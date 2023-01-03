@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 
 public class DynamoDBAttributes {
 
@@ -76,11 +77,15 @@ public class DynamoDBAttributes {
     }
 
     public static Instant getInstantAttribute(Map<String, AttributeValue> item, String name) {
+        return getInstantAttribute(item, name, Instant::ofEpochMilli);
+    }
+
+    public static Instant getInstantAttribute(Map<String, AttributeValue> item, String name, LongFunction<Instant> buildInstant) {
         String string = getNumberAttribute(item, name);
         if (string == null) {
             return null;
         }
-        return Instant.ofEpochMilli(Long.parseLong(string));
+        return buildInstant.apply(Long.parseLong(string));
     }
 
     private static <T> T getAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {

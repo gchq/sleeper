@@ -113,7 +113,7 @@ public class InternalDependencyIndexTest {
     }
 
     @Test
-    public void shouldExcludeUnexportedDependencyOfDependency() {
+    public void shouldIncludeUnexportedTransitiveAsCompileDependency() {
         // Given
         InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
@@ -124,11 +124,26 @@ public class InternalDependencyIndexTest {
 
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
+                .containsExactly("c", "b", "a");
+    }
+
+    @Test
+    public void shouldExcludeUnexportedTransitiveWhenSpecified() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").exported(false).build()).build(),
+                testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("c"))
                 .containsExactly("c", "b");
     }
 
     @Test
-    public void shouldIncludeUnexportedDependencyDirectly() {
+    public void shouldIncludeUnexportedDependencyDirectlyWhenExcludingUnexportedTransitives() {
         // Given
         InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
@@ -137,12 +152,12 @@ public class InternalDependencyIndexTest {
         ).build().internalDependencies();
 
         // When / Then
-        assertThat(index.dependencyPathsForModules("b"))
+        assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("b"))
                 .containsExactly("b", "a");
     }
 
     @Test
-    public void shouldIncludeDependencyWithExplicitlyDeclaredScope() {
+    public void shouldIncludeDependencyWithExplicitlyDeclaredScopeWhenExcludingUnexportedTransitives() {
         // Given
         InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
@@ -151,7 +166,7 @@ public class InternalDependencyIndexTest {
         ).build().internalDependencies();
 
         // When / Then
-        assertThat(index.dependencyPathsForModules("b"))
+        assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("b"))
                 .containsExactly("b", "a");
     }
 

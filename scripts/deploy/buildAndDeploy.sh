@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Copyright 2022 Crown Copyright
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,20 +33,6 @@ echo "VPC: ${VPC}"
 echo "SUBNET:${SUBNET}"
 echo "TABLE_NAME: ${TABLE_NAME}"
 
-SCRIPTS_DIR=$(cd $(dirname $0) && pwd)
-BASE_DIR=$(cd $(dirname $0) && cd "../../" && pwd)
-
-echo "-------------------------------------------------------------------------------"
-echo "Building Project"
-echo "-------------------------------------------------------------------------------"
-pushd ${BASE_DIR}/java
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn -q clean install -Pquick
-
-mkdir -p ${BASE_DIR}/scripts/jars
-mkdir -p ${BASE_DIR}/scripts/docker
-cp  ${BASE_DIR}/java/distribution/target/distribution-${VERSION}-bin/scripts/jars/* ${BASE_DIR}/scripts/jars/
-cp -r ${BASE_DIR}/java/distribution/target/distribution-${VERSION}-bin/scripts/docker/* ${BASE_DIR}/scripts/docker/
-cp  ${BASE_DIR}/java/distribution/target/distribution-${VERSION}-bin/scripts/templates/version.txt ${BASE_DIR}/scripts/templates/version.txt
-
-${SCRIPTS_DIR}/deploy.sh ${INSTANCE_ID} ${VPC} ${SUBNET} ${TABLE_NAME}
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ".." && pwd)
+"$SCRIPTS_DIR/build/build.sh"
+"$SCRIPTS_DIR/deploy/deploy.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" "$TABLE_NAME"

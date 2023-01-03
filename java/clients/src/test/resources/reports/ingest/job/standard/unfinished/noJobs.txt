@@ -1,0 +1,8 @@
+
+Ingest Job Status Report
+------------------------
+Total jobs waiting in queue (excluded from report): 0
+Total jobs in progress: 0
+-------------------------------------------------------
+| STATE | JOB_ID | TOTAL_FILES | TASK_ID | START_TIME |
+-------------------------------------------------------

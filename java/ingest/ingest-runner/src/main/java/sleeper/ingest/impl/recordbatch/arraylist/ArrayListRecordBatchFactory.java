@@ -16,6 +16,8 @@
 
 package sleeper.ingest.impl.recordbatch.arraylist;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.ParquetConfiguration;
@@ -29,6 +31,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 
 public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchFactory.class);
+
     private final ParquetConfiguration parquetConfiguration;
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
@@ -48,6 +52,9 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
             throw new IllegalArgumentException("maxNoOfRecordsInLocalStore must be positive");
         }
         this.createBatchFn = Objects.requireNonNull(createBatchFn, "createBatchFn must not be null");
+
+        LOGGER.info("Max number of records to read into memory is {}", maxNoOfRecordsInMemory);
+        LOGGER.info("Max number of records to write to local disk is {}", maxNoOfRecordsInLocalStore);
     }
 
     public static Builder builder() {

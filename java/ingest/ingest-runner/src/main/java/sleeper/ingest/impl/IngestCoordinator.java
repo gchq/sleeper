@@ -26,6 +26,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
@@ -35,7 +36,6 @@ import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -83,10 +83,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final long ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
     private long lastPartitionsUpdateTime;
+    private long recordsRead;
     private PartitionTree partitionTree;
     private boolean isClosed;
 
-    private IngestCoordinator(Builder builder, RecordBatchFactory<INCOMINGDATATYPE> recordBatchFactory) {
+    private IngestCoordinator(Builder<INCOMINGDATATYPE> builder) {
         LOGGER.info("Creating IngestCoordinator with schema of {}", builder.schema);
 
         // Supplied member variables
@@ -96,7 +97,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;
         this.ingestPartitionRefreshFrequencyInSeconds = builder.ingestPartitionRefreshFrequencyInSeconds;
-        this.recordBatchFactory = requireNonNull(recordBatchFactory);
+        this.recordBatchFactory = requireNonNull(builder.recordBatchFactory);
 
         // Other member variables
         this.ingestCoordinatorCreationTime = System.currentTimeMillis();
@@ -124,12 +125,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      *
      * @param sleeperStateStore The state store to update
      * @param fileInfoList      The details of the files to add to the state store
-     * @throws StateStoreException  -
-     * @throws InterruptedException -
      */
     private static void updateStateStore(StateStore sleeperStateStore,
-                                         List<FileInfo> fileInfoList)
-            throws StateStoreException, InterruptedException {
+                                         List<FileInfo> fileInfoList) {
         boolean success = false;
         int numberOfFailures = 0;
         while (!success) {
@@ -140,10 +138,15 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 LOGGER.error("Failed to update DynamoDB with new files", e);
                 numberOfFailures++;
                 if (numberOfFailures >= 10) {
-                    throw new StateStoreException("Unable to update StateStore after 10 attempts (most recent exception was " + e.getMessage() + ")", e);
+                    throw new RetryStateStoreException("Unable to update StateStore after 10 attempts (most recent exception was " + e.getMessage() + ")", e);
                 }
                 // Sleep with exponential back-off
-                Thread.sleep((long) Math.pow(2.0D, numberOfFailures));
+                try {
+                    Thread.sleep((long) Math.pow(2.0D, numberOfFailures));
+                } catch (InterruptedException e2) {
+                    Thread.currentThread().interrupt();
+                    throw new RetryStateStoreException("Interrupted retrying state store update after previous failure", e);
+                }
             }
         }
     }
@@ -185,13 +188,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 CompletableFuture<List<FileInfo>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
                         .thenApply(fileInfoList -> {
-                            // Update the state store
-                            try {
-                                updateStateStore(sleeperStateStore, fileInfoList);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                            // Return the total number of records that ave been written
+                            updateStateStore(sleeperStateStore, fileInfoList);
                             return fileInfoList;
                         });
                 ingestFutures.add(consumedFuture);
@@ -228,7 +225,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * Close this ingester synchronously, as required by {@link AutoCloseable}. This is the only closing method that may
      * be called more than once. Second and subsequent calls are ignored and a warning is logged.
      * <p>
-     * This method uses {@link #asyncCloseReturningFileInfoList()} and waits for that future to complete before
+     * This method uses {@link #asyncCloseReturningResult()} and waits for that future to complete before
      * returning.
      *
      * @throws IOException         -
@@ -240,13 +237,13 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         if (isClosed) {
             LOGGER.warn("Closing an IngestCoordinator that has already been closed");
         } else {
-            asyncCloseReturningFileInfoList().join();
+            asyncCloseReturningResult().join();
         }
     }
 
     /**
      * Close this ingester synchronously, returning information about every file that was ingested and added to the
-     * state store. This method uses {@link #asyncCloseReturningFileInfoList()} and waits for that future to complete
+     * state store. This method uses {@link #asyncCloseReturningResult()} and waits for that future to complete
      * before returning.
      *
      * @return Details about every file that was added to the state store.
@@ -254,8 +251,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws IteratorException   -
      * @throws StateStoreException -
      */
-    public List<FileInfo> closeReturningFileInfoList() throws StateStoreException, IteratorException, IOException {
-        return asyncCloseReturningFileInfoList().join();
+    public IngestResult closeReturningResult() throws StateStoreException, IteratorException, IOException {
+        return asyncCloseReturningResult().join();
     }
 
     /**
@@ -270,7 +267,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws IteratorException   -
      * @throws StateStoreException -
      */
-    public CompletableFuture<List<FileInfo>> asyncCloseReturningFileInfoList()
+    public CompletableFuture<IngestResult> asyncCloseReturningResult()
             throws StateStoreException, IteratorException, IOException {
         if (isClosed) {
             throw new AssertionError("Attempt to close IngestCoordinator and return results twice");
@@ -283,19 +280,16 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         return CompletableFuture.allOf(ingestFutures.toArray(new CompletableFuture[0]))
                 .whenComplete((msg, ex) -> internalClose())
                 .thenApply(dummy -> {
-                    List<FileInfo> fileInfoList = ingestFutures.stream()
-                            .map(CompletableFuture::join)
-                            .flatMap(Collection::stream)
-                            .collect(Collectors.toList());
-                    long noOfRecordsWritten = fileInfoList.stream()
-                            .mapToLong(FileInfo::getNumberOfRecords)
-                            .sum();
+                    List<FileInfo> filesWritten = ingestFutures.stream().map(CompletableFuture::join)
+                            .flatMap(List::stream).collect(Collectors.toList());
+                    IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
+                    long noOfRecordsWritten = result.getRecordsWritten();
                     double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
                     METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %.1f seconds at %.1f per second",
                             noOfRecordsWritten,
                             elapsedSeconds,
                             noOfRecordsWritten / elapsedSeconds));
-                    return fileInfoList;
+                    return result;
                 });
     }
 
@@ -349,6 +343,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         try {
             initiateIngestIfNecessary(false);
             currentRecordBatch.append(data);
+            recordsRead++;
         } catch (Exception e) {
             internalClose();
             throw e;
@@ -468,7 +463,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         public IngestCoordinator<T> build() {
-            return new IngestCoordinator<>(this, recordBatchFactory);
+            return new IngestCoordinator<>(this);
         }
     }
 }

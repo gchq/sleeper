@@ -33,7 +33,6 @@ public class IngestJobTest {
                 .build();
 
         // Then
-        assertThat(ingestJob.getId()).isNotNull();
         assertThat(ingestJob.getId()).isNotEmpty();
     }
 
@@ -47,7 +46,6 @@ public class IngestJobTest {
                 .build();
 
         // Then
-        assertThat(ingestJob.getId()).isNotNull();
         assertThat(ingestJob.getId()).isNotEmpty();
     }
 }

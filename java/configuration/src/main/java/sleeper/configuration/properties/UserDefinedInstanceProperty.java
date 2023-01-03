@@ -75,12 +75,14 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     // Arrow ingest
     ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "268435456"),                    // 256M
     ARROW_INGEST_BATCH_BUFFER_BYTES("sleeper.ingest.arrow.batch.buffer.bytes", "1073741824"),                       // 1G
-    ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "17179869184"),                // 16G
+    ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "2147483648"),                 // 2G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
 
     // Status Store
     INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
     INGEST_JOB_STATUS_TTL_IN_SECONDS("sleeper.ingest.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
+
+    INGEST_TASK_STATUS_TTL_IN_SECONDS("sleeper.ingest.task.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
 
     // Bulk Import - properties that are applicable to all bulk import platforms
     BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner"),

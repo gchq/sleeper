@@ -24,7 +24,6 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
@@ -33,15 +32,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +46,7 @@ import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -305,6 +302,21 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
+    public static List<Record> readIngestedRecords(IngestResult result, Schema schema) {
+        return result.getFileInfoList().stream()
+                .map(FileInfo::getFilename)
+                .flatMap(filename -> readRecordsFromParquetFileOrThrow(filename, schema).stream())
+                .collect(Collectors.toList());
+    }
+
+    public static List<Record> readRecordsFromParquetFileOrThrow(String filename, Schema schema) {
+        try {
+            return readRecordsFromParquetFile(filename, schema);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed reading records", e);
+        }
+    }
+
     public static List<Record> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -324,13 +336,4 @@ public class IngestRecordsTestDataHelper {
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
 
-    public static StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
-    }
-
-    public static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
-        stateStore.initialise(initialPartitions);
-        return stateStore;
-    }
 }

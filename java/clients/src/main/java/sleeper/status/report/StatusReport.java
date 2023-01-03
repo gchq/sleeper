@@ -24,8 +24,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -33,11 +33,11 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.status.report.compactionjob.CompactionJobStatusReportArguments;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
-import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
-import sleeper.status.report.compactiontask.CompactionTaskQuery;
-import sleeper.status.report.compactiontask.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
+import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
+import sleeper.status.report.compaction.task.CompactionTaskQuery;
+import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.io.IOException;
 
@@ -90,7 +90,7 @@ public class StatusReport {
                 .instanceId(instanceProperties.get(ID))
                 .tableName(tableProperties.get(TABLE_NAME))
                 .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(QueryType.UNFINISHED)
+                .queryType(JobQuery.Type.UNFINISHED)
                 .build()).run();
 
         // Tasks

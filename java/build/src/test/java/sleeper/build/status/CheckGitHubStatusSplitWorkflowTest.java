@@ -17,7 +17,6 @@ package sleeper.build.status;
 
 import org.junit.Test;
 import sleeper.build.chunks.ProjectChunk;
-import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.InMemoryGitHubWorkflowRuns;
@@ -33,15 +32,15 @@ public class CheckGitHubStatusSplitWorkflowTest {
     private final ProjectChunk chunk = ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build();
     private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(branch, chunk.getWorkflow());
 
-    private ProjectConfiguration.Builder configurationBuilder() {
-        return ProjectConfiguration.builder()
+    private CheckGitHubStatusConfig.Builder configurationBuilder() {
+        return CheckGitHubStatusConfig.builder()
                 .token("test-token").head(branch)
                 .chunks(Collections.singletonList(chunk));
     }
 
     @Test
     public void shouldPassWhenSingleChunkSuccessful() throws Exception {
-        ProjectConfiguration configuration = configurationBuilder().build();
+        CheckGitHubStatusConfig configuration = configurationBuilder().build();
         workflowRuns.setLatestRun(GitHubWorkflowRun.withCommitSha("test-sha").runId(123L).success());
 
         ChunkStatuses status = workflowRuns.checkStatus(configuration);
@@ -53,7 +52,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
 
     @Test
     public void shouldRetryWhenSingleChunkInProgressOnOldSha() throws Exception {
-        ProjectConfiguration configuration = configurationBuilder().retrySeconds(0).build();
+        CheckGitHubStatusConfig configuration = configurationBuilder().retrySeconds(0).build();
         GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("old-sha").runId(123L);
         workflowRuns.setLatestRunAndRecheck(runBuilder.inProgress(), runBuilder.success());
 
@@ -66,7 +65,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
 
     @Test
     public void shouldRetryMultipleTimes() throws Exception {
-        ProjectConfiguration configuration = configurationBuilder().retrySeconds(0).maxRetries(10).build();
+        CheckGitHubStatusConfig configuration = configurationBuilder().retrySeconds(0).maxRetries(10).build();
         GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("old-sha").runId(12L);
         workflowRuns.setLatestRunAndRechecks(runBuilder.inProgress(), runBuilder.inProgress(), runBuilder.success());
 
@@ -81,7 +80,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
 
     @Test
     public void shouldStopRetryingAfterSpecifiedTimes() throws Exception {
-        ProjectConfiguration configuration = configurationBuilder().retrySeconds(0).maxRetries(1).build();
+        CheckGitHubStatusConfig configuration = configurationBuilder().retrySeconds(0).maxRetries(1).build();
         GitHubWorkflowRun run = GitHubWorkflowRun.withCommitSha("old-sha").runId(12L).inProgress();
         workflowRuns.setLatestRunAndRecheck(run, run);
 
