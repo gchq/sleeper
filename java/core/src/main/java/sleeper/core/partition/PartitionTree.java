@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,12 +160,25 @@ public class PartitionTree {
         return getRootPartition();
     }
 
+    /**
+     * Traverse the partition tree visiting the leaves first, then proceed in steps where you remove the current leaf
+     * partitions and visit the new leaves.
+     * <p>
+     * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition
+     * on the left/min side of the split will always be displayed first in this ordering.
+     * <p>
+     * This produces an ordering which is natural to read when you care the most about the leaf partitions, but you also
+     * want to be able to read the rest of the tree in a predictable way.
+     *
+     * @return all partitions in the tree in leaves first order
+     */
     public Stream<Partition> traverseLeavesFirst() {
         return traverseLeavesFirst(getLeavesInTreeOrder(), new HashSet<>(), Stream.empty());
     }
 
     private List<Partition> getLeavesInTreeOrder() {
-        // Establish ordering of the leaves with a depth-first traversal.
+        // Establish ordering by combining depth-first tree traversal with the ordering of child IDs on each partition.
+        // This should ensure that partitions on the left/min side of a split will always come first in the order.
         return leavesInTreeOrderUnder(getRootPartition())
                 .collect(Collectors.toList());
     }
