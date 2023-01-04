@@ -37,13 +37,17 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final String s3BucketName;
     private final String localWorkingDirectory;
     private final S3TransferManager s3TransferManager;
+    private final S3AsyncClient s3AsyncClient;
+    private final boolean closeS3AsyncClient;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
-        if (builder.s3AsyncClient != null) {
-            s3TransferManager = S3TransferManager.builder().s3Client(builder.s3AsyncClient).build();
+        s3AsyncClient = builder.s3AsyncClient;
+        closeS3AsyncClient = builder.closeS3AsyncClient;
+        if (s3AsyncClient != null) {
+            s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build();
         } else {
             s3TransferManager = S3TransferManager.create();
         }
@@ -87,6 +91,9 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     @Override
     public void close() throws Exception {
+        if (s3AsyncClient != null && closeS3AsyncClient) {
+            s3AsyncClient.close();
+        }
         s3TransferManager.close();
     }
 
@@ -95,6 +102,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         private S3AsyncClient s3AsyncClient;
         private String s3BucketName;
         private String localWorkingDirectory;
+        private boolean closeS3AsyncClient;
 
         private Builder() {
         }
@@ -121,6 +129,11 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder tableProperties(TableProperties tableProperties) {
             return s3BucketName(tableProperties.get(DATA_BUCKET));
+        }
+
+        public Builder closeS3AsyncClient(boolean closeS3AsyncClient) {
+            this.closeS3AsyncClient = closeS3AsyncClient;
+            return this;
         }
 
         public AsyncS3PartitionFileWriterFactory build() {
