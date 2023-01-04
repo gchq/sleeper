@@ -117,6 +117,17 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
             return this;
         }
 
+        public Builder s3AsyncClientOrDefaultFromProperties(
+                S3AsyncClient s3AsyncClient, InstanceProperties properties) {
+            if (s3AsyncClient == null) {
+                this.s3AsyncClient = s3AsyncClientFromProperties(properties);
+                closeS3AsyncClient = true;
+            } else {
+                this.s3AsyncClient = s3AsyncClient;
+            }
+            return this;
+        }
+
         public Builder s3BucketName(String s3BucketName) {
             this.s3BucketName = s3BucketName;
             return this;
@@ -129,11 +140,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder tableProperties(TableProperties tableProperties) {
             return s3BucketName(tableProperties.get(DATA_BUCKET));
-        }
-
-        public Builder closeS3AsyncClient(boolean closeS3AsyncClient) {
-            this.closeS3AsyncClient = closeS3AsyncClient;
-            return this;
         }
 
         public AsyncS3PartitionFileWriterFactory build() {
