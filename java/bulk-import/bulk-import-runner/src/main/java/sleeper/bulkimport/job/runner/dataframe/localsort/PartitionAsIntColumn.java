@@ -43,11 +43,11 @@ public class PartitionAsIntColumn {
      * which the mapping from the leaf partitions to integers is computed does not matter, all that matters is that
      * each leaf partition gets mapped to one and only one int, and that no other partition gets mapped to
      * the same int.
-     * 
+     *
      * As an example, if we have a table with a key field of name 'key' and type integer, and there are two leaf
      * partitions where 10 is the boundary between them then the column will be the expression
      * "CASE WHEN (key < 10) THEN 0 ELSE 1 END".
-     * 
+     *
      * @param partitionTree The PartitionTree of the table
      * @param schema The Schema of the table
      * @return A Column calculating an int that identifies the partition the record is in
