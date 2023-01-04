@@ -21,6 +21,9 @@ import static java.util.Collections.emptyList;
 
 public class OnPushPathsDiffTestHelper {
 
+    private OnPushPathsDiffTestHelper() {
+    }
+
     public static OnPushPathsDiff identical(List<String> expected, List<String> actual) {
         return builder(expected, actual).build();
     }
