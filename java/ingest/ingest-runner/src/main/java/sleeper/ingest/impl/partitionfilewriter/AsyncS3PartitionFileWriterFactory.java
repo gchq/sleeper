@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
@@ -22,8 +23,12 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ASYNC_INGEST_CLIENT_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {
@@ -50,6 +55,20 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     public static Builder builderWith(TableProperties tableProperties) {
         return builder().tableProperties(tableProperties);
+    }
+
+    public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
+        String clientType = properties.get(ASYNC_INGEST_CLIENT_TYPE).toLowerCase(Locale.ROOT);
+        if ("java".equals(clientType)) {
+            return S3AsyncClient.create();
+        } else if ("crt".equals(clientType)) {
+            return S3AsyncClient.crtBuilder()
+                    .minimumPartSizeInBytes(properties.getLong(ASYNC_INGEST_CRT_PART_SIZE_BYTES))
+                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS))
+                    .build();
+        } else {
+            throw new IllegalArgumentException("Unrecognised async client type: " + clientType);
+        }
     }
 
     @Override
