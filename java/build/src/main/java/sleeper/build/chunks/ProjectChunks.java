@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,8 @@ public class ProjectChunks {
         for (ProjectChunk chunk : chunks) {
             OnPushPathsDiff diff = project.loadWorkflow(chunk)
                     .getOnPushPathsDiffFromExpected(project, chunk, dependencies);
-            diff.reportMissingEntries(out, project, chunk);
-            if (!diff.getMissingEntries().isEmpty()) {
+            diff.report(out, project, chunk);
+            if (!diff.isValid()) {
                 failed = true;
             }
         }
