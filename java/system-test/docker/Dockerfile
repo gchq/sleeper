@@ -13,8 +13,6 @@
 # limitations under the License.
 FROM amazoncorretto:11
 
-RUN apt-get update
-
 COPY system-test.jar /system-test.jar
 COPY run.sh /run.sh
 RUN ["chmod", "+x", "/run.sh"]

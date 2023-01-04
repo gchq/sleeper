@@ -13,8 +13,6 @@
 # limitations under the License.
 FROM amazoncorretto:11
 
-RUN apt-get update
-
 COPY compaction-job-execution.jar /compaction-job-execution.jar
 COPY run.sh /run.sh
 RUN ["chmod", "+x", "/run.sh"]
