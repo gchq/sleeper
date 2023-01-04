@@ -158,4 +158,18 @@ public class PartitionsBuilderTest {
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "aaa", null))));
     }
+
+    @Test
+    public void canBuildSinglePartitionTree() {
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .singlePartition("A")
+                .buildTree();
+
+        assertThat(tree.getAllPartitions())
+                .containsExactly(tree.getRootPartition());
+        assertThat(tree.getPartition("A"))
+                .isEqualTo(tree.getRootPartition());
+    }
 }

@@ -38,6 +38,7 @@ import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
+import sleeper.status.report.partitions.PartitionsStatusReporter;
 
 import java.io.IOException;
 
@@ -80,7 +81,7 @@ public class StatusReport {
     private void run() throws StateStoreException {
         System.out.println("\nFull Status Report:\n--------------------------");
         // Partitions
-        new PartitionsStatusReport(stateStore).run();
+        new PartitionsStatusReport(stateStore, tableProperties, new PartitionsStatusReporter(System.out)).run();
 
         // Data files
         new FilesStatusReport(stateStore, 1000, verbose).run();
