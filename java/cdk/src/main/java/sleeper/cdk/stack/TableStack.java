@@ -96,7 +96,7 @@ public class TableStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for handling initialisation and teardown of Sleeper Tables")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .build());
 
         configBucket.grantReadWrite(sleeperTableLambda);
@@ -207,7 +207,7 @@ public class TableStack extends NestedStack {
         Function tableMetricsPublisher = Function.Builder.create(this, tableName + "MetricsPublisher")
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .code(Code.fromBucket(jarsBucket, "metrics-" + instanceProperties.get(VERSION) + ".jar"))
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
                 .memorySize(256)
                 .timeout(Duration.seconds(60))
