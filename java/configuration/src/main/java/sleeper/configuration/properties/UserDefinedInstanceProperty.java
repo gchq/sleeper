@@ -67,9 +67,6 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     INGEST_SOURCE_BUCKET("sleeper.ingest.source.bucket"),
     INGEST_RECORD_BATCH_TYPE("sleeper.ingest.record.batch.type", "arraylist"),
     INGEST_PARTITION_FILE_WRITER_TYPE("sleeper.ingest.partition.file.writer.type", "direct"),
-    ASYNC_INGEST_CLIENT_TYPE("sleeper.ingest.async.client.type", "crt"), // crt or java
-    ASYNC_INGEST_CRT_PART_SIZE_BYTES("sleeper.ingest.async.crt.part.size.bytes", "134217728", Utils::isPositiveLong), // 128M
-    ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS("sleeper.ingest.async.crt.target.throughput.gbps", "10", Utils::isPositiveDouble),
 
     // ArrayList ingest
     MAX_RECORDS_TO_WRITE_LOCALLY("sleeper.ingest.max.local.records", "100000000"),
@@ -80,6 +77,11 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     ARROW_INGEST_BATCH_BUFFER_BYTES("sleeper.ingest.arrow.batch.buffer.bytes", "1073741824"),                       // 1G
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "2147483648"),                 // 2G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
+
+    // Async ingest partition file writer
+    ASYNC_INGEST_CLIENT_TYPE("sleeper.ingest.async.client.type", "crt"), // crt or java
+    ASYNC_INGEST_CRT_PART_SIZE_BYTES("sleeper.ingest.async.crt.part.size.bytes", "134217728", Utils::isPositiveLong), // 128M
+    ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS("sleeper.ingest.async.crt.target.throughput.gbps", "10", Utils::isPositiveDouble),
 
     // Status Store
     INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
