@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner.dataframelocalsort;
+package sleeper.bulkimport.job.runner.dataframe.localsort;
 
 import org.apache.spark.sql.Column;
 import sleeper.core.partition.Partition;
@@ -88,13 +88,11 @@ public class PartitionAsIntColumn {
 
     private static Map<Integer, Column> getRowKeyDimensionToColumn(Schema schema) {
         Map<Integer, Column> rowKeyDimensionToColumn = new HashMap<>();
-
         int i = 0;
         for (Field field : schema.getRowKeyFields()) {
             rowKeyDimensionToColumn.put(i, new Column(field.getName()));
             i++;
         }
-
         return rowKeyDimensionToColumn;
     }
 }

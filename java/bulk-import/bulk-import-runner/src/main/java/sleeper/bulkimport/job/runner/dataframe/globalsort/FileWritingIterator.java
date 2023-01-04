@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner.dataframe;
+package sleeper.bulkimport.job.runner.dataframe.globalsort;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;

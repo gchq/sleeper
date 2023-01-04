@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner;
+package sleeper.bulkimport.job.runner.dataframe.localsort;
 
 import com.facebook.collections.ByteArray;
 import org.apache.spark.sql.Column;
@@ -26,7 +26,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.collection.JavaConverters;
-import sleeper.bulkimport.job.runner.dataframelocalsort.PartitionAsIntColumn;
+import sleeper.bulkimport.job.runner.StructTypeFactory;
+import sleeper.bulkimport.job.runner.dataframe.localsort.PartitionAsIntColumn;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
