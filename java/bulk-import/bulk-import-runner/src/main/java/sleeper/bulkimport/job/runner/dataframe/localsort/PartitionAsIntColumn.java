@@ -50,7 +50,7 @@ public class PartitionAsIntColumn {
      * 
      * @param partitionTree The PartitionTree of the table
      * @param schema The Schema of the table
-     * @return
+     * @return A Column calculating an int that identifies the partition the record is in
      */
     public static Column getColumn(PartitionTree partitionTree, Schema schema) {
         Map<String, Integer> partitionIdToInt = getPartitionIdToInt(partitionTree);

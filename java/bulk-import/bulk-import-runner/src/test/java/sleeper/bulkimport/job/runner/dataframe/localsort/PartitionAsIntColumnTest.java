@@ -27,7 +27,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.collection.JavaConverters;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
-import sleeper.bulkimport.job.runner.dataframe.localsort.PartitionAsIntColumn;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;

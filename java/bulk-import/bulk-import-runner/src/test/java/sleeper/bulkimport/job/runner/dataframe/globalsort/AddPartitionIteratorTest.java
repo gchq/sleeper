@@ -18,8 +18,6 @@ package sleeper.bulkimport.job.runner.dataframe.globalsort;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.junit.Test;
-
-import sleeper.bulkimport.job.runner.dataframe.globalsort.AddPartitionIterator;
 import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
