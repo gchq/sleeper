@@ -90,7 +90,7 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M4</release.plugin.version>
-        <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
+        <surefire.plugin.version>3.0.0-M6</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <shade.plugin.version>3.3.0</shade.plugin.version>
         <jar.plugin.version>3.2.0</jar.plugin.version>
