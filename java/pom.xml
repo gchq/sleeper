@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 Crown Copyright
+  ~ Copyright 2023 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -80,8 +80,9 @@
         <reload4j.version>1.2.20</reload4j.version>
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
-        <netty.version>4.1.86.Final</netty.version>
         <bouncycastle.version>1.71.1</bouncycastle.version>
+        <!-- Netty version is managed because AWS and Arrow both depend on it but use incompatible versions -->
+        <netty.version>4.1.86.Final</netty.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
