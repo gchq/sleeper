@@ -17,15 +17,16 @@ ARG BUILDER_IMAGE_TAG=3.8-openjdk-8-slim
 ARG BASE_IMAGE_NAME=amazoncorretto
 ARG BASE_IMAGE_TAG=11
 
-ARG SPARK_VERSION=3.1.2
-ARG HADOOP_VERSION=3.2.1
+ARG SPARK_VERSION=3.3.0
+ARG HADOOP_VERSION=3.3.3
 
 FROM ${BUILDER_IMAGE_NAME}:${BUILDER_IMAGE_TAG} as builder
 
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
 
-ARG SPARK_DOWNLOAD_URL=https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.2.tgz
+ARG SPARK_DOWNLOAD_FILENAME=spark-${SPARK_VERSION}-bin-hadoop3
+ARG SPARK_DOWNLOAD_URL=https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/${SPARK_DOWNLOAD_FILENAME}.tgz
 
 # Build Native Hadoop Libraries
 WORKDIR /workdir
@@ -41,17 +42,17 @@ RUN ./extract-native-libs.sh
 RUN curl -s ${SPARK_DOWNLOAD_URL} | tar -C /opt -xz
 
 # Slim down spark
-RUN echo "Before slimming: $(du -sh /opt/spark-${SPARK_VERSION}-bin-hadoop3.2)" && \
+RUN echo "Before slimming: $(du -sh /opt/${SPARK_DOWNLOAD_FILENAME})" && \
     rm -r /opt/spark*/examples && \
     rm -r /opt/spark*/yarn && \
     cp /opt/spark*/kubernetes/dockerfiles/spark/entrypoint.sh /opt && rm -r /opt/spark*/kubernetes && \
     rm -r /opt/spark*/python && \
     rm -r /opt/spark*/R && \
     rm -r /opt/spark*/data && \
-    echo "After slimming: $(du -sh /opt/spark-${SPARK_VERSION}-bin-hadoop3.2)"
+    echo "After slimming: $(du -sh /opt/${SPARK_DOWNLOAD_FILENAME})"
 
 # Add workdir
-RUN mkdir /opt/spark-${SPARK_VERSION}-bin-hadoop3.2/workdir
+RUN mkdir /opt/${SPARK_DOWNLOAD_FILENAME}/workdir
 
 FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
@@ -65,12 +66,12 @@ RUN apt-get -qq update && \
 
 RUN groupadd ${GROUP} && useradd --home-dir /opt/spark --gid ${GROUP} --no-create-home --shell /bin/bash ${USER}
 
-COPY --from=builder --chown=${USER}:${GROUP} /opt/spark-${SPARK_VERSION}-bin-hadoop3.2 /opt/spark-${SPARK_VERSION}-bin-hadoop3.2
+COPY --from=builder --chown=${USER}:${GROUP} /opt/${SPARK_DOWNLOAD_FILENAME} /opt/${SPARK_DOWNLOAD_FILENAME}
 COPY --from=builder --chown=${USER}:${GROUP} /opt/entrypoint.sh /opt/
 COPY --from=builder --chown=${USER}:${GROUP} /opt/hadoop-${HADOOP_VERSION} /opt/hadoop-${HADOOP_VERSION}
 
 RUN cd /opt && \
-    ln -s ./spark-${SPARK_VERSION}-bin-hadoop3.2 ./spark && \
+    ln -s ./${SPARK_DOWNLOAD_FILENAME} ./spark && \
     ln -s ./hadoop-${HADOOP_VERSION} ./hadoop
 
 ENV SPARK_HOME=/opt/spark
