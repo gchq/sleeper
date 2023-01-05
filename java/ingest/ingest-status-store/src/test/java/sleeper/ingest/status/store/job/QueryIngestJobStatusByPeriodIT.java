@@ -96,10 +96,10 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
     public void shouldIncludeFinishedStatusUpdateOutsidePeriod() {
         // Given
         IngestJob job = jobWithFiles("file");
+        Instant periodStart = Instant.parse("2023-01-02T14:52:00.001Z");
         Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant periodEnd = Instant.parse("2023-01-03T14:52:00.001Z");
         Instant finishedTime = Instant.parse("2023-01-03T14:56:00.001Z");
-        Instant periodStart = startedTime.minus(Period.ofDays(1));
-        Instant periodEnd = finishedTime.plus(Period.ofDays(1));
         // Fix update times to be same as happened times
         IngestJobStatusStore store = storeWithUpdateTimes(startedTime, finishedTime);
 
