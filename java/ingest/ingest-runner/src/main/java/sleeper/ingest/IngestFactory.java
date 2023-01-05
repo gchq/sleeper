@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ public class IngestFactory {
             return AsyncS3PartitionFileWriterFactory.builderWith(tableProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
-                    .s3AsyncClient(s3AsyncClient)
+                    .s3AsyncClientOrDefaultFromProperties(s3AsyncClient, instanceProperties)
                     .build();
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
