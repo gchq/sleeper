@@ -19,6 +19,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -30,19 +31,16 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final ParquetConfiguration parquetConfiguration;
     private final String s3BucketName;
     private final String localWorkingDirectory;
-    private final S3AsyncClient s3AsyncClient;
-    private final boolean closeS3AsyncClient;
+    private final S3TransferManager s3TransferManager;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         if (builder.s3AsyncClient != null) {
-            s3AsyncClient = builder.s3AsyncClient;
-            closeS3AsyncClient = false;
+            s3TransferManager = S3TransferManager.builder().s3Client(builder.s3AsyncClient).build();
         } else {
-            s3AsyncClient = S3AsyncClient.create();
-            closeS3AsyncClient = true;
+            s3TransferManager = S3TransferManager.create();
         }
     }
 
@@ -61,7 +59,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     partition,
                     parquetConfiguration,
                     s3BucketName,
-                    s3AsyncClient,
+                    s3TransferManager,
                     localWorkingDirectory);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -70,9 +68,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     @Override
     public void close() throws Exception {
-        if (closeS3AsyncClient) {
-            s3AsyncClient.close();
-        }
+        s3TransferManager.close();
     }
 
     public static final class Builder {
