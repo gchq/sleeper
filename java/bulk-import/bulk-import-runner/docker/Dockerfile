@@ -19,13 +19,16 @@ ARG BASE_IMAGE_TAG=11
 
 ARG SPARK_VERSION=3.3.0
 ARG HADOOP_VERSION=3.3.3
+ARG SPARK_DOWNLOAD_FILENAME=spark-${SPARK_VERSION}-bin-hadoop3
+ARG SPARK_DIRNAME=${SPARK_DOWNLOAD_FILENAME}
 
 FROM ${BUILDER_IMAGE_NAME}:${BUILDER_IMAGE_TAG} as builder
 
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
+ARG SPARK_DOWNLOAD_FILENAME
+ARG SPARK_DIRNAME
 
-ARG SPARK_DOWNLOAD_FILENAME=spark-${SPARK_VERSION}-bin-hadoop3
 ARG SPARK_DOWNLOAD_URL=https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/${SPARK_DOWNLOAD_FILENAME}.tgz
 
 # Build Native Hadoop Libraries
@@ -42,22 +45,23 @@ RUN ./extract-native-libs.sh
 RUN curl -s ${SPARK_DOWNLOAD_URL} | tar -C /opt -xz
 
 # Slim down spark
-RUN echo "Before slimming: $(du -sh /opt/${SPARK_DOWNLOAD_FILENAME})" && \
+RUN echo "Before slimming: $(du -sh /opt/${SPARK_DIRNAME})" && \
     rm -r /opt/spark*/examples && \
     rm -r /opt/spark*/yarn && \
     cp /opt/spark*/kubernetes/dockerfiles/spark/entrypoint.sh /opt && rm -r /opt/spark*/kubernetes && \
     rm -r /opt/spark*/python && \
     rm -r /opt/spark*/R && \
     rm -r /opt/spark*/data && \
-    echo "After slimming: $(du -sh /opt/${SPARK_DOWNLOAD_FILENAME})"
+    echo "After slimming: $(du -sh /opt/${SPARK_DIRNAME})"
 
 # Add workdir
-RUN mkdir /opt/${SPARK_DOWNLOAD_FILENAME}/workdir
+RUN mkdir /opt/${SPARK_DIRNAME}/workdir
 
 FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
 ARG SPARK_VERSION
 ARG HADOOP_VERSION
+ARG SPARK_DIRNAME
 ARG USER=spark
 ARG GROUP=spark
 
@@ -69,12 +73,12 @@ RUN yum install -y libzstd shadow-utils.x86_64
 
 RUN groupadd ${GROUP} && useradd --home-dir /opt/spark --gid ${GROUP} --no-create-home --shell /bin/bash ${USER}
 
-COPY --from=builder --chown=${USER}:${GROUP} /opt/${SPARK_DOWNLOAD_FILENAME} /opt/${SPARK_DOWNLOAD_FILENAME}
+COPY --from=builder --chown=${USER}:${GROUP} /opt/${SPARK_DIRNAME} /opt/${SPARK_DIRNAME}
 COPY --from=builder --chown=${USER}:${GROUP} /opt/entrypoint.sh /opt/
 COPY --from=builder --chown=${USER}:${GROUP} /opt/hadoop-${HADOOP_VERSION} /opt/hadoop-${HADOOP_VERSION}
 
 RUN cd /opt && \
-    ln -s ./${SPARK_DOWNLOAD_FILENAME} ./spark && \
+    ln -s ./${SPARK_DIRNAME} ./spark && \
     ln -s ./hadoop-${HADOOP_VERSION} ./hadoop
 
 ENV SPARK_HOME=/opt/spark
@@ -84,6 +88,6 @@ ENV PATH="$PATH:${SPARK_HOME}/bin"
 USER ${USER}
 
 WORKDIR /opt/spark/workdir
-RUN mv ../conf/log4j.properties.template ./log4j.properties
+RUN mv ../conf/log4j2.properties.template ./log4j2.properties
 COPY ./bulk-import-runner.jar /opt/spark/workdir
 ENTRYPOINT ["/opt/entrypoint.sh"]
