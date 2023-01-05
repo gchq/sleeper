@@ -35,9 +35,10 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithFiles("file2");
         Instant startedTime1 = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant startedUpdateTime1 = Instant.parse("2023-01-03T14:50:00.123Z");
         Instant startedTime2 = Instant.parse("2023-01-03T14:55:00.001Z");
-        // Fix update times to be same as happened times
-        IngestJobStatusStore store = storeWithUpdateTimes(startedTime1, startedTime2);
+        Instant startedUpdateTime2 = Instant.parse("2023-01-03T14:55:00.123Z");
+        IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime1, startedUpdateTime2);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
@@ -60,8 +61,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         Instant periodStart = Instant.parse("2023-01-01T14:00:00.001Z");
         Instant periodEnd = Instant.parse("2023-01-02T14:00:00.001Z");
         Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
-        // Fix update time to be same as happened time
-        IngestJobStatusStore store = storeWithUpdateTimes(startedTime);
+        Instant startedUpdateTime = Instant.parse("2023-01-03T14:50:00.123Z");
+        IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
@@ -76,9 +77,10 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithTableAndFiles("other-table", "file2");
         Instant startedTime1 = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant startedUpdateTime1 = Instant.parse("2023-01-03T14:50:00.123Z");
         Instant startedTime2 = Instant.parse("2023-01-03T14:55:00.001Z");
-        // Fix update times to be same as happened times
-        IngestJobStatusStore store = storeWithUpdateTimes(startedTime1, startedTime2);
+        Instant startedUpdateTime2 = Instant.parse("2023-01-03T14:55:00.123Z");
+        IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime1, startedUpdateTime2);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
@@ -98,10 +100,11 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJob job = jobWithFiles("file");
         Instant periodStart = Instant.parse("2023-01-02T14:52:00.001Z");
         Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant startedUpdateTime = Instant.parse("2023-01-03T14:50:00.123Z");
         Instant periodEnd = Instant.parse("2023-01-03T14:52:00.001Z");
         Instant finishedTime = Instant.parse("2023-01-03T14:56:00.001Z");
-        // Fix update times to be same as happened times
-        IngestJobStatusStore store = storeWithUpdateTimes(startedTime, finishedTime);
+        Instant finishedUpdateTime = Instant.parse("2023-01-03T14:56:00.123Z");
+        IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime, finishedUpdateTime);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
