@@ -29,7 +29,7 @@ jobs:
         run: mvn --batch-mode clean install -am -pl bulk-import/bulk-import-runner -Pquick -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Copy .jar to docker directory
-        run: cp target/bulk-import-runner-*-SNAPSHOT-utility.jar docker/bulk-import-runner.jar
+        run: cp target/bulk-import-runner-*-utility.jar docker/bulk-import-runner.jar
         working-directory: ./java/bulk-import/bulk-import-runner
       - name: Docker build
         run: docker build .
