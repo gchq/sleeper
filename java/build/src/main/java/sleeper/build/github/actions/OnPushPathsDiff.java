@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class OnPushPathsDiff {
 
@@ -41,18 +41,22 @@ public class OnPushPathsDiff {
         return new Builder();
     }
 
-    public static OnPushPathsDiff fromExpectedAndActual(List<String> expected, List<String> actual) {
-        List<String> missingEntries = new ArrayList<>(expected);
-        missingEntries.removeAll(actual);
-        List<String> extraEntries = new ArrayList<>(actual);
-        extraEntries.removeAll(expected);
+    public static OnPushPathsDiff fromExpectedAndActual(
+            ProjectStructure project, List<String> expected, List<String> actual) {
+        List<String> missingEntries = expected.stream()
+                .filter(entry -> !actual.contains(entry))
+                .collect(Collectors.toList());
+        List<String> extraEntries = actual.stream()
+                .filter(entry -> !expected.contains(entry))
+                .filter(project::isUnderMavenPathRepositoryRelative)
+                .collect(Collectors.toList());
         return builder()
                 .expected(expected).actual(actual)
                 .missingEntries(missingEntries).extraEntries(extraEntries)
                 .build();
     }
 
-    public void reportMissingEntries(PrintStream out, ProjectStructure project, ProjectChunk chunk) {
+    public void report(PrintStream out, ProjectStructure project, ProjectChunk chunk) {
         if (!missingEntries.isEmpty()) {
             out.println("Found missing on.push.paths at " + project.workflowPathInRepository(chunk) + ":");
             missingEntries.forEach(out::println);
@@ -61,14 +65,15 @@ public class OnPushPathsDiff {
             expected.forEach(entry -> out.println("- '" + entry + "'"));
             out.println();
         }
-    }
-
-    public void reportExtraEntries(ProjectStructure project, ProjectChunk chunk, PrintStream out) {
         if (!extraEntries.isEmpty()) {
             out.println("Found extra on.push.paths at " + project.workflowPathInRepository(chunk) + ":");
             extraEntries.forEach(out::println);
             out.println();
         }
+    }
+
+    public boolean isValid() {
+        return missingEntries.isEmpty() && extraEntries.isEmpty();
     }
 
     public List<String> getExpected() {

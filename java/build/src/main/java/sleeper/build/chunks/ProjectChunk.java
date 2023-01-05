@@ -21,6 +21,7 @@ import sleeper.build.maven.MavenModuleAndPath;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -33,11 +34,15 @@ public class ProjectChunk {
     private final String workflow;
     private final List<String> modules;
 
+    // These are properties that will be exposed to the workflow by GetChunkConfig, but should otherwise be ignored.
+    private final Map<String, String> workflowOnlyProperties;
+
     private ProjectChunk(Builder builder) {
         id = Objects.requireNonNull(ignoreEmpty(builder.id), "id must not be null");
         name = Objects.requireNonNull(ignoreEmpty(builder.name), "name must not be null");
         workflow = Objects.requireNonNull(ignoreEmpty(builder.workflow), "workflow must not be null");
         modules = Collections.unmodifiableList(Objects.requireNonNull(builder.modules, "modules must not be null"));
+        workflowOnlyProperties = Collections.unmodifiableMap(Objects.requireNonNull(builder.workflowOnlyProperties, "workflowOnlyProperties must not be null"));
     }
 
     public String getId() {
@@ -60,6 +65,10 @@ public class ProjectChunk {
         return String.join(",", getModules());
     }
 
+    public Map<String, String> getWorkflowOutputs() {
+        return workflowOnlyProperties;
+    }
+
     public Stream<MavenModuleAndPath> dependencies(InternalDependencyIndex index) {
         return index.dependenciesForModules(modules);
     }
@@ -77,12 +86,14 @@ public class ProjectChunk {
             return false;
         }
         ProjectChunk that = (ProjectChunk) o;
-        return id.equals(that.id) && name.equals(that.name) && workflow.equals(that.workflow) && modules.equals(that.modules);
+        return id.equals(that.id) && name.equals(that.name)
+                && workflow.equals(that.workflow) && modules.equals(that.modules)
+                && workflowOnlyProperties.equals(that.workflowOnlyProperties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, workflow, modules);
+        return Objects.hash(id, name, workflow, modules, workflowOnlyProperties);
     }
 
     @Override
@@ -92,6 +103,7 @@ public class ProjectChunk {
                 ", name='" + name + '\'' +
                 ", workflow='" + workflow + '\'' +
                 ", modules=" + modules +
+                ", workflowOnlyProperties=" + workflowOnlyProperties +
                 '}';
     }
 
@@ -100,6 +112,7 @@ public class ProjectChunk {
         private String name;
         private String workflow;
         private List<String> modules = Collections.emptyList();
+        private Map<String, String> workflowOnlyProperties = Collections.emptyMap();
 
         private Builder() {
         }
@@ -126,6 +139,11 @@ public class ProjectChunk {
 
         public Builder modulesArray(String... modules) {
             return modules(Arrays.asList(modules));
+        }
+
+        public Builder workflowOnlyProperties(Map<String, String> workflowOnlyProperties) {
+            this.workflowOnlyProperties = workflowOnlyProperties;
+            return this;
         }
 
         public ProjectChunk build() {

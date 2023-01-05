@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import sleeper.build.util.PathUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public class ProjectStructure {
@@ -53,6 +54,11 @@ public class ProjectStructure {
 
     public Path relativizeMavenPathInRepository(String path) {
         return repositoryPath.relativize(mavenProjectAbsolute).resolve(path);
+    }
+
+    public boolean isUnderMavenPathRepositoryRelative(String path) {
+        Path mavenPath = repositoryPath.relativize(mavenProjectAbsolute);
+        return Paths.get(path).startsWith(mavenPath);
     }
 
     public MavenModuleStructure loadMavenStructure() throws IOException {
