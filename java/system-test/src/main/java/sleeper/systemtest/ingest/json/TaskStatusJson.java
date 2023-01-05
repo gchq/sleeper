@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.systemtest.ingest.json;
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.util.GsonConfig;
 
 import java.time.Instant;
@@ -25,6 +26,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class TaskStatusJson {
 
     private static final Gson GSON = GsonConfig.standardBuilder().create();
@@ -68,48 +70,4 @@ public class TaskStatusJson {
         return GSON.toJson(this);
     }
 
-    // These getters are just to convince Spotbugs these fields are used
-    public String getTaskArn() {
-        return taskArn;
-    }
-
-    public String getClusterArn() {
-        return clusterArn;
-    }
-
-    public String getDesiredStatus() {
-        return desiredStatus;
-    }
-
-    public String getLastStatus() {
-        return lastStatus;
-    }
-
-    public Map<String, String> getContainersLastStatus() {
-        return containersLastStatus;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getStartedAt() {
-        return startedAt;
-    }
-
-    public Instant getStoppingAt() {
-        return stoppingAt;
-    }
-
-    public Instant getStoppedAt() {
-        return stoppedAt;
-    }
-
-    public String getStopCode() {
-        return stopCode;
-    }
-
-    public String getStoppedReason() {
-        return stoppedReason;
-    }
 }
