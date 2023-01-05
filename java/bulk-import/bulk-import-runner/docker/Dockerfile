@@ -61,8 +61,11 @@ ARG HADOOP_VERSION
 ARG USER=spark
 ARG GROUP=spark
 
-RUN apt-get -qq update && \
-    apt-get -y -qq install tini libzstd1
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
+RUN chmod +x /usr/bin/tini
+
+RUN yum install -y libzstd shadow-utils.x86_64
 
 RUN groupadd ${GROUP} && useradd --home-dir /opt/spark --gid ${GROUP} --no-create-home --shell /bin/bash ${USER}
 
