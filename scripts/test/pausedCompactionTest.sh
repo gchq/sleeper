@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 Crown Copyright
+# Copyright 2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,11 @@ INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.util.EnsureCompactionJobCreationPaused "$INSTANCE_ID"
+
+END_CHECK_PAUSED_TIME=$(record_time)
+
 echo "-------------------------------------------------------------------------------"
 echo "Invoking compaction job creation"
 echo "-------------------------------------------------------------------------------"
@@ -36,7 +41,7 @@ java -cp "${SYSTEM_TEST_JAR}" \
 sleeper.systemtest.compaction.InvokeCompactionJobCreation "$INSTANCE_ID"
 
 END_CREATE_COMPACTION_JOBS_TIME=$(record_time)
-echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
+echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_CHECK_PAUSED_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Invoking compaction task creation"
@@ -58,7 +63,8 @@ echo "--------------------------------------------------------------------------
 echo "Finished compaction test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
+echo "Checking for paused state took $(elapsed_time_str "$START_TIME" "$END_CHECK_PAUSED_TIME")"
+echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_CHECK_PAUSED_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
 echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
 echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_TASKS_TIME" "$FINISH_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
