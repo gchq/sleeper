@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,11 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     ARROW_INGEST_BATCH_BUFFER_BYTES("sleeper.ingest.arrow.batch.buffer.bytes", "1073741824"),                       // 1G
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "2147483648"),                 // 2G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
+
+    // Async ingest partition file writer
+    ASYNC_INGEST_CLIENT_TYPE("sleeper.ingest.async.client.type", "crt"), // crt or java
+    ASYNC_INGEST_CRT_PART_SIZE_BYTES("sleeper.ingest.async.crt.part.size.bytes", "134217728", Utils::isPositiveLong), // 128M
+    ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS("sleeper.ingest.async.crt.target.throughput.gbps", "10", Utils::isPositiveDouble),
 
     // Status Store
     INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
