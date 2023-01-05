@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,10 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected IngestJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(INGEST_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return storeWithUpdateTimes(updateTimes);
+    }
+
+    protected IngestJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
         return new DynamoDBIngestJobStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }

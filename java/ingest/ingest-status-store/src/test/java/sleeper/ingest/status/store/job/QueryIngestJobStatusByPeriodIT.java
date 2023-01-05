@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.Test;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
@@ -35,6 +36,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJob job2 = jobWithFiles("file2");
         Instant startedTime1 = Instant.parse("2023-01-03T14:50:00.001Z");
         Instant startedTime2 = Instant.parse("2023-01-03T14:55:00.001Z");
+        // Fix update times to be same as happened times
+        IngestJobStatusStore store = storeWithUpdateTimes(startedTime1, startedTime2);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
@@ -55,6 +58,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         // Given
         IngestJob job = jobWithFiles("file");
         Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
+        // Fix update time to be same as happened time
+        IngestJobStatusStore store = storeWithUpdateTimes(startedTime);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
@@ -72,6 +77,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJob job2 = jobWithTableAndFiles("other-table", "file2");
         Instant startedTime1 = Instant.parse("2023-01-03T14:50:00.001Z");
         Instant startedTime2 = Instant.parse("2023-01-03T14:55:00.001Z");
+        // Fix update times to be same as happened times
+        IngestJobStatusStore store = storeWithUpdateTimes(startedTime1, startedTime2);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
@@ -90,12 +97,14 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         // Given
         IngestJob job = jobWithFiles("file");
         Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant finishedTime = Instant.parse("2023-01-03T14:56:00.001Z");
         Instant periodStart = startedTime.minus(Period.ofDays(1));
+        Instant periodEnd = finishedTime.plus(Period.ofDays(1));
+        // Fix update times to be same as happened times
+        IngestJobStatusStore store = storeWithUpdateTimes(startedTime, finishedTime);
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
-        Instant finishedTime = Instant.parse("2023-01-03T14:56:00.001Z");
-        Instant periodEnd = finishedTime.plus(Period.ofDays(1));
         store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
 
         // Then
