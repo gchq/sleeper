@@ -57,6 +57,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
     public void shouldExcludeIngestJobOutsidePeriod() {
         // Given
         IngestJob job = jobWithFiles("file");
+        Instant periodStart = Instant.parse("2023-01-01T14:00:00.001Z");
+        Instant periodEnd = Instant.parse("2023-01-02T14:00:00.001Z");
         Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
         // Fix update time to be same as happened time
         IngestJobStatusStore store = storeWithUpdateTimes(startedTime);
@@ -65,8 +67,6 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
 
         // Then
-        Instant periodStart = Instant.parse("2023-01-01T14:00:00.001Z");
-        Instant periodEnd = Instant.parse("2023-01-02T14:00:00.001Z");
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
     }
 
