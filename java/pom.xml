@@ -62,7 +62,7 @@
         <aws-lambda-java-events.version>3.7.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.0</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.10.2</aws-lambda-powertools.version>
-        <hadoop.version>3.2.1</hadoop.version>
+        <hadoop.version>3.3.3</hadoop.version>
         <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
         <commons-lang3.version>3.8.1</commons-lang3.version>
         <commons-codec.version>1.11</commons-codec.version>
