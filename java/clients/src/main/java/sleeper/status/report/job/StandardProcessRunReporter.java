@@ -22,8 +22,10 @@ import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriterFactory;
 
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
 import static sleeper.ClientUtils.countWithCommas;
@@ -117,6 +119,14 @@ public class StandardProcessRunReporter {
 
     public static String formatDecimal(double value) {
         return decimalWithCommas("%.2f", value);
+    }
+
+    public static String formatDurationString(double value) {
+        Duration duration = Duration.ofMillis((long) (value * 1000));
+        return duration.toString()
+                .substring(2)
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                .toLowerCase(Locale.ROOT);
     }
 
     public static <I, O> O getOrNull(I object, Function<I, O> getter) {
