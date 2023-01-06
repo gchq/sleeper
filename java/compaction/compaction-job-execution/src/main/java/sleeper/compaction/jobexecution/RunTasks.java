@@ -126,7 +126,8 @@ public class RunTasks {
         this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
+                        instanceProperties);
 
         // bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
@@ -155,21 +156,24 @@ public class RunTasks {
         LOGGER.debug("Cluster container instances {}", details);
         Set<String> recentContainerInstanceARNs = new HashSet<>();
 
+        int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
+        LOGGER.info("Number of running tasks is {}", numRunningTasks);
+
+        int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
+        LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
+        
+        // Do we need to scale?
+        if (launchType.equalsIgnoreCase("EC2")) {
+            int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
+            int totalTasks = maxNumTasksThatWillBeCreated + numRunningTasks;
+            LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
+            scaler.scaleTo(totalTasks, details);
+            // scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
+        }
+        
         if (0 == queueSize) {
             LOGGER.info("Finishing as queue size is 0");
         } else {
-            int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
-            LOGGER.info("Number of running tasks is {}", numRunningTasks);
-
-            int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
-            LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
-
-            // Do we need to scale out?
-            int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-            if (launchType.equalsIgnoreCase("EC2")) {
-                scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
-            }
-
             List<String> args = new ArrayList<>();
             args.add(s3Bucket);
             args.add(type);
@@ -177,17 +181,18 @@ public class RunTasks {
             NetworkConfiguration networkConfiguration = networkConfig(subnet);
 
             // Create 1 task for each item on the queue
-            Set<String> newArns = launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
+            Set<String> newArns = launchTasks(startTime, queueSize, maxNumTasksToCreate, override,
+                            networkConfiguration);
             recentContainerInstanceARNs.addAll(newArns);
         }
 
-        try {
-            if (launchType.equalsIgnoreCase("EC2")) {
-                scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
-            }
-        } catch (AmazonClientException e) {
-            LOGGER.error("Scale-in exception", e);
-        }
+//        try {
+//            if (launchType.equalsIgnoreCase("EC2")) {
+//                scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
+//            }
+//        } catch (AmazonClientException e) {
+//            LOGGER.error("Scale-in exception", e);
+//        }
     }
 
     /**
@@ -214,7 +219,8 @@ public class RunTasks {
 
             try {
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                LOGGER.info(
+                                "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                                 clusterName, launchType, containerName, defUsed);
                 runTaskResult.getTasks().stream()
                                 .filter(task -> task.getContainerInstanceArn() != null)

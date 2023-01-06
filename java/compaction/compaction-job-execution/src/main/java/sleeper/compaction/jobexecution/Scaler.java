@@ -42,8 +42,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * ECS EC2 auto scaler. This makes decisions on how many instances to start and
- * stop based on the amount of work there is to do.
+ * ECS EC2 auto scaler. This makes decisions on how many instances to start and stop based on the
+ * amount of work there is to do.
  */
 public class Scaler {
     /** AutoScaling client */
@@ -55,8 +55,7 @@ public class Scaler {
     /** The name of the ECS cluster the scaling group belongs to. */
     private final String ecsClusterName;
     /**
-     * The number of containers each EC2 instance can host. -1 means we haven't
-     * found out yet.
+     * The number of containers each EC2 instance can host. -1 means we haven't found out yet.
      */
     private int cachedInstanceContainers = -1;
     /** The CPU reservation for tasks. */
@@ -64,16 +63,15 @@ public class Scaler {
     /** The memory reservation for tasks. */
     private final int memoryReservation;
     /**
-     * The length of time an EC2 can be idle before being a candidate for
-     * termination.
+     * The length of time an EC2 can be idle before being a candidate for termination.
      */
     private final Duration gracePeriod;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Scaler.class);
 
     public Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,
-            String ecsClusterName,
-            int cpuReservation, int memoryReservation, Duration gracePeriod) {
+                    String ecsClusterName,
+                    int cpuReservation, int memoryReservation, Duration gracePeriod) {
         super();
         this.asClient = asClient;
         this.ecsClient = ecsClient;
@@ -83,13 +81,12 @@ public class Scaler {
         this.memoryReservation = memoryReservation;
         this.gracePeriod = gracePeriod;
         LOGGER.debug("Scaler constraints: CPU reservation {} Memory reservation {}",
-                this.cpuReservation, this.memoryReservation);
+                        this.cpuReservation, this.memoryReservation);
     }
 
     /**
-     * Find out how many containers of a specific CPU and RAM requirement can
-     * fit
-     * into the cluster at the moment.
+     * Find out how many containers of a specific CPU and RAM requirement can fit into the cluster
+     * at the moment.
      *
      * @param instanceDetails cluster EC2 details
      * @return the number of containers that can fit
@@ -97,7 +94,7 @@ public class Scaler {
     public int calculateAvailableClusterContainerCapacity(Map<String, InstanceDetails> instanceDetails) {
         int total = 0;
         for (InstanceDetails d : instanceDetails.values()) {
-            total +=  Math.min(d.availableCPU / this.cpuReservation,
+            total += Math.min(d.availableCPU / this.cpuReservation,
                             d.availableRAM / this.memoryReservation);
         }
         return total;
@@ -112,30 +109,56 @@ public class Scaler {
      */
     public static AutoScalingGroup getAutoScalingGroupInfo(String groupName, AmazonAutoScaling client) {
         DescribeAutoScalingGroupsRequest req = new DescribeAutoScalingGroupsRequest()
-                .withAutoScalingGroupNames(groupName)
-                .withMaxRecords(1);
+                        .withAutoScalingGroupNames(groupName)
+                        .withMaxRecords(1);
         DescribeAutoScalingGroupsResult result = client.describeAutoScalingGroups(req);
         if (result.getAutoScalingGroups().size() != 1) {
             throw new IllegalStateException("instead of 1, received " + result.getAutoScalingGroups().size()
-                    + " records for describe_auto_scaling_groups on group name " + groupName);
+                            + " records for describe_auto_scaling_groups on group name " + groupName);
         }
         AutoScalingGroup asg = result.getAutoScalingGroups().get(0);
         return asg;
     }
 
     /**
-     * Perform an EC2 auto scaling group scale-out if needed. First checks to
-     * see if
-     * any more instances are needed to run the desired number of new
-     * containers.
-     * If so, then the number of new instances is calculated from the remaining
-     * headroom in the cluster and number of containers that can fit on the
-     * instance
-     * type in the auto scaling group.
+     * Scales the ECS Auto Scaling Group to the right size. This looks at the number of total
+     * containers that should be running and the number that can fit on one instance and adjusts the
+     * desired size of the ASG.
+     * 
+     * @param numberContainers total number of containers to be run at the moment
+     * @param details details of the existing instances
+     */
+    public void scaleTo(int numberContainers, Map<String, InstanceDetails> details) {
+        // If we have any information set the number of containers per instance
+        checkContainersPerInstance(details);
+
+        // If we don't yet know how many can fit, then we assume only 1 will fit
+        int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedInstanceContainers : 1;
+
+        // Retrieve the details of the scaling group
+        AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
+        LOGGER.debug(
+                        "Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
+                        asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
+
+        int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
+        int newClusterSize = Math.min(instancesDesired, asg.getMaxSize());
+        LOGGER.info("Total containers wanted (including existing ones) {}, containers per instance {}, " +
+                        ", so total instances wanted {}, limited to {} by ASG", numberContainers, containersPerInstance,
+                        instancesDesired, newClusterSize);
+
+        // Set the new desired size on the cluster
+        setClusterDesiredSize(newClusterSize);
+    }
+
+    /**
+     * Perform an EC2 auto scaling group scale-out if needed. First checks to see if any more
+     * instances are needed to run the desired number of new containers. If so, then the number of
+     * new instances is calculated from the remaining headroom in the cluster and number of
+     * containers that can fit on the instance type in the auto scaling group.
      *
      * @param newContainerCount the number of new containers desired
-     * @param details map from EC2 instance ID to details about that
-     * instance
+     * @param details map from EC2 instance ID to details about that instance
      * @return result stating what action was taken
      */
     public ScaleOutResult possiblyScaleOut(int newContainerCount, Map<String, InstanceDetails> details) {
@@ -148,7 +171,7 @@ public class Scaler {
         int availableContainerCount = calculateAvailableClusterContainerCapacity(details);
 
         LOGGER.debug("newContainerCount {} containersPerInstance {} availableContainerCount {}", newContainerCount,
-                containersPerInstance, availableContainerCount);
+                        containersPerInstance, availableContainerCount);
         // Do we need to scale out?
         if (newContainerCount <= availableContainerCount) {
             LOGGER.debug("No scale out required");
@@ -157,9 +180,9 @@ public class Scaler {
         LOGGER.info("Containers to launch {}, cluster capacity {}", newContainerCount, availableContainerCount);
         // Retrieve the details of the scaling group
         AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
-        LOGGER.info(
-                "Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
-                asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
+        LOGGER.debug(
+                        "Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
+                        asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
 
         // Are we able to provision any more instances?
         int remainingHeadroom = asg.getMaxSize() - asg.getDesiredCapacity();
@@ -179,20 +202,16 @@ public class Scaler {
         int instancesAvailable = Math.min(instancesDesired, remainingHeadroom);
         int newClusterSize = asg.getDesiredCapacity() + instancesAvailable;
         LOGGER.info("Current scaling group size is {}, want to launch {} instances, spare capacity is {}",
-                asg.getDesiredCapacity(), instancesDesired, remainingHeadroom);
-        LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
+                        asg.getDesiredCapacity(), instancesDesired, remainingHeadroom);
         // Set the new desired size on the cluster
         setClusterDesiredSize(newClusterSize);
         return ScaleOutResult.SCALING_INITIATED;
     }
 
     /**
-     * Sets the number of containers that can run on each instance.
-     * If there are any details given in the map, then the first machine is
-     * queried
-     * to work out how many containers could fit on it.
-     * This method makes the assumption that the machines in the cluster are all
-     * identical.
+     * Sets the number of containers that can run on each instance. If there are any details given
+     * in the map, then the first machine is queried to work out how many containers could fit on
+     * it. This method makes the assumption that the machines in the cluster are all identical.
      *
      * @param details details of machines in the ECS cluster
      */
@@ -223,16 +242,16 @@ public class Scaler {
      * @param newClusterSize new desired size to set
      */
     public void setClusterDesiredSize(int newClusterSize) {
+        LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
         SetDesiredCapacityRequest req = new SetDesiredCapacityRequest()
-                .withAutoScalingGroupName(asGroupName)
-                .withDesiredCapacity(newClusterSize);
+                        .withAutoScalingGroupName(asGroupName)
+                        .withDesiredCapacity(newClusterSize);
         asClient.setDesiredCapacity(req);
     }
 
     /**
-     * Fetch a list of tasks from the ECS cluster that have the given task
-     * family
-     * name and desired status.
+     * Fetch a list of tasks from the ECS cluster that have the given task family name and desired
+     * status.
      *
      * @param taskFamilyName the task family name to filter on
      * @param desiredStatus task status should be RUNNING or STOPPED
@@ -241,9 +260,9 @@ public class Scaler {
     public List<String> getTasks(String taskFamilyName, String desiredStatus) {
         List<String> taskARNs = new ArrayList<>();
         ListTasksRequest request = new ListTasksRequest()
-                .withCluster(ecsClusterName)
-                .withFamily(taskFamilyName)
-                .withDesiredStatus(desiredStatus);
+                        .withCluster(ecsClusterName)
+                        .withFamily(taskFamilyName)
+                        .withDesiredStatus(desiredStatus);
         boolean more = true;
         while (more) {
             ListTasksResult result = ecsClient.listTasks(request);
@@ -256,10 +275,9 @@ public class Scaler {
     }
 
     /**
-     * Creates a list of EC2 container instance ARNs that are safe from
-     * termination.
-     * Looking at the list of tasks, we enumerate the instances and find those
-     * that haven't run a task recently and are not running any now.
+     * Creates a list of EC2 container instance ARNs that are safe from termination. Looking at the
+     * list of tasks, we enumerate the instances and find those that haven't run a task recently and
+     * are not running any now.
      *
      * @param clusterTasks the list of tasks this cluster is running/has run
      * @return set of EC2 instances to terminate
@@ -273,8 +291,8 @@ public class Scaler {
         for (int i = 0; i < clusterTasks.size(); i += 100) {
             List<String> subTaskList = clusterTasks.subList(i, Math.min(i + 100, clusterTasks.size()));
             DescribeTasksRequest request = new DescribeTasksRequest()
-                    .withCluster(ecsClusterName)
-                    .withTasks(subTaskList);
+                            .withCluster(ecsClusterName)
+                            .withTasks(subTaskList);
             DescribeTasksResult result = ecsClient.describeTasks(request);
             for (Task t : result.getTasks()) {
 
@@ -301,7 +319,7 @@ public class Scaler {
                     Duration stopDuration = Duration.between(stopInstant, now);
                     if (stopDuration.compareTo(gracePeriod) >= 0) {
                         LOGGER.debug("Task stopped longer than {} seconds, so don't keep its EC2",
-                                gracePeriod.getSeconds());
+                                        gracePeriod.getSeconds());
                     } else {
                         LOGGER.debug("Task stopped recently ({} seconds), keep its EC2", stopDuration.getSeconds());
                         shouldKeepEC2 = true;
@@ -318,15 +336,10 @@ public class Scaler {
     }
 
     /**
-     * Given a list of container instance ARNs that are safe, find EC2 IDs that
-     * are
-     * not
-     * on the safe list and haven't been registered with the cluster inside the
-     * grace
-     * period.
+     * Given a list of container instance ARNs that are safe, find EC2 IDs that are not on the safe
+     * list and haven't been registered with the cluster inside the grace period.
      *
-     * @param safeARNs the list of container instance ARNs that are safe from
-     * termination
+     * @param safeARNs the list of container instance ARNs that are safe from termination
      * @param details the cluster instance details
      * @return list of EC2 IDs to terminate
      */
@@ -340,17 +353,17 @@ public class Scaler {
         for (Map.Entry<String, InstanceDetails> machine : details.entrySet()) {
             if (safeARNs.contains(machine.getValue().instanceArn)) {
                 LOGGER.info("Instance ARN {} ID {} is in safe list, so keep it.",
-                        machine.getValue().instanceArn, machine.getKey());
+                                machine.getValue().instanceArn, machine.getKey());
             } else {
                 LOGGER.debug("Instance ARN {} not in set", machine.getValue().instanceArn);
                 Duration uptime = Duration.between(machine.getValue().registered, now);
                 if (uptime.compareTo(gracePeriod) >= 0) {
                     LOGGER.info("Instance ARN {} ID {} idle longer than grace period, so terminate it",
-                            machine.getValue().instanceArn, machine.getKey());
+                                    machine.getValue().instanceArn, machine.getKey());
                     terminationIDs.add(machine.getKey());
                 } else {
                     LOGGER.info("Instance ARN {} ID {} still in grace period ({} seconds) so keep it",
-                            machine.getValue().instanceArn, machine.getKey(), uptime.getSeconds());
+                                    machine.getValue().instanceArn, machine.getKey(), uptime.getSeconds());
                 }
             }
         }
@@ -362,12 +375,10 @@ public class Scaler {
      *
      * @param taskFamilyName the EC2 task family name
      * @param details the cluster details
-     * @param containerInstanceARNsUsed list of instance container ARNs from
-     * recently
-     * launched tasks
+     * @param containerInstanceARNsUsed list of instance container ARNs from recently launched tasks
      */
     public void possiblyScaleIn(String taskFamilyName, Map<String, InstanceDetails> details,
-            Set<String> containerInstanceARNsUsed) {
+                    Set<String> containerInstanceARNsUsed) {
         // List of container instance ARNs that are safe from termination
         Set<String> safeARNs = new HashSet<>(containerInstanceARNsUsed);
 
@@ -398,8 +409,8 @@ public class Scaler {
             LOGGER.info("Attempting to terminate EC2 ID {}", id);
             try {
                 TerminateInstanceInAutoScalingGroupRequest request = new TerminateInstanceInAutoScalingGroupRequest()
-                        .withInstanceId(id)
-                        .withShouldDecrementDesiredCapacity(true);
+                                .withInstanceId(id)
+                                .withShouldDecrementDesiredCapacity(true);
                 asClient.terminateInstanceInAutoScalingGroup(request);
             } catch (AmazonClientException e) {
                 LOGGER.error("Couldn't terminate EC2 ID " + id, e);
