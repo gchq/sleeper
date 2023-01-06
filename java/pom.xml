@@ -109,10 +109,7 @@
         <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <module.access.args>
-            --add-opens java.base/java.lang.invoke=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
-            --add-opens java.base/java.util=ALL-UNNAMED
-            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
         </module.access.args>
         <!--  This is required for later correct replacement of argLine -->
         <argLine/>
