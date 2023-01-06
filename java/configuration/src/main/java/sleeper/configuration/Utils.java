@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,14 @@ public class Utils {
 
     public static boolean isNonNegativeInteger(String integer) {
         return Integer.parseInt(integer) >= 0;
+    }
+
+    public static boolean isPositiveLong(String value) {
+        return Long.parseLong(value) > 0;
+    }
+
+    public static boolean isPositiveDouble(String value) {
+        return Double.parseDouble(value) > 0;
     }
 
     public static boolean isNonNullNonEmptyString(String string) {
