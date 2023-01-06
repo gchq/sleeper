@@ -98,7 +98,7 @@ public class StandardProcessRunReporter {
     }
 
     public static String getDurationInSeconds(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDurationString(summary.getDurationInSeconds()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDurationStringSeconds(summary.getDurationInSeconds()));
     }
 
     public static String getLinesRead(ProcessRun run) {
@@ -121,8 +121,15 @@ public class StandardProcessRunReporter {
         return decimalWithCommas("%.2f", value);
     }
 
-    public static String formatDurationString(double value) {
-        Duration duration = Duration.ofMillis((long) (value * 1000));
+    public static String formatDurationStringSeconds(double seconds) {
+        return formatDurationStringMillis(seconds * 1000);
+    }
+
+    public static String formatDurationStringMillis(double millis) {
+        return formatDurationString(Duration.ofMillis((long) millis));
+    }
+
+    public static String formatDurationString(Duration duration) {
         return duration.toString()
                 .substring(2)
                 .replaceAll("(\\d[HMS])(?!$)", "$1 ")

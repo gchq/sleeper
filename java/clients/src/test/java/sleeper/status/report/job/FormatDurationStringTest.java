@@ -27,7 +27,7 @@ public class FormatDurationStringTest {
         double seconds = 0.123;
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
 
         // Then
         assertThat(formattedString).isEqualTo("0.123s");
@@ -39,7 +39,7 @@ public class FormatDurationStringTest {
         double seconds = 1;
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
 
         // Then
         assertThat(formattedString).isEqualTo("1s");
@@ -51,7 +51,7 @@ public class FormatDurationStringTest {
         double seconds = 300;
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
 
         // Then
         assertThat(formattedString).isEqualTo("5m");
@@ -63,7 +63,7 @@ public class FormatDurationStringTest {
         double seconds = 7200;
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
 
         // Then
         assertThat(formattedString).isEqualTo("2h");
@@ -75,7 +75,7 @@ public class FormatDurationStringTest {
         double seconds = 12345.678;
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
 
         // Then
         assertThat(formattedString).isEqualTo("3h 25m 45.678s");
