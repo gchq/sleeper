@@ -22,6 +22,8 @@ import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.amazonaws.services.ecs.model.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -45,9 +47,15 @@ public class InstanceDetails {
     public final int totalCPU;
     /** Amount of RAM in total. */
     public final int totalRAM;
+    /** Number of running tasks. */
+    private final int numRunningTasks;
+    /** Number of pending tasks. */
+    private final int numPendingTasks;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
 
     public InstanceDetails(String instanceArn, Instant registered, int availableCPU, int availableRAM, int totalCPU,
-            int totalRAM) {
+                    int totalRAM, int numRunningTasks, int numPendingTasks) {
         super();
         this.instanceArn = instanceArn;
         this.registered = registered;
@@ -55,11 +63,19 @@ public class InstanceDetails {
         this.availableRAM = availableRAM;
         this.totalCPU = totalCPU;
         this.totalRAM = totalRAM;
+        this.numRunningTasks = numRunningTasks;
+        this.numPendingTasks = numPendingTasks;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceDetails [instanceArn=" + instanceArn + ", registered=" + registered + ", availableCPU=" + availableCPU + ", availableRAM=" + availableRAM + ", totalCPU=" + totalCPU
+                        + ", totalRAM=" + totalRAM + ", numRunningTasks=" + numRunningTasks + ", numPendingTasks=" + numPendingTasks + "]";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(availableCPU, availableRAM, instanceArn, registered, totalCPU, totalRAM);
+        return Objects.hash(availableCPU, availableRAM, instanceArn, numPendingTasks, numRunningTasks, registered, totalCPU, totalRAM);
     }
 
     @Override
@@ -74,34 +90,27 @@ public class InstanceDetails {
             return false;
         }
         InstanceDetails other = (InstanceDetails) obj;
-        return availableCPU == other.availableCPU && availableRAM == other.availableRAM
-                && Objects.equals(instanceArn, other.instanceArn) && Objects.equals(registered, other.registered)
-                && totalCPU == other.totalCPU && totalRAM == other.totalRAM;
-    }
-
-    @Override
-    public String toString() {
-        return "InstanceDetails [instance_arn=" + instanceArn + ", registered=" + registered + ", availableCPU="
-                + availableCPU + ", availableRAM=" + availableRAM + ", totalCPU=" + totalCPU + ", totalRAM=" + totalRAM
-                + "]";
+        return availableCPU == other.availableCPU && availableRAM == other.availableRAM && Objects.equals(instanceArn, other.instanceArn) && numPendingTasks == other.numPendingTasks
+                        && numRunningTasks == other.numRunningTasks && Objects.equals(registered, other.registered) && totalCPU == other.totalCPU && totalRAM == other.totalRAM;
     }
 
     /**
-     * Find details of EC2 instances in an ECS cluster.
-     * Inspects the cluster to find the details of all the instances.
+     * Find details of EC2 instances in an ECS cluster. Inspects the cluster to find the details of
+     * all the instances.
      *
      * @param ecsClusterName the cluster name
-     * @param ecsClient      the client conneciton
+     * @param ecsClient the client connection
      * @return map of instance IDs to details
      */
     public static Map<String, InstanceDetails> fetchInstanceDetails(String ecsClusterName, AmazonECS ecsClient) {
+        LOGGER.debug("Retrieving instance details for ECS cluster {}", ecsClusterName);
         Map<String, InstanceDetails> details = new HashMap<>();
         // Loop over the container instances in page size of 100
         boolean more = true;
         ListContainerInstancesRequest req = new ListContainerInstancesRequest()
-                .withCluster(ecsClusterName)
-                .withMaxResults(100)
-                .withStatus("ACTIVE");
+                        .withCluster(ecsClusterName)
+                        .withMaxResults(100)
+                        .withStatus("ACTIVE");
         while (more) {
             ListContainerInstancesResult result = ecsClient.listContainerInstances(req);
             // More to come?
@@ -113,29 +122,31 @@ public class InstanceDetails {
             }
             // now get a description of these instances
             DescribeContainerInstancesRequest conReq = new DescribeContainerInstancesRequest()
-                    .withCluster(ecsClusterName)
-                    .withContainerInstances(result.getContainerInstanceArns());
+                            .withCluster(ecsClusterName)
+                            .withContainerInstances(result.getContainerInstanceArns());
             DescribeContainerInstancesResult containersResult = ecsClient.describeContainerInstances(conReq);
             for (ContainerInstance c : containersResult.getContainerInstances()) {
                 // find the cpu and memory requirements
                 List<Resource> totalResources = c.getRegisteredResources();
                 List<Resource> remainingResources = c.getRemainingResources();
                 details.put(c.getEc2InstanceId(), new InstanceDetails(c.getContainerInstanceArn(),
-                        c.getRegisteredAt().toInstant(),
-                        findResourceAmount("CPU", remainingResources),
-                        findResourceAmount("MEMORY", remainingResources),
-                        findResourceAmount("CPU", totalResources),
-                        findResourceAmount("MEMORY", totalResources)));
+                                c.getRegisteredAt().toInstant(),
+                                findResourceAmount("CPU", remainingResources),
+                                findResourceAmount("MEMORY", remainingResources),
+                                findResourceAmount("CPU", totalResources),
+                                findResourceAmount("MEMORY", totalResources),
+                                c.getRunningTasksCount(),
+                                c.getPendingTasksCount()));
             }
         }
         return details;
     }
 
     /**
-     * Find the amount of the given resource in the list of resources.
-     * The list is inspected for the named resource and returned as an integer.
+     * Find the amount of the given resource in the list of resources. The list is inspected for the
+     * named resource and returned as an integer.
      *
-     * @param name      the resource name to find
+     * @param name the resource name to find
      * @param resources the list of resources
      * @return the amount, or 0 if not known
      * @throws IllegalStateException if the resource type is not INTEGER
@@ -145,7 +156,7 @@ public class InstanceDetails {
             if (r.getName().equals(name)) {
                 if (!r.getType().equals("INTEGER")) {
                     throw new java.lang.IllegalStateException(
-                            "resource " + name + " has type " + r.getType() + " instead of INTEGER");
+                                    "resource " + name + " has type " + r.getType() + " instead of INTEGER");
                 }
                 return r.getIntegerValue();
             }

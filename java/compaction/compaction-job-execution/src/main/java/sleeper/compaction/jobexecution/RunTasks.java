@@ -152,25 +152,24 @@ public class RunTasks {
         LOGGER.info("Queue size is {}", queueSize);
 
         // Obtain details of instances in this cluster
-        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
-        LOGGER.debug("Cluster container instances {}", details);
-        Set<String> recentContainerInstanceARNs = new HashSet<>();
+//        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
+        // Set<String> recentContainerInstanceARNs = new HashSet<>();
 
         int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
         LOGGER.info("Number of running tasks is {}", numRunningTasks);
 
         int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
         LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
-        
+
         // Do we need to scale?
         if (launchType.equalsIgnoreCase("EC2")) {
             int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
             int totalTasks = maxNumTasksThatWillBeCreated + numRunningTasks;
             LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
-            scaler.scaleTo(totalTasks, details);
+            scaler.scaleTo(totalTasks);
             // scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
         }
-        
+
         if (0 == queueSize) {
             LOGGER.info("Finishing as queue size is 0");
         } else {
@@ -181,9 +180,8 @@ public class RunTasks {
             NetworkConfiguration networkConfiguration = networkConfig(subnet);
 
             // Create 1 task for each item on the queue
-            Set<String> newArns = launchTasks(startTime, queueSize, maxNumTasksToCreate, override,
-                            networkConfiguration);
-            recentContainerInstanceARNs.addAll(newArns);
+            launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
+            // recentContainerInstanceARNs.addAll(newArns);
         }
 
 //        try {

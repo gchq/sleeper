@@ -128,17 +128,16 @@ public class Scaler {
      * @param numberContainers total number of containers to be run at the moment
      * @param details details of the existing instances
      */
-    public void scaleTo(int numberContainers, Map<String, InstanceDetails> details) {
+    public void scaleTo(int numberContainers) {
         // If we have any information set the number of containers per instance
-        checkContainersPerInstance(details);
+        checkContainersPerInstance(null);
 
         // If we don't yet know how many can fit, then we assume only 1 will fit
         int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedInstanceContainers : 1;
 
         // Retrieve the details of the scaling group
         AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
-        LOGGER.debug(
-                        "Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
+        LOGGER.debug("Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
                         asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
 
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
@@ -209,16 +208,27 @@ public class Scaler {
     }
 
     /**
-     * Sets the number of containers that can run on each instance. If there are any details given
-     * in the map, then the first machine is queried to work out how many containers could fit on
-     * it. This method makes the assumption that the machines in the cluster are all identical.
-     *
-     * @param details details of machines in the ECS cluster
+     * Sets the number of containers that can run on each instance. This method queries the cluster
+     * to retrieve details of the machines in it if needed. This method makes the assumption that
+     * the machines in the cluster are all identical. If details are passed in then they are used
+     * otherwise a request is made to the ECS API.
+     * 
+     * @param passedDetails optional details of cluster container instances, maybe null
      */
-    private void checkContainersPerInstance(Map<String, InstanceDetails> details) {
+    private void checkContainersPerInstance(Map<String, InstanceDetails> passedDetails) {
         if (containerPerInstanceKnown()) {
             return;
         }
+
+        // if details were passed in, use them, otherwise find them ourselves
+        Map<String, InstanceDetails> details;
+        if (passedDetails == null) {
+            // fetch details from ECS cluster
+            details = InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient);
+        } else {
+            details = passedDetails;
+        }
+
         // get the first one, we assume the containers are homogenous
         Optional<InstanceDetails> det = details.values().stream().findFirst();
         det.ifPresent(d -> {
