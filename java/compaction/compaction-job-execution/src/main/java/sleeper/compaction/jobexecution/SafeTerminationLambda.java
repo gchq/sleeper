@@ -1,5 +1,7 @@
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.s3.AmazonS3;
@@ -22,13 +24,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 
 public class SafeTerminationLambda implements RequestStreamHandler {
 
@@ -39,14 +42,27 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     private static final JsonParser PARSER = new JsonParser();
 
     private final AmazonS3 s3Client;
+    private final AmazonECS ecsClient;
+    private final String ecsClusterName;
 
     public SafeTerminationLambda() throws IOException {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
+        String type = validateParameter("type");
         this.s3Client = AmazonS3ClientBuilder.defaultClient();
+        this.ecsClient = AmazonECSClientBuilder.defaultClient();
 
         // find the instance properties from S3
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
+
+        // find ECS cluster name
+        if (type.equals("compaction")) {
+            this.ecsClusterName = instanceProperties.get(COMPACTION_CLUSTER);
+        } else if (type.equals("splittingcompaction")) {
+            this.ecsClusterName = instanceProperties.get(SPLITTING_COMPACTION_CLUSTER);
+        } else {
+            throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
+        }
     }
 
     private String validateParameter(String parameterName) {
@@ -55,21 +71,6 @@ public class SafeTerminationLambda implements RequestStreamHandler {
             throw new IllegalArgumentException("Missing environment variable: " + parameter);
         }
         return parameter;
-    }
-
-    public static void main(String[] args) throws Exception {
-        StringReader reader = new StringReader(test);
-        
-        // get the list of suggested termination IDs
-        Set<String> suggestedTerminations = extractSuggestedIDs(reader);
-
-        LOGGER.info("Suggested instances for termination {}", suggestedTerminations);
-
-        // get cluster instance details
-        Map<String,InstanceDetails> clusterDetails=InstanceDetails.fetchInstanceDetails(...);
-        
-        // filter out ones that are not running tasks
-        
     }
 
     /**
@@ -89,6 +90,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         // set of instance IDs that AWS Auto Scaling wants to terminate
         Set<String> suggestedTerminations = new HashSet<>();
 
+        // loop over each element and extract the instance ID
         for (JsonElement e : arr) {
             Map<String, String> instance = GSON.fromJson(e, TYPE_TOKEN.getType());
             suggestedTerminations.add(instance.get("InstanceId"));
@@ -100,12 +102,15 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
 
-        JsonElement root = PARSER.parse(reader);
-        JsonArray arr = root.getAsJsonObject().getAsJsonArray("Instances");
+        // get the list of suggested termination IDs
+        Set<String> suggestedTerminations = extractSuggestedIDs(reader);
 
-        for (JsonElement e : arr) {
-            Map<String, String> deets = GSON.fromJson(e, TYPE_TOKEN.getType());
-            System.out.println(deets);
-        }
+        LOGGER.info("Suggested instances for termination {}", suggestedTerminations);
+
+        // get cluster instance details
+        Map<String, InstanceDetails> clusterDetails = InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient);
+
+        // filter out ones that are not running tasks
+        
     }
 }
