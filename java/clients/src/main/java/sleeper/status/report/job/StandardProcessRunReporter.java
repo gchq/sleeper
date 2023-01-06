@@ -36,7 +36,7 @@ public class StandardProcessRunReporter {
     public static final TableFieldDefinition TASK_ID = TableFieldDefinition.field("TASK_ID");
     public static final TableFieldDefinition START_TIME = TableFieldDefinition.field("START_TIME");
     public static final TableFieldDefinition FINISH_TIME = TableFieldDefinition.field("FINISH_TIME");
-    public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION (s)");
+    public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION");
     public static final TableFieldDefinition LINES_READ = TableFieldDefinition.numeric("LINES_READ");
     public static final TableFieldDefinition LINES_WRITTEN = TableFieldDefinition.numeric("LINES_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
@@ -76,7 +76,7 @@ public class StandardProcessRunReporter {
         if (run.isFinished()) {
             out.printf("Finish Time: %s%n", run.getFinishTime());
             out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
-            out.printf("Duration: %ss%n", getDurationInSeconds(run));
+            out.printf("Duration: %s%n", getDurationInSeconds(run));
             out.printf("Lines Read: %s%n", getLinesRead(run));
             out.printf("Lines Written: %s%n", getLinesWritten(run));
             out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
@@ -98,7 +98,7 @@ public class StandardProcessRunReporter {
     }
 
     public static String getDurationInSeconds(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getDurationInSeconds()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDurationString(summary.getDurationInSeconds()));
     }
 
     public static String getLinesRead(ProcessRun run) {
