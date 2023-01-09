@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,18 @@ package sleeper.status.report.job;
 
 import org.junit.Test;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FormatDurationStringTest {
     @Test
     public void shouldFormatDurationStringWithMillisecondsOnly() {
         // Given
-        double seconds = 0.123;
+        Duration durationMillis = Duration.ofMillis(123);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationString(durationMillis);
 
         // Then
         assertThat(formattedString).isEqualTo("0.123s");
@@ -36,10 +38,10 @@ public class FormatDurationStringTest {
     @Test
     public void shouldFormatDurationStringWithSecondsOnly() {
         // Given
-        double seconds = 1;
+        Duration durationSecondsOnly = Duration.ofMillis(1000);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationString(durationSecondsOnly);
 
         // Then
         assertThat(formattedString).isEqualTo("1s");
@@ -48,10 +50,10 @@ public class FormatDurationStringTest {
     @Test
     public void shouldFormatDurationStringWithMinutesOnly() {
         // Given
-        double seconds = 300;
+        Duration durationMinutesOnly = Duration.ofMillis(300000);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationString(durationMinutesOnly);
 
         // Then
         assertThat(formattedString).isEqualTo("5m");
@@ -60,10 +62,10 @@ public class FormatDurationStringTest {
     @Test
     public void shouldFormatDurationStringWithHoursOnly() {
         // Given
-        double seconds = 7200;
+        Duration durationHoursOnly = Duration.ofMillis(7200000);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationString(durationHoursOnly);
 
         // Then
         assertThat(formattedString).isEqualTo("2h");
@@ -72,10 +74,10 @@ public class FormatDurationStringTest {
     @Test
     public void shouldFormatDurationStringWithAllUnits() {
         // Given
-        double seconds = 12345.678;
+        Duration durationAllUnits = Duration.ofMillis(12345678);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationStringSeconds(seconds);
+        String formattedString = StandardProcessRunReporter.formatDurationString(durationAllUnits);
 
         // Then
         assertThat(formattedString).isEqualTo("3h 25m 45.678s");

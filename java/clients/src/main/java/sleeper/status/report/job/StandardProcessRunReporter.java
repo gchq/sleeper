@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class StandardProcessRunReporter {
     }
 
     public static String getDurationInSeconds(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDurationStringSeconds(summary.getDurationInSeconds()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDurationString((long) (summary.getDurationInSeconds() * 1000)));
     }
 
     public static String getLinesRead(ProcessRun run) {
@@ -121,12 +121,8 @@ public class StandardProcessRunReporter {
         return decimalWithCommas("%.2f", value);
     }
 
-    public static String formatDurationStringSeconds(double seconds) {
-        return formatDurationStringMillis(seconds * 1000);
-    }
-
-    public static String formatDurationStringMillis(double millis) {
-        return formatDurationString(Duration.ofMillis((long) millis));
+    private static String formatDurationString(long millis) {
+        return formatDurationString(Duration.ofMillis(millis));
     }
 
     public static String formatDurationString(Duration duration) {
