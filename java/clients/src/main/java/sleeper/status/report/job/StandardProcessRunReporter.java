@@ -128,7 +128,7 @@ public class StandardProcessRunReporter {
     public static String formatDurationString(Duration duration) {
         return duration.toString()
                 .substring(2)
-                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ") // Separate units using a space e.g "1h 2m 3s"
                 .toLowerCase(Locale.ROOT);
     }
 
