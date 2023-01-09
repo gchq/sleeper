@@ -108,9 +108,11 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <!-- sun.io.ch.DirectBuffer is accessed by Apache Spark in the bulk import job runner -->
+        <!-- sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner -->
+        <!-- java.util.AbstractList is accessed by Apache Spark KryoSerializer, used in the bulk import job runner -->
         <module.access.args>
             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
         </module.access.args>
         <!--  This is required for later correct replacement of argLine -->
         <argLine/>
