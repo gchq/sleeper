@@ -87,6 +87,9 @@
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
         <bouncycastle.version>1.71.1</bouncycastle.version>
+        <!-- Build module has some separate dependencies -->
+        <jackson.build.version>2.14.0</jackson.build.version>
+        <jersey.build.version>2.37</jersey.build.version>
         <!-- Netty version is managed because AWS and Arrow both depend on it but use incompatible versions -->
         <netty.version>4.1.86.Final</netty.version>
         <!-- Testing -->

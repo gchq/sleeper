@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 Crown Copyright
+  ~ Copyright 2023 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -24,11 +24,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>build</artifactId>
-
-    <properties>
-        <jackson.build.version>2.14.0</jackson.build.version>
-        <jersey.build.version>2.37</jersey.build.version>
-    </properties>
 
     <dependencies>
         <dependency>
