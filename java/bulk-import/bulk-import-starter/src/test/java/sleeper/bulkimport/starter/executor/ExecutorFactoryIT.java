@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClient;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -28,7 +27,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,8 +40,7 @@ public class ExecutorFactoryIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    private String previousConfigBucketEnvSetting;
-    private String previousBulkImportPlatformEnvSetting;
+    private final Map<String, String> environment = new HashMap<>();
 
     private static final String DEFAULT_CONFIGURATION_FILE = "" +
             "sleeper.id=basic-example\n" +
@@ -56,21 +54,13 @@ public class ExecutorFactoryIT {
 
     @Before
     public void setUp() {
-        previousConfigBucketEnvSetting = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        previousBulkImportPlatformEnvSetting = System.getenv("BULK_IMPORT_PLATFORM");
-        setEnvironmentVariable(CONFIG_BUCKET.toEnvironmentVariable(), "config-bucket");
+        environment.put(CONFIG_BUCKET.toEnvironmentVariable(), "config-bucket");
     }
 
-    @After
-    public void cleanUp() {
-        if (null == previousConfigBucketEnvSetting) {
-            previousConfigBucketEnvSetting = "";
-        }
-        setEnvironmentVariable(CONFIG_BUCKET.toEnvironmentVariable(), previousConfigBucketEnvSetting);
-        if (null == previousBulkImportPlatformEnvSetting) {
-            previousBulkImportPlatformEnvSetting = "";
-        }
-        setEnvironmentVariable("BULK_IMPORT_PLATFORM", previousBulkImportPlatformEnvSetting);
+    private ExecutorFactory executorFactory(AmazonS3 s3Client) throws IOException {
+        return new ExecutorFactory(s3Client,
+                mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class),
+                environment::get);
     }
 
     @Test
@@ -80,7 +70,7 @@ public class ExecutorFactoryIT {
         s3Client.createBucket("config-bucket");
         s3Client.putObject("config-bucket", "config", DEFAULT_CONFIGURATION_FILE);
         setEnvironmentVariable("BULK_IMPORT_PLATFORM", "NonPersistentEMR");
-        ExecutorFactory executorFactory = new ExecutorFactory(s3Client, mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class));
+        ExecutorFactory executorFactory = executorFactory(s3Client);
 
         // When
         Executor executor = executorFactory.createExecutor();
@@ -99,7 +89,7 @@ public class ExecutorFactoryIT {
         s3Client.createBucket("config-bucket");
         s3Client.putObject("config-bucket", "config", configurationFile);
         setEnvironmentVariable("BULK_IMPORT_PLATFORM", "EKS");
-        ExecutorFactory executorFactory = new ExecutorFactory(s3Client, mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class));
+        ExecutorFactory executorFactory = executorFactory(s3Client);
 
         // When
         Executor executor = executorFactory.createExecutor();
@@ -111,7 +101,7 @@ public class ExecutorFactoryIT {
     }
 
     @Test
-    public void shouldNotCreateExecutorWithInvalidConfiguration() {
+    public void shouldNotCreateExecutorWithInvalidConfiguration() throws IOException {
         // Given
         String configurationFile = DEFAULT_CONFIGURATION_FILE;
         setEnvironmentVariable(CONFIG_BUCKET.toEnvironmentVariable(), "config-bucket");
@@ -119,28 +109,16 @@ public class ExecutorFactoryIT {
         s3Client.createBucket("config-bucket");
         s3Client.putObject("config-bucket", "config", configurationFile);
         setEnvironmentVariable("BULK_IMPORT_PLATFORM", "ZZZ");
+        ExecutorFactory executorFactory = executorFactory(s3Client);
 
         // When then
-        assertThatThrownBy(() -> {
-            ExecutorFactory executorFactory = new ExecutorFactory(s3Client, mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class));
-            executorFactory.createExecutor();
-        }).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(executorFactory::createExecutor).isInstanceOf(IllegalArgumentException.class);
 
         s3Client.shutdown();
     }
 
     public void setEnvironmentVariable(String key, String value) {
-        try {
-            Map<String, String> env = System.getenv();
-            Class<?> cl = env.getClass();
-            Field field = cl.getDeclaredField("m");
-            field.setAccessible(true);
-            Map<String, String> writableEnv;
-            writableEnv = (Map<String, String>) field.get(env);
-            writableEnv.put(key, value);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to set environment variable", e);
-        }
+        environment.put(key, value);
     }
 
     private AmazonS3 createS3Client() {
