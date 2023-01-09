@@ -92,7 +92,7 @@
         <netty.version>4.1.86.Final</netty.version>
         <!-- Testing -->
         <junit.version>4.13.2</junit.version>
-        <mockito.version>3.3.3</mockito.version>
+        <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.16.2</testcontainers.version>
         <wiremock.version>2.32.0</wiremock.version>
         <assertj.version>3.23.1</assertj.version>
