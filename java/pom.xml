@@ -73,7 +73,7 @@
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <jackson.version>2.11.4</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <testcontainers.version>1.16.2</testcontainers.version>
         <cdk.version>2.35.0</cdk.version>
