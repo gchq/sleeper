@@ -65,7 +65,7 @@
         <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
         <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
         <aws-java-sdk.version>1.12.380</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.19.0</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.19.12</aws-java-sdk-v2.version>
         <aws-crt.version>0.20.4</aws-crt.version>
         <aws-lambda-java-events.version>3.7.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.0</aws-lambda-java-core.version>
