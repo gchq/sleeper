@@ -55,7 +55,6 @@
         </module>
         <module name="JavadocMethod">
             <property name="id" value="javadocOnMethod"/>
-            <property name="allowMissingJavadoc" value="true"/>
             <property name="allowMissingParamTags" value="true"/>
         </module>
         <module name="JavadocStyle">
