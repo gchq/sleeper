@@ -63,7 +63,7 @@
         <spark.version>3.3.0</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
         <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
-        <joom.spark.platform.version>0.1.2</joom.spark.platform.version>
+        <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
         <aws-java-sdk.version>1.11.1034</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.19.0</aws-java-sdk-v2.version>
         <aws-crt.version>0.20.4</aws-crt.version>
