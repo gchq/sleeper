@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.compaction.jobexecution;
 
 import com.amazonaws.services.ecs.AmazonECS;
@@ -56,7 +71,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     public SafeTerminationLambda() throws IOException {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         String type = validateParameter("type");
-        
+
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
 
@@ -84,7 +99,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
 
     /**
      * Gets the list of EC2 instance IDs suggested for termination from the input JSON.
-     * 
+     *
      * @param reader the input source
      * @return set of IDs
      * @throws NullPointerException if reader is null
@@ -112,7 +127,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     /**
      * Examine list of suggested instances from AWS. Generate our own suggestions based on empty
      * instances.
-     * 
+     *
      * @param input input JSON
      * @param output response JSON
      * @param clusterDetails details of machines in cluster
@@ -143,7 +158,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
 
     /**
      * Filter out a set of instances that are not running and RUNNING/PENDING tasks.
-     * 
+     *
      * @param clusterDetails all instances in cluster
      * @param suggestedSize limit for number of instances to return
      * @return set of empty instances
@@ -169,7 +184,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     /**
      * Process request from AWS Lambda. Sets up a {@link java.io.Reader} and a
      * {@link java.io.Writer} around the streams.
-     * 
+     *
      * @param input the incoming Lambda event data
      * @param output the response JSON
      * @param context event context

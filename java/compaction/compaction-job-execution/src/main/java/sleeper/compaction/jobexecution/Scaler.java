@@ -124,9 +124,8 @@ public class Scaler {
      * Scales the ECS Auto Scaling Group to the right size. This looks at the number of total
      * containers that should be running and the number that can fit on one instance and adjusts the
      * desired size of the ASG.
-     * 
+     *
      * @param numberContainers total number of containers to be run at the moment
-     * @param details details of the existing instances
      */
     public void scaleTo(int numberContainers) {
         // If we have any information set the number of containers per instance
@@ -212,7 +211,7 @@ public class Scaler {
      * to retrieve details of the machines in it if needed. This method makes the assumption that
      * the machines in the cluster are all identical. If details are passed in then they are used
      * otherwise a request is made to the ECS API.
-     * 
+     *
      * @param passedDetails optional details of cluster container instances, maybe null
      */
     private void checkContainersPerInstance(Map<String, InstanceDetails> passedDetails) {
