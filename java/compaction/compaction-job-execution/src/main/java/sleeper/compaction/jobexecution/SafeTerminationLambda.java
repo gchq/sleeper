@@ -42,7 +42,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 public class SafeTerminationLambda implements RequestStreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SafeTerminationLambda.class);
-    /** gson JSON encoder/decoer */
+    /** gson JSON encoder/decoder. */
     private static final Gson GSON = new Gson();
     /** Type parameter for converting the inner map to a Java type. */
     private static final TypeToken<Map<String, String>> TYPE_TOKEN = new TypeToken<Map<String, String>>() {
@@ -50,14 +50,14 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     /** JSON reader for decoding. */
     private static final JsonParser PARSER = new JsonParser();
 
-    private final AmazonS3 s3Client;
     private final AmazonECS ecsClient;
     private final String ecsClusterName;
 
     public SafeTerminationLambda() throws IOException {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         String type = validateParameter("type");
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
+        
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
 
         // find the instance properties from S3
