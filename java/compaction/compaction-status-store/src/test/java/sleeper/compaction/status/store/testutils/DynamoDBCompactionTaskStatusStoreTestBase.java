@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.compaction.status.store.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
+
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;

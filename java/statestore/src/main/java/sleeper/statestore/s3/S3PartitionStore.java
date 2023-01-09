@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.RegionSerDe;

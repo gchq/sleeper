@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;

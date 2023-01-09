@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.build.github.api;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
+
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;

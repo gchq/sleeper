@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -35,7 +37,6 @@ import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.ArrayList;

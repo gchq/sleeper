@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
@@ -92,6 +93,6 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
     private StructType createEnhancedSchema(StructType convertedSchema) {
         StructType structTypeWithPartition = new StructType(convertedSchema.fields());
         return structTypeWithPartition
-              .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
+                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
     }
 }

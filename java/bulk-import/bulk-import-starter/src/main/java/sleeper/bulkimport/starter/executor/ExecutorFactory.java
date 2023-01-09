@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 

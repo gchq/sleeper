@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 package sleeper.environment.cdk.buildec2;
 
-import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.config.AppParameters;
-import sleeper.environment.cdk.config.IntParameter;
-import sleeper.environment.cdk.config.StringParameter;
 import software.amazon.awscdk.services.ec2.BlockDevice;
 import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
 import software.amazon.awscdk.services.ec2.EbsDeviceOptions;
@@ -26,6 +22,11 @@ import software.amazon.awscdk.services.ec2.EbsDeviceVolumeType;
 import software.amazon.awscdk.services.ec2.IMachineImage;
 import software.amazon.awscdk.services.ec2.LookupMachineImageProps;
 import software.amazon.awscdk.services.ec2.MachineImage;
+
+import sleeper.environment.cdk.config.AppContext;
+import sleeper.environment.cdk.config.AppParameters;
+import sleeper.environment.cdk.config.IntParameter;
+import sleeper.environment.cdk.config.StringParameter;
 
 import java.util.Collections;
 

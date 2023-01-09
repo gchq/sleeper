@@ -16,6 +16,7 @@
 package sleeper.build.github.actions;
 
 import org.junit.Test;
+
 import sleeper.build.testutil.TestProjectStructure;
 
 import java.util.Collections;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.cdk.stack.StateStoreStack;
-import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
@@ -34,6 +31,10 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
 import software.constructs.Construct;
+
+import sleeper.bulkimport.configuration.ConfigurationUtils;
+import sleeper.cdk.stack.StateStoreStack;
+import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.ArrayList;
 import java.util.Arrays;

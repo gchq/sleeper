@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -40,6 +37,10 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
 import java.util.Collections;
 import java.util.List;

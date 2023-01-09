@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package sleeper.cdk.stack;
 
-import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
+
+import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 

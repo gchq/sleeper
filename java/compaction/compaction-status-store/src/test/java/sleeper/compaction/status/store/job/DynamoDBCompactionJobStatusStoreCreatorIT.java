@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import org.junit.After;
 import org.junit.Test;
+
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils;
 import sleeper.configuration.properties.InstanceProperties;

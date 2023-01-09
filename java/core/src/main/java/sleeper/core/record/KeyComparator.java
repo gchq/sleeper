@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.core.record;
 
 import com.facebook.collections.ByteArray;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;

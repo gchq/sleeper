@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.io.IOException;
 import java.util.Objects;

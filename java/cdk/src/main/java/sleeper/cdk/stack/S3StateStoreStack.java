@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.s3.S3StateStore;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.dynamodb.Attribute;
@@ -27,6 +24,10 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
+
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.util.Locale;
 

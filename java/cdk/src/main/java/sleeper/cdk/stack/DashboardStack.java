@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TableProperty;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -35,6 +31,11 @@ import software.amazon.awscdk.services.cloudwatch.TextWidget;
 import software.amazon.awscdk.services.cloudwatch.Unit;
 import software.amazon.awscdk.services.cloudwatch.YAxisProps;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.ArrayList;
 import java.util.Arrays;

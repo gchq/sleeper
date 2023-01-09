@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.athena.composite;
 
 import com.amazonaws.athena.connector.lambda.handlers.CompositeHandler;
+
 import sleeper.athena.metadata.SimpleMetadataHandler;
 import sleeper.athena.record.SimpleRecordHandler;
 

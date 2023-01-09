@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;

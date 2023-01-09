@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2022 Crown Copyright
+  ~ Copyright 2023 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
             <value>
                 <package name="" withSubpackages="true" static="false"/>
                 <emptyLine/>
-                <package name="uk.gov.gchq" withSubpackages="true" static="false"/>
+                <package name="sleeper" withSubpackages="true" static="false"/>
                 <emptyLine/>
                 <package name="javax" withSubpackages="true" static="false"/>
                 <emptyLine/>

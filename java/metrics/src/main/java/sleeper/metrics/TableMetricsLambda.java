@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
+import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
+import software.amazon.cloudwatchlogs.emf.model.Unit;
+import software.amazon.lambda.powertools.metrics.Metrics;
+import software.amazon.lambda.powertools.metrics.MetricsUtils;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -32,11 +38,6 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
-import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
-import software.amazon.cloudwatchlogs.emf.model.Unit;
-import software.amazon.lambda.powertools.metrics.Metrics;
-import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import java.io.IOException;
 import java.util.List;

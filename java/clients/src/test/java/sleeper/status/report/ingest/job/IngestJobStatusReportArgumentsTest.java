@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
+
 import sleeper.status.report.job.query.JobQuery;
 
 import static org.assertj.core.api.Assertions.assertThat;

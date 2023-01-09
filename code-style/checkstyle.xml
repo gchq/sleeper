@@ -106,7 +106,7 @@
         </module>
         <module name="ImportOrder">
             <property name="id" value="importOrder"/>
-            <property name="groups" value="*,uk.gov.gchq,/^javax\./,java"/>
+            <property name="groups" value="*,sleeper,/^javax\./,java"/>
             <property name="ordered" value="true"/>
             <property name="separated" value="true"/>
             <property name="option" value="bottom"/>

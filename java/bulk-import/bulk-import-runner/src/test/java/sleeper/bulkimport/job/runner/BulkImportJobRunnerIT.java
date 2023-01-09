@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner;
@@ -98,9 +99,9 @@ public class BulkImportJobRunnerIT {
     @Parameters
     public static Collection<Object[]> getParameters() {
         return Lists.newArrayList(new Object[][]{
-            {new BulkImportJobDataframeRunner()},
-            {new BulkImportJobRDDRunner()},
-            {new BulkImportDataframeLocalSortRunner()}
+                {new BulkImportJobDataframeRunner()},
+                {new BulkImportJobRDDRunner()},
+                {new BulkImportDataframeLocalSortRunner()}
         });
     }
 

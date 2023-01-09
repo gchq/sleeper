@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@ package sleeper.systemtest.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awscdk.App;
+import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.Tags;
+
 import sleeper.cdk.ConfigValidator;
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.Tags;
 
 import java.io.File;
 import java.io.FileNotFoundException;

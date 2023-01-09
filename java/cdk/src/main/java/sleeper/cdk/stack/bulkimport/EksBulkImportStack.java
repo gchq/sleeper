@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,6 @@ import com.facebook.collections.Pair;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
-import sleeper.cdk.Utils;
-import sleeper.cdk.stack.StateStoreStack;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
@@ -64,6 +59,12 @@ import software.amazon.awscdk.services.stepfunctions.StateMachine;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.cdk.stack.StateStoreStack;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
