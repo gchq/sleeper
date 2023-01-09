@@ -94,7 +94,7 @@
         <junit.version>4.13.2</junit.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <wiremock.version>2.32.0</wiremock.version>
+        <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.23.1</assertj.version>
         <jsonunit.version>2.22.1</jsonunit.version>
         <!-- Maven plugins -->
