@@ -48,9 +48,9 @@ public class InstanceDetails {
     /** Amount of RAM in total. */
     public final int totalRAM;
     /** Number of running tasks. */
-    private final int numRunningTasks;
+    public final int numRunningTasks;
     /** Number of pending tasks. */
-    private final int numPendingTasks;
+    public final int numPendingTasks;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
 

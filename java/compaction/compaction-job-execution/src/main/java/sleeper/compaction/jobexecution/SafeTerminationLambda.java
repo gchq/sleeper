@@ -19,15 +19,21 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -36,9 +42,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 public class SafeTerminationLambda implements RequestStreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SafeTerminationLambda.class);
+    /** gson JSON encoder/decoer */
     private static final Gson GSON = new Gson();
+    /** Type parameter for converting the inner map to a Java type. */
     private static final TypeToken<Map<String, String>> TYPE_TOKEN = new TypeToken<Map<String, String>>() {
     };
+    /** JSON reader for decoding. */
     private static final JsonParser PARSER = new JsonParser();
 
     private final AmazonS3 s3Client;
@@ -78,10 +87,12 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      * 
      * @param reader the input source
      * @return set of IDs
+     * @throws NullPointerException if reader is null
      * @throws JsonIOException for an JSON related I/O error
      * @throws JsonSyntaxException if JSON is invalid
      */
-    private static Set<String> extractSuggestedIDs(Reader reader) throws JsonIOException, JsonSyntaxException {
+    public static Set<String> extractSuggestedIDs(Reader reader) throws JsonIOException, JsonSyntaxException {
+        Objects.requireNonNull(reader, "reader");
         JsonReader jsread = new JsonReader(reader);
 
         JsonElement root = PARSER.parse(jsread);
@@ -98,19 +109,80 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         return suggestedTerminations;
     }
 
-    @Override
-    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+    /**
+     * Examine list of suggested instances from AWS. Generate our own suggestions based on empty
+     * instances.
+     * 
+     * @param input input JSON
+     * @param output response JSON
+     * @param clusterDetails details of machines in cluster
+     * @throws IOException if anything goes wrong
+     */
+    public static void suggestIDsToTerminate(Reader input, Writer output, Map<String, InstanceDetails> clusterDetails) throws IOException {
+        Objects.requireNonNull(input, "input");
+        Objects.requireNonNull(output, "output");
+        Objects.requireNonNull(clusterDetails, "clusterDetails");
 
         // get the list of suggested termination IDs
-        Set<String> suggestedTerminations = extractSuggestedIDs(reader);
+        Set<String> suggestedTerminations = extractSuggestedIDs(input);
 
-        LOGGER.info("Suggested instances for termination {}", suggestedTerminations);
-
-        // get cluster instance details
-        Map<String, InstanceDetails> clusterDetails = InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient);
+        LOGGER.info("Suggested instances for termination from AWS {}", suggestedTerminations);
 
         // filter out ones that are not running tasks
-        
+        Set<String> emptyInstances = findEmptyInstances(clusterDetails, suggestedTerminations.size());
+
+        LOGGER.info("Returned list of instances to terminate {}", emptyInstances);
+
+        // return this back to AWS
+        Map<String, Set<String>> returnData = new HashMap<>();
+        returnData.put("InstanceIDs", emptyInstances);
+        String outputJson = GSON.toJson(returnData);
+
+        output.write(outputJson);
+    }
+
+    /**
+     * Filter out a set of instances that are not running and RUNNING/PENDING tasks.
+     * 
+     * @param clusterDetails all instances in cluster
+     * @param suggestedSize limit for number of instances to return
+     * @return set of empty instances
+     * @throws NullPointerException for clusterDetails
+     * @throws IllegalArgumentException if suggestedSize < 0
+     */
+    public static Set<String> findEmptyInstances(Map<String, InstanceDetails> clusterDetails, int suggestedSize) {
+        Objects.requireNonNull(clusterDetails, "clusterDetails");
+        if (suggestedSize < 0) {
+            throw new IllegalArgumentException("suggested size < 0");
+        }
+        Set<String> emptyInstances = clusterDetails.entrySet().stream()
+                        // find the instances that are not running any tasks
+                        .filter(e -> (e.getValue().numPendingTasks + e.getValue().numRunningTasks) == 0)
+                        // just get the instance ID
+                        .map(Map.Entry::getKey)
+                        // don't return more than was suggested initially
+                        .limit(suggestedSize)
+                        .collect(Collectors.toSet());
+        return emptyInstances;
+    }
+
+    /**
+     * Process request from AWS Lambda. Sets up a {@link java.io.Reader} and a
+     * {@link java.io.Writer} around the streams.
+     * 
+     * @param input the incoming Lambda event data
+     * @param output the response JSON
+     * @param context event context
+     */
+    @Override
+    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+                        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
+
+            suggestIDsToTerminate(reader, out, InstanceDetails.fetchInstanceDetails(this.ecsClusterName, ecsClient));
+
+        } catch (IllegalStateException | JsonSyntaxException e) {
+            LOGGER.error("Error reading/writing JSON response", e);
+        }
     }
 }
