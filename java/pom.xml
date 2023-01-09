@@ -198,6 +198,7 @@
             Facebook JCommon
             Testcontainers, via Docker Java API
             AWS SDK
+            Apache Spark
             -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
