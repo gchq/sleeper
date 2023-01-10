@@ -23,7 +23,8 @@ fi
 INSTANCE_ID=$1
 
 TABLE_NAME="system-test"
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 JARS_DIR="$SCRIPTS_DIR/jars"
 TEMPLATE_DIR="$SCRIPTS_DIR/templates"
 GENERATED_DIR="$SCRIPTS_DIR/generated"
@@ -44,7 +45,7 @@ sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_
 END_RUN_TASKS=$(record_time)
 echo "Starting ingest tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"
 
-"$SCRIPTS_DIR/test/paused/waitForIngest.sh"
+"$THIS_DIR/waitForIngest.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

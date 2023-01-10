@@ -22,22 +22,23 @@ fi
 
 INSTANCE_ID=$1
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/paused/testIngest.sh" "$INSTANCE_ID"
+"$THIS_DIR/testIngest.sh" "$INSTANCE_ID"
 
 END_INGEST=$(record_time)
 echo "Ingest finished at $(recorded_time_str "$END_INGEST"), took $(elapsed_time_str "$END_PAUSE_SYSTEM" "$END_INGEST")"
 
-"$SCRIPTS_DIR/test/paused/testCompaction.sh"
+"$THIS_DIR/testCompaction.sh"
 
 END_COMPACTION=$(record_time)
 echo "Compaction finished at $(recorded_time_str "$END_COMPACTION"), took $(elapsed_time_str "$END_INGEST" "$END_COMPACTION")"
 
-"$SCRIPTS_DIR/test/paused/testSplittingCompaction.sh"
+"$THIS_DIR/testSplittingCompaction.sh"
 
 END_COMPACTION=$(record_time)
 echo "Compaction finished at $(recorded_time_str "$END_COMPACTION"), took $(elapsed_time_str "$END_INGEST" "$END_COMPACTION")"
