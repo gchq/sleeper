@@ -22,14 +22,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.job.GsonConfig;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.status.report.job.query.JobQuery;
+import sleeper.util.GsonConfig;
 
 import java.io.PrintStream;
 import java.util.List;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
+            .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(CompactionJobStatus.class, compactionJobStatusJsonSerializer())
             .create();
     private final PrintStream out;

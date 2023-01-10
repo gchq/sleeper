@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -37,6 +36,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.util.ClientUtils;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
