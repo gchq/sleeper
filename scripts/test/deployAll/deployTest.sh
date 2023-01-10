@@ -36,7 +36,7 @@ WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$@"
+"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@"
 END_DEPLOY_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"

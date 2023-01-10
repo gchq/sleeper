@@ -15,14 +15,15 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-	echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+if [ "$#" -ne 4 ]; then
+	echo "Usage: $0 <properties_template> <uniqueId> <vpc> <subnet>"
 	exit 1
 fi
 
-INSTANCE_ID=$1
-VPC=$2
-SUBNET=$3
+PROPERTIES_TEMPLATE=$1
+INSTANCE_ID=$2
+VPC=$3
+SUBNET=$4
 
 TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -48,9 +49,9 @@ sed \
   -e "s|^sleeper.systemtest.repo=.*|sleeper.systemtest.repo=${INSTANCE_ID}/system-test|" \
   -e "s|^sleeper.optional.stacks=.*|sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,SystemTestStack,IngestStack,EmrBulkImportStack|" \
   -e "s|^sleeper.retain.infra.after.destroy=.*|sleeper.retain.infra.after.destroy=false|" \
-  "${THIS_DIR}/system-test-instance.properties" > "${INSTANCE_PROPERTIES}"
+  "$PROPERTIES_TEMPLATE" > "${INSTANCE_PROPERTIES}"
 
-echo "THIS_DIR: ${THIS_DIR}"
+echo "PROPERTIES_TEMPLATE: ${PROPERTIES_TEMPLATE}"
 echo "TEMPLATE_DIR: ${TEMPLATE_DIR}"
 echo "VERSION: ${VERSION}"
 echo "GENERATED_DIR: ${GENERATED_DIR}"
