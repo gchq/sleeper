@@ -15,37 +15,41 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-	echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+if [ "$#" -ne 1 ]; then
+	echo "Usage: $0 <instanceId>"
 	exit 1
 fi
 
 INSTANCE_ID=$1
 
+TABLE_NAME="system-test"
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+JARS_DIR="$SCRIPTS_DIR/jars"
+TEMPLATE_DIR="$SCRIPTS_DIR/templates"
+GENERATED_DIR="$SCRIPTS_DIR/generated"
+
+VERSION=$(cat "$TEMPLATE_DIR/version.txt")
+SYSTEM_TEST_JAR="${JARS_DIR}/system-test-${VERSION}-utility.jar"
+WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$@"
-END_DEPLOY_TIME=$(record_time)
-
 echo "-------------------------------------------------------------------------------"
-echo "Pausing System"
+echo "Writing Random Data"
 echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
 
-"$SCRIPTS_DIR/utility/pauseSystem.sh" "$INSTANCE_ID"
+END_RUN_TASKS=$(record_time)
+echo "Starting ingest tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"
 
-END_PAUSE_SYSTEM=$(record_time)
-
-"$SCRIPTS_DIR/test/paused/testAll.sh" "$INSTANCE_ID"
+"$SCRIPTS_DIR/test/paused/waitForIngest.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished paused deploy & test"
+echo "Finished ingest"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
-echo "Pausing system finished at $(recorded_time_str "$END_PAUSE_SYSTEM"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$END_PAUSE_SYSTEM")"
-echo "Tests finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_PAUSE_SYSTEM" "$FINISH_TIME")"
-echo "Overall, deploy & paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Starting ingest tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"
+echo "Ingest finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

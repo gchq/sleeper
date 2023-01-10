@@ -15,8 +15,8 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-	echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+if [ "$#" -ne 1 ]; then
+	echo "Usage: $0 <instanceId>"
 	exit 1
 fi
 
@@ -27,25 +27,26 @@ SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$@"
-END_DEPLOY_TIME=$(record_time)
+"$SCRIPTS_DIR/test/paused/testIngest.sh" "$INSTANCE_ID"
 
-echo "-------------------------------------------------------------------------------"
-echo "Pausing System"
-echo "-------------------------------------------------------------------------------"
+END_INGEST=$(record_time)
+echo "Ingest finished at $(recorded_time_str "$END_INGEST"), took $(elapsed_time_str "$END_PAUSE_SYSTEM" "$END_INGEST")"
 
-"$SCRIPTS_DIR/utility/pauseSystem.sh" "$INSTANCE_ID"
+"$SCRIPTS_DIR/test/paused/testCompaction.sh"
 
-END_PAUSE_SYSTEM=$(record_time)
+END_COMPACTION=$(record_time)
+echo "Compaction finished at $(recorded_time_str "$END_COMPACTION"), took $(elapsed_time_str "$END_INGEST" "$END_COMPACTION")"
 
-"$SCRIPTS_DIR/test/paused/testAll.sh" "$INSTANCE_ID"
+"$SCRIPTS_DIR/test/paused/testSplittingCompaction.sh"
+
+END_COMPACTION=$(record_time)
+echo "Compaction finished at $(recorded_time_str "$END_COMPACTION"), took $(elapsed_time_str "$END_INGEST" "$END_COMPACTION")"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished paused deploy & test"
+echo "Finished paused test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
-echo "Pausing system finished at $(recorded_time_str "$END_PAUSE_SYSTEM"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$END_PAUSE_SYSTEM")"
-echo "Tests finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_PAUSE_SYSTEM" "$FINISH_TIME")"
-echo "Overall, deploy & paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Starting of tasks to write random data finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$FINISH_TIME")"
+echo "Overall, deploying paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
