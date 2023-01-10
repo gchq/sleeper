@@ -149,7 +149,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
                 .memorySize(1024)
                 .timeout(Duration.seconds(10))
                 .environment(env)
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))

@@ -34,8 +34,8 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         String searchingTaskId = "test-task";
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithFiles("file2");
-        Instant startedTime1 = Instant.now();
-        Instant startedTime2 = Instant.now();
+        Instant startedTime1 = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
         store.jobStarted(searchingTaskId, job1, startedTime1);

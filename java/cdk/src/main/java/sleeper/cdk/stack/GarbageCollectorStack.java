@@ -73,7 +73,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .create(this, "GarbageCollectorLambda")
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need deleting and delete them")
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 // Timeout is set to 90% of the period with which this runs to avoid 2 running simultaneously,
                 // with a maximum of 900 seconds (15 minutes) which is the maximum execution time

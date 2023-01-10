@@ -1,9 +1,9 @@
-name: Full Maven Compile
+name: Bulk Import Docker
 on:
   push:
     paths:
-      - '.github/workflows/maven-full.yaml'
-      - 'java/**'
+      - '.github/workflows/docker-bulk-import.yaml'
+      - 'java/bulk-import-runner/docker/**'
 
 jobs:
   build:
@@ -25,6 +25,12 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
-      - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick -Dmaven.repo.local=.m2/repository
+      - name: Compile
+        run: mvn --batch-mode clean install -am -pl bulk-import/bulk-import-runner -Pquick -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Copy .jar to docker directory
+        run: cp target/bulk-import-runner-*-utility.jar docker/bulk-import-runner.jar
+        working-directory: ./java/bulk-import/bulk-import-runner
+      - name: Docker build
+        run: docker build .
+        working-directory: ./java/bulk-import/bulk-import-runner/docker
