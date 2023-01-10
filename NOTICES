@@ -45,7 +45,7 @@ Commons IO (commons-io:commons-io:2.11.0):
 
 - Apache License, Version 2.0
 
-Junit (junit:junit:4.13):
+Junit (org.junit.jupiter:junit-jupiter-api:5.9.2):
 
 - Eclipse Public License 1.0
 

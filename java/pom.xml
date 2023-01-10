@@ -91,7 +91,7 @@
         <!-- Netty version is managed because AWS and Arrow both depend on it but use incompatible versions -->
         <netty.version>4.1.86.Final</netty.version>
         <!-- Testing -->
-        <junit.version>4.13.2</junit.version>
+        <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <wiremock.version>2.35.0</wiremock.version>
@@ -265,8 +265,14 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -293,8 +299,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
