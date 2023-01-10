@@ -13,27 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.ingest;
 
-package sleeper.status.report.ingest.task;
+public class ECSFailureException extends RuntimeException {
 
-import com.google.gson.Gson;
-import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.util.GsonConfig;
-
-import java.io.PrintStream;
-import java.util.List;
-
-public class JsonIngestTaskStatusReporter implements IngestTaskStatusReporter {
-    private final Gson gson = GsonConfig.standardBuilder().create();
-    private final PrintStream out;
-
-    public JsonIngestTaskStatusReporter(PrintStream out) {
-        this.out = out;
-    }
-
-    @Override
-    public void report(IngestTaskQuery query, List<IngestTaskStatus> tasks) {
-        out.println(gson.toJson(tasks));
+    public ECSFailureException(String message) {
+        super(message);
     }
 
 }

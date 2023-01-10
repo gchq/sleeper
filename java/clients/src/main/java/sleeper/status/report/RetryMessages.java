@@ -25,8 +25,8 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.util.HashSet;

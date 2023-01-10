@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-import static sleeper.ClientUtils.countWithCommas;
-import static sleeper.ClientUtils.decimalWithCommas;
+import static sleeper.util.ClientUtils.countWithCommas;
+import static sleeper.util.ClientUtils.decimalWithCommas;
 
 public class StandardProcessRunReporter {
 

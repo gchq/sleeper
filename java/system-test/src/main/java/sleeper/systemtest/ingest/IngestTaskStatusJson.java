@@ -13,27 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.status.report.ingest.task;
+package sleeper.systemtest.ingest;
 
 import com.google.gson.Gson;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.util.GsonConfig;
 
-import java.io.PrintStream;
-import java.util.List;
+import java.time.Instant;
 
-public class JsonIngestTaskStatusReporter implements IngestTaskStatusReporter {
-    private final Gson gson = GsonConfig.standardBuilder().create();
-    private final PrintStream out;
+public class IngestTaskStatusJson {
 
-    public JsonIngestTaskStatusReporter(PrintStream out) {
-        this.out = out;
+    private static final Gson GSON = GsonConfig.standardBuilder().create();
+
+    private final String taskId;
+    private final Instant startTime;
+
+    public IngestTaskStatusJson(IngestTaskStatus status) {
+        taskId = status.getTaskId();
+        startTime = status.getStartTime();
     }
 
-    @Override
-    public void report(IngestTaskQuery query, List<IngestTaskStatus> tasks) {
-        out.println(gson.toJson(tasks));
+    public String toString() {
+        return GSON.toJson(this);
     }
 
+    // These getters are just to convince Spotbugs these fields are used
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public Instant getStartTime() {
+        return startTime;
+    }
 }
