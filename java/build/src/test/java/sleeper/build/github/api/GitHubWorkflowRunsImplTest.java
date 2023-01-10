@@ -17,7 +17,7 @@ package sleeper.build.github.api;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;

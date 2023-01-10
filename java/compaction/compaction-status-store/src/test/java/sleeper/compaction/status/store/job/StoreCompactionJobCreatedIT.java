@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.status.store.job;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusTestData;

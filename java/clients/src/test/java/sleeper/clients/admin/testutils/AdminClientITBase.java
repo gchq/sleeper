@@ -17,8 +17,8 @@ package sleeper.clients.admin.testutils;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -52,12 +52,12 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         return new AdminConfigStore(s3);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         s3.createBucket(CONFIG_BUCKET_NAME);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         s3.shutdown();
     }

@@ -17,8 +17,8 @@ package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils;
@@ -65,7 +65,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         assertThatThrownBy(() -> store.getJob("some-job")).isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         DynamoDBCompactionJobStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }

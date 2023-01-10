@@ -19,8 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -59,7 +59,7 @@ public abstract class AbstractMetadataHandlerIT {
             .valueFields(new Field("count", new LongType()))
             .build();
 
-    @Before
+    @BeforeEach
     public void setUpCredentials() {
         // Annoyingly the MetadataHandler hard-codes the S3 client it uses to check the spill bucket. Therefore
         // I need to set up some credentials in System properties so the default client will pick them up.
@@ -68,7 +68,7 @@ public abstract class AbstractMetadataHandlerIT {
         System.setProperty(AWS_REGION_SYSTEM_PROPERTY, localStackContainer.getRegion());
     }
 
-    @After
+    @AfterEach
     public void clearUpCredentials() {
         System.clearProperty(ACCESS_KEY_SYSTEM_PROPERTY);
         System.clearProperty(SECRET_KEY_SYSTEM_PROPERTY);

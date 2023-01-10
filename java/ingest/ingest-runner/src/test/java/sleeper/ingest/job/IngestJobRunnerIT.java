@@ -18,11 +18,11 @@ package sleeper.ingest.job;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -108,7 +108,7 @@ public class IngestJobRunnerIT {
                 {"arraylist", "direct", ""}});
     }
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
@@ -116,7 +116,7 @@ public class IngestJobRunnerIT {
         currentLocalTableDataDirectory = temporaryFolder.newFolder().getAbsolutePath();
     }
 
-    @After
+    @AfterEach
     public void after() {
         AWS_EXTERNAL_RESOURCE.clear();
     }

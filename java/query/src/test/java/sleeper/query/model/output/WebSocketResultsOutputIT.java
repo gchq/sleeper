@@ -19,7 +19,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;

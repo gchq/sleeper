@@ -26,11 +26,11 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -65,13 +65,13 @@ public class ConfigValidatorIT {
     private ConfigValidator configValidator;
     private final InstanceProperties instanceProperties = new InstanceProperties();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         amazonS3 = getS3Client();
         amazonDynamoDB = createDynamoClient();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         configValidator = new ConfigValidator(amazonS3, amazonDynamoDB);
     }

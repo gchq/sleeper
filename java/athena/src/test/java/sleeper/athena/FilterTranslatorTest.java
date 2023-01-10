@@ -31,7 +31,7 @@ import org.apache.parquet.filter2.predicate.Operators;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 import sleeper.core.record.Record;

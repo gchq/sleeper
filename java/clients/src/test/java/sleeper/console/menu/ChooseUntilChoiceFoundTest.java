@@ -15,7 +15,7 @@
  */
 package sleeper.console.menu;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.console.UserExitedException;
 

@@ -15,7 +15,7 @@
  */
 package sleeper.status.report.compaction.job;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.status.report.job.query.JobQuery.Type;

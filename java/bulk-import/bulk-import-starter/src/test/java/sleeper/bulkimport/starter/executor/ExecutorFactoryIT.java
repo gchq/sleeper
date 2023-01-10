@@ -19,9 +19,9 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClient;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -53,7 +53,7 @@ public class ExecutorFactoryIT {
             "sleeper.subnet=subnet-123\n" +
             "sleeper.account=123\n";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         environment.put(CONFIG_BUCKET.toEnvironmentVariable(), "config-bucket");
     }

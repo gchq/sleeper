@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.jobexecution.testutils;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
@@ -28,7 +28,7 @@ public class CompactSortedFilesTestBase {
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
     protected String folderName;
 
-    @Before
+    @BeforeEach
     public void setUpBase() throws Exception {
         folderName = folder.newFolder().getAbsolutePath();
     }

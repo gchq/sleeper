@@ -16,7 +16,7 @@
 
 package sleeper.ingest;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
@@ -51,7 +51,7 @@ public class IngestRecordsTestBase {
     protected String inputFolderName;
     protected String sketchFolderName;
 
-    @Before
+    @BeforeEach
     public void setUpBase() throws Exception {
         inputFolderName = folder.newFolder().getAbsolutePath();
         sketchFolderName = folder.newFolder().getAbsolutePath();

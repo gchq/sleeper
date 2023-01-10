@@ -33,11 +33,11 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -124,7 +124,7 @@ public class ReinitialiseTableIT {
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
@@ -136,7 +136,7 @@ public class ReinitialiseTableIT {
                 .build();
     }
 
-    @After
+    @AfterEach
     public void afterEach() {
         s3Client.shutdown();
         dynamoDBClient.shutdown();

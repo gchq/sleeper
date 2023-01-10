@@ -22,11 +22,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -113,13 +113,13 @@ public class BulkImportJobRunnerIT {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
-    @BeforeClass
+    @BeforeAll
     public static void setSparkProperties() {
         System.setProperty("spark.master", "local");
         System.setProperty("spark.app.name", "bulk import");
     }
 
-    @AfterClass
+    @AfterAll
     public static void clearSparkProperties() {
         System.clearProperty("spark.master");
         System.clearProperty("spark.app.name");

@@ -18,8 +18,8 @@ package sleeper.ingest.job;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -70,7 +70,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(CONFIG_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
@@ -78,7 +78,7 @@ public abstract class IngestJobQueueConsumerTestBase {
         AWS_EXTERNAL_RESOURCE.getSqsClient().createQueue(INGEST_QUEUE_NAME);
     }
 
-    @After
+    @AfterEach
     public void after() {
         AWS_EXTERNAL_RESOURCE.clear();
     }

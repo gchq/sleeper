@@ -20,10 +20,10 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
 import sleeper.compaction.job.CompactionJob;
@@ -68,7 +68,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
     private static AmazonDynamoDB dynamoDBClient;
     private static CompactionJobStatusStore jobStatusStore;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeAll() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
                 new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
@@ -83,7 +83,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterAll() {
         dynamoDBClient.shutdown();
         dynamoDBClient = null;

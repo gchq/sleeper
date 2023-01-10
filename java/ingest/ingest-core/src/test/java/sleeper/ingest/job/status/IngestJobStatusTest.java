@@ -16,7 +16,7 @@
 
 package sleeper.ingest.job.status;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;

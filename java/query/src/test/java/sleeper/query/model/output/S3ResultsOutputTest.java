@@ -20,9 +20,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -71,7 +71,7 @@ public class S3ResultsOutputTest {
     List<Record> recordList = setupData();
     String outputDir;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         outputDir = tempDir.newFolder().getAbsolutePath();
         String queryResultsBucket = UUID.randomUUID().toString();

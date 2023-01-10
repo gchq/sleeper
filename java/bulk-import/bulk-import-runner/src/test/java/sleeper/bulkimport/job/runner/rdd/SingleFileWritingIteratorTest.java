@@ -21,7 +21,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 import sleeper.configuration.properties.InstanceProperties;

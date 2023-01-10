@@ -15,7 +15,7 @@
  */
 package sleeper.build.maven;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.build.testutil.TestResources;
 

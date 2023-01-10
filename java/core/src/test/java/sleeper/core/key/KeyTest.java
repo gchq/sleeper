@@ -15,7 +15,7 @@
  */
 package sleeper.core.key;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 

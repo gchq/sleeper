@@ -15,7 +15,7 @@
  */
 package sleeper.statestore.inmemory;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;

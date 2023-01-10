@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;

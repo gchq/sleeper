@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.google.common.io.ByteStreams;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;

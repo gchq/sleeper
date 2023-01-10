@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;

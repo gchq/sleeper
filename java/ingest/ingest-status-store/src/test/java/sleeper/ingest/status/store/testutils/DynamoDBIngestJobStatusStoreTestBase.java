@@ -16,8 +16,8 @@
 package sleeper.ingest.status.store.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -60,12 +60,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final IngestJobStatusStore store = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         dynamoDBClient.deleteTable(jobStatusTableName);
     }

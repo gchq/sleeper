@@ -17,11 +17,11 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -235,12 +235,12 @@ public class IngestCoordinatorCommonIT {
         }
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(DATA_BUCKET_NAME);
     }
 
-    @After
+    @AfterEach
     public void after() {
         AWS_EXTERNAL_RESOURCE.clear();
     }

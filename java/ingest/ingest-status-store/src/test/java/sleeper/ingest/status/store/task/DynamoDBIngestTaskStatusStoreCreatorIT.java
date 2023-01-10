@@ -17,8 +17,8 @@
 package sleeper.ingest.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
@@ -41,7 +41,7 @@ public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
                 .extracting(DescribeTableResult::getTable).isNotNull();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         dynamoDBClient.deleteTable(tableName);
     }

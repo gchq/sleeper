@@ -23,8 +23,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.ClassRule;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -73,14 +73,14 @@ public abstract class AbstractRecordHandlerIT {
 
     private InstanceProperties instanceProperties;
 
-    @BeforeClass
+    @BeforeAll
     public static void createSpillBucket() {
         AmazonS3 s3Client = createS3Client();
         s3Client.createBucket(SPILL_BUCKET_NAME);
         s3Client.shutdown();
     }
 
-    @Before
+    @BeforeEach
     public void createInstance() {
         this.instanceProperties = TestUtils.createInstance(createS3Client());
     }
