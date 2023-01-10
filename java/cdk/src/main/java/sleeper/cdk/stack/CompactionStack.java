@@ -67,8 +67,10 @@ import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -102,6 +104,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
@@ -561,6 +564,12 @@ public class CompactionStack extends NestedStack {
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
         ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
                         Arrays.asList(customTermination.getFunctionArn()));
+
+        customTermination.addPermission("AutoscalingCall", Permission.builder()
+                        .action("lambda:InvokeFunction")
+                        .principal(Role.fromRoleArn(this, type+"_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
+                                        + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
+                        .build());
 
         AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
                         .create(this, clusterName + "CapacityProvider")
