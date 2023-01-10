@@ -20,7 +20,7 @@ import sleeper.statestore.FileInfo;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.ClientUtils.abbreviatedRecordCount;
+import static sleeper.util.ClientUtils.abbreviatedRecordCount;
 
 /**
  * The standard implementation of {@link FileStatusReporter} that returns file

@@ -17,7 +17,7 @@ Start Time: 2022-10-12T10:01:15.001Z
 Start Update Time: 2022-10-12T10:01:15.123Z
 Finish Time: 2022-10-12T10:01:45.001Z
 Finish Update Time: 2022-10-12T10:01:45.123Z
-Duration: 30.00s
+Duration: 30s
 Lines Read: 300
 Lines Written: 200
 Read Rate (reads per second): 10.00
@@ -28,7 +28,7 @@ Start Time: 2022-10-12T10:01:00.001Z
 Start Update Time: 2022-10-12T10:01:00.123Z
 Finish Time: 2022-10-12T10:01:20.001Z
 Finish Update Time: 2022-10-12T10:01:20.123Z
-Duration: 20.00s
+Duration: 20s
 Lines Read: 300
 Lines Written: 200
 Read Rate (reads per second): 15.00
