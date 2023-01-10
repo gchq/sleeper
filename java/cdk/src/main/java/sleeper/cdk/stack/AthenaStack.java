@@ -173,7 +173,7 @@ public class AthenaStack extends NestedStack {
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
                 .code(s3Code)
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .logRetention(Utils.getRetentionDays(logRetentionDays))
                 .handler(className)
                 .environment(env)

@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -46,6 +47,7 @@ import java.util.stream.IntStream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
+@SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
     private final IngestStack ingestStack;
     private final CompactionStack compactionStack;

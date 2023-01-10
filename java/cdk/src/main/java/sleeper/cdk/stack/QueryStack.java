@@ -216,7 +216,7 @@ public class QueryStack extends NestedStack {
                 .create(this, "QueryExecutorLambda")
                 .functionName(functionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to perform the query")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .code(code)
@@ -282,7 +282,7 @@ public class QueryStack extends NestedStack {
                 .memorySize(256)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .timeout(Duration.seconds(29))
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .build();
         queriesQueue.grantSendMessages(handler);
         configBucket.grantRead(handler);

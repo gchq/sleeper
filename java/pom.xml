@@ -51,7 +51,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
         <scala.version>2.12</scala.version>
         <scala.minor.version>2.12.17</scala.minor.version>
         <spark.version>3.3.0</spark.version>
@@ -93,15 +93,23 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M4</release.plugin.version>
-        <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
+        <surefire.plugin.version>3.0.0-M6</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <shade.plugin.version>3.3.0</shade.plugin.version>
         <jar.plugin.version>3.2.0</jar.plugin.version>
-        <compiler.plugin.version>3.8.1</compiler.plugin.version>
+        <compiler.plugin.version>3.10.1</compiler.plugin.version>
         <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
+        <module.access.args>
+            --add-opens java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+        </module.access.args>
+        <!--  This is required for later correct replacement of argLine -->
+        <argLine/>
     </properties>
 
     <dependencyManagement>
@@ -346,11 +354,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} ${module.access.args}</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${failsafe.plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} ${module.access.args}</argLine>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>integration-test</phase>
@@ -423,8 +437,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${compiler.plugin.version}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <release>${java.version}</release>
                     </configuration>
                 </plugin>
             </plugins>

@@ -71,7 +71,7 @@ public class VpcStack extends NestedStack {
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .build());
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()

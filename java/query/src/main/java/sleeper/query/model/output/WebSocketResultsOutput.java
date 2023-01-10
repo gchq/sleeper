@@ -44,13 +44,8 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
         String maxBatchSize = config.get(MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
-
-        addOutputLocations();
-    }
-
-    private void addOutputLocations() {
-        this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", this.getEndpoint()));
-        this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", this.getConnectionId()));
+        this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(ENDPOINT)));
+        this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(CONNECTION_ID)));
     }
 
     @Override
