@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 Crown Copyright
+# Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 set -e
 
 TABLE_NAME="system-test"
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 JARS_DIR="$SCRIPTS_DIR/jars"
 GENERATED_DIR="$SCRIPTS_DIR/generated"
