@@ -24,6 +24,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;

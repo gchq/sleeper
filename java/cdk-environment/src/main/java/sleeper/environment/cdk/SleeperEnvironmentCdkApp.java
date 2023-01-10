@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
  */
 package sleeper.environment.cdk;
 
-import sleeper.environment.cdk.buildec2.BuildEC2Stack;
-import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.networking.NetworkingStack;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+
+import sleeper.environment.cdk.buildec2.BuildEC2Stack;
+import sleeper.environment.cdk.config.AppContext;
+import sleeper.environment.cdk.networking.NetworkingStack;
 
 import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 

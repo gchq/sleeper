@@ -16,6 +16,8 @@
 package sleeper.ingest;
 
 import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -32,7 +34,6 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Iterator;

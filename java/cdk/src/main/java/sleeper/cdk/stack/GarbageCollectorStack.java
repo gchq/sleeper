@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -28,6 +26,9 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Collections;
 import java.util.List;

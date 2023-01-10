@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.bulkimport.job.runner.dataframelocalsort;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -54,9 +55,9 @@ public class AddPartitionAsIntIterator implements Iterator<Row> {
         // executors in the same Spark job.
         SortedSet<String> sortedLeafPartitionIds = new TreeSet<>();
         this.partitionTree.getAllPartitions().stream()
-            .filter(Partition::isLeafPartition)
-            .map(Partition::getId)
-            .forEach(sortedLeafPartitionIds::add);
+                .filter(Partition::isLeafPartition)
+                .map(Partition::getId)
+                .forEach(sortedLeafPartitionIds::add);
         this.partitionIdToInt = new TreeMap<>();
         int i = 0;
         for (String leafPartitionId : sortedLeafPartitionIds) {

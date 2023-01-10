@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +64,9 @@ public class AdditionIterator implements SortedRecordIterator {
         private Record nextNext;
 
         public AdditionIteratorInternal(CloseableIterator<Record> input,
-                List<String> rowKeyFieldNames,
-                List<String> sortKeyFieldNames,
-                List<String> valueFieldNames) {
+                                        List<String> rowKeyFieldNames,
+                                        List<String> sortKeyFieldNames,
+                                        List<String> valueFieldNames) {
             this.input = input;
             this.rowKeyFieldNames = rowKeyFieldNames;
             this.sortKeyFieldNames = sortKeyFieldNames;
@@ -115,7 +115,7 @@ public class AdditionIterator implements SortedRecordIterator {
     }
 
     private static boolean equalRowAndSort(List<String> rowKeyFieldNames,
-            List<String> sortKeyFieldNames, Record record1, Record record2) {
+                                           List<String> sortKeyFieldNames, Record record1, Record record2) {
         List<Object> keys1 = new ArrayList<>();
         List<Object> keys2 = new ArrayList<>();
         for (String rowKey : rowKeyFieldNames) {

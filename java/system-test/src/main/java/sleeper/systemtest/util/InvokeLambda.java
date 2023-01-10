@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@ package sleeper.systemtest.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import sleeper.configuration.properties.InstanceProperty;
-import sleeper.systemtest.SystemTestProperties;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.LambdaClient;
+
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
 

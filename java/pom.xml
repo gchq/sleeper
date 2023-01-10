@@ -97,8 +97,9 @@
         <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.36.0</jsonunit.version>
+        <checkstyle.version>10.6.0</checkstyle.version>
         <!-- Maven plugins -->
-        <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
+        <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
         <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
@@ -318,7 +319,6 @@
                         ../code-style/checkstyle-suppressions.xml
                     </suppressionsLocation>
                     <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
-                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <headerLocation>../code-style/licenseHeader.txt</headerLocation>
@@ -334,7 +334,6 @@
                         <phase>test</phase>
                         <configuration>
                             <configLocation>../code-style/checkstyle.xml</configLocation>
-                            <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <headerLocation>../code-style/licenseHeader.txt</headerLocation>
@@ -344,6 +343,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
