@@ -26,13 +26,14 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.FileUtils;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -50,9 +51,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 
+@Testcontainers
 public class ConfigValidatorIT {
 
-    @ClassRule
+    @Container
     public static final LocalStackContainer LOCALSTACK_CONTAINER
             = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);

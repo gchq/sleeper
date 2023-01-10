@@ -28,6 +28,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.athena.TestUtils;
@@ -46,9 +48,10 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 public abstract class AbstractRecordHandlerIT {
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     // For storing data

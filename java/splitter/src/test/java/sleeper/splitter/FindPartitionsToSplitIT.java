@@ -22,11 +22,12 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -62,8 +63,9 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
+@Testcontainers
 public class FindPartitionsToSplitIT {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
 

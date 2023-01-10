@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +31,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
@@ -93,6 +94,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+@Testcontainers
 @RunWith(Parameterized.class)
 public class BulkImportJobRunnerIT {
 
@@ -105,7 +107,7 @@ public class BulkImportJobRunnerIT {
         });
     }
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
     );

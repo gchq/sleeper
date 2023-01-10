@@ -22,13 +22,14 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -81,12 +82,13 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
+@Testcontainers
 public class QueryExecutorIT {
     protected static final int DYNAMO_PORT = 8000;
     protected static AmazonDynamoDB dynamoDBClient;
     protected static ExecutorService executorService;
 
-    @ClassRule
+    @Container
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 

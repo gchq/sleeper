@@ -46,11 +46,12 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.jars.ObjectFactory;
@@ -132,8 +133,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 
+@Testcontainers
 public class SqsQueryProcessorLambdaIT {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 

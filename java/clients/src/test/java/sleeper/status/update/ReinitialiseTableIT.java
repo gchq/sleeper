@@ -33,13 +33,14 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -100,6 +101,7 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
+@Testcontainers
 public class ReinitialiseTableIT {
     private static final String INSTANCE_NAME = "test";
     private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_NAME + "-config";
@@ -117,7 +119,7 @@ public class ReinitialiseTableIT {
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
             .build();
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
 

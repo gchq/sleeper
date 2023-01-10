@@ -22,9 +22,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -57,8 +58,9 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+@Testcontainers
 public class TableInitialiserIT {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 

@@ -20,11 +20,12 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -58,10 +59,11 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
+@Testcontainers
 public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
     private static final int DYNAMO_PORT = 8000;
 
-    @ClassRule
+    @Container
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 

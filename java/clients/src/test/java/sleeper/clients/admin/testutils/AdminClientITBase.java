@@ -17,21 +17,23 @@ package sleeper.clients.admin.testutils;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.core.CommonTestConstants;
 
+@Testcontainers
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
     private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
