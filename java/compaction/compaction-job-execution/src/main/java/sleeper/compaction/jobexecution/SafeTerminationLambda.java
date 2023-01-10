@@ -166,7 +166,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         // total the number of terminations to make
         int suggestTerminationCount = totalTerminations(input);
 
-        LOGGER.info("AWS AutoScaling wants to terminate {}", suggestTerminationCount);
+        LOGGER.info("AWS AutoScaling wants to terminate {} instances", suggestTerminationCount);
 
         // filter out ones that are not running tasks
         Set<String> emptyInstances = findEmptyInstances(clusterDetails, suggestTerminationCount);
