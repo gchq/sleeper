@@ -24,11 +24,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -67,13 +67,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,16 +96,14 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers
-@RunWith(Parameterized.class)
 public class BulkImportJobRunnerIT {
 
-    @Parameters
-    public static Collection<Object[]> getParameters() {
-        return Lists.newArrayList(new Object[][]{
-                {new BulkImportJobDataframeRunner()},
-                {new BulkImportJobRDDRunner()},
-                {new BulkImportDataframeLocalSortRunner()}
-        });
+    private static Stream<Arguments> getParameters() {
+        return Stream.of(
+                Arguments.of(Named.of("BulkImportJobDataframeRunner", (BulkImportJobRunner) new BulkImportJobDataframeRunner())),
+                Arguments.of(Named.of("BulkImportJobRDDRunner", (BulkImportJobRunner) new BulkImportJobRDDRunner())),
+                Arguments.of(Named.of("BulkImportDataframeLocalSortRunner", (BulkImportJobRunner) new BulkImportDataframeLocalSortRunner()))
+        );
     }
 
     @Container
@@ -126,12 +124,6 @@ public class BulkImportJobRunnerIT {
     public static void clearSparkProperties() {
         System.clearProperty("spark.master");
         System.clearProperty("spark.app.name");
-    }
-
-    private final BulkImportJobRunner runner;
-
-    public BulkImportJobRunnerIT(BulkImportJobRunner runner) {
-        this.runner = runner;
     }
 
     private AmazonDynamoDB createDynamoClient() {
@@ -308,8 +300,9 @@ public class BulkImportJobRunnerIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    @Test
-    public void shouldImportDataSinglePartition() throws IOException, StateStoreException {
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    public void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -358,8 +351,9 @@ public class BulkImportJobRunnerIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
     }
 
-    @Test
-    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys() throws IOException, StateStoreException {
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -408,8 +402,9 @@ public class BulkImportJobRunnerIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
     }
 
-    @Test
-    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException {
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    public void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -451,8 +446,9 @@ public class BulkImportJobRunnerIT {
                         tuple(100L, rightPartition));
     }
 
-    @Test
-    public void shouldImportLargeAmountOfDataMultiplePartitions() throws IOException, StateStoreException {
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    public void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -525,8 +521,9 @@ public class BulkImportJobRunnerIT {
         }
     }
 
-    @Test
-    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles() throws IOException, StateStoreException {
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
