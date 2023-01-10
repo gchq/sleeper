@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.compaction.job;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.MutablePair;
+
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;

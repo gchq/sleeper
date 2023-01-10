@@ -26,6 +26,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -40,7 +42,6 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.UUID;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 package sleeper.systemtest.cdk;
 
-import sleeper.cdk.Utils;
-import sleeper.cdk.stack.StateStoreStack;
-import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.SystemTestProperty;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.NestedStack;
@@ -35,6 +31,11 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.cdk.stack.StateStoreStack;
+import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.SystemTestProperty;
 
 import java.util.List;
 import java.util.Locale;

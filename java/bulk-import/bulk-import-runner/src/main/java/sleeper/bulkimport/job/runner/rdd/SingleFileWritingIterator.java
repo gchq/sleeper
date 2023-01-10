@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -72,10 +73,10 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private Instant startTime;
 
     public SingleFileWritingIterator(Iterator<Row> input,
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            Configuration conf,
-            PartitionTree partitionTree) {
+                                     InstanceProperties instanceProperties,
+                                     TableProperties tableProperties,
+                                     Configuration conf,
+                                     PartitionTree partitionTree) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;

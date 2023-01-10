@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.record.Record;
@@ -175,9 +176,9 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
             throw e1;
         }
         LOGGER.info("Created ArrowRecordBatchBase with:\n"
-                + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
-                + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
-                + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
+                        + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
+                        + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
+                        + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
                 this.sleeperSchema, this.localWorkingDirectory, workingArrowBufferAllocatorBytes,
                 minBatchArrowBufferAllocatorBytes, maxBatchArrowBufferAllocatorBytes,
                 this.maxNoOfBytesToWriteLocally, this.maxNoOfRecordsToWriteToArrowFileAtOnce);

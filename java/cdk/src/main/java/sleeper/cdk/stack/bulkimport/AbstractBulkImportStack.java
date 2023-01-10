@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
@@ -23,6 +22,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
+
+import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Locale;
 
@@ -38,8 +39,8 @@ public class AbstractBulkImportStack extends NestedStack {
     protected IBucket importBucket;
 
     public AbstractBulkImportStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties) {
+                                   String id,
+                                   InstanceProperties instanceProperties) {
         super(scope, id);
         this.id = id;
         this.instanceProperties = instanceProperties;

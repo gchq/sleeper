@@ -17,6 +17,7 @@ package sleeper.configuration;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
+
 import sleeper.configuration.properties.table.CompressionCodec;
 
 import java.util.Set;

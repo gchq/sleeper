@@ -15,12 +15,13 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import java.io.IOException;
 import java.util.Locale;

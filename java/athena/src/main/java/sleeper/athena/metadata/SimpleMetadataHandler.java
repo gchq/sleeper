@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
+
 import sleeper.core.partition.Partition;
 
 import java.io.IOException;
@@ -50,13 +51,13 @@ public class SimpleMetadataHandler extends SleeperMetadataHandler {
     }
 
     public SimpleMetadataHandler(AmazonS3 s3Client,
-                                  AmazonDynamoDB dynamoDBClient,
-                                  String configBucket,
-                                  EncryptionKeyFactory encryptionKeyFactory,
-                                  AWSSecretsManager secretsManager,
-                                  AmazonAthena athena,
-                                  String spillBucket,
-                                  String spillPrefix) throws IOException {
+                                 AmazonDynamoDB dynamoDBClient,
+                                 String configBucket,
+                                 EncryptionKeyFactory encryptionKeyFactory,
+                                 AWSSecretsManager secretsManager,
+                                 AmazonAthena athena,
+                                 String spillBucket,
+                                 String spillPrefix) throws IOException {
         super(s3Client, dynamoDBClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
     }
 

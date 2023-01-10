@@ -16,6 +16,7 @@
 package sleeper.ingest.status.store.job;
 
 import org.junit.Test;
+
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;

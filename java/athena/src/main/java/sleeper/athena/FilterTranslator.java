@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.apache.parquet.filter2.predicate.FilterApi;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.Operators;
 import org.apache.parquet.io.api.Binary;
+
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -59,6 +60,7 @@ public class FilterTranslator {
      * will therefore ignore all others. If there is no resulting predicate (either caused by an empty, or null map or a
      * map of non-primitive fields), this method will return null. If more than one primitive ValueSet exists in the map,
      * the predicates of all the ValueSets will be ANDed together.
+     *
      * @param valueSets a map of field name to ValueSet
      * @return A single parquet filter based on the ValueSets.
      */
@@ -224,6 +226,7 @@ public class FilterTranslator {
      * Wrapper around the FilterApi.and method which allows either side to be null. If both sides are null, null is
      * returned as the result. If one side is null, the other predicate will be returned. If both sides are non-null,
      * the predicates will be and-ed together
+     *
      * @param lhs left predicate
      * @param rhs right predicate
      * @return a Predicate which ensures both left and right predicates pass.
@@ -236,6 +239,7 @@ public class FilterTranslator {
      * Wrapper around the FilterApi.or method which allows either side to be null. If both sides are null, null is
      * returned as the result. If one side is null, the other predicate will be returned. If both sides are non-null,
      * the predicates will be or-ed together
+     *
      * @param lhs left predicate
      * @param rhs right predicate
      * @return a Predicate which ensures both left and right predicates pass.
