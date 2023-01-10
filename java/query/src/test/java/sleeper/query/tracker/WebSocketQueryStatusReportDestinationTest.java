@@ -16,11 +16,11 @@
 package sleeper.query.tracker;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import org.apache.curator.shaded.com.google.common.collect.Lists;
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range;
@@ -46,65 +46,58 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
+@WireMockTest
 public class WebSocketQueryStatusReportDestinationTest {
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .valueFields(new Field("count", new LongType()))
             .build();
+    private static WebSocketQueryConfig config;
 
-    @ClassRule
-    public static WireMockClassRule wireMockRule = new WireMockClassRule();
-
-    @Rule
-    public WireMockClassRule wireMock = wireMockRule;
-
-    private final WebSocketQueryStatusReportDestination listener;
-    private final UrlPattern url;
-    private final RangeFactory rangeFactory;
-
-    public WebSocketQueryStatusReportDestinationTest() {
-        String region = "eu-west-1";
-        String connectionId = "connection1";
-        this.listener = new WebSocketQueryStatusReportDestination(region, this.wireMock.baseUrl(), connectionId, new BasicAWSCredentials("accessKey", "secretKey"));
-        this.url = urlEqualTo("/@connections/" + connectionId);
-        this.wireMock.stubFor(post(this.url).willReturn(aResponse().withStatus(200)));
-        this.rangeFactory = new RangeFactory(SCHEMA);
+    @BeforeAll
+    public static void setup(WireMockRuntimeInfo runtimeInfo) {
+        config = WebSocketQueryConfig.from(runtimeInfo);
     }
 
     @Test
     public void shouldNotSendQueryQueuedNotification() {
         // Given
-        Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
 
         // When
-        listener.queryQueued(query);
+        config.getListener().queryQueued(query);
 
         // Then
-        wireMock.verify(0, postRequestedFor(url));
+        verify(0, postRequestedFor(config.getUrl()));
     }
 
     @Test
     public void shouldNotSendQueryInProgressNotification() {
         // Given
-        Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
 
         // When
-        listener.queryInProgress(query);
+        config.getListener().queryInProgress(query);
 
         // Then
-        wireMock.verify(0, postRequestedFor(url));
+        verify(0, postRequestedFor(config.getUrl()));
     }
 
     @Test
     public void shouldSendNotificationOfSubQueriesBeingCreated() {
         // Given
-        Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Region region = new Region(range);
-        Range partitionRange = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
+        Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
         Region partitionRegion = new Region(partitionRange);
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
         ArrayList<LeafPartitionQuery> subQueries = Lists.newArrayList(
@@ -114,10 +107,10 @@ public class WebSocketQueryStatusReportDestinationTest {
         );
 
         // When
-        listener.subQueriesCreated(query, subQueries);
+        config.getListener().subQueriesCreated(query, subQueries);
 
         // Then
-        wireMock.verify(1, postRequestedFor(url).withRequestBody(
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("q1"))
                         .and(matchingJsonPath("$.message", equalTo("subqueries")))
                         .and(matchingJsonPath("$.error", absent()))
@@ -129,7 +122,8 @@ public class WebSocketQueryStatusReportDestinationTest {
     @Test
     public void shouldSendQueryCompletedNotification() {
         // Given
-        Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
@@ -137,10 +131,10 @@ public class WebSocketQueryStatusReportDestinationTest {
         ));
 
         // When
-        listener.queryCompleted(query, result);
+        config.getListener().queryCompleted(query, result);
 
         // Then
-        wireMock.verify(1, postRequestedFor(url).withRequestBody(
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("q1"))
                         .and(matchingJsonPath("$.message", equalTo("completed")))
                         .and(matchingJsonPath("$.error", absent()))
@@ -151,7 +145,8 @@ public class WebSocketQueryStatusReportDestinationTest {
     @Test
     public void shouldSendPartialQueryFailureNotification() {
         // Given
-        Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q2", new Region(range)).build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
                 new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
@@ -159,10 +154,10 @@ public class WebSocketQueryStatusReportDestinationTest {
         ), new IOException("error writing record #2"));
 
         // When
-        listener.queryCompleted(query, result);
+        config.getListener().queryCompleted(query, result);
 
         // Then
-        wireMock.verify(1, postRequestedFor(url).withRequestBody(
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("q2"))
                         .and(matchingJsonPath("$.message", equalTo("error")))
                         .and(matchingJsonPath("$.error", equalTo(result.getError().getClass().getSimpleName() + ": " + result.getError().getMessage())))
@@ -173,18 +168,49 @@ public class WebSocketQueryStatusReportDestinationTest {
     @Test
     public void shouldSendQueryFailureNotificationOnException() {
         // Given
-        Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
+        stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
+        Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q3", new Region(range)).build();
 
         // When
-        listener.queryFailed(query, new IOException("fail"));
+        config.getListener().queryFailed(query, new IOException("fail"));
 
         // Then
-        wireMock.verify(1, postRequestedFor(url).withRequestBody(
+        verify(1, postRequestedFor(config.getUrl()).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("q3"))
                         .and(matchingJsonPath("$.message", equalTo("error")))
                         .and(matchingJsonPath("$.error", equalTo("IOException: fail")))
                         .and(matchingJsonPath("$.recordCount", absent()))
         ));
+    }
+
+    private static class WebSocketQueryConfig {
+        private final WebSocketQueryStatusReportDestination listener;
+        private final UrlPattern url;
+        private final RangeFactory rangeFactory;
+
+        private WebSocketQueryConfig(String endpoint) {
+            String region = "eu-west-1";
+            String connectionId = "connection1";
+            this.listener = new WebSocketQueryStatusReportDestination(region, endpoint, connectionId, new BasicAWSCredentials("accessKey", "secretKey"));
+            this.url = urlEqualTo("/@connections/" + connectionId);
+            this.rangeFactory = new RangeFactory(SCHEMA);
+        }
+
+        public static WebSocketQueryConfig from(WireMockRuntimeInfo runtimeInfo) {
+            return new WebSocketQueryConfig(runtimeInfo.getHttpBaseUrl());
+        }
+
+        public WebSocketQueryStatusReportDestination getListener() {
+            return listener;
+        }
+
+        public UrlPattern getUrl() {
+            return url;
+        }
+
+        public RangeFactory getRangeFactory() {
+            return rangeFactory;
+        }
     }
 }

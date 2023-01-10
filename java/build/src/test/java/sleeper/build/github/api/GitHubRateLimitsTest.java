@@ -16,8 +16,8 @@
 package sleeper.build.github.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import org.junit.Rule;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -26,17 +26,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.testutil.TestResources.exampleString;
 
+@WireMockTest
 public class GitHubRateLimitsTest {
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
-
     @Test
-    public void shouldGetExampleRateLimits() {
+    public void shouldGetExampleRateLimits(WireMockRuntimeInfo runtimeInfo) {
         stubFor(get("/rate_limit")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
@@ -45,7 +42,7 @@ public class GitHubRateLimitsTest {
                         .withHeader("Content-Type", "application/vnd.github+json")
                         .withBody(exampleString("examples/github-api/rate-limit.json"))));
 
-        JsonNode response = GitHubRateLimits.get("http://localhost:" + wireMockRule.port(), "test-bearer-token");
+        JsonNode response = GitHubRateLimits.get("http://localhost:" + runtimeInfo.getHttpPort(), "test-bearer-token");
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);
         assertThat(GitHubRateLimits.resetTime(response)).isEqualTo(Instant.parse("2013-07-01T17:47:53Z"));
     }
