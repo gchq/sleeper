@@ -60,10 +60,6 @@ public class CompactionTaskFinishedStatus {
         return timeSpentOnJobs;
     }
 
-    public double getSecondsSpentOnJobs() {
-        return timeSpentOnJobs.toMillis() / 1000.0;
-    }
-
     public long getTotalRecordsRead() {
         return totalRecordsRead;
     }
