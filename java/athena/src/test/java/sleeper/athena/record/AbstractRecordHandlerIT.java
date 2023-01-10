@@ -23,10 +23,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -44,8 +43,10 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
+import java.io.File;
 import java.io.IOException;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
@@ -55,8 +56,8 @@ public abstract class AbstractRecordHandlerIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     // For storing data
-    @ClassRule
-    public static TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public static File tempDir;
 
     protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -102,18 +103,18 @@ public abstract class AbstractRecordHandlerIT {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        TestUtils.ingestData(createDynamoClient(), createS3Client(), tempDir.newFolder().getAbsolutePath(),
+        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir.toPath(), null).toString(),
                 instanceProperties, table);
         return table;
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
-        return TestUtils.createTable(instanceProperties, SCHEMA, tempDir.newFolder().getAbsolutePath(),
+        return TestUtils.createTable(instanceProperties, SCHEMA, createTempDirectory(tempDir.toPath(), null).toString(),
                 createDynamoClient(), createS3Client(), initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) throws IOException {
-        return TestUtils.createTable(instanceProperties, schema, tempDir.newFolder().getAbsolutePath(),
+        return TestUtils.createTable(instanceProperties, schema, createTempDirectory(tempDir.toPath(), null).toString(),
                 createDynamoClient(), createS3Client(), initialSplits);
     }
 

@@ -46,9 +46,8 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -93,6 +92,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -113,6 +113,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
@@ -139,8 +140,8 @@ public class SqsQueryProcessorLambdaIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public File tempDir;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -159,7 +160,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws ObjectFactoryException, IOException {
         // Given
-        String dataDir = tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -189,10 +190,10 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldSplitUpQueryWhenItSpansMultiplePartitions() throws ObjectFactoryException, IOException {
         // Given
-        String dataDir = tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, tempDir.newFolder().getAbsolutePath(), 2005, 2008);
+        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir.toPath(), null).toString(), 2005, 2008);
         AmazonDynamoDB dynamoClient = createDynamoClient();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
@@ -220,10 +221,10 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldSetStatusOfQueryToIN_PROGRESSWhileSubQueriesAreProcessingAndToCOMPLETEDWhenAllSubQueriesHaveFinished() throws ObjectFactoryException, IOException {
         // Given
-        String dataDir = tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, tempDir.newFolder().getAbsolutePath(), 2005, 2008);
+        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir.toPath(), null).toString(), 2005, 2008);
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
         AmazonSQS sqsClient = createSqsClient();
@@ -259,7 +260,7 @@ public class SqsQueryProcessorLambdaIT {
             ReceiveMessageResult result = sqsClient.receiveMessage(request);
             assertThat(result.getMessages()).hasSize(1);
             SQSEvent event = new SQSEvent();
-            SQSMessage sqsMessage = new SQSEvent.SQSMessage();
+            SQSMessage sqsMessage = new SQSMessage();
             sqsMessage.setBody(result.getMessages().get(0).getBody());
             event.setRecords(Lists.newArrayList(
                     sqsMessage
@@ -283,10 +284,10 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() throws ObjectFactoryException, IOException {
         // Given
-        String dataDir = tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        loadData(instanceProperties, timeSeriesTable, tempDir.newFolder().getAbsolutePath(), 2005, 2008);
+        loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir.toPath(), null).toString(), 2005, 2008);
         AmazonDynamoDB dynamoClient = createDynamoClient();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
@@ -318,7 +319,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishResultsToS3ByDefault() throws IOException, ObjectFactoryException, QueryTrackerException {
         // Given
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -347,7 +348,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishResultsToS3() throws IOException, ObjectFactoryException, QueryTrackerException {
         // Given
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -381,7 +382,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishResultsToSQS() throws IOException, ObjectFactoryException, QueryTrackerException {
         // Given
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -416,7 +417,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishResultsToWebSocket() throws ObjectFactoryException, QueryTrackerException, IOException {
         // Given
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -467,7 +468,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishResultsToWebSocketInBatches() throws ObjectFactoryException, QueryTrackerException, IOException {
         // Given
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -516,7 +517,7 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishStatusReportsToWebSocket() throws IOException, ObjectFactoryException {
         // Given
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -565,7 +566,7 @@ public class SqsQueryProcessorLambdaIT {
     public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws IOException, ObjectFactoryException {
         // Given
         AmazonSQS sqsClient = this.createSqsClient();
-        String dataDir = this.tempDir.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
@@ -673,7 +674,7 @@ public class SqsQueryProcessorLambdaIT {
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
         String jsonQuery = querySerDe.toJson(query);
         SQSEvent event = new SQSEvent();
-        SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage();
+        SQSMessage sqsMessage = new SQSMessage();
         sqsMessage.setBody(jsonQuery);
         event.setRecords(Lists.newArrayList(sqsMessage));
         SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
@@ -738,7 +739,7 @@ public class SqsQueryProcessorLambdaIT {
         tableProperties.setSchema(SCHEMA);
 
         try {
-            String dataDir = tempDir.newFolder().getAbsolutePath();
+            String dataDir = createTempDirectory(tempDir.toPath(), null).toString();
             tableProperties.set(DATA_BUCKET, dataDir);
         } catch (IOException e) {
             throw new RuntimeException(e);

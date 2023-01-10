@@ -22,11 +22,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -63,6 +62,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -112,8 +113,8 @@ public class BulkImportJobRunnerIT {
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
     );
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -316,7 +317,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = folder.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(folder.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -366,7 +367,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = folder.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(folder.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -416,7 +417,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = folder.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(folder.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -459,7 +460,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = folder.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(folder.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -533,7 +534,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = folder.newFolder().getAbsolutePath();
+        String dataDir = createTempDirectory(folder.toPath(), null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();

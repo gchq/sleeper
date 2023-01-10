@@ -16,12 +16,12 @@
 package sleeper.bulkimport.job.runner.dataframe;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -34,6 +34,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -59,8 +61,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class WriteParquetFilesTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
 
     public InstanceProperties createInstanceProperties(String fs) {
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -81,7 +83,7 @@ public class WriteParquetFilesTest {
     @Test
     public void shouldWriteParquetFiles() throws IOException {
         // Given
-        String dir = folder.newFolder().getAbsolutePath();
+        String dir = createTempDirectory(folder.toPath(), null).toString();
         String dataBucket = "dataBucket";
         Schema schema = getSchema();
         InstanceProperties instanceProperties = createInstanceProperties(dir);
@@ -119,7 +121,7 @@ public class WriteParquetFilesTest {
     @Test
     public void ShouldWriteToMultipleParquetFilesWhenDataContainsMoreThanOnePartition() throws IOException {
         // Given
-        String dir = folder.newFolder().getAbsolutePath();
+        String dir = createTempDirectory(folder.toPath(), null).toString();
         String dataBucket = "dataBucket";
         Schema schema = getSchema();
         InstanceProperties instanceProperties = createInstanceProperties(dir);
@@ -165,7 +167,7 @@ public class WriteParquetFilesTest {
     }
 
     private List<Record> readRecords(String filename, Schema schema) {
-        try (ParquetReader<Record> reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(filename), schema)) {
+        try (ParquetReader<Record> reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> records = new ArrayList<>();
             for (Record record = reader.read(); record != null; record = reader.read()) {
                 records.add(new Record(record));

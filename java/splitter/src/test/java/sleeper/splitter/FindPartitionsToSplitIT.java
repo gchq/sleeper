@@ -22,9 +22,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -58,6 +57,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -69,8 +69,8 @@ public class FindPartitionsToSplitIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public File tempDir;
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
@@ -136,8 +136,8 @@ public class FindPartitionsToSplitIT {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
         recordLists.forEach(list -> {
             try {
-                File stagingArea = tempDir.newFolder();
-                File directory = tempDir.newFolder();
+                File stagingArea = createTempDirectory(tempDir.toPath(), null).toFile();
+                File directory = createTempDirectory(tempDir.toPath(), null).toFile();
                 try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, schema,
                         ArrayListRecordBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)

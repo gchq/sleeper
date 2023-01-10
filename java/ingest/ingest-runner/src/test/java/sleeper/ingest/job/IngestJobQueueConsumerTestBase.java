@@ -19,10 +19,9 @@ package sleeper.ingest.job;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -37,6 +36,7 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,8 +67,8 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
     protected static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
     protected static final String FILE_SYSTEM_PREFIX = "s3a://";
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
 
     @BeforeEach
     public void before() throws IOException {

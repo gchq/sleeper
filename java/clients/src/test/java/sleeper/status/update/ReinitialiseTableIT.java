@@ -33,11 +33,10 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -63,6 +62,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -146,8 +147,8 @@ public class ReinitialiseTableIT {
         s3Client = null;
     }
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
 
     @Test
     public void shouldThrowExceptionIfBucketIsEmpty() {
@@ -684,7 +685,7 @@ public class ReinitialiseTableIT {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
+        String folderName = createTempDirectory(folder.toPath(), null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
@@ -776,7 +777,7 @@ public class ReinitialiseTableIT {
         tableProperties.set(REVISION_TABLENAME, "sleeper" + "-" + tableName + "-" + "revisions");
         if (isS3StateStore) {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
-            tableProperties.set(DATA_BUCKET, folder.newFolder().getAbsolutePath());
+            tableProperties.set(DATA_BUCKET, createTempDirectory(folder.toPath(), null).toString());
         } else {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
         }
@@ -784,7 +785,7 @@ public class ReinitialiseTableIT {
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {
-        String folderName = folder.newFolder().getAbsolutePath();
+        String folderName = createTempDirectory(folder.toPath(), null).toString();
         String splitPointsFileName = folderName + "/split-points.txt";
         FileWriter fstream = new FileWriter(splitPointsFileName);
         BufferedWriter info = new BufferedWriter(fstream);
@@ -803,9 +804,9 @@ public class ReinitialiseTableIT {
 
     private String createRevisionDynamoTable(String tableName) {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
+        attributeDefinitions.add(new AttributeDefinition(REVISION_ID_KEY, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.HASH));
+        keySchemaElements.add(new KeySchemaElement(REVISION_ID_KEY, KeyType.HASH));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)

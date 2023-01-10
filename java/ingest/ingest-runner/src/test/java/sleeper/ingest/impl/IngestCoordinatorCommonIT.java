@@ -18,11 +18,10 @@ package sleeper.ingest.impl;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -49,6 +48,7 @@ import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -64,6 +64,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
@@ -74,17 +75,17 @@ public class IngestCoordinatorCommonIT {
             LocalStackContainer.Service.S3,
             LocalStackContainer.Service.DYNAMODB);
     private static final String DATA_BUCKET_NAME = "databucket";
-    private final QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> ingestCoordinatorFactoryFn;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    private final QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> ingestCoordinatorFactoryFn;
+    @TempDir
+    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
 
-    public IngestCoordinatorCommonIT(QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> ingestCoordinatorFactoryFn) {
+    public IngestCoordinatorCommonIT(QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> ingestCoordinatorFactoryFn) {
         this.ingestCoordinatorFactoryFn = ingestCoordinatorFactoryFn;
     }
 
-    private static String newTemporaryDirectory(TemporaryFolder temporaryFolder) {
+    private static String newTemporaryDirectory(File temporaryFolder) {
         try {
-            return temporaryFolder.newFolder().getAbsolutePath();
+            return createTempDirectory(temporaryFolder.toPath(), null).toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -92,7 +93,7 @@ public class IngestCoordinatorCommonIT {
 
     @Parameterized.Parameters
     public static Collection<Object[]> parametersForTests() {
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrowLocalFn =
+        QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> directArrowLocalFn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrow(
                                 stateStore,
@@ -101,7 +102,7 @@ public class IngestCoordinatorCommonIT {
                                 sleeperIteratorClassName,
                                 workingDir
                         );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrowS3Fn =
+        QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> directArrowS3Fn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrow(
                                 stateStore,
@@ -110,7 +111,7 @@ public class IngestCoordinatorCommonIT {
                                 sleeperIteratorClassName,
                                 workingDir
                         );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> asyncArrowS3Fn =
+        QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> asyncArrowS3Fn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorAsyncWriteBackedByArrow(
                                 stateStore,
@@ -119,7 +120,7 @@ public class IngestCoordinatorCommonIT {
                                 sleeperIteratorClassName,
                                 workingDir
                         );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListLocalFn =
+        QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> directArrayListLocalFn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
                                 stateStore,
@@ -128,7 +129,7 @@ public class IngestCoordinatorCommonIT {
                                 sleeperIteratorClassName,
                                 workingDir
                         );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListS3Fn =
+        QuinFunction<StateStore, Schema, String, String, File, IngestCoordinator<Record>> directArrayListS3Fn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
                                 stateStore,
@@ -576,7 +577,7 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
         // A deep working directory forces the ingest coordinator to create a deep tree of directories
-        String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath() + "/path/to/new/sub/directory";
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString() + "/path/to/new/sub/directory";
         try (IngestCoordinator<Record> ingestCoordinator =
                      ingestCoordinatorFactoryFn.apply(
                              stateStore,

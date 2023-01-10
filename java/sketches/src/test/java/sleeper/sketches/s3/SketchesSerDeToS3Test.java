@@ -19,9 +19,8 @@ import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
@@ -32,17 +31,19 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.sketches.Sketches;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SketchesSerDeToS3Test {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
 
     @Test
     public void shouldSerDeToFile() throws IOException {
@@ -75,7 +76,7 @@ public class SketchesSerDeToS3Test {
         map.put("key4", sketch4);
         Sketches sketches = new Sketches(map);
         SketchesSerDeToS3 sketchesSerDeToS3 = new SketchesSerDeToS3(schema);
-        String file = folder.newFolder().getAbsolutePath() + "/file.sketches";
+        String file = createTempDirectory(folder.toPath(), null).toString() + "/file.sketches";
         Path path = new Path(file);
 
         // When

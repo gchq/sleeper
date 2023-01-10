@@ -16,21 +16,24 @@
 package sleeper.compaction.jobexecution.testutils;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.core.CommonTestConstants;
 
+import java.io.File;
+
+import static java.nio.file.Files.createTempDirectory;
+
 public class CompactSortedFilesTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
     protected String folderName;
 
     @BeforeEach
     public void setUpBase() throws Exception {
-        folderName = folder.newFolder().getAbsolutePath();
+        folderName = createTempDirectory(folder.toPath(), null).toString();
     }
 
     protected CompactionJobFactory compactionFactory() {

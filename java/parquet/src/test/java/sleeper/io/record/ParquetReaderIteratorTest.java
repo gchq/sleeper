@@ -18,9 +18,8 @@ package sleeper.io.record;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
@@ -32,15 +31,17 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ParquetReaderIteratorTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
 
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("column1", new LongType()))
@@ -51,7 +52,7 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIterator() throws IOException {
         // Given
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         Map<String, Object> map1 = new HashMap<>();
@@ -82,7 +83,7 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         writer.close();

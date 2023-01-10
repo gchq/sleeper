@@ -19,11 +19,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -47,6 +46,7 @@ import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -60,6 +60,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -84,8 +85,8 @@ public class IngestJobRunnerIT {
     private final String recordBatchType;
     private final String partitionFileWriterType;
     private final String fileSystemPrefix;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
 
@@ -112,8 +113,8 @@ public class IngestJobRunnerIT {
     public void before() throws IOException {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
-        currentLocalIngestDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        currentLocalTableDataDirectory = temporaryFolder.newFolder().getAbsolutePath();
+        currentLocalIngestDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString();
+        currentLocalTableDataDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString();
     }
 
     @AfterEach
@@ -196,7 +197,7 @@ public class IngestJobRunnerIT {
                                   IngestJob job,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
-        String localDir = temporaryFolder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(temporaryFolder.toPath(), null).toString();
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
@@ -205,7 +206,7 @@ public class IngestJobRunnerIT {
 
         // Run the job consumer
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
+                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder.toPath(), null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider,
@@ -222,7 +223,7 @@ public class IngestJobRunnerIT {
                 expectedRecordList,
                 Collections.singletonMap(0, expectedNoOfFiles),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                temporaryFolder.newFolder().getAbsolutePath());
+                createTempDirectory(temporaryFolder.toPath(), null).toString());
     }
 
     @Test

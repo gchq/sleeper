@@ -20,9 +20,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -35,19 +34,21 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 public class FileWritingIteratorTest {
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    public File tempFolder;
 
     private Schema createSchema() {
         return Schema.builder()
@@ -61,7 +62,7 @@ public class FileWritingIteratorTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(createSchema());
         try {
-            tableProperties.set(TableProperty.DATA_BUCKET, tempFolder.newFolder().getAbsolutePath());
+            tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder.toPath(), null).toString());
         } catch (IOException e) {
             throw new RuntimeException("Failed to create temp folder for test", e);
         }

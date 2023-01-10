@@ -18,9 +18,8 @@ package sleeper.io.record;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
@@ -33,16 +32,18 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ParquetRecordWriterTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File folder = CommonTestConstants.TMP_DIRECTORY;
 
     @Test
     public void shouldWriteRecordsCorrectlyForStringStringSchema() throws IOException {
@@ -51,7 +52,7 @@ public class ParquetRecordWriterTest {
                 .rowKeyFields(new Field("column1", new StringType()))
                 .valueFields(new Field("column2", new StringType()))
                 .build();
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         Map<String, Object> map1 = new HashMap<>();
@@ -88,7 +89,7 @@ public class ParquetRecordWriterTest {
                 .sortKeyFields(new Field("column2", new LongType()))
                 .valueFields(new Field("column3", new LongType()))
                 .build();
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         Map<String, Object> map1 = new HashMap<>();
@@ -132,7 +133,7 @@ public class ParquetRecordWriterTest {
                 .rowKeyFields(new Field("column1", new ByteArrayType()))
                 .valueFields(new Field("column2", new ByteArrayType()))
                 .build();
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         Map<String, Object> map1 = new HashMap<>();

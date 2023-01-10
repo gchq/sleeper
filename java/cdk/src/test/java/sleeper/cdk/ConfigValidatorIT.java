@@ -26,11 +26,10 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -59,8 +58,8 @@ public class ConfigValidatorIT {
             = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private static AmazonS3 amazonS3;
     private static AmazonDynamoDB amazonDynamoDB;
@@ -237,7 +236,7 @@ public class ConfigValidatorIT {
                 "  ]\n" +
                 "}\n";
 
-        File tableSchemaFile = temporaryFolder.newFile("schema.json");
+        File tableSchemaFile = new File(temporaryFolder.toPath().toString(), "schema.json");
         FileUtils.write(tableSchemaFile, tableSchema, Charset.defaultCharset());
 
         String tableConfiguration = "" +
@@ -245,7 +244,7 @@ public class ConfigValidatorIT {
                 String.format("sleeper.table.statestore.classname=%s\n", stateStore) +
                 String.format("sleeper.table.schema.file=%s\n", tableSchemaFile.getAbsolutePath());
 
-        File tablePropertiesFile = temporaryFolder.newFile("table.properties");
+        File tablePropertiesFile = new File(temporaryFolder.toPath().toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());
 
         instanceProperties.set(TABLE_PROPERTIES, tablePropertiesFile.getAbsolutePath());

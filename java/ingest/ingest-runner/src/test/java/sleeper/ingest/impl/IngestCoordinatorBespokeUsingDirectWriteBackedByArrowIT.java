@@ -18,11 +18,10 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.CommonTestConstants;
@@ -39,6 +38,7 @@ import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
@@ -59,8 +60,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
             LocalStackContainer.Service.S3,
             LocalStackContainer.Service.DYNAMODB);
     private static final String DATA_BUCKET_NAME = "databucket";
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
 
     @BeforeEach
     public void before() {
@@ -153,7 +154,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
-        String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString();
 
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
