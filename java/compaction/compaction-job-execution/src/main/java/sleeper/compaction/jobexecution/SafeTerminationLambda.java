@@ -103,7 +103,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      * @param reader the input source
      * @return set of IDs
      * @throws NullPointerException if reader is null
-     * @throws JsonIOException for an JSON related I/O error
+     * @throws JsonIOException for a JSON related I/O error
      * @throws JsonSyntaxException if JSON is invalid
      */
     public static Set<String> extractSuggestedIDs(Reader reader) throws JsonIOException, JsonSyntaxException {
@@ -111,17 +111,42 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         JsonReader jsread = new JsonReader(reader);
 
         JsonElement root = PARSER.parse(jsread);
-        JsonArray arr = root.getAsJsonObject().getAsJsonArray("Instances");
+        JsonArray instancesArray = root.getAsJsonObject().getAsJsonArray("Instances");
 
         // set of instance IDs that AWS Auto Scaling wants to terminate
         Set<String> suggestedTerminations = new HashSet<>();
 
         // loop over each element and extract the instance ID
-        for (JsonElement e : arr) {
+        for (JsonElement e : instancesArray) {
             Map<String, String> instance = GSON.fromJson(e, TYPE_TOKEN.getType());
             suggestedTerminations.add(instance.get("InstanceId"));
         }
         return suggestedTerminations;
+    }
+
+    /**
+     * Examines the list of capacities that AWS AutoScaling has suggested for termination and sums
+     * them.
+     *
+     * @param reader the input source
+     * @return total capacity to be terminated
+     * @throws JsonIOException for a JSON related I/O error
+     * @throws JsonSyntaxException if JSON is invalid
+     */
+    public static int totalTerminations(Reader reader) throws JsonIOException, JsonSyntaxException {
+        Objects.requireNonNull(reader);
+        JsonReader jsread = new JsonReader(reader);
+
+        JsonElement root = PARSER.parse(jsread);
+        JsonArray capacities = root.getAsJsonObject().getAsJsonArray("CapacityToTerminate");
+
+        int terminationCount = 0;
+
+        // loop over each element and extract the capacity count
+        for (JsonElement e : capacities) {
+            terminationCount += e.getAsJsonObject().getAsJsonPrimitive("Capacity").getAsInt();
+        }
+        return terminationCount;
     }
 
     /**
@@ -138,13 +163,13 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         Objects.requireNonNull(output, "output");
         Objects.requireNonNull(clusterDetails, "clusterDetails");
 
-        // get the list of suggested termination IDs
-        Set<String> suggestedTerminations = extractSuggestedIDs(input);
+        // total the number of terminations to make
+        int suggestTerminationCount = totalTerminations(input);
 
-        LOGGER.info("Suggested instances for termination from AWS {}", suggestedTerminations);
+        LOGGER.info("AWS AutoScaling wants to terminate {}", suggestTerminationCount);
 
         // filter out ones that are not running tasks
-        Set<String> emptyInstances = findEmptyInstances(clusterDetails, suggestedTerminations.size());
+        Set<String> emptyInstances = findEmptyInstances(clusterDetails, suggestTerminationCount);
 
         LOGGER.info("Returned list of instances to terminate {}", emptyInstances);
 

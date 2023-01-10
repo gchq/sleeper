@@ -67,6 +67,78 @@ public class SafeTerminationTest {
                     + "  \"Cause\": \"SCALE_IN\"\n"
                     + "}";
 
+    public static final String IN_TEST_MULTI = "{\n"
+                    + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
+                    + "  \"AutoScalingGroupName\": \"my-asg\",\n"
+                    + "  \"CapacityToTerminate\": [\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+                    + "      \"Capacity\": 3,\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+                    + "      \"Capacity\": 4,\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    }\n"
+                    + "  ],\n"
+                    + "  \"Instances\": [\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+                    + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+                    + "      \"InstanceId\": \"i-02e1c69383a3ed501\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+                    + "      \"InstanceId\": \"i-036bc44b6092c01c7\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+                    + "      \"InstanceId\": \"i-0056faf8da3e11234\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+                    + "      \"InstanceId\": \"i-02e1c69383a34567\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+                    + "      \"InstanceId\": \"i-036bc44b6092cbcdd\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    },\n"
+                    + "    {\n"
+                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+                    + "      \"InstanceId\": \"i-036bc44b6092cabcd\",\n"
+                    + "      \"InstanceType\": \"t2.nano\",\n"
+                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
+                    + "    }\n"
+                    + "  ],\n"
+                    + "  \"Cause\": \"SCALE_IN\"\n"
+                    + "}";
+
+    public static final String IN_TEST_ZERO = "{\n"
+                    + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
+                    + "  \"AutoScalingGroupName\": \"my-asg\",\n"
+                    + "  \"CapacityToTerminate\": [\n"
+                    + "  ],\n"
+                    + "  \"Instances\": [\n"
+                    + "  ],\n"
+                    + "  \"Cause\": \"SCALE_IN\"\n"
+                    + "}";
+
     /**
      * Custom termination Lambda input test from
      * https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html.
@@ -77,7 +149,7 @@ public class SafeTerminationTest {
                     + "  \"CapacityToTerminate\": [\n"
                     + "    {\n"
                     + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"Capacity\": 2,\n"
+                    + "      \"Capacity\": 1,\n"
                     + "      \"InstanceMarketOption\": \"on-demand\"\n"
                     + "    }"
                     + "  ],\n"
@@ -235,5 +307,46 @@ public class SafeTerminationTest {
 
         // Then
         assertThat(output.toString()).isEqualToIgnoringWhitespace(JSON_RESPONSE_LIMIT);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void throwOnNullReaderTotalTerminations() {
+        SafeTerminationLambda.totalTerminations(null);
+    }
+
+    @Test
+    public void shouldReturnZeroTotalTerminations() {
+        // Given
+        StringReader input = new StringReader(IN_TEST_ZERO);
+
+        // When
+        int totalCapacity = SafeTerminationLambda.totalTerminations(input);
+
+        // Then
+        assertThat(totalCapacity).isEqualTo(0);
+    }
+
+    @Test
+    public void shouldReturnSingleTotalTerminations() {
+        // Given
+        StringReader input = new StringReader(IN_TEST);
+
+        // When
+        int totalCapacity = SafeTerminationLambda.totalTerminations(input);
+
+        // Then
+        assertThat(totalCapacity).isEqualTo(3);
+    }
+
+    @Test
+    public void shouldReturnMultipleTotalTerminations() {
+        // Given
+        StringReader input = new StringReader(IN_TEST_MULTI);
+
+        // When
+        int totalCapacity = SafeTerminationLambda.totalTerminations(input);
+
+        // Then
+        assertThat(totalCapacity).isEqualTo(7);
     }
 }
