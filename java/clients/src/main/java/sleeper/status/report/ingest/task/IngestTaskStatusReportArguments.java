@@ -18,7 +18,7 @@ package sleeper.status.report.ingest.task;
 
 import java.io.PrintStream;
 
-import static sleeper.ClientUtils.optionalArgument;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestTaskStatusReportArguments {
     private final String instanceId;

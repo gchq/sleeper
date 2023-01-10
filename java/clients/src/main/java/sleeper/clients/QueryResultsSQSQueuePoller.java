@@ -24,12 +24,12 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.util.List;

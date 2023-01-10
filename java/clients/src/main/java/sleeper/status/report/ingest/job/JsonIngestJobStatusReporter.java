@@ -21,15 +21,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.status.report.job.GsonConfig;
+import sleeper.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.status.report.job.query.JobQuery;
+import sleeper.util.GsonConfig;
 
 import java.io.PrintStream;
 import java.util.List;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
+            .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(IngestJobStatus.class, ingestJobStatusJsonSerializer())
             .create();
     private final PrintStream out;

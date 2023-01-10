@@ -26,7 +26,7 @@ import sleeper.status.report.table.TableWriterFactory;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.status.report.job.StandardProcessRunReporter.formatDecimal;
+import static sleeper.status.report.job.StandardProcessRunReporter.formatDurationString;
 import static sleeper.status.report.job.StandardProcessRunReporter.getOrNull;
 
 public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporter {
@@ -39,7 +39,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
     private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.FINISH_TIME);
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
-    private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION (s)");
+    private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION");
     private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_READ);
     private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_WRITTEN);
     private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.READ_RATE);
@@ -100,7 +100,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
         builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
                 .value(JOB_RUNS, task.getJobRunsOrNull())
                 .value(JOB_DURATION, getOrNull(task.getFinishedStatus(),
-                        status -> formatDecimal(status.getSecondsSpentOnJobs())));
+                        status -> formatDurationString(status.getTimeSpentOnJobs())));
         processRunReporter.writeRunFields(task.asProcessRun(), builder);
     }
 }
