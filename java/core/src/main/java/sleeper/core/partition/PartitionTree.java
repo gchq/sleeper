@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This represents a tree of {@link Partition}s. It can be used to find all
@@ -157,6 +158,67 @@ public class PartitionTree {
             }
         }
         return getRootPartition();
+    }
+
+    /**
+     * Traverse the partition tree visiting the leaves first, then proceed in steps where you remove the current leaf
+     * partitions and visit the new leaves.
+     * <p>
+     * The partitions are also ordered by the min and max of their ranges. Each time the tree is split, the partition
+     * on the left/min side of the split will always be displayed first in this ordering.
+     * <p>
+     * This produces an ordering which is natural to read when you care the most about the leaf partitions, but you also
+     * want to be able to read the rest of the tree in a predictable way.
+     *
+     * @return all partitions in the tree in leaves first order
+     */
+    public Stream<Partition> traverseLeavesFirst() {
+        return traverseLeavesFirst(getLeavesInTreeOrder(), new HashSet<>(), Stream.empty());
+    }
+
+    private List<Partition> getLeavesInTreeOrder() {
+        // Establish ordering by combining depth-first tree traversal with the ordering of child IDs on each partition.
+        // This should ensure that partitions on the left/min side of a split will always come first in the order.
+        return leavesInTreeOrderUnder(getRootPartition())
+                .collect(Collectors.toList());
+    }
+
+    private Stream<Partition> leavesInTreeOrderUnder(Partition partition) {
+        if (partition.isLeafPartition()) {
+            return Stream.of(partition);
+        }
+        // Always follow left/min side first. Child partition IDs should be left/min then right/max.
+        return partition.getChildPartitionIds().stream()
+                .map(this::getPartition)
+                .flatMap(this::leavesInTreeOrderUnder);
+    }
+
+    private Stream<Partition> traverseLeavesFirst(
+            List<Partition> leaves, Set<String> prunedIds, Stream<Partition> partialTraversal) {
+
+        // Prune the current leaves from the tree.
+        // Tracking the pruned partitions creates a logical tree without needing to update the actual tree.
+        leaves.stream().map(Partition::getId).forEach(prunedIds::add);
+
+        // Find the partitions that are the new leaves of the tree after the previous ones were pruned.
+        // Ensure the ordering is preserved, as the leaves were given in the correct order.
+        List<Partition> nextLeaves = distinctParentsOf(leaves)
+                .filter(parent -> prunedIds.containsAll(parent.getChildPartitionIds()))
+                .collect(Collectors.toList());
+
+        // Build traversal stream before recursive call, so it's tail-recursive
+        Stream<Partition> traversal = Stream.concat(partialTraversal, leaves.stream());
+        if (nextLeaves.isEmpty()) {
+            return traversal;
+        } else {
+            return traverseLeavesFirst(nextLeaves, prunedIds, traversal);
+        }
+    }
+
+    private Stream<Partition> distinctParentsOf(List<Partition> partitions) {
+        return partitions.stream()
+                .map(Partition::getParentPartitionId).filter(Objects::nonNull)
+                .distinct().map(this::getPartition);
     }
 
     @Override

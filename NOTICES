@@ -9,6 +9,10 @@ AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.11.1034):
 
 - Apache License, Version 2.0
 
+AWS Java SDK v2 (software.amazon.awssdk:*:2.19.0):
+
+- Apache License, Version 2.0
+
 AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.2.0):
 
 - Apache License, Version 2.0
