@@ -19,10 +19,12 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
+import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
+import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -34,6 +36,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,14 +58,15 @@ public class RunWriteRandomDataTaskOnECS {
 
     private final SystemTestProperties systemTestProperties;
     private final TableProperties tableProperties;
+    private final AmazonECS ecsClient;
 
-    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, TableProperties tableProperties) {
+    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, TableProperties tableProperties, AmazonECS ecsClient) {
         this.systemTestProperties = systemTestProperties;
         this.tableProperties = tableProperties;
+        this.ecsClient = ecsClient;
     }
 
-    public void run() throws InterruptedException {
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+    public List<RunTaskResult> run() throws InterruptedException {
 
         List<String> args = Arrays.asList(
                 systemTestProperties.get(CONFIG_BUCKET),
@@ -89,32 +94,42 @@ public class RunWriteRandomDataTaskOnECS {
                 .withPropagateTags(PropagateTags.TASK_DEFINITION)
                 .withPlatformVersion(systemTestProperties.get(FARGATE_VERSION));
 
+        List<RunTaskResult> results = new ArrayList<>();
         for (int i = 0; i < systemTestProperties.getInt(NUMBER_OF_WRITERS); i++) {
             if (i > 0 && i % 10 == 0) {
+                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in a second
                 Thread.sleep(10 * 1000L);
                 LOGGER.debug("10 tasks submitted, sleeping for 10 seconds");
             }
-            ecsClient.runTask(runTaskRequest);
-            // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in a second
+            RunTaskResult result = ecsClient.runTask(runTaskRequest);
+            List<Failure> failures = result.getFailures();
+            if (!failures.isEmpty()) {
+                throw new ECSFailureException("Failures running task " + i + ": " + failures);
+            }
+            results.add(result);
         }
         LOGGER.debug("Ran {} tasks", systemTestProperties.getInt(NUMBER_OF_WRITERS));
-
-        ecsClient.shutdown();
+        return results;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (2 != args.length) {
-            System.out.println("Usage: <instance id> <table name>");
+        if (args.length < 2 || args.length > 3) {
+            System.out.println("Usage: <instance id> <table name> <optional_output_file>");
             return;
         }
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, systemTestProperties).getTableProperties(args[1]);
-        RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties);
-        runWriteRandomDataTaskOnECS.run();
+        RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
+        List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
+        if (args.length > 2) {
+            TasksJson.writeToFile(results, Paths.get(args[2]));
+        }
 
         s3Client.shutdown();
+        ecsClient.shutdown();
     }
 }

@@ -18,7 +18,7 @@ package sleeper.status.report.job.query;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.ClientUtils.optionalArgument;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class JobQueryArgument {
 

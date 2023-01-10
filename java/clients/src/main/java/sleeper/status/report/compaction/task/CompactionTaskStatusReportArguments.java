@@ -17,7 +17,7 @@ package sleeper.status.report.compaction.task;
 
 import java.io.PrintStream;
 
-import static sleeper.ClientUtils.optionalArgument;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class CompactionTaskStatusReportArguments {
 

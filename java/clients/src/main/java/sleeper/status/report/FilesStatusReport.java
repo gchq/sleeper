@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Crown Copyright
+ * Copyright 2022 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-
-import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
@@ -33,6 +31,7 @@ import sleeper.status.report.filestatus.FileStatusCollector;
 import sleeper.status.report.filestatus.FileStatusReporter;
 import sleeper.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.util.HashMap;

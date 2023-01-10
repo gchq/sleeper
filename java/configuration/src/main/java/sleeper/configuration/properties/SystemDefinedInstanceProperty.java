@@ -61,6 +61,7 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
     GARBAGE_COLLECTOR_CLOUDWATCH_RULE("sleeper.gc.rule"),
 
     // Ingest
+    INGEST_LAMBDA_FUNCTION("sleeper.ingest.lambda.function"),
     INGEST_CLOUDWATCH_RULE("sleeper.ingest.rule"),
     INGEST_JOB_QUEUE_URL("sleeper.ingest.job.queue.url"),
     INGEST_JOB_DLQ_URL("sleeper.ingest.job.dlq.url"),

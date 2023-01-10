@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,19 +22,21 @@ import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriterFactory;
 
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
-import static sleeper.ClientUtils.countWithCommas;
-import static sleeper.ClientUtils.decimalWithCommas;
+import static sleeper.util.ClientUtils.countWithCommas;
+import static sleeper.util.ClientUtils.decimalWithCommas;
 
 public class StandardProcessRunReporter {
 
     public static final TableFieldDefinition TASK_ID = TableFieldDefinition.field("TASK_ID");
     public static final TableFieldDefinition START_TIME = TableFieldDefinition.field("START_TIME");
     public static final TableFieldDefinition FINISH_TIME = TableFieldDefinition.field("FINISH_TIME");
-    public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION (s)");
+    public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION");
     public static final TableFieldDefinition LINES_READ = TableFieldDefinition.numeric("LINES_READ");
     public static final TableFieldDefinition LINES_WRITTEN = TableFieldDefinition.numeric("LINES_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
@@ -74,7 +76,7 @@ public class StandardProcessRunReporter {
         if (run.isFinished()) {
             out.printf("Finish Time: %s%n", run.getFinishTime());
             out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
-            out.printf("Duration: %ss%n", getDurationInSeconds(run));
+            out.printf("Duration: %s%n", getDurationInSeconds(run));
             out.printf("Lines Read: %s%n", getLinesRead(run));
             out.printf("Lines Written: %s%n", getLinesWritten(run));
             out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
@@ -96,7 +98,7 @@ public class StandardProcessRunReporter {
     }
 
     public static String getDurationInSeconds(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getDurationInSeconds()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDurationString((long) (summary.getDurationInSeconds() * 1000)));
     }
 
     public static String getLinesRead(ProcessRun run) {
@@ -117,6 +119,17 @@ public class StandardProcessRunReporter {
 
     public static String formatDecimal(double value) {
         return decimalWithCommas("%.2f", value);
+    }
+
+    private static String formatDurationString(long millis) {
+        return formatDurationString(Duration.ofMillis(millis));
+    }
+
+    public static String formatDurationString(Duration duration) {
+        return duration.toString()
+                .substring(2)
+                .replaceAll("(\\d[HMS])(?!$)", "$1 ") // Separate units using a space e.g "1h 2m 3s"
+                .toLowerCase(Locale.ROOT);
     }
 
     public static <I, O> O getOrNull(I object, Function<I, O> getter) {

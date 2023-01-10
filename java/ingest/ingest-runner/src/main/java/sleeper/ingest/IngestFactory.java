@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package sleeper.ingest;
 
 import org.apache.hadoop.conf.Configuration;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -34,6 +32,7 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -130,7 +129,7 @@ public class IngestFactory {
             return AsyncS3PartitionFileWriterFactory.builderWith(tableProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
-                    .s3AsyncClient(s3AsyncClient)
+                    .s3AsyncClientOrDefaultFromProperties(s3AsyncClient, instanceProperties)
                     .build();
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
