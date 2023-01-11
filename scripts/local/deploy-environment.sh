@@ -28,5 +28,8 @@ else
   CDK_PARAMS=("$@")
 fi
 
-cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "./environments/$INSTANCE_ID-outputs.json" "${CDK_PARAMS[@]}"
-echo "$INSTANCE_ID" > "./environments/current.txt"
+ENVIRONMENTS_DIR="./environments"
+
+cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$ENVIRONMENTS_DIR/$INSTANCE_ID-outputs.json" "${CDK_PARAMS[@]}"
+mv "$INSTANCE_ID-BuildEC2.pem" "$ENVIRONMENTS_DIR"
+echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
