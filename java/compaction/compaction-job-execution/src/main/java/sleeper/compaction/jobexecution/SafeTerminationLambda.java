@@ -173,12 +173,12 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         Set<String> emptyInstances = new TreeSet<>();
 
         for (InstanceDetails d : detailsIt) {
+            if (d.numPendingTasks + d.numRunningTasks == 0) {
+                emptyInstances.add(d.instanceId);
+            }
             // running out of time?
             if (emptyInstances.size() >= suggestedSize || context.getRemainingTimeInMillis() < SAFE_TIME_LIMIT) {
                 break;
-            }
-            if (d.numPendingTasks + d.numRunningTasks == 0) {
-                emptyInstances.add(d.instanceId);
             }
         }
         return emptyInstances;
