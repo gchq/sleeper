@@ -60,7 +60,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, "5");
 
         // Then
-        assertThat(testSleeperProperties.getLong(PAGE_SIZE)).isEqualTo(new Long(5));
+        assertThat(testSleeperProperties.getLong(PAGE_SIZE)).isEqualTo(Long.valueOf(5L));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, "5");
 
         // Then
-        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(new Integer(5));
+        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
     }
 
     @Test
@@ -85,7 +85,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.setNumber(PAGE_SIZE, null);
 
         // Then
-        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(new Integer(5));
+        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, null);
 
         // Then
-        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(new Integer(5));
+        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(Integer.valueOf(5));
     }
 
     @Test
