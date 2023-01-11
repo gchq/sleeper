@@ -2,5 +2,6 @@
 build/
 dev/
 generated/
+local/
 deploy/buildAndDeploy.sh
 test/buildDeployTest.sh
