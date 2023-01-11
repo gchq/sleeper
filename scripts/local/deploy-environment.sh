@@ -23,7 +23,10 @@ fi
 INSTANCE_ID=$1
 
 if [ "$#" -lt 2 ]; then
-  cdk deploy -c instanceId="$INSTANCE_ID" --all
+	CDK_PARAMS=("--all")
 else
-  cdk deploy -c instanceId="$INSTANCE_ID" "$@"
+  CDK_PARAMS=("$@")
 fi
+
+cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "./environments/$INSTANCE_ID-outputs.json" "${CDK_PARAMS[@]}"
+echo "$INSTANCE_ID" > "./environments/current.txt"
