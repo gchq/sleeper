@@ -39,4 +39,5 @@ RUN apt-get install -y openjdk-17-jre
 WORKDIR /sleeper
 COPY . .
 
+ENV PATH /sleeper/bin:$PATH
 CMD bash

@@ -37,4 +37,4 @@ mv "$INSTANCE_ID-BuildEC2.pem" "$ENVIRONMENTS_DIR"
 echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
 
 # Wait for deployment, scan SSH to remember EC2 certificate
-"$THIS_DIR/scan-ssh.sh"
+"$THIS_DIR/scan-ssh"
