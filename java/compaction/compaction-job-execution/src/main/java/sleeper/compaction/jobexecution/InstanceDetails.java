@@ -60,7 +60,7 @@ public class InstanceDetails {
     public final int numPendingTasks;
 
     /** The number of ECS container instances to retrieve in one API call. */
-    public final static int INSTANCE_PAGE_SIZE = 25;
+    public final static int INSTANCE_PAGE_SIZE = 50;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
 
