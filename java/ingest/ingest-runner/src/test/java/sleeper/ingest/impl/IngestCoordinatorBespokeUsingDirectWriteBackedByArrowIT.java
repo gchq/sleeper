@@ -17,10 +17,10 @@ package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
@@ -55,7 +55,7 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfig
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
-    @ClassRule
+    @RegisterExtension
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
             LocalStackContainer.Service.DYNAMODB);
