@@ -36,7 +36,8 @@ mvn clean install -Pquick
 popd
 
 echo "$VERSION" > "$VERSION_FILE"
-cp  "$ENVIRONMENT_MAVEN_DIR/target/cdk-environment-$VERSION-utility.jar" "$THIS_DIR/cdk-environment.jar"
+mkdir -p "$THIS_DIR/jars"
+cp "$ENVIRONMENT_MAVEN_DIR/target/cdk-environment-$VERSION-utility.jar" "$THIS_DIR/jars/cdk-environment.jar"
 
 END_MAVEN_BUILD_TIME=$(record_time)
 echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
