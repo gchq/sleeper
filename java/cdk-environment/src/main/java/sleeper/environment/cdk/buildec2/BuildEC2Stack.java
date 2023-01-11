@@ -71,7 +71,7 @@ public class BuildEC2Stack extends Stack {
                 .keyName(key.getKeyName())
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();
-        instance.getInstance().addDependsOn(key);
+        instance.getInstance().addDependency(key);
 
         CfnOutput.Builder.create(this, "ConnectCommand")
                 .value("ssh -i " + keyFile + " " + image.loginUser() + "@" + instance.getInstancePublicIp())

@@ -20,6 +20,7 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
 import software.amazon.awscdk.services.ec2.GatewayVpcEndpointAwsService;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.IpAddresses;
 import software.amazon.awscdk.services.ec2.SubnetConfiguration;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.SubnetType;
@@ -37,27 +38,27 @@ public class NetworkingStack extends Stack {
         super(scope, props.getStackName(), props);
 
         vpc = Vpc.Builder.create(this, "Vpc")
-                .cidr("10.0.0.0/16")
+                .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
                 .maxAzs(1)
                 .subnetConfiguration(Arrays.asList(
                         SubnetConfiguration.builder().name("public")
                                 .subnetType(SubnetType.PUBLIC)
                                 .cidrMask(26).build(),
                         SubnetConfiguration.builder().name("private")
-                                .subnetType(SubnetType.PRIVATE_WITH_NAT)
+                                .subnetType(SubnetType.PRIVATE_WITH_EGRESS)
                                 .cidrMask(19).build()))
                 .build();
 
         GatewayVpcEndpoint.Builder.create(this, "S3").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.S3)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
-                        .subnetType(SubnetType.PRIVATE_WITH_NAT).build()))
+                        .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))
                 .build();
 
         GatewayVpcEndpoint.Builder.create(this, "DynamoDB").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.DYNAMODB)
                 .subnets(Collections.singletonList(SubnetSelection.builder()
-                        .subnetType(SubnetType.PRIVATE_WITH_NAT).build()))
+                        .subnetType(SubnetType.PRIVATE_WITH_EGRESS).build()))
                 .build();
     }
 
