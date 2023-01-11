@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2022 Crown Copyright
+  ~ Copyright 2022-2023 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -135,10 +135,10 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../ingest/ingest-runner/target/ingest-runner-${project.version}-utility.jar
+                ${project.basedir}/../ingest/ingest-starter/target/ingest-starter-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>ingest-${project.version}.jar</destName>
+            <destName>ingest-starter-${project.version}.jar</destName>
         </file>
         <file>
             <source>${project.basedir}/../metrics/target/metrics-${project.version}-utility.jar</source>

@@ -65,8 +65,8 @@ public class InstanceDetails {
     private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
 
     public InstanceDetails(String instanceId, String instanceArn, Instant registered, int availableCPU,
-            int availableRAM, int totalCPU,
-            int totalRAM, int numRunningTasks, int numPendingTasks) {
+                    int availableRAM, int totalCPU,
+                    int totalRAM, int numRunningTasks, int numPendingTasks) {
         super();
         this.instanceId = instanceId;
         this.instanceArn = instanceArn;
@@ -80,11 +80,11 @@ public class InstanceDetails {
     }
 
     /**
-     * Find details of EC2 instances in an ECS cluster. Inspects the cluster to find
-     * the details of all the instances.
+     * Find details of EC2 instances in an ECS cluster. Inspects the cluster to find the details of
+     * all the instances.
      *
      * @param ecsClusterName the cluster name
-     * @param ecsClient      the client connection
+     * @param ecsClient the client connection
      * @return map of instance IDs to details
      */
     public static Map<String, InstanceDetails> fetchInstanceDetails(String ecsClusterName, AmazonECS ecsClient) {
@@ -96,12 +96,11 @@ public class InstanceDetails {
     }
 
     /**
-     * Gets an {@link java.lang.Iterable} object that iterates over the instance
-     * details of
-     * machines in a cluster.
+     * Gets an {@link java.lang.Iterable} object that iterates over the instance details of machines
+     * in a cluster.
      *
      * @param ecsClusterName ECS cluster name to inspect
-     * @param ecsClient      Amazon ECS client
+     * @param ecsClient Amazon ECS client
      * @return iterable object for instances in a cluster
      */
     public static Iterable<InstanceDetails> iterateInstances(String ecsClusterName, AmazonECS ecsClient) {
@@ -143,9 +142,9 @@ public class InstanceDetails {
                 }
                 this.pageSize = pageSize;
                 this.req = new ListContainerInstancesRequest()
-                        .withCluster(ecsClusterName)
-                        .withMaxResults(pageSize)
-                        .withStatus("ACTIVE");
+                                .withCluster(ecsClusterName)
+                                .withMaxResults(pageSize)
+                                .withStatus("ACTIVE");
             }
 
             private boolean refillQueue() {
@@ -162,8 +161,8 @@ public class InstanceDetails {
                     }
                     // now get a description of these instances
                     DescribeContainerInstancesRequest conReq = new DescribeContainerInstancesRequest()
-                            .withCluster(ecsClusterName)
-                            .withContainerInstances(result.getContainerInstanceArns());
+                                    .withCluster(ecsClusterName)
+                                    .withContainerInstances(result.getContainerInstanceArns());
                     DescribeContainerInstancesResult containersResult = ecsClient.describeContainerInstances(conReq);
                     LOGGER.debug("Received details on {} instances", containersResult.getContainerInstances().size());
                     for (ContainerInstance c : containersResult.getContainerInstances()) {
@@ -171,15 +170,15 @@ public class InstanceDetails {
                         List<Resource> totalResources = c.getRegisteredResources();
                         List<Resource> remainingResources = c.getRemainingResources();
                         instanceQueue.add(new InstanceDetails(
-                                c.getEc2InstanceId(),
-                                c.getContainerInstanceArn(),
-                                c.getRegisteredAt().toInstant(),
-                                findResourceAmount("CPU", remainingResources),
-                                findResourceAmount("MEMORY", remainingResources),
-                                findResourceAmount("CPU", totalResources),
-                                findResourceAmount("MEMORY", totalResources),
-                                c.getRunningTasksCount(),
-                                c.getPendingTasksCount()));
+                                        c.getEc2InstanceId(),
+                                        c.getContainerInstanceArn(),
+                                        c.getRegisteredAt().toInstant(),
+                                        findResourceAmount("CPU", remainingResources),
+                                        findResourceAmount("MEMORY", remainingResources),
+                                        findResourceAmount("CPU", totalResources),
+                                        findResourceAmount("MEMORY", totalResources),
+                                        c.getRunningTasksCount(),
+                                        c.getPendingTasksCount()));
                     }
                     return true;
                 } else {
@@ -209,11 +208,10 @@ public class InstanceDetails {
     }
 
     /**
-     * Find the amount of the given resource in the list of resources. The list is
-     * inspected for the
+     * Find the amount of the given resource in the list of resources. The list is inspected for the
      * named resource and returned as an integer.
      *
-     * @param name      the resource name to find
+     * @param name the resource name to find
      * @param resources the list of resources
      * @return the amount, or 0 if not known
      * @throws IllegalStateException if the resource type is not INTEGER
@@ -223,7 +221,7 @@ public class InstanceDetails {
             if (r.getName().equals(name)) {
                 if (!r.getType().equals("INTEGER")) {
                     throw new java.lang.IllegalStateException(
-                            "resource " + name + " has type " + r.getType() + " instead of INTEGER");
+                                    "resource " + name + " has type " + r.getType() + " instead of INTEGER");
                 }
                 return r.getIntegerValue();
             }
@@ -231,9 +229,9 @@ public class InstanceDetails {
         return 0;
     }
 
-    public static void main(String args) {
+    public static void main(String... args) {
         Map<String, InstanceDetails> m = InstanceDetails.fetchInstanceDetails(args[0],
-                AmazonECSClientBuilder.defaultClient());
+                        AmazonECSClientBuilder.defaultClient());
         System.out.println(m);
     }
 }

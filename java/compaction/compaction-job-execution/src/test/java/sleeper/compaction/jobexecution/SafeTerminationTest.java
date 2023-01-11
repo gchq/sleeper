@@ -15,21 +15,95 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.services.lambda.runtime.ClientContext;
+import com.amazonaws.services.lambda.runtime.CognitoIdentity;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SafeTerminationTest {
+
+    /** Fake Lambda context class. */
+    public static class FakeContext implements Context {
+
+        @Override
+        public String getAwsRequestId() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getLogGroupName() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getLogStreamName() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getFunctionName() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getFunctionVersion() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public String getInvokedFunctionArn() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public CognitoIdentity getIdentity() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public ClientContext getClientContext() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public int getRemainingTimeInMillis() {
+            return 10000;
+        }
+
+        @Override
+        public int getMemoryLimitInMB() {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public LambdaLogger getLogger() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+    }
+
     /**
      * Custom termination Lambda input test from
      * https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html.
@@ -166,57 +240,45 @@ public class SafeTerminationTest {
 
     public static final Set<String> EXPECTED_SET = new HashSet<>(Arrays.asList("i-0056faf8da3e1f75d", "i-02e1c69383a3ed501", "i-036bc44b6092c01c7"));
 
-    public static final String JSON_RESPONSE = "{\"InstanceIDs\":[\"i-02e1c69383a3ed501\",\"i-0056faf8da3e1f75d\",\"i-036bc44b6092c01c7\"]}";
-    public static final String JSON_RESPONSE_LIMIT = "{\"InstanceIDs\":[\"i-02e1c69383a3ed501\"]}";
+    public static final String JSON_RESPONSE = "{\"InstanceIDs\":[\"id1\",\"id2\",\"id3\"]}";
+    public static final String JSON_RESPONSE_LIMIT = "{\"InstanceIDs\":[\"id1\"]}";
 
-    public static final Map<String, InstanceDetails> INSTANCE_MAP = new HashMap<>();
-    public static final Map<String, InstanceDetails> INSTANCE_MAP_LIMIT = new HashMap<>();
+    public static final List<InstanceDetails> INSTANCE_LIST = new ArrayList<>();
+    public static final List<InstanceDetails> INSTANCE_LIST_LIMIT = new ArrayList<>();
 
     static {
-        INSTANCE_MAP.put("i-0056faf8da3e1f75d", new InstanceDetails("arn", Instant.now(), 1, 1, 1, 1, 0, 0));
-        INSTANCE_MAP.put("i-02e1c69383a3ed501", new InstanceDetails("arn", Instant.now(), 1, 1, 1, 1, 0, 0));
-        INSTANCE_MAP.put("i-036bc44b6092c01c7", new InstanceDetails("arn", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new InstanceDetails("id2", "arn2", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new InstanceDetails("id3", "arn3", Instant.now(), 1, 1, 1, 1, 0, 0));
 
-        INSTANCE_MAP_LIMIT.put("i-02e1c69383a3ed501", new InstanceDetails("arn", Instant.now(), 1, 1, 1, 1, 0, 0));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void shouldThrowOnNullReader() {
-        SafeTerminationLambda.extractSuggestedIDs(null);
-    }
-
-    @Test
-    public void shouldReturnInstanceList() {
-        // Given input string
-        StringReader input = new StringReader(IN_TEST);
-
-        // When
-        Set<String> actual = SafeTerminationLambda.extractSuggestedIDs(input);
-
-        // Then
-        assertThat(actual).containsExactlyInAnyOrderElementsOf(EXPECTED_SET);
+        INSTANCE_LIST_LIMIT.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
     }
 
     @Test(expected = NullPointerException.class)
     public void throwOnNullDetails() {
-        SafeTerminationLambda.findEmptyInstances(null, 0);
+        SafeTerminationLambda.findEmptyInstances(null, 0, new FakeContext());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void throwOnNegativeSize() {
-        SafeTerminationLambda.findEmptyInstances(new HashMap<>(), -1);
+        SafeTerminationLambda.findEmptyInstances(new ArrayList<>(), -1, new FakeContext());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void throwOnNullContext() {
+        SafeTerminationLambda.findEmptyInstances(new ArrayList<>(), 0, null);
     }
 
     @Test
     public void shouldFindZeroEmptyInstances() {
         // Given
-        Map<String, InstanceDetails> details = new HashMap<>();
-        details.put("i-111", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
-        details.put("i-222", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.put("i-333", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 1, 0));
+        List<InstanceDetails> details = new ArrayList<>();
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 0));
 
         // When
-        Set<String> empties = SafeTerminationLambda.findEmptyInstances(details, 3);
+        Set<String> empties = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
 
         // Then
         assertThat(empties).isEmpty();
@@ -225,62 +287,67 @@ public class SafeTerminationTest {
     @Test
     public void shouldFindOneEmptyInstances() {
         // Given
-        Map<String, InstanceDetails> details = new HashMap<>();
-        details.put("i-111", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.put("i-222", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.put("i-333", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 1, 0));
+        List<InstanceDetails> details = new ArrayList<>();
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
 
         // When
-        Set<String> single = SafeTerminationLambda.findEmptyInstances(details, 3);
+        Set<String> single = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
 
         // Then
-        assertThat(single).containsExactly("i-111");
+        assertThat(single).containsExactly("id3");
     }
 
     @Test
     public void shouldFindMultiEmptyInstances() {
         // Given
-        Map<String, InstanceDetails> details = new HashMap<>();
-        details.put("i-111", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.put("i-222", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.put("i-333", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
+        List<InstanceDetails> details = new ArrayList<>();
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
 
         // When
-        Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 3);
+        Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
 
         // Then
-        assertThat(multi).containsExactlyInAnyOrder("i-111", "i-222");
+        assertThat(multi).containsExactlyInAnyOrder("id1", "id3");
     }
 
     @Test
     public void shouldFindAndLimitMultiEmptyInstances() {
         // Given
-        Map<String, InstanceDetails> details = new HashMap<>();
-        details.put("i-111", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.put("i-222", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.put("i-333", new InstanceDetails("someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
+        List<InstanceDetails> details = new ArrayList<>();
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
 
         // When
-        Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 1);
+        Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 1, new FakeContext());
 
         // Then
         assertThat(multi).hasSize(1);
-        assertThat(multi).containsAnyOf("i-111", "i-222");
+        assertThat(multi).containsAnyOf("id1", "id3");
     }
 
     @Test(expected = NullPointerException.class)
     public void throwOnNullReader() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(null, new StringWriter(), INSTANCE_MAP);
+        SafeTerminationLambda.suggestIDsToTerminate(null, new StringWriter(), INSTANCE_LIST, new FakeContext());
     }
 
     @Test(expected = NullPointerException.class)
     public void throwOnNullWriter() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), null, INSTANCE_MAP);
+        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), null, INSTANCE_LIST, new FakeContext());
     }
 
     @Test(expected = NullPointerException.class)
     public void throwOnNullInstances() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), new StringWriter(), null);
+        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), new StringWriter(), null, new FakeContext());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void throwOnNullContextSuggestions() throws IOException {
+        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), new StringWriter(), INSTANCE_LIST, null);
     }
 
     @Test
@@ -290,7 +357,7 @@ public class SafeTerminationTest {
         StringWriter output = new StringWriter();
 
         // When
-        SafeTerminationLambda.suggestIDsToTerminate(input, output, INSTANCE_MAP);
+        SafeTerminationLambda.suggestIDsToTerminate(input, output, INSTANCE_LIST, new FakeContext());
 
         // Then
         assertThat(output.toString()).isEqualToIgnoringWhitespace(JSON_RESPONSE);
@@ -303,7 +370,7 @@ public class SafeTerminationTest {
         StringWriter output = new StringWriter();
 
         // When
-        SafeTerminationLambda.suggestIDsToTerminate(input, output, INSTANCE_MAP_LIMIT);
+        SafeTerminationLambda.suggestIDsToTerminate(input, output, INSTANCE_LIST_LIMIT, new FakeContext());
 
         // Then
         assertThat(output.toString()).isEqualToIgnoringWhitespace(JSON_RESPONSE_LIMIT);

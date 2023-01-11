@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.query.model.output;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
@@ -44,13 +45,8 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
 
         String maxBatchSize = config.get(MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
-
-        addOutputLocations();
-    }
-
-    private void addOutputLocations() {
-        this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", this.getEndpoint()));
-        this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", this.getConnectionId()));
+        this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", config.get(ENDPOINT)));
+        this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", config.get(CONNECTION_ID)));
     }
 
     @Override

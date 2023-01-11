@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -342,19 +342,18 @@ public class CompactionStack extends NestedStack {
                         instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
         Function handler = Function.Builder
-                        .create(this, "JobCreationLambda")
-                        .functionName(functionName)
-                        .description(
-                                        "Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
-                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
-                        .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
-                        .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                        .code(code)
-                        .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
-                        .environment(environmentVariables)
-                        .reservedConcurrentExecutions(1)
-                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build();
+                .create(this, "JobCreationLambda")
+                .functionName(functionName)
+                .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .code(code)
+                .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
+                .environment(environmentVariables)
+                .reservedConcurrentExecutions(1)
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
 
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
@@ -751,18 +750,18 @@ public class CompactionStack extends NestedStack {
                         instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
         Function handler = Function.Builder
-                        .create(this, "CompactionTasksCreator")
-                        .functionName(functionName)
-                        .description("If there are compaction jobs on queue create tasks to run them")
-                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
-                        .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
-                        .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                        .code(code)
-                        .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
-                        .environment(environmentVariables)
-                        .reservedConcurrentExecutions(1)
-                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build();
+                .create(this, "CompactionTasksCreator")
+                .functionName(functionName)
+                .description("If there are compaction jobs on queue create tasks to run them")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .code(code)
+                .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
+                .environment(environmentVariables)
+                .reservedConcurrentExecutions(1)
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
 
         // Grant this function permission to read from the S3 bucket
         configBucket.grantRead(handler);
@@ -813,18 +812,18 @@ public class CompactionStack extends NestedStack {
                         instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
 
         Function handler = Function.Builder
-                        .create(this, "SplittingCompactionTasksCreator")
-                        .functionName(functionName)
-                        .description("If there are splitting compaction jobs on queue create tasks to run them")
-                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
-                        .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
-                        .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                        .code(code)
-                        .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
-                        .environment(environmentVariables)
-                        .reservedConcurrentExecutions(1)
-                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .build();
+                .create(this, "SplittingCompactionTasksCreator")
+                .functionName(functionName)
+                .description("If there are splitting compaction jobs on queue create tasks to run them")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .code(code)
+                .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
+                .environment(environmentVariables)
+                .reservedConcurrentExecutions(1)
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
 
         // Grant this function permission to read from the config S3 bucket
         configBucket.grantRead(handler);
