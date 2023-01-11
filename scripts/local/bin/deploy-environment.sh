@@ -15,14 +15,26 @@
 
 set -e
 
+if [ "$#" -lt 1 ]; then
+	echo "Usage: $0 <uniqueId> <optional_cdk_parameters>"
+	exit 1
+fi
+
+INSTANCE_ID=$1
+
+if [ "$#" -lt 2 ]; then
+	CDK_PARAMS=("--all")
+else
+  CDK_PARAMS=("$@")
+fi
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR="$THIS_DIR/environments"
-INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
 OUTPUTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-outputs.json"
-KNOWN_HOSTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-known_hosts"
-PRIVATE_KEY_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-BuildEC2.pem"
 
-USER=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
-EC2_IP=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
+cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
+mv "$INSTANCE_ID-BuildEC2.pem" "$ENVIRONMENTS_DIR"
+echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
 
-ssh -i "$PRIVATE_KEY_FILE" -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -t "$USER@$EC2_IP" screen -d -RR
+# Wait for deployment, scan SSH to remember EC2 certificate
+"$THIS_DIR/scan-ssh.sh"
