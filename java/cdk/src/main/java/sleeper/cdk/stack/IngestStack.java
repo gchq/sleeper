@@ -266,7 +266,7 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketArn(this,
                 "jarsBucket-ingest",
                 "arn:aws:s3:::" + instanceProperties.get(JARS_BUCKET));
-        Code code = Code.fromBucket(jarsBucket, "ingest-" + instanceProperties.get(VERSION) + ".jar");
+        Code code = Code.fromBucket(jarsBucket, "ingest-starter-" + instanceProperties.get(VERSION) + ".jar");
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -280,7 +280,7 @@ public class IngestStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .code(code)
-                .handler("sleeper.ingest.job.RunTasksLambda::eventHandler")
+                .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
