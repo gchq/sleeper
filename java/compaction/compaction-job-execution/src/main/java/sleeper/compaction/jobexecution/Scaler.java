@@ -142,7 +142,7 @@ public class Scaler {
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, asg.getMaxSize());
         LOGGER.info("Total containers wanted (including existing ones) {}, containers per instance {}, " +
-                        ", so total instances wanted {}, limited to {} by ASG", numberContainers, containersPerInstance,
+                        "so total instances wanted {}, limited to {} by ASG maximum", numberContainers, containersPerInstance,
                         instancesDesired, newClusterSize);
 
         // Set the new desired size on the cluster
