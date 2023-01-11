@@ -21,7 +21,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/testIngest.sh"
+"$THIS_DIR/waitForIngest.sh"
 
 END_INGEST=$(record_time)
 
