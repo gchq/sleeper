@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class WaitForCompactionJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCompactionJobs.class);
     private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
+    private static final int MAX_POLLS = 120;
 
     private final CompactionJobStatusStore statusStore;
     private final String tableName;
