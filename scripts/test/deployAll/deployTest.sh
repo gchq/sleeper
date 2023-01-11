@@ -24,7 +24,7 @@ INSTANCE_ID=$1
 
 TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(dirname "$THIS_DIR")
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 JARS_DIR="$SCRIPTS_DIR/jars"
 TEMPLATE_DIR="$SCRIPTS_DIR/templates"
 GENERATED_DIR="$SCRIPTS_DIR/generated"
