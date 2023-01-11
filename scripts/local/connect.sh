@@ -15,7 +15,14 @@
 
 set -e
 
-if [ "$#" -lt 1 ]; then
-	echo "Usage: $0 <instanceId>"
-	exit 1
-fi
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+ENVIRONMENTS_DIR="$THIS_DIR/environments"
+INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+OUTPUTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-outputs.json"
+KNOWN_HOSTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-known_hosts"
+PRIVATE_KEY_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-BuildEC2.pem"
+
+USER=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+EC2_IP=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
+
+ssh -i "$PRIVATE_KEY_FILE" -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -t "$USER@$EC2_IP" screen -d -RR
