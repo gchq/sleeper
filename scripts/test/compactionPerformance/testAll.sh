@@ -15,20 +15,13 @@
 
 set -e
 
-if [ "$#" -ne 1 ]; then
-	echo "Usage: $0 <instanceId>"
-	exit 1
-fi
-
-INSTANCE_ID=$1
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/testIngest.sh" "$INSTANCE_ID"
+"$THIS_DIR/testIngest.sh"
 
 END_INGEST=$(record_time)
 echo "Ingest finished at $(recorded_time_str "$END_INGEST"), took $(elapsed_time_str "$END_PAUSE_SYSTEM" "$END_INGEST")"

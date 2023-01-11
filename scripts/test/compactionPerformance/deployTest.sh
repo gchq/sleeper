@@ -39,7 +39,7 @@ echo "--------------------------------------------------------------------------
 
 END_PAUSE_SYSTEM=$(record_time)
 
-"$THIS_DIR/testAll.sh" "$INSTANCE_ID"
+"$THIS_DIR/testAll.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
