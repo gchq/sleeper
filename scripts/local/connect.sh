@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,31 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:22.04
+set -e
 
-RUN apt-get update
-RUN apt-get install -y curl ssh
-
-# Install NodeJS (for AWS CDK)
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash
-RUN apt-get install -y nodejs
-
-# Install AWS CDK CLI
-RUN npm install -g aws-cdk
-
-# Install AWS CLI
-WORKDIR /aws
-RUN apt-get install -y unzip less
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-RUN unzip awscliv2.zip
-RUN ./aws/install
-RUN rm -rf /aws
-WORKDIR /
-
-# Install Java
-RUN apt-get install -y openjdk-17-jre
-
-WORKDIR /sleeper
-COPY . .
-
-CMD bash
+if [ "$#" -lt 1 ]; then
+	echo "Usage: $0 <instanceId>"
+	exit 1
+fi
