@@ -77,17 +77,13 @@ public class BuildEC2Stack extends Stack {
                 .value("ssh -i " + keyFile + " " + image.loginUser() + "@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
                 .build();
-        CfnOutput.Builder.create(this, "BuildEC2IP")
+        CfnOutput.Builder.create(this, "PublicIP")
                 .value(instance.getInstancePublicIp())
-                .description("IP for build EC2 instance")
+                .description("Public IP for build EC2 instance")
                 .build();
-        CfnOutput.Builder.create(this, "BuildEC2LoginUser")
+        CfnOutput.Builder.create(this, "LoginUser")
                 .value(image.loginUser())
                 .description("User to SSH into on build EC2 instance")
-                .build();
-        CfnOutput.Builder.create(this, "BuildEC2KeyFile")
-                .value(keyFile)
-                .description("SSH key for build EC2 instance")
                 .build();
     }
 

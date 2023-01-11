@@ -15,7 +15,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y curl ssh
+RUN apt-get install -y curl ssh jq
 
 # Install NodeJS (for AWS CDK)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash
