@@ -16,33 +16,13 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: $0 <uniqueId> <optional_cdk_parameters>"
+	echo "Usage: $0 <uniqueId>"
 	exit 1
 fi
 
 INSTANCE_ID=$1
 
-if [ "$#" -lt 2 ]; then
-	CDK_PARAMS=("--all")
-else
-  CDK_PARAMS=("$@")
-fi
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
-OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
-
-cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
 
 echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
-
-# If an EC2 was created, save SSH details
-SSH_KEY_FILE="$INSTANCE_ID-BuildEC2.pem"
-if [ -f "$SSH_KEY_FILE" ]; then
-
-  mv "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
-
-  # Wait for deployment, scan SSH to remember EC2 certificate
-  "$THIS_DIR/scan-ssh-build-ec2"
-fi
