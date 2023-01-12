@@ -31,10 +31,17 @@ fi
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
 OUTPUTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-outputs.json"
+SSH_KEY_FILE="$INSTANCE_ID-BuildEC2.pem"
 
 cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
-mv "$INSTANCE_ID-BuildEC2.pem" "$ENVIRONMENTS_DIR"
-echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
 
-# Wait for deployment, scan SSH to remember EC2 certificate
-"$THIS_DIR/scan-ssh"
+# If an EC2 was created, save SSH details
+if [ -f "$SSH_KEY_FILE" ]; then
+
+  mv "$SSH_KEY_FILE" "$ENVIRONMENTS_DIR"
+
+  # Wait for deployment, scan SSH to remember EC2 certificate
+  "$THIS_DIR/scan-ssh"
+fi
+
+echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
