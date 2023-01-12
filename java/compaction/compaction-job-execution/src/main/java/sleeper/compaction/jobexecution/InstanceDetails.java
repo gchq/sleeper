@@ -16,7 +16,6 @@
 package sleeper.compaction.jobexecution;
 
 import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
@@ -60,7 +59,7 @@ public class InstanceDetails {
     public final int numPendingTasks;
 
     /** The number of ECS container instances to retrieve in one API call. */
-    public final static int INSTANCE_PAGE_SIZE = 50;
+    public static final int INSTANCE_PAGE_SIZE = 75;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
 
@@ -116,7 +115,7 @@ public class InstanceDetails {
         /** Amazon client for HTTP requests to AWS. */
         public final AmazonECS ecsClient;
 
-        public InstanceDetailsIterable(String ecsClusterName, AmazonECS ecsClient) {
+        InstanceDetailsIterable(String ecsClusterName, AmazonECS ecsClient) {
             this.ecsClusterName = Objects.requireNonNull(ecsClusterName, "ecsClusterName");
             this.ecsClient = Objects.requireNonNull(ecsClient, "ecsClient");
         }
@@ -136,7 +135,7 @@ public class InstanceDetails {
             /** Queue to serve instances from. */
             private Queue<InstanceDetails> instanceQueue = new ArrayDeque<>();
 
-            public InstanceDetailsIterator(int pageSize) {
+            InstanceDetailsIterator(int pageSize) {
                 if (pageSize < 1) {
                     throw new IllegalArgumentException("pageSize must be > 0");
                 }
@@ -147,24 +146,36 @@ public class InstanceDetails {
                                 .withStatus("ACTIVE");
             }
 
+            /**
+             * AWS uses pagination to return blocks of data, so if the last request indicates there
+             * is more data, we make another request. If that comes back empty, then we assume there
+             * is no more data, else we check the "next token" field in the response to decide if there
+             * might be more data.
+             *
+             * @return true if the queue was filled with more instance data
+             */
             private boolean refillQueue() {
                 if (anotherPageWaiting) {
                     LOGGER.debug("Retrieving upto {} instances for ECS cluster {}", pageSize, ecsClusterName);
+
                     ListContainerInstancesResult result = ecsClient.listContainerInstances(req);
                     // More to come?
                     anotherPageWaiting = result.getNextToken() != null;
                     req = req.withNextToken(result.getNextToken());
+
                     // check to see if there are any at all
                     if (result.getContainerInstanceArns().isEmpty()) {
                         anotherPageWaiting = false;
                         return false;
                     }
+
                     // now get a description of these instances
                     DescribeContainerInstancesRequest conReq = new DescribeContainerInstancesRequest()
                                     .withCluster(ecsClusterName)
                                     .withContainerInstances(result.getContainerInstanceArns());
                     DescribeContainerInstancesResult containersResult = ecsClient.describeContainerInstances(conReq);
                     LOGGER.debug("Received details on {} instances", containersResult.getContainerInstances().size());
+
                     for (ContainerInstance c : containersResult.getContainerInstances()) {
                         // find the cpu and memory requirements
                         List<Resource> totalResources = c.getRegisteredResources();
@@ -181,7 +192,7 @@ public class InstanceDetails {
                                         c.getPendingTasksCount()));
                     }
                     return true;
-                } else {
+                } else { // no more data pages
                     return false;
                 }
             }
@@ -227,11 +238,5 @@ public class InstanceDetails {
             }
         }
         return 0;
-    }
-
-    public static void main(String... args) {
-        Map<String, InstanceDetails> m = InstanceDetails.fetchInstanceDetails(args[0],
-                        AmazonECSClientBuilder.defaultClient());
-        System.out.println(m);
     }
 }

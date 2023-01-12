@@ -16,6 +16,7 @@
 package sleeper.configuration;
 
 import org.apache.commons.lang3.tuple.Pair;
+
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;

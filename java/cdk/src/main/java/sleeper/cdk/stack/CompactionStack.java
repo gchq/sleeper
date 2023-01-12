@@ -17,13 +17,14 @@ package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.tuple.Pair;
+
 import sleeper.cdk.Utils;
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.core.ContainerConstants;
-import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
+import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
@@ -566,7 +567,7 @@ public class CompactionStack extends NestedStack {
 
         customTermination.addPermission("AutoscalingCall", Permission.builder()
                         .action("lambda:InvokeFunction")
-                        .principal(Role.fromRoleArn(this, type+"_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
+                        .principal(Role.fromRoleArn(this, type + "_role_arn", "arn:aws:iam::" + instanceProperties.get(ACCOUNT)
                                         + ":role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"))
                         .build());
 
