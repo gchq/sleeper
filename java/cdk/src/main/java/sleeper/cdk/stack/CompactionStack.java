@@ -717,9 +717,9 @@ public class CompactionStack extends NestedStack {
                         .environment(environmentVariables)
                         .handler("sleeper.compaction.jobexecution.SafeTerminationLambda::handleRequest")
                         .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                        .memorySize(256)
+                        .memorySize(200)
                         .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                        .timeout(Duration.seconds(5))
+                        .timeout(Duration.seconds(10))
                         .build();
 
         // Grant read to the config bucket
