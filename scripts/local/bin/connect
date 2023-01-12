@@ -17,7 +17,14 @@ set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
-INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+
+if [ "$#" -gt 0 ]; then
+	INSTANCE_ID=$1
+	echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+else
+  INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+fi
+
 OUTPUTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-known_hosts"
 PRIVATE_KEY_FILE="$ENVIRONMENTS_DIR/$INSTANCE_ID-BuildEC2.pem"
