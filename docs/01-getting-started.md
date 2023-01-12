@@ -7,39 +7,49 @@ use the status scripts to see how much data is in the system, run some example q
 what the system is doing. It is best to do this from an EC2 instance as a significant amount of code needs to be
 uploaded to AWS.
 
+### Dependencies
+
 Before running this demo functionality, you will need the following installed (see
 the [deployment guide](02-deployment-guide.md) for more information on getting set up correctly) and you will need your
 CLI to be logged into your AWS account:
 
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 8](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
+
+If AWS CDK has already been bootstrapped in the account, it will not need to be installed to deploy Sleeper using
+Docker. If AWS CDK has not previously been bootstrapped in this account, then it needs bootstrapping. This will require
+these to be installed:
+
+* [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
-If CDK has not previously been bootstrapped in this account, then it needs bootstrapping. The `cdk bootstrap ...`
-command cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet compiled into the JAR
-named in `cdk.json`. See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance on
-how to bootstrap CDK in your account.
+The `cdk bootstrap ...` command cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet
+compiled into the JAR named in `cdk.json`.
+See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance on how to bootstrap CDK
+in your account.
+
+Other dependencies if you want to build/deploy without using Docker:
+
+* [Java 11/17](https://openjdk.java.net/install/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
 
 ### Deployment environment
 
 You can use the CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Once the CLI is logged in
-to your AWS, and the CDK has been bootstrapped, run these commands in the directory `java/cdk-environment` to build and
+to your AWS, and the CDK has been bootstrapped, run these commands in the directory `scripts/local` to build and
 deploy the environment:
 
 ```bash
-mvn clean install -Pquick
-cdk deploy --all
+./build.sh
+./runInDocker.sh environment deploy TestEnvironment
 ```
 
-This will create an SSH key locally, and output a command to connect to the EC2 instance with that key. It should look
-like this:
+This will create an SSH key locally, and wait for the EC2 instance to be deployed.
+You can then SSH to it with this command:
 
 ```bash
-ssh -i SleeperEnvironment-BuildEC2.pem ubuntu@[ec2-public-ip]
+./runInDocker.sh environment connect
 ```
 
 Immediately after it's deployed, commands will run on this instance to install development tools. Once you're connected,
@@ -63,23 +73,37 @@ the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/late
 
 #### Managing environments
 
-You can deploy either the VPC or the EC2 independently, and specify an instance ID when deploying multiple
-instances, or an existing VPC to deploy the EC2 to:
+You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
+You must specify an environment ID when deploying an environment, and you can specify an environment to connect to.
+Parameters after the environment ID will be passed to a `cdk deploy` command.
 
 ```bash
-cdk deploy -c instanceId=MyEnvironment --all
-cdk deploy -c instanceId=EmptyEnvironment "*-Networking"
-cdk deploy -c instanceId=MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+./runInDocker.sh environment deploy MyEnvironment
+./runInDocker.sh environment deploy EmptyEnvironment "*-Networking"
+./runInDocker.sh environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+./runInDocker.sh environment connect OtherEnvironment
 ```
 
-You can tear down the deployed environment with `cdk destroy`. If you used an `instanceId` or only deployed certain
-parts, you'll need to specify those. Here are some examples:
+You can switch environments like this:
 
 ```bash
-cdk destroy --all
-cdk destroy -c instanceId=MyEnvironment --all
-cdk destroy -c instanceId=EmptyEnvironment "*-Networking"
+./runInDocker.sh environment set OtherEnvironment
+./runInDocker.sh environment connect
 ```
+
+You can tear down the deployed environment like this:
+
+```bash
+./runInDocker.sh environment destroy MyEnvironment
+```
+
+You can also tear down individual parts of the environment like this:
+
+```bash
+./runInDocker.sh environment destroy MyEnvironment "*-BuildEC2"
+```
+
+Parameters after the environment ID will be passed to a `cdk destroy` command.
 
 ### System test
 
@@ -97,7 +121,7 @@ zones).
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
-Then run:
+While connected to your EC2 instance, from the sleeper repository directory run:
 
 ```bash
 ./scripts/test/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
