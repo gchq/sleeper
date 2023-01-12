@@ -16,7 +16,7 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
+ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
 
 if [ "$#" -gt 0 ]; then
 	INSTANCE_ID=$1
@@ -28,9 +28,24 @@ fi
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
-PRIVATE_KEY_FILE="$ENVIRONMENT_DIR/BuildEC2.pem"
 
-USER=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
 EC2_IP=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
 
-ssh -i "$PRIVATE_KEY_FILE" -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -t "$USER@$EC2_IP" screen -d -RR
+echo "Scanning $EC2_IP"
+
+# Wait for deployment, scan SSH to remember EC2 certificate
+RETRY_NUM=30
+RETRY_EVERY=10
+NUM=$RETRY_NUM
+until ssh-keyscan -H "$EC2_IP" > "$KNOWN_HOSTS_FILE"
+do
+  1>&2 echo "Failed SSH scan with status $?, retrying $NUM more times, next in $RETRY_EVERY seconds"
+  sleep $RETRY_EVERY
+  ((NUM--))
+
+  if [ $NUM -eq 0 ]
+  then
+    1>&2 echo "SSH scan unsuccessful after $RETRY_NUM tries"
+    exit 1
+  fi
+done

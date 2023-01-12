@@ -15,36 +15,15 @@
 
 set -e
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
-
-list_environments() {
-  echo "Available environments:"
-  pushd "$ENVIRONMENTS_DIR" > /dev/null
-  dirs=(*/)
-  for dir in "${dirs[@]}"; do
-    name="${dir%/}"
-    if [ "$name" == "*" ]; then
-      echo "None found"
-    else
-      echo "$name"
-    fi
-  done
-  popd > /dev/null
-}
-
 if [ "$#" -lt 1 ]; then
-	echo "Usage: $0 <uniqueId>"
-  list_environments
+	echo "Usage: $0 <command>"
 	exit 1
 fi
 
-INSTANCE_ID=$1
+SUBCOMMAND=$1
+shift
 
-if [ -d "$ENVIRONMENTS_DIR/$INSTANCE_ID" ]; then
-  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
-else
-  echo "Environment not found: $INSTANCE_ID"
-  list_environments
-	exit 1
-fi
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../scripts/environment && pwd)
+
+"$SCRIPTS_DIR/$SUBCOMMAND.sh" "$@"

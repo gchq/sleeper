@@ -29,7 +29,7 @@ else
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
+ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
@@ -44,5 +44,5 @@ if [ -f "$SSH_KEY_FILE" ]; then
   mv "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
 
   # Wait for deployment, scan SSH to remember EC2 certificate
-  "$THIS_DIR/scan-environment-ssh"
+  "$THIS_DIR/scan-ssh"
 fi

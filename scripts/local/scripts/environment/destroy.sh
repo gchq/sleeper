@@ -31,7 +31,7 @@ else
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../environments && pwd)
+ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 
 cdk destroy -c instanceId="$INSTANCE_ID" "${CDK_PARAMS[@]}"
