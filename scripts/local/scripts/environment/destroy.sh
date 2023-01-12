@@ -16,7 +16,7 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: $0 <uniqueId> <optional_cdk_parameters>"
+	echo "Usage: environment destroy <uniqueId> <optional_cdk_parameters>"
 	exit 1
 fi
 

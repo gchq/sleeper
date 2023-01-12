@@ -16,7 +16,7 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: $0 <uniqueId> <optional_cdk_parameters>"
+	echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
 	exit 1
 fi
 
@@ -44,5 +44,5 @@ if [ -f "$SSH_KEY_FILE" ]; then
   mv "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
 
   # Wait for deployment, scan SSH to remember EC2 certificate
-  "$THIS_DIR/scan-ssh"
+  "$THIS_DIR/scan-ssh.sh"
 fi
