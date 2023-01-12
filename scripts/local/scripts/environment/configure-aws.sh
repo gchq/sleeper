@@ -15,29 +15,9 @@
 
 set -e
 
-if [ "$#" -lt 1 ]; then
-	echo "Usage: environment destroy <uniqueId> <optional_cdk_parameters>"
-	exit 1
-fi
-
-INSTANCE_ID=$1
-
-if [ "$#" -lt 2 ]; then
-	CDK_PARAMS=("--all")
-  DELETE_ENVIRONMENT_DIR=true
-else
-  CDK_PARAMS=("$@")
-  DELETE_ENVIRONMENT_DIR=false
-fi
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 
-"$THIS_DIR/configure-aws.sh"
-
-cdk destroy -c instanceId="$INSTANCE_ID" "${CDK_PARAMS[@]}"
-
-if [ "$DELETE_ENVIRONMENT_DIR" = true ]; then
-  rm -rf "$ENVIRONMENT_DIR"
+if [ ! -f ~/.aws/config ]; then
+  echo "No AWS configuration found. Running 'aws configure'"
+  aws configure
 fi
