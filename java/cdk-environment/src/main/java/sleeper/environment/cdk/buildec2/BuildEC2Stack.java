@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package sleeper.environment.cdk.buildec2;
 
-import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.util.MyIpUtil;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -35,6 +33,9 @@ import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
+
+import sleeper.environment.cdk.config.AppContext;
+import sleeper.environment.cdk.util.MyIpUtil;
 
 import java.security.KeyPair;
 import java.util.Collections;

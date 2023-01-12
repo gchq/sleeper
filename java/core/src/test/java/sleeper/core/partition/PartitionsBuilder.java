@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,10 @@ public class PartitionsBuilder {
     public PartitionsBuilder(Schema schema) {
         this.schema = schema;
         factory = new PartitionFactory(schema);
+    }
+
+    public PartitionsBuilder singlePartition(String id) {
+        return leavesWithSplits(Collections.singletonList(id), Collections.emptyList());
     }
 
     public PartitionsBuilder leavesWithSplits(List<String> ids, List<Object> splits) {

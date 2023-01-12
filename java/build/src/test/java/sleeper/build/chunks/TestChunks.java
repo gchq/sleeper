@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package sleeper.build.chunks;
+
+import com.google.common.collect.ImmutableMap;
 
 import sleeper.build.testutil.TestResources;
 
@@ -51,6 +53,9 @@ public class TestChunks {
         return ProjectChunk.chunk("ingest").name("Ingest")
                 .workflow("chunk-ingest.yaml")
                 .modulesArray("ingest")
+                .workflowOnlyProperties(ImmutableMap.of(
+                        "workflowOnlyString", "test-root-string",
+                        "otherWorkflowOnlyData", "{\"testString\":\"test-string\",\"testList\":[\"a\",\"b\"]}"))
                 .build();
     }
 

@@ -1,4 +1,4 @@
-# Copyright 2022 Crown Copyright
+# Copyright 2022-2023 Crown Copyright
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ARG TARGETARCH
-FROM nvcr.io/nvidia/rapidsai/rapidsai-core:22.10-cuda11.5-base-ubuntu20.04-py3.9 as base
+FROM nvcr.io/nvidia/rapidsai/rapidsai-core:22.12-cuda11.5-base-ubuntu20.04-py3.9 as base
 
 # Install some essentials
 RUN ["apt-get", "update"]
 RUN ["apt-get", "upgrade", "-y"]
-RUN ["apt-get", "install", "-y", "htop", "nano", "openjdk-8-jre-headless"]
+RUN ["apt-get", "install", "-y", "htop", "nano", "openjdk-11-jre-headless"]
 
 # Create proc. user
 RUN ["useradd", "-ms", "/bin/bash", "worker"]

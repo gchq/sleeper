@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.ingest.status.store.job;
 
 import org.junit.Test;
+
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
@@ -61,8 +62,8 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         // Given
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithFiles("file2");
-        Instant startedTime1 = Instant.now();
-        Instant startedTime2 = Instant.now();
+        Instant startedTime1 = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant startedTime2 = Instant.parse("2022-12-14T13:56:12.001Z");
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);

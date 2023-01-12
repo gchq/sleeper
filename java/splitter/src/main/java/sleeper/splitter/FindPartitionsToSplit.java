@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package sleeper.splitter;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
@@ -77,14 +78,12 @@ public class FindPartitionsToSplit {
         }
     }
 
-    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> fileInfos) throws StateStoreException, IOException {
-        // Find files in this partition
-        List<FileInfo> relevantFiles = getRelevantFileInfos(partition, fileInfos);
-        // Calculate number of records in partition
-        long numberOfRecordsInPartition = relevantFiles.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, numberOfRecordsInPartition);
-        if (numberOfRecordsInPartition >= splitThreshold) {
-            LOGGER.info("Partition {} needs splitting as (split threshold is {})", partition.getId(), splitThreshold);
+    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> activeFileInfos) throws IOException {
+        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
+        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
+        if (check.isNeedsSplitting()) {
+            LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
             if (relevantFiles.size() < maxFilesInJob) {
@@ -108,9 +107,9 @@ public class FindPartitionsToSplit {
         }
     }
 
-    public static List<FileInfo> getRelevantFileInfos(Partition partition, List<FileInfo> fileInfos) {
+    public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
         List<FileInfo> relevantFiles = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfos) {
+        for (FileInfo fileInfo : activeFileInfos) {
             if (fileInfo.getPartitionId().equals(partition.getId())) {
                 relevantFiles.add(fileInfo);
             }

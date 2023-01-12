@@ -11,3 +11,9 @@ chunks:
     name: Ingest
     workflow: chunk-ingest.yaml
     modules: [ ingest ]
+    workflowOnlyString: test-root-string
+    otherWorkflowOnlyData:
+      testString: test-string
+      testList:
+        - a
+        - b

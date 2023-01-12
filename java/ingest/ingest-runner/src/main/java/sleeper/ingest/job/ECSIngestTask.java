@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,14 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
@@ -39,7 +42,6 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -73,7 +75,8 @@ public class ECSIngestTask {
         String taskId = UUID.randomUUID().toString();
 
         IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
-                taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
+                taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
+                AsyncS3PartitionFileWriterFactory.s3AsyncClientFromProperties(instanceProperties),
                 ingestHadoopConfiguration(instanceProperties));
         ingestTask.run();
 

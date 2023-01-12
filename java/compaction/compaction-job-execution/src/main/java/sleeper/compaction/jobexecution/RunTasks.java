@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
@@ -44,7 +45,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -153,25 +153,27 @@ public class RunTasks {
         LOGGER.info("Queue size is {}", queueSize);
 
         // Obtain details of instances in this cluster
-        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
-        LOGGER.debug("Cluster container instances {}", details);
-        Set<String> recentContainerInstanceARNs = new HashSet<>();
+//        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
+        // Set<String> recentContainerInstanceARNs = new HashSet<>();
+
+        int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
+        LOGGER.info("Number of running tasks is {}", numRunningTasks);
+
+        int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
+        LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
+
+        // Do we need to scale?
+        if (launchType.equalsIgnoreCase("EC2")) {
+            int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
+            int totalTasks = maxNumTasksThatWillBeCreated + numRunningTasks;
+            LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
+            scaler.scaleTo(totalTasks);
+            // scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
+        }
 
         if (0 == queueSize) {
             LOGGER.info("Finishing as queue size is 0");
         } else {
-            int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
-            LOGGER.info("Number of running tasks is {}", numRunningTasks);
-
-            int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
-            LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
-
-            // Do we need to scale out?
-            int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-            if (launchType.equalsIgnoreCase("EC2")) {
-                scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
-            }
-
             List<String> args = new ArrayList<>();
             args.add(s3Bucket);
             args.add(type);
@@ -179,17 +181,17 @@ public class RunTasks {
             NetworkConfiguration networkConfiguration = networkConfig(subnet);
 
             // Create 1 task for each item on the queue
-            Set<String> newArns = launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
-            recentContainerInstanceARNs.addAll(newArns);
+            launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
+            // recentContainerInstanceARNs.addAll(newArns);
         }
 
-        try {
-            if (launchType.equalsIgnoreCase("EC2")) {
-                scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
-            }
-        } catch (AmazonClientException e) {
-            LOGGER.error("Scale-in exception", e);
-        }
+//        try {
+//            if (launchType.equalsIgnoreCase("EC2")) {
+//                scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
+//            }
+//        } catch (AmazonClientException e) {
+//            LOGGER.error("Scale-in exception", e);
+//        }
     }
 
     /**
@@ -216,7 +218,8 @@ public class RunTasks {
 
             try {
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                LOGGER.info(
+                                "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                                 clusterName, launchType, containerName, defUsed);
                 runTaskResult.getTasks().stream()
                                 .filter(task -> task.getContainerInstanceArn() != null)

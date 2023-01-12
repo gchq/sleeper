@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe.RegionJsonSerDe;
 import sleeper.core.schema.Schema;
@@ -86,6 +88,7 @@ public class PartitionSerDe {
         }
 
         @Override
+        @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
         public JsonElement serialize(Partition partition, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             json.addProperty(PARTITION_ID, partition.getId());

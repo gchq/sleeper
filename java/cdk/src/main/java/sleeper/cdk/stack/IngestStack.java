@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -53,6 +50,10 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -64,6 +65,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -264,7 +266,7 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketArn(this,
                 "jarsBucket-ingest",
                 "arn:aws:s3:::" + instanceProperties.get(JARS_BUCKET));
-        Code code = Code.fromBucket(jarsBucket, "ingest-" + instanceProperties.get(VERSION) + ".jar");
+        Code code = Code.fromBucket(jarsBucket, "ingest-starter-" + instanceProperties.get(VERSION) + ".jar");
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -274,11 +276,11 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestTasksCreator")
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .code(code)
-                .handler("sleeper.ingest.job.RunTasksLambda::eventHandler")
+                .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
@@ -312,6 +314,7 @@ public class IngestStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
+        instanceProperties.set(INGEST_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(INGEST_CLOUDWATCH_RULE, rule.getRuleName());
     }
 

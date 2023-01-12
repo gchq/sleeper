@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 Crown Copyright
+  ~ Copyright 2022-2023 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.13.0-SNAPSHOT</version>
+    <version>0.14.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -51,55 +51,80 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
+        <!-- Scala is just used for Spark -->
         <scala.version>2.12</scala.version>
         <scala.minor.version>2.12.17</scala.minor.version>
+        <!--
+        The Spark and Hadoop versions must match the EMR release we use for bulk import.
+        See the versions listed in the documentation:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-690-release.html
+        -->
         <spark.version>3.3.0</spark.version>
-        <joom.spark.platform.version>0.1.2</joom.spark.platform.version>
-        <aws-java-sdk.version>1.11.1034</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.17.136</aws-java-sdk-v2.version>
-        <aws-lambda-java-events.version>3.7.0</aws-lambda-java-events.version>
-        <aws-lambda-java-core.version>1.2.0</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>1.10.2</aws-lambda-powertools.version>
-        <hadoop.version>3.2.1</hadoop.version>
+        <hadoop.version>3.3.3</hadoop.version>
         <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
-        <commons-lang3.version>3.8.1</commons-lang3.version>
-        <commons-codec.version>1.11</commons-codec.version>
+        <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
+        <aws-java-sdk.version>1.12.380</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.19.12</aws-java-sdk-v2.version>
+        <aws-crt.version>0.21.0</aws-crt.version>
+        <aws-lambda-java-events.version>3.11.0</aws-lambda-java-events.version>
+        <aws-lambda-java-core.version>1.2.2</aws-lambda-java-core.version>
+        <aws-lambda-powertools.version>1.13.0</aws-lambda-powertools.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <jackson.version>2.11.4</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
-        <cdk.version>2.35.0</cdk.version>
-        <apigatewayv2.version>2.35.0-alpha.0</apigatewayv2.version>
+        <cdk.version>2.59.0</cdk.version>
+        <apigatewayv2.version>2.59.0-alpha.0</apigatewayv2.version>
         <awskeypair.version>1.0.0-alpha.5</awskeypair.version>
-        <constructs.version>10.1.69</constructs.version>
-        <gson.version>2.7</gson.version>
-        <datasketches.version>3.1.0</datasketches.version>
-        <slf4j.version>1.7.36</slf4j.version>
-        <reload4j.version>1.2.20</reload4j.version>
-        <java-websocket.version>1.5.2</java-websocket.version>
-        <arrow.version>8.0.0</arrow.version>
-        <bouncycastle.version>1.71.1</bouncycastle.version>
+        <constructs.version>10.1.213</constructs.version>
+        <gson.version>2.10.1</gson.version>
+        <datasketches.version>3.3.0</datasketches.version>
+        <slf4j.version>2.0.6</slf4j.version>
+        <reload4j.version>1.2.24</reload4j.version>
+        <java-websocket.version>1.5.3</java-websocket.version>
+        <arrow.version>10.0.1</arrow.version>
+        <bouncycastle.version>1.72</bouncycastle.version>
+        <!-- Build module uses Jersey for communicating with GitHub API -->
+        <jersey.version>2.38</jersey.version>
+        <!-- Netty version is managed because AWS and Arrow both depend on it but use incompatible versions -->
+        <netty.version>4.1.86.Final</netty.version>
         <!-- Testing -->
-        <junit.version>4.13</junit.version>
-        <mockito.version>3.3.3</mockito.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
-        <wiremock.version>2.32.0</wiremock.version>
-        <assertj.version>3.23.1</assertj.version>
-        <jsonunit.version>2.22.1</jsonunit.version>
+        <junit.version>4.13.2</junit.version>
+        <mockito.version>4.11.0</mockito.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
+        <wiremock.version>2.35.0</wiremock.version>
+        <assertj.version>3.24.1</assertj.version>
+        <jsonunit.version>2.36.0</jsonunit.version>
+        <checkstyle.version>10.6.0</checkstyle.version>
         <!-- Maven plugins -->
-        <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
-        <release.plugin.version>3.0.0-M4</release.plugin.version>
-        <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
+        <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
+        <release.plugin.version>3.0.0-M7</release.plugin.version>
+        <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
-        <shade.plugin.version>3.3.0</shade.plugin.version>
-        <jar.plugin.version>3.2.0</jar.plugin.version>
-        <compiler.plugin.version>3.8.1</compiler.plugin.version>
-        <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
+        <shade.plugin.version>3.4.1</shade.plugin.version>
+        <jar.plugin.version>3.3.0</jar.plugin.version>
+        <compiler.plugin.version>3.10.1</compiler.plugin.version>
+        <enforcer.plugin.version>3.1.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
+        <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <msgpack.version>0.9.3</msgpack.version>
+        <!--
+        java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
+        sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
+        java.util.AbstractList is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
+        java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
+        -->
+        <module.access.args>
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.lang.invoke=ALL-UNNAMED
+        </module.access.args>
+        <!--  This is required for later correct replacement of argLine -->
+        <argLine/>
     </properties>
 
     <dependencyManagement>
@@ -125,6 +150,27 @@
                 <artifactId>tf-aws-keypair</artifactId>
                 <version>${awskeypair.version}</version>
             </dependency>
+            <!-- AWS SDK -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>s3-transfer-manager</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk.crt</groupId>
+                <artifactId>aws-crt</artifactId>
+                <version>${aws-crt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -146,6 +192,43 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
+            </dependency>
+            <!-- Jackson JSON processing -->
+            <!-- Used by (potentially non-exhaustive):
+            Facebook JCommon
+            Testcontainers, via Docker Java API
+            AWS SDK
+            Apache Spark
+            -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-datatype-guava</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-datatype-joda</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_${scala.version}</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <!-- Logging -->
             <dependency>
@@ -237,7 +320,6 @@
                         ../code-style/checkstyle-suppressions.xml
                     </suppressionsLocation>
                     <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
-                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <headerLocation>../code-style/licenseHeader.txt</headerLocation>
@@ -253,7 +335,6 @@
                         <phase>test</phase>
                         <configuration>
                             <configLocation>../code-style/checkstyle.xml</configLocation>
-                            <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <headerLocation>../code-style/licenseHeader.txt</headerLocation>
@@ -263,6 +344,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
@@ -323,11 +411,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} ${module.access.args}</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${failsafe.plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} ${module.access.args}</argLine>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>integration-test</phase>
@@ -400,8 +494,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${compiler.plugin.version}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target> 
+                        <release>${java.version}</release>
                     </configuration>
                 </plugin>
             </plugins>

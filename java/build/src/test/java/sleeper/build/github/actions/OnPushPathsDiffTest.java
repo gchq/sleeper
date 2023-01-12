@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,24 @@ package sleeper.build.github.actions;
 
 import org.junit.Test;
 
+import sleeper.build.chunks.ProjectStructure;
+import sleeper.build.testutil.TestProjectStructure;
+
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.github.actions.OnPushPathsDiffTestHelper.builder;
+import static sleeper.build.github.actions.OnPushPathsDiffTestHelper.identical;
 
 public class OnPushPathsDiffTest {
+
+    private final ProjectStructure project = TestProjectStructure.example();
+
+    private OnPushPathsDiff fromExpectedAndActual(List<String> expected, List<String> actual) {
+        return OnPushPathsDiff.fromExpectedAndActual(project, expected, actual);
+    }
 
     @Test
     public void shouldReportNoDifference() {
@@ -33,10 +43,11 @@ public class OnPushPathsDiffTest {
         List<String> actual = asList("a", "b");
 
         // When
-        OnPushPathsDiff diff = OnPushPathsDiff.fromExpectedAndActual(expected, actual);
+        OnPushPathsDiff diff = fromExpectedAndActual(expected, actual);
 
         // Then
         assertThat(diff).isEqualTo(identical(expected, actual));
+        assertThat(diff.isValid()).isTrue();
     }
 
     @Test
@@ -46,31 +57,10 @@ public class OnPushPathsDiffTest {
         List<String> actual = singletonList("a");
 
         // When
-        OnPushPathsDiff diff = OnPushPathsDiff.fromExpectedAndActual(expected, actual);
+        OnPushPathsDiff diff = fromExpectedAndActual(expected, actual);
 
         // Then
         assertThat(diff).isEqualTo(builder(expected, actual).missingEntries(asList("b", "c")).build());
-    }
-
-    @Test
-    public void shouldReportExtraEntries() {
-        // Given
-        List<String> expected = singletonList("a");
-        List<String> actual = asList("a", "b", "c");
-
-        // When
-        OnPushPathsDiff diff = OnPushPathsDiff.fromExpectedAndActual(expected, actual);
-
-        // Then
-        assertThat(diff).isEqualTo(builder(expected, actual).extraEntries(asList("b", "c")).build());
-    }
-
-    private static OnPushPathsDiff identical(List<String> expected, List<String> actual) {
-        return builder(expected, actual).build();
-    }
-
-    private static OnPushPathsDiff.Builder builder(List<String> expected, List<String> actual) {
-        return OnPushPathsDiff.builder().expected(expected).actual(actual)
-                .extraEntries(emptyList()).missingEntries(emptyList());
+        assertThat(diff.isValid()).isFalse();
     }
 }

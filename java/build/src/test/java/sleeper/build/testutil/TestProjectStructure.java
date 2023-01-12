@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,18 @@ public class TestProjectStructure {
     private static final Path BASE_PATH = Paths.get("src/test/resources/examples");
 
     public static ProjectStructure example() {
+        return exampleBuilder().build();
+    }
+
+    public static ProjectStructure exampleWithMavenPath(String path) {
+        return exampleBuilder().mavenProjectPath(BASE_PATH.resolve(path)).build();
+    }
+
+    private static ProjectStructure.Builder exampleBuilder() {
         return ProjectStructure.builder()
                 .chunksYamlPath(BASE_PATH.resolve("config/chunks.yaml"))
                 .mavenProjectPath(BASE_PATH.resolve("maven"))
-                .workflowsPath(BASE_PATH.resolve("github-actions"))
-                .build();
+                .workflowsPath(BASE_PATH.resolve("github-actions"));
     }
 
     public static CheckGitHubStatusConfig loadExampleGitHubStatusConfiguration() throws IOException {

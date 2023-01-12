@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
+import software.amazon.awssdk.transfer.s3.model.FileUpload;
+
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
@@ -32,10 +36,6 @@ import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
-import software.amazon.awssdk.core.async.AsyncRequestBody;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +64,7 @@ import static java.util.Objects.requireNonNull;
 public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncS3PartitionFileWriter.class);
 
-    private final S3AsyncClient s3AsyncClient;
+    private final S3TransferManager s3TransferManager;
     private final Schema sleeperSchema;
     private final Partition partition;
     private final String s3BucketName;
@@ -90,7 +90,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      *
      * @param partition             The partition to write to
      * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition file
-     * @param s3AsyncClient         The S3 client to use to perform the asynchronous upload
+     * @param s3TransferManager     The manager to use to perform the asynchronous upload
      * @param localWorkingDirectory The local directory to use to create temporary files
      * @param s3BucketName          The S3 bucket to write to
      * @throws IOException -
@@ -99,9 +99,9 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String s3BucketName,
-            S3AsyncClient s3AsyncClient,
+            S3TransferManager s3TransferManager,
             String localWorkingDirectory) throws IOException {
-        this.s3AsyncClient = requireNonNull(s3AsyncClient);
+        this.s3TransferManager = requireNonNull(s3TransferManager);
         this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.partition = requireNonNull(partition);
         this.s3BucketName = requireNonNull(s3BucketName);
@@ -154,32 +154,29 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
 
     /**
      * Create a {@link CompletableFuture} which uploads the named file, asynchronously, to S3 and then deletes the local
-     * copy of that file. The future completes once the file has been deleted and it contains the {@link
-     * PutObjectResponse} which was returned as the file was uploaded.
+     * copy of that file. The future completes once the file has been deleted, and it contains the response which was
+     * returned from the file upload.
      *
-     * @param s3AsyncClient       The client to use to perform the asynchronous upload
+     * @param s3TransferManager   The manager to use to perform the asynchronous upload
      * @param localFileName       The file to upload
      * @param s3BucketName        The S3 bucket to put the file into
      * @param s3Key               The S3 key of the uploaded file
      * @param hadoopConfiguration The Hadoop configuration to use when deleting the local file
-     * @return The {@link CompletableFuture} which was returned by the {@link
-     * S3AsyncClient#putObject} method.
+     * @return The {@link CompletableFuture} which was returned by the upload.
      */
-    private static CompletableFuture<PutObjectResponse> asyncUploadLocalFileToS3ThenDeleteLocalCopy(
-            S3AsyncClient s3AsyncClient,
+    private static CompletableFuture<CompletedFileUpload> asyncUploadLocalFileToS3ThenDeleteLocalCopy(
+            S3TransferManager s3TransferManager,
             String localFileName,
             String s3BucketName,
             String s3Key,
             Configuration hadoopConfiguration) {
         File localFile = new File(localFileName);
-        CompletableFuture<PutObjectResponse> uploadFuture = s3AsyncClient.putObject(
-                PutObjectRequest.builder()
-                        .bucket(s3BucketName)
-                        .key(s3Key)
-                        .build(),
-                AsyncRequestBody.fromFile(localFile));
+        FileUpload fileUpload = s3TransferManager.uploadFile(request -> request
+                .putObjectRequest(put -> put
+                        .bucket(s3BucketName).key(s3Key))
+                .source(localFile));
         LOGGER.debug("Started asynchronous upload of local file {} to s3://{}/{}", localFileName, s3BucketName, s3Key);
-        return uploadFuture.whenComplete((msg, ex) -> {
+        return fileUpload.completionFuture().whenComplete((msg, ex) -> {
             LOGGER.debug("Completed asynchronous upload of local file {} to s3://{}/{}", localFileName, s3BucketName, s3Key);
             Path path = new Path(localFileName);
             boolean successfulDelete = false;
@@ -280,13 +277,13 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 System.currentTimeMillis());
         // Start the asynchronous upload of the files to S3
         CompletableFuture<?> partitionFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
-                s3AsyncClient,
+                s3TransferManager,
                 partitionParquetLocalFileName,
                 s3BucketName,
                 partitionParquetS3Key,
                 hadoopConfiguration);
         CompletableFuture<?> quantileFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
-                s3AsyncClient,
+                s3TransferManager,
                 quantileSketchesLocalFileName,
                 s3BucketName,
                 quantileSketchesS3Key,

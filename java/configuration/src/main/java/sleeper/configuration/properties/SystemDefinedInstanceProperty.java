@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
     GARBAGE_COLLECTOR_CLOUDWATCH_RULE("sleeper.gc.rule"),
 
     // Ingest
+    INGEST_LAMBDA_FUNCTION("sleeper.ingest.lambda.function"),
     INGEST_CLOUDWATCH_RULE("sleeper.ingest.rule"),
     INGEST_JOB_QUEUE_URL("sleeper.ingest.job.queue.url"),
     INGEST_JOB_DLQ_URL("sleeper.ingest.job.dlq.url"),

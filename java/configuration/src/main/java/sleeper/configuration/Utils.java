@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.configuration;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
+
 import sleeper.configuration.properties.table.CompressionCodec;
 
 import java.util.Set;
@@ -42,6 +43,14 @@ public class Utils {
 
     public static boolean isNonNegativeInteger(String integer) {
         return Integer.parseInt(integer) >= 0;
+    }
+
+    public static boolean isPositiveLong(String value) {
+        return Long.parseLong(value) > 0;
+    }
+
+    public static boolean isPositiveDouble(String value) {
+        return Double.parseDouble(value) > 0;
     }
 
     public static boolean isNonNullNonEmptyString(String string) {

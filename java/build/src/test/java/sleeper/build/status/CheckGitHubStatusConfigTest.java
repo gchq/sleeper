@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 package sleeper.build.status;
 
 import org.junit.Test;
-import sleeper.build.chunks.ProjectChunk;
+
+import sleeper.build.chunks.TestChunks;
 import sleeper.build.github.TestGitHubHead;
 import sleeper.build.testutil.TestProjectStructure;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,19 +35,7 @@ public class CheckGitHubStatusConfigTest {
                 CheckGitHubStatusConfig.builder()
                         .token("test-token")
                         .head(TestGitHubHead.example())
-                        .chunks(Arrays.asList(
-                                ProjectChunk.chunk("bulk-import").name("Bulk Import")
-                                        .workflow("chunk-bulk-import.yaml").modulesArray(
-                                                "bulk-import/bulk-import-common",
-                                                "bulk-import/bulk-import-starter",
-                                                "bulk-import/bulk-import-runner")
-                                        .build(),
-                                ProjectChunk.chunk("common").name("Common")
-                                        .workflow("chunk-common.yaml").modulesArray(
-                                                "core", "configuration")
-                                        .build(),
-                                ProjectChunk.chunk("ingest").name("Ingest")
-                                        .workflow("chunk-ingest.yaml").modulesArray("ingest").build()))
+                        .chunks(TestChunks.example())
                         .build());
     }
 }

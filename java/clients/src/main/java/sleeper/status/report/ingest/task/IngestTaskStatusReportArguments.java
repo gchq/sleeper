@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package sleeper.status.report.ingest.task;
 
 import java.io.PrintStream;
 
-import static sleeper.ClientUtils.optionalArgument;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestTaskStatusReportArguments {
     private final String instanceId;

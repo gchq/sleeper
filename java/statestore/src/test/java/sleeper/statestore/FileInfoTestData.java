@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 package sleeper.statestore;
 
 import sleeper.core.key.Key;
+import sleeper.core.partition.Partition;
+import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import java.time.Instant;
+import java.util.stream.Collectors;
 
 public class FileInfoTestData {
     private FileInfoTestData() {
@@ -44,5 +47,27 @@ public class FileInfoTestData {
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
+    }
+
+    public static FileInfo defaultPartitionSingleFileWithRecords(Partition partition, long records) {
+        return FileInfo.builder()
+                .rowKeyTypes(partition.getRowKeyTypes())
+                .minRowKey(minRowKey(partition)).maxRowKey(maxRowKey(partition))
+                .filename(partition.getId() + ".parquet").partitionId(partition.getId())
+                .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
+                .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
+                .build();
+    }
+
+    private static Key minRowKey(Partition partition) {
+        return Key.create(partition.getRegion().getRanges().stream()
+                .map(Range::getMin)
+                .collect(Collectors.toList()));
+    }
+
+    private static Key maxRowKey(Partition partition) {
+        return Key.create(partition.getRegion().getRanges().stream()
+                .map(Range::getMax)
+                .collect(Collectors.toList()));
     }
 }

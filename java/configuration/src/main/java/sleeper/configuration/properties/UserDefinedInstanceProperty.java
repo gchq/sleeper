@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,11 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "2147483648"),                 // 2G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
 
+    // Async ingest partition file writer
+    ASYNC_INGEST_CLIENT_TYPE("sleeper.ingest.async.client.type", "crt"), // crt or java
+    ASYNC_INGEST_CRT_PART_SIZE_BYTES("sleeper.ingest.async.crt.part.size.bytes", "134217728", Utils::isPositiveLong), // 128M
+    ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS("sleeper.ingest.async.crt.target.throughput.gbps", "10", Utils::isPositiveDouble),
+
     // Status Store
     INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
     INGEST_JOB_STATUS_TTL_IN_SECONDS("sleeper.ingest.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
@@ -144,7 +149,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE("sleeper.bulk.import.emr.ebs.volumes.per.instance", "4", s -> Utils.isIntLtEqValue(s, 25)),
 
     // Bulk import using the non-persistent EMR approach
-    DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.8.0"),
+    DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.9.0"),
     DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE("sleeper.default.bulk.import.emr.master.instance.type", "m5.xlarge"),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE("sleeper.default.bulk.import.emr.executor.market.type", "SPOT", s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s))),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.default.bulk.import.emr.executor.instance.type", "m5.4xlarge"),

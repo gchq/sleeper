@@ -226,6 +226,26 @@ sleeper.ingest.arrow.max.local.store.bytes=2147483648
 # multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [1K]
 sleeper.ingest.arrow.max.single.write.to.file.records=1024
 
+# The implementation of the async S3 client to use for upload during ingest.
+# Valid values are 'java' or 'crt'. This determines the implementation of S3AsyncClient that gets used.
+# With 'java' it makes a single PutObject request for each file.
+# With 'crt' it uses the AWS Common Runtime (CRT) to make multipart uploads.
+# Note that the CRT option is recommended. Using the Java option may cause failures if any file is >5GB in size, and
+# will lead to the following warning:
+# "The provided S3AsyncClient is not an instance of S3CrtAsyncClient, and thus multipart upload/download feature is not
+# enabled and resumable file upload is not supported. To benefit from maximum throughput, consider using
+# S3AsyncClient.crtBuilder().build() instead."
+# (async partition file writer only)
+sleeper.ingest.async.client.type=crt
+
+# The part size in bytes to use for multipart uploads.
+# (CRT async ingest only) [128MB]
+sleeper.ingest.async.crt.part.size.bytes=134217728
+
+# The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded simultaneously.
+# (CRT async ingest only)
+sleeper.ingest.async.crt.target.throughput.gbps=10
+
 # Flag to enable/disable storage of tracking information for ingest jobs and tasks.
 sleeper.ingest.status.store.enabled=true
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class FileStatusCollector {
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
         for (Partition partition : state.getPartitions()) {
-            List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getRelevantFileInfos(partition, state.getActive());
+            List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getActive());
             long numRecordsInPartition = activeFilesInThisPartition.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
             totalRecords += numRecordsInPartition;
             if (partition.isLeafPartition()) {

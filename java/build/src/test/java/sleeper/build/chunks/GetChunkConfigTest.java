@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,5 +39,14 @@ public class GetChunkConfigTest {
         assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "github_actions_outputs"))
                 .isEqualTo("chunkName=Common\n" +
                         "moduleList=core,configuration");
+    }
+
+    @Test
+    public void shouldGetGitHubActionsOutputWithWorkflowOnlyProperties() {
+        assertThat(GetChunkConfig.get(CHUNKS.getById("ingest"), "github_actions_outputs"))
+                .isEqualTo("chunkName=Ingest\n" +
+                        "moduleList=ingest\n" +
+                        "workflowOnlyString=test-root-string\n" +
+                        "otherWorkflowOnlyData={\"testString\":\"test-string\",\"testList\":[\"a\",\"b\"]}");
     }
 }

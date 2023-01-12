@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,10 @@
  */
 package sleeper.build.chunks;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -60,6 +63,9 @@ public class ProjectChunksYaml {
         private final String workflow;
         private final List<String> modules;
 
+        @JsonAnySetter
+        private final Map<String, JsonNode> other = new LinkedHashMap<>();
+
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public YamlChunk(
                 @JsonProperty("name") String name,
@@ -71,7 +77,22 @@ public class ProjectChunksYaml {
         }
 
         public ProjectChunk build(String id) {
-            return ProjectChunk.chunk(id).name(name).workflow(workflow).modules(modules).build();
+            return ProjectChunk.chunk(id).name(name).workflow(workflow).modules(modules)
+                    .workflowOnlyProperties(getWorkflowOnlyProperties()).build();
+        }
+
+        private Map<String, String> getWorkflowOnlyProperties() {
+            Map<String, String> workflowOnlyProperties = new LinkedHashMap<>();
+            other.forEach((key, value) -> workflowOnlyProperties.put(key, readWorkflowOnlyValue(value)));
+            return workflowOnlyProperties;
+        }
+
+        private static String readWorkflowOnlyValue(JsonNode value) {
+            if (value.isTextual()) {
+                return value.textValue();
+            } else {
+                return value.toString();
+            }
         }
     }
 }

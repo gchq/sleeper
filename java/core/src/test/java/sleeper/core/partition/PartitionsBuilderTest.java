@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.core.partition;
 
 import org.junit.Test;
+
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -157,5 +158,19 @@ public class PartitionsBuilderTest {
         assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(Arrays.asList(
                 rangeFactory.createRange(field1, "", null),
                 rangeFactory.createRange(field2, "aaa", null))));
+    }
+
+    @Test
+    public void canBuildSinglePartitionTree() {
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .singlePartition("A")
+                .buildTree();
+
+        assertThat(tree.getAllPartitions())
+                .containsExactly(tree.getRootPartition());
+        assertThat(tree.getPartition("A"))
+                .isEqualTo(tree.getRootPartition());
     }
 }
