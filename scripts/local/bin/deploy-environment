@@ -35,6 +35,8 @@ SSH_KEY_FILE="$INSTANCE_ID-BuildEC2.pem"
 
 cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
 
+echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+
 # If an EC2 was created, save SSH details
 if [ -f "$SSH_KEY_FILE" ]; then
 
@@ -43,5 +45,3 @@ if [ -f "$SSH_KEY_FILE" ]; then
   # Wait for deployment, scan SSH to remember EC2 certificate
   "$THIS_DIR/scan-ssh"
 fi
-
-echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
