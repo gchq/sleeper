@@ -247,11 +247,11 @@ public class SafeTerminationTest {
     public static final List<InstanceDetails> INSTANCE_LIST_LIMIT = new ArrayList<>();
 
     static {
-        INSTANCE_LIST.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
-        INSTANCE_LIST.add(new InstanceDetails("id2", "arn2", Instant.now(), 1, 1, 1, 1, 0, 0));
-        INSTANCE_LIST.add(new InstanceDetails("id3", "arn3", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new InstanceDetails("id2", "arn2", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST.add(new InstanceDetails("id3", "arn3", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
 
-        INSTANCE_LIST_LIMIT.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
+        INSTANCE_LIST_LIMIT.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
     }
 
     @Test(expected = NullPointerException.class)
@@ -273,9 +273,9 @@ public class SafeTerminationTest {
     public void shouldFindZeroEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 0));
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 1, 1));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 1, 0));
 
         // When
         Set<String> empties = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
@@ -288,9 +288,9 @@ public class SafeTerminationTest {
     public void shouldFindOneEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 1, 1));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
 
         // When
         Set<String> single = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
@@ -303,9 +303,9 @@ public class SafeTerminationTest {
     public void shouldFindMultiEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
 
         // When
         Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 3, new FakeContext());
@@ -318,9 +318,9 @@ public class SafeTerminationTest {
     public void shouldFindAndLimitMultiEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
-        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
-        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 0, 1));
-        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
+        details.add(new InstanceDetails("id2", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 1));
+        details.add(new InstanceDetails("id3", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1, 0, 0));
 
         // When
         Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 1, new FakeContext());
