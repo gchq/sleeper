@@ -31,11 +31,12 @@ else
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 
-"$THIS_DIR/configure-aws.sh"
+"$SCRIPTS_DIR/util/configure-aws.sh"
 
 pushd "$CDK_DIR" > /dev/null
 cdk destroy -c instanceId="$INSTANCE_ID" "${CDK_PARAMS[@]}"
