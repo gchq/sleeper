@@ -138,7 +138,7 @@ public class RunTasks {
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
                         requirements.getLeft(),
                         requirements.getMiddle(),
-                        requirements.getRight()
+                        requirements.getRight());
     }
 
     public void run() throws InterruptedException {
