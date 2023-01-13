@@ -179,10 +179,6 @@ sleeper.compaction.ec2.root.size=100
 # The amount of time in seconds Sleeper will wait for a GPU compaction process to finish
 sleeper.compaction.gpu.timeout=1800
 
-# The grace period (seconds) before an EC2 instance in the compaction ECS cluster is considered
-# for termination.
-sleeper.compaction.ec2.scaling.grace=60
-
 # The frequency with which the WriteData class refreshes the list of partitions from the state store
 # (NB Refreshes only happen once a batch of data has been written so this is a lower bound
 # on the refresh frequency.)

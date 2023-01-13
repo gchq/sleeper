@@ -40,7 +40,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +57,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_SCALING_GRACE_PERIOD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
@@ -140,8 +138,7 @@ public class RunTasks {
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
                         requirements.getLeft(),
                         requirements.getMiddle(),
-                        requirements.getRight(),
-                        Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
+                        requirements.getRight()
     }
 
     public void run() throws InterruptedException {
@@ -151,10 +148,6 @@ public class RunTasks {
         int queueSize = CommonJobUtils.getNumberOfMessagesInQueue(sqsJobQueueUrl, sqsClient)
                         .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
         LOGGER.info("Queue size is {}", queueSize);
-
-        // Obtain details of instances in this cluster
-//        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
-        // Set<String> recentContainerInstanceARNs = new HashSet<>();
 
         int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
         LOGGER.info("Number of running tasks is {}", numRunningTasks);
@@ -168,7 +161,6 @@ public class RunTasks {
             int totalTasks = maxNumTasksThatWillBeCreated + numRunningTasks;
             LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
             scaler.scaleTo(totalTasks);
-            // scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
         }
 
         if (0 == queueSize) {
@@ -182,16 +174,7 @@ public class RunTasks {
 
             // Create 1 task for each item on the queue
             launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
-            // recentContainerInstanceARNs.addAll(newArns);
         }
-
-//        try {
-//            if (launchType.equalsIgnoreCase("EC2")) {
-//                scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
-//            }
-//        } catch (AmazonClientException e) {
-//            LOGGER.error("Scale-in exception", e);
-//        }
     }
 
     /**
