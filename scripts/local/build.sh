@@ -44,7 +44,7 @@ cp "$ENVIRONMENT_MAVEN_DIR/target/cdk-environment-$VERSION-utility.jar" "$JARS_D
 END_MAVEN_BUILD_TIME=$(record_time)
 echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
 
-"$THIS_DIR/buildDocker.sh"
+"$THIS_DIR/buildDocker.sh" "$@"
 
 END_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

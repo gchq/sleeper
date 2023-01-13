@@ -18,6 +18,12 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$(dirname "$THIS_DIR")" && pwd)
 
+if [ "$#" -lt 1 ]; then
+	DOCKER_PARAMS=(-t sleeper-local)
+else
+  DOCKER_PARAMS=("$@")
+fi
+
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
@@ -26,7 +32,7 @@ echo "Building local Docker image"
 echo "-------------------------------------------------------------------------------"
 
 pushd "$THIS_DIR"
-docker build -t sleeper-local .
+docker build . "${DOCKER_PARAMS[@]}"
 popd
 
 END_TIME=$(record_time)
