@@ -9,43 +9,30 @@ uploaded to AWS.
 
 ### Dependencies
 
-Before running this demo functionality, you will need the following installed (see
-the [deployment guide](02-deployment-guide.md) for more information on getting set up correctly) and you will need your
-CLI to be logged into your AWS account:
+Before running this demo functionality, you will need the following installed:
 
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
 
-If AWS CDK has already been bootstrapped in the account, it will not need to be installed to deploy Sleeper using
-Docker. If AWS CDK has not previously been bootstrapped in this account, then it needs bootstrapping. This will require
-these to be installed:
-
-* [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
-* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
-
-The `cdk bootstrap ...` command cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet
-compiled into the JAR named in `cdk.json`.
-See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance on how to bootstrap CDK
-in your account.
-
-Other dependencies if you want to build/deploy without using Docker:
-
-* [Java 11/17](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
-
 ### Deployment environment
 
-You can use the CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Once the CLI is logged in
-to your AWS, and the CDK has been bootstrapped, run these commands in the directory `scripts/local` to build and
-deploy the environment:
+You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. A local Docker image
+contains the necessary dependencies and scripts to do this. Run these commands in the directory `scripts/local` to build
+the Docker image and deploy the environment:
 
 ```bash
 ./build.sh
+./runInDocker.sh aws configure
+./runInDocker.sh cdk bootstrap
 ./runInDocker.sh environment deploy TestEnvironment
 ```
 
-This will create an SSH key locally, and wait for the EC2 instance to be deployed.
+You can also run `./runInDocker.sh` on its own to get a shell inside the local Docker container, where you can run
+`aws`, `cdk` and Sleeper `environment` commands directly. You can use `aws` commands here to configure alternative
+authentication rather than using `aws configure`. You can also set AWS environment variables or configuration on the
+host machine which will be propagated to the Docker container when you use `./runInDocker.sh`.
+
+The `environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
 You can then SSH to it with this command:
 
 ```bash
@@ -70,40 +57,6 @@ Once it has finished the instance might restart. The Sleeper Git repository will
 To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
 See
 the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
-
-#### Managing environments
-
-You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify an environment ID when deploying an environment, and you can specify an environment to connect to.
-Parameters after the environment ID will be passed to a `cdk deploy` command.
-
-```bash
-./runInDocker.sh environment deploy MyEnvironment
-./runInDocker.sh environment deploy EmptyEnvironment "*-Networking"
-./runInDocker.sh environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
-./runInDocker.sh environment connect OtherEnvironment
-```
-
-You can switch environments like this:
-
-```bash
-./runInDocker.sh environment set OtherEnvironment
-./runInDocker.sh environment connect
-```
-
-You can tear down the deployed environment like this:
-
-```bash
-./runInDocker.sh environment destroy MyEnvironment
-```
-
-You can also tear down individual parts of the environment like this:
-
-```bash
-./runInDocker.sh environment destroy MyEnvironment "*-BuildEC2"
-```
-
-Parameters after the environment ID will be passed to a `cdk destroy` command.
 
 ### System test
 
