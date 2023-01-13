@@ -15,9 +15,7 @@
 
 set -e
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-
-if [ ! -f ~/.aws/config ]; then
+if [ ! -f "$HOME/.aws/config" ]; then
   echo "No AWS configuration found. Running 'aws configure'"
   aws configure
 fi
