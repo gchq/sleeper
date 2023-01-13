@@ -16,7 +16,7 @@ You will need the following software:
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 8](https://openjdk.java.net/install/)
+* [Java 11/17](https://openjdk.java.net/install/)
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
