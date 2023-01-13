@@ -13,6 +13,8 @@ Before running this demo functionality, you will need the following installed:
 
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
+* [Java 11/17](https://openjdk.java.net/install/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
 
 ### Deployment environment
 
