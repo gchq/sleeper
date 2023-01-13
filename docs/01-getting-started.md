@@ -29,6 +29,11 @@ the Docker image and deploy the environment:
 ./runInDocker.sh environment deploy TestEnvironment
 ```
 
+The `./runInDocker.sh` command lets you run other commands inside a local Docker image. If you run it on its own you'll
+get a shell inside the container. You can use `aws` commands under that to configure alternative authentication rather
+than using `aws configure`. You can also set AWS environment variables or configuration on the host machine which will
+be propagated to the Docker container when you use `./runInDocker.sh`.
+
 The `environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
 You can then SSH to it with this command:
 

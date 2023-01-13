@@ -55,8 +55,8 @@ that bootstrapping CDK is a one-time action for the account that is nothing to d
 Sleeper itself. See
 [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
 on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
-not be run from inside the sleeper directory. You can use the local Docker image for this,
-as described in [getting started](01-getting-started.md#deployment-environment).
+not be run from inside the sleeper directory. You can run `cdk bootstrap` in the local
+Docker image, as described in [getting started](01-getting-started.md#deployment-environment).
 
 ### Lambda Reserved Concurrency
 
@@ -84,9 +84,11 @@ can manage multiple environments. This is built in the directory `scripts/local`
 you can use `./runInDocker.sh` in that directory to run commands inside the local Docker image.
 
 If you run `./runInDocker.sh` on its own you'll get a shell inside the local Docker container, where you can run
-`aws`, `cdk` and Sleeper `environment` commands directly. You can use `aws` commands here to configure alternative
-authentication rather than using `aws configure`. You can also set AWS environment variables or configuration on the
-host machine which will be propagated to the Docker container when you use `./runInDocker.sh`.
+`aws`, `cdk` and Sleeper `environment` commands directly.
+
+You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
+variables or configuration on the host machine, which will be propagated to the Docker container when you use
+`./runInDocker.sh`.
 
 #### Managing environments
 
