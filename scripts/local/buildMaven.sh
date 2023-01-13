@@ -17,23 +17,33 @@ set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 BASE_DIR=$(cd "$(dirname "$THIS_DIR")" && cd "../" && pwd)
+MAVEN_DIR="$BASE_DIR/java"
+ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/cdk-environment"
 SCRIPTS_DIR="$BASE_DIR/scripts"
+VERSION_FILE="$THIS_DIR/version.txt"
+JARS_DIR="$THIS_DIR/jars"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/buildMaven.sh"
+echo "-------------------------------------------------------------------------------"
+echo "Building cdk-environment module"
+echo "-------------------------------------------------------------------------------"
+echo "Started at $(recorded_time_str "$START_TIME")"
 
-END_MAVEN_BUILD_TIME=$(record_time)
-echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
+pushd "$ENVIRONMENT_MAVEN_DIR"
+VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+mvn clean install -Pquick "$@"
+popd
 
-"$THIS_DIR/buildDocker.sh"
+echo "$VERSION" > "$VERSION_FILE"
+mkdir -p "$JARS_DIR"
+rm -rf "${JARS_DIR:?}"/*
+cp "$ENVIRONMENT_MAVEN_DIR/target/cdk-environment-$VERSION-utility.jar" "$JARS_DIR/cdk-environment.jar"
 
 END_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
 echo "Finished build"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
-echo "Finished Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$END_MAVEN_BUILD_TIME" "$END_TIME")"
-echo "Overall, took $(elapsed_time_str "$START_TIME" "$END_TIME")"
+echo "Finished at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$START_TIME" "$END_TIME")"
