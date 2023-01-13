@@ -80,8 +80,15 @@ See [getting started](01-getting-started.md#deployment-environment) for informat
 to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
 
 When you use the local Docker image described in [getting started](01-getting-started.md#deployment-environment), you
-can manage multiple environments. Usages of the `./runInDocker.sh` command here assume you're in `scripts/local` and
-you've followed those instructions to set it up.
+can manage multiple environments. This is built in the directory `scripts/local` with `./build.sh`. Once that's built,
+you can use `./runInDocker.sh` in that directory to run commands inside the local Docker image.
+
+If you run `./runInDocker.sh` on its own you'll get a shell inside the local Docker container, where you can run
+`aws`, `cdk` and Sleeper `environment` commands directly. You can use `aws` commands here to configure alternative
+authentication rather than using `aws configure`. You can also set AWS environment variables or configuration on the
+host machine which will be propagated to the Docker container when you use `./runInDocker.sh`.
+
+#### Managing environments
 
 You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
 You must specify an environment ID when deploying an environment, and you can specify an environment to connect to.

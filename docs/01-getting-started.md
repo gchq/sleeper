@@ -29,11 +29,6 @@ the Docker image and deploy the environment:
 ./runInDocker.sh environment deploy TestEnvironment
 ```
 
-You can also run `./runInDocker.sh` on its own to get a shell inside the local Docker container, where you can run
-`aws`, `cdk` and Sleeper `environment` commands directly. You can use `aws` commands here to configure alternative
-authentication rather than using `aws configure`. You can also set AWS environment variables or configuration on the
-host machine which will be propagated to the Docker container when you use `./runInDocker.sh`.
-
 The `environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
 You can then SSH to it with this command:
 
