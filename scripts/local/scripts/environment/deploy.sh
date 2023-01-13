@@ -29,13 +29,16 @@ else
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
 "$THIS_DIR/configure-aws.sh"
 
+pushd "$CDK_DIR" > /dev/null
 cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
+popd > /dev/null
 
 echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
 
