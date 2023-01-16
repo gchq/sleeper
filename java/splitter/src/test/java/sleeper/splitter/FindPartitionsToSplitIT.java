@@ -264,7 +264,7 @@ public class FindPartitionsToSplitIT {
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 
         // 109 + 108 + 107 + 106 + 105 = 535
-        assertThat(numberOfRecords).contains(new Long(535));
+        assertThat(numberOfRecords).contains(Long.valueOf(535L));
     }
 
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {

@@ -154,8 +154,8 @@ public class InstancePropertiesTest {
 
         // Then
         assertThat(pageSizeString).isEqualTo("100");
-        assertThat(pageSizeInt).isEqualTo(new Integer(100));
-        assertThat(pageSizeLong).isEqualTo(new Long(100));
+        assertThat(pageSizeInt).isEqualTo(Integer.valueOf(100));
+        assertThat(pageSizeLong).isEqualTo(Long.valueOf(100L));
     }
 
     @Test

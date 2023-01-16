@@ -110,7 +110,7 @@ public class TableInitialiserIT {
         // Then
         assertThat(dynamoClient.scan(
                 new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(new Integer(1));
+                .isEqualTo(Integer.valueOf(1));
     }
 
     @Test
