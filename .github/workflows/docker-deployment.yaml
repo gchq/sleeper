@@ -1,11 +1,10 @@
-name: Maven Compile, Deployment Docker
+name: Deployment Docker
 on:
   push:
     paths:
       - '.github/workflows/docker-deployment.yaml'
-      - 'java/**'
-      - 'scripts/**'
-      - '!scripts/local/**'
+      - 'scripts/Dockerfile'
+      - 'scripts/.dockerignore'
 
 env:
   IMAGE_NAME: sleeper-deployment
