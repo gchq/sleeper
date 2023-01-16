@@ -34,9 +34,11 @@ jobs:
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
       - name: Docker build
         working-directory: ./scripts
-        run: docker build . --tag $IMAGE_NAME \
-          --label "git-commit=$GITHUB_SHA" \
-          --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        run: |
+          docker build . \
+            --tag $IMAGE_NAME \
+            --label "git-commit=$GITHUB_SHA" \
+            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
       - name: Log in to registry
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/344-store-docker-images'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
