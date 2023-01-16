@@ -32,7 +32,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
@@ -46,7 +45,6 @@ import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -80,7 +78,7 @@ public class IngestJobRunnerIT {
     private static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
     private static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
     @TempDir
-    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path temporaryFolder;
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
 
@@ -100,8 +98,8 @@ public class IngestJobRunnerIT {
     public void before() throws IOException {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
-        currentLocalIngestDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString();
-        currentLocalTableDataDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString();
+        currentLocalIngestDirectory = createTempDirectory(temporaryFolder, null).toString();
+        currentLocalTableDataDirectory = createTempDirectory(temporaryFolder, null).toString();
     }
 
     @AfterEach
@@ -190,7 +188,7 @@ public class IngestJobRunnerIT {
                                   IngestJob job,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
-        String localDir = createTempDirectory(temporaryFolder.toPath(), null).toString();
+        String localDir = createTempDirectory(temporaryFolder, null).toString();
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TableProperties tableProperties = createTable(sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
@@ -199,7 +197,7 @@ public class IngestJobRunnerIT {
 
         // Run the job consumer
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder.toPath(), null).toString()),
+                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider,
@@ -216,7 +214,7 @@ public class IngestJobRunnerIT {
                 expectedRecordList,
                 Collections.singletonMap(0, expectedNoOfFiles),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                createTempDirectory(temporaryFolder.toPath(), null).toString());
+                createTempDirectory(temporaryFolder, null).toString());
     }
 
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")

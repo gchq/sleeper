@@ -62,10 +62,10 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -148,7 +148,7 @@ public class ReinitialiseTableIT {
     }
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public Path folder;
 
     @Test
     public void shouldThrowExceptionIfBucketIsEmpty() {
@@ -685,7 +685,7 @@ public class ReinitialiseTableIT {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
-        String folderName = createTempDirectory(folder.toPath(), null).toString();
+        String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
@@ -777,7 +777,7 @@ public class ReinitialiseTableIT {
         tableProperties.set(REVISION_TABLENAME, "sleeper" + "-" + tableName + "-" + "revisions");
         if (isS3StateStore) {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
-            tableProperties.set(DATA_BUCKET, createTempDirectory(folder.toPath(), null).toString());
+            tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         } else {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
         }
@@ -785,7 +785,7 @@ public class ReinitialiseTableIT {
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {
-        String folderName = createTempDirectory(folder.toPath(), null).toString();
+        String folderName = createTempDirectory(folder, null).toString();
         String splitPointsFileName = folderName + "/split-points.txt";
         FileWriter fstream = new FileWriter(splitPointsFileName);
         BufferedWriter info = new BufferedWriter(fstream);

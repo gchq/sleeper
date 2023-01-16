@@ -22,7 +22,6 @@ import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -31,7 +30,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.sketches.Sketches;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -43,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SketchesSerDeToS3Test {
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     @Test
     public void shouldSerDeToFile() throws IOException {
@@ -76,7 +74,7 @@ public class SketchesSerDeToS3Test {
         map.put("key4", sketch4);
         Sketches sketches = new Sketches(map);
         SketchesSerDeToS3 sketchesSerDeToS3 = new SketchesSerDeToS3(schema);
-        String file = createTempDirectory(folder.toPath(), null).toString() + "/file.sketches";
+        String file = createTempDirectory(folder, null).toString() + "/file.sketches";
         Path path = new Path(file);
 
         // When

@@ -26,7 +26,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.testutils.AwsExternalResource;
@@ -36,7 +35,6 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +66,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
     protected static final String FILE_SYSTEM_PREFIX = "s3a://";
     @TempDir
-    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path temporaryFolder;
 
     @BeforeEach
     public void before() throws IOException {

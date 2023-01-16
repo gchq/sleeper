@@ -42,6 +42,7 @@ import sleeper.statestore.s3.S3StateStore;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public class ConfigValidatorIT {
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     @TempDir
-    public File temporaryFolder;
+    public Path temporaryFolder;
 
     private static AmazonS3 amazonS3;
     private static AmazonDynamoDB amazonDynamoDB;
@@ -236,7 +237,7 @@ public class ConfigValidatorIT {
                 "  ]\n" +
                 "}\n";
 
-        File tableSchemaFile = new File(temporaryFolder.toPath().toString(), "schema.json");
+        File tableSchemaFile = new File(temporaryFolder.toString(), "schema.json");
         FileUtils.write(tableSchemaFile, tableSchema, Charset.defaultCharset());
 
         String tableConfiguration = "" +
@@ -244,7 +245,7 @@ public class ConfigValidatorIT {
                 String.format("sleeper.table.statestore.classname=%s\n", stateStore) +
                 String.format("sleeper.table.schema.file=%s\n", tableSchemaFile.getAbsolutePath());
 
-        File tablePropertiesFile = new File(temporaryFolder.toPath().toString(), "table.properties");
+        File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());
 
         instanceProperties.set(TABLE_PROPERTIES, tablePropertiesFile.getAbsolutePath());

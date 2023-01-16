@@ -34,7 +34,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +47,7 @@ import static org.assertj.core.api.Assertions.tuple;
 public class FileWritingIteratorTest {
 
     @TempDir
-    public File tempFolder;
+    public java.nio.file.Path tempFolder;
 
     private Schema createSchema() {
         return Schema.builder()
@@ -62,7 +61,7 @@ public class FileWritingIteratorTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(createSchema());
         try {
-            tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder.toPath(), null).toString());
+            tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder, null).toString());
         } catch (IOException e) {
             throw new RuntimeException("Failed to create temp folder for test", e);
         }

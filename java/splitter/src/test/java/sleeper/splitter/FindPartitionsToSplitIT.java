@@ -51,6 +51,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +71,7 @@ public class FindPartitionsToSplitIT {
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
 
     @TempDir
-    public File tempDir;
+    public Path tempDir;
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
@@ -136,8 +137,8 @@ public class FindPartitionsToSplitIT {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
         recordLists.forEach(list -> {
             try {
-                File stagingArea = createTempDirectory(tempDir.toPath(), null).toFile();
-                File directory = createTempDirectory(tempDir.toPath(), null).toFile();
+                File stagingArea = createTempDirectory(tempDir, null).toFile();
+                File directory = createTempDirectory(tempDir, null).toFile();
                 try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, schema,
                         ArrayListRecordBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)

@@ -78,7 +78,7 @@ public class GarbageCollectorIT {
     );
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
@@ -141,7 +141,7 @@ public class GarbageCollectorIT {
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         Schema schema = getSchema();
         String tableName = UUID.randomUUID().toString();
-        String localDir = createTempDirectory(folder.toPath(), null).toString();
+        String localDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -151,7 +151,7 @@ public class GarbageCollectorIT {
         System.out.println(tableProperties);
         TableLister tableLister = new TableLister(s3Client, instanceProperties);
         Partition partition = stateStore.getAllPartitions().get(0);
-        String tempFolder = createTempDirectory(folder.toPath(), null).toString();
+        String tempFolder = createTempDirectory(folder, null).toString();
         //  - A file which should be garbage collected immediately
         String file1 = tempFolder + "/file1.parquet";
         FileInfo fileInfo1 = FileInfo.builder()

@@ -36,8 +36,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static com.amazonaws.SDKGlobalConfiguration.ACCESS_KEY_SYSTEM_PROPERTY;
 import static com.amazonaws.SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY;
@@ -53,7 +53,7 @@ public abstract class AbstractMetadataHandlerIT {
 
     // For storing data
     @TempDir
-    public static File tempDir;
+    public static Path tempDir;
 
     protected static final Schema TIME_SERIES_SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -94,13 +94,13 @@ public abstract class AbstractMetadataHandlerIT {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) throws IOException {
-        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA, createTempDirectory(tempDir.toPath(), null).toString(),
+        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA, createTempDirectory(tempDir, null).toString(),
                 createDynamoClient(), createS3Client(), 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties);
-        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir.toPath(), null).toString(),
+        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

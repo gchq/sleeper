@@ -62,7 +62,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -112,7 +111,7 @@ public class BulkImportJobRunnerIT {
     );
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -310,7 +309,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder.toPath(), null).toString();
+        String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -361,7 +360,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder.toPath(), null).toString();
+        String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -412,7 +411,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder.toPath(), null).toString();
+        String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -456,7 +455,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder.toPath(), null).toString();
+        String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
@@ -531,7 +530,7 @@ public class BulkImportJobRunnerIT {
         //  - Schema
         Schema schema = getSchema();
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder.toPath(), null).toString();
+        String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();

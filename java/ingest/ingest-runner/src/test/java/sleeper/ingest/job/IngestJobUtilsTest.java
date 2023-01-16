@@ -20,9 +20,6 @@ import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.CommonTestConstants;
-
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -34,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class IngestJobUtilsTest {
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     @Test
     public void shouldReturnEmptyListIfNoFiles() throws Exception {
@@ -63,7 +60,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
         // Given
-        String localDir = createTempDirectory(folder.toPath(), null).toString();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
@@ -85,7 +82,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
         // Given
-        String localDir = createTempDirectory(folder.toPath(), null).toString();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
@@ -109,7 +106,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForFilesInMultipleDirectories() throws Exception {
         // Given
-        String localDir = createTempDirectory(folder.toPath(), null).toString();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
@@ -138,7 +135,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForFilesInNestedDirectories() throws Exception {
         // Given
-        String localDir = createTempDirectory(folder.toPath(), null).toString();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 

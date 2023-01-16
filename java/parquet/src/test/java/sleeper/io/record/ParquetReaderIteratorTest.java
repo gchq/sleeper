@@ -21,7 +21,6 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -31,7 +30,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ParquetReaderIteratorTest {
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("column1", new LongType()))
@@ -52,7 +50,7 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIterator() throws IOException {
         // Given
-        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         Map<String, Object> map1 = new HashMap<>();
@@ -83,7 +81,7 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
-        Path path = new Path(createTempDirectory(folder.toPath(), null).toString() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         writer.close();

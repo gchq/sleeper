@@ -25,7 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -34,7 +33,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +60,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class WriteParquetFilesTest {
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     public InstanceProperties createInstanceProperties(String fs) {
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -83,7 +81,7 @@ public class WriteParquetFilesTest {
     @Test
     public void shouldWriteParquetFiles() throws IOException {
         // Given
-        String dir = createTempDirectory(folder.toPath(), null).toString();
+        String dir = createTempDirectory(folder, null).toString();
         String dataBucket = "dataBucket";
         Schema schema = getSchema();
         InstanceProperties instanceProperties = createInstanceProperties(dir);
@@ -121,7 +119,7 @@ public class WriteParquetFilesTest {
     @Test
     public void ShouldWriteToMultipleParquetFilesWhenDataContainsMoreThanOnePartition() throws IOException {
         // Given
-        String dir = createTempDirectory(folder.toPath(), null).toString();
+        String dir = createTempDirectory(folder, null).toString();
         String dataBucket = "dataBucket";
         Schema schema = getSchema();
         InstanceProperties instanceProperties = createInstanceProperties(dir);

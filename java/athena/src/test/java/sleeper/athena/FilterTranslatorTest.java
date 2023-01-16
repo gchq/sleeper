@@ -59,7 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FilterTranslatorTest {
 
     @TempDir
-    public static File tempDir;
+    public static java.nio.file.Path tempDir;
 
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(new Field("int", new IntType()))
@@ -90,7 +90,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldCreateIntegerRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -113,7 +113,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldCreateLongRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -136,7 +136,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldCreateStringRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -159,7 +159,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldFilterUsingMoreThanOneColumn() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -185,7 +185,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldFilterUsingMoreThanOneRangeOnTheSameColumn() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -210,7 +210,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldCreateByteArrayRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -234,7 +234,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldCreatePredicateWhenOnlyLowerBoundRangeIsGiven() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -257,7 +257,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldConsiderBoundsWhenCreatingFilter() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -372,7 +372,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueAllowListForIntegers() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -395,7 +395,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueDenyListForIntegers() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -418,7 +418,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueAllowListForLongs() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -441,7 +441,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueDenyListForLongs() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -464,7 +464,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueAllowListForStrings() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -487,7 +487,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueDenyListForStrings() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -510,7 +510,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueAllowListForByteArrays() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -533,7 +533,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleExactValueDenyListForByteArrays() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -556,7 +556,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldHandleDifferentPredicateTypesOverMultipleFields() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -583,7 +583,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldReturnNothingIfPredicatesDontOverlap() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
@@ -624,7 +624,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldDealWithExactBoundedRanges() throws IOException {
         // Given
-        String dataFile = new File(createTempDirectory(tempDir.toPath(), null).toString(), "test.parquet").getAbsolutePath();
+        String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
 
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);

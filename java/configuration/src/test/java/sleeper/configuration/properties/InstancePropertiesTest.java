@@ -18,10 +18,9 @@ package sleeper.configuration.properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.CommonTestConstants;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,7 +89,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 
 public class InstancePropertiesTest {
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public Path folder;
 
     @Test
     public void shouldCreateFromFile() throws IOException {
@@ -98,7 +97,7 @@ public class InstancePropertiesTest {
         InstanceProperties instanceProperties = getSleeperProperties();
 
         // When
-        File file = new File(createTempDirectory(folder.toPath(), null).toString() + "/props");
+        File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
         InstanceProperties loaded = new InstanceProperties();
         loaded.load(file);

@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
@@ -38,8 +37,8 @@ import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
@@ -61,7 +60,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
             LocalStackContainer.Service.DYNAMODB);
     private static final String DATA_BUCKET_NAME = "databucket";
     @TempDir
-    public File temporaryFolder = CommonTestConstants.TMP_DIRECTORY;
+    public Path temporaryFolder;
 
     @BeforeEach
     public void before() {
@@ -154,7 +153,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder.toPath(), null).toString();
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());

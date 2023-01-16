@@ -50,7 +50,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
     private void consumeAndVerify(Schema sleeperSchema,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
-        String localDir = createTempDirectory(temporaryFolder.toPath(), null).toString();
+        String localDir = createTempDirectory(temporaryFolder, null).toString();
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
@@ -69,7 +69,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 expectedRecordList,
                 Collections.singletonMap(0, expectedNoOfFiles),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                createTempDirectory(temporaryFolder.toPath(), null).toString());
+                createTempDirectory(temporaryFolder, null).toString());
     }
 
     private IngestTask createTaskRunner(InstanceProperties instanceProperties,

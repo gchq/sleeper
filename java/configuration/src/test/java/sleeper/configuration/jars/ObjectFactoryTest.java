@@ -40,6 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.jar.JarEntry;
@@ -62,7 +63,7 @@ public class ObjectFactoryTest {
     );
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public Path folder;
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -112,7 +113,7 @@ public class ObjectFactoryTest {
         ToolProvider.getSystemJavaCompiler()
                 .getTask(null, null, null, Collections.emptyList(), Collections.emptyList(), Collections.singletonList(fileObject))
                 .call();
-        String jarFileLocation = createTempDirectory(folder.toPath(), null).toString() + "/ajar.jar";
+        String jarFileLocation = createTempDirectory(folder, null).toString() + "/ajar.jar";
         JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFileLocation), new Manifest());
         JarEntry jarEntry = new JarEntry("MyIterator.class");
         jos.putNextEntry(jarEntry);
@@ -128,7 +129,7 @@ public class ObjectFactoryTest {
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
         // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, createTempDirectory(folder.toPath(), null).toString());
+        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, createTempDirectory(folder, null).toString());
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
         assertThat(sri).hasToString("MyIterator");

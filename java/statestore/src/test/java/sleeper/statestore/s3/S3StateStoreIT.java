@@ -54,8 +54,8 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,7 +82,7 @@ public class S3StateStoreIT {
             .withExposedPorts(DYNAMO_PORT);
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public Path folder;
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -118,7 +118,7 @@ public class S3StateStoreIT {
     private StateStore getStateStore(Schema schema,
                                      List<Partition> partitions,
                                      int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
-        String bucket = createTempDirectory(folder.toPath(), null).toString();
+        String bucket = createTempDirectory(folder, null).toString();
         String dynamoTableName = createDynamoTable();
         S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, dynamoDBClient, new Configuration());
         stateStore.initialise(partitions);

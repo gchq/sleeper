@@ -35,8 +35,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -58,7 +58,7 @@ public class TableCreatorIT {
             .build();
 
     @TempDir
-    public static File tempDir;
+    public static Path tempDir;
 
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
@@ -201,7 +201,7 @@ public class TableCreatorIT {
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
 
         // When
-        String localDir = createTempDirectory(tempDir.toPath(), null).toString();
+        String localDir = createTempDirectory(tempDir, null).toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(TABLE_NAME, "MyTable");

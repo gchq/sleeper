@@ -61,7 +61,6 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -142,7 +141,7 @@ public class CompactSortedFilesRunnerIT {
     }
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public java.nio.file.Path folder;
 
     @Test
     public void shouldDeleteMessages() throws IOException, StateStoreException, ObjectFactoryException, InterruptedException, ActionException {
@@ -166,7 +165,7 @@ public class CompactSortedFilesRunnerIT {
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
         //  - Create four files of sorted data
-        String folderName = createTempDirectory(folder.toPath(), null).toString();
+        String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";

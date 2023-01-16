@@ -21,7 +21,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -32,8 +31,8 @@ import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -45,7 +44,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRow
 
 public class IngestRecordsTestBase {
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public Path folder;
 
     protected final Field field = new Field("key", new LongType());
     protected final Schema schema = schemaWithRowKeys(field);
@@ -54,8 +53,8 @@ public class IngestRecordsTestBase {
 
     @BeforeEach
     public void setUpBase() throws Exception {
-        inputFolderName = createTempDirectory(folder.toPath(), null).toString();
-        sketchFolderName = createTempDirectory(folder.toPath(), null).toString();
+        inputFolderName = createTempDirectory(folder, null).toString();
+        sketchFolderName = createTempDirectory(folder, null).toString();
     }
 
     protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {

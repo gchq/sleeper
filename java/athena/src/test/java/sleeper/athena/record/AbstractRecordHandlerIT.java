@@ -43,8 +43,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +57,7 @@ public abstract class AbstractRecordHandlerIT {
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     // For storing data
     @TempDir
-    public static File tempDir;
+    public static Path tempDir;
 
     protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -103,18 +103,18 @@ public abstract class AbstractRecordHandlerIT {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir.toPath(), null).toString(),
+        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
-        return TestUtils.createTable(instanceProperties, SCHEMA, createTempDirectory(tempDir.toPath(), null).toString(),
+        return TestUtils.createTable(instanceProperties, SCHEMA, createTempDirectory(tempDir, null).toString(),
                 createDynamoClient(), createS3Client(), initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) throws IOException {
-        return TestUtils.createTable(instanceProperties, schema, createTempDirectory(tempDir.toPath(), null).toString(),
+        return TestUtils.createTable(instanceProperties, schema, createTempDirectory(tempDir, null).toString(),
                 createDynamoClient(), createS3Client(), initialSplits);
     }
 

@@ -37,7 +37,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,7 +64,7 @@ import static sleeper.query.model.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
 public class S3ResultsOutputTest {
     @TempDir
-    public File tempDir;
+    public Path tempDir;
 
     InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = setupSchema();
@@ -74,7 +73,7 @@ public class S3ResultsOutputTest {
 
     @BeforeEach
     public void setup() throws IOException {
-        outputDir = createTempDirectory(tempDir.toPath(), null).toString();
+        outputDir = createTempDirectory(tempDir, null).toString();
         String queryResultsBucket = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
         instanceProperties.set(FILE_SYSTEM, outputDir + "/");

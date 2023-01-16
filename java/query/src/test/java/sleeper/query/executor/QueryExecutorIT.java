@@ -61,8 +61,8 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,7 +94,7 @@ public class QueryExecutorIT {
             .withExposedPorts(DYNAMO_PORT);
 
     @TempDir
-    public File folder = CommonTestConstants.TMP_DIRECTORY;
+    public Path folder;
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -1340,10 +1340,10 @@ public class QueryExecutorIT {
                               TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
         instanceProperties.set(FILE_SYSTEM, "");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        tableProperties.set(DATA_BUCKET, createTempDirectory(folder.toPath(), null).toString());
+        tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .localDir(createTempDirectory(folder.toPath(), null).toString())
+                .localDir(createTempDirectory(folder, null).toString())
                 .instanceProperties(instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
