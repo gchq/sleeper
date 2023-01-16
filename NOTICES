@@ -105,7 +105,7 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.72):
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:localstack:1.17.6, org.testcontainers:testcontainers:1.17.6):
+Testcontainers (org.testcontainers:localstack:1.17.6, org.testcontainers:testcontainers:1.17.6, org.testcontainers:junit-jupiter:1.17.6):
 
 - MIT License
 
