@@ -44,11 +44,6 @@
         </dependency>
         <!-- Test dependencies -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
