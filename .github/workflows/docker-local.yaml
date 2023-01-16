@@ -58,3 +58,5 @@ jobs:
           echo VERSION=$VERSION
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+
+# Trigger build to test overwriting Docker image tag in container registry
