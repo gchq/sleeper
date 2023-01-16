@@ -19,11 +19,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.athena.TestUtils;
@@ -36,20 +37,23 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static com.amazonaws.SDKGlobalConfiguration.ACCESS_KEY_SYSTEM_PROPERTY;
 import static com.amazonaws.SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY;
 import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_SYSTEM_PROPERTY;
+import static java.nio.file.Files.createTempDirectory;
 
+@Testcontainers
 public abstract class AbstractMetadataHandlerIT {
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     // For storing data
-    @ClassRule
-    public static TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public static Path tempDir;
 
     protected static final Schema TIME_SERIES_SCHEMA = Schema.builder()
             .rowKeyFields(
@@ -59,7 +63,7 @@ public abstract class AbstractMetadataHandlerIT {
             .valueFields(new Field("count", new LongType()))
             .build();
 
-    @Before
+    @BeforeEach
     public void setUpCredentials() {
         // Annoyingly the MetadataHandler hard-codes the S3 client it uses to check the spill bucket. Therefore
         // I need to set up some credentials in System properties so the default client will pick them up.
@@ -68,7 +72,7 @@ public abstract class AbstractMetadataHandlerIT {
         System.setProperty(AWS_REGION_SYSTEM_PROPERTY, localStackContainer.getRegion());
     }
 
-    @After
+    @AfterEach
     public void clearUpCredentials() {
         System.clearProperty(ACCESS_KEY_SYSTEM_PROPERTY);
         System.clearProperty(SECRET_KEY_SYSTEM_PROPERTY);
@@ -90,13 +94,13 @@ public abstract class AbstractMetadataHandlerIT {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) throws IOException {
-        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA, tempDir.newFolder().getAbsolutePath(),
+        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA, createTempDirectory(tempDir, null).toString(),
                 createDynamoClient(), createS3Client(), 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties);
-        TestUtils.ingestData(createDynamoClient(), createS3Client(), tempDir.newFolder().getAbsolutePath(),
+        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

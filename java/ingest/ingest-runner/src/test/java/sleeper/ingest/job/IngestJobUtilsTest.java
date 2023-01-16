@@ -17,23 +17,21 @@ package sleeper.ingest.job;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import sleeper.core.CommonTestConstants;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestJobUtilsTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public java.nio.file.Path folder;
 
     @Test
     public void shouldReturnEmptyListIfNoFiles() throws Exception {
@@ -62,7 +60,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
         // Given
-        String localDir = folder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
@@ -84,7 +82,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
         // Given
-        String localDir = folder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
@@ -108,7 +106,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForFilesInMultipleDirectories() throws Exception {
         // Given
-        String localDir = folder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
@@ -137,7 +135,7 @@ public class IngestJobUtilsTest {
     @Test
     public void shouldGetPathsForFilesInNestedDirectories() throws Exception {
         // Given
-        String localDir = folder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 

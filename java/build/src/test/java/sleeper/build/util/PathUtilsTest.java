@@ -15,7 +15,7 @@
  */
 package sleeper.build.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

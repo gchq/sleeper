@@ -17,7 +17,7 @@ package sleeper.bulkimport.job.runner.dataframe;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;

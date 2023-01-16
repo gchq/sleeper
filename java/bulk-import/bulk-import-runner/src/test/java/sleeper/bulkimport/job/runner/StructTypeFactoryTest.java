@@ -19,7 +19,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

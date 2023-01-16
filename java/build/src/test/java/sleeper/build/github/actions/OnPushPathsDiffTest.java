@@ -15,7 +15,7 @@
  */
 package sleeper.build.github.actions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.testutil.TestProjectStructure;

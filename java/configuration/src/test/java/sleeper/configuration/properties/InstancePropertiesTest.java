@@ -15,17 +15,16 @@
  */
 package sleeper.configuration.properties;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import sleeper.core.CommonTestConstants;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -89,8 +88,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class InstancePropertiesTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
     @Test
     public void shouldCreateFromFile() throws IOException {
@@ -98,7 +97,7 @@ public class InstancePropertiesTest {
         InstanceProperties instanceProperties = getSleeperProperties();
 
         // When
-        File file = new File(folder.newFolder() + "/props");
+        File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
         InstanceProperties loaded = new InstanceProperties();
         loaded.load(file);

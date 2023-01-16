@@ -15,7 +15,7 @@
  */
 package sleeper.status.report.table;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.ToStringPrintStream;
 

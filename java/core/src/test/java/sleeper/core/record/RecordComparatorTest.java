@@ -15,7 +15,7 @@
  */
 package sleeper.core.record;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

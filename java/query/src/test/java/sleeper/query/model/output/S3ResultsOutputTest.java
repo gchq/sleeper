@@ -20,10 +20,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.iterator.WrappedIterator;
@@ -54,6 +53,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
@@ -63,17 +63,17 @@ import static sleeper.query.model.output.S3ResultsOutput.PAGE_SIZE;
 import static sleeper.query.model.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
 public class S3ResultsOutputTest {
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public Path tempDir;
 
     InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = setupSchema();
     List<Record> recordList = setupData();
     String outputDir;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
-        outputDir = tempDir.newFolder().getAbsolutePath();
+        outputDir = createTempDirectory(tempDir, null).toString();
         String queryResultsBucket = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
         instanceProperties.set(FILE_SYSTEM, outputDir + "/");

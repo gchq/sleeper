@@ -15,7 +15,7 @@
  */
 package sleeper.core.key;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.type.ByteArrayType;
