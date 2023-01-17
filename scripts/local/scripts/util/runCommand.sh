@@ -27,6 +27,8 @@ if [ "$SUBCOMMAND" == "aws" ]; then
   aws "$@"
 elif [ "$SUBCOMMAND" == "cdk" ]; then
   cdk "$@"
+elif [ "$SUBCOMMAND" == "--version" ] || [ "$SUBCOMMAND" == "-v" ]; then
+  cat /sleeper/version.txt
 else
   THIS_DIR=$(cd "$(dirname "$0")" && pwd)
   SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../../bin && pwd)
