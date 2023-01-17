@@ -23,9 +23,14 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
+import com.amazonaws.util.EC2MetadataUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class common to Sleeper components that run jobs in a container and
@@ -35,6 +40,19 @@ public class CommonJobUtils {
 
     private CommonJobUtils() {
 
+    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommonJobUtils.class);
+
+    public static void main(String...args) {
+        CommonJobUtils.getEC2Info().ifPresent(info -> {
+            LOGGER.info("Task running on EC2 instance ID {} of type {} architecture {} in AZ {} region {}",
+            info.getInstanceId(), info.getInstanceType(), info.getArchitecture(), info.getAvailabilityZone(),
+            info.getRegion());
+        });
+    }
+
+    public static Optional<EC2MetadataUtils.InstanceInfo> getEC2Info() {
+        return Optional.ofNullable(EC2MetadataUtils.getInstanceInfo());
     }
 
     public static Map<String, Integer> getNumberOfMessagesInQueue(String sqsJobQueueUrl, AmazonSQS sqsClient) {

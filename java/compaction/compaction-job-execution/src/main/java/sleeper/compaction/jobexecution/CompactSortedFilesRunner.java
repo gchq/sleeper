@@ -45,6 +45,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
@@ -140,6 +141,14 @@ public class CompactSortedFilesRunner {
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
                 .builder().taskId(taskId).type(type).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
+
+        // Log some basic data if running on EC2
+        CommonJobUtils.getEC2Info().ifPresent(info -> {
+            LOGGER.info("Task running on EC2 instance ID {} of type {} architecture {} in AZ {} region {}",
+            info.getInstanceId(), info.getInstanceType(), info.getArchitecture(), info.getAvailabilityZone(),
+            info.getRegion());
+        });
+
         taskStatusStore.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         long totalNumberOfMessagesProcessed = 0L;
