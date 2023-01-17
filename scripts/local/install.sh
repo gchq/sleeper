@@ -24,3 +24,6 @@ fi
 VERSION=$1
 
 docker pull ghcr.io/gchq/sleeper-local:$VERSION
+
+sudo curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/local/runInDocker.sh" --output /usr/local/bin/sleeper
+sudo chmod a+x /usr/local/bin/sleeper
