@@ -17,7 +17,7 @@ package sleeper.bulkimport.job.runner.rdd;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import scala.Tuple2;
 
 import sleeper.core.key.Key;

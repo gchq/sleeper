@@ -17,17 +17,16 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.key.Key;
@@ -50,10 +49,10 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -64,86 +63,80 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
-@RunWith(Parameterized.class)
 public class IngestCoordinatorCommonIT {
-    @ClassRule
+    @RegisterExtension
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
             LocalStackContainer.Service.DYNAMODB);
     private static final String DATA_BUCKET_NAME = "databucket";
-    private final QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> ingestCoordinatorFactoryFn;
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path temporaryFolder;
 
-    public IngestCoordinatorCommonIT(QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> ingestCoordinatorFactoryFn) {
-        this.ingestCoordinatorFactoryFn = ingestCoordinatorFactoryFn;
-    }
-
-    private static String newTemporaryDirectory(TemporaryFolder temporaryFolder) {
+    private static String newTemporaryDirectory(Path temporaryFolder) {
         try {
-            return temporaryFolder.newFolder().getAbsolutePath();
+            return createTempDirectory(temporaryFolder, null).toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> parametersForTests() {
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrowLocalFn =
-                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
-                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrow(
-                                stateStore,
-                                sleeperSchema,
-                                newTemporaryDirectory(temporaryFolder),
-                                sleeperIteratorClassName,
-                                workingDir
-                        );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrowS3Fn =
-                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
-                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrow(
-                                stateStore,
-                                sleeperSchema,
-                                "s3a://" + DATA_BUCKET_NAME,
-                                sleeperIteratorClassName,
-                                workingDir
-                        );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> asyncArrowS3Fn =
-                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
-                        (IngestCoordinator<Record>) createIngestCoordinatorAsyncWriteBackedByArrow(
-                                stateStore,
-                                sleeperSchema,
-                                DATA_BUCKET_NAME,
-                                sleeperIteratorClassName,
-                                workingDir
-                        );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListLocalFn =
-                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
-                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
-                                stateStore,
-                                sleeperSchema,
-                                newTemporaryDirectory(temporaryFolder),
-                                sleeperIteratorClassName,
-                                workingDir
-                        );
-        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListS3Fn =
-                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
-                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
-                                stateStore,
-                                sleeperSchema,
-                                "s3a://" + DATA_BUCKET_NAME,
-                                sleeperIteratorClassName,
-                                workingDir
-                        );
-        return Arrays.asList(new Object[][]{
-                {asyncArrowS3Fn},
-                {directArrowLocalFn},
-                {directArrowS3Fn},
-                {directArrayListLocalFn},
-                {directArrayListS3Fn}
-        });
+    private static Stream<Arguments> parametersForTests() {
+        return Stream.of(
+                Arguments.of(Named.of("Direct write, backed by Arrow, no S3",
+                        (QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>>)
+                                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
+                                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrow(
+                                                stateStore,
+                                                sleeperSchema,
+                                                newTemporaryDirectory(temporaryFolder),
+                                                sleeperIteratorClassName,
+                                                workingDir
+                                        ))),
+                Arguments.of(Named.of("Direct write, backed by Arrow, using S3",
+                        (QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>>)
+                                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
+                                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrow(
+                                                stateStore,
+                                                sleeperSchema,
+                                                "s3a://" + DATA_BUCKET_NAME,
+                                                sleeperIteratorClassName,
+                                                workingDir
+                                        ))),
+                Arguments.of(Named.of("Async write, backed by Arrow",
+                        (QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>>)
+                                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
+                                        (IngestCoordinator<Record>) createIngestCoordinatorAsyncWriteBackedByArrow(
+                                                stateStore,
+                                                sleeperSchema,
+                                                DATA_BUCKET_NAME,
+                                                sleeperIteratorClassName,
+                                                workingDir
+                                        ))),
+                Arguments.of(Named.of("Direct write, backed by ArrayList, no S3",
+                        (QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>>)
+                                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
+                                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
+                                                stateStore,
+                                                sleeperSchema,
+                                                newTemporaryDirectory(temporaryFolder),
+                                                sleeperIteratorClassName,
+                                                workingDir
+                                        ))),
+                Arguments.of(Named.of("Direct write, backed by ArrayList, using S3",
+                        (QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>>)
+                                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
+                                        (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
+                                                stateStore,
+                                                sleeperSchema,
+                                                "s3a://" + DATA_BUCKET_NAME,
+                                                sleeperIteratorClassName,
+                                                workingDir
+                                        )))
+        );
     }
 
     private static IngestCoordinator<Record> createIngestCoordinatorDirectWriteBackedByArrow(
@@ -235,18 +228,21 @@ public class IngestCoordinatorCommonIT {
         }
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(DATA_BUCKET_NAME);
     }
 
-    @After
+    @AfterEach
     public void after() {
         AWS_EXTERNAL_RESOURCE.clear();
     }
 
-    @Test
-    public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsCorrectly(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -260,11 +256,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteManyRecordsCorrectly() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteManyRecordsCorrectly(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -278,11 +278,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartitionIntKey() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartitionIntKey(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -298,11 +302,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartitionLongKey(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -318,11 +326,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartitionStringKey() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartitionStringKey(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Random random = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
@@ -346,11 +358,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartitionByteArrayKey(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
@@ -372,12 +388,16 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
 
-    @Test
-    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Random random = new Random(0);
         RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
@@ -406,11 +426,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
@@ -430,11 +454,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
@@ -451,11 +479,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100).boxed().collect(Collectors.toList()),
@@ -472,11 +504,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
@@ -492,11 +528,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteDuplicateRecords() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteDuplicateRecords(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -515,11 +555,15 @@ public class IngestCoordinatorCommonIT {
                 duplicatedRecordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldWriteNoRecordsSuccessfully(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 Collections.emptyList());
@@ -533,11 +577,15 @@ public class IngestCoordinatorCommonIT {
                 recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                null);
+                null,
+                ingestCoordinatorFactoryFn);
     }
 
-    @Test
-    public void shouldApplyIterator() throws StateStoreException, IOException, IteratorException {
+    @ParameterizedTest
+    @MethodSource("parametersForTests")
+    public void shouldApplyIterator(
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
@@ -561,7 +609,8 @@ public class IngestCoordinatorCommonIT {
                 expectedAggregatedRecords,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                AdditionIterator.class.getName());
+                AdditionIterator.class.getName(),
+                ingestCoordinatorFactoryFn);
     }
 
     private void ingestAndVerify(
@@ -570,13 +619,14 @@ public class IngestCoordinatorCommonIT {
             List<Record> expectedRecordsList,
             Function<Key, Integer> keyToPartitionNoMappingFn,
             Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
-            String sleeperIteratorClassName) throws IOException, StateStoreException, IteratorException {
+            String sleeperIteratorClassName,
+            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn) throws IOException, StateStoreException, IteratorException {
         StateStore stateStore = PartitionedTableCreator.createStateStore(
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
         // A deep working directory forces the ingest coordinator to create a deep tree of directories
-        String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath() + "/path/to/new/sub/directory";
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         try (IngestCoordinator<Record> ingestCoordinator =
                      ingestCoordinatorFactoryFn.apply(
                              stateStore,

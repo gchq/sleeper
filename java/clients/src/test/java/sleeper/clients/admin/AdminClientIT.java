@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.configuration.properties.InstanceProperties;

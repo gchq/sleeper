@@ -19,11 +19,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.google.common.io.ByteStreams;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -40,12 +40,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -53,14 +55,15 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 
+@Testcontainers
 public class ObjectFactoryTest {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
     );
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -110,7 +113,7 @@ public class ObjectFactoryTest {
         ToolProvider.getSystemJavaCompiler()
                 .getTask(null, null, null, Collections.emptyList(), Collections.emptyList(), Collections.singletonList(fileObject))
                 .call();
-        String jarFileLocation = folder.newFolder().getPath() + "/ajar.jar";
+        String jarFileLocation = createTempDirectory(folder, null).toString() + "/ajar.jar";
         JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFileLocation), new Manifest());
         JarEntry jarEntry = new JarEntry("MyIterator.class");
         jos.putNextEntry(jarEntry);
@@ -126,7 +129,7 @@ public class ObjectFactoryTest {
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
         // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, folder.newFolder().getPath());
+        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, createTempDirectory(folder, null).toString());
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
         assertThat(sri).hasToString("MyIterator");
@@ -136,7 +139,7 @@ public class ObjectFactoryTest {
         private final String code;
 
         public MySimpleJavaFileObject(String name, String code) {
-            super(create(name), JavaFileObject.Kind.SOURCE);
+            super(create(name), Kind.SOURCE);
             this.code = code;
         }
 
