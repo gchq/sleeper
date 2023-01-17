@@ -16,26 +16,20 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-  bash
-	exit
+	echo "Usage: environment <command>"
+	exit 1
 fi
 
 SUBCOMMAND=$1
 shift
 
-if [ "$SUBCOMMAND" == "aws" ]; then
-  aws "$@"
-elif [ "$SUBCOMMAND" == "cdk" ]; then
-  cdk "$@"
-else
-  THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-  SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/sleeper && pwd)
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/environment && pwd)
 
-  SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
-  if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
-    echo "Subcommand not found: $SUBCOMMAND"
-    exit 1
-  fi
-
-  "$SUBCOMMAND_SCRIPT" "$@"
+SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
+if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
+  echo "Subcommand not found: environment $SUBCOMMAND"
+  exit 1
 fi
+
+"$SUBCOMMAND_SCRIPT" "$@"

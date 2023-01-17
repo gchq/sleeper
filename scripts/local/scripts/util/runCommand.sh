@@ -16,14 +16,26 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: sleeper environment <command>"
-	exit 1
+  bash
+	exit
 fi
 
 SUBCOMMAND=$1
 shift
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../environment && pwd)
+if [ "$SUBCOMMAND" == "aws" ]; then
+  aws "$@"
+elif [ "$SUBCOMMAND" == "cdk" ]; then
+  cdk "$@"
+else
+  THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+  SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../../bin && pwd)
 
-"$SCRIPTS_DIR/$SUBCOMMAND.sh" "$@"
+  SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND"
+  if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
+    echo "Subcommand not found: $SUBCOMMAND"
+    exit 1
+  fi
+
+  "$SUBCOMMAND_SCRIPT" "$@"
+fi
