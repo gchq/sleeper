@@ -16,32 +16,14 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: sleeper environment destroy <uniqueId> <optional_cdk_parameters>"
+	echo "Usage: sleeper environment <command>"
 	exit 1
 fi
 
-INSTANCE_ID=$1
-
-if [ "$#" -lt 2 ]; then
-	CDK_PARAMS=("--all")
-  DELETE_ENVIRONMENT_DIR=true
-else
-  CDK_PARAMS=("$@")
-  DELETE_ENVIRONMENT_DIR=false
-fi
+SUBCOMMAND=$1
+shift
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
-CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../environment && pwd)
 
-"$SCRIPTS_DIR/util/configure-aws.sh"
-
-pushd "$CDK_DIR" > /dev/null
-cdk destroy -c instanceId="$INSTANCE_ID" "${CDK_PARAMS[@]}"
-popd > /dev/null
-
-if [ "$DELETE_ENVIRONMENT_DIR" = true ]; then
-  rm -rf "$ENVIRONMENT_DIR"
-fi
+"$SCRIPTS_DIR/$SUBCOMMAND.sh" "$@"

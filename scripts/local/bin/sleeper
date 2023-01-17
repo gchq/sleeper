@@ -16,14 +16,20 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: $0 <command>"
-	exit 1
+  bash
+	exit
 fi
 
 SUBCOMMAND=$1
 shift
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../scripts/environment && pwd)
+if [ "$SUBCOMMAND" == "aws" ]; then
+  aws "$@"
+elif [ "$SUBCOMMAND" == "cdk" ]; then
+  cdk "$@"
+else
+  THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+  SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../scripts/sleeper && pwd)
 
-"$SCRIPTS_DIR/$SUBCOMMAND.sh" "$@"
+  "$SCRIPTS_DIR/$SUBCOMMAND.sh" "$@"
+fi
