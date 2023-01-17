@@ -27,6 +27,9 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,9 +54,9 @@ import java.util.stream.Collectors;
  * Parquet files to S3A. The Hadoop FileSystem caches the S3AFileSystem objects which actually communicate with S3 and
  * this means that any new localstack container will not be recognised once the first one has been used. The FileSystem
  * cache needs to be reset between different recreations of the localstack container, and this takes place in the {@link
- * #after()} method.
+ * #afterAll(ExtensionContext)} method.
  */
-public class AwsExternalResource extends ExternalResource {
+public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsExternalResource.class);
 
     private final LocalStackContainer localStackContainer;
@@ -113,7 +116,7 @@ public class AwsExternalResource extends ExternalResource {
     }
 
     @Override
-    protected void before() {
+    public void beforeAll(ExtensionContext context) {
         localStackContainer.start();
         s3Client = (localStackServiceSet.contains(LocalStackContainer.Service.S3)) ? createS3Client() : null;
         s3AsyncClient = (localStackServiceSet.contains(LocalStackContainer.Service.S3)) ? createS3AsyncClient() : null;
@@ -172,7 +175,7 @@ public class AwsExternalResource extends ExternalResource {
     }
 
     @Override
-    protected void after() {
+    public void afterAll(ExtensionContext context) {
         clear();
         if (localStackServiceSet.contains(LocalStackContainer.Service.S3)) {
             s3Client.shutdown();

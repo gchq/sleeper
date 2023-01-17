@@ -26,7 +26,7 @@ public class TestMavenModuleStructure {
                 testedModuleBuilder("configuration").dependenciesArray(
                         dependency("org.apache.datasketches:datasketches-java"),
                         dependency("sleeper:core"),
-                        dependencyBuilder("junit:junit").scope("test").exported(false).build(),
+                        dependencyBuilder("org.junit.jupiter:junit-jupiter-api").scope("test").exported(false).build(),
                         dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
                 ).build(),
                 testedModuleBuilder("ingest").dependenciesArray(

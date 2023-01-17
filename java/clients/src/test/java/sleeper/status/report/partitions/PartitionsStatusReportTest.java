@@ -16,7 +16,7 @@
 
 package sleeper.status.report.partitions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.statestore.StateStore;
 

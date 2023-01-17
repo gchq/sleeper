@@ -42,7 +42,7 @@ import com.google.gson.Gson;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;

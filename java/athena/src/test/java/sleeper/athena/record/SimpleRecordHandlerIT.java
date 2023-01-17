@@ -33,7 +33,7 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 import org.apache.hadoop.fs.Path;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;

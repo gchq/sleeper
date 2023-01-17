@@ -15,7 +15,7 @@
  */
 package sleeper.status.report.ingest.task;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.ToStringPrintStream;
 import sleeper.ingest.task.IngestTaskStatus;

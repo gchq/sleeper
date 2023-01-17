@@ -51,6 +51,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
 public class ConfigurationUtils {
+    private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.x86_64";
 
     private ConfigurationUtils() {
     }
@@ -112,6 +113,9 @@ public class ConfigurationUtils {
         // spark.sql properties
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS));
 
+        // Set JAVA_HOME explicitly
+        sparkConf.put("spark.executorEnv.JAVA_HOME", JAVA_HOME);
+
         return sparkConf;
     }
 
@@ -139,8 +143,12 @@ public class ConfigurationUtils {
 
     public static Map<String, String> getJavaHomeConfiguration() {
         Map<String, String> javaHomeConf = new HashMap<>();
-        javaHomeConf.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64");
+        javaHomeConf.put("JAVA_HOME", JAVA_HOME);
 
         return javaHomeConf;
+    }
+
+    public static String getJavaHome() {
+        return JAVA_HOME;
     }
 }
