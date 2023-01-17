@@ -142,7 +142,7 @@ public class CompactSortedFilesRunner {
                 .builder().taskId(taskId).type(type).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
 
-        // Log some basic data if running on EC2
+        // Log some basic data if running on EC2 inside ECS
         CommonJobUtils.getEC2Info().ifPresent(info -> {
             LOGGER.info("Task running on EC2 instance ID {} of type {} architecture {} in AZ {} region {}",
             info.getInstanceId(), info.getInstanceType(), info.getArchitecture(), info.getAvailabilityZone(),
