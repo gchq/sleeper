@@ -24,26 +24,30 @@ import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.util.EC2MetadataUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utility class common to Sleeper components that run jobs in a container and
  * need to consume messages from a queue.
  */
 public class CommonJobUtils {
-
+    /** Environment variable key for finding where this program is running.*/
+    private static final String EXECUTION_ENV = "AWS_EXECUTION_ENV";
+    /** Value if running on EC2.*/
+    private static final String ECS_EC2_ENV="AWS_ECS_EC2";
+    
     private CommonJobUtils() {
 
     }
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonJobUtils.class);
 
-    public static void main(String...args) {
+    
+    public static void main(String... args) {        
         CommonJobUtils.getEC2Info().ifPresent(info -> {
             LOGGER.info("Task running on EC2 instance ID {} of type {} architecture {} in AZ {} region {}",
             info.getInstanceId(), info.getInstanceType(), info.getArchitecture(), info.getAvailabilityZone(),
@@ -52,7 +56,11 @@ public class CommonJobUtils {
     }
 
     public static Optional<EC2MetadataUtils.InstanceInfo> getEC2Info() {
+        if (ECS_EC2_ENV.equalsIgnoreCase(System.getenv(EXECUTION_ENV))) {
         return Optional.ofNullable(EC2MetadataUtils.getInstanceInfo());
+        } else {
+            return Optional.empty();
+        }
     }
 
     public static Map<String, Integer> getNumberOfMessagesInQueue(String sqsJobQueueUrl, AmazonSQS sqsClient) {
