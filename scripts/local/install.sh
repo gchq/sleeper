@@ -17,16 +17,19 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: install.sh <version>"
-	exit 1
+  GIT_REF="main"
+  REMOTE_TAG="latest"
+else
+  GIT_REF="$1"
+  REMOTE_TAG="$1"
 fi
 
-VERSION=$1
-REMOTE_IMAGE="ghcr.io/gchq/sleeper-local:$VERSION"
+REMOTE_IMAGE="ghcr.io/gchq/sleeper-local:$REMOTE_TAG"
 LOCAL_IMAGE="sleeper-local:current"
 
 docker pull "$REMOTE_IMAGE"
 docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
 
-sudo curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/local/runInDocker.sh" --output /usr/local/bin/sleeper
+echo "Installing Sleeper to system path (may require elevated permissions)"
+sudo curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/local/runInDocker.sh" --output /usr/local/bin/sleeper
 sudo chmod a+x /usr/local/bin/sleeper
