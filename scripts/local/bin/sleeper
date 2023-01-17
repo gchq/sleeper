@@ -29,7 +29,13 @@ elif [ "$SUBCOMMAND" == "cdk" ]; then
   cdk "$@"
 else
   THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-  SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../scripts/sleeper && pwd)
+  SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/sleeper && pwd)
 
-  "$SCRIPTS_DIR/$SUBCOMMAND.sh" "$@"
+  SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
+  if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
+    echo "Subcommand not found: $SUBCOMMAND"
+    exit 1
+  fi
+
+  "$SUBCOMMAND_SCRIPT" "$@"
 fi
