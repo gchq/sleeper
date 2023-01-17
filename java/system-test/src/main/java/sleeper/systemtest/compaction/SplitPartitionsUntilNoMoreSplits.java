@@ -28,11 +28,13 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeLambda;
+import sleeper.systemtest.util.WaitForQueueEstimateNotEmpty;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class SplitPartitionsUntilNoMoreSplits {
@@ -60,6 +62,8 @@ public class SplitPartitionsUntilNoMoreSplits {
 
         WaitForPartitionSplitting waitForSplitting = new WaitForPartitionSplitting(sqsClient, systemTestProperties);
         WaitForCompactionJobs waitForCompaction = new WaitForCompactionJobs(store, tableName);
+        WaitForQueueEstimateNotEmpty waitForJobQueueEstimate = new WaitForQueueEstimateNotEmpty(
+                sqsClient, systemTestProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
 
         while (true) {
             LOGGER.info("Splitting partitions");
@@ -72,6 +76,7 @@ public class SplitPartitionsUntilNoMoreSplits {
                 LOGGER.info("Lambda created no more jobs, splitting complete");
                 break;
             }
+            waitForJobQueueEstimate.pollUntilFinished();
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
             InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
             waitForCompaction.pollUntilFinished();
