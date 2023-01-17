@@ -16,7 +16,7 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-  bash
+  bash -l
 	exit
 fi
 

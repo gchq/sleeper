@@ -17,6 +17,7 @@
 HOME_IN_IMAGE=/root
 
 docker run -it --rm \
+  --name sleeper-local \
   -v "$HOME/.sleeper/environments:/root/.sleeper/environments" \
   -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
   -e AWS_ACCESS_KEY_ID \
