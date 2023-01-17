@@ -76,6 +76,8 @@ public class SplitPartitionsUntilNoMoreSplits {
                 LOGGER.info("Lambda created no more jobs, splitting complete");
                 break;
             }
+            // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
+            // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
             waitForJobQueueEstimate.pollUntilFinished();
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
             InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
