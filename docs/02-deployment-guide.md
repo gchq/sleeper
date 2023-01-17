@@ -20,6 +20,8 @@ You will need the following software:
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
+If you deployed an environment with the local Docker image, the EC2 instance will have these pre-installed.
+
 ### Configure AWS
 
 The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
