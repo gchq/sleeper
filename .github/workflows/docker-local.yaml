@@ -39,10 +39,10 @@ jobs:
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Log in to registry
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/439-install-script-for-local-docker'
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
       - name: Push image
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/439-install-script-for-local-docker'
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: |
 
           # This code came from GitHub Docs, to publish a 'latest' tag built from the main branch,
