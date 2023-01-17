@@ -69,10 +69,10 @@ public class SplitPartitionsUntilNoMoreSplits {
             LOGGER.info("Creating compaction jobs");
             InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
             if (store.getUnfinishedJobs(tableName).isEmpty()) {
-                LOGGER.info("Created no more jobs, splitting complete");
+                LOGGER.info("Lambda created no more jobs, splitting complete");
                 break;
             }
-            LOGGER.info("Creating splitting compaction tasks");
+            LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
             InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
             waitForCompaction.pollUntilFinished();
         }
