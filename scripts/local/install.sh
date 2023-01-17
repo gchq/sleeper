@@ -22,8 +22,11 @@ if [ "$#" -lt 1 ]; then
 fi
 
 VERSION=$1
+REMOTE_IMAGE="ghcr.io/gchq/sleeper-local:$VERSION"
+LOCAL_IMAGE="sleeper-local:current"
 
-docker pull ghcr.io/gchq/sleeper-local:$VERSION
+docker pull "$REMOTE_IMAGE"
+docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
 
 sudo curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/local/runInDocker.sh" --output /usr/local/bin/sleeper
 sudo chmod a+x /usr/local/bin/sleeper

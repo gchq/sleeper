@@ -25,4 +25,4 @@ docker run -it --rm \
   -e AWS_PROFILE \
   -e AWS_REGION \
   -e AWS_DEFAULT_REGION \
-  sleeper-local "$@"
+  sleeper-local:current "$@"
