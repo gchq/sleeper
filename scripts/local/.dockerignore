@@ -1,2 +1,3 @@
 build*
 runInDocker.sh
+install.sh
