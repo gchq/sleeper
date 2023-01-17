@@ -41,23 +41,21 @@ public class WaitForQueueEstimateNotEmpty {
     }
 
     public void pollUntilFinished() throws InterruptedException {
+        LOGGER.info("Waiting for messages on {}", queueUrl);
         poll.pollUntil("queue estimated not empty", this::isEstimateNotEmpty);
     }
 
     private boolean isEstimateNotEmpty() {
-        int unconsumedMessages = getUnconsumedMessages();
-        LOGGER.info("Unconsumed message estimate: {}", unconsumedMessages);
-        return unconsumedMessages > 0;
+        int approximateMessages = getApproximateMessages();
+        LOGGER.info("Approximate number of messages: {}", approximateMessages);
+        return approximateMessages > 0;
     }
 
-    private int getUnconsumedMessages() {
+    private int getApproximateMessages() {
         GetQueueAttributesResult result = sqsClient.getQueueAttributes(new GetQueueAttributesRequest()
                 .withQueueUrl(queueUrl)
-                .withAttributeNames(
-                        QueueAttributeName.ApproximateNumberOfMessages,
-                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible));
-        return getInt(result, QueueAttributeName.ApproximateNumberOfMessages) +
-                getInt(result, QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
+                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages));
+        return getInt(result, QueueAttributeName.ApproximateNumberOfMessages);
     }
 
     private static int getInt(GetQueueAttributesResult result, QueueAttributeName attribute) {
