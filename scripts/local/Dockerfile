@@ -43,7 +43,7 @@ WORKDIR /
 RUN apt-get install -y openjdk-17-jre
 
 # Set command line prompt to show you're in the local Docker container
-RUN echo 'export PS1="🐳 \e[0;34m\u@sleeper-local\e[0m: \w # "' >> ~/.bashrc
+RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-local\e[0m: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper
 COPY . .
