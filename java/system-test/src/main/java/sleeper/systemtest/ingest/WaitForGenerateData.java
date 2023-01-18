@@ -24,6 +24,8 @@ import com.amazonaws.services.ecs.model.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.systemtest.ingest.json.TaskStatusJson;
+import sleeper.systemtest.ingest.json.TasksJson;
 import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;

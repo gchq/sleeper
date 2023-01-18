@@ -4,4 +4,4 @@ dev/
 generated/
 local/
 deploy/buildAndDeploy.sh
-test/buildDeployTest.sh
+test/**/buildDeployTest.sh
