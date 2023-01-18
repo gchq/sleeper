@@ -56,7 +56,7 @@ public class SplitPartitionsUntilNoMoreSplits {
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
 
-        ApplyPartitionSplitAndWaitForCompletion applySplit = new ApplyPartitionSplitAndWaitForCompletion(
+        WaitForCurrentSplitAddingMissingJobs applySplit = new WaitForCurrentSplitAddingMissingJobs(
                 sqsClient, store, systemTestProperties, tableName);
 
         do {
