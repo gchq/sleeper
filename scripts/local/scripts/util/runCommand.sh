@@ -17,7 +17,7 @@ set -e
 
 if [ "$#" -lt 1 ]; then
   bash -l
-	exit
+  exit
 fi
 
 SUBCOMMAND=$1
