@@ -40,6 +40,10 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstancePropertyCons
         return new Builder();
     }
 
+    static UserDefinedInstancePropertyImpl.Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
     @Override
     public Predicate<String> validationPredicate() {
         return validationPredicate;

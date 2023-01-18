@@ -20,6 +20,8 @@ import sleeper.configuration.Utils;
 
 import java.util.Objects;
 
+import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.named;
+
 public interface UserDefinedInstancePropertyConstant extends InstanceProperty {
 
     // Tables
@@ -395,10 +397,6 @@ public interface UserDefinedInstancePropertyConstant extends InstanceProperty {
 
     static UserDefinedInstancePropertyConstant[] values() {
         return UserDefinedInstancePropertyImpl.ALL.toArray(new UserDefinedInstancePropertyConstant[0]);
-    }
-
-    private static UserDefinedInstancePropertyImpl.Builder named(String name) {
-        return UserDefinedInstancePropertyImpl.builder().propertyName(name);
     }
 
 }
