@@ -20,7 +20,8 @@ if [ "$#" -ne 3 ]; then
 	exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd )
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
@@ -28,7 +29,7 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/build/buildForTest.sh"
 END_BUILD_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deployTest.sh" "$@"
+"$THIS_DIR/deployTest.sh" "$@"
 FINISH_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
