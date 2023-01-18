@@ -16,15 +16,9 @@
 
 package sleeper.configuration.properties;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
-
-    public static final List<UserDefinedInstanceProperty> ALL = getAll();
 
     private final String propertyName;
     private final String defaultValue;
@@ -62,20 +56,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     @Override
     public String name() {
         return propertyName;
-    }
-
-    private static List<UserDefinedInstanceProperty> getAll() {
-        Field[] fields = UserDefinedInstanceProperty.class.getDeclaredFields();
-        List<UserDefinedInstanceProperty> properties = new ArrayList<>(fields.length);
-        for (Field field : fields) {
-            try {
-                properties.add((UserDefinedInstanceProperty) field.get(null));
-            } catch (IllegalAccessException e) {
-                throw new IllegalStateException(
-                        "Could not instantiate list of all user defined instance properties, failed reading " + field.getName(), e);
-            }
-        }
-        return Collections.unmodifiableList(properties);
     }
 
     static final class Builder {

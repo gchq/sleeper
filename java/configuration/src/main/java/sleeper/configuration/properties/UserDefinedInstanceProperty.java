@@ -17,6 +17,10 @@ package sleeper.configuration.properties;
 
 import sleeper.configuration.Utils;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.named;
@@ -397,9 +401,23 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse).build();
 
+    String name();
+
     static UserDefinedInstanceProperty[] values() {
-        return UserDefinedInstancePropertyImpl.ALL.toArray(new UserDefinedInstanceProperty[0]);
+        return getAll().toArray(new UserDefinedInstanceProperty[0]);
     }
 
-    String name();
+    private static List<UserDefinedInstanceProperty> getAll() {
+        Field[] fields = UserDefinedInstanceProperty.class.getDeclaredFields();
+        List<UserDefinedInstanceProperty> properties = new ArrayList<>(fields.length);
+        for (Field field : fields) {
+            try {
+                properties.add((UserDefinedInstanceProperty) field.get(null));
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException(
+                        "Could not instantiate list of all user defined instance properties, failed reading " + field.getName(), e);
+            }
+        }
+        return Collections.unmodifiableList(properties);
+    }
 }
