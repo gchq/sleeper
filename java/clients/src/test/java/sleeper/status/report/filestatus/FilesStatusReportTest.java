@@ -16,7 +16,7 @@
 package sleeper.status.report.filestatus;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;

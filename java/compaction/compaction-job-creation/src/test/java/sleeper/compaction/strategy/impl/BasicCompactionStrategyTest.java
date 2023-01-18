@@ -16,7 +16,7 @@
 package sleeper.compaction.strategy.impl;
 
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.InstanceProperties;

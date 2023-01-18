@@ -15,13 +15,13 @@
 
 set -e
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+TABLE_NAME="system-test"
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 JARS_DIR="$SCRIPTS_DIR/jars"
 GENERATED_DIR="$SCRIPTS_DIR/generated"
 
 SYSTEM_TEST_JAR="$JARS_DIR/system-test-$VERSION-utility.jar"
-WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
@@ -29,36 +29,42 @@ INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.util.EnsureCompactionJobCreationPaused "$INSTANCE_ID"
+
+END_CHECK_PAUSED_TIME=$(record_time)
+
 echo "-------------------------------------------------------------------------------"
-echo "Waiting for tasks to generate data"
+echo "Invoking compaction job creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
+sleeper.systemtest.compaction.InvokeCompactionJobCreation "$INSTANCE_ID"
 
-END_GENERATE_DATA_TIME=$(record_time)
-echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
-
-echo "-------------------------------------------------------------------------------"
-echo "Triggering ingest"
-echo "-------------------------------------------------------------------------------"
-java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.TriggerIngestFromQueue "${INSTANCE_ID}"
-
-END_TRIGGER_INGEST_TIME=$(record_time)
-echo "Triggering ingest finished at $(recorded_time_str "$END_TRIGGER_INGEST_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_TRIGGER_INGEST_TIME")"
+END_CREATE_COMPACTION_JOBS_TIME=$(record_time)
+echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_CHECK_PAUSED_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
 
 echo "-------------------------------------------------------------------------------"
-echo "Waiting for ingest tasks"
+echo "Invoking compaction task creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForIngestTasks "${INSTANCE_ID}"
+sleeper.systemtest.compaction.InvokeCompactionTaskCreation "$INSTANCE_ID"
+
+END_CREATE_COMPACTION_TASKS_TIME=$(record_time)
+echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
+
+echo "-------------------------------------------------------------------------------"
+echo "Waiting for compaction jobs"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished waiting for ingest"
+echo "Finished compaction test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
-echo "Triggering ingest finished at $(recorded_time_str "$END_TRIGGER_INGEST_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_TRIGGER_INGEST_TIME")"
-echo "Ingest tasks finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_TRIGGER_INGEST_TIME" "$FINISH_TIME")"
-echo "Overall, waited for $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Checking for paused state took $(elapsed_time_str "$START_TIME" "$END_CHECK_PAUSED_TIME")"
+echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_CHECK_PAUSED_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
+echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
+echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_TASKS_TIME" "$FINISH_TIME")"
+echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

@@ -22,11 +22,11 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -51,24 +51,27 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
+@Testcontainers
 public class FindPartitionsToSplitIT {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
 
-    @Rule
-    public TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public Path tempDir;
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
@@ -134,8 +137,8 @@ public class FindPartitionsToSplitIT {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
         recordLists.forEach(list -> {
             try {
-                File stagingArea = tempDir.newFolder();
-                File directory = tempDir.newFolder();
+                File stagingArea = createTempDirectory(tempDir, null).toFile();
+                File directory = createTempDirectory(tempDir, null).toFile();
                 try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, schema,
                         ArrayListRecordBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
@@ -264,7 +267,7 @@ public class FindPartitionsToSplitIT {
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 
         // 109 + 108 + 107 + 106 + 105 = 535
-        assertThat(numberOfRecords).contains(new Long(535));
+        assertThat(numberOfRecords).contains(Long.valueOf(535L));
     }
 
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {

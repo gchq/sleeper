@@ -15,7 +15,7 @@
  */
 package sleeper.build.chunks;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.maven.TestMavenModuleStructure;

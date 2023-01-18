@@ -22,8 +22,8 @@ import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.amazonaws.services.stepfunctions.model.StartExecutionResult;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
 import sleeper.bulkimport.job.BulkImportJob;
@@ -49,7 +49,7 @@ public class StateMachineExecutorTest {
     private AtomicReference<StartExecutionRequest> requested;
     private AmazonS3 amazonS3;
 
-    @Before
+    @BeforeEach
     public void setUpStepFunctions() {
         requested = new AtomicReference<>();
         stepFunctions = mock(AWSStepFunctions.class);

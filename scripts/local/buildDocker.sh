@@ -19,7 +19,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$(dirname "$THIS_DIR")" && pwd)
 
 if [ "$#" -lt 1 ]; then
-	DOCKER_PARAMS=(-t sleeper-local:current)
+  DOCKER_PARAMS=(-t sleeper-local:current)
 else
   DOCKER_PARAMS=("$@")
 fi

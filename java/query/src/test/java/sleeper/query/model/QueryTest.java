@@ -15,7 +15,7 @@
  */
 package sleeper.query.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
