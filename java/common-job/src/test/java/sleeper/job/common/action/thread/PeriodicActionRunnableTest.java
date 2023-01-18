@@ -15,7 +15,7 @@
  */
 package sleeper.job.common.action.thread;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.job.common.action.Action;
 

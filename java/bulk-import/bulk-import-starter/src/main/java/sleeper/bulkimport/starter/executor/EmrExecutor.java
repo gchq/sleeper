@@ -50,6 +50,7 @@ import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -201,6 +202,16 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withClassification("spark-defaults")
                 .withProperties(sparkConf);
         configurations.add(sparkDefaultsConfigurations);
+
+        Map<String, String> sparkExecutorJavaHome = new HashMap<>();
+        sparkExecutorJavaHome.put("JAVA_HOME", ConfigurationUtils.getJavaHome());
+        Configuration sparkEnvExportConfigurations = new Configuration()
+                .withClassification("export")
+                .withProperties(sparkExecutorJavaHome);
+        Configuration sparkEnvConfigurations = new Configuration()
+                .withClassification("spark-env")
+                .withConfigurations(sparkEnvExportConfigurations);
+        configurations.add(sparkEnvConfigurations);
 
         Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
         Configuration mapRedSiteConfigurations = new Configuration()

@@ -21,8 +21,9 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.ClassRule;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
@@ -32,10 +33,11 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.UUID;
 
+@Testcontainers
 public class IngestRecordsITBase extends IngestRecordsTestBase {
     private static final int DYNAMO_PORT = 8000;
 
-    @ClassRule
+    @Container
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 

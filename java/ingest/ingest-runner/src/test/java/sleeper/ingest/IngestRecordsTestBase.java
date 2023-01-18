@@ -16,13 +16,11 @@
 
 package sleeper.ingest;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -34,27 +32,29 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsTestBase {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
     protected final Field field = new Field("key", new LongType());
     protected final Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
     protected String sketchFolderName;
 
-    @Before
+    @BeforeEach
     public void setUpBase() throws Exception {
-        inputFolderName = folder.newFolder().getAbsolutePath();
-        sketchFolderName = folder.newFolder().getAbsolutePath();
+        inputFolderName = createTempDirectory(folder, null).toString();
+        sketchFolderName = createTempDirectory(folder, null).toString();
     }
 
     protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {

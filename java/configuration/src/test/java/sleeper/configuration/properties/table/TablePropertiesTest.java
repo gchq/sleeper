@@ -15,7 +15,7 @@
  */
 package sleeper.configuration.properties.table;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;

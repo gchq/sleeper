@@ -15,9 +15,9 @@
  */
 package sleeper.build.github.api;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import org.junit.Rule;
-import org.junit.Test;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import org.junit.jupiter.api.Test;
 
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
@@ -30,25 +30,23 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.testutil.TestResources.exampleString;
 
+@WireMockTest
 public class GitHubWorkflowRunsImplTest {
 
     private static final String TOKEN = "test-bearer-token";
     private static final GitHubHead GITHUB_EXAMPLE_HEAD = TestGitHubHead.exampleBuilder()
             .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
-    private GitHubWorkflowRuns workflowRuns() {
-        return new GitHubWorkflowRunsImpl(TOKEN, "http://localhost:" + wireMockRule.port());
+    private GitHubWorkflowRuns workflowRuns(int port) {
+        return new GitHubWorkflowRunsImpl(TOKEN, "http://localhost:" + port);
     }
 
     @Test
-    public void shouldGetSingleWorkflowRun() {
+    public void shouldGetSingleWorkflowRun(WireMockRuntimeInfo runtimeInfo) {
         stubFor(get("/repos/test-owner/test-repo/actions/workflows/test-workflow.yaml/runs?branch=test-branch")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
@@ -57,7 +55,7 @@ public class GitHubWorkflowRunsImplTest {
                         .withHeader("Content-Type", "application/vnd.github+json")
                         .withBody(exampleString("examples/github-api/workflow-runs-single.json"))));
 
-        assertThat(workflowRuns().getLatestRun(GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
+        assertThat(workflowRuns(runtimeInfo.getHttpPort()).getLatestRun(GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
                         .status("queued").runId(30433642L)
                         .runUrl("https://github.com/octo-org/octo-repo/actions/runs/30433642")
@@ -68,7 +66,7 @@ public class GitHubWorkflowRunsImplTest {
     }
 
     @Test
-    public void shouldCompareOldCommitWithThisCommit() {
+    public void shouldCompareOldCommitWithThisCommit(WireMockRuntimeInfo runtimeInfo) {
         stubFor(get("/repos/test-owner/test-repo/actions/workflows/test-workflow.yaml/runs?branch=test-branch")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
@@ -85,7 +83,7 @@ public class GitHubWorkflowRunsImplTest {
                         .withHeader("Content-Type", "application/vnd.github+json")
                         .withBody(exampleString("examples/github-api/compare.json"))));
 
-        assertThat(workflowRuns().getLatestRun(TestGitHubHead.example(), "test-workflow.yaml"))
+        assertThat(workflowRuns(runtimeInfo.getHttpPort()).getLatestRun(TestGitHubHead.example(), "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
                         .status("queued").runId(30433642L)
                         .runUrl("https://github.com/octo-org/octo-repo/actions/runs/30433642")

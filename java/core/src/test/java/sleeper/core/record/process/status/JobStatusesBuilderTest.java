@@ -15,7 +15,7 @@
  */
 package sleeper.core.record.process.status;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;

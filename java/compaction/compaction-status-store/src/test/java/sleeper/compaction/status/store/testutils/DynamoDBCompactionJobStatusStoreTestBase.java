@@ -16,8 +16,8 @@
 package sleeper.compaction.status.store.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
@@ -69,12 +69,12 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         dynamoDBClient.deleteTable(jobStatusTableName);
     }

@@ -17,7 +17,7 @@ package sleeper.sketches;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

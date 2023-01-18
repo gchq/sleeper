@@ -22,9 +22,10 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -61,8 +62,9 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+@Testcontainers
 public class SleeperTableLambdaIT {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
@@ -121,7 +123,7 @@ public class SleeperTableLambdaIT {
         // Then
         Integer count = dynamoClient.scan(new ScanRequest().withTableName(tableProperties.get(PARTITION_TABLENAME)))
                 .getCount();
-        assertThat(count).isEqualTo(new Integer(1));
+        assertThat(count).isEqualTo(Integer.valueOf(1));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -198,7 +200,7 @@ public class SleeperTableLambdaIT {
         assertThat(tables).hasSize(1);
         TableProperties downloaded = new TableProperties(instanceProperties);
         downloaded.loadFromS3(s3Client, tableProperties.get(TABLE_NAME));
-        assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(new Integer(20));
+        assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(Integer.valueOf(20));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
