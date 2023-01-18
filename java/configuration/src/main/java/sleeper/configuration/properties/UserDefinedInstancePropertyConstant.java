@@ -20,7 +20,7 @@ import sleeper.configuration.Utils;
 
 import java.util.Objects;
 
-public interface UserDefinedInstancePropertyConstants {
+public interface UserDefinedInstancePropertyConstant extends InstanceProperty {
 
     // Tables
     InstanceProperty TABLE_PROPERTIES = named("sleeper.table.properties")
@@ -392,6 +392,10 @@ public interface UserDefinedInstancePropertyConstants {
     InstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = named("sleeper.default.table.dynamo.strongly.consistent.reads")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse).build();
+
+    static UserDefinedInstancePropertyConstant[] values() {
+        return UserDefinedInstancePropertyImpl.ALL.toArray(new UserDefinedInstancePropertyConstant[0]);
+    }
 
     private static UserDefinedInstancePropertyImpl.Builder named(String name) {
         return UserDefinedInstancePropertyImpl.builder().propertyName(name);

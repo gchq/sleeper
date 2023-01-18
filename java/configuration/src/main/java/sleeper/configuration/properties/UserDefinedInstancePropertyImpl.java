@@ -16,30 +16,19 @@
 
 package sleeper.configuration.properties;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
-class UserDefinedInstancePropertyImpl implements InstanceProperty {
+class UserDefinedInstancePropertyImpl implements UserDefinedInstancePropertyConstant {
+
+    public static final List<UserDefinedInstancePropertyConstant> ALL = getAll();
+
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
-
-    UserDefinedInstancePropertyImpl(String propertyName) {
-        this(propertyName, (String) null);
-    }
-
-    UserDefinedInstancePropertyImpl(String propertyName, Predicate<String> validationPredicate) {
-        this(propertyName, null, validationPredicate);
-    }
-
-    UserDefinedInstancePropertyImpl(String propertyName, String defaultValue) {
-        this(propertyName, defaultValue, (s) -> true);
-    }
-
-    UserDefinedInstancePropertyImpl(String propertyName, String defaultValue, Predicate<String> validationPredicate) {
-        this.propertyName = propertyName;
-        this.defaultValue = defaultValue;
-        this.validationPredicate = validationPredicate;
-    }
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = builder.propertyName;
@@ -66,11 +55,24 @@ class UserDefinedInstancePropertyImpl implements InstanceProperty {
         return propertyName;
     }
 
+    private static List<UserDefinedInstancePropertyConstant> getAll() {
+        Field[] fields = UserDefinedInstancePropertyConstant.class.getDeclaredFields();
+        List<UserDefinedInstancePropertyConstant> properties = new ArrayList<>(fields.length);
+        for (Field field : fields) {
+            try {
+                properties.add((UserDefinedInstancePropertyConstant) field.get(null));
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException(
+                        "Could not instantiate list of all user defined instance properties, failed reading " + field.getName(), e);
+            }
+        }
+        return Collections.unmodifiableList(properties);
+    }
 
     static final class Builder {
         private String propertyName;
         private String defaultValue;
-        private Predicate<String> validationPredicate = (s) -> true;
+        private Predicate<String> validationPredicate = s -> true;
 
         private Builder() {
         }
