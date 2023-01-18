@@ -25,7 +25,7 @@ import com.amazonaws.athena.connector.lambda.metadata.GetSplitsResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;

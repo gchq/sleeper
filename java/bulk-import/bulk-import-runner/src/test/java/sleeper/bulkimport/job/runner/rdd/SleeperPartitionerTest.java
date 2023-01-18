@@ -16,7 +16,7 @@
 package sleeper.bulkimport.job.runner.rdd;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;

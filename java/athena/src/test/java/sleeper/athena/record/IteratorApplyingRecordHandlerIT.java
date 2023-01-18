@@ -34,7 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;

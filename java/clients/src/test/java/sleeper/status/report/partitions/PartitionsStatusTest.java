@@ -16,7 +16,7 @@
 
 package sleeper.status.report.partitions;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;

@@ -15,7 +15,7 @@
  */
 package sleeper.splitter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;

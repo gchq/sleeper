@@ -21,7 +21,7 @@ import org.apache.parquet.filter2.predicate.Operators.GtEq;
 import org.apache.parquet.filter2.predicate.Operators.Lt;
 import org.apache.parquet.filter2.predicate.Operators.Or;
 import org.apache.parquet.io.api.Binary;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;

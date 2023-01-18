@@ -15,7 +15,7 @@
  */
 package sleeper.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;

@@ -21,7 +21,6 @@ public class PollWithRetries {
 
     private final long pollIntervalMillis;
     private final int maxPolls;
-    private int polls;
 
     private PollWithRetries(long pollIntervalMillis, int maxPolls) {
         this.pollIntervalMillis = pollIntervalMillis;
@@ -33,12 +32,13 @@ public class PollWithRetries {
     }
 
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
+        int polls = 0;
         while (!checkFinished.getAsBoolean()) {
+            polls++;
             if (polls >= maxPolls) {
                 throw new TimedOutException("Timed out waiting until " + description);
             }
             Thread.sleep(pollIntervalMillis);
-            polls++;
         }
     }
 

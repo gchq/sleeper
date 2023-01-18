@@ -15,7 +15,7 @@
  */
 package sleeper.core.partition;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
 import sleeper.core.schema.Field;

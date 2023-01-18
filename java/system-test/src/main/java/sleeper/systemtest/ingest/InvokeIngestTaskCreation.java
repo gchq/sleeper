@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 Crown Copyright
+ * Copyright 2022 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,15 @@
  */
 package sleeper.systemtest.ingest;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.lambda.LambdaClient;
-
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.util.InvokeLambda;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
-public class TriggerIngestFromQueue {
+public class InvokeIngestTaskCreation {
 
-    private TriggerIngestFromQueue() {
+    private InvokeIngestTaskCreation() {
     }
 
     public static void main(String[] args) throws IOException {
@@ -37,17 +32,6 @@ public class TriggerIngestFromQueue {
             return;
         }
 
-        String instanceId = args[0];
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        s3Client.shutdown();
-
-        try (LambdaClient lambda = LambdaClient.create()) {
-            lambda.invoke(builder -> builder
-                    .functionName(systemTestProperties.get(INGEST_LAMBDA_FUNCTION))
-                    .payload(SdkBytes.fromUtf8String("{}")));
-        }
+        InvokeLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
     }
 }

@@ -25,11 +25,11 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.fs.Path;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.job.CompactionJob;
@@ -66,6 +66,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -74,9 +75,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+@Testcontainers
 public class CompactSortedFilesRunnerIT {
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB
     );
@@ -138,8 +140,8 @@ public class CompactSortedFilesRunnerIT {
         return tableProperties;
     }
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public java.nio.file.Path folder;
 
     @Test
     public void shouldDeleteMessages() throws IOException, StateStoreException, ObjectFactoryException, InterruptedException, ActionException {
@@ -163,7 +165,7 @@ public class CompactSortedFilesRunnerIT {
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
         //  - Create four files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
+        String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";

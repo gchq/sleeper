@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.task;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;

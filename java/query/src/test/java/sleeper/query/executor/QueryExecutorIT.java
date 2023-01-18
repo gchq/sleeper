@@ -22,13 +22,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -62,6 +62,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,6 +75,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -81,19 +83,20 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
+@Testcontainers
 public class QueryExecutorIT {
     protected static final int DYNAMO_PORT = 8000;
     protected static AmazonDynamoDB dynamoDBClient;
     protected static ExecutorService executorService;
 
-    @ClassRule
+    @Container
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
-    @BeforeClass
+    @BeforeAll
     public static void initDynamoClient() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
                 new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
@@ -105,7 +108,7 @@ public class QueryExecutorIT {
         executorService = Executors.newFixedThreadPool(10);
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdownDynamoClient() {
         dynamoDBClient.shutdown();
         executorService.shutdown();
@@ -1337,10 +1340,10 @@ public class QueryExecutorIT {
                               TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
         instanceProperties.set(FILE_SYSTEM, "");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        tableProperties.set(DATA_BUCKET, folder.newFolder().getAbsolutePath());
+        tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .localDir(folder.newFolder().getAbsolutePath())
+                .localDir(createTempDirectory(folder, null).toString())
                 .instanceProperties(instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
