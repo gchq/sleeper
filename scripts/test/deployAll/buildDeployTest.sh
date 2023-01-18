@@ -20,7 +20,7 @@ if [ "$#" -ne 3 ]; then
 	exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd )
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd )
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)

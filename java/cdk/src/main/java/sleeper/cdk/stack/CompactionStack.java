@@ -92,11 +92,13 @@ import java.util.regex.Pattern;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
@@ -112,6 +114,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -343,18 +346,18 @@ public class CompactionStack extends NestedStack {
                         instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
         Function handler = Function.Builder
-                .create(this, "JobCreationLambda")
-                .functionName(functionName)
-                .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
-                .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
-                .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+                        .create(this, "JobCreationLambda")
+                        .functionName(functionName)
+                        .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
+                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                        .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
+                        .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        .code(code)
+                        .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
+                        .environment(environmentVariables)
+                        .reservedConcurrentExecutions(1)
+                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build();
 
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
@@ -375,10 +378,10 @@ public class CompactionStack extends NestedStack {
                         .ruleName(ruleName)
                         .description("A rule to periodically trigger the job creation lambda")
                         .enabled(Boolean.TRUE)
-                        .schedule(Schedule.rate(
-                                        Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
+                        .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                         .targets(Collections.singletonList(new LambdaFunction(handler)))
                         .build();
+        instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
@@ -751,18 +754,18 @@ public class CompactionStack extends NestedStack {
                         instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
         Function handler = Function.Builder
-                .create(this, "CompactionTasksCreator")
-                .functionName(functionName)
-                .description("If there are compaction jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
-                .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
-                .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+                        .create(this, "CompactionTasksCreator")
+                        .functionName(functionName)
+                        .description("If there are compaction jobs on queue create tasks to run them")
+                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                        .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                        .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        .code(code)
+                        .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
+                        .environment(environmentVariables)
+                        .reservedConcurrentExecutions(1)
+                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build();
 
         // Grant this function permission to read from the S3 bucket
         configBucket.grantRead(handler);
@@ -791,10 +794,10 @@ public class CompactionStack extends NestedStack {
                         .ruleName(ruleName)
                         .description("A rule to periodically trigger the compaction tasks lambda")
                         .enabled(Boolean.TRUE)
-                        .schedule(Schedule
-                                        .rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
+                        .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                         .targets(Collections.singletonList(new LambdaFunction(handler)))
                         .build();
+        instanceProperties.set(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
@@ -813,18 +816,18 @@ public class CompactionStack extends NestedStack {
                         instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
 
         Function handler = Function.Builder
-                .create(this, "SplittingCompactionTasksCreator")
-                .functionName(functionName)
-                .description("If there are splitting compaction jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
-                .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
-                .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+                        .create(this, "SplittingCompactionTasksCreator")
+                        .functionName(functionName)
+                        .description("If there are splitting compaction jobs on queue create tasks to run them")
+                        .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                        .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                        .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        .code(code)
+                        .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
+                        .environment(environmentVariables)
+                        .reservedConcurrentExecutions(1)
+                        .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build();
 
         // Grant this function permission to read from the config S3 bucket
         configBucket.grantRead(handler);
@@ -854,10 +857,10 @@ public class CompactionStack extends NestedStack {
                         .ruleName(ruleName)
                         .description("A rule to periodically trigger the splitting compaction tasks lambda")
                         .enabled(Boolean.TRUE)
-                        .schedule(Schedule
-                                        .rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
+                        .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                         .targets(Collections.singletonList(new LambdaFunction(handler)))
                         .build();
+        instanceProperties.set(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 

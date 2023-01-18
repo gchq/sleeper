@@ -50,6 +50,7 @@ import java.util.Map;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -165,6 +166,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(PARTITION_SPLITTING_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(findPartitionsToSplitLambda)))
                 .build();
+        instanceProperties.set(PARTITION_SPLITTING_LAMBDA_FUNCTION, findPartitionsToSplitLambda.getFunctionName());
         instanceProperties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, rule.getRuleName());
 
         functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",

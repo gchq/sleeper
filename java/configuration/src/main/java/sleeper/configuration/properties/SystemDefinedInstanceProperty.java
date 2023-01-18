@@ -45,20 +45,24 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_TASK_EC2_DEFINITION_FAMILY("sleeper.compaction.ec2.task.definition"),
     COMPACTION_TASK_FARGATE_DEFINITION_FAMILY("sleeper.compaction.fargate.task.definition"),
     COMPACTION_AUTO_SCALING_GROUP("sleeper.compaction.scaling.group"),
+    COMPACTION_JOB_CREATION_LAMBDA_FUNCTION("sleeper.compaction.job.creation.lambda.function"),
     COMPACTION_JOB_CREATION_CLOUDWATCH_RULE("sleeper.compaction.job.creation.rule"),
     COMPACTION_JOB_QUEUE_URL("sleeper.compaction.job.queue.url"),
     COMPACTION_JOB_DLQ_URL("sleeper.compaction.job.dlq.url"),
+    COMPACTION_TASK_CREATION_LAMBDA_FUNCTION("sleeper.compaction.task.creation.lambda.function"),
     COMPACTION_TASK_CREATION_CLOUDWATCH_RULE("sleeper.compaction.task.creation.rule"),
     SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY("sleeper.compaction.splitting.ec2.task.definition"),
     SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY("sleeper.compaction.splitting.fargate.task.definition"),
     SPLITTING_COMPACTION_AUTO_SCALING_GROUP("sleeper.compaction.splitting.scaling.group"),
     SPLITTING_COMPACTION_JOB_QUEUE_URL("sleeper.compaction.splitting.job.queue.url"),
     SPLITTING_COMPACTION_JOB_DLQ_URL("sleeper.compaction.splitting.job.dlq.url"),
+    SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION("sleeper.compaction.splitting.task.creation.lambda.function"),
     SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE("sleeper.compaction.splitting.task.creation.rule"),
 
     // Partition splitting
     PARTITION_SPLITTING_QUEUE_URL("sleeper.partition.splitting.queue.url"),
     PARTITION_SPLITTING_DLQ_URL("sleeper.partition.splitting.dlq.url"),
+    PARTITION_SPLITTING_LAMBDA_FUNCTION("sleeper.partition.splitting.lambda.function"),
     PARTITION_SPLITTING_CLOUDWATCH_RULE("sleeper.partition.splitting.rule"),
 
     // Garbage collection
