@@ -3,4 +3,4 @@ build/
 dev/
 generated/
 deploy/buildAndDeploy.sh
-test/buildDeployTest.sh
+test/**/buildDeployTest.sh
