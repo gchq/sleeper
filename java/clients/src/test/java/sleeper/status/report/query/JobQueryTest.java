@@ -16,7 +16,7 @@
 
 package sleeper.status.report.query;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 

@@ -17,7 +17,7 @@
 package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.HashMap;

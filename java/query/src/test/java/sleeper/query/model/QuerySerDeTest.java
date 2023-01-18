@@ -16,9 +16,10 @@
 package sleeper.query.model;
 
 import com.google.gson.JsonParseException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Named;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -36,35 +37,28 @@ import sleeper.query.model.output.S3ResultsOutput;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-@RunWith(Parameterized.class)
 public class QuerySerDeTest {
-    private final boolean createSerDeFromTablePropertiesProvider;
 
-    public QuerySerDeTest(boolean createSerDeFromTablePropertiesProvider) {
-        this.createSerDeFromTablePropertiesProvider = createSerDeFromTablePropertiesProvider;
+    private static Stream<Arguments> alternateTestParameters() {
+        return Stream.of(
+                Arguments.of(Named.of("Create QuerySerDe using Map", false)),
+                Arguments.of(Named.of("Create QuerySerDe using TablePropertiesProvider", true))
+        );
     }
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> alternateTestParameters() {
-        return Arrays.asList(new Object[][]{
-                {false}, // Uses map to create the QuerySerDe
-                {true}   // Uses tablepropertiesprovider
-        });
-    }
-
-    private QuerySerDe generateQuerySerDe(String tableName, Schema schema) {
-        if (createSerDeFromTablePropertiesProvider) {
+    private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
+        if (useTablePropertiesProvider) {
             TestPropertiesProvider testPropertiesProvider = new TestPropertiesProvider(tableName, schema);
             return new QuerySerDe(testPropertiesProvider);
         }
@@ -77,11 +71,12 @@ public class QuerySerDeTest {
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
             .build();
 
-    @Test
-    public void shouldSerDeFromJSONStringMinInclusiveMaxExclusive() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeFromJSONStringMinInclusiveMaxExclusive(boolean useTablePropertiesProvider) {
         // Given
         RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
+        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
         String serialisedQuery = "{\n" +
                 "  \"queryId\": \"my-query\",\n" +
                 "  \"requestedValueFields\": [\n" +
@@ -116,11 +111,12 @@ public class QuerySerDeTest {
         assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
     }
 
-    @Test
-    public void shouldSerDeFromJSONStringMinInclusiveMaxInclusive() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeFromJSONStringMinInclusiveMaxInclusive(boolean useTablePropertiesProvider) {
         // Given
         RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
+        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
         String serialisedQuery = "{\n" +
                 "  \"queryId\": \"my-query\",\n" +
                 "  \"tableName\": \"my-table\",\n" +
@@ -152,11 +148,12 @@ public class QuerySerDeTest {
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
-    @Test
-    public void shouldSerDeFromJSONStringMinExclusiveMaxInclusive() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeFromJSONStringMinExclusiveMaxInclusive(boolean useTablePropertiesProvider) {
         // Given
         RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
+        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
         String serialisedQuery = "{\n" +
                 "  \"queryId\": \"my-query\",\n" +
                 "  \"tableName\": \"my-table\",\n" +
@@ -188,11 +185,12 @@ public class QuerySerDeTest {
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
-    @Test
-    public void shouldSerDeFromJSONStringMinExclusiveMaxExclusive() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeFromJSONStringMinExclusiveMaxExclusive(boolean useTablePropertiesProvider) {
         // Given
         RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
+        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
         String serialisedQuery = "{\n" +
                 "  \"queryId\": \"my-query\",\n" +
                 "  \"tableName\": \"my-table\",\n" +
@@ -224,12 +222,13 @@ public class QuerySerDeTest {
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
-    @Test
-    public void shouldSerDeFromJSONStringMinExclusiveNullMax() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeFromJSONStringMinExclusiveNullMax(boolean useTablePropertiesProvider) {
         // Given
         RangeFactory rangeFactory = new RangeFactory(schema);
-        TestPropertiesProvider testPropertiesProvider = new TestPropertiesProvider("my-table", schema);
-        QuerySerDe querySerDe = new QuerySerDe(testPropertiesProvider);
+        String tableName = "my-table";
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
         String serialisedQuery = "{\n" +
                 "  \"queryId\": \"my-query\",\n" +
                 "  \"tableName\": \"my-table\",\n" +
@@ -261,17 +260,17 @@ public class QuerySerDeTest {
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
-    @Test
-    public void shouldSerDeWhenSchemaHasIntKey() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeWhenSchemaHasIntKey(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
-        TestPropertiesProvider testPropertiesProvider = new TestPropertiesProvider(tableName, schema);
         Region region = new Region(rangeFactory.createExactRange(field, 1));
         Query query = new Query.Builder(tableName, "id", region).build();
-        QuerySerDe querySerDe = new QuerySerDe(testPropertiesProvider);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query, true));
@@ -280,8 +279,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeWhenSchemaHasLongKey() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeWhenSchemaHasLongKey(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -289,7 +289,7 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder(tableName, "id", region).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -298,8 +298,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeWhenSchemaHasStringKey() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeWhenSchemaHasStringKey(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -307,7 +308,7 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
         Query query = new Query.Builder(tableName, "id", region).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -316,8 +317,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeWhenSchemaHasByteArrayKey() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeWhenSchemaHasByteArrayKey(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -325,7 +327,7 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         Query query = new Query.Builder(tableName, "id", region).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -334,8 +336,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeMultipleByteArrayRegions() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeMultipleByteArrayRegions(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -344,7 +347,7 @@ public class QuerySerDeTest {
         Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
         Query query = new Query.Builder(tableName, "id", Arrays.asList(region1, region2)).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -353,8 +356,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeByteArrayRegionWithPublisherConfig() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeByteArrayRegionWithPublisherConfig(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -368,7 +372,7 @@ public class QuerySerDeTest {
         Query query = new Query.Builder(tableName, "id", Arrays.asList(region1, region2))
                 .setResultsPublisherConfig(publisherConfig)
                 .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -377,8 +381,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeIntKeyQueryDifferentIncludeExcludes() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeIntKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -389,7 +394,7 @@ public class QuerySerDeTest {
         Region region3 = new Region(rangeFactory.createRange(field, 5, false, 6, true));
         Region region4 = new Region(rangeFactory.createRange(field, 7, false, 8, false));
         Query query = new Query.Builder(tableName, "id", Arrays.asList(region1, region2, region3, region4)).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -398,8 +403,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeLongKeyQueryDifferentIncludeExcludes() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeLongKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -410,7 +416,7 @@ public class QuerySerDeTest {
         Region region3 = new Region(rangeFactory.createRange(field, 5L, false, 6L, true));
         Region region4 = new Region(rangeFactory.createRange(field, 7L, false, 8L, false));
         Query query = new Query.Builder(tableName, "id", Arrays.asList(region1, region2, region3, region4)).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -419,8 +425,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeStringKeyQueryDifferentIncludeExcludes() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeStringKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -431,7 +438,7 @@ public class QuerySerDeTest {
         Region region3 = new Region(rangeFactory.createRange(field, "5", false, "6", true));
         Region region4 = new Region(rangeFactory.createRange(field, "7", false, "8", false));
         Query query = new Query.Builder(tableName, "id", Arrays.asList(region1, region2, region3, region4)).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -440,8 +447,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeStringKeyQueryWithNull() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeStringKeyQueryWithNull(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -449,7 +457,7 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, "A", true, null, false));
         Query query = new Query.Builder(tableName, "id", region).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -458,8 +466,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeByteArrayKeyQueryDifferentIncludeExcludes() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeByteArrayKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -470,7 +479,7 @@ public class QuerySerDeTest {
         Region region3 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, true));
         Region region4 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, false));
         Query query = new Query.Builder(tableName, "id", Arrays.asList(region1, region2, region3, region4)).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -479,8 +488,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeByteArrayQueryWithNull() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeByteArrayQueryWithNull(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -488,7 +498,7 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, new byte[]{1, 2}, true, null, false));
         Query query = new Query.Builder(tableName, "id", region).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -497,8 +507,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeByteArrayKeyLeafPartitionQuery() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeByteArrayKeyLeafPartitionQuery(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -513,7 +524,7 @@ public class QuerySerDeTest {
         LeafPartitionQuery query = new LeafPartitionQuery
                 .Builder(tableName, "id", "subid", region, "leaf", partitionRegion, files)
                 .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         System.out.println(querySerDe.toJson(query));
@@ -524,8 +535,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeMultipleByteArrayKeyLeafPartitionQuery() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeMultipleByteArrayKeyLeafPartitionQuery(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -541,7 +553,7 @@ public class QuerySerDeTest {
         LeafPartitionQuery query = new LeafPartitionQuery
                 .Builder(tableName, "id", "subid", Arrays.asList(region1, region2), "leaf", partitionRegion, files)
                 .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         LeafPartitionQuery deserialisedQuery = (LeafPartitionQuery) querySerDe.fromJson(querySerDe.toJson(query));
@@ -550,8 +562,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldSerDeIntKeyWithIterator() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldSerDeIntKeyWithIterator(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -562,7 +575,7 @@ public class QuerySerDeTest {
                 .setQueryTimeIteratorClassName("iteratorClassName")
                 .setQueryTimeIteratorConfig("iteratorConfig")
                 .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
@@ -571,8 +584,9 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    @Test
-    public void shouldThrowExceptionWithNullTableName() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldThrowExceptionWithNullTableName(boolean useTablePropertiesProvider) {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -580,10 +594,10 @@ public class QuerySerDeTest {
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
         Query query = new Query.Builder(null, "id", region).build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When & Then
-        if (createSerDeFromTablePropertiesProvider) {
+        if (useTablePropertiesProvider) {
             // When the QuerySerDe is created from a TablePropertiesProvider,
             // the TablePropertiesProvider will return TableProperties for a table with a null name.
             String json = querySerDe.toJson(query);
@@ -598,12 +612,13 @@ public class QuerySerDeTest {
         }
     }
 
-    @Test
-    public void shouldThrowExceptionNoTableName() {
+    @ParameterizedTest()
+    @MethodSource("alternateTestParameters")
+    public void shouldThrowExceptionNoTableName(boolean useTablePropertiesProvider) {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         String tableName = UUID.randomUUID().toString();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         String queryJson = "{\n" +
                 "  \"queryId\": \"id\",\n" +

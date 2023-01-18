@@ -21,7 +21,7 @@ import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.VpcEndpoint;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;

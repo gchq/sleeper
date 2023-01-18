@@ -15,8 +15,8 @@
  */
 package sleeper.core.range.canonicaliser;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -31,7 +31,7 @@ public class RangeCanonicaliserLongTypeTest {
     private Field field;
     private RangeFactory rangeFactory;
 
-    @Before
+    @BeforeEach
     public void setup() {
         field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();

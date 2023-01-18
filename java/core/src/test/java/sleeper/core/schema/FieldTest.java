@@ -15,7 +15,7 @@
  */
 package sleeper.core.schema;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;

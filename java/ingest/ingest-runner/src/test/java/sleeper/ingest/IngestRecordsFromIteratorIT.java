@@ -15,7 +15,7 @@
  */
 package sleeper.ingest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.AssertQuantiles;

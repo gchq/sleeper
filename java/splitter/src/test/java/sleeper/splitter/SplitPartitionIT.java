@@ -22,13 +22,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
@@ -54,6 +54,7 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,22 +66,24 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+@Testcontainers
 public class SplitPartitionIT {
     private static final int DYNAMO_PORT = 8000;
-    @ClassRule
+    @Container
     public static GenericContainer<?> dynamoDb = new GenericContainer<>(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
     private static AmazonDynamoDB dynamoDBClient;
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
 
-    @BeforeClass
+    @BeforeAll
     public static void initDynamoClient() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
                 new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
@@ -91,7 +94,7 @@ public class SplitPartitionIT {
                 .build();
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdownDynamoClient() {
         dynamoDBClient.shutdown();
     }
@@ -112,8 +115,8 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntKeyCorrectly() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -219,8 +222,8 @@ public class SplitPartitionIT {
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
             for (int i = 0; i < 10; i++) {
                 List<Record> records = new ArrayList<>();
@@ -313,8 +316,8 @@ public class SplitPartitionIT {
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
             for (int i = 0; i < 10; i++) {
                 List<Record> records = new ArrayList<>();
@@ -360,8 +363,8 @@ public class SplitPartitionIT {
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                 .build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -424,8 +427,8 @@ public class SplitPartitionIT {
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                 .build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -488,8 +491,8 @@ public class SplitPartitionIT {
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                 .build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -555,8 +558,8 @@ public class SplitPartitionIT {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -607,8 +610,8 @@ public class SplitPartitionIT {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -670,8 +673,8 @@ public class SplitPartitionIT {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -784,8 +787,8 @@ public class SplitPartitionIT {
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
             for (int i = 0; i < 10; i++) {
                 List<Record> records = new ArrayList<>();
@@ -899,8 +902,8 @@ public class SplitPartitionIT {
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
             for (int i = 0; i < 10; i++) {
                 List<Record> records = new ArrayList<>();
@@ -952,8 +955,8 @@ public class SplitPartitionIT {
                 .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                 .build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
@@ -1018,8 +1021,8 @@ public class SplitPartitionIT {
                 .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                 .build();
         StateStore stateStore = getStateStore(schema);
-        String path = folder.newFolder().getAbsolutePath();
-        String path2 = folder.newFolder().getAbsolutePath();
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();

@@ -28,8 +28,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
 import sleeper.bulkimport.job.BulkImportJob;
@@ -59,7 +59,7 @@ public class EmrExecutorTest {
     private AtomicReference<RunJobFlowRequest> requested;
     private AmazonS3 amazonS3;
 
-    @Before
+    @BeforeEach
     public void setUpEmr() {
         requested = new AtomicReference<>();
         amazonS3 = mock(AmazonS3Client.class);

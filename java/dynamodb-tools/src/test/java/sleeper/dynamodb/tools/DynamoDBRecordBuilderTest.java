@@ -24,8 +24,8 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -40,7 +40,7 @@ public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
     private static final String TEST_VALUE = "test-value";
     private static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
 
-    @After
+    @AfterEach
     public void tearDown() {
         dynamoDBClient.deleteTable(TEST_TABLE_NAME);
     }

@@ -16,7 +16,7 @@
 
 package sleeper.ingest.job;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -41,6 +41,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 
@@ -49,7 +50,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
     private void consumeAndVerify(Schema sleeperSchema,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
-        String localDir = temporaryFolder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(temporaryFolder, null).toString();
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
@@ -68,7 +69,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 expectedRecordList,
                 Collections.singletonMap(0, expectedNoOfFiles),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                temporaryFolder.newFolder().getAbsolutePath());
+                createTempDirectory(temporaryFolder, null).toString());
     }
 
     private IngestTask createTaskRunner(InstanceProperties instanceProperties,
