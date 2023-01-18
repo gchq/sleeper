@@ -21,8 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
@@ -31,7 +29,6 @@ import sleeper.systemtest.SystemTestProperties;
 import java.io.IOException;
 
 public class WaitForCurrentSplitAddingMissingJobs {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
 
     private WaitForCurrentSplitAddingMissingJobs() {
     }
