@@ -27,12 +27,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.InvokeLambda;
 
 import java.io.IOException;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class WaitForCurrentSplitAddingMissingJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
@@ -57,19 +53,6 @@ public class WaitForCurrentSplitAddingMissingJobs {
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
 
-        WaitForPartitionSplitting waitForSplitting = new WaitForPartitionSplitting(sqsClient, systemTestProperties);
-        WaitForCompactionJobs waitForCompaction = new WaitForCompactionJobs(store, tableName);
-
-        LOGGER.info("Waiting for partition splits");
-        waitForSplitting.pollUntilFinished();
-        LOGGER.info("Creating compaction jobs");
-        InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
-        if (store.getUnfinishedJobs(tableName).isEmpty()) {
-            LOGGER.info("Created no more jobs, splitting complete");
-            return;
-        }
-        LOGGER.info("Creating splitting compaction tasks");
-        InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
-        waitForCompaction.pollUntilFinished();
+        ApplyPartitionSplitAndWaitForCompletion.run(sqsClient, store, systemTestProperties, tableName);
     }
 }
