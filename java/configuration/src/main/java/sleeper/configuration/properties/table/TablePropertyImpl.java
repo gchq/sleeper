@@ -37,7 +37,6 @@ class TablePropertyImpl implements TableProperty {
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
         defaultProperty = builder.defaultProperty;
-        ALL.add(this);
     }
 
     static Builder named(String name) {
@@ -77,8 +76,13 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
-        public TablePropertyImpl build() {
-            return new TablePropertyImpl(this);
+        public TableProperty build() {
+            return addToAllList(new TablePropertyImpl(this));
+        }
+
+        private static TableProperty addToAllList(TableProperty property) {
+            ALL.add(property);
+            return property;
         }
     }
 

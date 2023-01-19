@@ -28,7 +28,6 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     private SystemDefinedInstancePropertyImpl(String propertyName) {
         this.propertyName = propertyName;
-        ALL.add(this);
     }
 
     @Override
@@ -41,8 +40,13 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return propertyName;
     }
 
-    static SystemDefinedInstancePropertyImpl named(String propertyName) {
-        return new SystemDefinedInstancePropertyImpl(propertyName);
+    static SystemDefinedInstanceProperty named(String propertyName) {
+        return addToAllList(new SystemDefinedInstancePropertyImpl(propertyName));
+    }
+
+    private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
+        ALL.add(property);
+        return property;
     }
 
     static List<SystemDefinedInstanceProperty> all() {

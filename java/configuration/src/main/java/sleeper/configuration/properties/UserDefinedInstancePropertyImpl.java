@@ -33,7 +33,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         propertyName = builder.propertyName;
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
-        ALL.add(this);
     }
 
     static UserDefinedInstancePropertyImpl.Builder named(String name) {
@@ -82,8 +81,13 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public UserDefinedInstancePropertyImpl build() {
-            return new UserDefinedInstancePropertyImpl(this);
+        public UserDefinedInstanceProperty build() {
+            return addToAllList(new UserDefinedInstancePropertyImpl(this));
+        }
+
+        private static UserDefinedInstanceProperty addToAllList(UserDefinedInstanceProperty property) {
+            ALL.add(property);
+            return property;
         }
     }
 }
