@@ -28,6 +28,10 @@ if [ "$VERSION" == "main" ]; then
   REMOTE_TAG="latest"
 elif [ "$VERSION" == "latest" ]; then
   GIT_REF="main"
+elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
+  REMOTE_TAG=${VERSION:1}
+else # Add v to start of version number for GitHub release tag
+  GIT_REF="v$VERSION"
 fi
 
 REMOTE_IMAGE="ghcr.io/gchq/sleeper-local:$REMOTE_TAG"
