@@ -18,7 +18,7 @@ Before running this demo functionality, you will need the following installed:
 
 You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. A local Docker image
 contains the necessary dependencies and scripts to do this. Run the below commands to install a CLI for working with the
-local Docker image. The \[version\] can be `main` or a version like `v0.x.0`.
+local Docker image. The \[version\] can be `main` or a version like `v0.13.0`.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/local/install.sh" -o ./sleeper-install.sh
