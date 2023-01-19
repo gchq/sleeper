@@ -31,11 +31,12 @@ get a shell inside the container. You can use `aws` commands under that to confi
 than using `aws configure`. You can also set AWS environment variables or configuration on the host machine which will
 be propagated to the Docker container when you use `sleeper`.
 
-Run these commands to deploy an EC2 instance in AWS:
+Run these commands to deploy an EC2 instance in AWS (note that cdk bootstrap only needs to be done once in a given AWS
+account):
 
 ```bash
 sleeper aws configure
-sleeper cdk bootstrap # Note that cdk bootstrap only needs to be done once in a given AWS account
+sleeper cdk bootstrap
 sleeper environment deploy TestEnvironment
 ```
 
