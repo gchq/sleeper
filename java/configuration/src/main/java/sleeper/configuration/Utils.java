@@ -18,8 +18,13 @@ package sleeper.configuration;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.CompressionCodec;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -101,5 +106,19 @@ public class Utils {
         }
         int stringAsInt = Integer.parseInt(string);
         return stringAsInt >= 1 && stringAsInt <= 25;
+    }
+
+    public static <T extends SleeperProperty> List<T> getAllProperties(Class<T> clazz) {
+        Field[] fields = clazz.getDeclaredFields();
+        List<T> properties = new ArrayList<>(fields.length);
+        for (Field field : fields) {
+            try {
+                properties.add((T) field.get(null));
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException(
+                        "Could not instantiate list of all " + clazz.getName() + " properties, failed reading from" + field.getName(), e);
+            }
+        }
+        return Collections.unmodifiableList(properties);
     }
 }

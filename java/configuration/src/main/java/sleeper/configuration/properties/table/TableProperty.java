@@ -20,10 +20,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
@@ -148,21 +144,8 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     static TableProperty[] values() {
-        return getAll().toArray(new TableProperty[0]);
-    }
-
-    private static List<TableProperty> getAll() {
-        Field[] fields = TableProperty.class.getDeclaredFields();
-        List<TableProperty> properties = new ArrayList<>(fields.length);
-        for (Field field : fields) {
-            try {
-                properties.add((TableProperty) field.get(null));
-            } catch (IllegalAccessException e) {
-                throw new IllegalStateException(
-                        "Could not instantiate list of all user defined instance properties, failed reading " + field.getName(), e);
-            }
-        }
-        return Collections.unmodifiableList(properties);
+        return Utils.getAllProperties(TableProperty.class)
+                .toArray(new TableProperty[0]);
     }
 
     SleeperProperty getDefaultProperty();
