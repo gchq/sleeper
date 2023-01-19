@@ -39,10 +39,10 @@ jobs:
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Log in to registry
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        #if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
       - name: Push image
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        #if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: |
 
           # This code came from GitHub Docs, to publish a 'latest' tag built from the main branch,
@@ -64,9 +64,13 @@ jobs:
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
       - name: Delete old images
-        uses: actions/delete-package-versions@v4
+        uses: snok/container-retention-policy@v1
         with:
-          package-name: ${{ env.IMAGE_NAME }}
-          package-type: container
-          min-versions-to-keep: 4
-          ignore-versions: '^(latest|v[0-9.]+)$'
+          image-names: ${{ env.IMAGE_NAME }}
+          cut-off: now UTC
+          timestamp-to-use: updated_at
+          account-type: org
+          org-name: ${{ github.repository_owner }}
+          keep-at-least: 4
+          skip-tags: latest, v*
+          token: ${{ github.token }}

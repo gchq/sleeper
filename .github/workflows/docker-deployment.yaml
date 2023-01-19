@@ -64,9 +64,13 @@ jobs:
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
       - name: Delete old images
-        uses: actions/delete-package-versions@v4
+        uses: snok/container-retention-policy@v1
         with:
-          package-name: ${{ env.IMAGE_NAME }}
-          package-type: container
-          min-versions-to-keep: 4
-          ignore-versions: '^latest|v[0-9.]+$'
+          image-names: ${{ env.IMAGE_NAME }}
+          cut-off: now UTC
+          timestamp-to-use: updated_at
+          account-type: org
+          org-name: ${{ github.repository_owner }}
+          keep-at-least: 4
+          skip-tags: latest, v*
+          token: ${{ github.token }}
