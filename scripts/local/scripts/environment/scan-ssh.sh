@@ -19,8 +19,8 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
 
 if [ "$#" -gt 0 ]; then
-	INSTANCE_ID=$1
-	echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+  INSTANCE_ID=$1
+  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
 else
   INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
 fi
