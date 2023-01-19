@@ -73,4 +73,4 @@ jobs:
           org-name: ${{ github.repository_owner }}
           keep-at-least: 4
           skip-tags: latest, v*
-          token: ${{ github.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
