@@ -17,11 +17,17 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-  GIT_REF="main"
-  REMOTE_TAG="latest"
+  VERSION="latest"
 else
-  GIT_REF="$1"
-  REMOTE_TAG="$1"
+  VERSION="$1"
+fi
+
+GIT_REF="$VERSION"
+REMOTE_TAG="$VERSION"
+if [ "$VERSION" == "main" ]; then
+  REMOTE_TAG="latest"
+elif [ "$VERSION" == "latest" ]; then
+  GIT_REF="main"
 fi
 
 REMOTE_IMAGE="ghcr.io/gchq/sleeper-local:$REMOTE_TAG"
