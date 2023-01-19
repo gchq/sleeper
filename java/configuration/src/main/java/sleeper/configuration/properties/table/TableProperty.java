@@ -20,7 +20,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
@@ -146,11 +145,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     static TableProperty[] values() {
-        return all().toArray(new TableProperty[0]);
-    }
-
-    static List<TableProperty> all() {
-        return TablePropertyImpl.all();
+        return TablePropertyImpl.all().toArray(new TableProperty[0]);
     }
 
     SleeperProperty getDefaultProperty();

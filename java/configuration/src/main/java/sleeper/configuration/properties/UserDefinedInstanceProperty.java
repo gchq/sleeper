@@ -19,7 +19,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
 
-import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.named;
@@ -403,10 +402,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isTrueOrFalse).build();
 
     static UserDefinedInstanceProperty[] values() {
-        return all().toArray(new UserDefinedInstanceProperty[0]);
-    }
-
-    static List<UserDefinedInstanceProperty> all() {
-        return UserDefinedInstancePropertyImpl.all();
+        return UserDefinedInstancePropertyImpl.all().toArray(new UserDefinedInstanceProperty[0]);
     }
 }

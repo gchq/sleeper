@@ -17,8 +17,6 @@ package sleeper.configuration.properties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.List;
-
 import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl.named;
 
 /**
@@ -103,10 +101,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_ENDPOINT = named("sleeper.bulk.import.eks.k8s.endpoint");
 
     static SystemDefinedInstanceProperty[] values() {
-        return all().toArray(new SystemDefinedInstanceProperty[0]);
-    }
-
-    static List<SystemDefinedInstanceProperty> all() {
-        return SystemDefinedInstancePropertyImpl.all();
+        return SystemDefinedInstancePropertyImpl.all().toArray(new SystemDefinedInstanceProperty[0]);
     }
 }
