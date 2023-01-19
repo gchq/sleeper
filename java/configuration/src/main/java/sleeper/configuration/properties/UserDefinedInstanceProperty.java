@@ -400,8 +400,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse).build();
 
-    String name();
-
     static UserDefinedInstanceProperty[] values() {
         return Utils.getAllProperties(UserDefinedInstanceProperty.class)
                 .toArray(new UserDefinedInstanceProperty[0]);

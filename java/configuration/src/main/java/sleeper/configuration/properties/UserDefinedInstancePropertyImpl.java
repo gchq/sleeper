@@ -53,11 +53,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return propertyName;
     }
 
-    @Override
-    public String name() {
-        return propertyName;
-    }
-
     static final class Builder {
         private String propertyName;
         private String defaultValue;
