@@ -422,6 +422,12 @@ public class CompactionStack extends NestedStack {
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
+            taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
+                            .create()
+                            .resources(Collections.singletonList("*"))
+                            .actions(Arrays.asList("ecs:DescribeContainerInstances"))
+                            .build());
+
             compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };
 
@@ -496,6 +502,12 @@ public class CompactionStack extends NestedStack {
                             stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
+
+            taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
+                            .create()
+                            .resources(Collections.singletonList("*"))
+                            .actions(Arrays.asList("ecs:DescribeContainerInstances"))
+                            .build());
 
             compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };

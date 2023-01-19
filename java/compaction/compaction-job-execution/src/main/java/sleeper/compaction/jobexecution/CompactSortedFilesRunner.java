@@ -94,6 +94,7 @@ public class CompactSortedFilesRunner {
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public CompactSortedFilesRunner(
                     InstanceProperties instanceProperties,
                     ObjectFactory objectFactory,
@@ -285,5 +286,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Shut down dynamoDBClient");
         s3Client.shutdown();
         LOGGER.info("Shut down s3Client");
+        ecsClient.shutdown();
+        LOGGER.info("Shut down ecsClient");
     }
 }

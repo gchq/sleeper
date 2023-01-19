@@ -133,17 +133,10 @@ public class CommonJobUtils {
                 if (instanceDetails.isPresent()) {
                     return Optional.of(new ContainerMetadata(metadata.get().getLeft(), metadata.get().getMiddle(),
                                     instanceDetails.get().getEc2InstanceId(), metadata.get().getRight(), instanceDetails.get().getStatus()));
-                } else {
-                    return Optional.empty();
                 }
-
-            } else {
-                return Optional.empty();
             }
-
-        } else {
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 
     /**
