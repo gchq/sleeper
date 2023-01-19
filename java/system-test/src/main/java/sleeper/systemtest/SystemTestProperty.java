@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.InstanceProperty;
@@ -24,6 +25,8 @@ import java.util.Objects;
 
 import static sleeper.systemtest.SystemTestPropertyImpl.named;
 
+// Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
+@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty NUMBER_OF_WRITERS = named("sleeper.systemtest.writers")
             .validationPredicate(Objects::nonNull).build();
