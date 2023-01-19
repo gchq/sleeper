@@ -101,8 +101,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty BULK_IMPORT_EKS_NAMESPACE = named("sleeper.bulk.import.eks.k8s.namespace");
     SystemDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_ENDPOINT = named("sleeper.bulk.import.eks.k8s.endpoint");
 
-    String name();
-
     static SystemDefinedInstanceProperty[] values() {
         return Utils.getAllProperties(SystemDefinedInstanceProperty.class)
                 .toArray(new SystemDefinedInstanceProperty[0]);

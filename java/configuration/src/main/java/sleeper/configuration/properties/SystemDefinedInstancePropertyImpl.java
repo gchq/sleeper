@@ -33,11 +33,6 @@ public class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceP
         return propertyName;
     }
 
-    @Override
-    public String name() {
-        return getPropertyName();
-    }
-
     static SystemDefinedInstancePropertyImpl named(String propertyName) {
         return new SystemDefinedInstancePropertyImpl(propertyName);
     }
