@@ -16,7 +16,7 @@
 
 package sleeper.configuration.properties;
 
-public class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
+class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
     private final String propertyName;
 
     private SystemDefinedInstancePropertyImpl(String propertyName) {
