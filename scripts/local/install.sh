@@ -55,6 +55,8 @@ case "$PATH" in
       echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.zshrc"
       echo "Added to ~/.zshrc"
     fi
+    export PATH="$PATH:$EXECUTABLE_DIR"
+    echo "Added to current session"
     ;;
 esac
 
