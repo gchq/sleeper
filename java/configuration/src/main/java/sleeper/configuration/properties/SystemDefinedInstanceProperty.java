@@ -25,7 +25,7 @@ import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl
  * Properties set internally by sleeper and not by the user. These are set by the system itself at deployment time
  * so require no default or validation. Even if you set these in your properties file, they will be overwritten.
  */
-// Suppress as impl class has no initialization code (could result in confusing behaviour if it did)
+// Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemDefinedInstanceProperty extends InstanceProperty {
     // Configuration
