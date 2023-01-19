@@ -45,7 +45,8 @@ import static sleeper.configuration.properties.table.TablePropertyImpl.named;
 /**
  * These contain the table properties which are stored separately to the instance properties.
  */
-@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION") // Suppress as superclass is an interface
+// Suppress as impl class has no initialization code (could result in confusing behaviour if it did)
+@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface TableProperty extends SleeperProperty {
     // User defined
     TableProperty TABLE_NAME = named("sleeper.table.name")

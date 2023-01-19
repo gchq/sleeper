@@ -28,7 +28,8 @@ import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.n
  * have a validation predicate for determining if the value a user has provided is valid. By default the predicate
  * always returns true indicating the property is valid.
  */
-@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION") // Suppress as superclass is an interface
+// Suppress as impl class has no initialization code (could result in confusing behaviour if it did)
+@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface UserDefinedInstanceProperty extends InstanceProperty {
     // Tables
     UserDefinedInstanceProperty TABLE_PROPERTIES = named("sleeper.table.properties")
