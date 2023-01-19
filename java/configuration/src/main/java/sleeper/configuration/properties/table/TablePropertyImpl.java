@@ -20,7 +20,7 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.function.Predicate;
 
-public class TablePropertyImpl implements TableProperty {
+class TablePropertyImpl implements TableProperty {
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
@@ -37,14 +37,14 @@ public class TablePropertyImpl implements TableProperty {
         return builder().propertyName(name);
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
-    public static final class Builder {
+    static final class Builder {
         private String propertyName;
         private String defaultValue;
-        private Predicate<String> validationPredicate = (s) -> true;
+        private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
 
         private Builder() {
