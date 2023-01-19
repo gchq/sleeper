@@ -150,4 +150,3 @@ public interface TableProperty extends SleeperProperty {
 
     SleeperProperty getDefaultProperty();
 }
-
