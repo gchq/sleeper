@@ -20,7 +20,7 @@ JARS_DIR="$SCRIPTS_DIR/jars"
 DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
-"$SCRIPTS_DIR/build/build.sh"
+"$SCRIPTS_DIR/build/build.sh" "$@"
 
 VERSION=$(cat "$VERSION_FILE")
 
