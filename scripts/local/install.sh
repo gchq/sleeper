@@ -30,6 +30,20 @@ LOCAL_IMAGE="sleeper-local:current"
 docker pull "$REMOTE_IMAGE"
 docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
 
-echo "Installing Sleeper to system path (may require elevated permissions)"
-sudo curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/local/runInDocker.sh" --output /usr/local/bin/sleeper
-sudo chmod a+x /usr/local/bin/sleeper
+# Ensure executable directory is on path
+EXECUTABLE_DIR="$HOME/.local/bin"
+mkdir -p "$EXECUTABLE_DIR"
+case "$PATH" in
+  *"$EXECUTABLE_DIR"*)
+    ;;
+  *)
+    if ! grep -q "$EXECUTABLE_DIR" "$HOME/.bashrc"; then
+      echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.bashrc"
+    fi
+    ;;
+esac
+
+echo "Installing Sleeper CLI to user path"
+EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
+curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/local/runInDocker.sh" --output "$EXECUTABLE_PATH"
+chmod a+x "$EXECUTABLE_PATH"
