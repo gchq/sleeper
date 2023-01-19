@@ -43,18 +43,22 @@ EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
 case "$PATH" in
   *"$EXECUTABLE_DIR"*)
+    echo "Executable directory already on path: $EXECUTABLE_DIR"
     ;;
   *)
+    echo "Adding executable directory to path: $EXECUTABLE_DIR"
     if ! grep -q "$EXECUTABLE_DIR" "$HOME/.bashrc" 2> /dev/null; then
       echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.bashrc"
+      echo "Added to ~/.bashrc"
     fi
     if ! grep -q "$EXECUTABLE_DIR" "$HOME/.zshrc" 2> /dev/null; then
       echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.zshrc"
+      echo "Added to ~/.zshrc"
     fi
     ;;
 esac
 
-echo "Installing Sleeper CLI to user path"
+echo "Installing Sleeper CLI"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
 curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/local/runInDocker.sh" --output "$EXECUTABLE_PATH"
 chmod a+x "$EXECUTABLE_PATH"
