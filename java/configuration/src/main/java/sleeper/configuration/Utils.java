@@ -102,5 +102,4 @@ public class Utils {
         int stringAsInt = Integer.parseInt(string);
         return stringAsInt >= 1 && stringAsInt <= maxValue;
     }
-
 }
