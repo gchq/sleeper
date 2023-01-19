@@ -71,11 +71,19 @@ public class BuildEC2Stack extends Stack {
                 .keyName(key.getKeyName())
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();
-        instance.getInstance().addDependsOn(key);
+        instance.getInstance().addDependency(key);
 
         CfnOutput.Builder.create(this, "ConnectCommand")
                 .value("ssh -i " + keyFile + " " + image.loginUser() + "@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
+                .build();
+        CfnOutput.Builder.create(this, "PublicIP")
+                .value(instance.getInstancePublicIp())
+                .description("Public IP for build EC2 instance")
+                .build();
+        CfnOutput.Builder.create(this, "LoginUser")
+                .value(image.loginUser())
+                .description("User to SSH into on build EC2 instance")
                 .build();
     }
 

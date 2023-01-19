@@ -16,7 +16,7 @@ You will need the following software:
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 8](https://openjdk.java.net/install/)
+* [Java 11/17](https://openjdk.java.net/install/)
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
@@ -55,7 +55,8 @@ that bootstrapping CDK is a one-time action for the account that is nothing to d
 Sleeper itself. See
 [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
 on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
-not be run from inside the sleeper directory.
+not be run from inside the sleeper directory. You can run `cdk bootstrap` in the local
+Docker image, as described in [getting started](01-getting-started.md#deployment-environment).
 
 ### Lambda Reserved Concurrency
 
@@ -77,6 +78,51 @@ You're now ready to build and deploy Sleeper.
 
 See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
 to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
+
+When you use the local Docker image described in [getting started](01-getting-started.md#deployment-environment), you
+can manage multiple environments. This is built in the directory `scripts/local` with `./build.sh`. Once that's built,
+you can use `./runInDocker.sh` in that directory to run commands inside the local Docker image.
+
+If you run `./runInDocker.sh` on its own you'll get a shell inside the local Docker container, where you can run
+`aws`, `cdk` and Sleeper `environment` commands directly.
+
+You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
+variables or configuration on the host machine, which will be propagated to the Docker container when you use
+`./runInDocker.sh`.
+
+#### Managing environments
+
+You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
+You must specify an environment ID when deploying an environment, and you can specify an environment to connect to.
+Parameters after the environment ID will be passed to a `cdk deploy` command.
+
+```bash
+./runInDocker.sh environment deploy MyEnvironment
+./runInDocker.sh environment deploy EmptyEnvironment "*-Networking"
+./runInDocker.sh environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+./runInDocker.sh environment connect OtherEnvironment
+```
+
+You can switch environments like this:
+
+```bash
+./runInDocker.sh environment set OtherEnvironment
+./runInDocker.sh environment connect
+```
+
+You can tear down the deployed environment like this:
+
+```bash
+./runInDocker.sh environment destroy MyEnvironment
+```
+
+You can also tear down individual parts of the environment like this:
+
+```bash
+./runInDocker.sh environment destroy MyEnvironment "*-BuildEC2"
+```
+
+Parameters after the environment ID will be passed to a `cdk destroy` command.
 
 ## Building
 
