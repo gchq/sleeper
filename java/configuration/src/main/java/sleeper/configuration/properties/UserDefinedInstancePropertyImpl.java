@@ -16,9 +16,14 @@
 
 package sleeper.configuration.properties;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
+
+    private static final List<UserDefinedInstanceProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
     private final String defaultValue;
@@ -28,14 +33,15 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         propertyName = builder.propertyName;
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
-    }
-
-    static Builder builder() {
-        return new Builder();
+        ALL.add(this);
     }
 
     static UserDefinedInstancePropertyImpl.Builder named(String name) {
-        return builder().propertyName(name);
+        return new Builder().propertyName(name);
+    }
+
+    static List<UserDefinedInstanceProperty> all() {
+        return Collections.unmodifiableList(ALL);
     }
 
     @Override

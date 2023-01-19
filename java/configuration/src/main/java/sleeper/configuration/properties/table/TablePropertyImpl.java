@@ -18,9 +18,15 @@ package sleeper.configuration.properties.table;
 
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
+
+    private static final List<TableProperty> ALL = new ArrayList<>();
+
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
@@ -31,14 +37,15 @@ class TablePropertyImpl implements TableProperty {
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
         defaultProperty = builder.defaultProperty;
+        ALL.add(this);
     }
 
     static Builder named(String name) {
-        return builder().propertyName(name);
+        return new Builder().propertyName(name);
     }
 
-    static Builder builder() {
-        return new Builder();
+    static List<TableProperty> all() {
+        return Collections.unmodifiableList(ALL);
     }
 
     static final class Builder {

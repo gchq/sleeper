@@ -19,6 +19,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
 
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.named;
@@ -229,7 +230,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("gp2")
             .validationPredicate(Utils::isValidEbsVolumeType).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE = named("sleeper.bulk.import.emr.ebs.volumes.per.instance")
-            .defaultValue("4").validationPredicate(s -> Utils.isIntLtEqValue(s, 25)).build();
+            .defaultValue("4").validationPredicate(s -> Utils.isPositiveIntLtEqValue(s, 25)).build();
 
     // Bulk import using the non-persistent EMR approach
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL = named("sleeper.default.bulk.import.emr.release.label")
@@ -402,7 +403,10 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isTrueOrFalse).build();
 
     static UserDefinedInstanceProperty[] values() {
-        return Utils.getAllProperties(UserDefinedInstanceProperty.class)
-                .toArray(new UserDefinedInstanceProperty[0]);
+        return all().toArray(new UserDefinedInstanceProperty[0]);
+    }
+
+    static List<UserDefinedInstanceProperty> all() {
+        return UserDefinedInstancePropertyImpl.all();
     }
 }

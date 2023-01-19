@@ -16,11 +16,19 @@
 
 package sleeper.configuration.properties;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
+
+    private static final List<SystemDefinedInstanceProperty> ALL = new ArrayList<>();
+
     private final String propertyName;
 
     private SystemDefinedInstancePropertyImpl(String propertyName) {
         this.propertyName = propertyName;
+        ALL.add(this);
     }
 
     @Override
@@ -35,5 +43,9 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     static SystemDefinedInstancePropertyImpl named(String propertyName) {
         return new SystemDefinedInstancePropertyImpl(propertyName);
+    }
+
+    static List<SystemDefinedInstanceProperty> all() {
+        return Collections.unmodifiableList(ALL);
     }
 }
