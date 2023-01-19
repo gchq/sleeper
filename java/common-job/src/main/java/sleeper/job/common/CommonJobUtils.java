@@ -16,6 +16,9 @@
 package sleeper.job.common;
 
 import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
+import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
 import com.amazonaws.services.ecs.model.DesiredStatus;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
@@ -24,28 +27,40 @@ import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.util.EC2MetadataUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import org.apache.commons.lang3.tuple.Triple;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Utility class common to Sleeper components that run jobs in a container and
- * need to consume messages from a queue.
+ * Utility class common to Sleeper components that run jobs in a container and need to consume
+ * messages from a queue.
  */
 public class CommonJobUtils {
-    /** Environment variable key for finding where this program is running.*/
-    private static final String EXECUTION_ENV = "AWS_EXECUTION_ENV";
-    /** Value if running on EC2.*/
-    private static final String ECS_EC2_ENV = "AWS_ECS_EC2";
+    /** Environment variable key for finding where this program is running. */
+    public static final String EXECUTION_ENV = "AWS_EXECUTION_ENV";
+    /** Value if running on EC2. */
+    public static final String ECS_EC2_ENV = "AWS_ECS_EC2";
+    /** Environment variable for location of container metadata. */
+    public static final String ECS_CONTAINER_METADATA_FILE = "ECS_CONTAINER_METADATA_FILE";
 
     private CommonJobUtils() {
 
     }
 
     /**
-     * Return the instance information about this EC2 instance if this is a container
-     * running on EC2 inside ECS.
+     * Return the instance information about this EC2 instance. This function doesn't work inside
+     * containers on ECS.
      *
      * @return an optional containing the instance information
      */
@@ -57,13 +72,150 @@ public class CommonJobUtils {
         }
     }
 
+    /** Basic metadata class about where this container is running. */
+    public static class ContainerMetadata {
+        public final String clusterName;
+        public final String instanceARN;
+        public final String instanceID;
+        public final String az;
+        public final String status;
+
+        public ContainerMetadata(String clusterName, String instanceARN, String instanceID, String az, String status) {
+            super();
+            this.clusterName = clusterName;
+            this.instanceARN = instanceARN;
+            this.instanceID = instanceID;
+            this.az = az;
+            this.status = status;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(az, clusterName, instanceARN, instanceID, status);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            ContainerMetadata other = (ContainerMetadata) obj;
+            return Objects.equals(az, other.az) && Objects.equals(clusterName, other.clusterName) && Objects.equals(instanceARN, other.instanceARN) && Objects.equals(instanceID, other.instanceID)
+                            && Objects.equals(status, other.status);
+        }
+
+        @Override
+        public String toString() {
+            return "ContainerMetadata [clusterName=" + clusterName + ", instanceARN=" + instanceARN + ", instanceID=" + instanceID + ", az=" + az + ", status=" + status + "]";
+        }
+    }
+
+    /**
+     * Read the container metadata from Amazon ECS API and from the container metadata file.
+     *
+     * @param ecsClient the API client
+     * @return container details if available
+     * @throws IOException for an I/O error reading the metadata file
+     */
+    public static Optional<ContainerMetadata> retrieveContainerMetadata(AmazonECS ecsClient) throws IOException {
+        if (ECS_EC2_ENV.equalsIgnoreCase(System.getenv(EXECUTION_ENV))) {
+
+            Optional<Triple<String, String, String>> metadata = retrieveContainerMetadataViaEnvFile();
+            if (metadata.isPresent()) {
+                Optional<ContainerInstance> instanceDetails = describeContainerInstance(ecsClient, metadata.get().getLeft(), metadata.get().getMiddle());
+
+                if (instanceDetails.isPresent()) {
+                    return Optional.of(new ContainerMetadata(metadata.get().getLeft(), metadata.get().getMiddle(),
+                                    instanceDetails.get().getEc2InstanceId(), metadata.get().getRight(), instanceDetails.get().getStatus()));
+                } else {
+                    return Optional.empty();
+                }
+
+            } else {
+                return Optional.empty();
+            }
+
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Get some container metadata from the metadata file stored at the place indicated by AWS
+     * environment variable.
+     *
+     * @return a triple of cluster name, instanceARN and availability zone if the environment
+     * variable is set
+     * @throws IOException if error occurs reading file
+     */
+    public static Optional<Triple<String, String, String>> retrieveContainerMetadataViaEnvFile() throws IOException {
+        String metaDataFile = System.getenv(ECS_CONTAINER_METADATA_FILE);
+        if (metaDataFile != null) {
+            return retrieveContainerMetadataFile(metaDataFile);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Get some container metadata from the container metadata file at the given path
+     *
+     * @param file the path to the metadata
+     * @return triple of cluster name, instanceARN and availability zone in that order
+     * @throws IOException if an error occurs whilst retrieving data
+     */
+    public static Optional<Triple<String, String, String>> retrieveContainerMetadataFile(String file) throws IOException {
+        Objects.requireNonNull(file, "file");
+
+        BufferedReader metaReader = Files.newBufferedReader(Paths.get(file));
+        JsonReader jsread = new JsonReader(metaReader);
+
+        JsonElement root = JsonParser.parseReader(jsread);
+        JsonObject rootNode = root.getAsJsonObject();
+        String clusterName = rootNode.get("Cluster").getAsString();
+        String containerInstanceArn = rootNode.get("ContainerInstanceARN").getAsString();
+        String az = rootNode.get("AvailabilityZone").getAsString();
+
+        return Optional.of(Triple.of(clusterName, containerInstanceArn, az));
+    }
+
+    /**
+     * Get information about the EC2 instance named by ARN.
+     *
+     * @param ecsClient API client
+     * @param ecsCluster cluster name
+     * @param containerInstanceARN EC2 instance ARN
+     * @return container instance or an empty optional
+     */
+    public static Optional<ContainerInstance> describeContainerInstance(AmazonECS ecsClient, String ecsCluster, String containerInstanceARN) {
+        Objects.requireNonNull(ecsClient);
+        Objects.requireNonNull(ecsCluster, "ecsCluster");
+        Objects.requireNonNull(containerInstanceARN, "containerInstanceARN");
+        DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()
+                        .withCluster(ecsCluster)
+                        .withContainerInstances(containerInstanceARN);
+        DescribeContainerInstancesResult result = ecsClient.describeContainerInstances(req);
+        if (result.getContainerInstances().isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(result.getContainerInstances().get(0));
+        }
+    }
+
     public static Map<String, Integer> getNumberOfMessagesInQueue(String sqsJobQueueUrl, AmazonSQS sqsClient) {
         GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
-                .withQueueUrl(sqsJobQueueUrl)
-                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
-                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
+                        .withQueueUrl(sqsJobQueueUrl)
+                        .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
+                                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
         GetQueueAttributesResult sizeResult = sqsClient.getQueueAttributes(getQueueAttributesRequest);
-        // See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
+        // See
+        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
         int appoximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
         int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
         Map<String, Integer> results = new HashMap<>();
@@ -75,15 +227,15 @@ public class CommonJobUtils {
     public static int getNumRunningTasks(String clusterName, AmazonECS ecsClient) {
         int numRunningTasks = 0;
         ListTasksRequest listTasksRequest = new ListTasksRequest()
-                .withCluster(clusterName)
-                .withDesiredStatus(DesiredStatus.RUNNING);
+                        .withCluster(clusterName)
+                        .withDesiredStatus(DesiredStatus.RUNNING);
         ListTasksResult listTasksResult = ecsClient.listTasks(listTasksRequest);
         numRunningTasks += listTasksResult.getTaskArns().size();
         while (null != listTasksResult.getNextToken()) {
             listTasksRequest = new ListTasksRequest()
-                    .withCluster(clusterName)
-                    .withDesiredStatus(DesiredStatus.RUNNING)
-                    .withNextToken(listTasksResult.getNextToken());
+                            .withCluster(clusterName)
+                            .withDesiredStatus(DesiredStatus.RUNNING)
+                            .withNextToken(listTasksResult.getNextToken());
             listTasksResult = ecsClient.listTasks(listTasksRequest);
             numRunningTasks += listTasksResult.getTaskArns().size();
         }

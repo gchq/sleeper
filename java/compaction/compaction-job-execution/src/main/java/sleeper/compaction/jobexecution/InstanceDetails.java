@@ -78,6 +78,34 @@ public class InstanceDetails {
         this.numPendingTasks = numPendingTasks;
     }
 
+    @Override
+    public String toString() {
+        return "InstanceDetails [instanceId=" + instanceId + ", instanceArn=" + instanceArn + ", registered=" + registered + ", availableCPU=" + availableCPU + ", availableRAM=" + availableRAM
+                        + ", totalCPU=" + totalCPU + ", totalRAM=" + totalRAM + ", numRunningTasks=" + numRunningTasks + ", numPendingTasks=" + numPendingTasks + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(availableCPU, availableRAM, instanceArn, instanceId, numPendingTasks, numRunningTasks, registered, totalCPU, totalRAM);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        InstanceDetails other = (InstanceDetails) obj;
+        return availableCPU == other.availableCPU && availableRAM == other.availableRAM && Objects.equals(instanceArn, other.instanceArn) && Objects.equals(instanceId, other.instanceId)
+                        && numPendingTasks == other.numPendingTasks && numRunningTasks == other.numRunningTasks && Objects.equals(registered, other.registered) && totalCPU == other.totalCPU
+                        && totalRAM == other.totalRAM;
+    }
+
     /**
      * Find details of EC2 instances in an ECS cluster. Inspects the cluster to find the details of
      * all the instances.
@@ -149,8 +177,8 @@ public class InstanceDetails {
             /**
              * AWS uses pagination to return blocks of data, so if the last request indicates there
              * is more data, we make another request. If that comes back empty, then we assume there
-             * is no more data, else we check the "next token" field in the response to decide if there
-             * might be more data.
+             * is no more data, else we check the "next token" field in the response to decide if
+             * there might be more data.
              *
              * @return true if the queue was filled with more instance data
              */
