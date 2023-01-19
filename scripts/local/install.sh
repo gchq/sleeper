@@ -50,10 +50,14 @@ case "$PATH" in
     if ! grep -q "$EXECUTABLE_DIR" "$HOME/.bashrc" 2> /dev/null; then
       echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.bashrc"
       echo "Added to ~/.bashrc"
+    else
+      echo "Already in ~/.bashrc"
     fi
     if ! grep -q "$EXECUTABLE_DIR" "$HOME/.zshrc" 2> /dev/null; then
       echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.zshrc"
       echo "Added to ~/.zshrc"
+    else
+      echo "Already in ~/.zshrc"
     fi
     export PATH="$PATH:$EXECUTABLE_DIR"
     echo "Added to current session"
