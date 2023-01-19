@@ -15,8 +15,7 @@
 
 set -e
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
+ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
 list_environments() {
   echo "Available environments:"

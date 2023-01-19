@@ -31,7 +31,7 @@ fi
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-ENVIRONMENTS_DIR=$(cd "$THIS_DIR" && cd ../../environments && pwd)
+ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 

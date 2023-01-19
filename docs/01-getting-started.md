@@ -13,32 +13,38 @@ Before running this demo functionality, you will need the following installed:
 
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 11/17](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
 
 ### Deployment environment
 
 You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. A local Docker image
-contains the necessary dependencies and scripts to do this. Run these commands in the directory `scripts/local` to build
-the Docker image and deploy the environment:
+contains the necessary dependencies and scripts to do this. Run the following commands to install a CLI to work with
+the local Docker image. The \[version\] can be `main` or a version like `v0.13.0`.
 
 ```bash
-./build.sh
-./runInDocker.sh aws configure
-./runInDocker.sh cdk bootstrap
-./runInDocker.sh environment deploy TestEnvironment
+curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/local/install.sh" -o ./sleeper-install.sh
+chmod +x ./sleeper-install.sh
+./sleeper-install.sh [version]
 ```
 
-The `./runInDocker.sh` command lets you run other commands inside a local Docker image. If you run it on its own you'll
+This installs a `sleeper` command to run other commands inside a local Docker image. If you run it on its own you'll
 get a shell inside the container. You can use `aws` commands under that to configure alternative authentication rather
 than using `aws configure`. You can also set AWS environment variables or configuration on the host machine which will
-be propagated to the Docker container when you use `./runInDocker.sh`.
+be propagated to the Docker container when you use `sleeper`.
 
-The `environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
+Run these commands to deploy an EC2 instance in AWS (note that cdk bootstrap only needs to be done once in a given AWS
+account):
+
+```bash
+sleeper aws configure
+sleeper cdk bootstrap
+sleeper environment deploy TestEnvironment
+```
+
+The `sleeper environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
 You can then SSH to it with this command:
 
 ```bash
-./runInDocker.sh environment connect
+sleeper environment connect
 ```
 
 Immediately after it's deployed, commands will run on this instance to install development tools. Once you're connected,

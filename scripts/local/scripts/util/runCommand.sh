@@ -16,20 +16,28 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment <command>"
-	exit 1
+  bash -l
+  exit
 fi
 
 SUBCOMMAND=$1
 shift
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/environment && pwd)
+if [ "$SUBCOMMAND" == "aws" ]; then
+  aws "$@"
+elif [ "$SUBCOMMAND" == "cdk" ]; then
+  cdk "$@"
+elif [ "$SUBCOMMAND" == "--version" ] || [ "$SUBCOMMAND" == "-v" ]; then
+  cat /sleeper/version.txt
+else
+  THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+  SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../../bin && pwd)
 
-SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
-if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
-  echo "Subcommand not found: environment $SUBCOMMAND"
-  exit 1
+  SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND"
+  if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
+    echo "Subcommand not found: $SUBCOMMAND"
+    exit 1
+  fi
+
+  "$SUBCOMMAND_SCRIPT" "$@"
 fi
-
-"$SUBCOMMAND_SCRIPT" "$@"
