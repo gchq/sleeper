@@ -20,9 +20,6 @@ import sleeper.build.github.GitHubRunToHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 
 import java.util.Objects;
@@ -30,20 +27,14 @@ import java.util.stream.Stream;
 
 public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable {
 
-    private final String token;
-    private final Client client;
-    private final WebTarget gitHubApi;
+    private final GitHubApi api;
 
     public GitHubWorkflowRunsImpl(String token) {
         this(token, "https://api.github.com");
     }
 
     public GitHubWorkflowRunsImpl(String token, String baseUrl) {
-        this.token = token;
-        client = ClientBuilder.newBuilder()
-                .register(JacksonProvider.class)
-                .build();
-        gitHubApi = client.target(baseUrl);
+        api = GitHubApi.baseUrlAndToken(baseUrl, token);
     }
 
     @Override
@@ -51,7 +42,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
         WebTarget repository = repository(head);
         WebTarget runs = repository.path("actions/workflows").path(workflow)
                 .path("runs").queryParam("branch", head.getBranch());
-        GitHubWorkflowRunsResponse response = request(runs).buildGet()
+        GitHubWorkflowRunsResponse response = api.request(runs).buildGet()
                 .invoke(GitHubWorkflowRunsResponse.class);
         return response.getWorkflowRuns().stream()
                 .map(GitHubWorkflowRunsResponse.Run::toInternalRun)
@@ -64,7 +55,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
     public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
         WebTarget repository = repository(head);
         WebTarget run = repository.path("actions/runs").path("" + runId);
-        GitHubWorkflowRunsResponse.Run response = request(run).buildGet()
+        GitHubWorkflowRunsResponse.Run response = api.request(run).buildGet()
                 .invoke(GitHubWorkflowRunsResponse.Run.class);
         return response.toInternalRun();
     }
@@ -75,21 +66,16 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
             return GitHubRunToHead.sameSha(run);
         }
         WebTarget compare = repository.path("compare").path(run.getCommitSha() + "..." + head.getSha());
-        GitHubCompareResponse response = request(compare).buildGet().invoke(GitHubCompareResponse.class);
+        GitHubCompareResponse response = api.request(compare).buildGet().invoke(GitHubCompareResponse.class);
         return response.toRunToHead(run);
     }
 
     private WebTarget repository(GitHubHead head) {
-        return gitHubApi.path("repos").path(head.getOwnerAndRepository());
-    }
-
-    private Invocation.Builder request(WebTarget target) {
-        return target.request("application/vnd.github+json")
-                .header("Authorization", "Bearer " + token);
+        return api.path("repos").path(head.getOwnerAndRepository());
     }
 
     @Override
     public void close() {
-        client.close();
+        api.close();
     }
 }
