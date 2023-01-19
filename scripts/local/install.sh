@@ -45,8 +45,11 @@ case "$PATH" in
   *"$EXECUTABLE_DIR"*)
     ;;
   *)
-    if ! grep -q "$EXECUTABLE_DIR" "$HOME/.bashrc"; then
+    if ! grep -q "$EXECUTABLE_DIR" "$HOME/.bashrc" 2> /dev/null; then
       echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.bashrc"
+    fi
+    if ! grep -q "$EXECUTABLE_DIR" "$HOME/.zshrc" 2> /dev/null; then
+      echo "export PATH=\"\$PATH:$EXECUTABLE_DIR\"" >> "$HOME/.zshrc"
     fi
     ;;
 esac
