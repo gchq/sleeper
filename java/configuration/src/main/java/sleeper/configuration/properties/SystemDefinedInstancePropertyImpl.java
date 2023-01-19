@@ -25,9 +25,11 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     private static final List<SystemDefinedInstanceProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
+    private final String description;
 
-    private SystemDefinedInstancePropertyImpl(String propertyName) {
-        this.propertyName = propertyName;
+    private SystemDefinedInstancePropertyImpl(Builder builder) {
+        propertyName = builder.propertyName;
+        description = builder.description;
     }
 
     @Override
@@ -40,16 +42,47 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return propertyName;
     }
 
-    static SystemDefinedInstanceProperty named(String propertyName) {
-        return addToAllList(new SystemDefinedInstancePropertyImpl(propertyName));
+    @Override
+    public String getDescription() {
+        return description;
     }
 
-    private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
-        ALL.add(property);
-        return property;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    static Builder named(String propertyName) {
+        return builder().propertyName(propertyName);
     }
 
     static List<SystemDefinedInstanceProperty> all() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static final class Builder {
+        private String propertyName;
+        private String description;
+
+        private Builder() {
+        }
+
+        public Builder propertyName(String propertyName) {
+            this.propertyName = propertyName;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public SystemDefinedInstanceProperty build() {
+            return addToAllList(new SystemDefinedInstancePropertyImpl(this));
+        }
+
+        private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
+            ALL.add(property);
+            return property;
+        }
     }
 }

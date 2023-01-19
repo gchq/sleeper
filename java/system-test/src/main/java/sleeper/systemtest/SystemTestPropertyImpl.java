@@ -26,11 +26,13 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
+    private final String description;
 
     private SystemTestPropertyImpl(Builder builder) {
         propertyName = builder.propertyName;
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
+        description = builder.description;
     }
 
     @Override
@@ -48,6 +50,12 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return validationPredicate;
     }
 
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+
     static List<SystemTestProperty> all() {
         return Collections.unmodifiableList(ALL);
     }
@@ -64,6 +72,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private String propertyName;
         private String defaultValue;
         private Predicate<String> validationPredicate = (s) -> true;
+        private String description;
 
         private Builder() {
         }
@@ -80,6 +89,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
         public Builder validationPredicate(Predicate<String> validationPredicate) {
             this.validationPredicate = validationPredicate;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
             return this;
         }
 

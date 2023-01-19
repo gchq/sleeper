@@ -31,12 +31,19 @@ class TablePropertyImpl implements TableProperty {
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
+    private final String description;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = builder.propertyName;
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
         defaultProperty = builder.defaultProperty;
+        description = builder.description;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
     }
 
     static Builder named(String name) {
@@ -52,6 +59,7 @@ class TablePropertyImpl implements TableProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
+        private String description;
 
         private Builder() {
         }
@@ -73,6 +81,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder defaultProperty(SleeperProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
             return this;
         }
 
