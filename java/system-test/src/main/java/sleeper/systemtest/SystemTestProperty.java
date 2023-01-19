@@ -21,56 +21,42 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.ingest.IngestMode;
 
 import java.util.Objects;
-import java.util.function.Predicate;
 
-public enum SystemTestProperty implements InstanceProperty {
-    NUMBER_OF_WRITERS("sleeper.systemtest.writers", null, Objects::nonNull),
-    NUMBER_OF_RECORDS_PER_WRITER("sleeper.systemtest.records-per-writer", null, Objects::nonNull),
-    INGEST_MODE("sleeper.systemtest.ingest.mode", null, s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)),
-    SYSTEM_TEST_CLUSTER_NAME("sleeper.systemtest.cluster"),
-    SYSTEM_TEST_REPO("sleeper.systemtest.repo", null, Objects::nonNull),
-    WRITE_DATA_TASK_DEFINITION_FAMILY("sleeper.systemtest.task-definition"),
-    SYSTEM_TEST_TASK_CPU("sleeper.systemtest.task.cpu", "1024"),
-    SYSTEM_TEST_TASK_MEMORY("sleeper.systemtest.task.memory", "4096"),
-    MIN_RANDOM_INT("sleeper.systemtest.random.int.min", "0"),
-    MAX_RANDOM_INT("sleeper.systemtest.random.int.max", "100000000"),
-    MIN_RANDOM_LONG("sleeper.systemtest.random.long.min", "0"),
-    MAX_RANDOM_LONG("sleeper.systemtest.random.long.max", "10000000000"),
-    RANDOM_STRING_LENGTH("sleeper.systemtest.random.string.length", "10"),
-    RANDOM_BYTE_ARRAY_LENGTH("sleeper.systemtest.random.bytearray.length", "10"),
-    MAX_ENTRIES_RANDOM_MAP("sleeper.systemtest.random.map.length", "10"),
-    MAX_ENTRIES_RANDOM_LIST("sleeper.systemtest.random.list.length", "10");
+import static sleeper.systemtest.SystemTestPropertyImpl.named;
 
-    private final String propertyName;
-    private final String defaultValue;
-    private final Predicate<String> validationPredicate;
+public interface SystemTestProperty extends InstanceProperty {
+    SystemTestProperty NUMBER_OF_WRITERS = named("sleeper.systemtest.writers")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty NUMBER_OF_RECORDS_PER_WRITER = named("sleeper.systemtest.records-per-writer")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty INGEST_MODE = named("sleeper.systemtest.ingest.mode")
+            .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
+    SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = named("sleeper.systemtest.cluster").build();
+    SystemTestProperty SYSTEM_TEST_REPO = named("sleeper.systemtest.repo")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = named("sleeper.systemtest.task-definition").build();
+    SystemTestProperty SYSTEM_TEST_TASK_CPU = named("sleeper.systemtest.task.cpu")
+            .defaultValue("1024").build();
+    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = named("sleeper.systemtest.task.memory")
+            .defaultValue("4096").build();
+    SystemTestProperty MIN_RANDOM_INT = named("sleeper.systemtest.random.int.min")
+            .defaultValue("0").build();
+    SystemTestProperty MAX_RANDOM_INT = named("sleeper.systemtest.random.int.max")
+            .defaultValue("100000000").build();
+    SystemTestProperty MIN_RANDOM_LONG = named("sleeper.systemtest.random.long.min")
+            .defaultValue("0").build();
+    SystemTestProperty MAX_RANDOM_LONG = named("sleeper.systemtest.random.long.max")
+            .defaultValue("10000000000").build();
+    SystemTestProperty RANDOM_STRING_LENGTH = named("sleeper.systemtest.random.string.length")
+            .defaultValue("10").build();
+    SystemTestProperty RANDOM_BYTE_ARRAY_LENGTH = named("sleeper.systemtest.random.bytearray.length")
+            .defaultValue("10").build();
+    SystemTestProperty MAX_ENTRIES_RANDOM_MAP = named("sleeper.systemtest.random.map.length")
+            .defaultValue("10").build();
+    SystemTestProperty MAX_ENTRIES_RANDOM_LIST = named("sleeper.systemtest.random.list.length")
+            .defaultValue("10").build();
 
-    SystemTestProperty(String propertyName) {
-        this(propertyName, null);
-    }
-
-    SystemTestProperty(String propertyName, String defaultValue) {
-        this(propertyName, defaultValue, (s) -> true);
-    }
-
-    SystemTestProperty(String propertyName, String defaultValue, Predicate<String> validationPredicate) {
-        this.propertyName = propertyName;
-        this.defaultValue = defaultValue;
-        this.validationPredicate = validationPredicate;
-    }
-
-    @Override
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    @Override
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    @Override
-    public Predicate<String> validationPredicate() {
-        return validationPredicate;
+    static SystemTestProperty[] values() {
+        return SystemTestPropertyImpl.all().toArray(new SystemTestProperty[0]);
     }
 }
