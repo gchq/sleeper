@@ -28,7 +28,7 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/build/buildForTest.sh"
 END_BUILD_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deployTest.sh" "$@"
+"$SCRIPTS_DIR/test/deployAll/deployTest.sh" "$@"
 FINISH_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"

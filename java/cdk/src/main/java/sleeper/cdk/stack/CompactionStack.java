@@ -236,7 +236,7 @@ public class CompactionStack extends NestedStack {
                         .queueName(dlQueueName)
                         .build();
         DeadLetterQueue compactionMergeJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
-                        .maxReceiveCount(1)
+                        .maxReceiveCount(3)
                         .queue(compactionDLQ)
                         .build();
         String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobQ");
@@ -287,7 +287,7 @@ public class CompactionStack extends NestedStack {
                         .queueName(dlQueueName)
                         .build();
         DeadLetterQueue compactionJobDefinitionsDeadLetterQueue = DeadLetterQueue.builder()
-                        .maxReceiveCount(1)
+                        .maxReceiveCount(3)
                         .queue(splittingDLQ)
                         .build();
         String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionJobQ");
