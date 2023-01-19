@@ -59,8 +59,7 @@ case "$PATH" in
     else
       echo "Already in ~/.zshrc"
     fi
-    export PATH="$PATH:$EXECUTABLE_DIR"
-    echo "Added to current session"
+    echo "Please relaunch a terminal to be able to use Sleeper commands"
     ;;
 esac
 
@@ -68,3 +67,4 @@ echo "Installing Sleeper CLI"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
 curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/local/runInDocker.sh" --output "$EXECUTABLE_PATH"
 chmod a+x "$EXECUTABLE_PATH"
+echo "Installed"
