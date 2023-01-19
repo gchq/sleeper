@@ -25,7 +25,7 @@ curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/local/ins
 chmod +x ./sleeper-install.sh
 ./sleeper-install.sh [version]
 sleeper aws configure
-sleeper cdk bootstrap
+sleeper cdk bootstrap # Note that cdk bootstrap only needs to be done once in a given AWS account
 sleeper environment deploy TestEnvironment
 ```
 
