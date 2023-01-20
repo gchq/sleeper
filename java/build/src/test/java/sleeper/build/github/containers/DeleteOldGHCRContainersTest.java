@@ -18,6 +18,7 @@ package sleeper.build.github.containers;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -51,8 +52,7 @@ class DeleteOldGHCRContainersTest {
         deleteAll(runtimeInfo);
 
         // Then
-        verify(gitHubRequest(deleteRequestedFor(
-                urlEqualTo("/orgs/test-org/packages/container/sleeper-local/versions/64403175"))));
+        verify(packageVersionDeleted("sleeper-local", 64403175));
     }
 
     @Test
@@ -68,8 +68,7 @@ class DeleteOldGHCRContainersTest {
         deleteAll(runtimeInfo);
 
         // Then
-        verify(gitHubRequest(deleteRequestedFor(
-                urlEqualTo("/orgs/test-org/packages/container/sleeper-local/versions/123"))));
+        verify(packageVersionDeleted("sleeper-local", 123));
     }
 
     private void deleteAll(WireMockRuntimeInfo runtimeInfo) {
@@ -101,5 +100,10 @@ class DeleteOldGHCRContainersTest {
     private void packageVersionDeleteSucceeds(String packageName, int versionId) {
         stubFor(gitHubRequest(delete("/orgs/test-org/packages/container/" + packageName + "/versions/" + versionId))
                 .willReturn(gitHubResponse().withStatus(204)));
+    }
+
+    private RequestPatternBuilder packageVersionDeleted(String packageName, int versionId) {
+        return gitHubRequest(deleteRequestedFor(
+                urlEqualTo("/orgs/test-org/packages/container/" + packageName + "/versions/" + versionId)));
     }
 }
