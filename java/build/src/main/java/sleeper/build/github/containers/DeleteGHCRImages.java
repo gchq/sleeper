@@ -45,7 +45,7 @@ public class DeleteGHCRImages {
 
     public void delete() {
         for (GitHubPackageVersionResponse version : getAllVersions()) {
-            if (tagsToKeep == null || version.getTags().stream().noneMatch(tag -> tagsToKeep.matcher(tag).find())) {
+            if (noneAreTagsToKeep(version.getTags())) {
                 deleteVersion(version.getId());
             }
         }
@@ -55,6 +55,10 @@ public class DeleteGHCRImages {
         WebTarget target = containerPath().path("versions");
         return api.request(target).get(new GenericType<>() {
         });
+    }
+
+    private boolean noneAreTagsToKeep(List<String> tags) {
+        return tagsToKeep == null || tags.stream().noneMatch(tag -> tagsToKeep.matcher(tag).find());
     }
 
     private void deleteVersion(String versionId) {
