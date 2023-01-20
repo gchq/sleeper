@@ -52,18 +52,18 @@ public class DeleteGHCRImages {
     }
 
     private List<GitHubPackageVersionResponse> getAllVersions() {
-        WebTarget target = containerPath(imageName).path("versions");
+        WebTarget target = containerPath().path("versions");
         return api.request(target).get(new GenericType<>() {
         });
     }
 
     private void deleteVersion(String versionId) {
-        WebTarget target = containerPath(imageName).path("versions").path(versionId);
+        WebTarget target = containerPath().path("versions").path(versionId);
         api.request(target).delete(Void.class);
     }
 
-    private WebTarget containerPath(String packageName) {
-        return packagesBasePath().path("container").path(packageName);
+    private WebTarget containerPath() {
+        return packagesBasePath().path("container").path(imageName);
     }
 
     private WebTarget packagesBasePath() {
