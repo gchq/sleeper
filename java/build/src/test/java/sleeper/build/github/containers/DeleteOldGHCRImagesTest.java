@@ -19,7 +19,6 @@ package sleeper.build.github.containers;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -56,17 +55,15 @@ class DeleteOldGHCRImagesTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("sleeper-local", imageWithIdAndTags(123, "test-tag"));
-        packageVersionDeleteSucceeds("sleeper-local", 123);
 
         // When
         deleteImages(runtimeInfo, builder -> builder.imageName("sleeper-local").tagsToKeepPattern("test-tag"));
 
         // Then
-        verify(packageVersionDeleted("sleeper-local", 123));
+        verify(0, packageVersionDeleted("sleeper-local", 123));
     }
 
     private void deleteImages(WireMockRuntimeInfo runtimeInfo, Consumer<DeleteGHCRImages.Builder> configuration) {
