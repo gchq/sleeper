@@ -1,0 +1,5 @@
+{
+  "app": "java -cp jars/cdk-environment.jar sleeper.environment.cdk.SleeperEnvironmentCdkApp",
+  "context": {
+  }
+}

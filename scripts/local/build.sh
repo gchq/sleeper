@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,25 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-	echo "Usage: $0 <uniqueId> <vpc> <subnet>"
-	exit 1
-fi
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+BASE_DIR=$(cd "$(dirname "$THIS_DIR")" && cd "../" && pwd)
+SCRIPTS_DIR="$BASE_DIR/scripts"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/build/buildForTest.sh"
-END_BUILD_TIME=$(record_time)
+"$THIS_DIR/buildMaven.sh"
 
-"$THIS_DIR/deployTest.sh" "$@"
-FINISH_TIME=$(record_time)
+END_MAVEN_BUILD_TIME=$(record_time)
+echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
 
+"$THIS_DIR/buildDocker.sh"
+
+END_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished"
+echo "Finished build"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Build finished at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_BUILD_TIME")"
-echo "Deploying test finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$FINISH_TIME")"
-echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
+echo "Finished Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$END_MAVEN_BUILD_TIME" "$END_TIME")"
+echo "Overall, took $(elapsed_time_str "$START_TIME" "$END_TIME")"
