@@ -63,7 +63,7 @@ class DeleteOldGHCRImagesTest {
         packageVersionDeleteSucceeds("sleeper-local", 123);
 
         // When
-        deleteImages(runtimeInfo, builder -> builder.imageName("sleeper-local").tagsPattern("test-tag"));
+        deleteImages(runtimeInfo, builder -> builder.imageName("sleeper-local").tagsToKeepPattern("test-tag"));
 
         // Then
         verify(packageVersionDeleted("sleeper-local", 123));

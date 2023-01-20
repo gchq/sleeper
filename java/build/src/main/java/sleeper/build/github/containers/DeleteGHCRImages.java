@@ -22,6 +22,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -29,13 +30,13 @@ public class DeleteGHCRImages {
     private final GitHubApi api;
     private final String organization;
     private final String imageName;
-    private final Pattern tagsPattern;
+    private final Pattern tagsToKeep;
 
     private DeleteGHCRImages(Builder builder) {
-        api = builder.api;
-        organization = builder.organization;
-        imageName = builder.imageName;
-        tagsPattern = builder.tagsPattern;
+        api = Objects.requireNonNull(builder.api, "api must not be null");
+        organization = Objects.requireNonNull(builder.organization, "organization must not be null");
+        imageName = Objects.requireNonNull(builder.imageName, "imageName must not be null");
+        tagsToKeep = builder.tagsToKeep;
     }
 
     public static Builder withApi(GitHubApi api) {
@@ -71,7 +72,7 @@ public class DeleteGHCRImages {
         private GitHubApi api;
         private String organization;
         private String imageName;
-        private Pattern tagsPattern;
+        private Pattern tagsToKeep;
 
         private Builder() {
         }
@@ -91,13 +92,13 @@ public class DeleteGHCRImages {
             return this;
         }
 
-        public Builder tagsPattern(Pattern tagsPattern) {
-            this.tagsPattern = tagsPattern;
+        public Builder tagsToKeep(Pattern tagsToKeep) {
+            this.tagsToKeep = tagsToKeep;
             return this;
         }
 
-        public Builder tagsPattern(String tagsPattern) {
-            return tagsPattern(Pattern.compile(tagsPattern));
+        public Builder tagsToKeepPattern(String tagsToKeepPattern) {
+            return tagsToKeep(Pattern.compile(tagsToKeepPattern));
         }
 
         public Builder applyMutation(Consumer<Builder> consumer) {
