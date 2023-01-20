@@ -22,6 +22,7 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -35,6 +36,7 @@ import static sleeper.build.github.api.GitHubApiTestHelper.doWithGitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
+import static sleeper.build.github.containers.TestGHCRImage.image;
 import static sleeper.build.github.containers.TestGHCRImage.imageWithId;
 import static sleeper.build.github.containers.TestGHCRImage.imageWithIdAndTags;
 import static sleeper.build.testutil.TestResources.exampleString;
@@ -87,8 +89,9 @@ class DeleteOldGHCRImagesTest {
     @Disabled("TODO")
     void shouldKeepMostRecentImage(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        // TODO specify dates
-        packageVersionListReturns("test-image", imageWithId(1), imageWithId(2));
+        packageVersionListReturns("test-image",
+                image().id(1).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).build(),
+                image().id(2).updatedAt(Instant.parse("2023-01-20T15:30:12Z")).build());
 
         // When
         deleteImages(runtimeInfo, builder -> builder.imageName("test-image").keepMostRecent(1));
