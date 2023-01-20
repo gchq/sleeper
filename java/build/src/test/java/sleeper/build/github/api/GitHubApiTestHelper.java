@@ -21,24 +21,17 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static sleeper.build.testutil.TestResources.exampleString;
 
 public class GitHubApiTestHelper {
-    private MappingBuilder gitHubRequest(MappingBuilder builder) {
+
+    public static MappingBuilder gitHubRequest(MappingBuilder builder) {
         return builder.withHeader("Accept", equalTo("application/vnd.github+json"))
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"));
     }
 
-    private ResponseDefinitionBuilder gitHubResponse() {
+    public static ResponseDefinitionBuilder gitHubResponse() {
         return aResponse()
                 .withHeader("Content-Type", "application/vnd.github+json");
     }
 
-    public MappingBuilder createStub() {
-        return gitHubRequest(get("/rate_limit"))
-                .willReturn(gitHubResponse()
-                        .withStatus(200)
-                        .withBody(exampleString("examples/github-api/rate-limit.json")));
-    }
 }

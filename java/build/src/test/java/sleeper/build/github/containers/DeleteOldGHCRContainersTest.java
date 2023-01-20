@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.List;
 
-public class DeleteOldGHCRContainersTest {
+class DeleteOldGHCRContainersTest {
     @Test
     void shouldDeleteAContainer() {
         // Given
