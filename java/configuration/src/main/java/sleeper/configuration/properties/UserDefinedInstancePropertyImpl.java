@@ -18,13 +18,15 @@ package sleeper.configuration.properties;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
+    private static final Map<String, UserDefinedInstanceProperty> ALL_MAP = new HashMap<>();
     private static final List<UserDefinedInstanceProperty> ALL = new ArrayList<>();
-
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
@@ -35,14 +37,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
         description = builder.description;
-    }
-
-    static UserDefinedInstancePropertyImpl.Builder named(String name) {
-        return new Builder().propertyName(name);
-    }
-
-    static List<UserDefinedInstanceProperty> all() {
-        return Collections.unmodifiableList(ALL);
     }
 
     @Override
@@ -63,6 +57,22 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static UserDefinedInstanceProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
+    public static List<UserDefinedInstanceProperty> all() {
+        return Collections.unmodifiableList(ALL);
     }
 
     static final class Builder {
@@ -99,6 +109,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         }
 
         private static UserDefinedInstanceProperty addToAllList(UserDefinedInstanceProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             return property;
         }

@@ -148,5 +148,13 @@ public interface TableProperty extends SleeperProperty {
         return TablePropertyImpl.all().toArray(new TableProperty[0]);
     }
 
+    static TableProperty from(String propertyName) {
+        return TablePropertyImpl.get(propertyName);
+    }
+
+    static boolean has(String propertyName) {
+        return TablePropertyImpl.get(propertyName) != null;
+    }
+
     SleeperProperty getDefaultProperty();
 }

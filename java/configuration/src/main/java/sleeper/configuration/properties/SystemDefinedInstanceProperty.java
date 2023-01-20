@@ -103,4 +103,12 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     static SystemDefinedInstanceProperty[] values() {
         return SystemDefinedInstancePropertyImpl.all().toArray(new SystemDefinedInstanceProperty[0]);
     }
+
+    static SystemDefinedInstanceProperty from(String propertyName) {
+        return SystemDefinedInstancePropertyImpl.get(propertyName);
+    }
+
+    static boolean has(String propertyName) {
+        return SystemDefinedInstancePropertyImpl.get(propertyName) != null;
+    }
 }

@@ -33,15 +33,24 @@ import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.n
 public interface UserDefinedInstanceProperty extends InstanceProperty {
     // Tables
     UserDefinedInstanceProperty TABLE_PROPERTIES = named("sleeper.table.properties")
+            .description("A comma separated list of paths containing the table properties files")
             .validationPredicate(Objects::nonNull).build();
     // Common
     UserDefinedInstanceProperty ID = named("sleeper.id")
+            .description("A string to uniquely identify this deployment")
             .validationPredicate(Objects::nonNull).build();
     UserDefinedInstanceProperty JARS_BUCKET = named("sleeper.jars.bucket")
+            .description("The S3 bucket containing the jar files of the Sleeper components")
             .validationPredicate(Objects::nonNull).build();
-    UserDefinedInstanceProperty USER_JARS = named("sleeper.userjars").build();
-    UserDefinedInstanceProperty TAGS_FILE = named("sleeper.tags.file").build();
-    UserDefinedInstanceProperty TAGS = named("sleeper.tags").build();
+    UserDefinedInstanceProperty USER_JARS = named("sleeper.userjars")
+            .description("A comma-separated list of the jars containing application specific iterator code")
+            .build();
+    UserDefinedInstanceProperty TAGS_FILE = named("sleeper.tags.file")
+            .description("A file of key-value tags")
+            .build();
+    UserDefinedInstanceProperty TAGS = named("sleeper.tags")
+            .description("A list of tags for the project")
+            .build();
     UserDefinedInstanceProperty STACK_TAG_NAME = named("sleeper.stack.tag.name")
             .defaultValue("DeploymentStack").build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = named("sleeper.retain.infra.after.destroy")
@@ -403,5 +412,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     static UserDefinedInstanceProperty[] values() {
         return UserDefinedInstancePropertyImpl.all().toArray(new UserDefinedInstanceProperty[0]);
+    }
+
+    static UserDefinedInstanceProperty from(String propertyName) {
+        return UserDefinedInstancePropertyImpl.get(propertyName);
+    }
+
+    static boolean has(String propertyName) {
+        return UserDefinedInstancePropertyImpl.get(propertyName) != null;
     }
 }

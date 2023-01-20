@@ -20,11 +20,14 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
 
+    private static final Map<String, TableProperty> ALL_MAP = new HashMap<>();
     private static final List<TableProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
@@ -42,16 +45,44 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
+    public Predicate<String> validationPredicate() {
+        return validationPredicate;
+    }
+
+    @Override
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    @Override
     public String getDescription() {
         return description;
     }
 
-    static Builder named(String name) {
-        return new Builder().propertyName(name);
+    static Builder builder() {
+        return new Builder();
     }
 
-    static List<TableProperty> all() {
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static List<TableProperty> all() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static TableProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
     }
 
     static final class Builder {
@@ -94,28 +125,9 @@ class TablePropertyImpl implements TableProperty {
         }
 
         private static TableProperty addToAllList(TableProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             return property;
         }
-    }
-
-    @Override
-    public Predicate<String> validationPredicate() {
-        return validationPredicate;
-    }
-
-    @Override
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    @Override
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    @Override
-    public SleeperProperty getDefaultProperty() {
-        return defaultProperty;
     }
 }

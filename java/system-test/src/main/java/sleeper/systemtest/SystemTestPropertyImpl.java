@@ -18,10 +18,13 @@ package sleeper.systemtest;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public class SystemTestPropertyImpl implements SystemTestProperty {
+    private static final Map<String, SystemTestProperty> ALL_MAP = new HashMap<>();
     private static final List<SystemTestProperty> ALL = new ArrayList<>();
     private final String propertyName;
     private final String defaultValue;
@@ -55,17 +58,20 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return description;
     }
 
-
-    static List<SystemTestProperty> all() {
-        return Collections.unmodifiableList(ALL);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static Builder named(String name) {
         return builder().propertyName(name);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static SystemTestProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
+    public static List<SystemTestProperty> all() {
+        return Collections.unmodifiableList(ALL);
     }
 
     public static final class Builder {
@@ -102,6 +108,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         }
 
         private static SystemTestProperty addToAllList(SystemTestProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             return property;
         }

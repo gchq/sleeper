@@ -18,10 +18,13 @@ package sleeper.configuration.properties;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
 
+    private static final Map<String, SystemDefinedInstanceProperty> ALL_MAP = new HashMap<>();
     private static final List<SystemDefinedInstanceProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
@@ -51,11 +54,15 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return new Builder();
     }
 
-    static Builder named(String propertyName) {
+    public static Builder named(String propertyName) {
         return builder().propertyName(propertyName);
     }
 
-    static List<SystemDefinedInstanceProperty> all() {
+    public static SystemDefinedInstanceProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
+    public static List<SystemDefinedInstanceProperty> all() {
         return Collections.unmodifiableList(ALL);
     }
 
@@ -81,6 +88,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         }
 
         private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             return property;
         }
