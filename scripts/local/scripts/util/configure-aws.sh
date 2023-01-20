@@ -1,4 +1,4 @@
-
+#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,17 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BASE_DIR=$(cd "$(dirname "$0")" && cd "../../" && pwd)
-MAVEN_DIR="$BASE_DIR/java"
-SCRIPTS_DIR="$BASE_DIR/scripts"
-JARS_DIR="$SCRIPTS_DIR/jars"
-DOCKER_DIR="$SCRIPTS_DIR/docker"
-VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
+set -e
 
-"$SCRIPTS_DIR/build/build.sh" "$@"
-
-VERSION=$(cat "$VERSION_FILE")
-
-cp -r "$MAVEN_DIR/system-test/docker" "$DOCKER_DIR/system-test"
-cp -r "$MAVEN_DIR/system-test/target/system-test-${VERSION}-utility.jar" "$DOCKER_DIR/system-test/system-test.jar"
-cp -r "$MAVEN_DIR/system-test/target/system-test-${VERSION}-utility.jar" "$JARS_DIR"
+if [ ! -f "$HOME/.aws/config" ]; then
+  echo "No AWS configuration found. Running 'aws configure'"
+  aws configure
+fi
