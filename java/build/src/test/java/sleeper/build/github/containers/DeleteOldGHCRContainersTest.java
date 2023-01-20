@@ -42,16 +42,10 @@ class DeleteOldGHCRContainersTest {
     @Test
     void shouldDeleteAContainerVersion(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        stubFor(gitHubRequest(get("/orgs/test-org/packages?package_type=container"))
-                .willReturn(gitHubResponse()
-                        .withStatus(200)
-                        .withBody(exampleString("examples/github-api/package-list-one-container.json"))));
-        stubFor(gitHubRequest(get("/orgs/test-org/packages/container/sleeper-local/versions"))
-                .willReturn(gitHubResponse()
-                        .withStatus(200)
-                        .withBody(exampleString("examples/github-api/package-version-list-one-image.json"))));
-        stubFor(gitHubRequest(delete("/orgs/test-org/packages/container/sleeper-local/versions/64403175"))
-                .willReturn(gitHubResponse().withStatus(204)));
+        containerListReturns(exampleString("examples/github-api/package-list-one-container.json"));
+        packageVersionListReturns("sleeper-local",
+                exampleString("examples/github-api/package-version-list-one-image.json"));
+        packageVersionDeleteSucceeds("sleeper-local", 64403175);
 
         // When
         deleteAll(runtimeInfo);
@@ -64,18 +58,11 @@ class DeleteOldGHCRContainersTest {
     @Test
     void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        stubFor(gitHubRequest(get("/orgs/test-org/packages?package_type=container"))
-                .willReturn(gitHubResponse()
-                        .withStatus(200)
-                        .withBody(gitHubJson(List.of(packageWithName("sleeper-local"))))));
+        containerListReturns(packageWithName("sleeper-local"));
 
         // TODO add tag
-        stubFor(gitHubRequest(get("/orgs/test-org/packages/container/sleeper-local/versions"))
-                .willReturn(gitHubResponse()
-                        .withStatus(200)
-                        .withBody(gitHubJson(List.of(versionWithId(123))))));
-        stubFor(gitHubRequest(delete("/orgs/test-org/packages/container/sleeper-local/versions/123"))
-                .willReturn(gitHubResponse().withStatus(204)));
+        packageVersionListReturns("sleeper-local", versionWithId(123));
+        packageVersionDeleteSucceeds("sleeper-local", 123);
 
         // When
         deleteAll(runtimeInfo);
@@ -87,5 +74,32 @@ class DeleteOldGHCRContainersTest {
 
     private void deleteAll(WireMockRuntimeInfo runtimeInfo) {
         new DeleteGHCRImages(gitHubApi(runtimeInfo), "test-org").deleteAll();
+    }
+
+    private void containerListReturns(TestGitHubPackage... packages) {
+        containerListReturns(gitHubJson(List.of(packages)));
+    }
+
+    private void containerListReturns(String body) {
+        stubFor(gitHubRequest(get("/orgs/test-org/packages?package_type=container"))
+                .willReturn(gitHubResponse()
+                        .withStatus(200)
+                        .withBody(body)));
+    }
+
+    private void packageVersionListReturns(String packageName, TestGitHubVersion... versions) {
+        packageVersionListReturns(packageName, gitHubJson(List.of(versions)));
+    }
+
+    private void packageVersionListReturns(String packageName, String body) {
+        stubFor(gitHubRequest(get("/orgs/test-org/packages/container/" + packageName + "/versions"))
+                .willReturn(gitHubResponse()
+                        .withStatus(200)
+                        .withBody(body)));
+    }
+
+    private void packageVersionDeleteSucceeds(String packageName, int versionId) {
+        stubFor(gitHubRequest(delete("/orgs/test-org/packages/container/" + packageName + "/versions/" + versionId))
+                .willReturn(gitHubResponse().withStatus(204)));
     }
 }
