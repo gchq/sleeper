@@ -21,6 +21,7 @@ import sleeper.build.github.api.GitHubApi;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -52,7 +53,9 @@ public class DeleteGHCRImages {
 
     private Stream<GitHubPackageVersionResponse> getVersionsToDelete() {
         return getAllVersions().stream()
-                .filter(v -> noneAreTagsToKeep(v.getTags()));
+                .filter(v -> noneAreTagsToKeep(v.getTags()))
+                .sorted(Comparator.comparing(GitHubPackageVersionResponse::getUpdatedAt).reversed())
+                .skip(keepMostRecent);
     }
 
     private List<GitHubPackageVersionResponse> getAllVersions() {

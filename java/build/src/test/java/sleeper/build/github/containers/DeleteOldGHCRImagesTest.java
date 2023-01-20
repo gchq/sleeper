@@ -19,7 +19,6 @@ package sleeper.build.github.containers;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -86,12 +85,12 @@ class DeleteOldGHCRImagesTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldKeepMostRecentImage(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("test-image",
                 image().id(1).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).build(),
                 image().id(2).updatedAt(Instant.parse("2023-01-20T15:30:12Z")).build());
+        packageVersionDeleteSucceeds("test-image", 1);
 
         // When
         deleteImages(runtimeInfo, builder -> builder.imageName("test-image").keepMostRecent(1));

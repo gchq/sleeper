@@ -62,7 +62,7 @@ public class TestGHCRImage {
 
     public static final class Builder {
         private int id;
-        private Instant updatedAt;
+        private Instant updatedAt = Instant.parse("2023-01-01T12:00:01Z");
         private List<String> tags = List.of();
 
         private Builder() {

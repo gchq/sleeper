@@ -19,22 +19,31 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.Instant;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubPackageVersionResponse {
 
     private final String id;
+    private final Instant updatedAt;
     private final Metadata metadata;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public GitHubPackageVersionResponse(@JsonProperty("id") String id, @JsonProperty("metadata") Metadata metadata) {
+    public GitHubPackageVersionResponse(@JsonProperty("id") String id,
+                                        @JsonProperty("updated_at") Instant updatedAt,
+                                        @JsonProperty("metadata") Metadata metadata) {
         this.id = id;
+        this.updatedAt = updatedAt;
         this.metadata = metadata;
     }
 
     public String getId() {
         return id;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 
     public List<String> getTags() {
