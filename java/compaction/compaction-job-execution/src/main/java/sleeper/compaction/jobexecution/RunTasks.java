@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
-import sleeper.job.common.DescribeClusterException;
 
 import java.io.IOException;
 import java.util.ArrayList;

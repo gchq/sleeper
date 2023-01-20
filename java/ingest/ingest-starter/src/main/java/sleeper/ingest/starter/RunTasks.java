@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.job.common.CommonJobUtils;
-import sleeper.job.common.DescribeClusterException;
 
 import java.util.ArrayList;
 import java.util.List;
