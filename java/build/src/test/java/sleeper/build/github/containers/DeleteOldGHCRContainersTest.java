@@ -33,8 +33,8 @@ import static sleeper.build.github.api.GitHubApiTestHelper.gitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
+import static sleeper.build.github.containers.TestGHCRImage.imageWithId;
 import static sleeper.build.github.containers.TestGitHubPackage.packageWithName;
-import static sleeper.build.github.containers.TestGitHubVersion.versionWithId;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
@@ -61,7 +61,7 @@ class DeleteOldGHCRContainersTest {
         containerListReturns(packageWithName("sleeper-local"));
 
         // TODO add tag
-        packageVersionListReturns("sleeper-local", versionWithId(123));
+        packageVersionListReturns("sleeper-local", imageWithId(123));
         packageVersionDeleteSucceeds("sleeper-local", 123);
 
         // When
@@ -86,7 +86,7 @@ class DeleteOldGHCRContainersTest {
                         .withBody(body)));
     }
 
-    private void packageVersionListReturns(String packageName, TestGitHubVersion... versions) {
+    private void packageVersionListReturns(String packageName, TestGHCRImage... versions) {
         packageVersionListReturns(packageName, gitHubJson(List.of(versions)));
     }
 

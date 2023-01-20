@@ -15,19 +15,32 @@
  */
 package sleeper.build.github.containers;
 
-public class TestGitHubVersion {
+import java.util.List;
+import java.util.Map;
+
+public class TestGHCRImage {
 
     private final int id;
+    private final Map<String, Object> metadata;
 
-    private TestGitHubVersion(int id) {
+    private TestGHCRImage(int id, List<String> tags) {
         this.id = id;
+        this.metadata = Map.of("package-type", "container", "container", Map.of("tags", tags));
     }
 
-    public static TestGitHubVersion versionWithId(int id) {
-        return new TestGitHubVersion(id);
+    public static TestGHCRImage imageWithId(int id) {
+        return new TestGHCRImage(id, List.of());
+    }
+
+    public static TestGHCRImage imageWithIdAndTags(int id, String... tags) {
+        return new TestGHCRImage(id, List.of(tags));
     }
 
     public int getId() {
         return id;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
     }
 }
