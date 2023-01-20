@@ -20,6 +20,8 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -29,6 +31,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
+import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
+import static sleeper.build.github.containers.TestGitHubPackage.packageWithName;
+import static sleeper.build.github.containers.TestGitHubVersion.versionWithId;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
@@ -54,6 +59,30 @@ class DeleteOldGHCRContainersTest {
         // Then
         verify(gitHubRequest(deleteRequestedFor(
                 urlEqualTo("/orgs/test-org/packages/container/sleeper-local/versions/64403175"))));
+    }
+
+    @Test
+    void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(gitHubRequest(get("/orgs/test-org/packages?package_type=container"))
+                .willReturn(gitHubResponse()
+                        .withStatus(200)
+                        .withBody(gitHubJson(List.of(packageWithName("sleeper-local"))))));
+
+        // TODO add tag
+        stubFor(gitHubRequest(get("/orgs/test-org/packages/container/sleeper-local/versions"))
+                .willReturn(gitHubResponse()
+                        .withStatus(200)
+                        .withBody(gitHubJson(List.of(versionWithId(123))))));
+        stubFor(gitHubRequest(delete("/orgs/test-org/packages/container/sleeper-local/versions/123"))
+                .willReturn(gitHubResponse().withStatus(204)));
+
+        // When
+        deleteAll(runtimeInfo);
+
+        // Then
+        verify(gitHubRequest(deleteRequestedFor(
+                urlEqualTo("/orgs/test-org/packages/container/sleeper-local/versions/123"))));
     }
 
     private void deleteAll(WireMockRuntimeInfo runtimeInfo) {
