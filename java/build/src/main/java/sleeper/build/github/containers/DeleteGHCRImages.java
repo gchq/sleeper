@@ -32,14 +32,14 @@ public class DeleteGHCRImages {
     private final GitHubApi api;
     private final String organization;
     private final String imageName;
-    private final Pattern tagsToKeep;
+    private final Pattern ignoreTags;
     private final int keepMostRecent;
 
     private DeleteGHCRImages(Builder builder) {
         api = Objects.requireNonNull(builder.api, "api must not be null");
         organization = Objects.requireNonNull(builder.organization, "organization must not be null");
         imageName = Objects.requireNonNull(builder.imageName, "imageName must not be null");
-        tagsToKeep = builder.tagsToKeep;
+        ignoreTags = builder.ignoreTags;
         keepMostRecent = builder.keepMostRecent;
     }
 
@@ -53,7 +53,7 @@ public class DeleteGHCRImages {
 
     private Stream<GitHubPackageVersionResponse> getVersionsToDelete() {
         return getAllVersions().stream()
-                .filter(v -> noneAreTagsToKeep(v.getTags()))
+                .filter(this::hasNoIgnoredTags)
                 .sorted(Comparator.comparing(GitHubPackageVersionResponse::getUpdatedAt).reversed())
                 .skip(keepMostRecent);
     }
@@ -64,8 +64,8 @@ public class DeleteGHCRImages {
         });
     }
 
-    private boolean noneAreTagsToKeep(List<String> tags) {
-        return tagsToKeep == null || tags.stream().noneMatch(tag -> tagsToKeep.matcher(tag).find());
+    private boolean hasNoIgnoredTags(GitHubPackageVersionResponse version) {
+        return ignoreTags == null || version.getTags().stream().noneMatch(tag -> ignoreTags.matcher(tag).find());
     }
 
     private void deleteVersion(GitHubPackageVersionResponse version) {
@@ -85,7 +85,7 @@ public class DeleteGHCRImages {
         private GitHubApi api;
         private String organization;
         private String imageName;
-        private Pattern tagsToKeep;
+        private Pattern ignoreTags;
         private int keepMostRecent;
 
         private Builder() {
@@ -106,13 +106,13 @@ public class DeleteGHCRImages {
             return this;
         }
 
-        public Builder tagsToKeep(Pattern tagsToKeep) {
-            this.tagsToKeep = tagsToKeep;
+        public Builder ignoreTags(Pattern ignoreTags) {
+            this.ignoreTags = ignoreTags;
             return this;
         }
 
-        public Builder tagsToKeepPattern(String tagsToKeepPattern) {
-            return tagsToKeep(Pattern.compile(tagsToKeepPattern));
+        public Builder ignoreTagsPattern(String ignoreTagsPattern) {
+            return ignoreTags(Pattern.compile(ignoreTagsPattern));
         }
 
         public Builder keepMostRecent(int keepMostRecent) {

@@ -78,7 +78,7 @@ class DeleteOldGHCRImagesTest {
         packageVersionListReturns("test-image", imageWithIdAndTags(123, "test-tag"));
 
         // When
-        deleteImages(runtimeInfo, builder -> builder.imageName("test-image").tagsToKeepPattern("test-tag"));
+        deleteImages(runtimeInfo, builder -> builder.imageName("test-image").ignoreTagsPattern("test-tag"));
 
         // Then
         verify(0, packageVersionDeleted("test-image", 123));
