@@ -36,7 +36,6 @@ import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
 import static sleeper.build.github.containers.TestGHCRImage.imageWithIdAndTags;
-import static sleeper.build.github.containers.TestGitHubPackage.packageWithName;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
@@ -45,7 +44,6 @@ class DeleteOldGHCRImagesTest {
     @Test
     void shouldDeleteAnImage(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        containerListReturns(exampleString("examples/github-api/package-list-one-container.json"));
         packageVersionListReturns("sleeper-local",
                 exampleString("examples/github-api/package-version-list-one-image.json"));
         packageVersionDeleteSucceeds("sleeper-local", 64403175);
@@ -61,8 +59,6 @@ class DeleteOldGHCRImagesTest {
     @Disabled("TODO")
     void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        containerListReturns(packageWithName("sleeper-local"));
-
         packageVersionListReturns("sleeper-local", imageWithIdAndTags(123, "test-tag"));
         packageVersionDeleteSucceeds("sleeper-local", 123);
 
@@ -76,17 +72,6 @@ class DeleteOldGHCRImagesTest {
     private void deleteImages(WireMockRuntimeInfo runtimeInfo, Consumer<DeleteGHCRImages.Builder> configuration) {
         doWithGitHubApi(runtimeInfo, api -> DeleteGHCRImages.withApi(api)
                 .organization("test-org").applyMutation(configuration).delete());
-    }
-
-    private void containerListReturns(TestGitHubPackage... packages) {
-        containerListReturns(gitHubJson(List.of(packages)));
-    }
-
-    private void containerListReturns(String body) {
-        stubFor(gitHubRequest(get("/orgs/test-org/packages?package_type=container"))
-                .willReturn(gitHubResponse()
-                        .withStatus(200)
-                        .withBody(body)));
     }
 
     private void packageVersionListReturns(String packageName, TestGHCRImage... versions) {
