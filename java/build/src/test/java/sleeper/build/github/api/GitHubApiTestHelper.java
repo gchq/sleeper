@@ -28,6 +28,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 
 public class GitHubApiTestHelper {
+    private GitHubApiTestHelper() {
+    }
 
     public static MappingBuilder gitHubRequest(MappingBuilder builder) {
         return builder.withHeader("Accept", equalTo("application/vnd.github+json"))

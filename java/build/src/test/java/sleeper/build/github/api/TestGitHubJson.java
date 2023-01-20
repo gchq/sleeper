@@ -19,6 +19,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TestGitHubJson {
+    private TestGitHubJson() {
+    }
 
     private static final ObjectMapper MAPPER = JacksonProvider.mapper();
 
