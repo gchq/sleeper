@@ -111,10 +111,11 @@ public class RunTasks {
             return;
         }
 
-        int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
-        LOGGER.info("Number of running tasks is {}", numRunningTasks);
+        // Find out number of pending and running tasks
+        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
+        LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
-        int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
+        int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
 
         // Create 1 task for each item on the queue
