@@ -19,7 +19,6 @@ package sleeper.build.github.containers;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -102,21 +101,25 @@ class DeleteOldGHCRImagesTest {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldKeepMostRecentImageMatchingTagPattern(WireMockRuntimeInfo runtimeInfo) {
+    void shouldKeepMostRecentImageNotIgnoredByTagPattern(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("test-image",
-                image().id(1).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).tags("test-tag-1").build(),
-                image().id(2).updatedAt(Instant.parse("2023-01-20T15:30:12Z")).tags("test-tag-2").build(),
-                image().id(3).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).tags("other-tag-1").build(),
-                image().id(4).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).tags("other-tag-1").build());
-        packageVersionDeleteSucceeds("test-image", 1);
+                image().id(1).updatedAt(Instant.parse("2023-01-20T15:00:00Z")).tags("ignore-tag-1").build(),
+                image().id(2).updatedAt(Instant.parse("2023-01-20T15:30:00Z")).tags("ignore-tag-2").build(),
+                image().id(3).updatedAt(Instant.parse("2023-01-20T16:00:00Z")).tags("other-tag-1").build(),
+                image().id(4).updatedAt(Instant.parse("2023-01-20T16:30:00Z")).tags("other-tag-2").build());
         packageVersionDeleteSucceeds("test-image", 3);
 
         //When
         deleteImages(runtimeInfo, builder -> builder.imageName("test-image")
-                .ignoreTagsPattern("test-tag.*")
+                .ignoreTagsPattern("ignore-tag-.*")
                 .keepMostRecent(1));
+
+        // Then
+        verify(0, packageVersionDeleted("test-image", 1));
+        verify(0, packageVersionDeleted("test-image", 2));
+        verify(1, packageVersionDeleted("test-image", 3));
+        verify(0, packageVersionDeleted("test-image", 4));
     }
 
     private void deleteImages(WireMockRuntimeInfo runtimeInfo, Consumer<DeleteGHCRImages.Builder> configuration) {
