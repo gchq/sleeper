@@ -507,7 +507,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
                 .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
+                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole"))
                 .build();
         IRole role = Objects.requireNonNull(handler.getRole());
         role.addToPrincipalPolicy(policyStatement);
@@ -566,7 +566,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
                 .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
+                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole"))
                 .build();
         IRole role = Objects.requireNonNull(handler.getRole());
         role.addToPrincipalPolicy(policyStatement);
