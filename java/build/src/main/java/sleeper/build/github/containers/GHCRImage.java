@@ -19,12 +19,12 @@ package sleeper.build.github.containers;
 import java.time.Instant;
 import java.util.List;
 
-public class GHCRContainer {
+public class GHCRImage {
     private String id;
     private List<String> tags;
     private Instant created;
 
-    private GHCRContainer(Builder builder) {
+    private GHCRImage(Builder builder) {
         id = builder.id;
         tags = builder.tags;
         created = builder.created;
@@ -57,8 +57,8 @@ public class GHCRContainer {
             return this;
         }
 
-        public GHCRContainer build() {
-            return new GHCRContainer(this);
+        public GHCRImage build() {
+            return new GHCRImage(this);
         }
     }
 }
