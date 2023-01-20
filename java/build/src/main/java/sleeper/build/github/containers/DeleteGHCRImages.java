@@ -32,18 +32,37 @@ public class DeleteGHCRImages {
         this.organization = organization;
     }
 
-    public void deleteAllImages() {
-        // getAllContainers
-        List<GitHubPackageResponse> allContainers = getAllContainers();
-        // for each, getAllImages and delete
+    public void deleteAll() {
+        for (GitHubPackageResponse container : getAllContainers()) {
+            for (GitHubPackageVersionResponse version : getAllVersionsByPackage(container.getName())) {
+                deleteVersion(container.getName(), version.getId());
+            }
+        }
     }
 
     private List<GitHubPackageResponse> getAllContainers() {
-        ///orgs/test-org/packages?package_type=container
-        WebTarget target = api.path("orgs").path(organization).path("packages")
+        WebTarget target = packagesBasePath()
                 .queryParam("package_type", "container");
-        List<GitHubPackageResponse> response = api.request(target).get(new GenericType<List<GitHubPackageResponse>>() {
+        return api.request(target).get(new GenericType<>() {
         });
-        return response;
+    }
+
+    private List<GitHubPackageVersionResponse> getAllVersionsByPackage(String packageName) {
+        WebTarget target = containerPath(packageName).path("versions");
+        return api.request(target).get(new GenericType<>() {
+        });
+    }
+
+    private void deleteVersion(String packageName, String versionId) {
+        WebTarget target = containerPath(packageName).path("versions").path(versionId);
+        api.request(target).delete(Void.class);
+    }
+
+    private WebTarget containerPath(String packageName) {
+        return packagesBasePath().path("container").path(packageName);
+    }
+
+    private WebTarget packagesBasePath() {
+        return api.path("orgs").path(organization).path("packages");
     }
 }

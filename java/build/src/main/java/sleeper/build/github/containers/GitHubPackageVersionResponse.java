@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.build.github.containers;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,16 +20,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GitHubPackageResponse {
+public class GitHubPackageVersionResponse {
 
-    private final String name;
+    private final String id;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public GitHubPackageResponse(@JsonProperty("name") String name) {
-        this.name = name;
+    public GitHubPackageVersionResponse(@JsonProperty("id") String id) {
+        this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getId() {
+        return id;
     }
 }
