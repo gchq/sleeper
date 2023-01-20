@@ -19,6 +19,7 @@ package sleeper.build.github.api;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -33,6 +34,11 @@ public class GitHubApiTestHelper {
     public static ResponseDefinitionBuilder gitHubResponse() {
         return aResponse()
                 .withHeader("Content-Type", "application/vnd.github+json");
+    }
+
+    public static RequestPatternBuilder gitHubRequest(RequestPatternBuilder builder) {
+        return builder.withHeader("Accept", equalTo("application/vnd.github+json"))
+                .withHeader("Authorization", equalTo("Bearer test-bearer-token"));
     }
 
     public static GitHubApi gitHubApi(WireMockRuntimeInfo runtimeInfo) {
