@@ -85,7 +85,7 @@ public class TablePropertiesTest {
         tableProperties.set(TABLE_NAME, "id");
 
         // When
-        ITableProperty defaultingProperty = new ITableProperty() {
+        TableProperty defaultingProperty = new TableProperty() {
             @Override
             public SleeperProperty getDefaultProperty() {
                 return TABLE_NAME;
@@ -125,7 +125,7 @@ public class TablePropertiesTest {
             }
         };
 
-        ITableProperty defaultingProperty = new ITableProperty() {
+        TableProperty defaultingProperty = new TableProperty() {
             @Override
             public SleeperProperty getDefaultProperty() {
                 return sleeperProperty;
