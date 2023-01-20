@@ -98,7 +98,7 @@ fix them.
 ID=<a-unique-id>
 VPC=<your-vpc-id>
 SUBNET=<your-subnet-id>
-./scripts/test/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions
 have completed. Use the following command to check the status of the table called 'system-test':
