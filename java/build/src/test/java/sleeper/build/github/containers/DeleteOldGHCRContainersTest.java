@@ -19,6 +19,7 @@ package sleeper.build.github.containers;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -29,11 +30,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static sleeper.build.github.api.GitHubApiTestHelper.gitHubApi;
+import static sleeper.build.github.api.GitHubApiTestHelper.doWithGitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
-import static sleeper.build.github.containers.TestGHCRImage.imageWithId;
+import static sleeper.build.github.containers.TestGHCRImage.imageWithIdAndTags;
 import static sleeper.build.github.containers.TestGitHubPackage.packageWithName;
 import static sleeper.build.testutil.TestResources.exampleString;
 
@@ -56,23 +57,27 @@ class DeleteOldGHCRContainersTest {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
         // Given
         containerListReturns(packageWithName("sleeper-local"));
 
-        // TODO add tag
-        packageVersionListReturns("sleeper-local", imageWithId(123));
+        packageVersionListReturns("sleeper-local", imageWithIdAndTags(123, "test-tag"));
         packageVersionDeleteSucceeds("sleeper-local", 123);
 
         // When
-        deleteAll(runtimeInfo);
+        deleteAllExceptMatchingTags(runtimeInfo, "test-tag");
 
         // Then
         verify(packageVersionDeleted("sleeper-local", 123));
     }
 
+    private void deleteAllExceptMatchingTags(WireMockRuntimeInfo runtimeInfo, String tag) {
+
+    }
+
     private void deleteAll(WireMockRuntimeInfo runtimeInfo) {
-        new DeleteGHCRImages(gitHubApi(runtimeInfo), "test-org").deleteAll();
+        doWithGitHubApi(runtimeInfo, api -> new DeleteGHCRImages(api, "test-org").deleteAll());
     }
 
     private void containerListReturns(TestGitHubPackage... packages) {

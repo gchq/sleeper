@@ -21,17 +21,17 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
-import sleeper.build.github.GitHubWorkflowRuns;
 import sleeper.build.github.TestGitHubHead;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.build.github.api.GitHubApiTestHelper.gitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
+import static sleeper.build.github.api.GitHubApiTestHelper.returnWithGitHubApi;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
@@ -41,8 +41,9 @@ class GitHubWorkflowRunsImplTest {
             .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
 
 
-    private GitHubWorkflowRuns workflowRuns(WireMockRuntimeInfo runtimeInfo) {
-        return new GitHubWorkflowRunsImpl(gitHubApi(runtimeInfo));
+    private Optional<GitHubWorkflowRun> getLatestRun(
+            WireMockRuntimeInfo runtimeInfo, GitHubHead head, String workflow) {
+        return returnWithGitHubApi(runtimeInfo, api -> new GitHubWorkflowRunsImpl(api).getLatestRun(head, workflow));
     }
 
     @Test
@@ -52,7 +53,7 @@ class GitHubWorkflowRunsImplTest {
                         .withStatus(200)
                         .withBody(exampleString("examples/github-api/workflow-runs-single.json"))));
 
-        assertThat(workflowRuns(runtimeInfo).getLatestRun(GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
+        assertThat(getLatestRun(runtimeInfo, GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
                         .status("queued").runId(30433642L)
                         .runUrl("https://github.com/octo-org/octo-repo/actions/runs/30433642")
@@ -74,7 +75,7 @@ class GitHubWorkflowRunsImplTest {
                         .withStatus(200)
                         .withBody(exampleString("examples/github-api/compare.json"))));
 
-        assertThat(workflowRuns(runtimeInfo).getLatestRun(TestGitHubHead.example(), "test-workflow.yaml"))
+        assertThat(getLatestRun(runtimeInfo, TestGitHubHead.example(), "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
                         .status("queued").runId(30433642L)
                         .runUrl("https://github.com/octo-org/octo-repo/actions/runs/30433642")

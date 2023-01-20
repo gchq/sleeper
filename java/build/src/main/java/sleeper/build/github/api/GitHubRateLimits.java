@@ -24,6 +24,12 @@ public class GitHubRateLimits {
     private GitHubRateLimits() {
     }
 
+    public static JsonNode get(String token) {
+        try (GitHubApi api = GitHubApi.withToken(token)) {
+            return get(api);
+        }
+    }
+
     public static JsonNode get(GitHubApi api) {
         return api.request(api.path("rate_limit"))
                 .buildGet().invoke(JsonNode.class);

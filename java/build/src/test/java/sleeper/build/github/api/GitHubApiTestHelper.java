@@ -21,6 +21,9 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 
@@ -41,8 +44,18 @@ public class GitHubApiTestHelper {
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"));
     }
 
-    public static GitHubApi gitHubApi(WireMockRuntimeInfo runtimeInfo) {
-        return GitHubApi.withBaseUrlAndToken("http://localhost:" + runtimeInfo.getHttpPort(), "test-bearer-token");
+    public static void doWithGitHubApi(WireMockRuntimeInfo runtimeInfo, Consumer<GitHubApi> consumer) {
+        returnWithGitHubApi(runtimeInfo, api -> {
+            consumer.accept(api);
+            return null;
+        });
+    }
+
+    public static <T> T returnWithGitHubApi(WireMockRuntimeInfo runtimeInfo, Function<GitHubApi, T> function) {
+        try (GitHubApi api = GitHubApi.withBaseUrlAndToken(
+                "http://localhost:" + runtimeInfo.getHttpPort(), "test-bearer-token")) {
+            return function.apply(api);
+        }
     }
 
 }

@@ -19,15 +19,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import sleeper.build.github.api.GitHubRateLimits;
 
-import static sleeper.build.github.api.GitHubApi.withToken;
-
 public class GetRemainingRateLimit {
 
     private GetRemainingRateLimit() {
     }
 
     public static void main(String[] args) {
-        JsonNode response = GitHubRateLimits.get(withToken(args[0]));
+        JsonNode response = GitHubRateLimits.get(args[0]);
         int remaining = GitHubRateLimits.remainingLimit(response);
         System.err.println("Core limit remaining: " + remaining);
         System.err.println("Core limit resets at: " + GitHubRateLimits.resetTime(response));
