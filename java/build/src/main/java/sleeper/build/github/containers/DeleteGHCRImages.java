@@ -31,12 +31,14 @@ public class DeleteGHCRImages {
     private final String organization;
     private final String imageName;
     private final Pattern tagsToKeep;
+    private final int keepMostRecent;
 
     private DeleteGHCRImages(Builder builder) {
         api = Objects.requireNonNull(builder.api, "api must not be null");
         organization = Objects.requireNonNull(builder.organization, "organization must not be null");
         imageName = Objects.requireNonNull(builder.imageName, "imageName must not be null");
         tagsToKeep = builder.tagsToKeep;
+        keepMostRecent = builder.keepMostRecent;
     }
 
     public static Builder withApi(GitHubApi api) {
@@ -79,6 +81,7 @@ public class DeleteGHCRImages {
         private String organization;
         private String imageName;
         private Pattern tagsToKeep;
+        private int keepMostRecent;
 
         private Builder() {
         }
@@ -105,6 +108,11 @@ public class DeleteGHCRImages {
 
         public Builder tagsToKeepPattern(String tagsToKeepPattern) {
             return tagsToKeep(Pattern.compile(tagsToKeepPattern));
+        }
+
+        public Builder keepMostRecent(int keepMostRecent) {
+            this.keepMostRecent = keepMostRecent;
+            return this;
         }
 
         public Builder applyMutation(Consumer<Builder> consumer) {
