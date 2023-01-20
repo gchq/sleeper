@@ -45,7 +45,9 @@ public class DeleteGHCRImages {
 
     public void delete() {
         for (GitHubPackageVersionResponse version : getAllVersions()) {
-            deleteVersion(version.getId());
+            if (tagsToKeep == null || version.getTags().stream().noneMatch(tag -> tagsToKeep.matcher(tag).find())) {
+                deleteVersion(version.getId());
+            }
         }
     }
 

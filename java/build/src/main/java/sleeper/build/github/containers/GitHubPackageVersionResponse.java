@@ -41,6 +41,7 @@ public class GitHubPackageVersionResponse {
         return metadata.container.tags;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Metadata {
         private final ContainerMetadata container;
 
@@ -50,6 +51,7 @@ public class GitHubPackageVersionResponse {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ContainerMetadata {
         private final List<String> tags;
 
