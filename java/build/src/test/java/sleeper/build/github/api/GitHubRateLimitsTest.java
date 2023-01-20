@@ -25,6 +25,7 @@ import java.time.Instant;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.github.api.GitHubApiTestHelper.gitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.testutil.TestResources.exampleString;
@@ -39,7 +40,11 @@ class GitHubRateLimitsTest {
                         .withStatus(200)
                         .withBody(exampleString("examples/github-api/rate-limit.json"))));
 
-        JsonNode response = GitHubRateLimits.get("http://localhost:" + runtimeInfo.getHttpPort(), "test-bearer-token");
+        JsonNode response;
+        try (GitHubApi api = gitHubApi(runtimeInfo)) {
+            response = GitHubRateLimits.get(api);
+        }
+
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);
         assertThat(GitHubRateLimits.resetTime(response)).isEqualTo(Instant.parse("2013-07-01T17:47:53Z"));
     }

@@ -30,11 +30,11 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
     private final GitHubApi api;
 
     public GitHubWorkflowRunsImpl(String token) {
-        this(token, "https://api.github.com");
+        this(GitHubApi.withToken(token));
     }
 
-    public GitHubWorkflowRunsImpl(String token, String baseUrl) {
-        api = GitHubApi.baseUrlAndToken(baseUrl, token);
+    public GitHubWorkflowRunsImpl(GitHubApi api) {
+        this.api = api;
     }
 
     @Override

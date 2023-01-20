@@ -41,7 +41,11 @@ public class GitHubApi implements AutoCloseable {
                 .header("Authorization", "Bearer " + token);
     }
 
-    public static GitHubApi baseUrlAndToken(String baseUrl, String token) {
+    public static GitHubApi withToken(String token) {
+        return withBaseUrlAndToken("https://api.github.com", token);
+    }
+
+    public static GitHubApi withBaseUrlAndToken(String baseUrl, String token) {
         return new GitHubApi(baseUrl, token);
     }
 
