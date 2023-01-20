@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class DeleteGHCRImages {
     private final GitHubApi api;
@@ -46,11 +47,12 @@ public class DeleteGHCRImages {
     }
 
     public void delete() {
-        for (GitHubPackageVersionResponse version : getAllVersions()) {
-            if (noneAreTagsToKeep(version.getTags())) {
-                deleteVersion(version.getId());
-            }
-        }
+        getVersionsToDelete().forEach(this::deleteVersion);
+    }
+
+    private Stream<GitHubPackageVersionResponse> getVersionsToDelete() {
+        return getAllVersions().stream()
+                .filter(v -> noneAreTagsToKeep(v.getTags()));
     }
 
     private List<GitHubPackageVersionResponse> getAllVersions() {
@@ -63,8 +65,8 @@ public class DeleteGHCRImages {
         return tagsToKeep == null || tags.stream().noneMatch(tag -> tagsToKeep.matcher(tag).find());
     }
 
-    private void deleteVersion(String versionId) {
-        WebTarget target = containerPath().path("versions").path(versionId);
+    private void deleteVersion(GitHubPackageVersionResponse version) {
+        WebTarget target = containerPath().path("versions").path(version.getId());
         api.request(target).delete(Void.class);
     }
 
