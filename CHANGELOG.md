@@ -4,6 +4,37 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/12-performance-test.md)
 
+## Version 0.14.0
+
+This contains the following improvements:
+
+General code improvements:
+- All Java modules have been upgraded to Java 11 and the project can now be built with Java 11 or 17. All
+code executed in lambdas, containers and on EMR now uses Amazon Corretto 11.
+- The SleeperProperty enums have been converted into static constants. This will allow additional properties
+to be added to them more easily.
+- Upgraded from JUnit 4 to 5.
+- Updated versions of many dependencies, including EMR, Spark, Hadoop.
+
+Compactions:
+- The lambda that creates more ECS tasks to run compactions previously scaled up too quickly as the calculation
+of the number of tasks currently running ignored pending tasks. This meant that occasionally tasks would start
+up and find they had no work to do.
+
+Standard ingest:
+- Fixed bug where the asynchronous file uploader could fail if a file was greate than 5GB.
+- Split ingest modules into submodules so that code needed for lambda to start jobs is smaller.
+
+System tests:
+- Made system tests more deterministic by explicitly triggering compactions.
+
+Clients:
+- Reports now report durations in human-readable format.
+
+Docker CLI:
+- Added a CLI for setting up an environment to deploy Sleeper
+- Uploaded an image for deploying a fixed, built version of Sleeper to be used in the future
+
 ## Version 0.13.0
 
 This contains the following improvements:
