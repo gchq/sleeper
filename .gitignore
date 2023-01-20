@@ -13,6 +13,6 @@ cdk.out/
 generated/
 scripts/jars/
 scripts/docker/
-scripts/templates/version.txt
+scripts/**/version.txt
 __pycache__
 *.pem

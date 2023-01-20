@@ -47,7 +47,7 @@ public class KeyPairUtil {
             generator.initialize(2048);
             return generator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Could not generate a keypair", e);
+            throw new IllegalStateException("Could not generate a keypair", e);
         }
     }
 
@@ -60,7 +60,7 @@ public class KeyPairUtil {
             Files.write(path, Collections.singletonList(KeyPairUtil.privatePem(pair)));
             Files.setPosixFilePermissions(path, Collections.singleton(PosixFilePermission.OWNER_READ));
         } catch (IOException e) {
-            throw new RuntimeException("Could not write private key", e);
+            throw new IllegalStateException("Could not write private key", e);
         }
     }
 

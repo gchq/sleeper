@@ -15,41 +15,35 @@
 
 set -e
 
-BASE_DIR=$(cd "$(dirname "$0")" && cd "../../" && pwd)
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+BASE_DIR=$(cd "$(dirname "$THIS_DIR")" && cd "../" && pwd)
 MAVEN_DIR="$BASE_DIR/java"
+ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/cdk-environment"
 SCRIPTS_DIR="$BASE_DIR/scripts"
-JARS_DIR="$SCRIPTS_DIR/jars"
-DOCKER_DIR="$SCRIPTS_DIR/docker"
-VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
-
-if [ "$#" -lt 1 ]; then
-  MAVEN_PARAMS=("clean install -q -Pquick")
-else
-  MAVEN_PARAMS=("$@")
-fi
+VERSION_FILE="$THIS_DIR/version.txt"
+JARS_DIR="$THIS_DIR/jars"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
-START_BUILD_TIME=$(record_time)
-pushd "$MAVEN_DIR"
+START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Building Project"
+echo "Building cdk-environment module"
 echo "-------------------------------------------------------------------------------"
-echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
+echo "Started at $(recorded_time_str "$START_TIME")"
 
+pushd "$ENVIRONMENT_MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-SCRIPTS_DISTRIBUTION_DIR="$MAVEN_DIR/distribution/target/distribution-$VERSION-bin/scripts"
-mvn "${MAVEN_PARAMS[@]}"
-
-mkdir -p "$JARS_DIR"
-mkdir -p "$DOCKER_DIR"
-rm -rf "${JARS_DIR:?}"/*
-rm -rf "${DOCKER_DIR:?}"/*
-cp  "$SCRIPTS_DISTRIBUTION_DIR/jars"/* "$JARS_DIR"
-cp -r "$SCRIPTS_DISTRIBUTION_DIR/docker"/* "$DOCKER_DIR"
-cp  "$SCRIPTS_DISTRIBUTION_DIR/templates/version.txt" "$VERSION_FILE"
-
-END_BUILD_TIME=$(record_time)
-echo "Finished build at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_BUILD_TIME" "$END_BUILD_TIME")"
-
+mvn clean install -Pquick "$@"
 popd
+
+echo "$VERSION" > "$VERSION_FILE"
+mkdir -p "$JARS_DIR"
+rm -rf "${JARS_DIR:?}"/*
+cp "$ENVIRONMENT_MAVEN_DIR/target/cdk-environment-$VERSION-utility.jar" "$JARS_DIR/cdk-environment.jar"
+
+END_TIME=$(record_time)
+echo "-------------------------------------------------------------------------------"
+echo "Finished build"
+echo "-------------------------------------------------------------------------------"
+echo "Started at $(recorded_time_str "$START_TIME")"
+echo "Finished at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$START_TIME" "$END_TIME")"
