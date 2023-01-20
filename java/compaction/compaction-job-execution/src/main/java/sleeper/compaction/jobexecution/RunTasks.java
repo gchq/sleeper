@@ -113,14 +113,8 @@ public class RunTasks {
         }
 
         // Find out number of pending and running tasks
-        int numRunningAndPendingTasks = -1;
-        try {
-            numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
-        } catch (DescribeClusterException e) {
-            LOGGER.error("DescribeClusterException when retrieving number of pending and running tasks for cluster " + clusterName, e);
-            return;
-        }
-        LOGGER.info("Number of running and pending tasks is {}" + numRunningAndPendingTasks);
+        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
+        LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);

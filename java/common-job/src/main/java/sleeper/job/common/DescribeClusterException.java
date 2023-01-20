@@ -15,7 +15,7 @@
  */
 package sleeper.job.common;
 
-public class DescribeClusterException extends Exception {
+public class DescribeClusterException extends RuntimeException {
 
     public DescribeClusterException(Throwable cause) {
         super(cause);
