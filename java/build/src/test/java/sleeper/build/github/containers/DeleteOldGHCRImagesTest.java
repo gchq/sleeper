@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
@@ -39,10 +40,10 @@ import static sleeper.build.github.containers.TestGitHubPackage.packageWithName;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-class DeleteOldGHCRContainersTest {
+class DeleteOldGHCRImagesTest {
 
     @Test
-    void shouldDeleteAContainerVersion(WireMockRuntimeInfo runtimeInfo) {
+    void shouldDeleteAnImage(WireMockRuntimeInfo runtimeInfo) {
         // Given
         containerListReturns(exampleString("examples/github-api/package-list-one-container.json"));
         packageVersionListReturns("sleeper-local",
@@ -50,7 +51,7 @@ class DeleteOldGHCRContainersTest {
         packageVersionDeleteSucceeds("sleeper-local", 64403175);
 
         // When
-        deleteAll(runtimeInfo);
+        deleteImages(runtimeInfo, builder -> builder.imageName("sleeper-local"));
 
         // Then
         verify(packageVersionDeleted("sleeper-local", 64403175));
@@ -66,18 +67,15 @@ class DeleteOldGHCRContainersTest {
         packageVersionDeleteSucceeds("sleeper-local", 123);
 
         // When
-        deleteAllExceptMatchingTags(runtimeInfo, "test-tag");
+        deleteImages(runtimeInfo, builder -> builder.imageName("sleeper-local").tagsPattern("test-tag"));
 
         // Then
         verify(packageVersionDeleted("sleeper-local", 123));
     }
 
-    private void deleteAllExceptMatchingTags(WireMockRuntimeInfo runtimeInfo, String tag) {
-
-    }
-
-    private void deleteAll(WireMockRuntimeInfo runtimeInfo) {
-        doWithGitHubApi(runtimeInfo, api -> new DeleteGHCRImages(api, "test-org").deleteAll());
+    private void deleteImages(WireMockRuntimeInfo runtimeInfo, Consumer<DeleteGHCRImages.Builder> configuration) {
+        doWithGitHubApi(runtimeInfo, api -> DeleteGHCRImages.withApi(api)
+                .organization("test-org").applyMutation(configuration).delete());
     }
 
     private void containerListReturns(TestGitHubPackage... packages) {

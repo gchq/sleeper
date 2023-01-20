@@ -22,17 +22,27 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 public class DeleteGHCRImages {
     private final GitHubApi api;
     private final String organization;
+    private final String imageName;
+    private final Pattern tagsPattern;
 
-    public DeleteGHCRImages(GitHubApi api, String organization) {
-        this.api = api;
-        this.organization = organization;
+    private DeleteGHCRImages(Builder builder) {
+        api = builder.api;
+        organization = builder.organization;
+        imageName = builder.imageName;
+        tagsPattern = builder.tagsPattern;
     }
 
-    public void deleteAll() {
+    public static Builder withApi(GitHubApi api) {
+        return new Builder().api(api);
+    }
+
+    public void delete() {
         for (GitHubPackageResponse container : getAllContainers()) {
             for (GitHubPackageVersionResponse version : getAllVersionsByPackage(container.getName())) {
                 deleteVersion(container.getName(), version.getId());
@@ -64,5 +74,52 @@ public class DeleteGHCRImages {
 
     private WebTarget packagesBasePath() {
         return api.path("orgs").path(organization).path("packages");
+    }
+
+    public static final class Builder {
+        private GitHubApi api;
+        private String organization;
+        private String imageName;
+        private Pattern tagsPattern;
+
+        private Builder() {
+        }
+
+        public Builder api(GitHubApi api) {
+            this.api = api;
+            return this;
+        }
+
+        public Builder organization(String organization) {
+            this.organization = organization;
+            return this;
+        }
+
+        public Builder imageName(String imageName) {
+            this.imageName = imageName;
+            return this;
+        }
+
+        public Builder tagsPattern(Pattern tagsPattern) {
+            this.tagsPattern = tagsPattern;
+            return this;
+        }
+
+        public Builder tagsPattern(String tagsPattern) {
+            return tagsPattern(Pattern.compile(tagsPattern));
+        }
+
+        public Builder applyMutation(Consumer<Builder> consumer) {
+            consumer.accept(this);
+            return this;
+        }
+
+        public void delete() {
+            build().delete();
+        }
+
+        public DeleteGHCRImages build() {
+            return new DeleteGHCRImages(this);
+        }
     }
 }
