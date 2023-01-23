@@ -95,11 +95,11 @@ public class Utils {
         return VALID_EBS_VOLUME_TYPES.contains(ebsVolumeType);
     }
 
-    public static boolean isIntLtEqValue(String string, int maxValue) {
+    public static boolean isPositiveIntLtEqValue(String string, int maxValue) {
         if (!isNonNullNonEmptyString(string)) {
             return false;
         }
         int stringAsInt = Integer.parseInt(string);
-        return stringAsInt >= 1 && stringAsInt <= 25;
+        return stringAsInt >= 1 && stringAsInt <= maxValue;
     }
 }
