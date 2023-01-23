@@ -21,28 +21,28 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-public class TestGHCRImage {
+public class TestGHCRVersion {
 
     private final int id;
     private final Instant updatedAt;
     private final List<String> tags;
 
-    private TestGHCRImage(Builder builder) {
+    private TestGHCRVersion(Builder builder) {
         id = builder.id;
         updatedAt = builder.updatedAt;
         tags = builder.tags;
     }
 
-    public static Builder image() {
+    public static Builder version() {
         return new Builder();
     }
 
-    public static TestGHCRImage imageWithId(int id) {
-        return image().id(id).build();
+    public static TestGHCRVersion versionWithId(int id) {
+        return version().id(id).build();
     }
 
-    public static TestGHCRImage imageWithIdAndTags(int id, String... tags) {
-        return image().id(id).tags(tags).build();
+    public static TestGHCRVersion versionWithIdAndTags(int id, String... tags) {
+        return version().id(id).tags(tags).build();
     }
 
     public int getId() {
@@ -85,8 +85,8 @@ public class TestGHCRImage {
             return tags(List.of(tags));
         }
 
-        public TestGHCRImage build() {
-            return new TestGHCRImage(this);
+        public TestGHCRVersion build() {
+            return new TestGHCRVersion(this);
         }
     }
 }

@@ -38,20 +38,20 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DeleteGHCRImages {
+public class DeleteGHCRVersions {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DeleteGHCRImages.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeleteGHCRVersions.class);
 
     private final GitHubApi api;
     private final String organization;
-    private final String imageName;
+    private final String packageName;
     private final Pattern ignoreTags;
     private final int keepMostRecent;
 
-    private DeleteGHCRImages(Builder builder) {
+    private DeleteGHCRVersions(Builder builder) {
         api = Objects.requireNonNull(builder.api, "api must not be null");
         organization = Objects.requireNonNull(builder.organization, "organization must not be null");
-        imageName = Objects.requireNonNull(builder.imageName, "imageName must not be null");
+        packageName = Objects.requireNonNull(builder.packageName, "packageName must not be null");
         ignoreTags = builder.ignoreTags;
         keepMostRecent = builder.keepMostRecent;
     }
@@ -59,7 +59,7 @@ public class DeleteGHCRImages {
     public static void main(String[] args) throws IOException {
         Properties properties = loadProperties(Paths.get(args[0]));
         try (GitHubApi api = GitHubApi.withToken(properties.getProperty("token"))) {
-            withApi(api).properties(properties).build().deleteImages();
+            withApi(api).properties(properties).build().deleteVersions();
         }
     }
 
@@ -75,9 +75,9 @@ public class DeleteGHCRImages {
         return new Builder().api(api);
     }
 
-    public void deleteImages() {
-        LOGGER.info("Deleting images for {}/{}, ignoring {} and keeping {}",
-                organization, imageName, ignoreTags, keepMostRecent);
+    public void deleteVersions() {
+        LOGGER.info("Deleting versions for {}/{}, ignoring {} and keeping {}",
+                organization, packageName, ignoreTags, keepMostRecent);
         List<GitHubPackageVersionResponse> all = getAllVersions();
         List<GitHubPackageVersionResponse> toDelete = getVersionsToDelete(all).collect(Collectors.toList());
         LOGGER.info("Deleting {} of {} versions", toDelete.size(), all.size());
@@ -108,7 +108,7 @@ public class DeleteGHCRImages {
     }
 
     private WebTarget containerPath() {
-        return packagesBasePath().path("container").path(imageName);
+        return packagesBasePath().path("container").path(packageName);
     }
 
     private WebTarget packagesBasePath() {
@@ -118,7 +118,7 @@ public class DeleteGHCRImages {
     public static final class Builder {
         private GitHubApi api;
         private String organization;
-        private String imageName;
+        private String packageName;
         private Pattern ignoreTags;
         private int keepMostRecent;
 
@@ -135,8 +135,8 @@ public class DeleteGHCRImages {
             return this;
         }
 
-        public Builder imageName(String imageName) {
-            this.imageName = imageName;
+        public Builder packageName(String packageName) {
+            this.packageName = packageName;
             return this;
         }
 
@@ -160,13 +160,13 @@ public class DeleteGHCRImages {
 
         public Builder properties(Properties properties) {
             return organization(properties.getProperty("organization"))
-                    .imageName(properties.getProperty("imageName"))
+                    .packageName(properties.getProperty("packageName"))
                     .ignoreTagsPattern(properties.getProperty("ignoreTagsPattern"))
                     .keepMostRecent(properties.getProperty("keepMostRecent"));
         }
 
-        public DeleteGHCRImages build() {
-            return new DeleteGHCRImages(this);
+        public DeleteGHCRVersions build() {
+            return new DeleteGHCRVersions(this);
         }
     }
 }

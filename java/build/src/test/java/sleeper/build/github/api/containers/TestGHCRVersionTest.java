@@ -22,11 +22,11 @@ import java.time.Instant;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
 
-class TestGHCRImageTest {
+class TestGHCRVersionTest {
 
     @Test
     void canBuildJson() {
-        assertThatJson(gitHubJson(TestGHCRImage.image().id(123)
+        assertThatJson(gitHubJson(TestGHCRVersion.version().id(123)
                 .updatedAt(Instant.parse("2023-01-20T14:44:42Z"))
                 .tags("latest", "test-tag")
                 .build()))

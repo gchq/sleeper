@@ -37,38 +37,38 @@ import static sleeper.build.github.api.GitHubApiTestHelper.doWithGitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
-import static sleeper.build.github.api.containers.DeleteGHCRImages.withApi;
-import static sleeper.build.github.api.containers.TestGHCRImage.image;
-import static sleeper.build.github.api.containers.TestGHCRImage.imageWithId;
-import static sleeper.build.github.api.containers.TestGHCRImage.imageWithIdAndTags;
+import static sleeper.build.github.api.containers.DeleteGHCRVersions.withApi;
+import static sleeper.build.github.api.containers.TestGHCRVersion.version;
+import static sleeper.build.github.api.containers.TestGHCRVersion.versionWithId;
+import static sleeper.build.github.api.containers.TestGHCRVersion.versionWithIdAndTags;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-class DeleteGHCRImagesTest {
+class DeleteGHCRVersionsTest {
 
     @Test
-    void shouldDeleteAnImage(WireMockRuntimeInfo runtimeInfo) {
+    void shouldDeleteAVersion(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("sleeper-local",
                 exampleString("examples/github-api/package-version-list-one-image.json"));
         packageVersionDeleteSucceeds("sleeper-local", 64403175);
 
         // When
-        deleteImages(runtimeInfo, "imageName=sleeper-local");
+        deleteVersions(runtimeInfo, "packageName=sleeper-local");
 
         // Then
         verify(packageVersionDeleted("sleeper-local", 64403175));
     }
 
     @Test
-    void shouldDeleteMultipleImages(WireMockRuntimeInfo runtimeInfo) {
+    void shouldDeleteMultipleVersions(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        packageVersionListReturns("test-image", imageWithId(1), imageWithId(2));
+        packageVersionListReturns("test-image", versionWithId(1), versionWithId(2));
         packageVersionDeleteSucceeds("test-image", 1);
         packageVersionDeleteSucceeds("test-image", 2);
 
         // When
-        deleteImages(runtimeInfo, "imageName=test-image");
+        deleteVersions(runtimeInfo, "packageName=test-image");
 
         // Then
         verify(packageVersionDeleted("test-image", 1));
@@ -78,11 +78,11 @@ class DeleteGHCRImagesTest {
     @Test
     void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        packageVersionListReturns("test-image", imageWithIdAndTags(123, "test-tag"));
+        packageVersionListReturns("test-image", versionWithIdAndTags(123, "test-tag"));
 
         // When
-        deleteImages(runtimeInfo, "" +
-                "imageName=test-image\n" +
+        deleteVersions(runtimeInfo, "" +
+                "packageName=test-image\n" +
                 "ignoreTagsPattern=test-tag");
 
         // Then
@@ -90,16 +90,16 @@ class DeleteGHCRImagesTest {
     }
 
     @Test
-    void shouldKeepMostRecentImage(WireMockRuntimeInfo runtimeInfo) {
+    void shouldKeepMostRecentVersion(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("test-image",
-                image().id(1).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).build(),
-                image().id(2).updatedAt(Instant.parse("2023-01-20T15:30:12Z")).build());
+                version().id(1).updatedAt(Instant.parse("2023-01-20T15:00:12Z")).build(),
+                version().id(2).updatedAt(Instant.parse("2023-01-20T15:30:12Z")).build());
         packageVersionDeleteSucceeds("test-image", 1);
 
         // When
-        deleteImages(runtimeInfo, "" +
-                "imageName=test-image\n" +
+        deleteVersions(runtimeInfo, "" +
+                "packageName=test-image\n" +
                 "keepMostRecent=1");
 
         // Then
@@ -108,18 +108,18 @@ class DeleteGHCRImagesTest {
     }
 
     @Test
-    void shouldKeepMostRecentImageNotIgnoredByTagPattern(WireMockRuntimeInfo runtimeInfo) {
+    void shouldKeepMostRecentVersionNotIgnoredByTagPattern(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("test-image",
-                image().id(1).updatedAt(Instant.parse("2023-01-20T15:00:00Z")).tags("ignore-tag-1").build(),
-                image().id(2).updatedAt(Instant.parse("2023-01-20T15:30:00Z")).tags("ignore-tag-2").build(),
-                image().id(3).updatedAt(Instant.parse("2023-01-20T16:00:00Z")).tags("other-tag-1").build(),
-                image().id(4).updatedAt(Instant.parse("2023-01-20T16:30:00Z")).tags("other-tag-2").build());
+                version().id(1).updatedAt(Instant.parse("2023-01-20T15:00:00Z")).tags("ignore-tag-1").build(),
+                version().id(2).updatedAt(Instant.parse("2023-01-20T15:30:00Z")).tags("ignore-tag-2").build(),
+                version().id(3).updatedAt(Instant.parse("2023-01-20T16:00:00Z")).tags("other-tag-1").build(),
+                version().id(4).updatedAt(Instant.parse("2023-01-20T16:30:00Z")).tags("other-tag-2").build());
         packageVersionDeleteSucceeds("test-image", 3);
 
         //When
-        deleteImages(runtimeInfo, "" +
-                "imageName=test-image\n" +
+        deleteVersions(runtimeInfo, "" +
+                "packageName=test-image\n" +
                 "ignoreTagsPattern=ignore-tag-.*\n" +
                 "keepMostRecent=1");
 
@@ -130,14 +130,14 @@ class DeleteGHCRImagesTest {
         verify(0, packageVersionDeleted("test-image", 4));
     }
 
-    private void deleteImages(WireMockRuntimeInfo runtimeInfo, String propertiesStr) {
+    private void deleteVersions(WireMockRuntimeInfo runtimeInfo, String propertiesStr) {
         Properties properties = loadProperties(propertiesStr);
         properties.setProperty("organization", "test-org");
         doWithGitHubApi(runtimeInfo, api ->
-                withApi(api).properties(properties).build().deleteImages());
+                withApi(api).properties(properties).build().deleteVersions());
     }
 
-    private void packageVersionListReturns(String packageName, TestGHCRImage... versions) {
+    private void packageVersionListReturns(String packageName, TestGHCRVersion... versions) {
         packageVersionListReturns(packageName, gitHubJson(List.of(versions)));
     }
 

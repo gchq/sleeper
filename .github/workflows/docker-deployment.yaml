@@ -69,9 +69,9 @@ jobs:
         run: |
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> delete.properties
           echo "organization=${{ github.repository_owner }}" >> delete.properties
-          echo "imageName=$IMAGE_NAME" >> delete.properties
+          echo "packageName=$IMAGE_NAME" >> delete.properties
           echo "ignoreTagsPattern=^(latest|v[0-9.]+)$" >> delete.properties
           echo "keepMostRecent=4" >> delete.properties
-          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRImages \
+          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
             -Dmaven.repo.local=../.m2/repository \
             -Dexec.args=delete.properties \
