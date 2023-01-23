@@ -16,6 +16,8 @@
 
 package sleeper.build.github.containers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.build.github.api.GitHubApi;
 
 import javax.ws.rs.client.WebTarget;
@@ -58,6 +60,7 @@ public class DeleteGHCRImages {
                 .skip(keepMostRecent);
     }
 
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // GenericType is intended to be used as an anonymous class
     private List<GitHubPackageVersionResponse> getAllVersions() {
         WebTarget target = containerPath().path("versions");
         return api.request(target).get(new GenericType<>() {
