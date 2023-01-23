@@ -16,13 +16,11 @@
 package sleeper.build.github.api.containers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-@JsonSerialize
 public class TestGHCRImage {
 
     private final int id;
