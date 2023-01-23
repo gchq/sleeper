@@ -17,10 +17,6 @@ package sleeper.build.github.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-
 import java.time.Instant;
 
 public class GitHubRateLimits {
@@ -29,18 +25,13 @@ public class GitHubRateLimits {
     }
 
     public static JsonNode get(String token) {
-        return get("https://api.github.com", token);
+        try (GitHubApi api = GitHubApi.withToken(token)) {
+            return get(api);
+        }
     }
 
-    public static JsonNode get(String baseUrl, String token) {
-        Client client = ClientBuilder.newBuilder()
-                .register(JacksonProvider.class)
-                .build();
-        Invocation request = client.target(baseUrl).path("rate_limit")
-                .request("application/vnd.github+json")
-                .header("Authorization", "Bearer " + token)
-                .buildGet();
-        return request.invoke().readEntity(JsonNode.class);
+    public static JsonNode get(GitHubApi api) {
+        return api.request(api.path("rate_limit")).get(JsonNode.class);
     }
 
     public static int remainingLimit(JsonNode response) {

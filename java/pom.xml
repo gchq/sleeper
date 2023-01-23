@@ -108,6 +108,7 @@
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
         <enforcer.plugin.version>3.1.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
+        <spotbugs.version>4.7.3</spotbugs.version>
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <!--
@@ -128,6 +129,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>${spotbugs.version}</version>
+            </dependency>
             <!-- AWS CDK -->
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
