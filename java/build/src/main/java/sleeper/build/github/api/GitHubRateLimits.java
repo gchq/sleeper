@@ -31,8 +31,7 @@ public class GitHubRateLimits {
     }
 
     public static JsonNode get(GitHubApi api) {
-        return api.request(api.path("rate_limit"))
-                .buildGet().invoke(JsonNode.class);
+        return api.request(api.path("rate_limit")).get(JsonNode.class);
     }
 
     public static int remainingLimit(JsonNode response) {

@@ -42,8 +42,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
         WebTarget repository = repository(head);
         WebTarget runs = repository.path("actions/workflows").path(workflow)
                 .path("runs").queryParam("branch", head.getBranch());
-        GitHubWorkflowRunsResponse response = api.request(runs).buildGet()
-                .invoke(GitHubWorkflowRunsResponse.class);
+        GitHubWorkflowRunsResponse response = api.request(runs).get(GitHubWorkflowRunsResponse.class);
         return response.getWorkflowRuns().stream()
                 .map(GitHubWorkflowRunsResponse.Run::toInternalRun)
                 .map(run -> compare(repository, run, head))
@@ -55,8 +54,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
     public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
         WebTarget repository = repository(head);
         WebTarget run = repository.path("actions/runs").path("" + runId);
-        GitHubWorkflowRunsResponse.Run response = api.request(run).buildGet()
-                .invoke(GitHubWorkflowRunsResponse.Run.class);
+        GitHubWorkflowRunsResponse.Run response = api.request(run).get(GitHubWorkflowRunsResponse.Run.class);
         return response.toInternalRun();
     }
 
@@ -66,7 +64,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
             return GitHubRunToHead.sameSha(run);
         }
         WebTarget compare = repository.path("compare").path(run.getCommitSha() + "..." + head.getSha());
-        GitHubCompareResponse response = api.request(compare).buildGet().invoke(GitHubCompareResponse.class);
+        GitHubCompareResponse response = api.request(compare).get(GitHubCompareResponse.class);
         return response.toRunToHead(run);
     }
 
