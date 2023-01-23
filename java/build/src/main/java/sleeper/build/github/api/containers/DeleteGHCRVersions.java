@@ -86,7 +86,7 @@ public class DeleteGHCRVersions {
 
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // GenericType is intended to be used as an anonymous class
     private List<GitHubPackageVersionResponse> getAllVersions() {
-        WebTarget target = containerPath().path("versions");
+        WebTarget target = packagePath().path("versions");
         return api.request(target).get(new GenericType<>() {
         });
     }
@@ -103,16 +103,12 @@ public class DeleteGHCRVersions {
     }
 
     private void deleteVersion(GitHubPackageVersionResponse version) {
-        WebTarget target = containerPath().path("versions").path(version.getId());
+        WebTarget target = packagePath().path("versions").path(version.getId());
         api.request(target).delete(Void.class);
     }
 
-    private WebTarget containerPath() {
-        return packagesBasePath().path("container").path(packageName);
-    }
-
-    private WebTarget packagesBasePath() {
-        return api.path("orgs").path(organization).path("packages");
+    private WebTarget packagePath() {
+        return api.path("orgs").path(organization).path("packages").path("container").path(packageName);
     }
 
     public static final class Builder {
