@@ -27,15 +27,12 @@ import software.amazon.awscdk.services.autoscaling.BlockDeviceVolume;
 import software.amazon.awscdk.services.autoscaling.CfnAutoScalingGroup;
 import software.amazon.awscdk.services.autoscaling.EbsDeviceOptions;
 import software.amazon.awscdk.services.autoscaling.EbsDeviceVolumeType;
-import software.amazon.awscdk.services.autoscaling.Signals;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
-import software.amazon.awscdk.services.ec2.CloudFormationInit;
 import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.InitCommand;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
@@ -100,15 +97,16 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -118,7 +116,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -800,7 +797,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                         .create()
                         .resources(Collections.singletonList("*"))
-                        .actions(Arrays.asList("ecs:DescribeClusters", "ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
+                        .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
                                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
                         .build();
@@ -861,9 +858,8 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                         .create()
                         .resources(Collections.singletonList("*"))
-                        .actions(Arrays.asList("ecs:DescribeClusters", "ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
+                        .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                                        // "autoscaling:TerminateInstanceInAutoScalingGroup",
                                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
                         .build();
         IRole role = Objects.requireNonNull(handler.getRole());

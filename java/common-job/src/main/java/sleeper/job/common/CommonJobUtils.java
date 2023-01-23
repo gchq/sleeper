@@ -223,30 +223,11 @@ public class CommonJobUtils {
         return results;
     }
 
-    <<<<<<<HEAD
-
-    public static int getNumRunningTasks(String clusterName, AmazonECS ecsClient) {
-        int numRunningTasks = 0;
-        ListTasksRequest listTasksRequest = new ListTasksRequest()
-                        .withCluster(clusterName)
-                        .withDesiredStatus(DesiredStatus.RUNNING);
-        ListTasksResult listTasksResult = ecsClient.listTasks(listTasksRequest);
-        numRunningTasks += listTasksResult.getTaskArns().size();
-        while (null != listTasksResult.getNextToken()) {
-            listTasksRequest = new ListTasksRequest()
-                            .withCluster(clusterName)
-                            .withDesiredStatus(DesiredStatus.RUNNING)
-                            .withNextToken(listTasksResult.getNextToken());
-            listTasksResult = ecsClient.listTasks(listTasksRequest);
-            numRunningTasks += listTasksResult.getTaskArns().size();
-=======
-
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {
         DescribeClustersRequest describeClustersRequest = new DescribeClustersRequest().withClusters(clusterName);
         List<Cluster> clusters = ecsClient.describeClusters(describeClustersRequest).getClusters();
         if (null == clusters || clusters.isEmpty() || clusters.size() > 1) {
             throw new DescribeClusterException("Unable to retrieve details of cluster " + clusterName);
->>>>>>> main
         }
         return clusters.get(0).getPendingTasksCount() + clusters.get(0).getRunningTasksCount();
     }

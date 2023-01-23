@@ -57,12 +57,14 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty COMPACTION_JOB_DLQ_URL = named("sleeper.compaction.job.dlq.url");
     SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = named("sleeper.compaction.task.creation.lambda.function");
     SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = named("sleeper.compaction.task.creation.rule");
+    SystemDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = named("sleeper.compaction.scaling.group");
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = named("sleeper.compaction.splitting.ec2.task.definition");
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = named("sleeper.compaction.splitting.fargate.task.definition");
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = named("sleeper.compaction.splitting.job.queue.url");
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = named("sleeper.compaction.splitting.job.dlq.url");
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = named("sleeper.compaction.splitting.task.creation.lambda.function");
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = named("sleeper.compaction.splitting.task.creation.rule");
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = named("sleeper.compaction.splitting.scaling.group");
 
     // Partition splitting
     SystemDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_URL = named("sleeper.partition.splitting.queue.url");

@@ -158,7 +158,7 @@ public class RunTasks {
         // Do we need to scale?
         if (launchType.equalsIgnoreCase("EC2")) {
             int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-            int totalTasks = maxNumTasksThatWillBeCreated + numRunningTasks;
+            int totalTasks = maxNumTasksThatWillBeCreated + numRunningAndPendingTasks;
             LOGGER.info("Total number of tasks if all launches succeed {}", totalTasks);
             scaler.scaleTo(totalTasks);
         }
