@@ -224,10 +224,10 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     // Arrow ingest
     UserDefinedInstanceProperty ARROW_INGEST_WORKING_BUFFER_BYTES = named("sleeper.ingest.arrow.working.buffer.bytes")
-            .description("# The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and other sundry\n" +
-                    "# activities.\n" +
-                    "# Note that this is off-heap memory, which is in addition to the memory assigned to the JVM.\n" +
-                    "# (arrow-based ingest only) [256MB]")
+            .description("The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and other sundry\n" +
+                    "activities.\n" +
+                    "Note that this is off-heap memory, which is in addition to the memory assigned to the JVM.\n" +
+                    "(arrow-based ingest only) [256MB]")
             .defaultValue("268435456")
             .build();
     UserDefinedInstanceProperty ARROW_INGEST_BATCH_BUFFER_BYTES = named("sleeper.ingest.arrow.batch.buffer.bytes")
@@ -479,7 +479,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("m5.xlarge")
             .build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = named("sleeper.default.bulk.import.emr.executor.market.type")
-            .description("")
             .defaultValue("SPOT").validationPredicate(s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s)))
             .build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = named("sleeper.default.bulk.import.emr.executor.instance.type")
@@ -532,7 +531,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     // Bulk import using EKS
     UserDefinedInstanceProperty BULK_IMPORT_REPO = named("sleeper.bulk.import.eks.repo")
-            .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.\n")
+            .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")
             .build();
 
     // Partition splitting
@@ -631,19 +630,19 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("X86_64")
             .build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_CPU = named("sleeper.compaction.task.arm.cpu")
-            .description("The CPU for a compaction task using a 64 bit architecture.\n")
+            .description("The CPU for a compaction task using a 64 bit architecture.")
             .defaultValue("1024")
             .build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = named("sleeper.compaction.task.arm.memory")
-            .description("The memory for a compaction task using a 64 bit architecture.\n")
+            .description("The memory for a compaction task using a 64 bit architecture.")
             .defaultValue("4096")
             .build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_CPU = named("sleeper.compaction.task.x86.cpu")
-            .description("The CPU for a compaction task using a 32 bit architecture.\n")
+            .description("The CPU for a compaction task using a 32 bit architecture.")
             .defaultValue("1024")
             .build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = named("sleeper.compaction.task.x86.memory")
-            .description("The memory for a compaction task using a 32 bit architecture.\n")
+            .description("The memory for a compaction task using a 32 bit architecture.")
             .defaultValue("4096")
             .build();
     UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = named("sleeper.compaction.status.store.enabled")
@@ -661,9 +660,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .build(); // Default is 1 week
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = named("sleeper.default.compaction.strategy.class")
-            .description("\"The name of the class that defines how compaction jobs should be created.\\n\" +\n" +
-                    "                    \"This should implement sleeper.compaction.strategy.CompactionStrategy. The value of this property is the\\n\" +\n" +
-                    "                    \"default value which can be overridden on a per-table basis.\"")
+            .description("\"The name of the class that defines how compaction jobs should be created.\n" +
+                    "This should implement sleeper.compaction.strategy.CompactionStrategy. The value of this property is the\n" +
+                    "default value which can be overridden on a per-table basis.")
             .defaultValue("sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
             .build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = named("sleeper.default.compaction.files.batch.size")
