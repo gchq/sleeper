@@ -63,6 +63,6 @@ public class InstancePropertyReport {
         if (SystemDefinedInstanceProperty.has(propertyName)) {
             return SystemDefinedInstanceProperty.from(propertyName).formatDescription();
         }
-        return "# No description available\n";
+        return "# No description available";
     }
 }

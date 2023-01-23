@@ -59,6 +59,6 @@ public class TablePropertyReport {
         if (TableProperty.has(propertyName)) {
             return TableProperty.from(propertyName).formatDescription();
         }
-        return "# No description available\n";
+        return "# No description available";
     }
 }
