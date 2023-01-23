@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.build.github.containers;
+package sleeper.build.github.api.containers;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

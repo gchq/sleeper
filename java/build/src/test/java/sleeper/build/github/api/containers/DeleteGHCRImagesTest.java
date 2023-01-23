@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.build.github.containers;
+package sleeper.build.github.api.containers;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -35,9 +35,9 @@ import static sleeper.build.github.api.GitHubApiTestHelper.doWithGitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
-import static sleeper.build.github.containers.TestGHCRImage.image;
-import static sleeper.build.github.containers.TestGHCRImage.imageWithId;
-import static sleeper.build.github.containers.TestGHCRImage.imageWithIdAndTags;
+import static sleeper.build.github.api.containers.TestGHCRImage.image;
+import static sleeper.build.github.api.containers.TestGHCRImage.imageWithId;
+import static sleeper.build.github.api.containers.TestGHCRImage.imageWithIdAndTags;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
