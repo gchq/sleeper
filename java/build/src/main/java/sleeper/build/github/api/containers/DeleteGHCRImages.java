@@ -59,7 +59,7 @@ public class DeleteGHCRImages {
     public static void main(String[] args) throws IOException {
         Properties properties = loadProperties(Paths.get(args[0]));
         try (GitHubApi api = GitHubApi.withToken(properties.getProperty("token"))) {
-            withApi(api).properties(properties).delete();
+            withApi(api).properties(properties).build().deleteImages();
         }
     }
 
@@ -75,7 +75,7 @@ public class DeleteGHCRImages {
         return new Builder().api(api);
     }
 
-    public void delete() {
+    public void deleteImages() {
         LOGGER.info("Deleting images for {}/{}, ignoring {} and keeping {}",
                 organization, imageName, ignoreTags, keepMostRecent);
         List<GitHubPackageVersionResponse> all = getAllVersions();
@@ -163,10 +163,6 @@ public class DeleteGHCRImages {
                     .imageName(properties.getProperty("imageName"))
                     .ignoreTagsPattern(properties.getProperty("ignoreTagsPattern"))
                     .keepMostRecent(properties.getProperty("keepMostRecent"));
-        }
-
-        public void delete() {
-            build().delete();
         }
 
         public DeleteGHCRImages build() {

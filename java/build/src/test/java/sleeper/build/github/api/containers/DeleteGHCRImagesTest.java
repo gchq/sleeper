@@ -134,7 +134,7 @@ class DeleteGHCRImagesTest {
         Properties properties = loadProperties(propertiesStr);
         properties.setProperty("organization", "test-org");
         doWithGitHubApi(runtimeInfo, api ->
-                withApi(api).properties(properties).delete());
+                withApi(api).properties(properties).build().deleteImages());
     }
 
     private void packageVersionListReturns(String packageName, TestGHCRImage... versions) {
