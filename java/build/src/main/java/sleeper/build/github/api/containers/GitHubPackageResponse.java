@@ -13,10 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.table;
 
-import sleeper.configuration.properties.SleeperProperty;
+package sleeper.build.github.api.containers;
 
-public interface ITableProperty extends SleeperProperty {
-    SleeperProperty getDefaultProperty();
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class GitHubPackageResponse {
+
+    private final String name;
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public GitHubPackageResponse(@JsonProperty("name") String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

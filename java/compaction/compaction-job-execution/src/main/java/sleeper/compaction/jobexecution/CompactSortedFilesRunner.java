@@ -147,7 +147,6 @@ public class CompactSortedFilesRunner {
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
-
         Instant startTime = Instant.now();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
                 .builder().taskId(taskId).type(type).startTime(startTime);

@@ -16,12 +16,11 @@
 package sleeper.job.common;
 
 import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
-import com.amazonaws.services.ecs.model.DesiredStatus;
-import com.amazonaws.services.ecs.model.ListTasksRequest;
-import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
@@ -40,6 +39,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -59,7 +59,6 @@ public class CommonJobUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonJobUtils.class);
 
     private CommonJobUtils() {
-
     }
 
     /**
@@ -224,6 +223,8 @@ public class CommonJobUtils {
         return results;
     }
 
+    <<<<<<<HEAD
+
     public static int getNumRunningTasks(String clusterName, AmazonECS ecsClient) {
         int numRunningTasks = 0;
         ListTasksRequest listTasksRequest = new ListTasksRequest()
@@ -238,7 +239,15 @@ public class CommonJobUtils {
                             .withNextToken(listTasksResult.getNextToken());
             listTasksResult = ecsClient.listTasks(listTasksRequest);
             numRunningTasks += listTasksResult.getTaskArns().size();
+=======
+
+    public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {
+        DescribeClustersRequest describeClustersRequest = new DescribeClustersRequest().withClusters(clusterName);
+        List<Cluster> clusters = ecsClient.describeClusters(describeClustersRequest).getClusters();
+        if (null == clusters || clusters.isEmpty() || clusters.size() > 1) {
+            throw new DescribeClusterException("Unable to retrieve details of cluster " + clusterName);
+>>>>>>> main
         }
-        return numRunningTasks;
+        return clusters.get(0).getPendingTasksCount() + clusters.get(0).getRunningTasksCount();
     }
 }

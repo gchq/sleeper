@@ -83,18 +83,18 @@ public class RunTasks {
             return;
         }
 
-        // Find out number of running tasks
-        int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
-        LOGGER.info("Number of running tasks is {}" + numRunningTasks);
+        // Find out number of pending and running tasks
+        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
+        LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         // Finish if number of running tasks is already the maximum
-        if (numRunningTasks == maximumRunningTasks) {
+        if (numRunningAndPendingTasks == maximumRunningTasks) {
             LOGGER.info("Finishing as number of running tasks is already the maximum");
             return;
         }
 
         // Calculate maximum number of tasks to create
-        int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
+        int maxNumTasksToCreate = maximumRunningTasks - numRunningAndPendingTasks;
         LOGGER.debug("Maximum number of tasks to create is {}", maxNumTasksToCreate);
 
         // Create 1 task per ingest jobs up to the maximum number of tasks to create

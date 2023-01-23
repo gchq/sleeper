@@ -800,9 +800,8 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                         .create()
                         .resources(Collections.singletonList("*"))
-                        .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
+                        .actions(Arrays.asList("ecs:DescribeClusters", "ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
                                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                                        // "autoscaling:TerminateInstanceInAutoScalingGroup",
                                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
                         .build();
         IRole role = Objects.requireNonNull(handler.getRole());
@@ -862,7 +861,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                         .create()
                         .resources(Collections.singletonList("*"))
-                        .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
+                        .actions(Arrays.asList("ecs:DescribeClusters", "ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
                                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
                                         // "autoscaling:TerminateInstanceInAutoScalingGroup",
                                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
