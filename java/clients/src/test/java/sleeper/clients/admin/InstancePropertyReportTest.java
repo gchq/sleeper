@@ -58,7 +58,7 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .containsAnyOf(Stream.of(SystemDefinedInstanceProperty.values())
                         .map(SystemDefinedInstanceProperty::getPropertyName)
                         .toArray(String[]::new))
-                // Then check some set property descriptions and values are present in the output
+                // Then check some set property values and their descriptions are present in the output
                 .contains("# The AWS account number. This is the AWS account that the instance will be deployed to\n" +
                         "sleeper.account: 1234567890\n")
                 .contains("# The length of time in days that CloudWatch logs are retained\n" +
@@ -67,9 +67,8 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.tags: name,abc,project,test\n")
                 .contains("# The id of the VPC to deploy to\n" +
                         "sleeper.vpc: aVPC\n")
-                // Then check if property with no decription is displayed
-                .contains("# No description available\n" +
-                        "sleeper.config.bucket: sleeper-test-instance-config");
+                .contains("# The S3 bucket name used to store configuration files.\n" +
+                        "sleeper.config.bucket: sleeper-test-instance-config\n");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.account"))
