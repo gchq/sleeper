@@ -68,7 +68,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     public static final class Builder {
         private String propertyName;
-        private String description;
+        private String description = "No description available";
 
         private Builder() {
         }

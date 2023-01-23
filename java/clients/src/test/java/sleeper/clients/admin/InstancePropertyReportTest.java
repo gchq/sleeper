@@ -59,10 +59,17 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         .map(SystemDefinedInstanceProperty::getPropertyName)
                         .toArray(String[]::new))
                 // Then check some set property values are present in the output
-                .contains("sleeper.account: 1234567890\n")
-                .contains("sleeper.log.retention.days: 1\n")
-                .contains("sleeper.tags: name,abc,project,test\n")
-                .contains("sleeper.vpc: aVPC\n");
+                .contains("# The AWS account number. This is the AWS account that the instance will be deployed to\n" +
+                        "sleeper.account: 1234567890\n")
+                .contains("# The length of time in days that CloudWatch logs are retained\n" +
+                        "sleeper.log.retention.days: 1\n")
+                .contains("# A list of tags for the project\n" +
+                        "sleeper.tags: name,abc,project,test\n")
+                .contains("# The id of the VPC to deploy to\n" +
+                        "sleeper.vpc: aVPC\n")
+                // Then check if property with no decription is displayed
+                .contains("# No description available\n" +
+                        "sleeper.config.bucket: sleeper-test-instance-config");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.account"))
@@ -70,7 +77,7 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .isLessThan(output.indexOf("sleeper.vpc"));
         assertThat(output.indexOf("sleeper.log.retention.days"))
                 .isLessThan(output.indexOf("sleeper.vpc"));
-
+        System.out.println(output);
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();
