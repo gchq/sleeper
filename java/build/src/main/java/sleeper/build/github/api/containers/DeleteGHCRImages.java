@@ -84,18 +84,18 @@ public class DeleteGHCRImages {
         toDelete.forEach(this::deleteVersion);
     }
 
-    private Stream<GitHubPackageVersionResponse> getVersionsToDelete(List<GitHubPackageVersionResponse> allVersions) {
-        return allVersions.stream()
-                .filter(this::hasNoIgnoredTags)
-                .sorted(Comparator.comparing(GitHubPackageVersionResponse::getUpdatedAt).reversed())
-                .skip(keepMostRecent);
-    }
-
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // GenericType is intended to be used as an anonymous class
     private List<GitHubPackageVersionResponse> getAllVersions() {
         WebTarget target = containerPath().path("versions");
         return api.request(target).get(new GenericType<>() {
         });
+    }
+
+    private Stream<GitHubPackageVersionResponse> getVersionsToDelete(List<GitHubPackageVersionResponse> allVersions) {
+        return allVersions.stream()
+                .filter(this::hasNoIgnoredTags)
+                .sorted(Comparator.comparing(GitHubPackageVersionResponse::getUpdatedAt).reversed())
+                .skip(keepMostRecent);
     }
 
     private boolean hasNoIgnoredTags(GitHubPackageVersionResponse version) {
