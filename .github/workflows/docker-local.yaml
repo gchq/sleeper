@@ -71,6 +71,6 @@ jobs:
           echo "imageName=$IMAGE_NAME" >> delete.properties
           echo "ignoreTagsPattern=^(latest|v[0-9.]+)$" >> delete.properties
           echo "keepMostRecent=4" >> delete.properties
-          echo "mvn compile exec:java -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRImages \
-            -Dmaven.repo.local=../.m2/repository" \
+          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRImages \
+            -Dmaven.repo.local=../.m2/repository \
             -Dexec.args=delete.properties \

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DeleteGHCRImages {
@@ -77,11 +78,14 @@ public class DeleteGHCRImages {
     public void delete() {
         LOGGER.info("Deleting images for {}/{}, ignoring {}, keeping {}",
                 organization, imageName, ignoreTags, keepMostRecent);
-        getVersionsToDelete().forEach(this::deleteVersion);
+        List<GitHubPackageVersionResponse> all = getAllVersions();
+        List<GitHubPackageVersionResponse> toDelete = getVersionsToDelete(all).collect(Collectors.toList());
+        LOGGER.info("Deleting {} of {} versions", toDelete.size(), all.size());
+        toDelete.forEach(this::deleteVersion);
     }
 
-    private Stream<GitHubPackageVersionResponse> getVersionsToDelete() {
-        return getAllVersions().stream()
+    private Stream<GitHubPackageVersionResponse> getVersionsToDelete(List<GitHubPackageVersionResponse> allVersions) {
+        return allVersions.stream()
                 .filter(this::hasNoIgnoredTags)
                 .sorted(Comparator.comparing(GitHubPackageVersionResponse::getUpdatedAt).reversed())
                 .skip(keepMostRecent);
