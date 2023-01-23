@@ -51,77 +51,127 @@ public interface TableProperty extends SleeperProperty {
     // User defined
     TableProperty TABLE_NAME = named("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
+            .description("A unique name identifying this table.")
             .build();
     TableProperty SCHEMA = named("sleeper.table.schema")
             .validationPredicate(Objects::nonNull)
+            .description("The schema representing the structure of this table.")
             .build();
     TableProperty ENCRYPTED = named("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
+            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.")
             .build();
-    TableProperty SCHEMA_FILE = named("sleeper.table.schema.file").build();
+    TableProperty SCHEMA_FILE = named("sleeper.table.schema.file")
+            .description("A JSON file containing the schema for this table.")
+            .build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
+            .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
             .build();
     TableProperty PAGE_SIZE = named("sleeper.table.page.size")
             .defaultProperty(DEFAULT_PAGE_SIZE)
+            .description("The size of the page in the Parquet files - defaults to the value in the instance properties.")
             .build();
     TableProperty S3A_READAHEAD_RANGE = named("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
             .validationPredicate(Utils::isValidNumberOfBytes)
+            .description("The S3 readahead range - defaults to the value in the instance properties.")
             .build();
     TableProperty COMPRESSION_CODEC = named("sleeper.table.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
             .validationPredicate(Utils::isValidCompressionCodec)
+            .description("The compression codec to use for this table. Defaults to the value in the instance properties.")
             .build();
-    TableProperty ITERATOR_CLASS_NAME = named("sleeper.table.iterator.class.name").build();
-    TableProperty ITERATOR_CONFIG = named("sleeper.table.iterator.config").build();
-    TableProperty SPLIT_POINTS_FILE = named("sleeper.table.splits.file").build();
+    TableProperty ITERATOR_CLASS_NAME = named("sleeper.table.iterator.class.name")
+            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.\n" +
+                    "Defaults to nothing.")
+            .build();
+    TableProperty ITERATOR_CONFIG = named("sleeper.table.iterator.config")
+            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
+            .build();
+    TableProperty SPLIT_POINTS_FILE = named("sleeper.table.splits.file")
+            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the\n" +
+                    "table will be created with a single root partition.")
+            .build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = named("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
+            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
             .build();
     TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = named("sleeper.table.gc.delay.seconds")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
+            .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for\n" +
+                    "garbage collection. The reason for not deleting files immediately after they have been marked as ready for\n" +
+                    "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance\n" +
+                    "properties.")
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = named("sleeper.table.compaction.strategy.class")
             .defaultProperty(DEFAULT_COMPACTION_STRATEGY_CLASS)
+            .description("The name of the class that defines how compaction jobs should be created.\n" +
+                    "This should implement sleeper.compaction.strategy.CompactionStrategy. Defaults to the strategy used by the whole\n" +
+                    "instance (set in the instance properties).")
             .build();
     TableProperty COMPACTION_FILES_BATCH_SIZE = named("sleeper.table.compaction.files.batch.size")
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
+            .description("The minimum number of files to read in a compaction job. Note that the state store\n" +
+                    "must support atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
+                    "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = named("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
+            .description("Partitions in this table with more than the following number of records in will be split")
             .build();
     TableProperty STATESTORE_CLASSNAME = named("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
+            .description("The name of the class used for the metadata store. The default is DynamoDBStateStore.\n" +
+                    "An alternative option is the S3StateStore.")
             .build();
 
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = named("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
+            .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. This value\n" +
+                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk\n" +
+                    "import job specification.")
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = named("sleeper.table.bulk.import.emr.executor.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE)
+            .description("(EMR mode only) The EC2 instance type to be used for the executor nodes of the EMR cluster. This value\n" +
+                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk\n" +
+                    "import job specification.")
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = named("sleeper.table.bulk.import.emr.executor.market.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE)
             .build();
     TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = named("sleeper.table.bulk.import.emr.executor.initial.instances")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
+            .description("(EMR mode only) The initial number of EC2 instances to be used as executors in the EMR cluster. This value\n" +
+                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk\n" +
+                    "import job specification.")
             .build();
     TableProperty BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS = named("sleeper.table.bulk.import.emr.executor.max.instances")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS)
+            .description("(EMR mode only) The maximum number of EC2 instances to be used as executors in the EMR cluster. This value\n" +
+                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk\n" +
+                    "import job specification.")
             .build();
     TableProperty BULK_IMPORT_EMR_RELEASE_LABEL = named("sleeper.table.bulk.import.emr.release.label")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL)
+            .description("# (EMR mode only) The EMR release label to be used when creating an EMR cluster for bulk importing data\n" +
+                    "# using Spark running on EMR. This value overrides the default value in the instance properties. It can\n" +
+                    "# be overridden by a value in the bulk import job specification.")
             .build();
 
     // Size ratio compaction strategy
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = named("sleeper.table.compaction.strategy.sizeratio.ratio")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
+            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
+                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n")
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = named("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
+            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running\n" +
+                    "concurrently per partition.")
             .build();
 
     // System defined

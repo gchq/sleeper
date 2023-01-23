@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
@@ -37,11 +38,11 @@ class TablePropertyImpl implements TableProperty {
     private final String description;
 
     private TablePropertyImpl(Builder builder) {
-        propertyName = builder.propertyName;
+        propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
-        validationPredicate = builder.validationPredicate;
+        validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
-        description = builder.description;
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
     @Override
@@ -90,7 +91,7 @@ class TablePropertyImpl implements TableProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
-        private String description;
+        private String description = "No description available";
 
         private Builder() {
         }

@@ -48,8 +48,17 @@ public class TablePropertyReport {
                 tableProperties, Arrays.asList(TableProperty.values()));
         out.println("\n\n Table Property Report \n -------------------------");
         for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
+            out.println();
+            out.println(formatDescription(entry.getKey().toString()));
             out.println(entry.getKey() + ": " + entry.getValue());
         }
         confirmReturnToMainScreen(out, in);
+    }
+
+    private String formatDescription(String propertyName) {
+        if (TableProperty.has(propertyName)) {
+            return TableProperty.from(propertyName).formatDescription();
+        }
+        return "# No description available\n";
     }
 }

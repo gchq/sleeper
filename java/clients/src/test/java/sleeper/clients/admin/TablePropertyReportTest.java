@@ -64,9 +64,12 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         .map(TableProperty::getPropertyName)
                         .collect(Collectors.toList()))
                 // Then check some set table property values are present in the output
-                .contains("sleeper.table.name: test-table\n")
-                .contains("sleeper.table.encrypted: false\n")
-                .contains("sleeper.table.schema: " +
+                .contains("# A unique name identifying this table.\n" +
+                        "sleeper.table.name: test-table\n")
+                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                        "sleeper.table.encrypted: false\n")
+                .contains("# The schema representing the structure of this table.\n" +
+                        "sleeper.table.schema: " +
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
                         "\"sortKeyFields\":[]," +
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n");
