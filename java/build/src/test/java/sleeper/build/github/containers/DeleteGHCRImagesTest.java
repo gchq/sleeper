@@ -41,7 +41,7 @@ import static sleeper.build.github.containers.TestGHCRImage.imageWithIdAndTags;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-class DeleteOldGHCRImagesTest {
+class DeleteGHCRImagesTest {
 
     @Test
     void shouldDeleteAnImage(WireMockRuntimeInfo runtimeInfo) {
