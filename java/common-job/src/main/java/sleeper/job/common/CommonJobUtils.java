@@ -32,6 +32,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,6 +55,8 @@ public class CommonJobUtils {
     public static final String ECS_EC2_ENV = "AWS_ECS_EC2";
     /** Environment variable for location of container metadata. */
     public static final String ECS_CONTAINER_METADATA_FILE = "ECS_CONTAINER_METADATA_FILE";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommonJobUtils.class);
 
     private CommonJobUtils() {
 
@@ -135,6 +139,8 @@ public class CommonJobUtils {
                                     instanceDetails.get().getEc2InstanceId(), metadata.get().getRight(), instanceDetails.get().getStatus()));
                 }
             }
+        } else {
+            LOGGER.info("Not running on an EC2 instance");
         }
         return Optional.empty();
     }
@@ -152,6 +158,7 @@ public class CommonJobUtils {
         if (metaDataFile != null) {
             return retrieveContainerMetadataFile(metaDataFile);
         } else {
+            LOGGER.warn("Environment variable {} not set! Can't retrieve container metadata", ECS_CONTAINER_METADATA_FILE);
             return Optional.empty();
         }
     }
@@ -174,7 +181,6 @@ public class CommonJobUtils {
         String clusterName = rootNode.get("Cluster").getAsString();
         String containerInstanceArn = rootNode.get("ContainerInstanceARN").getAsString();
         String az = rootNode.get("AvailabilityZone").getAsString();
-
         return Optional.of(Triple.of(clusterName, containerInstanceArn, az));
     }
 
@@ -195,6 +201,7 @@ public class CommonJobUtils {
                         .withContainerInstances(containerInstanceARN);
         DescribeContainerInstancesResult result = ecsClient.describeContainerInstances(req);
         if (result.getContainerInstances().isEmpty()) {
+            LOGGER.warn("No EC2 instances returned in describeContainerInstance request!");
             return Optional.empty();
         } else {
             return Optional.of(result.getContainerInstances().get(0));

@@ -27,15 +27,19 @@ import software.amazon.awscdk.services.autoscaling.BlockDeviceVolume;
 import software.amazon.awscdk.services.autoscaling.CfnAutoScalingGroup;
 import software.amazon.awscdk.services.autoscaling.EbsDeviceOptions;
 import software.amazon.awscdk.services.autoscaling.EbsDeviceVolumeType;
+import software.amazon.awscdk.services.autoscaling.Signals;
 import software.amazon.awscdk.services.cloudwatch.Alarm;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
+import software.amazon.awscdk.services.ec2.CloudFormationInit;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InitCommand;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
+import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
@@ -551,10 +555,16 @@ public class CompactionStack extends NestedStack {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc,
                     SystemDefinedInstanceProperty scalingProperty, IBucket configBucket, IBucket jarsBucket, String type) {
+
+        // create some extra user data to enable ECS container metadata file
+        UserData customUserData = UserData.forLinux();
+        customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
+
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
                         .allowAllOutbound(true)
                         .associatePublicIpAddress(false)
                         .requireImdsv2(true)
+                        .userData(customUserData)
                         .blockDevices(Arrays.asList(BlockDevice.builder()
                                         .deviceName("/dev/xvda") // root volume
                                         .volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),

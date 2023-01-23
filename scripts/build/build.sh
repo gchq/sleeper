@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
 BASE_DIR=$(cd "$(dirname "$0")" && cd "../../" && pwd)
 MAVEN_DIR="$BASE_DIR/java"
@@ -23,7 +23,7 @@ DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
 if [ "$#" -lt 1 ]; then
-  MAVEN_PARAMS=("clean install -q -Pquick")
+  MAVEN_PARAMS=("clean install -Pquick")
 else
   MAVEN_PARAMS=("$@")
 fi
@@ -39,7 +39,7 @@ echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
 SCRIPTS_DISTRIBUTION_DIR="$MAVEN_DIR/distribution/target/distribution-$VERSION-bin/scripts"
-mvn "${MAVEN_PARAMS[@]}"
+mvn ${MAVEN_PARAMS[@]}
 
 mkdir -p "$JARS_DIR"
 mkdir -p "$DOCKER_DIR"
