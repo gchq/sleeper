@@ -21,9 +21,11 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.time.Instant;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Properties;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
@@ -35,6 +37,7 @@ import static sleeper.build.github.api.GitHubApiTestHelper.doWithGitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
 import static sleeper.build.github.api.TestGitHubJson.gitHubJson;
+import static sleeper.build.github.api.containers.DeleteGHCRImages.withApi;
 import static sleeper.build.github.api.containers.TestGHCRImage.image;
 import static sleeper.build.github.api.containers.TestGHCRImage.imageWithId;
 import static sleeper.build.github.api.containers.TestGHCRImage.imageWithIdAndTags;
@@ -51,7 +54,7 @@ class DeleteGHCRImagesTest {
         packageVersionDeleteSucceeds("sleeper-local", 64403175);
 
         // When
-        deleteImages(runtimeInfo, builder -> builder.imageName("sleeper-local"));
+        deleteImages(runtimeInfo, "imageName=sleeper-local");
 
         // Then
         verify(packageVersionDeleted("sleeper-local", 64403175));
@@ -65,7 +68,7 @@ class DeleteGHCRImagesTest {
         packageVersionDeleteSucceeds("test-image", 2);
 
         // When
-        deleteImages(runtimeInfo, builder -> builder.imageName("test-image"));
+        deleteImages(runtimeInfo, "imageName=test-image");
 
         // Then
         verify(packageVersionDeleted("test-image", 1));
@@ -78,7 +81,9 @@ class DeleteGHCRImagesTest {
         packageVersionListReturns("test-image", imageWithIdAndTags(123, "test-tag"));
 
         // When
-        deleteImages(runtimeInfo, builder -> builder.imageName("test-image").ignoreTagsPattern("test-tag"));
+        deleteImages(runtimeInfo, "" +
+                "imageName=test-image\n" +
+                "ignoreTagsPattern=test-tag");
 
         // Then
         verify(0, packageVersionDeleted("test-image", 123));
@@ -93,7 +98,9 @@ class DeleteGHCRImagesTest {
         packageVersionDeleteSucceeds("test-image", 1);
 
         // When
-        deleteImages(runtimeInfo, builder -> builder.imageName("test-image").keepMostRecent(1));
+        deleteImages(runtimeInfo, "" +
+                "imageName=test-image\n" +
+                "keepMostRecent=1");
 
         // Then
         verify(1, packageVersionDeleted("test-image", 1));
@@ -111,9 +118,10 @@ class DeleteGHCRImagesTest {
         packageVersionDeleteSucceeds("test-image", 3);
 
         //When
-        deleteImages(runtimeInfo, builder -> builder.imageName("test-image")
-                .ignoreTagsPattern("ignore-tag-.*")
-                .keepMostRecent(1));
+        deleteImages(runtimeInfo, "" +
+                "imageName=test-image\n" +
+                "ignoreTagsPattern=ignore-tag-.*\n" +
+                "keepMostRecent=1");
 
         // Then
         verify(0, packageVersionDeleted("test-image", 1));
@@ -122,9 +130,11 @@ class DeleteGHCRImagesTest {
         verify(0, packageVersionDeleted("test-image", 4));
     }
 
-    private void deleteImages(WireMockRuntimeInfo runtimeInfo, Consumer<DeleteGHCRImages.Builder> configuration) {
-        doWithGitHubApi(runtimeInfo, api -> DeleteGHCRImages.withApi(api)
-                .organization("test-org").applyMutation(configuration).delete());
+    private void deleteImages(WireMockRuntimeInfo runtimeInfo, String propertiesStr) {
+        Properties properties = loadProperties(propertiesStr);
+        properties.setProperty("organization", "test-org");
+        doWithGitHubApi(runtimeInfo, api ->
+                withApi(api).properties(properties).delete());
     }
 
     private void packageVersionListReturns(String packageName, TestGHCRImage... versions) {
@@ -146,5 +156,15 @@ class DeleteGHCRImagesTest {
     private RequestPatternBuilder packageVersionDeleted(String packageName, int versionId) {
         return gitHubRequest(deleteRequestedFor(
                 urlEqualTo("/orgs/test-org/packages/container/" + packageName + "/versions/" + versionId)));
+    }
+
+    private static Properties loadProperties(String propertiesStr) {
+        Properties properties = new Properties();
+        try {
+            properties.load(new StringReader(propertiesStr));
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return properties;
     }
 }

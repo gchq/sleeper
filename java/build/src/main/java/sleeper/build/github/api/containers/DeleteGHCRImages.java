@@ -17,20 +17,30 @@
 package sleeper.build.github.api.containers;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.build.github.api.GitHubApi;
 
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class DeleteGHCRImages {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeleteGHCRImages.class);
+
     private final GitHubApi api;
     private final String organization;
     private final String imageName;
@@ -45,11 +55,28 @@ public class DeleteGHCRImages {
         keepMostRecent = builder.keepMostRecent;
     }
 
+    public static void main(String[] args) throws IOException {
+        Properties properties = loadProperties(Paths.get(args[0]));
+        try (GitHubApi api = GitHubApi.withToken(properties.getProperty("token"))) {
+            withApi(api).properties(properties).delete();
+        }
+    }
+
+    private static Properties loadProperties(Path path) throws IOException {
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(path)) {
+            properties.load(reader);
+        }
+        return properties;
+    }
+
     public static Builder withApi(GitHubApi api) {
         return new Builder().api(api);
     }
 
     public void delete() {
+        LOGGER.info("Deleting images for {}/{}, ignoring {}, keeping {}",
+                organization, imageName, ignoreTags, keepMostRecent);
         getVersionsToDelete().forEach(this::deleteVersion);
     }
 
@@ -115,7 +142,7 @@ public class DeleteGHCRImages {
         }
 
         public Builder ignoreTagsPattern(String ignoreTagsPattern) {
-            return ignoreTags(Pattern.compile(ignoreTagsPattern));
+            return ignoreTags(ignoreTagsPattern == null ? null : Pattern.compile(ignoreTagsPattern));
         }
 
         public Builder keepMostRecent(int keepMostRecent) {
@@ -123,9 +150,15 @@ public class DeleteGHCRImages {
             return this;
         }
 
-        public Builder applyMutation(Consumer<Builder> consumer) {
-            consumer.accept(this);
-            return this;
+        public Builder keepMostRecent(String keepMostRecent) {
+            return keepMostRecent(keepMostRecent == null ? 0 : Integer.parseInt(keepMostRecent));
+        }
+
+        public Builder properties(Properties properties) {
+            return organization(properties.getProperty("organization"))
+                    .imageName(properties.getProperty("imageName"))
+                    .ignoreTagsPattern(properties.getProperty("ignoreTagsPattern"))
+                    .keepMostRecent(properties.getProperty("keepMostRecent"));
         }
 
         public void delete() {
