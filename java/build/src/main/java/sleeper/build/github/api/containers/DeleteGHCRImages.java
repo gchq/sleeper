@@ -76,7 +76,7 @@ public class DeleteGHCRImages {
     }
 
     public void delete() {
-        LOGGER.info("Deleting images for {}/{}, ignoring {}, keeping {}",
+        LOGGER.info("Deleting images for {}/{}, ignoring {} and keeping {}",
                 organization, imageName, ignoreTags, keepMostRecent);
         List<GitHubPackageVersionResponse> all = getAllVersions();
         List<GitHubPackageVersionResponse> toDelete = getVersionsToDelete(all).collect(Collectors.toList());
