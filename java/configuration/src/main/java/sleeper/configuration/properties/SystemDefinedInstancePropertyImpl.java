@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
 
@@ -31,8 +32,8 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     private final String description;
 
     private SystemDefinedInstancePropertyImpl(Builder builder) {
-        propertyName = builder.propertyName;
-        description = builder.description;
+        propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
     @Override

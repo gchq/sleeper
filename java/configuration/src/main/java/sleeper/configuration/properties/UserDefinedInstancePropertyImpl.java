@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
@@ -33,10 +34,10 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final String description;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
-        propertyName = builder.propertyName;
+        propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
-        validationPredicate = builder.validationPredicate;
-        description = builder.description;
+        validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
     @Override

@@ -36,4 +36,8 @@ public interface SleeperProperty {
     default String toEnvironmentVariable() {
         return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
+
+    default String formatDescription() {
+        return "# " + getDescription().replace("\n", "\n# ");
+    }
 }

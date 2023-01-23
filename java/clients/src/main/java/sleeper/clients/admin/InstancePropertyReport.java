@@ -57,16 +57,12 @@ public class InstancePropertyReport {
     }
 
     private String formatDescription(String propertyName) {
-        return "# " + getDescription(propertyName).replace("\n", "\n# ");
-    }
-
-    private String getDescription(String propertyName) {
         if (UserDefinedInstanceProperty.has(propertyName)) {
-            return UserDefinedInstanceProperty.from(propertyName).getDescription();
+            return UserDefinedInstanceProperty.from(propertyName).formatDescription();
         }
         if (SystemDefinedInstanceProperty.has(propertyName)) {
-            return SystemDefinedInstanceProperty.from(propertyName).getDescription();
+            return SystemDefinedInstanceProperty.from(propertyName).formatDescription();
         }
-        return "No description available";
+        return "# No description available\n";
     }
 }

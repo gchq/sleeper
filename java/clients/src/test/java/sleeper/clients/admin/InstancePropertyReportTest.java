@@ -58,7 +58,7 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .containsAnyOf(Stream.of(SystemDefinedInstanceProperty.values())
                         .map(SystemDefinedInstanceProperty::getPropertyName)
                         .toArray(String[]::new))
-                // Then check some set property values are present in the output
+                // Then check some set property descriptions and values are present in the output
                 .contains("# The AWS account number. This is the AWS account that the instance will be deployed to\n" +
                         "sleeper.account: 1234567890\n")
                 .contains("# The length of time in days that CloudWatch logs are retained\n" +
