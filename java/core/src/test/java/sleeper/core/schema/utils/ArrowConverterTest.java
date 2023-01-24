@@ -172,7 +172,7 @@ public class ArrowConverterTest {
 
         // When/Then
         assertThatThrownBy(() -> convertArrowPrimitiveFieldToSleeperField(arrowField))
-                .isInstanceOf(AssertionError.class);
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
@@ -182,7 +182,7 @@ public class ArrowConverterTest {
 
         // When/Then
         assertThatThrownBy(() -> convertArrowPrimitiveFieldToSleeperField(arrowField))
-                .isInstanceOf(AssertionError.class);
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowMapField(String name, ArrowType keyType, ArrowType valueType) {

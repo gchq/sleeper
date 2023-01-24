@@ -116,7 +116,7 @@ public class ArrowConverter {
         } else if (sleeperType instanceof ByteArrayType) {
             return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Binary());
         } else {
-            throw new AssertionError("Sleeper column type " + sleeperType.toString() + " is not a primitive inside convertSleeperPrimitiveFieldToArrowField()");
+            throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not a primitive inside convertSleeperPrimitiveFieldToArrowField()");
         }
     }
 
@@ -126,7 +126,7 @@ public class ArrowConverter {
         if (type instanceof ArrowType.PrimitiveType) {
             return convertArrowPrimitiveFieldToSleeperField(arrowField);
         } else {
-            throw new AssertionError("Arrow field type " + type.toString() + " is not supported by Sleeper");
+            throw new UnsupportedOperationException("Arrow column type " + type.toString() + " is not supported by Sleeper");
         }
     }
 
@@ -140,7 +140,7 @@ public class ArrowConverter {
             } else if (arrowIntType.getBitWidth() == 32 && arrowIntType.getIsSigned()) {
                 return new Field(fieldName, new IntType());
             } else {
-                throw new AssertionError("Arrow int type with bitWidth=" + arrowIntType.getBitWidth() +
+                throw new UnsupportedOperationException("Arrow int type with bitWidth=" + arrowIntType.getBitWidth() +
                         " and signed=" + arrowIntType.getIsSigned() + " is not supported by Sleeper");
             }
         } else if (type instanceof ArrowType.Binary) {
@@ -148,7 +148,7 @@ public class ArrowConverter {
         } else if (type instanceof ArrowType.Utf8) {
             return new Field(fieldName, new StringType());
         } else {
-            throw new AssertionError("Arrow column type " + type.toString() + " is not supported by Sleeper");
+            throw new UnsupportedOperationException("Arrow column type " + type.toString() + " is not supported by Sleeper");
         }
     }
 }
