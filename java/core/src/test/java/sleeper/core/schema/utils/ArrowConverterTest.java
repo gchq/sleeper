@@ -44,7 +44,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static sleeper.core.schema.utils.ArrowConverter.convertArrowFieldToSleeperField;
-import static sleeper.core.schema.utils.ArrowConverter.convertArrowPrimitiveFieldToSleeperField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperFieldToArrowField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperSchemaToArrowSchema;
 
@@ -62,10 +61,6 @@ class ArrowConverterTest {
                 arguments(named("StringType", sleeperField(new StringType())),
                         named("ArrowType.Utf8", arrowPrimitiveField(new ArrowType.Utf8())))
         );
-    }
-
-    private static Field sleeperField(Type type) {
-        return new Field("field", type);
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowPrimitiveField(ArrowType type) {
@@ -99,8 +94,8 @@ class ArrowConverterTest {
     void shouldConvertSleeperSchemaWithPrimitiveValueToArrowSchema() {
         // Given
         Schema sleeperSchema = Schema.builder()
-                .rowKeyFields(sleeperStringField("key"))
-                .valueFields(sleeperIntField("value"))
+                .rowKeyFields(sleeperField("key", new StringType()))
+                .valueFields(sleeperField("value", new IntType()))
                 .build();
 
         // When
@@ -117,7 +112,7 @@ class ArrowConverterTest {
     void shouldConvertSleeperSchemaWithListValueToArrowSchema() {
         // Given
         Schema sleeperSchema = Schema.builder()
-                .rowKeyFields(sleeperStringField("key"))
+                .rowKeyFields(sleeperField("key", new StringType()))
                 .valueFields(sleeperListField("value", new IntType()))
                 .build();
 
@@ -135,7 +130,7 @@ class ArrowConverterTest {
     void shouldConvertSleeperSchemaWithMapValueToArrowSchema() {
         // Given
         Schema sleeperSchema = Schema.builder()
-                .rowKeyFields(sleeperStringField("key"))
+                .rowKeyFields(sleeperField("key", new StringType()))
                 .valueFields(sleeperMapField("value", new StringType(), new IntType()))
                 .build();
 
@@ -155,7 +150,7 @@ class ArrowConverterTest {
         org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Duration(TimeUnit.SECOND));
 
         // When/Then
-        assertThatThrownBy(() -> convertArrowPrimitiveFieldToSleeperField(arrowField))
+        assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -165,7 +160,7 @@ class ArrowConverterTest {
         org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(32, false));
 
         // When/Then
-        assertThatThrownBy(() -> convertArrowPrimitiveFieldToSleeperField(arrowField))
+        assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -204,12 +199,8 @@ class ArrowConverterTest {
         return sleeperField(name, new ListType(type));
     }
 
-    private static Field sleeperStringField(String name) {
-        return sleeperField(name, new StringType());
-    }
-
-    private static Field sleeperIntField(String name) {
-        return sleeperField(name, new IntType());
+    private static Field sleeperField(Type type) {
+        return sleeperField("field", type);
     }
 
     private static Field sleeperField(String name, Type type) {

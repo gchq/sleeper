@@ -25,6 +25,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
@@ -104,7 +105,7 @@ public class ArrowConverter {
      * @param sleeperField The Sleeper field to be converted
      * @return The corresponding Arrow field
      */
-    public static org.apache.arrow.vector.types.pojo.Field convertSleeperPrimitiveFieldToArrowField(Field sleeperField) {
+    private static org.apache.arrow.vector.types.pojo.Field convertSleeperPrimitiveFieldToArrowField(Field sleeperField) {
         String fieldName = sleeperField.getName();
         Type sleeperType = sleeperField.getType();
         if (sleeperType instanceof IntType) {
@@ -129,25 +130,29 @@ public class ArrowConverter {
         }
     }
 
-    public static Field convertArrowPrimitiveFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
-        String fieldName = arrowField.getName();
-        ArrowType type = arrowField.getType();
+    private static PrimitiveType convertArrowPrimitiveTypeToSleeperType(ArrowType type) {
         if (type instanceof ArrowType.Int) {
             ArrowType.Int arrowIntType = (ArrowType.Int) type;
             if (arrowIntType.getBitWidth() == 64 && arrowIntType.getIsSigned()) {
-                return new Field(fieldName, new LongType());
+                return new LongType();
             } else if (arrowIntType.getBitWidth() == 32 && arrowIntType.getIsSigned()) {
-                return new Field(fieldName, new IntType());
+                return new IntType();
             } else {
                 throw new UnsupportedOperationException("Arrow int type with bitWidth=" + arrowIntType.getBitWidth() +
                         " and signed=" + arrowIntType.getIsSigned() + " is not supported by Sleeper");
             }
         } else if (type instanceof ArrowType.Binary) {
-            return new Field(fieldName, new ByteArrayType());
+            return new ByteArrayType();
         } else if (type instanceof ArrowType.Utf8) {
-            return new Field(fieldName, new StringType());
+            return new StringType();
         } else {
             throw new UnsupportedOperationException("Arrow column type " + type.toString() + " is not supported by Sleeper");
         }
+    }
+
+    private static Field convertArrowPrimitiveFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
+        String fieldName = arrowField.getName();
+        ArrowType type = arrowField.getType();
+        return new Field(fieldName, convertArrowPrimitiveTypeToSleeperType(type));
     }
 }
