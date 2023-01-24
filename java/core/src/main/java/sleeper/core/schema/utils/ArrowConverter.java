@@ -119,4 +119,36 @@ public class ArrowConverter {
             throw new AssertionError("Sleeper column type " + sleeperType.toString() + " is not a primitive inside convertSleeperPrimitiveFieldToArrowField()");
         }
     }
+
+    public static Field convertArrowFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
+        String fieldName = arrowField.getName();
+        ArrowType type = arrowField.getType();
+        if (type instanceof ArrowType.PrimitiveType) {
+            return convertArrowPrimitiveFieldToSleeperField(arrowField);
+        } else {
+            throw new AssertionError("Arrow field type " + type.toString() + " is not supported by Sleeper");
+        }
+    }
+
+    public static Field convertArrowPrimitiveFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
+        String fieldName = arrowField.getName();
+        ArrowType type = arrowField.getType();
+        if (type instanceof ArrowType.Int) {
+            ArrowType.Int arrowIntType = (ArrowType.Int) type;
+            if (arrowIntType.getBitWidth() == 64 && arrowIntType.getIsSigned()) {
+                return new Field(fieldName, new LongType());
+            } else if (arrowIntType.getBitWidth() == 32 && arrowIntType.getIsSigned()) {
+                return new Field(fieldName, new IntType());
+            } else {
+                throw new AssertionError("Arrow int type with bitWidth=" + arrowIntType.getBitWidth() +
+                        " and signed=" + arrowIntType.getIsSigned() + " is not supported by Sleeper");
+            }
+        } else if (type instanceof ArrowType.Binary) {
+            return new Field(fieldName, new ByteArrayType());
+        } else if (type instanceof ArrowType.Utf8) {
+            return new Field(fieldName, new StringType());
+        } else {
+            throw new AssertionError("Arrow column type " + type.toString() + " is not supported by Sleeper");
+        }
+    }
 }

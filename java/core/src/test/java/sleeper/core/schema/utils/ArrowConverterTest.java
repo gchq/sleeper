@@ -16,14 +16,17 @@
 
 package sleeper.core.schema.utils;
 
+import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
@@ -34,6 +37,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static sleeper.core.schema.utils.ArrowConverter.convertArrowFieldToSleeperField;
+import static sleeper.core.schema.utils.ArrowConverter.convertArrowPrimitiveFieldToSleeperField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperPrimitiveFieldToArrowField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperSchemaToArrowSchema;
 
@@ -107,6 +113,77 @@ public class ArrowConverterTest {
                         arrowMapField("value", new ArrowType.Utf8(), new ArrowType.Int(32, true)));
     }
 
+    @Test
+    void shouldConvertArrowIntFieldToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(32, true));
+
+        // When
+        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
+
+        // Then
+        assertThat(sleeperField)
+                .isEqualTo(sleeperField(FIELD_NAME, new IntType()));
+    }
+
+    @Test
+    void shouldConvertArrowLongFieldToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(64, true));
+
+        // When
+        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
+
+        // Then
+        assertThat(sleeperField)
+                .isEqualTo(sleeperField(FIELD_NAME, new LongType()));
+    }
+
+    @Test
+    void shouldConvertArrowBinaryFieldToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Binary());
+
+        // When
+        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
+
+        // Then
+        assertThat(sleeperField)
+                .isEqualTo(sleeperField(FIELD_NAME, new ByteArrayType()));
+    }
+
+    @Test
+    void shouldConvertArrowUtf8FieldToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Utf8());
+
+        // When
+        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
+
+        // Then
+        assertThat(sleeperField)
+                .isEqualTo(sleeperField(FIELD_NAME, new StringType()));
+    }
+
+    @Test
+    void shouldFailToConvertArrowFieldThatIsNotSupportedBySleeper() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Duration(TimeUnit.SECOND));
+
+        // When/Then
+        assertThatThrownBy(() -> convertArrowPrimitiveFieldToSleeperField(arrowField))
+                .isInstanceOf(AssertionError.class);
+    }
+
+    @Test
+    void shouldFailToConvertArrowUnsignedIntFieldToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(32, false));
+
+        // When/Then
+        assertThatThrownBy(() -> convertArrowPrimitiveFieldToSleeperField(arrowField))
+                .isInstanceOf(AssertionError.class);
+    }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowMapField(String name, ArrowType keyType, ArrowType valueType) {
         return arrowListField(name,
