@@ -121,7 +121,6 @@ public class ArrowConverter {
     }
 
     public static Field convertArrowFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
-        String fieldName = arrowField.getName();
         ArrowType type = arrowField.getType();
         if (type instanceof ArrowType.PrimitiveType) {
             return convertArrowPrimitiveFieldToSleeperField(arrowField);
