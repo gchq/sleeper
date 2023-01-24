@@ -20,6 +20,9 @@ import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -38,13 +41,56 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Named.named;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static sleeper.core.schema.utils.ArrowConverter.convertArrowFieldToSleeperField;
 import static sleeper.core.schema.utils.ArrowConverter.convertArrowPrimitiveFieldToSleeperField;
+import static sleeper.core.schema.utils.ArrowConverter.convertSleeperFieldToArrowField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperPrimitiveFieldToArrowField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperSchemaToArrowSchema;
 
-public class ArrowConverterTest {
+class ArrowConverterTest {
     private static final String FIELD_NAME = "test-field";
+
+    private static Stream<Arguments> getSleeperFieldToArrowField() {
+        return Stream.of(
+                arguments(named("IntType", sleeperField(new IntType())),
+                        named("ArrowType.Int 32-bit", arrowPrimitiveField(new ArrowType.Int(32, true)))),
+                arguments(named("LongType", sleeperField(new LongType())),
+                        named("ArrowType.Int 64-bit", arrowPrimitiveField(new ArrowType.Int(64, true))))
+        );
+    }
+
+    private static Field sleeperField(Type type) {
+        return new Field("field", type);
+    }
+
+    private static org.apache.arrow.vector.types.pojo.Field arrowPrimitiveField(ArrowType type) {
+        return arrowPrimitiveField("field", type);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getSleeperFieldToArrowField")
+    void shouldConvertSleeperFieldToArrowField(
+            Field sleeperField, org.apache.arrow.vector.types.pojo.Field expectedArrowField) {
+
+        // When
+        org.apache.arrow.vector.types.pojo.Field converted = convertSleeperFieldToArrowField(sleeperField);
+
+        // Then
+        assertThat(converted).isEqualTo(expectedArrowField);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getSleeperFieldToArrowField")
+    void shouldConvertArrowFieldToSleeperField(
+            Field expectedSleeperField, org.apache.arrow.vector.types.pojo.Field arrowField) {
+
+        Field converted = convertArrowFieldToSleeperField(arrowField);
+
+        // Then
+        assertThat(converted).isEqualTo(expectedSleeperField);
+    }
 
     @Test
     void shouldConvertSleeperPrimitiveFieldToArrowField() {

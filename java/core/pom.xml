@@ -73,5 +73,11 @@
             <artifactId>arrow-memory-unsafe</artifactId>
             <version>${arrow.version}</version>
         </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
