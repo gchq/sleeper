@@ -46,7 +46,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static sleeper.core.schema.utils.ArrowConverter.convertArrowFieldToSleeperField;
 import static sleeper.core.schema.utils.ArrowConverter.convertArrowPrimitiveFieldToSleeperField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperFieldToArrowField;
-import static sleeper.core.schema.utils.ArrowConverter.convertSleeperPrimitiveFieldToArrowField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperSchemaToArrowSchema;
 
 class ArrowConverterTest {
@@ -54,10 +53,14 @@ class ArrowConverterTest {
 
     private static Stream<Arguments> getSleeperFieldToArrowField() {
         return Stream.of(
+                arguments(named("ByteArrayType", sleeperField(new ByteArrayType())),
+                        named("ArrowType.Binary", arrowPrimitiveField(new ArrowType.Binary()))),
                 arguments(named("IntType", sleeperField(new IntType())),
                         named("ArrowType.Int 32-bit", arrowPrimitiveField(new ArrowType.Int(32, true)))),
                 arguments(named("LongType", sleeperField(new LongType())),
-                        named("ArrowType.Int 64-bit", arrowPrimitiveField(new ArrowType.Int(64, true))))
+                        named("ArrowType.Int 64-bit", arrowPrimitiveField(new ArrowType.Int(64, true)))),
+                arguments(named("StringType", sleeperField(new StringType())),
+                        named("ArrowType.Utf8", arrowPrimitiveField(new ArrowType.Utf8())))
         );
     }
 
@@ -90,19 +93,6 @@ class ArrowConverterTest {
 
         // Then
         assertThat(converted).isEqualTo(expectedSleeperField);
-    }
-
-    @Test
-    void shouldConvertSleeperPrimitiveFieldToArrowField() {
-        // Given
-        Field sleeperField = sleeperIntField(FIELD_NAME);
-
-        // When
-        org.apache.arrow.vector.types.pojo.Field arrowField = convertSleeperPrimitiveFieldToArrowField(sleeperField);
-
-        // Then
-        assertThat(arrowField)
-                .isEqualTo(arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(32, true)));
     }
 
     @Test
@@ -157,58 +147,6 @@ class ArrowConverterTest {
                 .containsExactly(
                         arrowPrimitiveField("key", new ArrowType.Utf8()),
                         arrowMapField("value", new ArrowType.Utf8(), new ArrowType.Int(32, true)));
-    }
-
-    @Test
-    void shouldConvertArrowIntFieldToSleeperField() {
-        // Given
-        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(32, true));
-
-        // When
-        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
-
-        // Then
-        assertThat(sleeperField)
-                .isEqualTo(sleeperField(FIELD_NAME, new IntType()));
-    }
-
-    @Test
-    void shouldConvertArrowLongFieldToSleeperField() {
-        // Given
-        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(64, true));
-
-        // When
-        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
-
-        // Then
-        assertThat(sleeperField)
-                .isEqualTo(sleeperField(FIELD_NAME, new LongType()));
-    }
-
-    @Test
-    void shouldConvertArrowBinaryFieldToSleeperField() {
-        // Given
-        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Binary());
-
-        // When
-        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
-
-        // Then
-        assertThat(sleeperField)
-                .isEqualTo(sleeperField(FIELD_NAME, new ByteArrayType()));
-    }
-
-    @Test
-    void shouldConvertArrowUtf8FieldToSleeperField() {
-        // Given
-        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Utf8());
-
-        // When
-        Field sleeperField = convertArrowFieldToSleeperField(arrowField);
-
-        // Then
-        assertThat(sleeperField)
-                .isEqualTo(sleeperField(FIELD_NAME, new StringType()));
     }
 
     @Test
