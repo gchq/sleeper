@@ -59,7 +59,9 @@ class ArrowConverterTest {
                 arguments(named("LongType", sleeperField(new LongType())),
                         named("ArrowType.Int 64-bit", arrowPrimitiveField(new ArrowType.Int(64, true)))),
                 arguments(named("StringType", sleeperField(new StringType())),
-                        named("ArrowType.Utf8", arrowPrimitiveField(new ArrowType.Utf8())))
+                        named("ArrowType.Utf8", arrowPrimitiveField(new ArrowType.Utf8()))),
+                arguments(named("List of StringType", sleeperField(new ListType(new StringType()))),
+                        named("ArrowType.List of ArrowType.Utf8", arrowListField(new ArrowType.Utf8())))
         );
     }
 
@@ -169,6 +171,10 @@ class ArrowConverterTest {
                 arrowStructField(name,
                         arrowPrimitiveField("key", keyType),
                         arrowPrimitiveField("value", valueType)));
+    }
+
+    private static org.apache.arrow.vector.types.pojo.Field arrowListField(ArrowType type) {
+        return arrowListField("field", type);
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowListField(String name, ArrowType type) {
