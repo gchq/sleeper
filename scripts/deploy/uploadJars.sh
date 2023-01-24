@@ -42,8 +42,8 @@ set -e
 
 if [ $STATUS -ne 0 ]; then
   echo "Creating JARs bucket"
-  (aws s3api create-bucket --acl private --bucket ${JARS_BUCKET} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION} && \
-  aws s3api put-public-access-block --bucket ${JARS_BUCKET} --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true")
+  aws s3api create-bucket --acl private --bucket ${JARS_BUCKET} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION}
+  aws s3api put-public-access-block --bucket ${JARS_BUCKET} --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 fi
 
 echo "Uploading JARS"
