@@ -36,7 +36,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -156,7 +155,7 @@ class ArrowConverterTest {
         // When/Then
         assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Arrow primitive type Duration(SECOND) is not supported by Sleeper");
+                .hasMessage("Arrow primitive type Duration(SECOND) is not supported by Sleeper");
     }
 
     @Test
@@ -167,7 +166,7 @@ class ArrowConverterTest {
         // When/Then
         assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Arrow int type with bitWidth=32 and signed=false is not supported by Sleeper");
+                .hasMessage("Arrow int type with bitWidth=32 and signed=false is not supported by Sleeper");
     }
 
     @Test
@@ -181,7 +180,22 @@ class ArrowConverterTest {
         // When/Then
         assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Arrow struct field contains non-primitive field types");
+                .hasMessage("Arrow struct field contains non-primitive field types, which is not supported by Sleeper");
+    }
+
+    @Test
+    void shouldFailToConvertArrowStructListFieldWithMoreThanTwoFieldsToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowListField(
+                arrowStructField("test-struct",
+                        arrowField(new ArrowType.Utf8()),
+                        arrowField(new ArrowType.Utf8()),
+                        arrowField(new ArrowType.Utf8())).getType());
+
+        // When/Then
+        assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage("Arrow struct field does not contain exactly two field elements, which is not supported by Sleeper");
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowMapField(ArrowType keyType, ArrowType valueType) {
@@ -203,16 +217,16 @@ class ArrowConverterTest {
         return arrowListField(name, arrowField("element", type));
     }
 
-    private static org.apache.arrow.vector.types.pojo.Field arrowListField(String name, org.apache.arrow.vector.types.pojo.Field... field) {
+    private static org.apache.arrow.vector.types.pojo.Field arrowListField(String name, org.apache.arrow.vector.types.pojo.Field... fields) {
         return new org.apache.arrow.vector.types.pojo.Field(name, FieldType.notNullable(new ArrowType.List()),
-                List.of(field));
+                List.of(fields));
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowStructField(String name, org.apache.arrow.vector.types.pojo.Field... fields) {
         return new org.apache.arrow.vector.types.pojo.Field(
                 name + "-key-value-struct",
                 new org.apache.arrow.vector.types.pojo.FieldType(false, new ArrowType.Struct(), null),
-                Stream.of(fields).collect(Collectors.toList()));
+                List.of(fields));
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowField(String name, ArrowType type) {
