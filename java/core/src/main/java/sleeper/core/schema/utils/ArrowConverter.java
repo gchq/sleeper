@@ -154,7 +154,7 @@ public class ArrowConverter {
         } else if (type instanceof ArrowType.Utf8) {
             return new StringType();
         } else {
-            throw new UnsupportedOperationException("Arrow column type " + type.toString() + " is not supported by Sleeper");
+            throw new UnsupportedOperationException("Arrow primitive type " + type.toString() + " is not supported by Sleeper");
         }
     }
 

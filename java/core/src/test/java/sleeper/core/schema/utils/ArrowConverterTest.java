@@ -53,13 +53,13 @@ class ArrowConverterTest {
     private static Stream<Arguments> getSleeperFieldToArrowField() {
         return Stream.of(
                 arguments(named("ByteArrayType", sleeperField(new ByteArrayType())),
-                        named("ArrowType.Binary", arrowPrimitiveField(new ArrowType.Binary()))),
+                        named("ArrowType.Binary", arrowField(new ArrowType.Binary()))),
                 arguments(named("IntType", sleeperField(new IntType())),
-                        named("ArrowType.Int 32-bit", arrowPrimitiveField(new ArrowType.Int(32, true)))),
+                        named("ArrowType.Int 32-bit", arrowField(new ArrowType.Int(32, true)))),
                 arguments(named("LongType", sleeperField(new LongType())),
-                        named("ArrowType.Int 64-bit", arrowPrimitiveField(new ArrowType.Int(64, true)))),
+                        named("ArrowType.Int 64-bit", arrowField(new ArrowType.Int(64, true)))),
                 arguments(named("StringType", sleeperField(new StringType())),
-                        named("ArrowType.Utf8", arrowPrimitiveField(new ArrowType.Utf8()))),
+                        named("ArrowType.Utf8", arrowField(new ArrowType.Utf8()))),
                 arguments(named("List of StringType", sleeperField(new ListType(new StringType()))),
                         named("ArrowType.List of ArrowType.Utf8", arrowListField(new ArrowType.Utf8()))),
                 arguments(named("Map of StringType to IntType", sleeperField(new MapType(new StringType(), new IntType()))),
@@ -67,8 +67,8 @@ class ArrowConverterTest {
         );
     }
 
-    private static org.apache.arrow.vector.types.pojo.Field arrowPrimitiveField(ArrowType type) {
-        return arrowPrimitiveField("field", type);
+    private static org.apache.arrow.vector.types.pojo.Field arrowField(ArrowType type) {
+        return arrowField("field", type);
     }
 
     @ParameterizedTest
@@ -108,8 +108,8 @@ class ArrowConverterTest {
         // Then
         assertThat(arrowSchema.getFields())
                 .containsExactly(
-                        arrowPrimitiveField("key", new ArrowType.Utf8()),
-                        arrowPrimitiveField("value", new ArrowType.Int(32, true)));
+                        arrowField("key", new ArrowType.Utf8()),
+                        arrowField("value", new ArrowType.Int(32, true)));
     }
 
     @Test
@@ -126,7 +126,7 @@ class ArrowConverterTest {
         // Then
         assertThat(arrowSchema.getFields())
                 .containsExactly(
-                        arrowPrimitiveField("key", new ArrowType.Utf8()),
+                        arrowField("key", new ArrowType.Utf8()),
                         arrowListField("value", new ArrowType.Int(32, true)));
     }
 
@@ -144,28 +144,44 @@ class ArrowConverterTest {
         // Then
         assertThat(arrowSchema.getFields())
                 .containsExactly(
-                        arrowPrimitiveField("key", new ArrowType.Utf8()),
+                        arrowField("key", new ArrowType.Utf8()),
                         arrowMapField("value", new ArrowType.Utf8(), new ArrowType.Int(32, true)));
     }
 
     @Test
     void shouldFailToConvertArrowPrimitiveFieldThatIsNotSupportedBySleeper() {
         // Given
-        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Duration(TimeUnit.SECOND));
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowField(FIELD_NAME, new ArrowType.Duration(TimeUnit.SECOND));
 
         // When/Then
         assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("Arrow primitive type Duration(SECOND) is not supported by Sleeper");
     }
 
     @Test
     void shouldFailToConvertArrowUnsignedIntFieldToSleeperField() {
         // Given
-        org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Int(32, false));
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowField(FIELD_NAME, new ArrowType.Int(32, false));
 
         // When/Then
         assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("Arrow int type with bitWidth=32 and signed=false is not supported by Sleeper");
+    }
+
+    @Test
+    void shouldFailToConvertArrowStructListFieldWithNonPrimitivesToSleeperField() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Field arrowField = arrowMapField(new ArrowType.Utf8(),
+                arrowStructField("test-struct",
+                        arrowField(new ArrowType.Utf8()),
+                        arrowField(new ArrowType.Int(32, true))).getType());
+
+        // When/Then
+        assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("Arrow struct field contains non-primitive field types");
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowMapField(ArrowType keyType, ArrowType valueType) {
@@ -175,8 +191,8 @@ class ArrowConverterTest {
     private static org.apache.arrow.vector.types.pojo.Field arrowMapField(String name, ArrowType keyType, ArrowType valueType) {
         return arrowListField(name,
                 arrowStructField(name,
-                        arrowPrimitiveField("key", keyType),
-                        arrowPrimitiveField("value", valueType)));
+                        arrowField("key", keyType),
+                        arrowField("value", valueType)));
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowListField(ArrowType type) {
@@ -184,7 +200,7 @@ class ArrowConverterTest {
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowListField(String name, ArrowType type) {
-        return arrowListField(name, arrowPrimitiveField("element", type));
+        return arrowListField(name, arrowField("element", type));
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowListField(String name, org.apache.arrow.vector.types.pojo.Field... field) {
@@ -199,7 +215,7 @@ class ArrowConverterTest {
                 Stream.of(fields).collect(Collectors.toList()));
     }
 
-    private static org.apache.arrow.vector.types.pojo.Field arrowPrimitiveField(String name, ArrowType type) {
+    private static org.apache.arrow.vector.types.pojo.Field arrowField(String name, ArrowType type) {
         return org.apache.arrow.vector.types.pojo.Field.notNullable(name, type);
     }
 
