@@ -17,6 +17,7 @@ on:
       - 'java/sketches/**'
       - 'java/tables/**'
       - 'java/ingest/ingest-status-store/**'
+      - 'java/core-arrow/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/parquet/**'

@@ -21,6 +21,7 @@ on:
       - 'java/compaction/compaction-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
+      - 'java/core-arrow/**'
       - 'java/ingest/ingest-core/**'
       - 'java/splitter/**'
       - 'java/sketches/**'
