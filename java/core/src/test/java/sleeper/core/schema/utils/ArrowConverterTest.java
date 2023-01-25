@@ -61,7 +61,9 @@ class ArrowConverterTest {
                 arguments(named("StringType", sleeperField(new StringType())),
                         named("ArrowType.Utf8", arrowPrimitiveField(new ArrowType.Utf8()))),
                 arguments(named("List of StringType", sleeperField(new ListType(new StringType()))),
-                        named("ArrowType.List of ArrowType.Utf8", arrowListField(new ArrowType.Utf8())))
+                        named("ArrowType.List of ArrowType.Utf8", arrowListField(new ArrowType.Utf8()))),
+                arguments(named("Map of StringType to IntType", sleeperField(new MapType(new StringType(), new IntType()))),
+                        named("ArrowType.List of ArrowType.Struct", arrowMapField(new ArrowType.Utf8(), new ArrowType.Int(32, true))))
         );
     }
 
@@ -147,7 +149,7 @@ class ArrowConverterTest {
     }
 
     @Test
-    void shouldFailToConvertArrowFieldThatIsNotSupportedBySleeper() {
+    void shouldFailToConvertArrowPrimitiveFieldThatIsNotSupportedBySleeper() {
         // Given
         org.apache.arrow.vector.types.pojo.Field arrowField = arrowPrimitiveField(FIELD_NAME, new ArrowType.Duration(TimeUnit.SECOND));
 
@@ -164,6 +166,10 @@ class ArrowConverterTest {
         // When/Then
         assertThatThrownBy(() -> convertArrowFieldToSleeperField(arrowField))
                 .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    private static org.apache.arrow.vector.types.pojo.Field arrowMapField(ArrowType keyType, ArrowType valueType) {
+        return arrowMapField("field", keyType, valueType);
     }
 
     private static org.apache.arrow.vector.types.pojo.Field arrowMapField(String name, ArrowType keyType, ArrowType valueType) {

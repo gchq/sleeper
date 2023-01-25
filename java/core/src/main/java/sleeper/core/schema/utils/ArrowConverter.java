@@ -126,10 +126,16 @@ public class ArrowConverter {
         if (type instanceof ArrowType.PrimitiveType) {
             return convertArrowPrimitiveFieldToSleeperField(arrowField);
         } else if (type instanceof ArrowType.List) {
-            return convertArrowListFieldToSleeperField(arrowField);
+            return convertArrowNonPrimitiveFieldToSleeperField(arrowField);
         } else {
             throw new UnsupportedOperationException("Arrow column type " + type.toString() + " is not supported by Sleeper");
         }
+    }
+
+    private static Field convertArrowPrimitiveFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
+        String fieldName = arrowField.getName();
+        ArrowType type = arrowField.getType();
+        return new Field(fieldName, convertArrowPrimitiveTypeToSleeperType(type));
     }
 
     private static PrimitiveType convertArrowPrimitiveTypeToSleeperType(ArrowType type) {
@@ -152,21 +158,32 @@ public class ArrowConverter {
         }
     }
 
-    private static Field convertArrowPrimitiveFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
-        String fieldName = arrowField.getName();
-        ArrowType type = arrowField.getType();
-        return new Field(fieldName, convertArrowPrimitiveTypeToSleeperType(type));
-    }
-
-    private static Field convertArrowListFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
+    private static Field convertArrowNonPrimitiveFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
         if (arrowField.getChildren().size() != 1) {
             throw new UnsupportedOperationException("Arrow list field does not contain exactly one field element, which is not supported by Sleeper");
         }
         ArrowType listFieldType = arrowField.getChildren().get(0).getType();
-        if (!(listFieldType instanceof ArrowType.PrimitiveType)) {
-            throw new UnsupportedOperationException("Arrow list field contains non-primitive field types, which is not supported by Sleeper");
+        if (listFieldType instanceof ArrowType.PrimitiveType) {
+            return new Field(arrowField.getName(), new ListType(
+                    convertArrowPrimitiveTypeToSleeperType(listFieldType)));
+        } else if (listFieldType instanceof ArrowType.Struct) {
+            return convertArrowStructListFieldToSleeperField(arrowField);
+        } else {
+            throw new UnsupportedOperationException("Arrow list field contains unsupported field types");
         }
-        PrimitiveType type = convertArrowPrimitiveTypeToSleeperType(listFieldType);
-        return new Field(arrowField.getName(), new ListType(type));
+    }
+
+    private static Field convertArrowStructListFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
+        org.apache.arrow.vector.types.pojo.Field structField = arrowField.getChildren().get(0);
+        if (structField.getChildren().size() != 2) {
+            throw new UnsupportedOperationException("Arrow struct field does not contain exactly two field elements, which is not supported by Sleeper");
+        }
+        if (structField.getChildren().stream().anyMatch(c -> !(c.getType() instanceof ArrowType.PrimitiveType))) {
+            throw new UnsupportedOperationException("Arrow struct field contains non-primitive field types, which is not supported by Sleeper");
+        }
+        List<org.apache.arrow.vector.types.pojo.Field> structChildren = structField.getChildren();
+        return new Field(arrowField.getName(), new MapType(
+                convertArrowPrimitiveTypeToSleeperType(structChildren.get(0).getType()),
+                convertArrowPrimitiveTypeToSleeperType(structChildren.get(1).getType())));
     }
 }
