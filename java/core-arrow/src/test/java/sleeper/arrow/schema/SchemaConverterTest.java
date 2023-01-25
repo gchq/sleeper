@@ -18,7 +18,6 @@ package sleeper.arrow.schema;
 
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
@@ -95,7 +94,6 @@ public class SchemaConverterTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldConvertArrowSchemaWithPrimitiveValueFieldToSleeperSchema() {
         // Given
         List<Field> arrowFields = List.of(
@@ -122,7 +120,6 @@ public class SchemaConverterTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldConvertArrowSchemaWithStructListValueFieldToSleeperSchema() {
         // Given
         List<org.apache.arrow.vector.types.pojo.Field> arrowFields = List.of(
@@ -149,6 +146,38 @@ public class SchemaConverterTest {
                                 .rowKeyFields(sleeperField("rowKeyField1", new StringType()))
                                 .sortKeyFields(sleeperField("sortKeyField1", new StringType()))
                                 .valueFields(sleeperField("valueField1", new MapType(new StringType(), new IntType())))
+                                .build());
+    }
+
+    @Test
+    void shouldConvertArrowSchemaWithMultipleRowKeyFieldsToSleeperSchema() {
+        // Given
+        List<org.apache.arrow.vector.types.pojo.Field> arrowFields = List.of(
+                arrowField("rowKeyField1", new ArrowType.Utf8()),
+                arrowField("rowKeyField2", new ArrowType.Int(32, true)),
+                arrowField("rowKeyField3", new ArrowType.Utf8()),
+                arrowField("sortKeyField1", new ArrowType.Utf8()),
+                arrowField("valueField1", new ArrowType.Utf8())
+        );
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
+
+
+        // When
+        Schema sleeperSchema = convertArrowSchemaToSleeperSchema(arrowSchema,
+                List.of("rowKeyField1", "rowKeyField2", "rowKeyField3"),
+                List.of("sortKeyField1"),
+                List.of("valueField1"));
+
+        // Then
+        assertThat(sleeperSchema)
+                .isEqualTo(
+                        Schema.builder()
+                                .rowKeyFields(
+                                        sleeperField("rowKeyField1", new StringType()),
+                                        sleeperField("rowKeyField2", new IntType()),
+                                        sleeperField("rowKeyField3", new StringType()))
+                                .sortKeyFields(sleeperField("sortKeyField1", new StringType()))
+                                .valueFields(sleeperField("valueField1", new StringType()))
                                 .build());
     }
 }

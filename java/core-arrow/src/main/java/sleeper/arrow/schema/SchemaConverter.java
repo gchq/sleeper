@@ -16,9 +16,12 @@
 
 package sleeper.arrow.schema;
 
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SchemaConverter {
@@ -43,6 +46,21 @@ public class SchemaConverter {
                                                            List<String> rowKeyFieldNames,
                                                            List<String> sortKeyFieldNames,
                                                            List<String> valueFieldNames) {
-        return null;
+        Map<String, Field> sleeperFields = new HashMap<>();
+        arrowSchema.getFields().stream()
+                .map(FieldConverter::convertArrowFieldToSleeperField)
+                .forEach(field -> sleeperFields.put(field.getName(), field));
+
+        return Schema.builder()
+                .rowKeyFields(rowKeyFieldNames.stream()
+                        .map(sleeperFields::get)
+                        .collect(Collectors.toList()))
+                .sortKeyFields(sortKeyFieldNames.stream()
+                        .map(sleeperFields::get)
+                        .collect(Collectors.toList()))
+                .valueFields(valueFieldNames.stream()
+                        .map(sleeperFields::get)
+                        .collect(Collectors.toList()))
+                .build();
     }
 }
