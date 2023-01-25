@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.arrow;
+package sleeper.arrow.schema;
 
 import org.apache.arrow.vector.types.pojo.ArrowType;
 
 import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
@@ -34,26 +33,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ArrowConverter {
-    private ArrowConverter() {
+public class FieldConverter {
+    private FieldConverter() {
     }
 
     public static final String MAP_KEY_FIELD_NAME = "key";
     public static final String MAP_VALUE_FIELD_NAME = "value";
-
-    /**
-     * Create an Arrow Schema from a Sleeper Schema. The order of the fields in each Schema is retained.
-     *
-     * @param sleeperSchema The Sleeper {@link Schema}
-     * @return The Arrow {@link org.apache.arrow.vector.types.pojo.Schema}
-     */
-    public static org.apache.arrow.vector.types.pojo.Schema convertSleeperSchemaToArrowSchema(Schema sleeperSchema) {
-        List<org.apache.arrow.vector.types.pojo.Field> arrowFields =
-                sleeperSchema.getAllFields().stream()
-                        .map(ArrowConverter::convertSleeperFieldToArrowField)
-                        .collect(Collectors.toList());
-        return new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
-    }
 
     public static org.apache.arrow.vector.types.pojo.Field convertSleeperFieldToArrowField(Field sleeperField) {
         String fieldName = sleeperField.getName();
@@ -121,12 +106,6 @@ public class ArrowConverter {
         }
     }
 
-    public static Schema convertArrowSchemaToSleeperSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
-                                                           List<String> rowKeyFieldNames,
-                                                           List<String> sortKeyFieldNames,
-                                                           List<String> valueFieldNames) {
-        return null;
-    }
 
     public static Field convertArrowFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
         ArrowType type = arrowField.getType();
