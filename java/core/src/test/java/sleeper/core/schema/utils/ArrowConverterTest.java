@@ -43,6 +43,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static sleeper.core.schema.utils.ArrowConverter.convertArrowFieldToSleeperField;
+import static sleeper.core.schema.utils.ArrowConverter.convertArrowSchemaToSleeperSchema;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperFieldToArrowField;
 import static sleeper.core.schema.utils.ArrowConverter.convertSleeperSchemaToArrowSchema;
 
@@ -145,6 +146,30 @@ class ArrowConverterTest {
                 .containsExactly(
                         arrowField("key", new ArrowType.Utf8()),
                         arrowMapField("value", new ArrowType.Utf8(), new ArrowType.Int(32, true)));
+    }
+
+    @Test
+    void shouldConvertArrowSchemaToSleeperSchema() {
+        // Given
+        List<org.apache.arrow.vector.types.pojo.Field> arrowFields = List.of(
+                arrowField("field1", new ArrowType.Utf8()),
+                arrowField("field2", new ArrowType.Utf8()),
+                arrowField("field3", new ArrowType.Utf8()));
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
+
+
+        // When
+        Schema sleeperSchema = convertArrowSchemaToSleeperSchema(arrowSchema,
+                List.of("field1"), List.of("field2"), List.of("field3"));
+
+        // Then
+        assertThat(sleeperSchema)
+                .isEqualTo(
+                        Schema.builder()
+                                .rowKeyFields(sleeperField("field1", new StringType()))
+                                .sortKeyFields(sleeperField("field2", new StringType()))
+                                .valueFields(sleeperField("field3", new StringType()))
+                                .build());
     }
 
     @Test

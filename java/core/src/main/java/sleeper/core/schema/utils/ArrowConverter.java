@@ -121,6 +121,18 @@ public class ArrowConverter {
         }
     }
 
+    public static Schema convertArrowSchemaToSleeperSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
+                                                           List<String> rowKeyFieldNames,
+                                                           List<String> sortKeyFieldNames,
+                                                           List<String> valueFieldNames) {
+        return Schema.builder()
+                .fromArrowSchema(arrowSchema)
+                .rowKeyFieldNames(rowKeyFieldNames)
+                .sortKeyFieldNames(sortKeyFieldNames)
+                .valueFieldNames(valueFieldNames)
+                .build();
+    }
+
     public static Field convertArrowFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {
         ArrowType type = arrowField.getType();
         if (type instanceof ArrowType.PrimitiveType) {

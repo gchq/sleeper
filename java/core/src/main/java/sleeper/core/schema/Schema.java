@@ -16,12 +16,15 @@
 package sleeper.core.schema;
 
 import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.utils.ArrowConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +32,8 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static sleeper.core.schema.utils.ArrowConverter.convertSleeperSchemaToArrowSchema;
 
 /**
  * A Schema describes the fields found in a particular table in a Sleeper instance.
@@ -109,6 +114,10 @@ public class Schema {
                 .findFirst();
     }
 
+    public org.apache.arrow.vector.types.pojo.Schema getArrowSchema() {
+        return convertSleeperSchemaToArrowSchema(this);
+    }
+
     @Override
     public String toString() {
         return "Schema{" + "rowKeyFields=" + rowKeyFields + ", sortKeyFields=" + sortKeyFields + ", valueFields=" + valueFields + '}';
@@ -135,11 +144,25 @@ public class Schema {
     }
 
     public static final class Builder {
+        private final Map<String, Field> allFields = new HashMap<>();
         private List<Field> rowKeyFields;
         private List<Field> sortKeyFields;
         private List<Field> valueFields;
 
         private Builder() {
+        }
+
+        public Builder fromArrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema) {
+            arrowSchema.getFields().stream()
+                    .map(ArrowConverter::convertArrowFieldToSleeperField)
+                    .forEach(field -> allFields.put(field.getName(), field));
+            return this;
+        }
+
+        public Builder rowKeyFieldNames(List<String> rowKeyFieldNames) {
+            return rowKeyFields(rowKeyFieldNames.stream()
+                    .map(allFields::get)
+                    .collect(Collectors.toList()));
         }
 
         public Builder rowKeyFields(List<Field> rowKeyFields) {
@@ -151,6 +174,12 @@ public class Schema {
             return rowKeyFields(Arrays.asList(rowKeyFields));
         }
 
+        public Builder sortKeyFieldNames(List<String> sortKeyFieldNames) {
+            return sortKeyFields(sortKeyFieldNames.stream()
+                    .map(allFields::get)
+                    .collect(Collectors.toList()));
+        }
+
         public Builder sortKeyFields(List<Field> sortKeyFields) {
             this.sortKeyFields = sortKeyFields;
             return this;
@@ -158,6 +187,12 @@ public class Schema {
 
         public Builder sortKeyFields(Field... sortKeyFields) {
             return sortKeyFields(Arrays.asList(sortKeyFields));
+        }
+
+        public Builder valueFieldNames(List<String> valueFieldNames) {
+            return valueFields(valueFieldNames.stream()
+                    .map(allFields::get)
+                    .collect(Collectors.toList()));
         }
 
         public Builder valueFields(List<Field> valueFields) {
