@@ -15,6 +15,7 @@ on:
       - 'java/sketches/**'
       - 'java/configuration/**'
       - 'java/core/**'
+      - 'java/core-arrow/**'
 
 jobs:
   chunk-workflow:

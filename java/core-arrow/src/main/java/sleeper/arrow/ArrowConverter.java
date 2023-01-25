@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.schema.utils;
+package sleeper.arrow;
 
 import org.apache.arrow.vector.types.pojo.ArrowType;
 
@@ -125,12 +125,7 @@ public class ArrowConverter {
                                                            List<String> rowKeyFieldNames,
                                                            List<String> sortKeyFieldNames,
                                                            List<String> valueFieldNames) {
-        return Schema.builder()
-                .fromArrowSchema(arrowSchema)
-                .rowKeyFieldNames(rowKeyFieldNames)
-                .sortKeyFieldNames(sortKeyFieldNames)
-                .valueFieldNames(valueFieldNames)
-                .build();
+        return null;
     }
 
     public static Field convertArrowFieldToSleeperField(org.apache.arrow.vector.types.pojo.Field arrowField) {

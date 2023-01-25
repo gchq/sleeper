@@ -47,6 +47,7 @@
         <module>distribution</module>
         <module>dynamodb-tools</module>
         <module>build</module>
+        <module>core-arrow</module>
     </modules>
 
     <properties>
