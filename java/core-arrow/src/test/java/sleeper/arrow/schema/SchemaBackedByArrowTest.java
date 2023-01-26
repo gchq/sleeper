@@ -31,7 +31,7 @@ import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
 
 public class SchemaBackedByArrowTest {
     @Test
-    void shouldCreateSchemaWrapperFromSleeperSchema() {
+    void shouldCreateSchemaBackedByArrowFromSleeperSchema() {
         // Given
         Schema sleeperSchema = Schema.builder()
                 .rowKeyFields(sleeperField("rowKeyField1", new StringType()))
@@ -56,7 +56,7 @@ public class SchemaBackedByArrowTest {
     }
 
     @Test
-    void shouldCreateSchemaWrapperFromArrowSchema() {
+    void shouldCreateSchemaBackedByArrowFromArrowSchema() {
         // Given
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
                 List.of(
