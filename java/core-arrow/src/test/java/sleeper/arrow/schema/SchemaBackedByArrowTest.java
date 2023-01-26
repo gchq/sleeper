@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
 
-public class SchemaWrapperTest {
+public class SchemaBackedByArrowTest {
     @Test
     void shouldCreateSchemaWrapperFromSleeperSchema() {
         // Given
@@ -40,12 +40,12 @@ public class SchemaWrapperTest {
                 .build();
 
         // When
-        SchemaWrapper schemaWrapper = SchemaWrapper.fromSleeperSchema(sleeperSchema);
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromSleeperSchema(sleeperSchema);
 
         // Then
-        assertThat(schemaWrapper.getSleeperSchema())
+        assertThat(schemaBackedByArrow.getSleeperSchema())
                 .isEqualTo(sleeperSchema);
-        assertThat(schemaWrapper.getArrowSchema())
+        assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(
                         new org.apache.arrow.vector.types.pojo.Schema(
                                 List.of(arrowField("rowKeyField1", new ArrowType.Utf8()),
@@ -67,15 +67,15 @@ public class SchemaWrapperTest {
         );
 
         // When
-        SchemaWrapper schemaWrapper = SchemaWrapper.fromArrowSchema(arrowSchema,
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromArrowSchema(arrowSchema,
                 List.of("rowKeyField1"),
                 List.of("sortKeyField1"),
                 List.of("valueField1"));
 
         // Then
-        assertThat(schemaWrapper.getArrowSchema())
+        assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(arrowSchema);
-        assertThat(schemaWrapper.getSleeperSchema())
+        assertThat(schemaBackedByArrow.getSleeperSchema())
                 .isEqualTo(
                         Schema.builder()
                                 .rowKeyFields(sleeperField("rowKeyField1", new StringType()))

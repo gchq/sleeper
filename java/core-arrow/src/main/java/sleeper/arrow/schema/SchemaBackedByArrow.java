@@ -25,13 +25,13 @@ import java.util.Objects;
 import static sleeper.arrow.schema.SchemaConverter.convertArrowSchemaToSleeperSchema;
 import static sleeper.arrow.schema.SchemaConverter.convertSleeperSchemaToArrowSchema;
 
-public class SchemaWrapper {
+public class SchemaBackedByArrow {
     private final org.apache.arrow.vector.types.pojo.Schema arrowSchema;
     private final List<String> rowKeyFieldNames;
     private final List<String> sortKeyFieldNames;
     private final List<String> valueFieldNames;
 
-    private SchemaWrapper(Builder builder) {
+    private SchemaBackedByArrow(Builder builder) {
         arrowSchema = Objects.requireNonNull(builder.arrowSchema, "arrowSchema must not be null");
         rowKeyFieldNames = Objects.requireNonNull(builder.rowKeyFieldNames, "rowKeyFieldNames must not be null");
         sortKeyFieldNames = Objects.requireNonNull(builder.sortKeyFieldNames, "sortKeyFieldNames must not be null");
@@ -42,15 +42,15 @@ public class SchemaWrapper {
         return new Builder();
     }
 
-    public static SchemaWrapper fromSleeperSchema(Schema sleeperSchema) {
+    public static SchemaBackedByArrow fromSleeperSchema(Schema sleeperSchema) {
         return builder()
                 .arrowSchema(convertSleeperSchemaToArrowSchema(sleeperSchema))
                 .sleeperSchema(sleeperSchema)
                 .build();
     }
 
-    public static SchemaWrapper fromArrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
-                                                List<String> rowKeyFieldNames, List<String> sortKeyFieldNames, List<String> valueFieldNames) {
+    public static SchemaBackedByArrow fromArrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
+                                                      List<String> rowKeyFieldNames, List<String> sortKeyFieldNames, List<String> valueFieldNames) {
         return builder()
                 .arrowSchema(arrowSchema)
                 .rowKeyFieldNames(rowKeyFieldNames)
@@ -102,8 +102,8 @@ public class SchemaWrapper {
             return this;
         }
 
-        public SchemaWrapper build() {
-            return new SchemaWrapper(this);
+        public SchemaBackedByArrow build() {
+            return new SchemaBackedByArrow(this);
         }
     }
 }
