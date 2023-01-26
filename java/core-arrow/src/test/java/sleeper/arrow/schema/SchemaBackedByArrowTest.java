@@ -26,6 +26,7 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
 
@@ -69,8 +70,7 @@ public class SchemaBackedByArrowTest {
         // When
         SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromArrowSchema(arrowSchema,
                 List.of("rowKeyField1"),
-                List.of("sortKeyField1"),
-                List.of("valueField1"));
+                List.of("sortKeyField1"));
 
         // Then
         assertThat(schemaBackedByArrow.getArrowSchema())
@@ -84,5 +84,21 @@ public class SchemaBackedByArrowTest {
                                 .build()
                 );
 
+    }
+
+    @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithNoValueFields() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("rowKeyField1", new ArrowType.Utf8()),
+                        arrowField("sortKeyField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("rowKeyField1"), List.of("sortKeyField1")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

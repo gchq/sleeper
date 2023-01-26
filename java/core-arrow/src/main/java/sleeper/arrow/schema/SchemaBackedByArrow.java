@@ -17,10 +17,13 @@
 package sleeper.arrow.schema;
 
 
+import org.apache.arrow.vector.types.pojo.Field;
+
 import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static sleeper.arrow.schema.SchemaConverter.convertArrowSchemaToSleeperSchema;
 import static sleeper.arrow.schema.SchemaConverter.convertSleeperSchemaToArrowSchema;
@@ -35,7 +38,13 @@ public class SchemaBackedByArrow {
         arrowSchema = Objects.requireNonNull(builder.arrowSchema, "arrowSchema must not be null");
         rowKeyFieldNames = Objects.requireNonNull(builder.rowKeyFieldNames, "rowKeyFieldNames must not be null");
         sortKeyFieldNames = Objects.requireNonNull(builder.sortKeyFieldNames, "sortKeyFieldNames must not be null");
-        valueFieldNames = Objects.requireNonNull(builder.valueFieldNames, "valueFieldNames must not be null");
+        valueFieldNames = arrowSchema.getFields().stream()
+                .map(Field::getName)
+                .filter(field -> !rowKeyFieldNames.contains(field) && !sortKeyFieldNames.contains(field))
+                .collect(Collectors.toList());
+        if (valueFieldNames.isEmpty()) {
+            throw new IllegalArgumentException("No value fields defined");
+        }
     }
 
     public static Builder builder() {
@@ -50,12 +59,11 @@ public class SchemaBackedByArrow {
     }
 
     public static SchemaBackedByArrow fromArrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
-                                                      List<String> rowKeyFieldNames, List<String> sortKeyFieldNames, List<String> valueFieldNames) {
+                                                      List<String> rowKeyFieldNames, List<String> sortKeyFieldNames) {
         return builder()
                 .arrowSchema(arrowSchema)
                 .rowKeyFieldNames(rowKeyFieldNames)
                 .sortKeyFieldNames(sortKeyFieldNames)
-                .valueFieldNames(valueFieldNames)
                 .build();
     }
 
@@ -71,7 +79,6 @@ public class SchemaBackedByArrow {
         private org.apache.arrow.vector.types.pojo.Schema arrowSchema;
         private List<String> rowKeyFieldNames;
         private List<String> sortKeyFieldNames;
-        private List<String> valueFieldNames;
 
         private Builder() {
         }
@@ -83,8 +90,7 @@ public class SchemaBackedByArrow {
 
         public Builder sleeperSchema(Schema schema) {
             return this.rowKeyFieldNames(schema.getRowKeyFieldNames())
-                    .sortKeyFieldNames(schema.getSortKeyFieldNames())
-                    .valueFieldNames(schema.getValueFieldNames());
+                    .sortKeyFieldNames(schema.getSortKeyFieldNames());
         }
 
         public Builder rowKeyFieldNames(List<String> rowKeyFieldNames) {
@@ -94,11 +100,6 @@ public class SchemaBackedByArrow {
 
         public Builder sortKeyFieldNames(List<String> sortKeyFieldNames) {
             this.sortKeyFieldNames = sortKeyFieldNames;
-            return this;
-        }
-
-        public Builder valueFieldNames(List<String> valueFieldNames) {
-            this.valueFieldNames = valueFieldNames;
             return this;
         }
 
