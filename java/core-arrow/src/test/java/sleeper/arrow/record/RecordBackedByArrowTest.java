@@ -23,7 +23,7 @@ import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.junit.jupiter.api.Test;
 
-import sleeper.arrow.schema.SchemaWrapper;
+import sleeper.arrow.schema.SchemaBackedByArrow;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -41,24 +41,23 @@ public class RecordBackedByArrowTest {
     @Test
     void shouldRetrieveValuesFromArrowBuffer() {
         // Given
-        SchemaWrapper schemaWrapper = SchemaWrapper.fromSleeperSchema(Schema.builder()
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromSleeperSchema(Schema.builder()
                 .rowKeyFields(sleeperField("field1", new StringType()))
                 .sortKeyFields(sleeperField("field2", new StringType()))
                 .valueFields(sleeperField("field3", new IntType()))
                 .build());
 
         try (BufferAllocator bufferAllocator = new RootAllocator();
-             VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schemaWrapper.getArrowSchema(), bufferAllocator)) {
+             VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schemaBackedByArrow.getArrowSchema(), bufferAllocator)) {
             // When
             Record record = new Record();
             record.put("field1", "test1");
             record.put("field2", "test2");
             record.put("field3", 123);
-            writeRecord(vectorSchemaRoot, schemaWrapper.getSleeperSchema().getAllFields(), record);
+            writeRecord(vectorSchemaRoot, schemaBackedByArrow.getSleeperSchema().getAllFields(), record);
 
             // Then
             RecordBackedByArrow recordBackedByArrow = RecordBackedByArrow.builder()
-                    .schemaWrapper(schemaWrapper)
                     .vectorSchemaRoot(vectorSchemaRoot)
                     .rowNum(1)
                     .build();

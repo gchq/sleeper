@@ -18,23 +18,15 @@ package sleeper.arrow.record;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 
-import sleeper.arrow.schema.SchemaWrapper;
-import sleeper.core.record.Record;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static sleeper.arrow.record.RecordConverter.getValueFromFieldVector;
 
 public class RecordBackedByArrow {
-    private SchemaWrapper schemaWrapper;
-    private VectorSchemaRoot vectorSchemaRoot;
-    private int rowNum;
-    private List<Record> recordList = new ArrayList<>();
+    private final VectorSchemaRoot vectorSchemaRoot;
+    private final int rowNum;
 
     private RecordBackedByArrow(Builder builder) {
-        schemaWrapper = builder.schemaWrapper;
         vectorSchemaRoot = builder.vectorSchemaRoot;
+        rowNum = builder.rowNum;
     }
 
     public static Builder builder() {
@@ -46,16 +38,10 @@ public class RecordBackedByArrow {
     }
 
     public static final class Builder {
-        private SchemaWrapper schemaWrapper;
         private VectorSchemaRoot vectorSchemaRoot;
         private int rowNum;
 
         private Builder() {
-        }
-
-        public Builder schemaWrapper(SchemaWrapper schemaWrapper) {
-            this.schemaWrapper = schemaWrapper;
-            return this;
         }
 
         public Builder vectorSchemaRoot(VectorSchemaRoot vectorSchemaRoot) {
