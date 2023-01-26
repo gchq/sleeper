@@ -75,6 +75,14 @@ public class SchemaBackedByArrow {
         return convertArrowSchemaToSleeperSchema(arrowSchema, rowKeyFieldNames, sortKeyFieldNames, valueFieldNames);
     }
 
+    public boolean isValueField(Field field) {
+        return isValueField(field.getName());
+    }
+
+    public boolean isValueField(String fieldName) {
+        return valueFieldNames.contains(fieldName);
+    }
+
     public static final class Builder {
         private org.apache.arrow.vector.types.pojo.Schema arrowSchema;
         private List<String> rowKeyFieldNames;

@@ -18,78 +18,62 @@ package sleeper.arrow.record;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.jupiter.api.Test;
 
 import sleeper.arrow.schema.SchemaBackedByArrow;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
+import static sleeper.arrow.ArrowUtils.appendToArrowBuffer;
+import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
 
 public class RecordBackedByArrowTest {
     @Test
-    void shouldRetrieveValuesFromArrowBuffer() {
+    void shouldRetrieveRecordsFromArrowBuffer() {
         // Given
-        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromSleeperSchema(Schema.builder()
-                .rowKeyFields(sleeperField("field1", new StringType()))
-                .sortKeyFields(sleeperField("field2", new StringType()))
-                .valueFields(sleeperField("field3", new IntType()))
-                .build());
+        Schema schema = new Schema(
+                List.of(
+                        arrowField("rowKey1", new ArrowType.Utf8()),
+                        arrowField("sortKey1", new ArrowType.Utf8()),
+                        arrowField("column1", new ArrowType.Utf8()),
+                        arrowField("column2", new ArrowType.Utf8())
+                )
+        );
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromArrowSchema(schema,
+                List.of("rowKey1"), List.of("sortKey1"));
 
-        try (BufferAllocator bufferAllocator = new RootAllocator();
-             VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schemaBackedByArrow.getArrowSchema(), bufferAllocator)) {
-            // When
-            Record record = new Record();
-            record.put("field1", "test1");
-            record.put("field2", "test2");
-            record.put("field3", 123);
-            writeRecord(vectorSchemaRoot, schemaBackedByArrow.getSleeperSchema().getAllFields(), record);
+        try (BufferAllocator bufferAllocator = new RootAllocator(Long.MAX_VALUE);
+             VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, bufferAllocator)) {
+            Map<String, Object> map1 = new HashMap<>();
+            map1.put("column1", "A");
+            map1.put("column2", "B");
+            int map1Index = appendToArrowBuffer(vectorSchemaRoot, schemaBackedByArrow, map1);
+            Map<String, Object> map2 = new HashMap<>();
+            map2.put("column1", "C");
+            map2.put("column2", "D");
+            int map2Index = appendToArrowBuffer(vectorSchemaRoot, schemaBackedByArrow, map2);
 
-            // Then
-            RecordBackedByArrow recordBackedByArrow = RecordBackedByArrow.builder()
+            RecordBackedByArrow recordBackedByArrow1 = RecordBackedByArrow.builder()
                     .vectorSchemaRoot(vectorSchemaRoot)
-                    .rowNum(1)
-                    .build();
+                    .rowNum(map1Index).build();
+            RecordBackedByArrow recordBackedByArrow2 = RecordBackedByArrow.builder()
+                    .vectorSchemaRoot(vectorSchemaRoot)
+                    .rowNum(map2Index).build();
 
-            assertThat(recordBackedByArrow.get("field1"))
-                    .isEqualTo("test1");
-            assertThat(recordBackedByArrow.get("field2"))
-                    .isEqualTo("test2");
-            assertThat(recordBackedByArrow.get("field3"))
-                    .isEqualTo(123);
+            assertThat(recordBackedByArrow1.get("column1"))
+                    .isEqualTo("A");
+            assertThat(recordBackedByArrow1.get("column2"))
+                    .isEqualTo("B");
+            assertThat(recordBackedByArrow2.get("column1"))
+                    .isEqualTo("C");
+            assertThat(recordBackedByArrow2.get("column2"))
+                    .isEqualTo("D");
         }
-
-    }
-
-    private void writeRecord(VectorSchemaRoot vectorSchemaRoot, List<Field> allFields, Record record) {
-        int insertAtRowNo = 0;
-        for (int fieldNo = 0; fieldNo < allFields.size(); fieldNo++) {
-            Field sleeperField = allFields.get(fieldNo);
-            String fieldName = sleeperField.getName();
-            Type sleeperType = sleeperField.getType();
-            if (sleeperType instanceof IntType) {
-                IntVector intVector = (IntVector) vectorSchemaRoot.getVector(fieldNo);
-                Integer value = (Integer) record.get(fieldName);
-                intVector.setSafe(insertAtRowNo, value);
-            } else if (sleeperType instanceof StringType) {
-                VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(fieldNo);
-                String value = (String) record.get(fieldName);
-                varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
-            } else {
-                throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
-            }
-        }
-        vectorSchemaRoot.setRowCount(insertAtRowNo + 1);
     }
 }
