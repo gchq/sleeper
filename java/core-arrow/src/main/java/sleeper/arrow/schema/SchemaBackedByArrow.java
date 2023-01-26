@@ -17,45 +17,53 @@
 package sleeper.arrow.schema;
 
 
+import org.apache.arrow.vector.types.pojo.Field;
+
 import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static sleeper.arrow.schema.SchemaConverter.convertArrowSchemaToSleeperSchema;
 import static sleeper.arrow.schema.SchemaConverter.convertSleeperSchemaToArrowSchema;
 
-public class SchemaWrapper {
+public class SchemaBackedByArrow {
     private final org.apache.arrow.vector.types.pojo.Schema arrowSchema;
     private final List<String> rowKeyFieldNames;
     private final List<String> sortKeyFieldNames;
     private final List<String> valueFieldNames;
 
-    private SchemaWrapper(Builder builder) {
+    private SchemaBackedByArrow(Builder builder) {
         arrowSchema = Objects.requireNonNull(builder.arrowSchema, "arrowSchema must not be null");
         rowKeyFieldNames = Objects.requireNonNull(builder.rowKeyFieldNames, "rowKeyFieldNames must not be null");
         sortKeyFieldNames = Objects.requireNonNull(builder.sortKeyFieldNames, "sortKeyFieldNames must not be null");
-        valueFieldNames = Objects.requireNonNull(builder.valueFieldNames, "valueFieldNames must not be null");
+        valueFieldNames = arrowSchema.getFields().stream()
+                .map(Field::getName)
+                .filter(field -> !rowKeyFieldNames.contains(field) && !sortKeyFieldNames.contains(field))
+                .collect(Collectors.toList());
+        if (valueFieldNames.isEmpty()) {
+            throw new IllegalArgumentException("No value fields defined");
+        }
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static SchemaWrapper fromSleeperSchema(Schema sleeperSchema) {
+    public static SchemaBackedByArrow fromSleeperSchema(Schema sleeperSchema) {
         return builder()
                 .arrowSchema(convertSleeperSchemaToArrowSchema(sleeperSchema))
                 .sleeperSchema(sleeperSchema)
                 .build();
     }
 
-    public static SchemaWrapper fromArrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
-                                                List<String> rowKeyFieldNames, List<String> sortKeyFieldNames, List<String> valueFieldNames) {
+    public static SchemaBackedByArrow fromArrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema,
+                                                      List<String> rowKeyFieldNames, List<String> sortKeyFieldNames) {
         return builder()
                 .arrowSchema(arrowSchema)
                 .rowKeyFieldNames(rowKeyFieldNames)
                 .sortKeyFieldNames(sortKeyFieldNames)
-                .valueFieldNames(valueFieldNames)
                 .build();
     }
 
@@ -71,7 +79,6 @@ public class SchemaWrapper {
         private org.apache.arrow.vector.types.pojo.Schema arrowSchema;
         private List<String> rowKeyFieldNames;
         private List<String> sortKeyFieldNames;
-        private List<String> valueFieldNames;
 
         private Builder() {
         }
@@ -83,8 +90,7 @@ public class SchemaWrapper {
 
         public Builder sleeperSchema(Schema schema) {
             return this.rowKeyFieldNames(schema.getRowKeyFieldNames())
-                    .sortKeyFieldNames(schema.getSortKeyFieldNames())
-                    .valueFieldNames(schema.getValueFieldNames());
+                    .sortKeyFieldNames(schema.getSortKeyFieldNames());
         }
 
         public Builder rowKeyFieldNames(List<String> rowKeyFieldNames) {
@@ -97,13 +103,8 @@ public class SchemaWrapper {
             return this;
         }
 
-        public Builder valueFieldNames(List<String> valueFieldNames) {
-            this.valueFieldNames = valueFieldNames;
-            return this;
-        }
-
-        public SchemaWrapper build() {
-            return new SchemaWrapper(this);
+        public SchemaBackedByArrow build() {
+            return new SchemaBackedByArrow(this);
         }
     }
 }

@@ -26,12 +26,13 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
 
-public class SchemaWrapperTest {
+public class SchemaBackedByArrowTest {
     @Test
-    void shouldCreateSchemaWrapperFromSleeperSchema() {
+    void shouldCreateSchemaBackedByArrowFromSleeperSchema() {
         // Given
         Schema sleeperSchema = Schema.builder()
                 .rowKeyFields(sleeperField("rowKeyField1", new StringType()))
@@ -40,12 +41,12 @@ public class SchemaWrapperTest {
                 .build();
 
         // When
-        SchemaWrapper schemaWrapper = SchemaWrapper.fromSleeperSchema(sleeperSchema);
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromSleeperSchema(sleeperSchema);
 
         // Then
-        assertThat(schemaWrapper.getSleeperSchema())
+        assertThat(schemaBackedByArrow.getSleeperSchema())
                 .isEqualTo(sleeperSchema);
-        assertThat(schemaWrapper.getArrowSchema())
+        assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(
                         new org.apache.arrow.vector.types.pojo.Schema(
                                 List.of(arrowField("rowKeyField1", new ArrowType.Utf8()),
@@ -56,7 +57,7 @@ public class SchemaWrapperTest {
     }
 
     @Test
-    void shouldCreateSchemaWrapperFromArrowSchema() {
+    void shouldCreateSchemaBackedByArrowFromArrowSchema() {
         // Given
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
                 List.of(
@@ -67,15 +68,14 @@ public class SchemaWrapperTest {
         );
 
         // When
-        SchemaWrapper schemaWrapper = SchemaWrapper.fromArrowSchema(arrowSchema,
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromArrowSchema(arrowSchema,
                 List.of("rowKeyField1"),
-                List.of("sortKeyField1"),
-                List.of("valueField1"));
+                List.of("sortKeyField1"));
 
         // Then
-        assertThat(schemaWrapper.getArrowSchema())
+        assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(arrowSchema);
-        assertThat(schemaWrapper.getSleeperSchema())
+        assertThat(schemaBackedByArrow.getSleeperSchema())
                 .isEqualTo(
                         Schema.builder()
                                 .rowKeyFields(sleeperField("rowKeyField1", new StringType()))
@@ -84,5 +84,21 @@ public class SchemaWrapperTest {
                                 .build()
                 );
 
+    }
+
+    @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithNoValueFields() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("rowKeyField1", new ArrowType.Utf8()),
+                        arrowField("sortKeyField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("rowKeyField1"), List.of("sortKeyField1")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
