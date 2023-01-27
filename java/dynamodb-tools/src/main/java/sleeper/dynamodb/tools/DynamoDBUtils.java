@@ -81,11 +81,15 @@ public class DynamoDBUtils {
     public static List<Map<String, AttributeValue>> doScanWithPagination(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
         double totalCapacity = 0.0D;
         ScanResult result = dynamoDB.scan(scanRequest);
-        totalCapacity += result.getConsumedCapacity().getCapacityUnits();
+        if (null != result.getConsumedCapacity()) {
+            totalCapacity += result.getConsumedCapacity().getCapacityUnits();
+        }
         List<Map<String, AttributeValue>> allItems = result.getItems();
         while (null != result.getLastEvaluatedKey()) {
             result = dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey()));
-            totalCapacity += result.getConsumedCapacity().getCapacityUnits();
+            if (null != result.getConsumedCapacity()) {
+                totalCapacity += result.getConsumedCapacity().getCapacityUnits();
+            }
             allItems.addAll(result.getItems());
         }
         LOGGER.debug("Scanned for all records, capacity consumed = {}", totalCapacity);
