@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static sleeper.arrow.schema.ArrowSchemaConverter.convertArrowSchemaToSleeperSchema;
 import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToArrowSchema;
 
 public class SchemaBackedByArrow {
@@ -69,10 +68,6 @@ public class SchemaBackedByArrow {
 
     public org.apache.arrow.vector.types.pojo.Schema getArrowSchema() {
         return arrowSchema;
-    }
-
-    public Schema getSleeperSchema() {
-        return convertArrowSchemaToSleeperSchema(arrowSchema, rowKeyFieldNames, sortKeyFieldNames, valueFieldNames);
     }
 
     public static final class Builder {

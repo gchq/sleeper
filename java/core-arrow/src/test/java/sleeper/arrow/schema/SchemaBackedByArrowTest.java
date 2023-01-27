@@ -44,8 +44,6 @@ public class SchemaBackedByArrowTest {
         SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromSleeperSchema(sleeperSchema);
 
         // Then
-        assertThat(schemaBackedByArrow.getSleeperSchema())
-                .isEqualTo(sleeperSchema);
         assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(
                         new org.apache.arrow.vector.types.pojo.Schema(
@@ -75,15 +73,6 @@ public class SchemaBackedByArrowTest {
         // Then
         assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(arrowSchema);
-        assertThat(schemaBackedByArrow.getSleeperSchema())
-                .isEqualTo(
-                        Schema.builder()
-                                .rowKeyFields(sleeperField("rowKeyField1", new StringType()))
-                                .sortKeyFields(sleeperField("sortKeyField1", new StringType()))
-                                .valueFields(sleeperField("valueField1", new StringType()))
-                                .build()
-                );
-
     }
 
     @Test
