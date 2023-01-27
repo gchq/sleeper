@@ -19,6 +19,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.util.ClientUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class TablePropertyReport {
 
     private String formatDescription(String propertyName) {
         if (TableProperty.has(propertyName)) {
-            return TableProperty.from(propertyName).formatDescription();
+            return ClientUtils.formatDescription(TableProperty.from(propertyName));
         }
         return "# No description available";
     }

@@ -20,6 +20,7 @@ import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.util.ClientUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -58,10 +59,10 @@ public class InstancePropertyReport {
 
     private String formatDescription(String propertyName) {
         if (UserDefinedInstanceProperty.has(propertyName)) {
-            return UserDefinedInstanceProperty.from(propertyName).formatDescription();
+            return ClientUtils.formatDescription(UserDefinedInstanceProperty.from(propertyName));
         }
         if (SystemDefinedInstanceProperty.has(propertyName)) {
-            return SystemDefinedInstanceProperty.from(propertyName).formatDescription();
+            return ClientUtils.formatDescription(SystemDefinedInstanceProperty.from(propertyName));
         }
         return "# No description available";
     }
