@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class DynamoDBUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
@@ -79,20 +80,18 @@ public class DynamoDBUtils {
     }
 
     public static List<Map<String, AttributeValue>> doScanWithPagination(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        double totalCapacity = 0.0D;
         ScanResult result = dynamoDB.scan(scanRequest);
-        if (null != result.getConsumedCapacity()) {
-            totalCapacity += result.getConsumedCapacity().getCapacityUnits();
-        }
         List<Map<String, AttributeValue>> allItems = result.getItems();
         while (null != result.getLastEvaluatedKey()) {
             result = dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey()));
-            if (null != result.getConsumedCapacity()) {
-                totalCapacity += result.getConsumedCapacity().getCapacityUnits();
-            }
             allItems.addAll(result.getItems());
         }
-        LOGGER.debug("Scanned for records, capacity consumed = {}", totalCapacity);
         return allItems;
+    }
+
+    public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        return Stream.iterate(dynamoDB.scan(scanRequest),
+                result -> null != result.getLastEvaluatedKey(),
+                result -> dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey())));
     }
 }
