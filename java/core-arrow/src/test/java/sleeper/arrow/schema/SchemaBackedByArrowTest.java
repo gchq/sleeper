@@ -180,4 +180,37 @@ public class SchemaBackedByArrowTest {
                 List.of("sortKeyField1")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithDuplicateFieldNames() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("duplicateField1", new ArrowType.Utf8()),
+                        arrowField("duplicateField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("duplicateField1"),
+                List.of()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithOneFieldAsRowAndSortKey() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("testField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("testField1"),
+                List.of("testField1")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

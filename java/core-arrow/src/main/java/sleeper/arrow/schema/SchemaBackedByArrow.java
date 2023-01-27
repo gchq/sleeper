@@ -23,8 +23,10 @@ import sleeper.core.schema.Schema;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToArrowSchema;
+import static sleeper.core.schema.Schema.validateNoDuplicateNames;
 import static sleeper.core.schema.Schema.validateRowKeys;
 import static sleeper.core.schema.Schema.validateSortKeys;
 
@@ -42,6 +44,12 @@ public class SchemaBackedByArrow {
                 .filter(field -> !builder.rowKeyFieldNames.contains(field.getName())
                         && !builder.sortKeyFieldNames.contains(field.getName()))
                 .collect(Collectors.toList());
+        // Validate arrowSchema has no duplicate fields
+        validateNoDuplicateNames(arrowSchema.getFields().stream()
+                .map(org.apache.arrow.vector.types.pojo.Field::getName));
+        // Validate rowKeyFields and sortKeyFields don't reference the same field
+        validateNoDuplicateNames(Stream.of(builder.rowKeyFieldNames, builder.sortKeyFieldNames)
+                .flatMap(List::stream));
     }
 
     public static Builder builder() {

@@ -90,13 +90,12 @@ public class Schema {
     }
 
     private <T> List<T> getMappedFields(Stream<Field> fields, Function<Field, T> mapping) {
-        return Collections.unmodifiableList(fields
-                .map(mapping)
-                .collect(Collectors.toList()));
+        return fields.map(mapping)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public List<Field> getAllFields() {
-        return Collections.unmodifiableList(streamAllFields().collect(Collectors.toList()));
+        return streamAllFields().collect(Collectors.toUnmodifiableList());
     }
 
     public Stream<Field> streamAllFields() {
@@ -212,13 +211,17 @@ public class Schema {
                 .flatMap(List::stream);
     }
 
-    public static void validateNoDuplicates(Stream<Field> fields) {
+    private static void validateNoDuplicates(Stream<Field> fields) {
+        validateNoDuplicateNames(fields.map(Field::getName));
+    }
+
+    public static void validateNoDuplicateNames(Stream<String> fieldNames) {
         Set<String> foundNames = new HashSet<>();
         Set<String> duplicates = new TreeSet<>();
-        fields.forEach(field -> {
-            boolean isNew = foundNames.add(field.getName());
+        fieldNames.forEach(field -> {
+            boolean isNew = foundNames.add(field);
             if (!isNew) {
-                duplicates.add(field.getName());
+                duplicates.add(field);
             }
         });
         if (!duplicates.isEmpty()) {
