@@ -47,7 +47,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.arrow.schema.SchemaConverter.convertSleeperSchemaToArrowSchema;
+import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToArrowSchema;
 
 /**
  * This class stores data in Arrow format, in-memory where possible and then spilling to disk once the memory is full.

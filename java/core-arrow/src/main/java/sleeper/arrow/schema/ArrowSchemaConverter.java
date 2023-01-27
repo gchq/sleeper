@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class SchemaConverter {
-    private SchemaConverter() {
+public class ArrowSchemaConverter {
+    private ArrowSchemaConverter() {
     }
 
     /**
@@ -37,7 +37,7 @@ public class SchemaConverter {
     public static org.apache.arrow.vector.types.pojo.Schema convertSleeperSchemaToArrowSchema(Schema sleeperSchema) {
         List<org.apache.arrow.vector.types.pojo.Field> arrowFields =
                 sleeperSchema.getAllFields().stream()
-                        .map(FieldConverter::convertSleeperFieldToArrowField)
+                        .map(ArrowFieldConverter::convertSleeperFieldToArrowField)
                         .collect(Collectors.toList());
         return new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
     }
@@ -48,7 +48,7 @@ public class SchemaConverter {
                                                            List<String> valueFieldNames) {
         Map<String, Field> sleeperFields = new HashMap<>();
         arrowSchema.getFields().stream()
-                .map(FieldConverter::convertArrowFieldToSleeperField)
+                .map(ArrowFieldConverter::convertArrowFieldToSleeperField)
                 .forEach(field -> sleeperFields.put(field.getName(), field));
 
         return Schema.builder()

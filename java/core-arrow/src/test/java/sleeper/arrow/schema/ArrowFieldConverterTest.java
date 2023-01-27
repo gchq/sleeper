@@ -37,15 +37,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static sleeper.arrow.schema.ArrowFieldConverter.convertArrowFieldToSleeperField;
+import static sleeper.arrow.schema.ArrowFieldConverter.convertSleeperFieldToArrowField;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowListField;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowMapField;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowStructField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
-import static sleeper.arrow.schema.FieldConverter.convertArrowFieldToSleeperField;
-import static sleeper.arrow.schema.FieldConverter.convertSleeperFieldToArrowField;
 
-class FieldConverterTest {
+class ArrowFieldConverterTest {
     private static final String FIELD_NAME = "test-field";
 
     private static Stream<Arguments> getSleeperFieldToArrowField() {

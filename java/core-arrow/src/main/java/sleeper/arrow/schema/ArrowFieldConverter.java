@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FieldConverter {
-    private FieldConverter() {
+public class ArrowFieldConverter {
+    private ArrowFieldConverter() {
     }
 
     public static final String MAP_KEY_FIELD_NAME = "key";

@@ -28,6 +28,8 @@ import sleeper.core.schema.type.StringType;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.arrow.schema.ArrowSchemaConverter.convertArrowSchemaToSleeperSchema;
+import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToArrowSchema;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowListField;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowMapField;
@@ -35,10 +37,8 @@ import static sleeper.arrow.schema.ConverterTestHelper.arrowStructField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperListField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperMapField;
-import static sleeper.arrow.schema.SchemaConverter.convertArrowSchemaToSleeperSchema;
-import static sleeper.arrow.schema.SchemaConverter.convertSleeperSchemaToArrowSchema;
 
-public class SchemaConverterTest {
+public class ArrowSchemaConverterTest {
     @Test
     void shouldConvertSleeperSchemaWithPrimitiveValueToArrowSchema() {
         // Given

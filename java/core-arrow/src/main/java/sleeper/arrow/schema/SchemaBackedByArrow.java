@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static sleeper.arrow.schema.SchemaConverter.convertArrowSchemaToSleeperSchema;
-import static sleeper.arrow.schema.SchemaConverter.convertSleeperSchemaToArrowSchema;
+import static sleeper.arrow.schema.ArrowSchemaConverter.convertArrowSchemaToSleeperSchema;
+import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToArrowSchema;
 
 public class SchemaBackedByArrow {
     private final org.apache.arrow.vector.types.pojo.Schema arrowSchema;
