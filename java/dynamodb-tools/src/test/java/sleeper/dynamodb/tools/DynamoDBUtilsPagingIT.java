@@ -19,14 +19,13 @@ package sleeper.dynamodb.tools;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
     @Test
@@ -45,10 +44,9 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
 
         // When/Then
-        assertThat(streamPagedResults(dynamoDBClient, new ScanRequest()
+        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
                 .withTableName(TEST_TABLE_NAME)
                 .withLimit(1)))
-                .flatMap(ScanResult::getItems)
                 .containsExactlyInAnyOrder(record1, record2);
     }
 }

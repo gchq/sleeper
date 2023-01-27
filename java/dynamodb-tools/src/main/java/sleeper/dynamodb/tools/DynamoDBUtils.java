@@ -94,4 +94,9 @@ public class DynamoDBUtils {
                 result -> null != result.getLastEvaluatedKey(),
                 result -> dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey())));
     }
+
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        return streamPagedResults(dynamoDB, scanRequest)
+                .flatMap(result -> result.getItems().stream());
+    }
 }
