@@ -81,7 +81,13 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.table.page.size: 131072\n" +
                         "\n" +
                         "# Partitions in this table with more than the following number of records in will be split\n" +
-                        "sleeper.table.partition.splitting.threshold: 1000000000");
+                        "sleeper.table.partition.splitting.threshold: 1000000000")
+                // Then check property with multi-line description
+                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as ready for\n" +
+                        "# garbage collection. The reason for not deleting files immediately after they have been marked as ready for\n" +
+                        "# garbage collection is that they may still be in use by queries. Defaults to the value set in the instance\n" +
+                        "# properties.\n" +
+                        "sleeper.table.gc.delay.seconds: 600");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.table.encrypted"))

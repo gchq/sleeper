@@ -94,7 +94,6 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
         assertThat(output.indexOf("sleeper.log.retention.days"))
                 .isLessThan(output.indexOf("sleeper.vpc"));
         InOrder order = Mockito.inOrder(in.mock);
-        System.out.println(output);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
