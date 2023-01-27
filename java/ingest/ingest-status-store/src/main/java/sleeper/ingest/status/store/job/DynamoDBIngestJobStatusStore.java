@@ -26,7 +26,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +48,7 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.doScanWithPagination;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 
 public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
@@ -127,31 +127,31 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public List<IngestJobStatus> getJobsByTaskId(String tableName, String taskId) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                        doScanWithPagination(dynamoDB, createScanRequestByTable(tableName)))
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<IngestJobStatus> getUnfinishedJobs(String tableName) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                        doScanWithPagination(dynamoDB, createScanRequestByTable(tableName)))
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<IngestJobStatus> getAllJobs(String tableName) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                        doScanWithPagination(dynamoDB, createScanRequestByTable(tableName)))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBIngestJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                        doScanWithPagination(dynamoDB, createScanRequestByTable(tableName)))
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
