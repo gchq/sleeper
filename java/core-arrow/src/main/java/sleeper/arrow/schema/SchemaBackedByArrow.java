@@ -17,8 +17,7 @@
 package sleeper.arrow.schema;
 
 
-import org.apache.arrow.vector.types.pojo.Field;
-
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
 import java.util.List;
@@ -38,7 +37,7 @@ public class SchemaBackedByArrow {
         rowKeyFieldNames = Objects.requireNonNull(builder.rowKeyFieldNames, "rowKeyFieldNames must not be null");
         sortKeyFieldNames = Objects.requireNonNull(builder.sortKeyFieldNames, "sortKeyFieldNames must not be null");
         valueFieldNames = arrowSchema.getFields().stream()
-                .map(Field::getName)
+                .map(org.apache.arrow.vector.types.pojo.Field::getName)
                 .filter(field -> !rowKeyFieldNames.contains(field) && !sortKeyFieldNames.contains(field))
                 .collect(Collectors.toList());
         if (valueFieldNames.isEmpty()) {
@@ -68,6 +67,25 @@ public class SchemaBackedByArrow {
 
     public org.apache.arrow.vector.types.pojo.Schema getArrowSchema() {
         return arrowSchema;
+    }
+
+    public List<Field> getRowKeyFields() {
+        return getFields(rowKeyFieldNames);
+    }
+
+    public List<Field> getSortKeyFields() {
+        return getFields(sortKeyFieldNames);
+    }
+
+    public List<Field> getValueFields() {
+        return getFields(valueFieldNames);
+    }
+
+    private List<Field> getFields(List<String> fieldNames) {
+        return fieldNames.stream()
+                .map(arrowSchema::findField)
+                .map(ArrowFieldConverter::convertArrowFieldToSleeperField)
+                .collect(Collectors.toList());
     }
 
     public static final class Builder {
