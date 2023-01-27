@@ -22,27 +22,26 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
+import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
+import static sleeper.build.github.api.GitHubApiTestHelper.returnWithGitHubApi;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-public class GitHubRateLimitsTest {
+class GitHubRateLimitsTest {
 
     @Test
-    public void shouldGetExampleRateLimits(WireMockRuntimeInfo runtimeInfo) {
-        stubFor(get("/rate_limit")
-                .withHeader("Accept", equalTo("application/vnd.github+json"))
-                .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
-                .willReturn(aResponse()
+    void shouldGetExampleRateLimits(WireMockRuntimeInfo runtimeInfo) {
+        stubFor(gitHubRequest(get("/rate_limit"))
+                .willReturn(gitHubResponse()
                         .withStatus(200)
-                        .withHeader("Content-Type", "application/vnd.github+json")
                         .withBody(exampleString("examples/github-api/rate-limit.json"))));
 
-        JsonNode response = GitHubRateLimits.get("http://localhost:" + runtimeInfo.getHttpPort(), "test-bearer-token");
+        JsonNode response = returnWithGitHubApi(runtimeInfo, GitHubRateLimits::get);
+
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);
         assertThat(GitHubRateLimits.resetTime(response)).isEqualTo(Instant.parse("2013-07-01T17:47:53Z"));
     }

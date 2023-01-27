@@ -1,0 +1,16 @@
+[
+  {
+    "id": 64403175,
+    "name": "sha256:63251085d9d3344d61053a55e73524a71cf19df62938e40eff3e77d5fe4ea1d7",
+    "created_at": "2023-01-19T14:32:01Z",
+    "updated_at": "2023-01-19T14:32:01Z",
+    "metadata": {
+      "package_type": "container",
+      "container": {
+        "tags": [
+          "latest"
+        ]
+      }
+    }
+  }
+]
