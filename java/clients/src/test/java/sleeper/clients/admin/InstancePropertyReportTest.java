@@ -77,7 +77,14 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.athena.handler.timeout.seconds: 900\n" +
                         "\n" +
                         "# The number of days before objects in the spill bucket are deleted.\n" +
-                        "sleeper.athena.spill.bucket.ageoff.days: 1");
+                        "sleeper.athena.spill.bucket.ageoff.days: 1")
+                // Then check property with multi-line description
+                .contains("# The minimum number of files to read in a compaction job. Note that the state store\n" +
+                        "# must support atomic updates for this many files. For the DynamoDBStateStore this\n" +
+                        "# is 11. It can be overridden on a per-table basis.\n" +
+                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
+                        "# This is a default value and will be used if not specified in the table.properties file\n" +
+                        "sleeper.default.compaction.files.batch.size: 11");
 
 
         // Then check the ordering of some property names are correct
