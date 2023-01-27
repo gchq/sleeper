@@ -72,7 +72,16 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.table.schema: " +
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
                         "\"sortKeyFields\":[]," +
-                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n");
+                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
+                // Then check properties in sequence to check spacing between them
+                .contains("# A unique name identifying this table.\n" +
+                        "sleeper.table.name: test-table\n" +
+                        "\n" +
+                        "# The size of the page in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.page.size: 131072\n" +
+                        "\n" +
+                        "# Partitions in this table with more than the following number of records in will be split\n" +
+                        "sleeper.table.partition.splitting.threshold: 1000000000");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.table.encrypted"))
