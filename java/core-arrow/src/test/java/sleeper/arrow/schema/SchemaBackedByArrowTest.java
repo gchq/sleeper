@@ -89,6 +89,43 @@ public class SchemaBackedByArrowTest {
     }
 
     @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithNoRowKeyFields() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("sortKeyField1", new ArrowType.Utf8()),
+                        arrowField("valueField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of(),
+                List.of("sortKeyField1")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldCreateSchemaBackedByArrowFromArrowSchemaWithNoSortKeyFields() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("rowKeyField1", new ArrowType.Utf8()),
+                        arrowField("valueField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When
+        SchemaBackedByArrow schemaBackedByArrow = SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("rowKeyField1"),
+                List.of());
+
+        // Then
+        assertThat(schemaBackedByArrow.getSortKeyFields())
+                .isEmpty();
+    }
+
+    @Test
     void shouldCreateSchemaBackedByArrowFromArrowSchemaWithNoValueFields() {
         // Given
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
@@ -104,31 +141,8 @@ public class SchemaBackedByArrowTest {
                 List.of("sortKeyField1"));
 
         // Then
-        assertThat(schemaBackedByArrow.getArrowSchema())
-                .isEqualTo(arrowSchema);
-        assertThat(schemaBackedByArrow.getRowKeyFields())
-                .containsExactly(sleeperField("rowKeyField1", new StringType()));
-        assertThat(schemaBackedByArrow.getSortKeyFields())
-                .containsExactly(sleeperField("sortKeyField1", new StringType()));
         assertThat(schemaBackedByArrow.getValueFields())
                 .isEmpty();
-    }
-
-    @Test
-    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithNoRowKeyFields() {
-        // Given
-        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
-                List.of(
-                        arrowField("sortKeyField1", new ArrowType.Utf8()),
-                        arrowField("valueField1", new ArrowType.Utf8())
-                )
-        );
-
-        // When/Then
-        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
-                List.of(),
-                List.of("sortKeyField1")))
-                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
