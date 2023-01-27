@@ -25,6 +25,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToArrowSchema;
+import static sleeper.core.schema.Schema.validateRowKeys;
+import static sleeper.core.schema.Schema.validateSortKeys;
 
 public class SchemaBackedByArrow {
     private final org.apache.arrow.vector.types.pojo.Schema arrowSchema;
@@ -34,11 +36,8 @@ public class SchemaBackedByArrow {
 
     private SchemaBackedByArrow(Builder builder) {
         arrowSchema = Objects.requireNonNull(builder.arrowSchema, "arrowSchema must not be null");
-        rowKeyFields = Objects.requireNonNull(getFields(builder.rowKeyFieldNames), "rowKeyFieldNames must not be null");
-        if (rowKeyFields.isEmpty()) {
-            throw new IllegalArgumentException("Row key fields must not be empty");
-        }
-        sortKeyFields = Objects.requireNonNull(getFields(builder.sortKeyFieldNames), "sortKeyFieldNames must not be null");
+        rowKeyFields = validateRowKeys(getFields(builder.rowKeyFieldNames));
+        sortKeyFields = validateSortKeys(getFields(builder.sortKeyFieldNames));
         valueFields = arrowSchema.getFields().stream()
                 .filter(field -> !builder.rowKeyFieldNames.contains(field.getName())
                         && !builder.sortKeyFieldNames.contains(field.getName()))

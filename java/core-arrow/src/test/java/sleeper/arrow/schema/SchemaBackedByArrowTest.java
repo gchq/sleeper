@@ -28,6 +28,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.arrow.schema.ConverterTestHelper.arrowField;
+import static sleeper.arrow.schema.ConverterTestHelper.arrowListField;
 import static sleeper.arrow.schema.ConverterTestHelper.sleeperField;
 
 public class SchemaBackedByArrowTest {
@@ -126,6 +127,42 @@ public class SchemaBackedByArrowTest {
         // When/Then
         assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
                 List.of(),
+                List.of("sortKeyField1")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithNonPrimitiveRowKey() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowListField("rowKeyField1", new ArrowType.Utf8()),
+                        arrowField("sortKeyField1", new ArrowType.Utf8()),
+                        arrowField("valueField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("rowKeyField1"),
+                List.of("sortKeyField1")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFailToCreateSchemaBackedByArrowFromArrowSchemaWithNonPrimitiveSortKey() {
+        // Given
+        org.apache.arrow.vector.types.pojo.Schema arrowSchema = new org.apache.arrow.vector.types.pojo.Schema(
+                List.of(
+                        arrowField("rowKeyField1", new ArrowType.Utf8()),
+                        arrowListField("sortKeyField1", new ArrowType.Utf8()),
+                        arrowField("valueField1", new ArrowType.Utf8())
+                )
+        );
+
+        // When/Then
+        assertThatThrownBy(() -> SchemaBackedByArrow.fromArrowSchema(arrowSchema,
+                List.of("rowKeyField1"),
                 List.of("sortKeyField1")))
                 .isInstanceOf(IllegalArgumentException.class);
     }

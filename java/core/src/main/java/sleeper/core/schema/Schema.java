@@ -41,7 +41,7 @@ public class Schema {
     private Schema(Builder builder) {
         rowKeyFields = validateRowKeys(builder.rowKeyFields);
         sortKeyFields = validateSortKeys(builder.sortKeyFields);
-        valueFields = validateValueKeys(builder.valueFields);
+        valueFields = validateValueFields(builder.valueFields);
         validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
     }
 
@@ -174,7 +174,7 @@ public class Schema {
         }
     }
 
-    private static List<Field> validateRowKeys(List<Field> fields) {
+    public static List<Field> validateRowKeys(List<Field> fields) {
         if (fields == null || fields.isEmpty()) {
             throw new IllegalArgumentException("Must have at least one row key field");
         }
@@ -184,7 +184,7 @@ public class Schema {
         return makeImmutable(fields);
     }
 
-    private static List<Field> validateSortKeys(List<Field> fields) {
+    public static List<Field> validateSortKeys(List<Field> fields) {
         if (fields == null) {
             return Collections.emptyList();
         }
@@ -194,7 +194,7 @@ public class Schema {
         return makeImmutable(fields);
     }
 
-    private static List<Field> validateValueKeys(List<Field> fields) {
+    private static List<Field> validateValueFields(List<Field> fields) {
         if (fields == null) {
             return Collections.emptyList();
         }
@@ -212,7 +212,7 @@ public class Schema {
                 .flatMap(List::stream);
     }
 
-    private static void validateNoDuplicates(Stream<Field> fields) {
+    public static void validateNoDuplicates(Stream<Field> fields) {
         Set<String> foundNames = new HashSet<>();
         Set<String> duplicates = new TreeSet<>();
         fields.forEach(field -> {
