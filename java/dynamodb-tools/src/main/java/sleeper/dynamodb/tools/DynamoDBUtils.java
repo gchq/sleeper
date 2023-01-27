@@ -92,7 +92,7 @@ public class DynamoDBUtils {
             }
             allItems.addAll(result.getItems());
         }
-        LOGGER.debug("Scanned for all records, capacity consumed = {}", totalCapacity);
+        LOGGER.debug("Scanned for records, capacity consumed = {}", totalCapacity);
         return allItems;
     }
 }
