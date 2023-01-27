@@ -52,6 +52,12 @@ public class SchemaBackedByArrowTest {
                                         arrowField("valueField1", new ArrowType.Utf8()))
                         )
                 );
+        assertThat(schemaBackedByArrow.getRowKeyFields())
+                .containsExactly(sleeperField("rowKeyField1", new StringType()));
+        assertThat(schemaBackedByArrow.getSortKeyFields())
+                .containsExactly(sleeperField("sortKeyField1", new StringType()));
+        assertThat(schemaBackedByArrow.getValueFields())
+                .containsExactly(arrowField("valueField1", new ArrowType.Utf8()));
     }
 
     @Test
@@ -73,6 +79,12 @@ public class SchemaBackedByArrowTest {
         // Then
         assertThat(schemaBackedByArrow.getArrowSchema())
                 .isEqualTo(arrowSchema);
+        assertThat(schemaBackedByArrow.getRowKeyFields())
+                .containsExactly(sleeperField("rowKeyField1", new StringType()));
+        assertThat(schemaBackedByArrow.getSortKeyFields())
+                .containsExactly(sleeperField("sortKeyField1", new StringType()));
+        assertThat(schemaBackedByArrow.getValueFields())
+                .containsExactly(arrowField("valueField1", new ArrowType.Utf8()));
     }
 
     @Test

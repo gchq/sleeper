@@ -77,8 +77,10 @@ public class SchemaBackedByArrow {
         return getFields(sortKeyFieldNames);
     }
 
-    public List<Field> getValueFields() {
-        return getFields(valueFieldNames);
+    public List<org.apache.arrow.vector.types.pojo.Field> getValueFields() {
+        return valueFieldNames.stream()
+                .map(arrowSchema::findField)
+                .collect(Collectors.toList());
     }
 
     private List<Field> getFields(List<String> fieldNames) {
