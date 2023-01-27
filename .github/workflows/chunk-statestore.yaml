@@ -9,8 +9,9 @@ on:
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/statestore/**'
-      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
+      - 'java/core-arrow/**'
+      - 'java/dynamodb-tools/**'
       - 'java/configuration/**'
       - 'java/core/**'
 

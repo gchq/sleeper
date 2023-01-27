@@ -8,13 +8,14 @@ on:
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
-      - 'java/metrics/**'
-      - 'java/garbage-collector/**'
       - 'java/tables/**'
+      - 'java/garbage-collector/**'
+      - 'java/metrics/**'
       - 'java/statestore/**'
-      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
+      - 'java/dynamodb-tools/**'
       - 'java/configuration/**'
+      - 'java/core-arrow/**'
       - 'java/core/**'
 
 jobs:
