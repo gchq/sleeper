@@ -100,7 +100,7 @@ VPC=<your-vpc-id>
 SUBNET=<your-subnet-id>
 ./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
-Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions
+Wait for this to finish. Then wait until the ingest processes have run and the compactions
 have completed. Use the following command to check the status of the table called 'system-test':
 ```bash
 ./scripts/utility/filesStatusReport.sh ${ID} system-test
