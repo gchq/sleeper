@@ -17,17 +17,21 @@ package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class DynamoDBUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
@@ -72,5 +76,19 @@ public class DynamoDBUtils {
                                 .withAttributeName(expiryField)
                 ));
         LOGGER.info("Configured TTL on field {}", expiryField);
+    }
+
+    public static List<Map<String, AttributeValue>> doScanWithPagination(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        double totalCapacity = 0.0D;
+        ScanResult result = dynamoDB.scan(scanRequest);
+        totalCapacity += result.getConsumedCapacity().getCapacityUnits();
+        List<Map<String, AttributeValue>> allItems = result.getItems();
+        while (null != result.getLastEvaluatedKey()) {
+            result = dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey()));
+            totalCapacity += result.getConsumedCapacity().getCapacityUnits();
+            allItems.addAll(result.getItems());
+        }
+        LOGGER.debug("Scanned for all records, capacity consumed = {}", totalCapacity);
+        return allItems;
     }
 }
