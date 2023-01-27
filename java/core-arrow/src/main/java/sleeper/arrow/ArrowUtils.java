@@ -37,18 +37,16 @@ public class ArrowUtils {
         for (FieldVector fieldVector : vectorSchemaRoot.getFieldVectors()) {
             Field arrowField = fieldVector.getField();
             ArrowType arrowType = arrowField.getType();
-            if (schema.isValueField(arrowField)) {
-                if (arrowType.equals(new ArrowType.Int(32, true))) {
-                    IntVector intVector = (IntVector) fieldVector;
-                    Integer value = (Integer) record.get(arrowField.getName());
-                    intVector.setSafe(insertAtRowNo, value);
-                } else if (arrowType.equals(new ArrowType.Utf8())) {
-                    VarCharVector varCharVector = (VarCharVector) fieldVector;
-                    String value = (String) record.get(arrowField.getName());
-                    varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
-                } else {
-                    throw new UnsupportedOperationException("Arrow column type " + arrowType + " is not handled");
-                }
+            if (arrowType.equals(new ArrowType.Int(32, true))) {
+                IntVector intVector = (IntVector) fieldVector;
+                Integer value = (Integer) record.get(arrowField.getName());
+                intVector.setSafe(insertAtRowNo, value);
+            } else if (arrowType.equals(new ArrowType.Utf8())) {
+                VarCharVector varCharVector = (VarCharVector) fieldVector;
+                String value = (String) record.get(arrowField.getName());
+                varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
+            } else {
+                throw new UnsupportedOperationException("Arrow column type " + arrowType + " is not handled");
             }
         }
         vectorSchemaRoot.setRowCount(insertAtRowNo + 1);
