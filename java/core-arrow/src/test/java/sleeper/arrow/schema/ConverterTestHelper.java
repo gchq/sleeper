@@ -70,6 +70,10 @@ public class ConverterTestHelper {
         return org.apache.arrow.vector.types.pojo.Field.notNullable(name, type);
     }
 
+    public static org.apache.arrow.vector.types.pojo.Field arrowFieldNullable(String name, ArrowType type) {
+        return org.apache.arrow.vector.types.pojo.Field.nullable(name, type);
+    }
+
     public static Field sleeperMapField(String name, PrimitiveType keyType, PrimitiveType valueType) {
         return sleeperField(name, new MapType(keyType, valueType));
     }
