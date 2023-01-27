@@ -38,17 +38,19 @@ public class SchemaBackedByArrow {
 
     private SchemaBackedByArrow(Builder builder) {
         arrowSchema = Objects.requireNonNull(builder.arrowSchema, "arrowSchema must not be null");
-        rowKeyFields = validateRowKeys(getFields(builder.rowKeyFieldNames));
-        sortKeyFields = validateSortKeys(getFields(builder.sortKeyFieldNames));
+        List<String> rowKeyFieldNames = Objects.requireNonNull(builder.rowKeyFieldNames, "rowKeyFieldNames must not be null");
+        List<String> sortKeyFieldNames = Objects.requireNonNull(builder.sortKeyFieldNames, "sortKeyFieldNames must not be null");
+        rowKeyFields = validateRowKeys(getFields(rowKeyFieldNames));
+        sortKeyFields = validateSortKeys(getFields(sortKeyFieldNames));
         valueFields = arrowSchema.getFields().stream()
-                .filter(field -> !builder.rowKeyFieldNames.contains(field.getName())
-                        && !builder.sortKeyFieldNames.contains(field.getName()))
+                .filter(field -> !rowKeyFieldNames.contains(field.getName())
+                        && !sortKeyFieldNames.contains(field.getName()))
                 .collect(Collectors.toList());
         // Validate arrowSchema has no duplicate fields
         validateNoDuplicateNames(arrowSchema.getFields().stream()
                 .map(org.apache.arrow.vector.types.pojo.Field::getName));
         // Validate rowKeyFields and sortKeyFields don't reference the same field
-        validateNoDuplicateNames(Stream.of(builder.rowKeyFieldNames, builder.sortKeyFieldNames)
+        validateNoDuplicateNames(Stream.of(rowKeyFieldNames, sortKeyFieldNames)
                 .flatMap(List::stream));
     }
 
@@ -59,7 +61,8 @@ public class SchemaBackedByArrow {
     public static SchemaBackedByArrow fromSleeperSchema(Schema sleeperSchema) {
         return builder()
                 .arrowSchema(convertSleeperSchemaToArrowSchema(sleeperSchema))
-                .sleeperSchema(sleeperSchema)
+                .rowKeyFieldNames(sleeperSchema.getRowKeyFieldNames())
+                .sortKeyFieldNames(sleeperSchema.getSortKeyFieldNames())
                 .build();
     }
 
@@ -106,11 +109,6 @@ public class SchemaBackedByArrow {
         public Builder arrowSchema(org.apache.arrow.vector.types.pojo.Schema arrowSchema) {
             this.arrowSchema = arrowSchema;
             return this;
-        }
-
-        public Builder sleeperSchema(Schema schema) {
-            return this.rowKeyFieldNames(schema.getRowKeyFieldNames())
-                    .sortKeyFieldNames(schema.getSortKeyFieldNames());
         }
 
         public Builder rowKeyFieldNames(List<String> rowKeyFieldNames) {

@@ -17,7 +17,6 @@ package sleeper.core.schema;
 
 import sleeper.core.schema.type.PrimitiveType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -180,7 +179,7 @@ public class Schema {
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Row key fields must have a primitive type");
         }
-        return makeImmutable(fields);
+        return List.copyOf(fields);
     }
 
     public static List<Field> validateSortKeys(List<Field> fields) {
@@ -190,18 +189,14 @@ public class Schema {
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Sort key fields must have a primitive type");
         }
-        return makeImmutable(fields);
+        return List.copyOf(fields);
     }
 
     private static List<Field> validateValueFields(List<Field> fields) {
         if (fields == null) {
             return Collections.emptyList();
         }
-        return makeImmutable(fields);
-    }
-
-    private static List<Field> makeImmutable(List<Field> fields) {
-        return Collections.unmodifiableList(new ArrayList<>(fields));
+        return List.copyOf(fields);
     }
 
     private static Stream<Field> streamAllFields(
