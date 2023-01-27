@@ -28,21 +28,21 @@ import static sleeper.arrow.schema.ArrowSchemaConverter.convertSleeperSchemaToAr
 
 public class SchemaBackedByArrow {
     private final org.apache.arrow.vector.types.pojo.Schema arrowSchema;
-    private final List<String> rowKeyFieldNames;
-    private final List<String> sortKeyFieldNames;
-    private final List<String> valueFieldNames;
+    private final List<Field> rowKeyFields;
+    private final List<Field> sortKeyFields;
+    private final List<org.apache.arrow.vector.types.pojo.Field> valueFields;
 
     private SchemaBackedByArrow(Builder builder) {
         arrowSchema = Objects.requireNonNull(builder.arrowSchema, "arrowSchema must not be null");
-        rowKeyFieldNames = Objects.requireNonNull(builder.rowKeyFieldNames, "rowKeyFieldNames must not be null");
-        sortKeyFieldNames = Objects.requireNonNull(builder.sortKeyFieldNames, "sortKeyFieldNames must not be null");
-        valueFieldNames = arrowSchema.getFields().stream()
-                .map(org.apache.arrow.vector.types.pojo.Field::getName)
-                .filter(field -> !rowKeyFieldNames.contains(field) && !sortKeyFieldNames.contains(field))
-                .collect(Collectors.toList());
-        if (valueFieldNames.isEmpty()) {
-            throw new IllegalArgumentException("No value fields defined");
+        rowKeyFields = Objects.requireNonNull(getFields(builder.rowKeyFieldNames), "rowKeyFieldNames must not be null");
+        if (rowKeyFields.isEmpty()) {
+            throw new IllegalArgumentException("Row key fields must not be empty");
         }
+        sortKeyFields = Objects.requireNonNull(getFields(builder.sortKeyFieldNames), "sortKeyFieldNames must not be null");
+        valueFields = arrowSchema.getFields().stream()
+                .filter(field -> !builder.rowKeyFieldNames.contains(field.getName())
+                        && !builder.sortKeyFieldNames.contains(field.getName()))
+                .collect(Collectors.toList());
     }
 
     public static Builder builder() {
@@ -70,17 +70,15 @@ public class SchemaBackedByArrow {
     }
 
     public List<Field> getRowKeyFields() {
-        return getFields(rowKeyFieldNames);
+        return rowKeyFields;
     }
 
     public List<Field> getSortKeyFields() {
-        return getFields(sortKeyFieldNames);
+        return sortKeyFields;
     }
 
     public List<org.apache.arrow.vector.types.pojo.Field> getValueFields() {
-        return valueFieldNames.stream()
-                .map(arrowSchema::findField)
-                .collect(Collectors.toList());
+        return valueFields;
     }
 
     private List<Field> getFields(List<String> fieldNames) {
