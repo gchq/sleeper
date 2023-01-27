@@ -40,6 +40,22 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static List<UserDefinedInstanceProperty> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    public static UserDefinedInstanceProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
     @Override
     public Predicate<String> validationPredicate() {
         return validationPredicate;
@@ -58,22 +74,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     @Override
     public String getDescription() {
         return description;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static Builder named(String name) {
-        return builder().propertyName(name);
-    }
-
-    public static UserDefinedInstanceProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
-    }
-
-    public static List<UserDefinedInstanceProperty> all() {
-        return Collections.unmodifiableList(ALL);
     }
 
     static final class Builder {

@@ -36,6 +36,22 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder named(String propertyName) {
+        return builder().propertyName(propertyName);
+    }
+
+    public static List<SystemDefinedInstanceProperty> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    public static SystemDefinedInstanceProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
     @Override
     public String getDefaultValue() {
         return null;
@@ -49,22 +65,6 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     @Override
     public String getDescription() {
         return description;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static Builder named(String propertyName) {
-        return builder().propertyName(propertyName);
-    }
-
-    public static SystemDefinedInstanceProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
-    }
-
-    public static List<SystemDefinedInstanceProperty> all() {
-        return Collections.unmodifiableList(ALL);
     }
 
     public static final class Builder {

@@ -45,6 +45,22 @@ class TablePropertyImpl implements TableProperty {
         description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
+    static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static List<TableProperty> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    public static TableProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
     @Override
     public Predicate<String> validationPredicate() {
         return validationPredicate;
@@ -68,22 +84,6 @@ class TablePropertyImpl implements TableProperty {
     @Override
     public String getDescription() {
         return description;
-    }
-
-    static Builder builder() {
-        return new Builder();
-    }
-
-    public static Builder named(String name) {
-        return builder().propertyName(name);
-    }
-
-    public static List<TableProperty> all() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static TableProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
     }
 
     static final class Builder {

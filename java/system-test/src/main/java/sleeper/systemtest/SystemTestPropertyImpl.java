@@ -38,6 +38,22 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         description = builder.description;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static List<SystemTestProperty> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
+    public static SystemTestProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
     @Override
     public String getPropertyName() {
         return propertyName;
@@ -56,22 +72,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     @Override
     public String getDescription() {
         return description;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static Builder named(String name) {
-        return builder().propertyName(name);
-    }
-
-    public static SystemTestProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
-    }
-
-    public static List<SystemTestProperty> all() {
-        return Collections.unmodifiableList(ALL);
     }
 
     public static final class Builder {
