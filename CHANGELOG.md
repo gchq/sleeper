@@ -22,7 +22,7 @@ of the number of tasks currently running ignored pending tasks. This meant that 
 up and find they had no work to do.
 
 Standard ingest:
-- Fixed bug where the asynchronous file uploader could fail if a file was greate than 5GB.
+- Fixed bug where the asynchronous file uploader could fail if a file was greater than 5GB.
 - Split ingest modules into submodules so that code needed for lambda to start jobs is smaller.
 
 System tests:
