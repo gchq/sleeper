@@ -51,10 +51,14 @@ public class RecordBackedByArrowTest {
         try (BufferAllocator bufferAllocator = new RootAllocator(Long.MAX_VALUE);
              VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, bufferAllocator)) {
             Map<String, Object> map1 = new HashMap<>();
+            map1.put("rowKey1", "1");
+            map1.put("sortKey1", "2");
             map1.put("column1", "A");
             map1.put("column2", "B");
             int map1Index = appendToArrowBuffer(vectorSchemaRoot, schemaBackedByArrow, map1);
             Map<String, Object> map2 = new HashMap<>();
+            map2.put("rowKey1", "3");
+            map2.put("sortKey1", "4");
             map2.put("column1", "C");
             map2.put("column2", "D");
             int map2Index = appendToArrowBuffer(vectorSchemaRoot, schemaBackedByArrow, map2);
