@@ -36,6 +36,17 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency> 
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-arrow</artifactId>
+            <version>${parquet-hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -79,29 +90,6 @@
             <artifactId>arrow-dataset</artifactId>
             <version>${arrow.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>parquet-arrow</artifactId>
-            <version>${parquet-hadoop.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.arrow</groupId>
-                    <artifactId>arrow-memory</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.arrow</groupId>
-                    <artifactId>arrow-vector</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.arrow</groupId>
-                    <artifactId>arrow-format</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>

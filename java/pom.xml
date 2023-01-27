@@ -63,7 +63,7 @@
         -->
         <spark.version>3.3.0</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
-        <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
+        <parquet-hadoop.version>1.12.3</parquet-hadoop.version>
         <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
         <aws-java-sdk.version>1.12.380</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.19.12</aws-java-sdk-v2.version>
@@ -235,6 +235,27 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_${scala.version}</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <!-- Arrow -->
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-format</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-core</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-unsafe</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
             </dependency>
             <!-- Logging -->
             <dependency>
