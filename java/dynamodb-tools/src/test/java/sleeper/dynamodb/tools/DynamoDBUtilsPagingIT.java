@@ -49,4 +49,78 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
                 .withLimit(1)))
                 .containsExactlyInAnyOrder(record1, record2);
     }
+
+    @Test
+    void shouldReturnOnePageOfResultsWhenFewerRecordsThanScanLimit() {
+        // Given
+        createStringTable();
+
+        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, UUID.randomUUID().toString())
+                .string(TEST_VALUE, "value1").build();
+
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+
+        // When/Then
+        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                .withTableName(TEST_TABLE_NAME)
+                .withLimit(2)))
+                .containsExactlyInAnyOrder(record1);
+    }
+
+    @Test
+    void shouldReturnPagedResultsWhenRecordsEqualToScanLimit() {
+        // Given
+        createStringTable();
+
+        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, UUID.randomUUID().toString())
+                .string(TEST_VALUE, "value1").build();
+
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+
+        // When/Then
+        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                .withTableName(TEST_TABLE_NAME)
+                .withLimit(1)))
+                .containsExactlyInAnyOrder(record1);
+    }
+
+    @Test
+    void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanScanLimit() {
+        // Given
+        createStringTable();
+
+        Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, UUID.randomUUID().toString())
+                .string(TEST_VALUE, "value1").build();
+        Map<String, AttributeValue> record2 = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, UUID.randomUUID().toString())
+                .string(TEST_VALUE, "value2").build();
+        Map<String, AttributeValue> record3 = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, UUID.randomUUID().toString())
+                .string(TEST_VALUE, "value3").build();
+
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record1));
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record2));
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record3));
+
+        // When/Then
+        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                .withTableName(TEST_TABLE_NAME)
+                .withLimit(2)))
+                .containsExactlyInAnyOrder(record1, record2, record3);
+    }
+
+    @Test
+    void shouldReturnNoResultsWhenNoRecordsExist() {
+        // Given
+        createStringTable();
+
+        // When/Then
+        assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                .withTableName(TEST_TABLE_NAME)
+                .withLimit(1)))
+                .isEmpty();
+    }
 }
