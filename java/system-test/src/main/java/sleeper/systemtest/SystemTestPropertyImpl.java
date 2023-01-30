@@ -73,11 +73,15 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     public String getDescription() {
         return description;
     }
+    
+    public String toString() {
+        return propertyName;
+    }
 
     public static final class Builder {
         private String propertyName;
         private String defaultValue;
-        private Predicate<String> validationPredicate = (s) -> true;
+        private Predicate<String> validationPredicate = s -> true;
         private String description;
 
         private Builder() {

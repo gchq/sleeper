@@ -62,12 +62,16 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    @Override
     public String getDefaultValue() {
         return defaultValue;
     }
 
-    @Override
-    public String getPropertyName() {
+    public String toString() {
         return propertyName;
     }
 

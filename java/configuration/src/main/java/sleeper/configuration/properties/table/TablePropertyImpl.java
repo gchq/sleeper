@@ -85,6 +85,10 @@ class TablePropertyImpl implements TableProperty {
     public String getDescription() {
         return description;
     }
+    
+    public String toString() {
+        return propertyName;
+    }
 
     static final class Builder {
         private String propertyName;

@@ -51,14 +51,18 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     public static SystemDefinedInstanceProperty get(String propertyName) {
         return ALL_MAP.get(propertyName);
     }
+    
+    @Override
+    public String getPropertyName() {
+        return propertyName;
+    }
 
     @Override
     public String getDefaultValue() {
         return null;
     }
 
-    @Override
-    public String getPropertyName() {
+    public String toString() {
         return propertyName;
     }
 
