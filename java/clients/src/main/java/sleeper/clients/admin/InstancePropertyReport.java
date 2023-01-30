@@ -16,9 +16,11 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.util.ClientUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -48,8 +50,20 @@ public class InstancePropertyReport {
                 instanceProperties, Arrays.asList(UserDefinedInstanceProperty.values()));
         out.println("\n\n Instance Property Report \n -------------------------");
         for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
+            out.println();
+            out.println(formatDescription(entry.getKey().toString()));
             out.println(entry.getKey() + ": " + entry.getValue());
         }
         confirmReturnToMainScreen(out, in);
+    }
+
+    private String formatDescription(String propertyName) {
+        if (UserDefinedInstanceProperty.has(propertyName)) {
+            return ClientUtils.formatDescription(UserDefinedInstanceProperty.from(propertyName));
+        }
+        if (SystemDefinedInstanceProperty.has(propertyName)) {
+            return ClientUtils.formatDescription(SystemDefinedInstanceProperty.from(propertyName));
+        }
+        return "# No description available";
     }
 }
