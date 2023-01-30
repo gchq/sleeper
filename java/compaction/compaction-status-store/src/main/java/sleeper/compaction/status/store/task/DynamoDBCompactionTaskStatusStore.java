@@ -44,8 +44,8 @@ import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusF
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.doScanWithPagination;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
@@ -94,21 +94,21 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                 .addKeyConditionsEntry(TASK_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(taskId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems().stream())
                 .findFirst().orElse(null);
     }
 
     @Override
     public List<CompactionTaskStatus> getAllTasks() {
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
-                        doScanWithPagination(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
-                        doScanWithPagination(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> task.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
@@ -116,7 +116,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     @Override
     public List<CompactionTaskStatus> getTasksInProgress() {
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
-                        doScanWithPagination(dynamoDB, new ScanRequest().withTableName(statusTableName)))
+                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> !task.isFinished())
                 .collect(Collectors.toList());
     }

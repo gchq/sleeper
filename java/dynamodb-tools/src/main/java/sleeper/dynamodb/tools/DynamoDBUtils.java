@@ -79,24 +79,14 @@ public class DynamoDBUtils {
         LOGGER.info("Configured TTL on field {}", expiryField);
     }
 
-    public static List<Map<String, AttributeValue>> doScanWithPagination(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        ScanResult result = dynamoDB.scan(scanRequest);
-        List<Map<String, AttributeValue>> allItems = result.getItems();
-        while (null != result.getLastEvaluatedKey()) {
-            result = dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey()));
-            allItems.addAll(result.getItems());
-        }
-        return allItems;
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        return streamPagedResults(dynamoDB, scanRequest)
+                .flatMap(result -> result.getItems().stream());
     }
 
     public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
         return Stream.iterate(dynamoDB.scan(scanRequest),
                 result -> null != result.getLastEvaluatedKey(),
                 result -> dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey())));
-    }
-
-    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        return streamPagedResults(dynamoDB, scanRequest)
-                .flatMap(result -> result.getItems().stream());
     }
 }
