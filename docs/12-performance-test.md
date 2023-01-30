@@ -6,13 +6,19 @@ code have increased or decreased the performance. These tests are based on the s
 [09-dev-guide#System-tests](09-dev-guide.md#System-tests). Note that currently the following needs to be run on
 an x86 machine.
 
+Under `scripts/test` we have system tests for deploying everything, and for compaction performance testing. The
+compaction tests take control of when compactions run in order to produce more deterministic results. The tests for
+deploying everything test direct ingest, while the compaction performance tests currently use a queue.
+
+## Deploy all
+
 Run the tests:
 
 ```bash
 ID=<a-unique-id-for-the-test>
 VPC=<id-of-the-VPC-to-deploy-to>
 SUBNET=<id-of-the-subnet-to-deploy-to>
- ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
 Find the ECS cluster that is running the containers that are writing data for ingest. It will have the name
@@ -46,6 +52,26 @@ fields @message | filter @message like "compaction read"
 
 This should result a single value summarising the performance of the containers that are performing a compaction. See
 the table below for the results for various versions of Sleeper.
+
+## Compaction performance
+
+This test will continue running and wait for each operation in the tests to run. This will take around an hour.
+
+Run the tests:
+
+```bash
+ID=<a-unique-id-for-the-test>
+VPC=<id-of-the-VPC-to-deploy-to>
+SUBNET=<id-of-the-subnet-to-deploy-to>
+./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+```
+
+Report the results:
+
+```bash
+./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
+./scripts/utility/ingestJobStatusReport.sh ${ID} system-test standard -a
+```
 
 ## Benchmarks
 
