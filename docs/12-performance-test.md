@@ -55,7 +55,17 @@ the table below for the results for various versions of Sleeper.
 
 ## Compaction performance
 
-This test will continue running and wait for each operation in the tests to run. This will take around an hour.
+This test will continue running and wait for each operation in the tests to run. This will take around an hour. This
+can be used to measure performance of compaction in a way that controls for quirks in the ordering of partition
+splitting and compaction job creation.
+
+This avoids situations like when compaction & partition splitting happens halfway through ingest. The first few files
+may be picked up by a standard compaction, then the partition is split. More files are picked up by a splitting
+compaction, and then a second splitting compaction picks up the rest after the standard compaction finishes.
+
+There are a variety of scenarios like this that can occur when compaction and partition splitting occurs on scheduled
+jobs (as in the deploy all system test, or normal system functioning). The compaction performance test avoids this by
+disabling the scheduled jobs and triggering those processes directly.
 
 Run the tests:
 
