@@ -21,7 +21,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
@@ -230,35 +229,17 @@ public class ReinitialiseTable {
 
     private void deleteRelevantS3StateStoreRevisionInfo(String dynamoTableName) {
         System.out.println("Deleting files info items from " + dynamoTableName + " Dynamo DB Table");
-        Map<String, AttributeValue> lastKeyEvaluated = null;
-        int countOfDeletedItems = 0;
-        do {
-            ScanRequest scanRequest = new ScanRequest()
-                    .withTableName(dynamoTableName)
-                    .withLimit(50)
-                    .withExclusiveStartKey(lastKeyEvaluated);
-
-            ScanResult result = dynamoDBClient.scan(scanRequest);
-            for (Map<String, AttributeValue> item : result.getItems()) {
-                if (deletePartitions) {
-                    dynamoDBClient.deleteItem(
-                            new DeleteItemRequest(
-                                    dynamoTableName,
-                                    Collections.singletonMap(REVISION_ID_KEY, item.get(REVISION_ID_KEY))));
-                    countOfDeletedItems++;
-                } else {
-                    if (item.get(REVISION_ID_KEY).toString().contains(CURRENT_FILES_REVISION_ID_KEY)) {
-                        dynamoDBClient.deleteItem(
-                                new DeleteItemRequest(
-                                        dynamoTableName,
-                                        Collections.singletonMap(REVISION_ID_KEY, item.get(REVISION_ID_KEY))));
-                        countOfDeletedItems++;
-                    }
-                }
-
-            }
-            lastKeyEvaluated = result.getLastEvaluatedKey();
-        } while (lastKeyEvaluated != null);
+        long countOfDeletedItems = streamPagedItems(dynamoDBClient,
+                new ScanRequest()
+                        .withTableName(dynamoTableName)
+                        .withLimit(50))
+                .filter(item -> deletePartitions
+                        || item.get(REVISION_ID_KEY).toString().contains(CURRENT_FILES_REVISION_ID_KEY))
+                .map(item -> dynamoDBClient.deleteItem(
+                        new DeleteItemRequest(
+                                dynamoTableName,
+                                Collections.singletonMap(REVISION_ID_KEY, item.get(REVISION_ID_KEY)))))
+                .count();
 
         System.out.println(countOfDeletedItems + " items successfully deleted from " + dynamoTableName + " Dynamo DB Table");
     }
