@@ -65,6 +65,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -209,32 +210,20 @@ public class ReinitialiseTable {
 
     private void deleteAllDynamoTableItems(String dynamoTableName, TableProperties tableProperties) {
         System.out.println("Deleting all items from " + dynamoTableName + " Dynamo DB Table");
-        Map<String, AttributeValue> lastKeyEvaluated = null;
-        int countOfDeletedItems = 0;
-        do {
-            ScanRequest scanRequest = new ScanRequest()
-                    .withTableName(dynamoTableName)
-                    .withLimit(50)
-                    .withExclusiveStartKey(lastKeyEvaluated);
-
-            ScanResult result = dynamoDBClient.scan(scanRequest);
-            for (Map<String, AttributeValue> item : result.getItems()) {
-                if (dynamoTableName.contains(tableProperties.get(PARTITION_TABLENAME))) {
-                    dynamoDBClient.deleteItem(
-                            new DeleteItemRequest(
-                                    dynamoTableName,
-                                    Collections.singletonMap(PARTITION_ID, item.get(PARTITION_ID))));
-
-                } else {
-                    dynamoDBClient.deleteItem(
-                            new DeleteItemRequest(
-                                    dynamoTableName,
-                                    Collections.singletonMap(FILE_NAME, item.get(FILE_NAME))));
-                }
-                countOfDeletedItems++;
-            }
-            lastKeyEvaluated = result.getLastEvaluatedKey();
-        } while (lastKeyEvaluated != null);
+        long countOfDeletedItems = streamPagedItems(dynamoDBClient,
+                new ScanRequest()
+                        .withTableName(dynamoTableName)
+                        .withLimit(50))
+                .map(item -> {
+                    Map<String, AttributeValue> deleteKey;
+                    if (dynamoTableName.contains(tableProperties.get(PARTITION_TABLENAME))) {
+                        deleteKey = Collections.singletonMap(PARTITION_ID, item.get(PARTITION_ID));
+                    } else {
+                        deleteKey = Collections.singletonMap(FILE_NAME, item.get(FILE_NAME));
+                    }
+                    return dynamoDBClient.deleteItem(
+                            new DeleteItemRequest(dynamoTableName, deleteKey));
+                }).count();
 
         System.out.println(countOfDeletedItems + " items successfully deleted from " + dynamoTableName + " Dynamo DB Table");
     }
