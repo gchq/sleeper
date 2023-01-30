@@ -287,11 +287,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
 
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
-            List<Map<String, AttributeValue>> results = streamPagedResults(dynamoDB, scanRequest)
-                    .flatMap(result -> {
-                        totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
-                        return result.getItems().stream();
-                    }).collect(Collectors.toList());
+            List<Map<String, AttributeValue>> results = scanTrackingCapacity(scanRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity.get());
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
@@ -385,26 +381,13 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
         try {
-            double totalCapacity = 0.0D;
             ScanRequest scanRequest = new ScanRequest()
                     .withTableName(activeTablename)
                     .withConsistentRead(stronglyConsistentReads)
                     .withFilterExpression("attribute_not_exists(" + JOB_ID + ")")
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            ScanResult queryResult = dynamoDB.scan(scanRequest);
-            totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-            List<Map<String, AttributeValue>> results = new ArrayList<>(queryResult.getItems());
-            while (null != queryResult.getLastEvaluatedKey()) {
-                scanRequest = new ScanRequest()
-                        .withTableName(activeTablename)
-                        .withConsistentRead(stronglyConsistentReads)
-                        .withFilterExpression("attribute_not_exists(" + JOB_ID + ")")
-                        .withExclusiveStartKey(queryResult.getLastEvaluatedKey())
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-                queryResult = dynamoDB.scan(scanRequest);
-                totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-                results.addAll(queryResult.getItems());
-            }
+            AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+            List<Map<String, AttributeValue>> results = scanTrackingCapacity(scanRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
@@ -429,6 +412,15 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             partitionToFiles.get(partition).add(fileInfo.getFilename());
         }
         return partitionToFiles;
+    }
+
+    private List<Map<String, AttributeValue>> scanTrackingCapacity(
+            ScanRequest scanRequest, AtomicReference<Double> totalCapacity) {
+        return streamPagedResults(dynamoDB, scanRequest)
+                .flatMap(result -> {
+                    totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
+                    return result.getItems().stream();
+                }).collect(Collectors.toList());
     }
 
     @Override
