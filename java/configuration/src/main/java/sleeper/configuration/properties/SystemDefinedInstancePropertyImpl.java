@@ -51,7 +51,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     public static SystemDefinedInstanceProperty get(String propertyName) {
         return ALL_MAP.get(propertyName);
     }
-    
+
     @Override
     public String getPropertyName() {
         return propertyName;
