@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class DynamoDBUtils {
@@ -85,8 +86,11 @@ public class DynamoDBUtils {
     }
 
     public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        return Stream.iterate(dynamoDB.scan(scanRequest),
-                result -> null != result.getLastEvaluatedKey(),
-                result -> dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey())));
+        return Stream.iterate(
+                dynamoDB.scan(scanRequest),
+                Objects::nonNull,
+                result -> null != result.getLastEvaluatedKey()
+                        ? dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey()))
+                        : null);
     }
 }
