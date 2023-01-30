@@ -55,8 +55,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
@@ -278,26 +281,18 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public List<FileInfo> getActiveFiles() throws StateStoreException {
         try {
-            double totalCapacity = 0.0D;
-            ScanRequest queryRequest = new ScanRequest()
+            ScanRequest scanRequest = new ScanRequest()
                     .withTableName(activeTablename)
                     .withConsistentRead(stronglyConsistentReads)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            ScanResult queryResult = dynamoDB.scan(queryRequest);
-            totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-            List<Map<String, AttributeValue>> results = new ArrayList<>();
-            results.addAll(queryResult.getItems());
-            while (null != queryResult.getLastEvaluatedKey()) {
-                queryRequest = new ScanRequest()
-                        .withTableName(activeTablename)
-                        .withConsistentRead(stronglyConsistentReads)
-                        .withExclusiveStartKey(queryResult.getLastEvaluatedKey())
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-                queryResult = dynamoDB.scan(queryRequest);
-                totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-                results.addAll(queryResult.getItems());
-            }
-            LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity);
+
+            AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+            List<Map<String, AttributeValue>> results = streamPagedResults(dynamoDB, scanRequest)
+                    .flatMap(result -> {
+                        totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
+                        return result.getItems().stream();
+                    }).collect(Collectors.toList());
+            LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity.get());
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
                 fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
