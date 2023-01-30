@@ -18,24 +18,38 @@ package sleeper.configuration.properties;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
 
+    private static final Map<String, SystemDefinedInstanceProperty> ALL_MAP = new HashMap<>();
     private static final List<SystemDefinedInstanceProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
+    private final String description;
 
-    private SystemDefinedInstancePropertyImpl(String propertyName) {
-        this.propertyName = propertyName;
+    private SystemDefinedInstancePropertyImpl(Builder builder) {
+        propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
-    static SystemDefinedInstanceProperty named(String propertyName) {
-        return addToAllList(new SystemDefinedInstancePropertyImpl(propertyName));
+    public static Builder builder() {
+        return new Builder();
     }
 
-    static List<SystemDefinedInstanceProperty> all() {
+    public static Builder named(String propertyName) {
+        return builder().propertyName(propertyName);
+    }
+
+    public static List<SystemDefinedInstanceProperty> all() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static SystemDefinedInstanceProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
     }
 
     @Override
@@ -52,8 +66,36 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return propertyName;
     }
 
-    private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
-        ALL.add(property);
-        return property;
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public static final class Builder {
+        private String propertyName;
+        private String description = "No description available";
+
+        private Builder() {
+        }
+
+        public Builder propertyName(String propertyName) {
+            this.propertyName = propertyName;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public SystemDefinedInstanceProperty build() {
+            return addToAllList(new SystemDefinedInstancePropertyImpl(this));
+        }
+
+        private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
+            ALL.add(property);
+            return property;
+        }
     }
 }

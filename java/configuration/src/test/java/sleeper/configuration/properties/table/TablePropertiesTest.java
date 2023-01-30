@@ -100,6 +100,11 @@ public class TablePropertiesTest {
             public String getDefaultValue() {
                 return null;
             }
+
+            @Override
+            public String getDescription() {
+                return null;
+            }
         };
 
         // Then
@@ -123,6 +128,11 @@ public class TablePropertiesTest {
             public String getDefaultValue() {
                 return null;
             }
+
+            @Override
+            public String getDescription() {
+                return null;
+            }
         };
 
         TableProperty defaultingProperty = new TableProperty() {
@@ -138,6 +148,11 @@ public class TablePropertiesTest {
 
             @Override
             public String getDefaultValue() {
+                return null;
+            }
+
+            @Override
+            public String getDescription() {
                 return null;
             }
         };

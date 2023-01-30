@@ -18,27 +18,40 @@ package sleeper.systemtest;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 public class SystemTestPropertyImpl implements SystemTestProperty {
+    private static final Map<String, SystemTestProperty> ALL_MAP = new HashMap<>();
     private static final List<SystemTestProperty> ALL = new ArrayList<>();
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
+    private final String description;
 
     private SystemTestPropertyImpl(Builder builder) {
         propertyName = builder.propertyName;
         defaultValue = builder.defaultValue;
         validationPredicate = builder.validationPredicate;
+        description = builder.description;
     }
 
-    static Builder named(String name) {
-        return new Builder().propertyName(name);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    static List<SystemTestProperty> all() {
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static List<SystemTestProperty> all() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static SystemTestProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
     }
 
     @Override
@@ -56,6 +69,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return validationPredicate;
     }
 
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -64,6 +82,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private String propertyName;
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
+        private String description;
 
         private Builder() {
         }
@@ -83,11 +102,17 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
             return this;
         }
 
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
         public SystemTestProperty build() {
             return addToAllList(new SystemTestPropertyImpl(this));
         }
 
         private static SystemTestProperty addToAllList(SystemTestProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             return property;
         }
