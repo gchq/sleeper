@@ -47,6 +47,30 @@ class TablePropertyImpl implements TableProperty {
         return Collections.unmodifiableList(ALL);
     }
 
+    @Override
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    @Override
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public Predicate<String> validationPredicate() {
+        return validationPredicate;
+    }
+
+    @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    public String toString() {
+        return propertyName;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
@@ -84,25 +108,5 @@ class TablePropertyImpl implements TableProperty {
             ALL.add(property);
             return property;
         }
-    }
-
-    @Override
-    public Predicate<String> validationPredicate() {
-        return validationPredicate;
-    }
-
-    @Override
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    @Override
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    @Override
-    public SleeperProperty getDefaultProperty() {
-        return defaultProperty;
     }
 }

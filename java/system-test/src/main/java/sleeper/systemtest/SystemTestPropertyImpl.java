@@ -33,6 +33,14 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         validationPredicate = builder.validationPredicate;
     }
 
+    static Builder named(String name) {
+        return new Builder().propertyName(name);
+    }
+
+    static List<SystemTestProperty> all() {
+        return Collections.unmodifiableList(ALL);
+    }
+
     @Override
     public String getPropertyName() {
         return propertyName;
@@ -48,22 +56,14 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return validationPredicate;
     }
 
-    static List<SystemTestProperty> all() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static Builder named(String name) {
-        return builder().propertyName(name);
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public String toString() {
+        return propertyName;
     }
 
     public static final class Builder {
         private String propertyName;
         private String defaultValue;
-        private Predicate<String> validationPredicate = (s) -> true;
+        private Predicate<String> validationPredicate = s -> true;
 
         private Builder() {
         }
