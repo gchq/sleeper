@@ -81,9 +81,9 @@ means that it is hard to produce reproducible figures. In future work we hope to
 more accurate results. Nevertheless, these tests have caught several significant performance regressions that would
 otherwise not have been noticed.
 
-| Version number | Test date  | Compaction rate (records/s) | Ingest S3 write rate (records/s)
-|----------------|------------|-----------------------------|---------------------------------
-| 0.11.0         | 13/06/2022 | 366000                      | 160000
-| 0.12.0         | 18/10/2022 | 378000                      | 146600
-| 0.13.0         | 06/01/2023 | 326000                      | 144000
-| 0.14.0         | 20/01/2023 | 349000                      | 153000
+| Version number | Test date  | Compaction rate (records/s) | Ingest S3 write rate (records/s) |
+|----------------|------------|-----------------------------|----------------------------------|
+| 0.11.0         | 13/06/2022 | 366000                      | 160000                           |
+| 0.12.0         | 18/10/2022 | 378000                      | 146600                           |
+| 0.13.0         | 06/01/2023 | 326000                      | 144000                           |
+| 0.14.0         | 20/01/2023 | 349000                      | 153000                           |
