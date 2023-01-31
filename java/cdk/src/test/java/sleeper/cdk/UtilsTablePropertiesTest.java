@@ -52,25 +52,32 @@ class UtilsTablePropertiesTest {
 
     @Test
     void shouldFindTablePropertiesFileNextToInstancePropertiesFile() throws IOException {
+        // Given
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
         properties.save(tempDir.resolve("table.properties"));
+
+        // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties);
     }
 
     @Test
     void shouldFindNoTablePropertiesFiles() throws IOException {
+        // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .isEmpty();
     }
 
     @Test
     void shouldFindTablePropertiesFilesInTablesFolder() throws IOException {
+        // Given
         Files.createDirectory(tempDir.resolve("tables"));
         TableProperties properties1 = createTestTableProperties(instanceProperties, schemaWithKey("test-key1"));
         properties1.save(tempDir.resolve("tables/table1.properties"));
         TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
         properties2.save(tempDir.resolve("tables/table2.properties"));
+
+        // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties1, properties2);
     }
