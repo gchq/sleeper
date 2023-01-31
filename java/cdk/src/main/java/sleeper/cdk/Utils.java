@@ -34,6 +34,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -157,6 +158,20 @@ public class Utils {
                         .build())
                 .build();
         return AwsLogDriver.awsLogs(logDriverProps);
+    }
+
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Path instancePropertiesFile) {
+        return Stream.of(instancePropertiesFile.getParent().resolve("table.properties"))
+                .map(file -> {
+                    TableProperties properties = new TableProperties(instanceProperties);
+                    try {
+                        properties.load(file);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return properties;
+                });
     }
 
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
