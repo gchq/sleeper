@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -165,10 +166,11 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Path instancePropertiesFile) throws IOException {
+        Path baseDir = getInstancePropertiesDirectory(instancePropertiesFile);
         return Stream.concat(
-                        Stream.of(instancePropertiesFile.getParent().resolve("table.properties"))
+                        Stream.of(baseDir.resolve("table.properties"))
                                 .filter(Files::exists),
-                        streamPropertiesFilesInTablesFolder(instancePropertiesFile))
+                        streamPropertiesFilesInTablesFolder(baseDir))
                 .map(file -> {
                     TableProperties properties = new TableProperties(instanceProperties);
                     try {
@@ -180,8 +182,17 @@ public class Utils {
                 });
     }
 
-    private static Stream<Path> streamPropertiesFilesInTablesFolder(Path instancePropertiesFile) throws IOException {
-        Path path = instancePropertiesFile.getParent().resolve("tables");
+    private static Path getInstancePropertiesDirectory(Path instancePropertiesFile) {
+        Path parent = instancePropertiesFile.getParent();
+        if (parent == null) {
+            return Paths.get(".");
+        } else {
+            return parent;
+        }
+    }
+
+    private static Stream<Path> streamPropertiesFilesInTablesFolder(Path baseDir) throws IOException {
+        Path path = baseDir.resolve("tables");
         if (!Files.isDirectory(path)) {
             return Stream.empty();
         }

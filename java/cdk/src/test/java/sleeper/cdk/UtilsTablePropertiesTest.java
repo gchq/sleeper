@@ -28,6 +28,7 @@ import sleeper.core.schema.type.StringType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -62,13 +63,6 @@ class UtilsTablePropertiesTest {
     }
 
     @Test
-    void shouldFindNoTablePropertiesFiles() throws IOException {
-        // When / Then
-        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
-                .isEmpty();
-    }
-
-    @Test
     void shouldFindTablePropertiesFilesInTablesFolder() throws IOException {
         // Given
         Files.createDirectory(tempDir.resolve("tables"));
@@ -80,5 +74,19 @@ class UtilsTablePropertiesTest {
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties1, properties2);
+    }
+
+    @Test
+    void shouldFindNoTablePropertiesFilesWhenNonePresent() throws IOException {
+        // When / Then
+        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldFindNothingInWorkingDirectoryWhenInstancePropertiesDirectoryNotSpecified() throws IOException {
+        // When / Then
+        assertThat(Utils.getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
+                .isEmpty();
     }
 }
