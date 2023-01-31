@@ -16,10 +16,14 @@
 
 package sleeper.configuration.properties;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.List;
 
 import static sleeper.configuration.properties.PropertyGroupImpl.group;
 
+// Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
+@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface PropertyGroup {
     PropertyGroup COMMON = group("Common")
             .description("The following properties are commonly used throughout Sleeper")

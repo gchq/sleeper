@@ -17,6 +17,7 @@
 package sleeper.configuration.properties;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -48,7 +49,7 @@ public class PropertyGroupImpl implements PropertyGroup {
     }
 
     public static List<PropertyGroup> all() {
-        return ALL;
+        return Collections.unmodifiableList(ALL);
     }
 
     @Override
