@@ -38,9 +38,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -162,9 +164,11 @@ public class Utils {
     }
 
     public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        return Stream.of(instancePropertiesFile.getParent().resolve("table.properties"))
-                .filter(Files::exists)
+            InstanceProperties instanceProperties, Path instancePropertiesFile) throws IOException {
+        return Stream.concat(
+                        Stream.of(instancePropertiesFile.getParent().resolve("table.properties"))
+                                .filter(Files::exists),
+                        streamPropertiesFilesInTablesFolder(instancePropertiesFile))
                 .map(file -> {
                     TableProperties properties = new TableProperties(instanceProperties);
                     try {
@@ -174,6 +178,18 @@ public class Utils {
                     }
                     return properties;
                 });
+    }
+
+    private static Stream<Path> streamPropertiesFilesInTablesFolder(Path instancePropertiesFile) throws IOException {
+        Path path = instancePropertiesFile.getParent().resolve("tables");
+        if (!Files.isDirectory(path)) {
+            return Stream.empty();
+        }
+        List<Path> files;
+        try (Stream<Path> pathStream = Files.list(path)) {
+            files = pathStream.collect(Collectors.toList());
+        }
+        return files.stream().sorted();
     }
 
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
