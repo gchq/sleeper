@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties.table;
 
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.ArrayList;
@@ -84,6 +85,11 @@ class TablePropertyImpl implements TableProperty {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return PropertyGroup.TABLE;
     }
 
     public String toString() {

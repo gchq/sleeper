@@ -41,10 +41,12 @@ public class PropertyGroup {
             .build();
     public static final PropertyGroup ATHENA = group("The following properties relate to the integration with Athena.")
             .build();
+    public static final PropertyGroup TABLE = group("The following properties relate to tables and their properties.")
+            .build();
     public static final PropertyGroup UNKNOWN = group("The following properties have no defined property grouping")
             .build();
     private static final List<PropertyGroup> ALL = List.of(COMMON, INGEST, BULK_IMPORT, PARTITION_SPLITTING, GARBAGE_COLLECTOR,
-            COMPACTION, QUERY, LOGGING, DEFAULT, ATHENA, UNKNOWN);
+            COMPACTION, QUERY, LOGGING, DEFAULT, ATHENA, TABLE, UNKNOWN);
 
     private final String description;
 

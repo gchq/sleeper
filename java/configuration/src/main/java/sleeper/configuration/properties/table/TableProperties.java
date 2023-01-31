@@ -32,6 +32,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -125,6 +126,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 .appendSuper(super.equals(o))
                 .append(instanceProperties, that.instanceProperties)
                 .isEquals();
+    }
+
+    public List<TableProperty> getAllProperties() {
+        return Arrays.asList(TableProperty.values());
     }
 
     @Override

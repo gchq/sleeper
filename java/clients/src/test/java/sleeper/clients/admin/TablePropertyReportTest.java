@@ -74,14 +74,14 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "\"sortKeyFields\":[]," +
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
                 // Then check properties in sequence to check spacing between them
-                .contains("# A unique name identifying this table.\n" +
-                        "sleeper.table.name: test-table\n" +
+                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                        "sleeper.table.encrypted: false\n" +
                         "\n" +
-                        "# The size of the page in the Parquet files - defaults to the value in the instance properties.\n" +
-                        "sleeper.table.page.size: 131072\n" +
+                        "# A JSON file containing the schema for this table.\n" +
+                        "sleeper.table.schema.file: null\n" +
                         "\n" +
-                        "# Partitions in this table with more than the following number of records in will be split\n" +
-                        "sleeper.table.partition.splitting.threshold: 1000000000")
+                        "# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.rowgroup.size: 8388608")
                 // Then check property with multi-line description
                 .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as ready for\n" +
                         "# garbage collection. The reason for not deleting files immediately after they have been marked as ready for\n" +
@@ -90,11 +90,11 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.table.gc.delay.seconds: 600");
 
         // Then check the ordering of some property names are correct
-        assertThat(output.indexOf("sleeper.table.encrypted"))
-                .isLessThan(output.indexOf("sleeper.table.name"))
-                .isLessThan(output.indexOf("sleeper.table.schema"));
         assertThat(output.indexOf("sleeper.table.name"))
-                .isLessThan(output.indexOf("sleeper.table.schema"));
+                .isLessThan(output.indexOf("sleeper.table.schema"))
+                .isLessThan(output.indexOf("sleeper.table.encrypted"));
+        assertThat(output.indexOf("sleeper.table.schema.file"))
+                .isLessThan(output.indexOf("sleeper.table.rowgroup.size"));
 
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock, times(2)).promptLine(any());
