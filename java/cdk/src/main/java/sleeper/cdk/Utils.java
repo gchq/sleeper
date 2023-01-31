@@ -19,7 +19,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.ecs.AwsLogDriver;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -161,7 +160,7 @@ public class Utils {
                         .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                         .build())
                 .build();
-        return AwsLogDriver.awsLogs(logDriverProps);
+        return LogDriver.awsLogs(logDriverProps);
     }
 
     public static Stream<TableProperties> getAllTableProperties(
