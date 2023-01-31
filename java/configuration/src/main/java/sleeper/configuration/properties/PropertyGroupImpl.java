@@ -27,8 +27,8 @@ public class PropertyGroupImpl implements PropertyGroup {
     private final String description;
 
     private PropertyGroupImpl(Builder builder) {
-        name = builder.name;
-        description = builder.description;
+        name = Objects.requireNonNull(builder.name, "name must not be null");
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
     static Builder group(String name) {
@@ -61,12 +61,12 @@ public class PropertyGroupImpl implements PropertyGroup {
             return false;
         }
         PropertyGroupImpl that = (PropertyGroupImpl) o;
-        return Objects.equals(description, that.description);
+        return name.equals(that.name) && description.equals(that.description);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(description);
+        return Objects.hash(name, description);
     }
 
     @Override
