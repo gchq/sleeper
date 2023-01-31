@@ -17,6 +17,7 @@
 package sleeper.configuration.properties;
 
 import java.util.List;
+import java.util.Objects;
 
 public class PropertyGroup {
     public static final PropertyGroup COMMON = group("The following properties are commonly used throughout Sleeper")
@@ -42,7 +43,7 @@ public class PropertyGroup {
             .build();
     public static final PropertyGroup UNKNOWN = group("The following properties have no defined property grouping")
             .build();
-    public static final List<PropertyGroup> ALL = List.of(COMMON, INGEST, BULK_IMPORT, PARTITION_SPLITTING, GARBAGE_COLLECTOR,
+    private static final List<PropertyGroup> ALL = List.of(COMMON, INGEST, BULK_IMPORT, PARTITION_SPLITTING, GARBAGE_COLLECTOR,
             COMPACTION, QUERY, LOGGING, DEFAULT, ATHENA, UNKNOWN);
 
     private final String description;
@@ -65,6 +66,28 @@ public class PropertyGroup {
 
     public static List<PropertyGroup> all() {
         return ALL;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PropertyGroup that = (PropertyGroup) o;
+        return Objects.equals(description, that.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(description);
+    }
+
+    @Override
+    public String toString() {
+        return description;
     }
 
     private static final class Builder {

@@ -20,6 +20,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
@@ -84,7 +85,11 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "# is 11. It can be overridden on a per-table basis.\n" +
                         "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
                         "# This is a default value and will be used if not specified in the table.properties file\n" +
-                        "sleeper.default.compaction.files.batch.size: 11");
+                        "sleeper.default.compaction.files.batch.size: 11")
+                // Then check property groups are printed
+                .contains(PropertyGroup.all().stream()
+                        .map(PropertyGroup::getDescription)
+                        .toArray(String[]::new));
 
 
         // Then check the grouping of some property names are correct
@@ -93,6 +98,8 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .isLessThan(output.indexOf("sleeper.vpc"));
         assertThat(output.indexOf("sleeper.ingest"))
                 .isLessThan(output.indexOf("sleeper.compaction"));
+        assertThat(output.indexOf(PropertyGroup.INGEST.getDescription()))
+                .isLessThan(output.indexOf(PropertyGroup.COMPACTION.getDescription()));
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();

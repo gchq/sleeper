@@ -17,13 +17,14 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
-import sleeper.util.ClientUtils;
 
 import java.util.List;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.util.ClientUtils.formatString;
 
 public class InstancePropertyReport {
 
@@ -43,10 +44,16 @@ public class InstancePropertyReport {
 
     private void print(InstanceProperties instanceProperties) {
         List<InstanceProperty> propertyList = instanceProperties.getAllProperties();
+        PropertyGroup currentGroup = null;
         out.println("\n\n Instance Property Report \n -------------------------");
         for (InstanceProperty instanceProperty : propertyList) {
+            if (currentGroup == null || !currentGroup.equals(instanceProperty.getPropertyGroup())) {
+                currentGroup = instanceProperty.getPropertyGroup();
+                out.println();
+                out.println(formatString(currentGroup.getDescription()));
+            }
             out.println();
-            out.println(ClientUtils.formatDescription(instanceProperty));
+            out.println(formatString(instanceProperty.getDescription()));
             out.println(instanceProperty.getPropertyName() + ": " + instanceProperties.get(instanceProperty));
         }
         confirmReturnToMainScreen(out, in);

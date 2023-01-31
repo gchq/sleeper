@@ -58,7 +58,7 @@ public class TablePropertyReport {
 
     private String formatDescription(String propertyName) {
         if (TableProperty.has(propertyName)) {
-            return ClientUtils.formatDescription(TableProperty.from(propertyName));
+            return ClientUtils.formatString(TableProperty.from(propertyName).getDescription());
         }
         return "# No description available";
     }
