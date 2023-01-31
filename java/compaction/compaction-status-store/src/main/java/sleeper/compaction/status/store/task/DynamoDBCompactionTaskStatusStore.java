@@ -25,7 +25,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +45,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
@@ -94,29 +94,29 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                 .addKeyConditionsEntry(TASK_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(taskId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems().stream())
                 .findFirst().orElse(null);
     }
 
     @Override
     public List<CompactionTaskStatus> getAllTasks() {
-        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
-        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
+                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
-        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
-        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
+                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> task.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionTaskStatus> getTasksInProgress() {
-        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
-        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(
+                        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> !task.isFinished())
                 .collect(Collectors.toList());
     }
