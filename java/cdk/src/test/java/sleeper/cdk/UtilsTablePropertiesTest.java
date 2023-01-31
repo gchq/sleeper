@@ -56,4 +56,10 @@ class UtilsTablePropertiesTest {
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties);
     }
+
+    @Test
+    void shouldFindNoTablePropertiesFiles() {
+        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+                .isEmpty();
+    }
 }
