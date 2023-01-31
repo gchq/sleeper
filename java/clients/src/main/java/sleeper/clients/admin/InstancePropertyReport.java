@@ -16,15 +16,12 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.util.ClientUtils;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.NavigableMap;
+import java.util.List;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
@@ -45,25 +42,13 @@ public class InstancePropertyReport {
     }
 
     private void print(InstanceProperties instanceProperties) {
-
-        NavigableMap<Object, Object> orderedProperties = SleeperPropertyUtils.orderedPropertyMapWithIncludes(
-                instanceProperties, Arrays.asList(UserDefinedInstanceProperty.values()));
+        List<InstanceProperty> propertyList = instanceProperties.getAllProperties();
         out.println("\n\n Instance Property Report \n -------------------------");
-        for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
+        for (InstanceProperty instanceProperty : propertyList) {
             out.println();
-            out.println(formatDescription(entry.getKey().toString()));
-            out.println(entry.getKey() + ": " + entry.getValue());
+            out.println(ClientUtils.formatDescription(instanceProperty));
+            out.println(instanceProperty.getPropertyName() + ": " + instanceProperties.get(instanceProperty));
         }
         confirmReturnToMainScreen(out, in);
-    }
-
-    private String formatDescription(String propertyName) {
-        if (UserDefinedInstanceProperty.has(propertyName)) {
-            return ClientUtils.formatDescription(UserDefinedInstanceProperty.from(propertyName));
-        }
-        if (SystemDefinedInstanceProperty.has(propertyName)) {
-            return ClientUtils.formatDescription(SystemDefinedInstanceProperty.from(propertyName));
-        }
-        return "# No description available";
     }
 }

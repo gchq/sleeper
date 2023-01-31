@@ -70,14 +70,14 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .contains("# The S3 bucket name used to store configuration files.\n" +
                         "sleeper.config.bucket: sleeper-test-instance-config\n")
                 // Then check properties in sequence to check spacing between them
-                .contains("# The amount of memory (GB) the athena composite handler has\n" +
-                        "sleeper.athena.handler.memory: 4096\n" +
+                .contains("# The loging level for Parquet logs.\n" +
+                        "sleeper.logging.parquet.level: null\n" +
                         "\n" +
-                        "# The timeout in seconds for the athena composite handler\n" +
-                        "sleeper.athena.handler.timeout.seconds: 900\n" +
+                        "# The loging level for AWS logs.\n" +
+                        "sleeper.logging.aws.level: null\n" +
                         "\n" +
-                        "# The number of days before objects in the spill bucket are deleted.\n" +
-                        "sleeper.athena.spill.bucket.ageoff.days: 1")
+                        "# The loging level for everything else.\n" +
+                        "sleeper.logging.root.level: null")
                 // Then check property with multi-line description
                 .contains("# The minimum number of files to read in a compaction job. Note that the state store\n" +
                         "# must support atomic updates for this many files. For the DynamoDBStateStore this\n" +
@@ -87,12 +87,12 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.default.compaction.files.batch.size: 11");
 
 
-        // Then check the ordering of some property names are correct
+        // Then check the grouping of some property names are correct
         assertThat(output.indexOf("sleeper.account"))
                 .isLessThan(output.indexOf("sleeper.log.retention.days"))
                 .isLessThan(output.indexOf("sleeper.vpc"));
-        assertThat(output.indexOf("sleeper.log.retention.days"))
-                .isLessThan(output.indexOf("sleeper.vpc"));
+        assertThat(output.indexOf("sleeper.ingest"))
+                .isLessThan(output.indexOf("sleeper.compaction"));
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();

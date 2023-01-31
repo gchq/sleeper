@@ -92,7 +92,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description = "No description available";
-        private PropertyGroup propertyGroup;
+        private PropertyGroup propertyGroup = PropertyGroup.UNKNOWN;
 
         private Builder() {
         }
