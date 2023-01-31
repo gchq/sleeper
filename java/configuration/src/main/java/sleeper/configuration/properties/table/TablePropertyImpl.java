@@ -89,7 +89,7 @@ class TablePropertyImpl implements TableProperty {
 
     @Override
     public PropertyGroup getPropertyGroup() {
-        return PropertyGroup.TABLE;
+        return PropertyGroup.COMMON;
     }
 
     public String toString() {

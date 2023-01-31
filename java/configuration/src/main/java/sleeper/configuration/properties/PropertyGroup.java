@@ -17,94 +17,50 @@
 package sleeper.configuration.properties;
 
 import java.util.List;
-import java.util.Objects;
 
-public class PropertyGroup {
-    public static final PropertyGroup COMMON = group("The following properties are commonly used throughout Sleeper")
-            .build();
-    public static final PropertyGroup INGEST = group("The following properties relate to standard ingest")
-            .build();
-    public static final PropertyGroup BULK_IMPORT = group("The following properties relate to bulk import, " +
-            "i.e. ingesting data using Spark jobs running on EMR or EKS.")
-            .build();
-    public static final PropertyGroup PARTITION_SPLITTING = group("The following properties relate to the splitting of partitions")
-            .build();
-    public static final PropertyGroup GARBAGE_COLLECTOR = group("The following properties relate to garbage collection.")
-            .build();
-    public static final PropertyGroup COMPACTION = group("The following properties relate to compactions.")
-            .build();
-    public static final PropertyGroup QUERY = group("The following properties relate to queries.")
-            .build();
-    public static final PropertyGroup LOGGING = group("The following properties relate to logging.")
-            .build();
-    public static final PropertyGroup DEFAULT = group("The following properties relate to default values.")
-            .build();
-    public static final PropertyGroup ATHENA = group("The following properties relate to the integration with Athena.")
-            .build();
-    public static final PropertyGroup TABLE = group("The following properties relate to tables and their properties.")
-            .build();
-    public static final PropertyGroup UNKNOWN = group("The following properties have no defined property grouping")
-            .build();
-    private static final List<PropertyGroup> ALL = List.of(COMMON, INGEST, BULK_IMPORT, PARTITION_SPLITTING, GARBAGE_COLLECTOR,
-            COMPACTION, QUERY, LOGGING, DEFAULT, ATHENA, TABLE, UNKNOWN);
+import static sleeper.configuration.properties.PropertyGroupImpl.group;
 
-    private final String description;
+public interface PropertyGroup {
+    PropertyGroup COMMON = group("Common")
+            .description("The following properties are commonly used throughout Sleeper")
+            .build();
+    PropertyGroup INGEST = group("Ingest")
+            .description("The following properties relate to standard ingest")
+            .build();
+    PropertyGroup BULK_IMPORT = group("Bulk Import")
+            .description("The following properties relate to bulk import, " +
+                    "i.e. ingesting data using Spark jobs running on EMR or EKS.")
+            .build();
+    PropertyGroup PARTITION_SPLITTING = group("Partition Splitting")
+            .description("The following properties relate to the splitting of partitions")
+            .build();
+    PropertyGroup GARBAGE_COLLECTOR = group("Garbage Collector")
+            .description("The following properties relate to garbage collection.")
+            .build();
+    PropertyGroup COMPACTION = group("Compaction")
+            .description("The following properties relate to compactions.")
+            .build();
+    PropertyGroup QUERY = group("Query")
+            .description("The following properties relate to queries.")
+            .build();
+    PropertyGroup LOGGING = group("Logging")
+            .description("The following properties relate to logging.")
+            .build();
+    PropertyGroup DEFAULT = group("Default")
+            .description("The following properties relate to default values.")
+            .build();
+    PropertyGroup ATHENA = group("Athena")
+            .description("The following properties relate to the integration with Athena.")
+            .build();
+    PropertyGroup UNKNOWN = group("Unknown")
+            .description("The following properties have no defined property grouping")
+            .build();
 
-    private PropertyGroup(Builder builder) {
-        description = builder.description;
+    static List<PropertyGroup> all() {
+        return PropertyGroupImpl.all();
     }
 
-    private static Builder group(String description) {
-        return builder().description(description);
-    }
+    String getName();
 
-    private static Builder builder() {
-        return new Builder();
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public static List<PropertyGroup> all() {
-        return ALL;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PropertyGroup that = (PropertyGroup) o;
-        return Objects.equals(description, that.description);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(description);
-    }
-
-    @Override
-    public String toString() {
-        return description;
-    }
-
-    private static final class Builder {
-        private String description;
-
-        private Builder() {
-        }
-
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public PropertyGroup build() {
-            return new PropertyGroup(this);
-        }
-    }
+    String getDescription();
 }
