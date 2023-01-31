@@ -19,6 +19,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.util.ClientUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -48,8 +49,17 @@ public class TablePropertyReport {
                 tableProperties, Arrays.asList(TableProperty.values()));
         out.println("\n\n Table Property Report \n -------------------------");
         for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
+            out.println();
+            out.println(formatDescription(entry.getKey().toString()));
             out.println(entry.getKey() + ": " + entry.getValue());
         }
         confirmReturnToMainScreen(out, in);
+    }
+
+    private String formatDescription(String propertyName) {
+        if (TableProperty.has(propertyName)) {
+            return ClientUtils.formatDescription(TableProperty.from(propertyName));
+        }
+        return "# No description available";
     }
 }

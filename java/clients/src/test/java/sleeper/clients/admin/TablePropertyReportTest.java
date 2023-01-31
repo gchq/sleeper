@@ -64,12 +64,30 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         .map(TableProperty::getPropertyName)
                         .collect(Collectors.toList()))
                 // Then check some set table property values are present in the output
-                .contains("sleeper.table.name: test-table\n")
-                .contains("sleeper.table.encrypted: false\n")
-                .contains("sleeper.table.schema: " +
+                .contains("# A unique name identifying this table.\n" +
+                        "sleeper.table.name: test-table\n")
+                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                        "sleeper.table.encrypted: false\n")
+                .contains("# The schema representing the structure of this table.\n" +
+                        "sleeper.table.schema: " +
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
                         "\"sortKeyFields\":[]," +
-                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n");
+                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
+                // Then check properties in sequence to check spacing between them
+                .contains("# A unique name identifying this table.\n" +
+                        "sleeper.table.name: test-table\n" +
+                        "\n" +
+                        "# The size of the page in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.page.size: 131072\n" +
+                        "\n" +
+                        "# Partitions in this table with more than the following number of records in will be split\n" +
+                        "sleeper.table.partition.splitting.threshold: 1000000000")
+                // Then check property with multi-line description
+                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as ready for\n" +
+                        "# garbage collection. The reason for not deleting files immediately after they have been marked as ready for\n" +
+                        "# garbage collection is that they may still be in use by queries. Defaults to the value set in the instance\n" +
+                        "# properties.\n" +
+                        "sleeper.table.gc.delay.seconds: 600");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.table.encrypted"))

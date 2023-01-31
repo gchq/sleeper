@@ -27,6 +27,8 @@ public interface SleeperProperty {
 
     String getDefaultValue();
 
+    String getDescription();
+
     default Predicate<String> validationPredicate() {
         return (s) -> true;
     }
