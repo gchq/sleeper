@@ -92,14 +92,35 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         .toArray(String[]::new));
 
 
-        // Then check the grouping of some property names are correct
+        // Then check the order of some property names are correct
         assertThat(output.indexOf("sleeper.account"))
                 .isLessThan(output.indexOf("sleeper.log.retention.days"))
                 .isLessThan(output.indexOf("sleeper.vpc"));
         assertThat(output.indexOf("sleeper.ingest"))
                 .isLessThan(output.indexOf("sleeper.compaction"));
+        // Then check the order of some groups are correct
         assertThat(output.indexOf(PropertyGroup.INGEST.getDescription()))
+                .isLessThan(output.indexOf(PropertyGroup.BULK_IMPORT.getDescription()));
+        assertThat(output.indexOf(PropertyGroup.GARBAGE_COLLECTOR.getDescription()))
                 .isLessThan(output.indexOf(PropertyGroup.COMPACTION.getDescription()));
+        // Then check that some UserDefinedProperties are in the correct group
+        assertThat(output.indexOf("sleeper.ingest.task.cpu"))
+                .isBetween(
+                        output.indexOf(PropertyGroup.INGEST.getDescription()),
+                        output.indexOf(PropertyGroup.BULK_IMPORT.getDescription()));
+        assertThat(output.indexOf("sleeper.compaction.job.creation.memory"))
+                .isBetween(
+                        output.indexOf(PropertyGroup.COMPACTION.getDescription()),
+                        output.indexOf(PropertyGroup.QUERY.getDescription()));
+        // Then check that SystemDefinedProperty is in the correct group
+        assertThat(output.indexOf("sleeper.query.role.arn"))
+                .isBetween(
+                        output.indexOf(PropertyGroup.QUERY.getDescription()),
+                        output.indexOf(PropertyGroup.LOGGING.getDescription()));
+        assertThat(output.indexOf("sleeper.partition.splitting.queue.url"))
+                .isBetween(
+                        output.indexOf(PropertyGroup.PARTITION_SPLITTING.getDescription()),
+                        output.indexOf(PropertyGroup.GARBAGE_COLLECTOR.getDescription()));
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();

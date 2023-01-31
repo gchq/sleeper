@@ -30,10 +30,12 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     private final String propertyName;
     private final String description;
+    private final PropertyGroup group;
 
     private SystemDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        group = Objects.requireNonNull(builder.group, "group must not be null");
     }
 
     public static Builder builder() {
@@ -71,9 +73,15 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return description;
     }
 
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return group;
+    }
+
     public static final class Builder {
         private String propertyName;
         private String description = "No description available";
+        private PropertyGroup group = PropertyGroup.UNKNOWN;
 
         private Builder() {
         }
@@ -85,6 +93,11 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder group(PropertyGroup group) {
+            this.group = group;
             return this;
         }
 
