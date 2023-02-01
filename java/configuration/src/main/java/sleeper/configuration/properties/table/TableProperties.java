@@ -115,7 +115,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
-        LOGGER.info("Loading table properties from bucket {}, key {}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
+        LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
     }
 
