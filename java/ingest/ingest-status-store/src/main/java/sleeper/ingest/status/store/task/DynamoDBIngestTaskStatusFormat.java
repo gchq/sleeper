@@ -27,7 +27,6 @@ import sleeper.ingest.task.IngestTaskStatusesBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -93,7 +92,7 @@ public class DynamoDBIngestTaskStatusFormat {
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
-    public static Stream<IngestTaskStatus> streamTaskStatuses(List<Map<String, AttributeValue>> items) {
+    public static Stream<IngestTaskStatus> streamTaskStatuses(Stream<Map<String, AttributeValue>> items) {
         IngestTaskStatusesBuilder builder = new IngestTaskStatusesBuilder();
         items.forEach(item -> addStatusUpdate(item, builder));
         return builder.stream();

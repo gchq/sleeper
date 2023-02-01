@@ -110,8 +110,8 @@ public class DynamoDBCompactionJobStatusFormat {
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
-    public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
-        return CompactionJobStatus.streamFrom(items.stream()
+    public static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
+        return CompactionJobStatus.streamFrom(items
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord));
     }
 

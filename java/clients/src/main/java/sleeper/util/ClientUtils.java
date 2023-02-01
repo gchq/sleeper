@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperProperty;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -97,4 +98,9 @@ public class ClientUtils {
         }
         return String.join(",", parts);
     }
+
+    public static String formatDescription(SleeperProperty property) {
+        return "# " + property.getDescription().replace("\n", "\n# ");
+    }
+
 }

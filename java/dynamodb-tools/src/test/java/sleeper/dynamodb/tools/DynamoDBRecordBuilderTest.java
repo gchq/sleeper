@@ -16,35 +16,19 @@
 
 package sleeper.dynamodb.tools;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
-    private static final String TEST_KEY = "test-key";
-    private static final String TEST_VALUE = "test-value";
-    private static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
-
-    @AfterEach
-    public void tearDown() {
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME);
-    }
-
+public class DynamoDBRecordBuilderTest extends DynamoDBTableTestBase {
     @Test
     public void shouldCreateRecordWithStringAttribute() {
         // Given we have a table in dynamodb that accepts strings
@@ -104,23 +88,5 @@ public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
         assertThat(result.getItems()).containsExactly(record);
-    }
-
-    private void createStringTable() {
-        createTable(ScalarAttributeType.S);
-    }
-
-    private void createNumericTable() {
-        createTable(ScalarAttributeType.N);
-    }
-
-    private void createTable(ScalarAttributeType valueType) {
-        initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
-                Arrays.asList(
-                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
-                        new AttributeDefinition(TEST_VALUE, valueType)),
-                Arrays.asList(
-                        new KeySchemaElement(TEST_KEY, KeyType.HASH),
-                        new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
     }
 }

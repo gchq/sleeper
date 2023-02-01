@@ -20,31 +20,74 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
 
+    private static final Map<String, TableProperty> ALL_MAP = new HashMap<>();
     private static final List<TableProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
+    private final String description;
 
     private TablePropertyImpl(Builder builder) {
-        propertyName = builder.propertyName;
+        propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
-        validationPredicate = builder.validationPredicate;
+        validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
-    static Builder named(String name) {
-        return new Builder().propertyName(name);
+    static Builder builder() {
+        return new Builder();
     }
 
-    static List<TableProperty> all() {
+    public static Builder named(String name) {
+        return builder().propertyName(name);
+    }
+
+    public static List<TableProperty> all() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static TableProperty get(String propertyName) {
+        return ALL_MAP.get(propertyName);
+    }
+
+    @Override
+    public Predicate<String> validationPredicate() {
+        return validationPredicate;
+    }
+
+    @Override
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    @Override
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public String toString() {
+        return propertyName;
     }
 
     static final class Builder {
@@ -52,6 +95,7 @@ class TablePropertyImpl implements TableProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
+        private String description = "No description available";
 
         private Builder() {
         }
@@ -76,33 +120,19 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
         public TableProperty build() {
             return addToAllList(new TablePropertyImpl(this));
         }
 
         private static TableProperty addToAllList(TableProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             return property;
         }
-    }
-
-    @Override
-    public Predicate<String> validationPredicate() {
-        return validationPredicate;
-    }
-
-    @Override
-    public String getDefaultValue() {
-        return defaultValue;
-    }
-
-    @Override
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    @Override
-    public SleeperProperty getDefaultProperty() {
-        return defaultProperty;
     }
 }
