@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
@@ -52,13 +53,15 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super(properties);
         this.instanceProperties = instanceProperties;
         setSchema(schema);
-        init();
+        validate();
     }
 
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
-        super(properties);
-        this.instanceProperties = instanceProperties;
-        init();
+        this(instanceProperties, loadSchema(properties), properties);
+    }
+
+    private static Schema loadSchema(Properties properties) {
+        return Schema.loadFromString(properties.getProperty(SCHEMA.getPropertyName()));
     }
 
     @Override
