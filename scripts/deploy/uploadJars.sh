@@ -46,5 +46,5 @@ if [ $STATUS -ne 0 ]; then
   aws s3api put-public-access-block --bucket "${JARS_BUCKET}" --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 fi
 
-echo "Uploading JARS"
+echo "Uploading JARs"
 aws s3 sync --size-only "${JAR_DIR}" "s3://${JARS_BUCKET}"
