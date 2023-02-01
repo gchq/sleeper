@@ -53,7 +53,11 @@ public class Schema {
     }
 
     public static Schema load(Path schemaPath) throws IOException {
-        return new SchemaSerDe().fromJson(Files.readString(schemaPath));
+        return loadFromString(Files.readString(schemaPath));
+    }
+
+    public static Schema loadFromString(String schemaJson) {
+        return new SchemaSerDe().fromJson(schemaJson);
     }
 
     public List<Field> getRowKeyFields() {

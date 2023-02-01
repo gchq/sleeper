@@ -29,7 +29,6 @@ import sleeper.configuration.properties.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
@@ -53,7 +52,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super(properties);
         this.instanceProperties = instanceProperties;
         setSchema(schema);
-        validate();
+        init();
     }
 
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
@@ -64,19 +63,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     protected void init() {
-        String schemaFile = get(TableProperty.SCHEMA_FILE);
-        String schema = get(TableProperty.SCHEMA);
-        SchemaSerDe schemaSerDe = new SchemaSerDe();
-        if (schema == null) {
-            if (schemaFile != null) {
-                try {
-                    setSchema(schemaSerDe.fromJsonFile(schemaFile));
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException("Unable to load file from JSON", e);
-                }
-            }
-        } else {
-            this.schema = schemaSerDe.fromJson(schema);
+        String schemaProperty = get(TableProperty.SCHEMA);
+        if (schemaProperty != null) {
+            schema = Schema.loadFromString(schemaProperty);
         }
         super.init();
     }
