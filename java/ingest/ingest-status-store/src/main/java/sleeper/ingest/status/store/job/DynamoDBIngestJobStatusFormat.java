@@ -31,7 +31,6 @@ import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -95,8 +94,8 @@ public class DynamoDBIngestJobStatusFormat {
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
-    public static Stream<IngestJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
-        return IngestJobStatus.streamFrom(items.stream()
+    public static Stream<IngestJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
+        return IngestJobStatus.streamFrom(items
                 .map(DynamoDBIngestJobStatusFormat::getStatusUpdateRecord));
     }
 

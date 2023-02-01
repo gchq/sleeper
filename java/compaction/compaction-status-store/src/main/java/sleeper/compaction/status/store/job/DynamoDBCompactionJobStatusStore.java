@@ -25,7 +25,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +48,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStore.class);
@@ -133,36 +133,36 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .addKeyConditionsEntry(DynamoDBCompactionJobStatusFormat.JOB_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(jobId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems());
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems().stream());
     }
 
     @Override
     public List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionJobStatus> getAllJobs(String tableName) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
+                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
@@ -174,5 +174,4 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ));
     }
-
 }

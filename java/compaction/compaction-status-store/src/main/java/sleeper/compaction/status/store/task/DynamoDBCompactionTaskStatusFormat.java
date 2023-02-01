@@ -27,7 +27,6 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -95,7 +94,7 @@ public class DynamoDBCompactionTaskStatusFormat {
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
-    public static Stream<CompactionTaskStatus> streamTaskStatuses(List<Map<String, AttributeValue>> items) {
+    public static Stream<CompactionTaskStatus> streamTaskStatuses(Stream<Map<String, AttributeValue>> items) {
         CompactionTaskStatusesBuilder builder = new CompactionTaskStatusesBuilder();
         items.forEach(item -> addStatusUpdate(item, builder));
         return builder.stream();
