@@ -17,6 +17,7 @@ package sleeper.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
@@ -100,7 +101,10 @@ public class ClientUtils {
     }
 
     public static String formatDescription(SleeperProperty property) {
-        return "# " + property.getDescription().replace("\n", "\n# ");
+        return formatString(property.getDescription());
     }
 
+    public static String formatString(String str) {
+        return "# " + WordUtils.wrap(str, 100).replace("\n", "\n# ");
+    }
 }
