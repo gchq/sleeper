@@ -31,12 +31,6 @@ import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.n
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface UserDefinedInstanceProperty extends InstanceProperty {
-    // Tables
-    UserDefinedInstanceProperty TABLE_PROPERTIES = named("sleeper.table.properties")
-            .description("A comma separated list of paths containing the table properties files. These can either be paths to\n" +
-                    "the properties files themselves or paths to directories which contain the table properties.")
-            .validationPredicate(Objects::nonNull)
-            .build();
     // Common
     UserDefinedInstanceProperty ID = named("sleeper.id")
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars.\n" +
