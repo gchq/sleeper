@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
 class UtilsTablePropertiesTest {
 
@@ -52,12 +53,15 @@ class UtilsTablePropertiesTest {
     }
 
     @Test
-    void shouldFindTablePropertiesFileNextToInstancePropertiesFile() throws IOException {
+    void shouldFindTableConfigurationNextToInstancePropertiesFile() throws IOException {
         // Given
-        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
+        Schema schema = schemaWithKey("test-key");
+        TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        schema.save(tempDir.resolve("schema.json"));
         properties.save(tempDir.resolve("table.properties"));
 
         // When / Then
+        properties.setSchema(schema);
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties);
     }
@@ -88,5 +92,16 @@ class UtilsTablePropertiesTest {
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldFindTablePropertiesFileNextToInstancePropertiesFileWithSchemaInProperties() throws IOException {
+        // Given
+        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
+        properties.save(tempDir.resolve("table.properties"));
+
+        // When / Then
+        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+                .containsExactly(properties);
     }
 }

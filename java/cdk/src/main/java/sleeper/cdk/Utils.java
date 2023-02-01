@@ -29,6 +29,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -171,13 +172,18 @@ public class Utils {
                                 .filter(Files::exists),
                         streamPropertiesFilesInTablesFolder(baseDir))
                 .map(file -> {
-                    TableProperties properties = new TableProperties(instanceProperties);
                     try {
+                        TableProperties properties = new TableProperties(instanceProperties);
+                        Path schemaPath = file.getParent().resolve("schema.json");
+                        if (Files.exists(schemaPath)) {
+                            Schema schema = Schema.load(schemaPath);
+                            properties.setSchema(schema);
+                        }
                         properties.load(file);
+                        return properties;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    return properties;
                 });
     }
 

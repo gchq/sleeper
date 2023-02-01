@@ -17,6 +17,9 @@ package sleeper.core.schema;
 
 import sleeper.core.schema.type.PrimitiveType;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,6 +50,10 @@ public class Schema {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Schema load(Path schemaPath) throws IOException {
+        return new SchemaSerDe().fromJson(Files.readString(schemaPath));
     }
 
     public List<Field> getRowKeyFields() {
@@ -107,6 +114,10 @@ public class Schema {
         return streamAllFields()
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
+    }
+
+    public void save(Path path) throws IOException {
+        Files.writeString(path, new SchemaSerDe().toJson(this));
     }
 
     @Override
