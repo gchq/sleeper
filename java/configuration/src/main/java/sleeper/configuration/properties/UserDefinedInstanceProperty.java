@@ -697,7 +697,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isNonNegativeInteger)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = named("sleeper.compaction.ec2.pool.desired")
-            .description("The initial desired number of instances for the EC2 cluster." +
+            .description("The initial desired number of instances for the EC2 cluster."+
                     "Can be set by dividing initial maximum containers by number that should fit on instance type.")
             .defaultValue("0")
             .validationPredicate(Utils::isNonNegativeInteger)
