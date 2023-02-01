@@ -36,15 +36,15 @@ echo "VERSION: ${VERSION}"
 echo "JAR_DIR: ${JAR_DIR}"
 
 set +e
-aws s3api head-bucket --bucket ${JARS_BUCKET} >/dev/null 2>&1
+aws s3api head-bucket --bucket "${JARS_BUCKET}" >/dev/null 2>&1
 STATUS=$?
 set -e
 
 if [ $STATUS -ne 0 ]; then
   echo "Creating JARs bucket"
-  aws s3api create-bucket --acl private --bucket ${JARS_BUCKET} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION}
-  aws s3api put-public-access-block --bucket ${JARS_BUCKET} --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+  aws s3api create-bucket --acl private --bucket "${JARS_BUCKET}" --region "${REGION}" --create-bucket-configuration "LocationConstraint=${REGION}"
+  aws s3api put-public-access-block --bucket "${JARS_BUCKET}" --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
 fi
 
 echo "Uploading JARS"
-aws s3 sync --size-only ${JAR_DIR} s3://${JARS_BUCKET}
+aws s3 sync --size-only "${JAR_DIR}" "s3://${JARS_BUCKET}"
