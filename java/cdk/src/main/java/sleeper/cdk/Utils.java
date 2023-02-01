@@ -167,24 +167,28 @@ public class Utils {
             InstanceProperties instanceProperties, Path instancePropertiesFile) throws IOException {
         Path baseDir = directoryOf(instancePropertiesFile);
         return streamBaseAndTableFolders(baseDir)
-                .map(folder -> {
-                    Path propertiesPath = folder.resolve("table.properties");
-                    if (!Files.exists(propertiesPath)) {
-                        return null;
-                    }
-                    try {
-                        TableProperties properties = new TableProperties(instanceProperties);
-                        Path schemaPath = folder.resolve("schema.json");
-                        if (Files.exists(schemaPath)) {
-                            Schema schema = Schema.load(schemaPath);
-                            properties.setSchema(schema);
-                        }
-                        properties.load(propertiesPath);
-                        return properties;
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).filter(Objects::nonNull);
+                .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
+                .filter(Objects::nonNull);
+    }
+
+    private static TableProperties readTablePropertiesFolderOrNull(
+            InstanceProperties instanceProperties, Path folder) {
+        Path propertiesPath = folder.resolve("table.properties");
+        Path schemaPath = folder.resolve("schema.json");
+        if (!Files.exists(propertiesPath)) {
+            return null;
+        }
+        try {
+            TableProperties properties = new TableProperties(instanceProperties);
+            if (Files.exists(schemaPath)) {
+                Schema schema = Schema.load(schemaPath);
+                properties.setSchema(schema);
+            }
+            properties.load(propertiesPath);
+            return properties;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Path directoryOf(Path filePath) {
