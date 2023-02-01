@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,5 +74,20 @@ class TablePropertiesSchemaTest {
         // Then
         assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
         assertThat(tableProperties.getSchema()).isEqualTo(schema);
+    }
+
+    @Test
+    void shouldFailValidatingPropertiesWhenSettingSchemaInConstructor() throws IOException {
+        // Given
+        String input = "";
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+
+        // When
+        InstanceProperties instanceProperties = new InstanceProperties();
+        Properties properties = loadProperties(input);
+
+        // Then
+        assertThatThrownBy(() -> new TableProperties(instanceProperties, schema, properties))
+                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
     }
 }
