@@ -105,7 +105,6 @@ sed_in_place \
 	-e "s|^sleeper.vpc=.*|sleeper.vpc=${VPC}|" \
 	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
-	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
 	"${INSTANCE_PROPERTIES}"
 
 ###################################

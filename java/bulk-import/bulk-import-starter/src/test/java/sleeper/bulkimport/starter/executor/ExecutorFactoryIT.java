@@ -47,7 +47,6 @@ public class ExecutorFactoryIT {
 
     private static final String DEFAULT_CONFIGURATION_FILE = "" +
             "sleeper.id=basic-example\n" +
-            "sleeper.table.properties=example/basic/table.properties\n" +
             "sleeper.region=eu-west-2\n" +
             "sleeper.version=0.10.0-SNAPSHOT\n" +
             "sleeper.jars.bucket=jars-bucket\n" +
