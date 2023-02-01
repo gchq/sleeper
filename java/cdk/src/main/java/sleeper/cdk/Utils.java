@@ -165,7 +165,7 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Path instancePropertiesFile) throws IOException {
-        Path baseDir = getInstancePropertiesDirectory(instancePropertiesFile);
+        Path baseDir = directoryOf(instancePropertiesFile);
         return Stream.concat(
                         Stream.of(baseDir.resolve("table.properties"))
                                 .filter(Files::exists),
@@ -173,7 +173,7 @@ public class Utils {
                 .map(file -> {
                     try {
                         TableProperties properties = new TableProperties(instanceProperties);
-                        Path schemaPath = file.getParent().resolve("schema.json");
+                        Path schemaPath = directoryOf(file).resolve("schema.json");
                         if (Files.exists(schemaPath)) {
                             Schema schema = Schema.load(schemaPath);
                             properties.setSchema(schema);
@@ -186,8 +186,8 @@ public class Utils {
                 });
     }
 
-    private static Path getInstancePropertiesDirectory(Path instancePropertiesFile) {
-        Path parent = instancePropertiesFile.getParent();
+    private static Path directoryOf(Path filePath) {
+        Path parent = filePath.getParent();
         if (parent == null) {
             return Paths.get(".");
         } else {
