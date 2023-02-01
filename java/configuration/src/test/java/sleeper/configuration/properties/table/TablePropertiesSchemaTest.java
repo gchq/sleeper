@@ -18,8 +18,15 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesSchemaTest {
 
@@ -34,4 +41,20 @@ class TablePropertiesSchemaTest {
                 .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
     }
 
+    @Test
+    void shouldLoadSuccessfullyIfTableSchemaIsSetBeforeLoad() throws IOException {
+        // Given
+        String input = "" +
+                "sleeper.table.name=myTable\n";
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+
+        // When
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.setSchema(schema);
+        tableProperties.loadFromString(input);
+
+        // Then
+        assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
+        assertThat(tableProperties.getSchema()).isEqualTo(schema);
+    }
 }
