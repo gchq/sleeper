@@ -65,7 +65,7 @@ class TablePropertiesSchemaTest {
 
         // When / Then
         assertThatThrownBy(() -> new TableProperties(instanceProperties, properties))
-                .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
+                .hasMessage("Schema not set in property sleeper.table.schema");
     }
 
     @Test

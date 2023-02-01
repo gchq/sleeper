@@ -117,7 +117,7 @@ class UtilsTablePropertiesTest {
                 .forEach(tableProperties -> {
                     // Consume the stream to trigger reading the properties file
                 }))
-                .isInstanceOf(IllegalArgumentException.class);
+                .hasMessage("Schema not set in property sleeper.table.schema");
     }
 
     @Test

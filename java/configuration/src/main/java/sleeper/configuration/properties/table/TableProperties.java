@@ -31,6 +31,7 @@ import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -61,7 +62,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     private static Schema loadSchema(Properties properties) {
-        return Schema.loadFromString(properties.getProperty(SCHEMA.getPropertyName()));
+        return Schema.loadFromString(
+                Objects.requireNonNull(properties.getProperty(SCHEMA.getPropertyName()),
+                        "Schema not set in property " + SCHEMA.getPropertyName()));
     }
 
     @Override
