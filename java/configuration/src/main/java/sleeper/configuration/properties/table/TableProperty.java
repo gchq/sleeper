@@ -157,9 +157,9 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty BULK_IMPORT_EMR_RELEASE_LABEL = named("sleeper.table.bulk.import.emr.release.label")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL)
-            .description("# (EMR mode only) The EMR release label to be used when creating an EMR cluster for bulk importing data " +
-                    "# using Spark running on EMR. This value overrides the default value in the instance properties. It can " +
-                    "# be overridden by a value in the bulk import job specification.")
+            .description("(EMR mode only) The EMR release label to be used when creating an EMR cluster for bulk importing data " +
+                    "using Spark running on EMR. This value overrides the default value in the instance properties. It can " +
+                    "be overridden by a value in the bulk import job specification.")
             .build();
 
     // Size ratio compaction strategy

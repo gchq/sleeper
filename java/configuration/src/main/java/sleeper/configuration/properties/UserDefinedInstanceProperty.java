@@ -144,7 +144,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     // Ingest
     UserDefinedInstanceProperty ECR_INGEST_REPO = named("sleeper.ingest.repo")
             .description("The name of the ECR repository for the ingest container. The Docker image from the ingest module should have been " +
-                    "# uploaded to an ECR repository of this name in this account.")
+                    "uploaded to an ECR repository of this name in this account.")
             .build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_INGEST_TASKS = named("sleeper.ingest.max.concurrent.tasks")
             .description("The maximum number of concurrent ECS tasks to run")
