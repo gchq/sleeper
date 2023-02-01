@@ -35,7 +35,7 @@ class TablePropertiesTest {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n" +
-                "sleeper.table.schema={}\n" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n" +
                 "sleeper.table.compression.codec=madeUp";
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
@@ -47,7 +47,7 @@ class TablePropertiesTest {
     void shouldThrowExceptionIfTableNameIsAbsentOnInit() {
         // Given
         String input = "" +
-                "sleeper.table.schema={}\n";
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.loadFromString(input))

@@ -44,6 +44,18 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
+    void shouldFailIfTableSchemaIsInvalidOnLoad() {
+        // Given
+        String input = "" +
+                "sleeper.table.name=myTable\n" +
+                "sleeper.table.schema={}\n";
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        // When / Then
+        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+                .hasMessage("Must have at least one row key field");
+    }
+
+    @Test
     void shouldFailIfTableSchemaIsAbsentOnConstructor() throws IOException {
         // Given
         String input = "" +
@@ -118,6 +130,21 @@ class TablePropertiesSchemaTest {
 
         // Then
         assertThatThrownBy(() -> new TableProperties(instanceProperties, schema, properties))
+                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
+    }
+
+    @Test
+    void shouldFailValidatingPropertiesWhenSettingSchemaFromPropertyInConstructor() throws IOException {
+        // Given
+        String input = "" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
+
+        // When
+        InstanceProperties instanceProperties = new InstanceProperties();
+        Properties properties = loadProperties(input);
+
+        // Then
+        assertThatThrownBy(() -> new TableProperties(instanceProperties, properties))
                 .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
     }
 }
