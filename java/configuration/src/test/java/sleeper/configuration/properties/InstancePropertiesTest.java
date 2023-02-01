@@ -81,7 +81,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
@@ -167,7 +166,6 @@ public class InstancePropertiesTest {
         instanceProperties.set(ID, "test");
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.set(SUBNET, "subnet1");
-        instanceProperties.set(TABLE_PROPERTIES, "/path/to/table.properties");
 
         // When
         String serialised = instanceProperties.saveAsString();
@@ -189,7 +187,6 @@ public class InstancePropertiesTest {
         instanceProperties.set(ID, "test");
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.set(SUBNET, "subnet1");
-        instanceProperties.set(TABLE_PROPERTIES, "/path/to/table.properties");
 
         // When
         instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
@@ -207,7 +204,6 @@ public class InstancePropertiesTest {
         instanceProperties.set(REGION, "eu-west-2");
         instanceProperties.set(VERSION, "0.1");
         instanceProperties.set(ID, "test");
-        instanceProperties.set(TABLE_PROPERTIES, "/path/to/table.properties");
         instanceProperties.set(QUERY_LAMBDA_ROLE, "arn:aws:iam::1234567890:role/sleeper-QueryRoleABCDEF-GHIJKLMOP");
         Map<String, String> tags = new HashMap<>();
         tags.put("name", "abc");

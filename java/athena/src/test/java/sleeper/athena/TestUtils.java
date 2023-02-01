@@ -53,7 +53,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
@@ -79,7 +78,6 @@ public class TestUtils {
         instanceProperties.set(REGION, "unused");
         instanceProperties.set(VPC_ID, "unused");
         instanceProperties.set(SUBNET, "unused");
-        instanceProperties.set(TABLE_PROPERTIES, "unused");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);

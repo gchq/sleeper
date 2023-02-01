@@ -50,7 +50,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 
 @Testcontainers
 public class ConfigValidatorIT {
@@ -253,7 +252,5 @@ public class ConfigValidatorIT {
 
         File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());
-
-        instanceProperties.set(TABLE_PROPERTIES, tablePropertiesFile.getAbsolutePath());
     }
 }
