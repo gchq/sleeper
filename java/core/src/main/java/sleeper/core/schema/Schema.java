@@ -97,13 +97,13 @@ public class Schema {
     }
 
     private <T> List<T> getMappedFields(Stream<Field> fields, Function<Field, T> mapping) {
-        return Collections.unmodifiableList(fields
+        return fields
                 .map(mapping)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public List<Field> getAllFields() {
-        return Collections.unmodifiableList(streamAllFields().collect(Collectors.toList()));
+        return streamAllFields().collect(Collectors.toUnmodifiableList());
     }
 
     public Stream<Field> streamAllFields() {

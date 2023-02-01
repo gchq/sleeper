@@ -85,9 +85,8 @@ public class Utils {
         StringBuilder sb = new StringBuilder();
         Arrays.stream(propertyNames)
                 .filter(s -> instanceProperties.get(s) != null)
-                .forEach(s -> {
-                    sb.append("-D").append(s.getPropertyName()).append("=").append(instanceProperties.get(s)).append(" ");
-                });
+                .forEach(s -> sb.append("-D").append(s.getPropertyName())
+                        .append("=").append(instanceProperties.get(s)).append(" "));
 
         return sb.toString();
     }
@@ -104,7 +103,7 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
+     * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
      * A value of -1 represents an infinite number of days.
      *
      * @param numberOfDays number of days you want to retain the logs
