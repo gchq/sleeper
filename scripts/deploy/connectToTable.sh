@@ -74,6 +74,3 @@ sed_in_place \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
 	${INSTANCE_PROPERTIES}
-sed_in_place \
-	-e "s|^sleeper.table.schema.file=.*|sleeper.table.schema.file=${SCHEMA}|" \
-	${TABLE_PROPERTIES}

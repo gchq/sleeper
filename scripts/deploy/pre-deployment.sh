@@ -85,7 +85,6 @@ cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
 
 # Table Properties
 sed \
-  -e "s|^sleeper.table.schema.file=.*|sleeper.table.schema.file=${SCHEMA}|" \
   -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
 	"${TEMPLATE_DIR}/tableproperties.template" \
 	> "${TABLE_PROPERTIES}"
