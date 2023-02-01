@@ -48,6 +48,7 @@ if [ "$(check_bucket_exists)" -ne 0 ]; then
   aws s3api create-bucket --acl private --bucket "${JARS_BUCKET}" --region "${REGION}" --create-bucket-configuration "LocationConstraint=${REGION}"
   aws s3api put-public-access-block --bucket "${JARS_BUCKET}" --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
   while [ "$(check_bucket_exists)" -ne 0 ]; do
+    echo "Waiting for bucket to be available..."
     sleep 5
   done
 fi
