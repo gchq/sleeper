@@ -69,11 +69,12 @@ class UtilsTablePropertiesTest {
     @Test
     void shouldFindTablePropertiesFilesInTablesFolder() throws IOException {
         // Given
-        Files.createDirectory(tempDir.resolve("tables"));
+        Files.createDirectories(tempDir.resolve("tables/table1"));
+        Files.createDirectory(tempDir.resolve("tables/table2"));
         TableProperties properties1 = createTestTableProperties(instanceProperties, schemaWithKey("test-key1"));
-        properties1.save(tempDir.resolve("tables/table1.properties"));
+        properties1.save(tempDir.resolve("tables/table1/table.properties"));
         TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
-        properties2.save(tempDir.resolve("tables/table2.properties"));
+        properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
@@ -103,5 +104,20 @@ class UtilsTablePropertiesTest {
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties);
+    }
+
+    @Test
+    void shouldFindTablePropertiesFilesInTablesFolderWithSchemaInProperties() throws IOException {
+        // Given
+        Files.createDirectories(tempDir.resolve("tables/table1"));
+        Files.createDirectory(tempDir.resolve("tables/table2"));
+        TableProperties properties1 = createTestTableProperties(instanceProperties, schemaWithKey("test-key1"));
+        properties1.save(tempDir.resolve("tables/table1/table.properties"));
+        TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
+        properties2.save(tempDir.resolve("tables/table2/table.properties"));
+
+        // When / Then
+        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+                .containsExactly(properties1, properties2);
     }
 }

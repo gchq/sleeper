@@ -166,24 +166,25 @@ public class Utils {
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Path instancePropertiesFile) throws IOException {
         Path baseDir = directoryOf(instancePropertiesFile);
-        return Stream.concat(
-                        Stream.of(baseDir.resolve("table.properties"))
-                                .filter(Files::exists),
-                        streamPropertiesFilesInTablesFolder(baseDir))
-                .map(file -> {
+        return streamBaseAndTableFolders(baseDir)
+                .map(folder -> {
+                    Path propertiesPath = folder.resolve("table.properties");
+                    if (!Files.exists(propertiesPath)) {
+                        return null;
+                    }
                     try {
                         TableProperties properties = new TableProperties(instanceProperties);
-                        Path schemaPath = directoryOf(file).resolve("schema.json");
+                        Path schemaPath = folder.resolve("schema.json");
                         if (Files.exists(schemaPath)) {
                             Schema schema = Schema.load(schemaPath);
                             properties.setSchema(schema);
                         }
-                        properties.load(file);
+                        properties.load(propertiesPath);
                         return properties;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                });
+                }).filter(Objects::nonNull);
     }
 
     private static Path directoryOf(Path filePath) {
@@ -195,16 +196,24 @@ public class Utils {
         }
     }
 
-    private static Stream<Path> streamPropertiesFilesInTablesFolder(Path baseDir) throws IOException {
-        Path path = baseDir.resolve("tables");
-        if (!Files.isDirectory(path)) {
+    private static Stream<Path> streamBaseAndTableFolders(Path baseDir) throws IOException {
+        return Stream.concat(
+                Stream.of(baseDir),
+                streamTableFolders(baseDir));
+    }
+
+    private static Stream<Path> streamTableFolders(Path baseDir) throws IOException {
+        Path tablesFolder = baseDir.resolve("tables");
+        if (!Files.isDirectory(tablesFolder)) {
             return Stream.empty();
         }
-        List<Path> files;
-        try (Stream<Path> pathStream = Files.list(path)) {
-            files = pathStream.collect(Collectors.toList());
+        List<Path> tables;
+        try (Stream<Path> pathStream = Files.list(tablesFolder)) {
+            tables = pathStream
+                    .filter(Files::isDirectory)
+                    .collect(Collectors.toList());
         }
-        return files.stream().sorted();
+        return tables.stream().sorted();
     }
 
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
