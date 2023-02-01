@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 class TablePropertiesSchemaTest {
 
     @Test
-    void shouldThrowExceptionIfTableSchemaIsAbsentOnInit() {
+    void shouldFailIfTableSchemaIsAbsentOnLoad() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
@@ -41,6 +41,36 @@ class TablePropertiesSchemaTest {
         // When / Then
         assertThatThrownBy(() -> tableProperties.loadFromString(input))
                 .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
+    }
+
+    @Test
+    void shouldFailIfTableSchemaIsAbsentOnConstructor() throws IOException {
+        // Given
+        String input = "" +
+                "sleeper.table.name=myTable\n";
+        InstanceProperties instanceProperties = new InstanceProperties();
+        Properties properties = loadProperties(input);
+
+        // When / Then
+        assertThatThrownBy(() -> new TableProperties(instanceProperties, properties))
+                .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
+    }
+
+    @Test
+    void shouldLoadSuccessfullyIfTableSchemaIsInPropertyInConstructor() throws IOException {
+        // Given
+        String input = "" +
+                "sleeper.table.name=myTable\n" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}";
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        Properties properties = loadProperties(input);
+
+        // When
+        TableProperties tableProperties = new TableProperties(new InstanceProperties(), properties);
+
+        // Then
+        assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
+        assertThat(tableProperties.getSchema()).isEqualTo(schema);
     }
 
     @Test
