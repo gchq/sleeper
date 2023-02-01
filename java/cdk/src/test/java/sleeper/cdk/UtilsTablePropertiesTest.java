@@ -29,8 +29,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -101,6 +103,21 @@ class UtilsTablePropertiesTest {
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldFailWhenNoSchemaSpecified() throws IOException {
+        // Given
+        TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        properties.save(tempDir.resolve("table.properties"));
+
+        // When / Then
+        Stream<TableProperties> stream = Utils.getAllTableProperties(instanceProperties, instancePropertiesFile);
+        assertThatThrownBy(() -> stream
+                .forEach(tableProperties -> {
+                    // Consume the stream to trigger reading the properties file
+                }))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
