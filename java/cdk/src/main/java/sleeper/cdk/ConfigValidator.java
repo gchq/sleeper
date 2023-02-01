@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.internal.BucketNameUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +40,7 @@ public class ConfigValidator {
         this.amazonDynamoDB = amazonDynamoDB;
     }
 
-    public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) throws IOException {
+    public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
         checkForValidInstanceId(instanceProperties);
         checkQueryResultsBucketDoesNotExist(instanceProperties);
         checkTableConfiguration(instanceProperties, instancePropertyPath);
@@ -62,7 +61,7 @@ public class ConfigValidator {
         }
     }
 
-    private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) throws IOException {
+    private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) {
         String instanceName = instanceProperties.get(ID);
 
         getAllTableProperties(instanceProperties, instancePropertyPath).forEach(tableProperties -> {

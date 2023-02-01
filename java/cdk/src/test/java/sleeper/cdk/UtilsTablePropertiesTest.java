@@ -92,14 +92,14 @@ class UtilsTablePropertiesTest {
     }
 
     @Test
-    void shouldFindNoTablePropertiesFilesWhenNonePresent() throws IOException {
+    void shouldFindNoTablePropertiesFilesWhenNonePresent() {
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .isEmpty();
     }
 
     @Test
-    void shouldFindNothingInWorkingDirectoryWhenInstancePropertiesDirectoryNotSpecified() throws IOException {
+    void shouldFindNothingInWorkingDirectoryWhenInstancePropertiesDirectoryNotSpecified() {
         // When / Then
         assertThat(Utils.getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
                 .isEmpty();

@@ -15,8 +15,6 @@
  */
 package sleeper.cdk;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
@@ -42,8 +40,6 @@ import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -215,16 +211,7 @@ public class SleeperCdkApp extends Stack {
     public static void main(String[] args) throws IOException {
         App app = new App();
 
-        String propertiesFile = (String) app.getNode().tryGetContext("propertiesfile");
-        String validate = (String) app.getNode().tryGetContext("validate");
-        Path inputPropertiesFile = Paths.get(propertiesFile);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.load(inputPropertiesFile);
-
-        if ("true".equalsIgnoreCase(validate)) {
-            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(instanceProperties, inputPropertiesFile);
-        }
+        InstanceProperties instanceProperties = Utils.loadInstanceProperties(new InstanceProperties(), app);
 
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()

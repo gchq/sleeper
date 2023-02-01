@@ -15,7 +15,8 @@
  */
 package sleeper.cdk;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -27,12 +28,9 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -165,8 +163,30 @@ public class Utils {
         return LogDriver.awsLogs(logDriverProps);
     }
 
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) throws IOException {
+        Path propertiesFile = getInstancePropertiesPath(scope);
+        properties.load(propertiesFile);
+
+        String validate = (String) scope.getNode().tryGetContext("validate");
+        if ("true".equalsIgnoreCase(validate)) {
+            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
+                    AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
+        }
+
+        return properties;
+    }
+
+    private static Path getInstancePropertiesPath(Construct scope) {
+        return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
+    }
+
     public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Path instancePropertiesFile) throws IOException {
+            InstanceProperties instanceProperties, Construct scope) {
+        return getAllTableProperties(instanceProperties, getInstancePropertiesPath(scope));
+    }
+
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Path instancePropertiesFile) {
         Path baseDir = directoryOf(instancePropertiesFile);
         return streamBaseAndTableFolders(baseDir)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
@@ -201,13 +221,13 @@ public class Utils {
         }
     }
 
-    private static Stream<Path> streamBaseAndTableFolders(Path baseDir) throws IOException {
+    private static Stream<Path> streamBaseAndTableFolders(Path baseDir) {
         return Stream.concat(
                 Stream.of(baseDir),
                 streamTableFolders(baseDir));
     }
 
-    private static Stream<Path> streamTableFolders(Path baseDir) throws IOException {
+    private static Stream<Path> streamTableFolders(Path baseDir) {
         Path tablesFolder = baseDir.resolve("tables");
         if (!Files.isDirectory(tablesFolder)) {
             return Stream.empty();
@@ -217,37 +237,10 @@ public class Utils {
             tables = pathStream
                     .filter(Files::isDirectory)
                     .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list table configuration directories", e);
         }
         return tables.stream().sorted();
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
-        return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
-                .map(File::new)
-                .flatMap(Utils::processDirectory)
-                .map(f -> processFile(f, instanceProperties));
-    }
-
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private static Stream<File> processDirectory(File f) {
-        if (!f.exists()) {
-            throw new RuntimeException("There was a problem with the table configuration. " +
-                    f.getAbsolutePath() + " doesn't exist");
-        }
-        if (f.isDirectory()) {
-            return Arrays.stream(Objects.requireNonNull(f.listFiles()));
-        }
-        return Stream.of(f);
-    }
-
-    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
-        try (FileInputStream fis = new FileInputStream(file)) {
-            TableProperties tableProperties = new TableProperties(instanceProperties);
-            tableProperties.load(fis);
-            return tableProperties;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
-        }
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {

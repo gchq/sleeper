@@ -15,23 +15,19 @@
  */
 package sleeper.systemtest.cdk;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 
-import sleeper.cdk.ConfigValidator;
 import sleeper.cdk.SleeperCdkApp;
+import sleeper.cdk.Utils;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -88,15 +84,7 @@ public class SystemTestApp extends SleeperCdkApp {
     public static void main(String[] args) throws IOException {
         App app = new App();
 
-        String systemTestPropertiesFile = (String) app.getNode().tryGetContext("testpropertiesfile");
-        String validate = (String) app.getNode().tryGetContext("validate");
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        Path systemTestPropertiesFilePath = Paths.get(systemTestPropertiesFile);
-        systemTestProperties.load(systemTestPropertiesFilePath);
-        if ("true".equalsIgnoreCase(validate)) {
-            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(systemTestProperties, systemTestPropertiesFilePath);
-        }
+        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(new SystemTestProperties(), app);
 
         String id = systemTestProperties.get(ID);
         Environment environment = Environment.builder()
