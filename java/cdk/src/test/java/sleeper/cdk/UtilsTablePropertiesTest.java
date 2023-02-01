@@ -55,10 +55,10 @@ class UtilsTablePropertiesTest {
     @Test
     void shouldFindTableConfigurationNextToInstancePropertiesFile() throws IOException {
         // Given
-        Schema schema = schemaWithKey("test-key");
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
-        schema.save(tempDir.resolve("schema.json"));
         properties.save(tempDir.resolve("table.properties"));
+        Schema schema = schemaWithKey("test-key");
+        schema.save(tempDir.resolve("schema.json"));
 
         // When / Then
         properties.setSchema(schema);
@@ -71,12 +71,20 @@ class UtilsTablePropertiesTest {
         // Given
         Files.createDirectories(tempDir.resolve("tables/table1"));
         Files.createDirectory(tempDir.resolve("tables/table2"));
-        TableProperties properties1 = createTestTableProperties(instanceProperties, schemaWithKey("test-key1"));
+
+        TableProperties properties1 = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties1.save(tempDir.resolve("tables/table1/table.properties"));
-        TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
+        TableProperties properties2 = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
+        Schema schema1 = schemaWithKey("test-key1");
+        schema1.save(tempDir.resolve("tables/table1/schema.json"));
+        Schema schema2 = schemaWithKey("test-key2");
+        schema2.save(tempDir.resolve("tables/table2/schema.json"));
+
         // When / Then
+        properties1.setSchema(schema1);
+        properties2.setSchema(schema2);
         assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties1, properties2);
     }
