@@ -24,8 +24,10 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -105,6 +107,8 @@ public class ClientUtils {
     }
 
     public static String formatString(String str) {
-        return "# " + WordUtils.wrap(str, 100).replace("\n", "\n# ");
+        return Arrays.stream(str.split("\n")).
+                map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
+                .collect(Collectors.joining("\n"));
     }
 }
