@@ -29,8 +29,9 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -84,16 +85,17 @@ public class SystemTestApp extends SleeperCdkApp {
         throw new RuntimeException("Error when retrieving instance properties");
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         App app = new App();
 
         String systemTestPropertiesFile = (String) app.getNode().tryGetContext("testpropertiesfile");
         String validate = (String) app.getNode().tryGetContext("validate");
         SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.load(new File(systemTestPropertiesFile));
+        Path systemTestPropertiesFilePath = Paths.get(systemTestPropertiesFile);
+        systemTestProperties.load(systemTestPropertiesFilePath);
         if ("true".equalsIgnoreCase(validate)) {
             new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(systemTestProperties);
+                    AmazonDynamoDBClientBuilder.defaultClient()).validate(systemTestProperties, systemTestPropertiesFilePath);
         }
 
         String id = systemTestProperties.get(ID);

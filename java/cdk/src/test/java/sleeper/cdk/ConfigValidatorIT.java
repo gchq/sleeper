@@ -42,6 +42,7 @@ import sleeper.statestore.s3.S3StateStore;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public class ConfigValidatorIT {
         setupTablesPropertiesFile(instanceProperties, "example-valid-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
         // When / Then
-        assertThatCode(() -> configValidator.validate(instanceProperties))
+        assertThatCode(this::validate)
                 .doesNotThrowAnyException();
     }
 
@@ -98,7 +99,7 @@ public class ConfigValidatorIT {
         amazonS3.createBucket(bucketName);
 
         // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper table bucket exists: sleeper-valid-id-table-example-table");
         amazonS3.deleteBucket(bucketName);
@@ -113,7 +114,7 @@ public class ConfigValidatorIT {
         amazonS3.createBucket(bucketName);
 
         // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper query results bucket exists: " + bucketName);
         amazonS3.deleteBucket(bucketName);
@@ -126,7 +127,7 @@ public class ConfigValidatorIT {
         setupTablesPropertiesFile(instanceProperties, "example--invalid-name-tab$$-le", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
         // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
     }
@@ -137,7 +138,7 @@ public class ConfigValidatorIT {
         instanceProperties.set(ID, "aa$$aa");
 
         // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper instance id is illegal: aa$$aa");
     }
@@ -166,9 +167,15 @@ public class ConfigValidatorIT {
         createDynamoTable(dynamoTable);
 
         // When
-        assertThatCode(() -> configValidator.validate(instanceProperties))
+        assertThatCode(this::validate)
                 .doesNotThrowAnyException();
         amazonDynamoDB.deleteTable(dynamoTable);
+    }
+
+    private void validate() throws IOException {
+        Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
+        Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
+        configValidator.validate(instanceProperties, instancePropertiesPath);
     }
 
     private void checkErrorIsThrownWhenTableExists(String dynamoTable) throws IOException {
@@ -178,7 +185,7 @@ public class ConfigValidatorIT {
         createDynamoTable(dynamoTable);
 
         // When
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper DynamoDBTable exists: " + dynamoTable);
         amazonDynamoDB.deleteTable(dynamoTable);
@@ -242,8 +249,7 @@ public class ConfigValidatorIT {
 
         String tableConfiguration = "" +
                 String.format("sleeper.table.name=%s\n", tableName) +
-                String.format("sleeper.table.statestore.classname=%s\n", stateStore) +
-                String.format("sleeper.table.schema.file=%s\n", tableSchemaFile.getAbsolutePath());
+                String.format("sleeper.table.statestore.classname=%s\n", stateStore);
 
         File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());

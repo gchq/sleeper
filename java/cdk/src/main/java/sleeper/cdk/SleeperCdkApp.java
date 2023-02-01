@@ -41,8 +41,9 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -211,18 +212,18 @@ public class SleeperCdkApp extends Stack {
         new PropertiesStack(this, "Properties", instanceProperties);
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         App app = new App();
 
         String propertiesFile = (String) app.getNode().tryGetContext("propertiesfile");
         String validate = (String) app.getNode().tryGetContext("validate");
-        File inputPropertiesFile = new File(propertiesFile);
+        Path inputPropertiesFile = Paths.get(propertiesFile);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.load(inputPropertiesFile);
 
         if ("true".equalsIgnoreCase(validate)) {
             new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(instanceProperties);
+                    AmazonDynamoDBClientBuilder.defaultClient()).validate(instanceProperties, inputPropertiesFile);
         }
 
         String id = instanceProperties.get(ID);

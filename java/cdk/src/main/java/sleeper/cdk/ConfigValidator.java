@@ -22,6 +22,8 @@ import com.amazonaws.services.s3.internal.BucketNameUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,10 +41,10 @@ public class ConfigValidator {
         this.amazonDynamoDB = amazonDynamoDB;
     }
 
-    public void validate(InstanceProperties instanceProperties) {
+    public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) throws IOException {
         checkForValidInstanceId(instanceProperties);
         checkQueryResultsBucketDoesNotExist(instanceProperties);
-        checkTableConfiguration(instanceProperties);
+        checkTableConfiguration(instanceProperties, instancePropertyPath);
     }
 
     private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
@@ -60,10 +62,10 @@ public class ConfigValidator {
         }
     }
 
-    private void checkTableConfiguration(InstanceProperties instanceProperties) {
+    private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) throws IOException {
         String instanceName = instanceProperties.get(ID);
 
-        getAllTableProperties(instanceProperties).forEach(tableProperties -> {
+        getAllTableProperties(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
             String tableName = tableProperties.get(TABLE_NAME);
 
             checkBucketConfigurationForTable(instanceName, tableName);
@@ -76,7 +78,7 @@ public class ConfigValidator {
 
     private void checkDynamoDBConfigurationForTable(String instanceName, String tableName) {
         List<String> tableTypes = Arrays.asList("active-files", "gc-files", "partitions");
-        tableTypes.stream().forEach(tableType -> {
+        tableTypes.forEach(tableType -> {
             String dynamodbTableName = String.join("-", "sleeper", instanceName, "table", tableName, tableType);
             if (doesDynamoTableExist(dynamodbTableName)) {
                 throw new IllegalArgumentException("Sleeper DynamoDBTable exists: " + dynamodbTableName);
