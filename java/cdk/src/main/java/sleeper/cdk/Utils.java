@@ -43,9 +43,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
@@ -179,13 +181,12 @@ public class Utils {
             return null;
         }
         try {
-            TableProperties properties = new TableProperties(instanceProperties);
+            Properties properties = loadProperties(propertiesPath);
             if (Files.exists(schemaPath)) {
                 Schema schema = Schema.load(schemaPath);
-                properties.setSchema(schema);
+                return new TableProperties(instanceProperties, schema, properties);
             }
-            properties.load(propertiesPath);
-            return properties;
+            return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

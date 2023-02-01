@@ -32,6 +32,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -46,6 +47,19 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     public TableProperties(InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
+    }
+
+    public TableProperties(InstanceProperties instanceProperties, Schema schema, Properties properties) {
+        super(properties);
+        this.instanceProperties = instanceProperties;
+        setSchema(schema);
+        validate();
+    }
+
+    public TableProperties(InstanceProperties instanceProperties, Properties properties) {
+        super(properties);
+        this.instanceProperties = instanceProperties;
+        init();
     }
 
     @Override

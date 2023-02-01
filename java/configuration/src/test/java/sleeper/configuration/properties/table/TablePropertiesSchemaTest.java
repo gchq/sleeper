@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesSchemaTest {
@@ -52,6 +53,22 @@ class TablePropertiesSchemaTest {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.setSchema(schema);
         tableProperties.loadFromString(input);
+
+        // Then
+        assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
+        assertThat(tableProperties.getSchema()).isEqualTo(schema);
+    }
+
+    @Test
+    void shouldOverrideSchemaInPropertiesWithSpecifiedSchema() throws IOException {
+        // Given
+        String input = "" +
+                "sleeper.table.name=myTable\n" +
+                "sleeper.table.schema={}\n";
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+
+        // When
+        TableProperties tableProperties = new TableProperties(new InstanceProperties(), schema, loadProperties(input));
 
         // Then
         assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");

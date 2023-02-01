@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -131,6 +133,22 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     public void load(Path file) throws IOException {
         InputStream inputStream = new BufferedInputStream(Files.newInputStream(file));
         load(inputStream);
+    }
+
+    public static Properties loadProperties(Path file) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(file)) {
+            return loadProperties(reader);
+        }
+    }
+
+    public static Properties loadProperties(String input) throws IOException {
+        return loadProperties(new StringReader(input));
+    }
+
+    public static Properties loadProperties(Reader reader) throws IOException {
+        Properties properties = new Properties();
+        properties.load(reader);
+        return properties;
     }
 
     public void save(OutputStream oututStream) throws IOException {
