@@ -16,4 +16,5 @@
 package sleeper.configuration.properties;
 
 public interface InstanceProperty extends SleeperProperty {
+    PropertyGroup getPropertyGroup();
 }

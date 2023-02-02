@@ -16,6 +16,8 @@
 
 package sleeper.systemtest;
 
+import sleeper.configuration.properties.PropertyGroup;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,6 +74,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return PropertyGroup.COMMON;
     }
 
     public String toString() {
