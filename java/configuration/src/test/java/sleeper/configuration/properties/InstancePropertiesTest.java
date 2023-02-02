@@ -21,7 +21,11 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -269,5 +273,31 @@ public class InstancePropertiesTest {
         instanceProperties.set(S3A_INPUT_FADVISE, "normal");
 
         return instanceProperties;
+    }
+
+    @Test
+    void shouldGetAllUserDefinedAndSystemDefinedProperties() {
+        // Given/When
+        InstanceProperties properties = new InstanceProperties();
+        List<InstanceProperty> propertyList = properties.getAllProperties();
+
+        // Then
+        assertThat(propertyList)
+                .containsAll(Arrays.asList(UserDefinedInstanceProperty.values()));
+        assertThat(propertyList)
+                .containsAll(Arrays.asList(SystemDefinedInstanceProperty.values()));
+    }
+
+    @Test
+    void shouldOrderAllPropertiesBasedOnGroup() {
+        // Given/When
+        InstanceProperties properties = new InstanceProperties();
+        List<InstanceProperty> propertyList = properties.getAllProperties();
+        List<InstanceProperty> orderedPropertyList = new ArrayList<>(propertyList);
+        orderedPropertyList.sort(Comparator.comparingInt(a -> PropertyGroup.all().indexOf(a.getPropertyGroup())));
+
+        // Then
+        assertThat(propertyList)
+                .isEqualTo(orderedPropertyList);
     }
 }
