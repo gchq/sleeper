@@ -21,7 +21,7 @@ if [ "$#" -ne 2 ]; then
 fi
 
 INSTANCE_ID=$1
-TABLE_NAME=$4
+TABLE_NAME=$2
 
 echo "-------------------------------------------------------------------------------"
 echo "Running Deployment"
