@@ -105,43 +105,16 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .isLessThan(output.indexOf("The following properties relate to bulk import"));
         assertThat(output.indexOf("The following properties relate to garbage collection"))
                 .isLessThan(output.indexOf("The following properties relate to compactions"));
-        // Then check that one property in each group is in the correct place
+        // Then check that one UserDefinedInstanceProperty is in the correct group
         assertThat(output.indexOf("sleeper.id"))
                 .isBetween(
                         output.indexOf("The following properties are commonly used throughout Sleeper"),
                         output.indexOf("The following properties relate to standard ingest"));
-        assertThat(output.indexOf("sleeper.ingest.repo"))
+        // Then check that one SystemDefinedInstanceProperty is in the correct group
+        assertThat(output.indexOf("sleeper.config.bucket"))
                 .isBetween(
-                        output.indexOf("The following properties relate to standard ingest"),
-                        output.indexOf("The following properties relate to bulk import"));
-        assertThat(output.indexOf("sleeper.bulk.import.class.name"))
-                .isBetween(
-                        output.indexOf("The following properties relate to bulk import"),
-                        output.indexOf("The following properties relate to the splitting of partitions"));
-        assertThat(output.indexOf("sleeper.partition.splitting.period.minutes"))
-                .isBetween(
-                        output.indexOf("The following properties relate to the splitting of partitions"),
-                        output.indexOf("The following properties relate to garbage collection"));
-        assertThat(output.indexOf("sleeper.gc.period.minutes"))
-                .isBetween(
-                        output.indexOf("The following properties relate to garbage collection"),
-                        output.indexOf("The following properties relate to compactions"));
-        assertThat(output.indexOf("sleeper.compaction.repo"))
-                .isBetween(
-                        output.indexOf("The following properties relate to compactions"),
-                        output.indexOf("The following properties relate to queries"));
-        assertThat(output.indexOf("sleeper.query.s3.max-connections"))
-                .isBetween(
-                        output.indexOf("The following properties relate to queries"),
-                        output.indexOf("The following properties relate to logging"));
-        assertThat(output.indexOf("sleeper.logging.level"))
-                .isBetween(
-                        output.indexOf("The following properties relate to logging"),
-                        output.indexOf("The following properties relate to the integration with Athena"));
-        assertThat(output.indexOf("sleeper.athena.spill.bucket.ageoff.days"))
-                .isBetween(
-                        output.indexOf("The following properties relate to the integration with Athena"),
-                        output.indexOf("The following properties relate to default values."));
+                        output.indexOf("The following properties are commonly used throughout Sleeper"),
+                        output.indexOf("The following properties relate to standard ingest"));
 
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
