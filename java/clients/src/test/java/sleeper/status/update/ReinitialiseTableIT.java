@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,15 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
@@ -64,6 +65,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -73,6 +75,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -99,6 +102,7 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
+@Testcontainers
 public class ReinitialiseTableIT {
     private static final String INSTANCE_NAME = "test";
     private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_NAME + "-config";
@@ -116,14 +120,14 @@ public class ReinitialiseTableIT {
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
             .build();
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
 
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
@@ -135,7 +139,7 @@ public class ReinitialiseTableIT {
                 .build();
     }
 
-    @After
+    @AfterEach
     public void afterEach() {
         s3Client.shutdown();
         dynamoDBClient.shutdown();
@@ -143,8 +147,8 @@ public class ReinitialiseTableIT {
         s3Client = null;
     }
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
     @Test
     public void shouldThrowExceptionIfBucketIsEmpty() {
@@ -681,7 +685,7 @@ public class ReinitialiseTableIT {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
+        String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
@@ -773,7 +777,7 @@ public class ReinitialiseTableIT {
         tableProperties.set(REVISION_TABLENAME, "sleeper" + "-" + tableName + "-" + "revisions");
         if (isS3StateStore) {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
-            tableProperties.set(DATA_BUCKET, folder.newFolder().getAbsolutePath());
+            tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         } else {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
         }
@@ -781,7 +785,7 @@ public class ReinitialiseTableIT {
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {
-        String folderName = folder.newFolder().getAbsolutePath();
+        String folderName = createTempDirectory(folder, null).toString();
         String splitPointsFileName = folderName + "/split-points.txt";
         FileWriter fstream = new FileWriter(splitPointsFileName);
         BufferedWriter info = new BufferedWriter(fstream);
@@ -800,9 +804,9 @@ public class ReinitialiseTableIT {
 
     private String createRevisionDynamoTable(String tableName) {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
+        attributeDefinitions.add(new AttributeDefinition(REVISION_ID_KEY, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.HASH));
+        keySchemaElements.add(new KeySchemaElement(REVISION_ID_KEY, KeyType.HASH));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)

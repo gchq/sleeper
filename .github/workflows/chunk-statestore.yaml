@@ -4,17 +4,18 @@ on:
     paths:
       - '.github/workflows/chunk-statestore.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/statestore/**'
+      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: State Store
-      moduleList: statestore
+      chunkId: statestore

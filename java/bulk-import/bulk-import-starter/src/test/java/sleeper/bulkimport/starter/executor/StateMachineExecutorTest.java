@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,10 @@ import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.amazonaws.services.stepfunctions.model.StartExecutionResult;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
+
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -48,7 +49,7 @@ public class StateMachineExecutorTest {
     private AtomicReference<StartExecutionRequest> requested;
     private AmazonS3 amazonS3;
 
-    @Before
+    @BeforeEach
     public void setUpStepFunctions() {
         requested = new AtomicReference<>();
         stepFunctions = mock(AWSStepFunctions.class);

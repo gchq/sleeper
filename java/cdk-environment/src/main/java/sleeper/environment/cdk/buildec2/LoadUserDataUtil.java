@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,17 @@ class LoadUserDataUtil {
     }
 
     private static String templateString() {
+        String userData = resourceString("user_data");
+        String cloudInit = resourceString("cloud-init.sh");
+        return userData.replace("%cloud-init-script%", cloudInit);
+    }
+
+    private static String resourceString(String resourcePath) {
         try {
-            URL resource = Objects.requireNonNull(LoadUserDataUtil.class.getClassLoader().getResource("user_data"));
+            URL resource = Objects.requireNonNull(LoadUserDataUtil.class.getClassLoader().getResource(resourcePath));
             return IOUtils.toString(resource, Charset.defaultCharset());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to load user data template", e);
+            throw new IllegalStateException("Failed to load " + resourcePath, e);
         }
     }
 }

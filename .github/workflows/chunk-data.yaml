@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-data.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
@@ -11,13 +12,13 @@ on:
       - 'java/garbage-collector/**'
       - 'java/tables/**'
       - 'java/statestore/**'
+      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Data
-      moduleList: tables,garbage-collector,metrics
+      chunkId: data

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.github.api.GitHubWorkflowRunsImpl;
+
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 public class CheckGitHubStatusMain {
 
@@ -27,22 +26,18 @@ public class CheckGitHubStatusMain {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Usage: <properties file path>");
-        }
-        String propertiesFile = args[0];
-        ChunksStatus status = ProjectConfiguration.from(loadProperties(propertiesFile)).checkStatus();
-        status.report(System.out);
-        if (status.isFailCheck()) {
+        if (args.length != 2) {
+            System.out.println("Usage: <github.properties path> <chunks.yaml path>");
             System.exit(1);
+            return;
         }
-    }
-
-    private static Properties loadProperties(String path) throws IOException {
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            properties.load(reader);
+        CheckGitHubStatusConfig configuration = CheckGitHubStatusConfig.fromGitHubAndChunks(Paths.get(args[0]), Paths.get(args[1]));
+        try (GitHubWorkflowRunsImpl gitHub = configuration.gitHubWorkflowRuns()) {
+            ChunkStatuses status = configuration.checkStatus(gitHub);
+            status.report(System.out);
+            if (status.isFailCheck()) {
+                System.exit(1);
+            }
         }
-        return properties;
     }
 }

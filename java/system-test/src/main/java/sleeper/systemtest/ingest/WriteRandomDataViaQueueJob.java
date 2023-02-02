@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
@@ -34,7 +35,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -61,8 +62,8 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
             ObjectFactory objectFactory,
             SystemTestProperties properties,
             TableProperties tableProperties,
-            StateStore stateStore) {
-        super(objectFactory, properties, tableProperties, stateStore);
+            StateStoreProvider stateStoreProvider) {
+        super(objectFactory, properties, tableProperties, stateStoreProvider);
         this.ingestMode = ingestMode;
     }
 
@@ -116,7 +117,11 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
 
         SendMessageRequest sendMessageRequest;
         if (ingestMode.equalsIgnoreCase(IngestMode.QUEUE.name())) {
-            IngestJob ingestJob = new IngestJob(getTableProperties().get(TABLE_NAME), UUID.randomUUID().toString(), Collections.singletonList(filename));
+            IngestJob ingestJob = IngestJob.builder()
+                    .tableName(getTableProperties().get(TABLE_NAME))
+                    .id(UUID.randomUUID().toString())
+                    .files(Collections.singletonList(filename))
+                    .build();
             String jsonJob = new IngestJobSerDe().toJson(ingestJob);
             LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
             sendMessageRequest = new SendMessageRequest()

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 Crown Copyright
+# Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ fi
 INSTANCE_ID=$1
 TABLE_NAME=$2
 
-BASE_DIR=$(cd $(dirname $0) && cd "../../" && pwd)
-GENERATED_DIR=${BASE_DIR}/scripts/generated
-TEMPLATE_DIR=${BASE_DIR}/scripts/templates
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+GENERATED_DIR=${SCRIPTS_DIR}/generated
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 
 echo "-------------------------------------------------------------------------------"
 echo "Connecting to table"
@@ -35,8 +35,8 @@ echo "TABLE_NAME: ${TABLE_NAME}"
 echo "GENERATED_DIR:${GENERATED_DIR}"
 echo "TEMPLATE_DIR: ${TEMPLATE_DIR}"
 
-rm -rf ${GENERATED_DIR}
-mkdir -p ${GENERATED_DIR}
+rm -rf "${GENERATED_DIR:?}"/*
+mkdir -p "${GENERATED_DIR}"
 
 #######################
 # Output Bucket Names #
@@ -69,7 +69,7 @@ grep "^sleeper.table.schema=" ${TABLE_PROPERTIES} | cut -d'=' -f2 | sed 's/\\:/:
   > ${SCHEMA}
 
 # Overwrite references to local files
-source "${BASE_DIR}/scripts/functions/sedInPlace.sh"
+source "${SCRIPTS_DIR}/functions/sedInPlace.sh"
 sed_in_place \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \

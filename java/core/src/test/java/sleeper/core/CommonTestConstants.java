@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,9 @@
  */
 package sleeper.core;
 
-import java.io.File;
-
 public final class CommonTestConstants {
-    public static final File TMP_DIRECTORY;
     public static final String DYNAMODB_LOCAL_CONTAINER = "amazon/dynamodb-local:1.13.6";
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:0.14.0";
-
-    static {
-        final String tmpDirectoryProperty = System.getProperty("java.io.tmpdir");
-
-        if (null != tmpDirectoryProperty) {
-            TMP_DIRECTORY = new File(tmpDirectoryProperty);
-        } else {
-            TMP_DIRECTORY = new File(".");
-        }
-    }
 
     private CommonTestConstants() {
         // Empty

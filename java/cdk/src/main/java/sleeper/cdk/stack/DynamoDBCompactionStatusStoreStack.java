@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.compaction.status.DynamoDBUtils;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
-import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
@@ -28,6 +22,12 @@ import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
+
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -56,7 +56,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
-                .timeToLiveAttribute(DynamoDBUtils.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
@@ -73,7 +73,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionTaskStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
-                .timeToLiveAttribute(DynamoDBUtils.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
     }

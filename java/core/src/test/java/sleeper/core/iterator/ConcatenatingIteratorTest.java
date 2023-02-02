@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@ package sleeper.core.iterator;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import sleeper.core.record.Record;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class ConcatenatingIteratorTest {
     private TestSupplier testSupplier1;
     private TestSupplier testSupplier2;
 
-    @Before
+    @BeforeEach
     public void resetSuppliers() {
         testSupplier1 = new TestSupplier(Lists.newArrayList(
                 new Record(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),

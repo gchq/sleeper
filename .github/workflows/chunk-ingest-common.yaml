@@ -1,0 +1,24 @@
+name: Build Ingest Common Modules
+on:
+  push:
+    paths:
+      - '.github/workflows/chunk-ingest-common.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/ingest/pom.xml'
+      - 'java/ingest/ingest-core/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/dynamodb-tools/**'
+      - 'java/core/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: ingest-common

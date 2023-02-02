@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import sleeper.cdk.Utils;
-import sleeper.cdk.stack.StateStoreStack;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.CfnJsonProps;
 import software.amazon.awscdk.Duration;
@@ -56,6 +51,12 @@ import software.amazon.awscdk.services.sns.ITopic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.cdk.stack.StateStoreStack;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -336,7 +337,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
                 .memorySize(1024)
                 .timeout(Duration.seconds(20))
                 .environment(env)
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))

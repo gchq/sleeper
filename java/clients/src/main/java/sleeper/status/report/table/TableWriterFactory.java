@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,12 +45,24 @@ public class TableWriterFactory {
         }
 
         public TableField addField(String header) {
-            return fieldBuilder(header).build();
+            return addField(TableFieldDefinition.field(header));
         }
 
-        public TableField.Builder fieldBuilder(String header) {
+        public TableField addNumericField(String header) {
+            return addField(TableFieldDefinition.numeric(header));
+        }
+
+        public TableField addField(TableFieldDefinition definition) {
             return TableField.builder(this, fields.size())
-                    .header(header).alignLeft();
+                    .definition(definition)
+                    .build();
+        }
+
+        public Builder addFields(TableFieldDefinition... definitions) {
+            for (TableFieldDefinition definition : definitions) {
+                addField(definition);
+            }
+            return this;
         }
 
         TableField addField(TableField field) {

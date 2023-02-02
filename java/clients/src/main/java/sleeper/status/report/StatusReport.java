@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import sleeper.ClientUtils;
+
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -33,17 +33,19 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.status.report.compactionjob.CompactionJobStatusReportArguments;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
-import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
-import sleeper.status.report.compactiontask.CompactionTaskQuery;
-import sleeper.status.report.compactiontask.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
+import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
+import sleeper.status.report.compaction.task.CompactionTaskQuery;
+import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.job.query.JobQuery;
+import sleeper.status.report.partitions.PartitionsStatusReporter;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 
-import static sleeper.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 /**
  * A utility class to report information about the partitions, the files, the
@@ -80,7 +82,7 @@ public class StatusReport {
     private void run() throws StateStoreException {
         System.out.println("\nFull Status Report:\n--------------------------");
         // Partitions
-        new PartitionsStatusReport(stateStore).run();
+        new PartitionsStatusReport(stateStore, tableProperties, new PartitionsStatusReporter(System.out)).run();
 
         // Data files
         new FilesStatusReport(stateStore, 1000, verbose).run();
@@ -90,7 +92,7 @@ public class StatusReport {
                 .instanceId(instanceProperties.get(ID))
                 .tableName(tableProperties.get(TABLE_NAME))
                 .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(QueryType.UNFINISHED)
+                .queryType(JobQuery.Type.UNFINISHED)
                 .build()).run();
 
         // Tasks

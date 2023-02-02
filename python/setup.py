@@ -1,4 +1,4 @@
-# Copyright 2022 Crown Copyright
+# Copyright 2022-2023 Crown Copyright
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sleeper',
-    version='0.13.0-SNAPSHOT',
+    version='0.15.0-SNAPSHOT',
     description='Python client for Sleeper',
     packages=['sleeper', 'pq'],
     install_requires=[

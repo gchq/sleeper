@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022 Crown Copyright
+# Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,6 @@
 
 set -e
 
-BASE_DIR=$(cd $(dirname $0) && cd "../../" && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp ${BASE_DIR}/scripts/jars/clients-*-utility.jar sleeper.status.report.CompactionTaskStatusReport "$@"
+java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.report.CompactionTaskStatusReport "$@"

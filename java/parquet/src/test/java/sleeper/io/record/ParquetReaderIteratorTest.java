@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package sleeper.io.record;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import sleeper.core.CommonTestConstants;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -35,11 +34,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ParquetReaderIteratorTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public java.nio.file.Path folder;
 
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("column1", new LongType()))
@@ -50,7 +50,7 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIterator() throws IOException {
         // Given
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         Map<String, Object> map1 = new HashMap<>();
@@ -81,7 +81,7 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
-        Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
         writer.close();

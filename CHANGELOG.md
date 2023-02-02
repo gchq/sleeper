@@ -4,6 +4,77 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/12-performance-test.md)
 
+## Version 0.14.0
+
+This contains the following improvements:
+
+General code improvements:
+- All Java modules have been upgraded to Java 11 and the project can now be built with Java 11 or 17. All
+code executed in lambdas, containers and on EMR now uses Amazon Corretto 11.
+- The SleeperProperty enums have been converted into static constants. This will allow additional properties
+to be added to them more easily.
+- Upgraded from JUnit 4 to 5.
+- Updated versions of many dependencies, including EMR, Spark, Hadoop.
+
+Compactions:
+- The lambda that creates more ECS tasks to run compactions previously scaled up too quickly as the calculation
+of the number of tasks currently running ignored pending tasks. This meant that occasionally tasks would start
+up and find they had no work to do.
+
+Standard ingest:
+- Fixed bug where the asynchronous file uploader could fail if a file was greater than 5GB.
+- Split ingest modules into submodules so that code needed for lambda to start jobs is smaller.
+
+System tests:
+- Made system tests more deterministic by explicitly triggering compactions.
+
+Clients:
+- Reports now report durations in human-readable format.
+
+Docker CLI:
+- Added a CLI for setting up an environment to deploy Sleeper
+- Uploaded an image for deploying a fixed, built version of Sleeper to be used in the future
+
+## Version 0.13.0
+
+This contains the following improvements:
+
+General code improvements:
+- The various compaction related modules are now all submodules of one parent compaction module.
+- Simplified the names of Cloudwatch log groups.
+
+Standard ingest:
+- Refactored standard ingest code to simplify it and make it easier to use.
+- Observability of ingest jobs: it is now possible to see the status of ingest jobs (i.e. whether they are queued,
+in progress, finished) and how long they took to run.
+- Fixed bug where standard ingest would fail if it needed to upload a file greater than 5GB to S3. This was done
+by replacing the use of put object with transfer manager.
+- The minimum part size to be used for uploads is now configurable and defaults to 128MB.
+- Changed the default value of `sleeper.ingest.arrow.max.local.store.bytes` from 16GB to 2GB to reduce the latency
+before data is uploaded to S3.
+- Various integration tests were converted to unit tests to speed up the build process.
+
+Bulk import:
+- Added new Dataframe based approach to bulk import that uses a custom partitioner so that Spark partitions the
+data according to Sleeper's leaf partitions. The data is then sorted within those partitions. This avoids the
+global sort required by the other Dataframe based approach, and means there is one fewer pass through the data
+to be loaded. This reduced the time of a test bulk import job from 24 to 14 minutes.
+- EBS storage can be configured for EMR clusters created for bulk import jobs.
+- Bumped default EMR version to 6.8.0 and Spark version to 3.3.0.
+
+Compactions:
+- Compactions can now be run on Graviton Fargate containers.
+
+Scripts:
+- The script to report information about the partitions now reports more detailed information about the number of
+elements in a partition and whether it needs splitting.
+- System test script reports elapsed time.
+
+Build:
+- Various improvments to github actions reliability.
+- Created a Docker image that can be used to deploy Sleeper. This avoids the user needing to install multiple tools
+locally.
+
 ## Version 0.12.0
 
 This contains the following improvements:

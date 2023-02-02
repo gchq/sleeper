@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.amazonaws.services.elasticmapreduce.model.Application;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.Configuration;
+import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
+import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
@@ -31,10 +33,12 @@ import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
 import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.elasticmapreduce.model.Tag;
+import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
@@ -46,11 +50,15 @@ import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -112,7 +120,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withJobFlowRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME))
                 .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
-                        .withName("Bulk Load")
+                        .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar").withArgs(constructArgs(bulkImportJob))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
@@ -135,18 +143,31 @@ public class EmrExecutor extends AbstractEmrExecutor {
             marketTypeOfExecutors = "SPOT";
         }
 
+        VolumeSpecification volumeSpecification = new VolumeSpecification()
+//                .withIops(null) // TODO Add property to control this
+                .withSizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
+                .withVolumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE));
+        EbsBlockDeviceConfig ebsBlockDeviceConfig = new EbsBlockDeviceConfig()
+                .withVolumeSpecification(volumeSpecification)
+                .withVolumesPerInstance(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE));
+        EbsConfiguration ebsConfiguration = new EbsConfiguration()
+                .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
+                .withEbsOptimized(true);
+
         config.setInstanceGroups(Lists.newArrayList(
                 new InstanceGroupConfig()
                         .withName("Executors")
                         .withInstanceType(executorInstanceType)
                         .withInstanceRole(InstanceRoleType.CORE)
                         .withInstanceCount(initialNumberOfExecutors)
+                        .withEbsConfiguration(ebsConfiguration)
                         .withMarket(MarketType.fromValue(marketTypeOfExecutors)),
                 new InstanceGroupConfig()
                         .withName("Driver")
                         .withInstanceType(driverInstanceType)
                         .withInstanceRole(InstanceRoleType.MASTER)
                         .withInstanceCount(1)
+                        .withEbsConfiguration(ebsConfiguration)
         ));
 
         String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
@@ -181,6 +202,16 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withClassification("spark-defaults")
                 .withProperties(sparkConf);
         configurations.add(sparkDefaultsConfigurations);
+
+        Map<String, String> sparkExecutorJavaHome = new HashMap<>();
+        sparkExecutorJavaHome.put("JAVA_HOME", ConfigurationUtils.getJavaHome());
+        Configuration sparkEnvExportConfigurations = new Configuration()
+                .withClassification("export")
+                .withProperties(sparkExecutorJavaHome);
+        Configuration sparkEnvConfigurations = new Configuration()
+                .withClassification("spark-env")
+                .withConfigurations(sparkEnvExportConfigurations);
+        configurations.add(sparkEnvConfigurations);
 
         Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
         Configuration mapRedSiteConfigurations = new Configuration()

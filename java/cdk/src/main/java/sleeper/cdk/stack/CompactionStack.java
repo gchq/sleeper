@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.core.ContainerConstants;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -33,13 +30,13 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
-import software.amazon.awscdk.services.ecs.AwsLogDriver;
-import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.CpuArchitecture;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
-import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
+import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -55,6 +52,10 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.ContainerConstants;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -64,23 +65,29 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -299,7 +306,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "JobCreationLambda")
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .code(code)
@@ -331,6 +338,7 @@ public class CompactionStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
+        instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
@@ -353,27 +361,16 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "MergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
+        FargateTaskDefinition taskDefinition = compactionFargateTaskDefinition("Merge");
         this.compactionFamily = taskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
 
         IRepository repository = Repository.fromRepositoryName(this, "ECR1", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-MergeTasks")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(logDriver)
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
@@ -415,27 +412,16 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
+        FargateTaskDefinition taskDefinition = compactionFargateTaskDefinition("SplittingMerge");
         splittingCompactionFamily = taskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
 
         IRepository repository = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-SplittingMergeTasks")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(logDriver)
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "SplittingMergeCompactionTasks"))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
@@ -458,6 +444,30 @@ public class CompactionStack extends NestedStack {
         return cluster;
     }
 
+    private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        int cpu;
+        int memoryLimitMiB;
+        if (architecture.startsWith("ARM")) {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+        } else {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+        }
+
+        return FargateTaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionTaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionTaskFamily")
+                .cpu(cpu).memoryLimitMiB(memoryLimitMiB)
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.of(architecture))
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
+                .build();
+    }
+
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(IBucket configBucket,
                                                IBucket jarsBucket,
@@ -476,7 +486,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "CompactionTasksCreator")
                 .functionName(functionName)
                 .description("If there are compaction jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .code(code)
@@ -497,7 +507,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
                 .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
+                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole"))
                 .build();
         IRole role = Objects.requireNonNull(handler.getRole());
         role.addToPrincipalPolicy(policyStatement);
@@ -513,6 +523,7 @@ public class CompactionStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
+        instanceProperties.set(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
@@ -534,7 +545,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "SplittingCompactionTasksCreator")
                 .functionName(functionName)
                 .description("If there are splitting compaction jobs on queue create tasks to run them")
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .code(code)
@@ -555,7 +566,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
                 .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
+                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole"))
                 .build();
         IRole role = Objects.requireNonNull(handler.getRole());
         role.addToPrincipalPolicy(policyStatement);
@@ -571,6 +582,7 @@ public class CompactionStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
+        instanceProperties.set(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 

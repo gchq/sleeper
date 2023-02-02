@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import sleeper.statestore.FileInfo;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.ClientUtils.abbreviatedRecordCount;
+import static sleeper.util.ClientUtils.abbreviatedRecordCount;
 
 /**
  * The standard implementation of {@link FileStatusReporter} that returns file

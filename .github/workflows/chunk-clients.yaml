@@ -4,24 +4,30 @@ on:
     paths:
       - '.github/workflows/chunk-clients.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/clients/**'
       - 'java/query/**'
+      - 'java/compaction/compaction-job-creation/**'
+      - 'java/compaction/compaction-status-store/**'
       - 'java/splitter/**'
-      - 'java/ingest/**'
-      - 'java/common-job/**'
+      - 'java/ingest/ingest-runner/**'
       - 'java/sketches/**'
       - 'java/tables/**'
+      - 'java/ingest/ingest-status-store/**'
+      - 'java/common-job/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/compaction/compaction-core/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
+      - 'java/dynamodb-tools/**'
       - 'java/configuration/**'
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Clients
-      moduleList: clients
+      chunkId: clients

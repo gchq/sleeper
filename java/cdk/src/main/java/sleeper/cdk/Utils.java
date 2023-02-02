@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,20 @@
 package sleeper.cdk;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.ecs.AwsLogDriver;
+import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
+import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
+import software.constructs.Construct;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.logs.RetentionDays;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,7 +44,9 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
@@ -140,6 +148,17 @@ public class Utils {
         }
     }
 
+    public static LogDriver createFargateContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
+                .streamPrefix(instanceProperties.get(ID) + "-" + id)
+                .logGroup(LogGroup.Builder.create(scope, id)
+                        .logGroupName(instanceProperties.get(ID) + "-" + id)
+                        .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                        .build())
+                .build();
+        return AwsLogDriver.awsLogs(logDriverProps);
+    }
+
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
                 .map(File::new)
@@ -175,7 +194,7 @@ public class Utils {
     }
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY))) {
+        if (properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
             return RemovalPolicy.RETAIN;
         } else {
             return RemovalPolicy.DESTROY;

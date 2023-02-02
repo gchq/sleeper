@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package sleeper.core.range;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import sleeper.core.key.Key;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

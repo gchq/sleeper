@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
@@ -68,8 +69,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener {
     }
 
     public DynamoDBQueryTracker(Map<String, String> destinationConfig) {
-        this.trackerTableName = destinationConfig.get(QUERY_TRACKER_TABLE_NAME.name());
-        String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.name());
+        this.trackerTableName = destinationConfig.get(QUERY_TRACKER_TABLE_NAME.getPropertyName());
+        String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.getPropertyName());
         this.queryTrackerTTL = Long.parseLong(ttl != null ? ttl : QUERY_TRACKER_ITEM_TTL_IN_DAYS.getDefaultValue());
         this.dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
     }
@@ -162,9 +163,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener {
         QueryState parentState = getParentState(children);
 
         if (parentState != null) {
-            long totalRecordCount = children.stream().mapToLong(query -> {
-                return query.getRecordCount() != null ? query.getRecordCount() : 0;
-            }).sum();
+            long totalRecordCount = children.stream().mapToLong(query ->
+                    query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
             LOGGER.info("Updating state of parent to {}", parentState);
             updateState(leafPartitionQuery.getQueryId(), NON_NESTED_QUERY_PLACEHOLDER, parentState, totalRecordCount);
         }

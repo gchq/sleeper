@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,11 @@ import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-
-import java.util.UUID;
 
 /**
  *
@@ -56,7 +55,7 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         StepConfig stepConfig = new StepConfig()
-                .withName("BulkLoad-" + UUID.randomUUID().toString().substring(0, 5))
+                .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar").withArgs(constructArgs(bulkImportJob)));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()

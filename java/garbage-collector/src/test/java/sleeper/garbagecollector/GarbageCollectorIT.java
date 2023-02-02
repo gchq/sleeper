@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -56,6 +57,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -67,15 +69,16 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+@Testcontainers
 public class GarbageCollectorIT {
 
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
     );
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public java.nio.file.Path folder;
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
@@ -138,7 +141,7 @@ public class GarbageCollectorIT {
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         Schema schema = getSchema();
         String tableName = UUID.randomUUID().toString();
-        String localDir = folder.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -148,7 +151,7 @@ public class GarbageCollectorIT {
         System.out.println(tableProperties);
         TableLister tableLister = new TableLister(s3Client, instanceProperties);
         Partition partition = stateStore.getAllPartitions().get(0);
-        String tempFolder = folder.newFolder().getAbsolutePath();
+        String tempFolder = createTempDirectory(folder, null).toString();
         //  - A file which should be garbage collected immediately
         String file1 = tempFolder + "/file1.parquet";
         FileInfo fileInfo1 = FileInfo.builder()

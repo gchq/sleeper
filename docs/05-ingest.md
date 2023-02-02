@@ -199,7 +199,7 @@ The following properties are instance properties that can be overridden by table
 part of the job specification:
 
 ```properties
-sleeper.default.bulk.import.emr.release.label=emr-6.4.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This default can be overridden by a table property or by a property in the bulk import job specification.
+sleeper.default.bulk.import.emr.release.label=emr-6.9.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This default can be overridden by a table property or by a property in the bulk import job specification.
 sleeper.default.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.initial.instances=2 # The initial number of EC2 instances to be used as executors in the EMR cluster.
@@ -211,7 +211,7 @@ will be used instead of the default values in the instance properties, unless th
 by properties in the job specification.
 
 ```properties
-sleeper.table.bulk.import.emr.release.label=emr-6.4.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
+sleeper.table.bulk.import.emr.release.label=emr-6.9.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster. This value 
 overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
@@ -231,7 +231,7 @@ automatically scales up and down between `sleeper.bulk.import.persistent.emr.min
 The other properties of the cluster are controlled using similar properties to the non-persistent EMR cluster, e.g.
 
 ```properties
-sleeper.bulk.import.persistent.emr.release.label=emr-6.4.0
+sleeper.bulk.import.persistent.emr.release.label=emr-6.9.0
 sleeper.bulk.import.persistent.emr.master.instance.type=m5.xlarge
 sleeper.bulk.import.persistent.emr.core.instance.type=m5.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
@@ -304,6 +304,8 @@ servers in the cluster.
 ```
 
 You can then use the instructions [here](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-web-interfaces.html) to access the pages.
+Also see [this link](https://aws.amazon.com/premiumsupport/knowledge-center/spark-driver-logs-emr-cluster/) for instructions on how to access
+the logs of the Spark driver.
 
 #### An example of using bulk import
 
@@ -319,7 +321,7 @@ A persistent EMR cluster consisting of 10 core nodes of instance type m5.4xlarge
 following instance properties:
 
 ```properties
-sleeper.bulk.import.persistent.emr.release.label=emr-6.4.0
+sleeper.bulk.import.persistent.emr.release.label=emr-6.9.0
 sleeper.bulk.import.persistent.emr.master.instance.type=m5.xlarge
 sleeper.bulk.import.persistent.emr.core.instance.type=m5.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=false
@@ -377,8 +379,18 @@ The Spark properties for a job can be overridden by specifying the `sparkConf` s
 
 #### Changing the bulk import class
 
-Sleeper contains two different Spark algorithms for performing the bulk import. The first uses Dataframes and is the default
-approach. The second uses RDDs. To change to the RDD approach on a per-job basis, add the following the the JSON for the job:
+Sleeper contains three different Spark algorithms for performing the bulk import. There are two approaches that use Dataframes and one
+that uses RDDs (recall that algorithms expressed using Spark's Dataframe API are normally more efficient than RDD-based algorithms).
+
+The default algorithm is the `BulkImportDataframeLocalSortRunner`. This partitions the data according to Sleeper's leaf partitions and
+then sorts within partitions. In general this is more efficient than the `BulkImportJobDataframeRunner` algorithm which globally sorts
+the data before ingesting data. This will result in more files than there are Sleeper partitions. However, if the number of Sleeper leaf
+partitions is small then this allow more parallelism than the `BulkImportDataframeLocalSortRunner` approach.
+
+The RDD-based approach uses the `repartitionAndSortWithinPartitions` method on an RDD formed from the input data. This is generally
+significantly less efficient than the Dataframe-based methods.
+
+To change the algorithm usedon a per-job basis, set the `className` field on the JSON for the job, e.g.:
 
 ```JSON
 "className": "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner"

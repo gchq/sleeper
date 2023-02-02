@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -33,16 +34,16 @@ public abstract class WriteRandomDataJob {
     private final ObjectFactory objectFactory;
     private final SystemTestProperties systemTestProperties;
     private final TableProperties tableProperties;
-    private final StateStore stateStore;
+    private final StateStoreProvider stateStoreProvider;
 
     public WriteRandomDataJob(ObjectFactory objectFactory,
                               SystemTestProperties systemTestProperties,
                               TableProperties tableProperties,
-                              StateStore stateStore) {
+                              StateStoreProvider stateStoreProvider) {
         this.objectFactory = objectFactory;
         this.systemTestProperties = systemTestProperties;
         this.tableProperties = tableProperties;
-        this.stateStore = stateStore;
+        this.stateStoreProvider = stateStoreProvider;
     }
 
     public abstract void run() throws IOException, StateStoreException;
@@ -68,6 +69,10 @@ public abstract class WriteRandomDataJob {
     }
 
     protected StateStore getStateStore() {
-        return stateStore;
+        return stateStoreProvider.getStateStore(tableProperties);
+    }
+
+    protected StateStoreProvider getStateStoreProvider() {
+        return stateStoreProvider;
     }
 }

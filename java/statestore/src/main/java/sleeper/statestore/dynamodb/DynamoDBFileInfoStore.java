@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -42,6 +41,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactionConflictException;
 import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoStore;
@@ -54,10 +54,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
@@ -277,26 +280,14 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public List<FileInfo> getActiveFiles() throws StateStoreException {
         try {
-            double totalCapacity = 0.0D;
-            ScanRequest queryRequest = new ScanRequest()
+            ScanRequest scanRequest = new ScanRequest()
                     .withTableName(activeTablename)
                     .withConsistentRead(stronglyConsistentReads)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            ScanResult queryResult = dynamoDB.scan(queryRequest);
-            totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-            List<Map<String, AttributeValue>> results = new ArrayList<>();
-            results.addAll(queryResult.getItems());
-            while (null != queryResult.getLastEvaluatedKey()) {
-                queryRequest = new ScanRequest()
-                        .withTableName(activeTablename)
-                        .withConsistentRead(stronglyConsistentReads)
-                        .withExclusiveStartKey(queryResult.getLastEvaluatedKey())
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-                queryResult = dynamoDB.scan(queryRequest);
-                totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-                results.addAll(queryResult.getItems());
-            }
-            LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity);
+
+            AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+            List<Map<String, AttributeValue>> results = scanTrackingCapacity(scanRequest, totalCapacity);
+            LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity.get());
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
                 fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
@@ -310,105 +301,41 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public Iterator<FileInfo> getReadyForGCFiles() {
-        return new FilesReadyForGCIterator(dynamoDB, readyForGCTablename, fileInfoFormat, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads);
-    }
-
-    private static class FilesReadyForGCIterator implements Iterator<FileInfo> {
-        private final AmazonDynamoDB dynamoDB;
-        private final String readyForGCFileInfoTablename;
-        private final DynamoDBFileInfoFormat fileInfoFormat;
-        private final int delayBeforeGarbageCollectionInSeconds;
-        private final boolean stronglyConsistentReads;
-        private double totalCapacity;
-        private ScanResult scanResult;
-        private Iterator<Map<String, AttributeValue>> itemsIterator;
-
-        FilesReadyForGCIterator(AmazonDynamoDB dynamoDB,
-                                String readyForGCFileInfoTablename,
-                                DynamoDBFileInfoFormat fileInfoFormat,
-                                int delayBeforeGarbageCollectionInSeconds,
-                                boolean stronglyConsistentReads) {
-            this.dynamoDB = dynamoDB;
-            this.readyForGCFileInfoTablename = readyForGCFileInfoTablename;
-            this.fileInfoFormat = fileInfoFormat;
-            this.delayBeforeGarbageCollectionInSeconds = delayBeforeGarbageCollectionInSeconds;
-            this.stronglyConsistentReads = stronglyConsistentReads;
-            this.totalCapacity = 0.0D;
-            long delayInMilliseconds = 1000L * delayBeforeGarbageCollectionInSeconds;
-            long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
-            Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-            expressionAttributeValues.put(":deletetime", new AttributeValue().withN("" + deleteTime));
-            ScanRequest queryRequest = new ScanRequest()
-                    .withTableName(readyForGCFileInfoTablename)
-                    .withConsistentRead(stronglyConsistentReads)
-                    .withExpressionAttributeValues(expressionAttributeValues)
-                    .withFilterExpression(LAST_UPDATE_TIME + " < :deletetime")
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            scanResult = dynamoDB.scan(queryRequest);
-            totalCapacity += scanResult.getConsumedCapacity().getCapacityUnits();
-            itemsIterator = scanResult.getItems().iterator();
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (itemsIterator.hasNext()) {
-                return true;
-            }
-            if (null != scanResult.getLastEvaluatedKey()) {
-                long delayInMilliseconds = 1000L * delayBeforeGarbageCollectionInSeconds;
-                long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
-                Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-                expressionAttributeValues.put(":deletetime", new AttributeValue().withN("" + deleteTime));
-                ScanRequest queryRequest = new ScanRequest()
-                        .withTableName(readyForGCFileInfoTablename)
-                        .withConsistentRead(stronglyConsistentReads)
-                        .withExpressionAttributeValues(expressionAttributeValues)
-                        .withExclusiveStartKey(scanResult.getLastEvaluatedKey())
-                        .withFilterExpression(LAST_UPDATE_TIME + " < :deletetime")
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-                scanResult = dynamoDB.scan(queryRequest);
-                totalCapacity += scanResult.getConsumedCapacity().getCapacityUnits();
-                List<Map<String, AttributeValue>> items2 = scanResult.getItems();
-                this.itemsIterator = items2.iterator();
-                return hasNext();
-            }
-            LOGGER.debug("Scanned table {} for all ready for GC files, capacity consumed = {}", readyForGCFileInfoTablename, totalCapacity);
-            return false;
-        }
-
-        @Override
-        public FileInfo next() {
-            try {
-                return fileInfoFormat.getFileInfoFromAttributeValues(itemsIterator.next());
-            } catch (IOException e) {
-                throw new RuntimeException("IOException creating FileInfo from attribute values");
-            }
-        }
+        long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
+        long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+        ScanRequest scanRequest = new ScanRequest()
+                .withTableName(readyForGCTablename)
+                .withConsistentRead(stronglyConsistentReads)
+                .withExpressionAttributeValues(Map.of(":deletetime", new AttributeValue().withN("" + deleteTime)))
+                .withFilterExpression(LAST_UPDATE_TIME + " < :deletetime")
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+        return streamPagedResults(dynamoDB, scanRequest)
+                .flatMap(result -> {
+                    double newConsumed = totalCapacity.updateAndGet(old ->
+                            old + result.getConsumedCapacity().getCapacityUnits());
+                    LOGGER.debug("Scanned table {} for all ready for GC files, capacity consumed = {}",
+                            readyForGCTablename, newConsumed);
+                    return result.getItems().stream();
+                }).map(item -> {
+                    try {
+                        return fileInfoFormat.getFileInfoFromAttributeValues(item);
+                    } catch (IOException e) {
+                        throw new RuntimeException("IOException creating FileInfo from attribute values");
+                    }
+                }).iterator();
     }
 
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
         try {
-            double totalCapacity = 0.0D;
             ScanRequest scanRequest = new ScanRequest()
                     .withTableName(activeTablename)
                     .withConsistentRead(stronglyConsistentReads)
                     .withFilterExpression("attribute_not_exists(" + JOB_ID + ")")
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            ScanResult queryResult = dynamoDB.scan(scanRequest);
-            totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-            List<Map<String, AttributeValue>> results = new ArrayList<>(queryResult.getItems());
-            while (null != queryResult.getLastEvaluatedKey()) {
-                scanRequest = new ScanRequest()
-                        .withTableName(activeTablename)
-                        .withConsistentRead(stronglyConsistentReads)
-                        .withFilterExpression("attribute_not_exists(" + JOB_ID + ")")
-                        .withExclusiveStartKey(queryResult.getLastEvaluatedKey())
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-                queryResult = dynamoDB.scan(scanRequest);
-                totalCapacity += queryResult.getConsumedCapacity().getCapacityUnits();
-                results.addAll(queryResult.getItems());
-            }
+            AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+            List<Map<String, AttributeValue>> results = scanTrackingCapacity(scanRequest, totalCapacity);
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
@@ -433,6 +360,15 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             partitionToFiles.get(partition).add(fileInfo.getFilename());
         }
         return partitionToFiles;
+    }
+
+    private List<Map<String, AttributeValue>> scanTrackingCapacity(
+            ScanRequest scanRequest, AtomicReference<Double> totalCapacity) {
+        return streamPagedResults(dynamoDB, scanRequest)
+                .flatMap(result -> {
+                    totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
+                    return result.getItems().stream();
+                }).collect(Collectors.toList());
     }
 
     @Override

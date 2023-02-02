@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,6 @@ package sleeper.cdk.stack;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.s3.S3StateStore;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -44,6 +39,12 @@ import software.amazon.awscdk.services.s3.assets.AssetOptions;
 import software.amazon.awscdk.services.s3.deployment.BucketDeployment;
 import software.amazon.awscdk.services.s3.deployment.Source;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.s3.S3StateStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,7 +97,7 @@ public class TableStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for handling initialisation and teardown of Sleeper Tables")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .build());
 
         configBucket.grantReadWrite(sleeperTableLambda);
@@ -207,7 +208,7 @@ public class TableStack extends NestedStack {
         Function tableMetricsPublisher = Function.Builder.create(this, tableName + "MetricsPublisher")
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .code(Code.fromBucket(jarsBucket, "metrics-" + instanceProperties.get(VERSION) + ".jar"))
-                .runtime(Runtime.JAVA_8)
+                .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
                 .memorySize(256)
                 .timeout(Duration.seconds(60))

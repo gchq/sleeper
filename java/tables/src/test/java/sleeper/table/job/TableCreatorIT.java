@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -34,16 +36,19 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.UUID;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
+@Testcontainers
 public class TableCreatorIT {
-    @ClassRule
+    @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
@@ -52,19 +57,19 @@ public class TableCreatorIT {
             .valueFields(new Field("value", new StringType()))
             .build();
 
-    @ClassRule
-    public static TemporaryFolder tempDir = new TemporaryFolder();
+    @TempDir
+    public static Path tempDir;
 
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
 
-    @Before
+    @BeforeEach
     public void createClients() {
         s3Client = getS3Client();
         dynamoClient = getDynamoClient();
     }
 
-    @After
+    @AfterEach
     public void shutDownClients() {
         s3Client.shutdown();
         dynamoClient.shutdown();
@@ -196,7 +201,7 @@ public class TableCreatorIT {
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
 
         // When
-        String localDir = tempDir.newFolder().getAbsolutePath();
+        String localDir = createTempDirectory(tempDir, null).toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(TABLE_NAME, "MyTable");

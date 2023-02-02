@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+
 import sleeper.core.key.Key;
 import sleeper.core.key.KeySerDe;
 import sleeper.core.schema.Schema;
@@ -28,9 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createBinaryAttribute;
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBinaryAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
 

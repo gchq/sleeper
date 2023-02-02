@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
  */
 package sleeper.systemtest.cdk;
 
-import sleeper.cdk.Utils;
-import sleeper.cdk.stack.StateStoreStack;
-import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.SystemTestProperty;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.NestedStack;
@@ -27,17 +23,19 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
-import software.amazon.awscdk.services.ecs.AwsLogDriver;
-import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
-import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import sleeper.cdk.Utils;
+import sleeper.cdk.stack.StateStoreStack;
+import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.SystemTestProperty;
 
 import java.util.List;
 import java.util.Locale;
@@ -45,7 +43,6 @@ import java.util.Locale;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
@@ -110,15 +107,9 @@ public class SystemTestStack extends NestedStack {
         IRepository repository = Repository.fromRepositoryName(this, "ECR3", systemTestProperties.get(SYSTEM_TEST_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, systemTestProperties.get(VERSION));
 
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(systemTestProperties.get(ID) + "-SystemTestTasks")
-                .logRetention(Utils.getRetentionDays(systemTestProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(logDriver)
+                .logging(Utils.createFargateContainerLogDriver(this, systemTestProperties, "SystemTestTasks"))
                 .environment(Utils.createDefaultEnvironment(systemTestProperties))
                 .build();
         taskDefinition.addContainer(SYSTEM_TEST_CONTAINER, containerDefinitionOptions);

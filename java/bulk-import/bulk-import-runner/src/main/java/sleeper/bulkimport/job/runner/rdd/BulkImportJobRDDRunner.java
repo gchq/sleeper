@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.WriteParquetFiles;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -44,15 +44,13 @@ public class BulkImportJobRDDRunner extends BulkImportJobRunner {
     public Dataset<Row> createFileInfos(
             Dataset<Row> rows, BulkImportJob job, TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-
         Schema schema = tableProperties.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-
         JavaRDD<Row> rdd = rows.javaRDD()
                 .mapToPair(new ExtractKeyFunction(schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
                 .repartitionAndSortWithinPartitions(new SleeperPartitioner(schemaAsString, broadcastedPartitions), new WrappedKeyComparator(schemaAsString))
                 .map(tuple -> tuple._2)
-                .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf));
+                .mapPartitions(new WriteParquetFile(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf, broadcastedPartitions));
 
         SparkSession session = SparkSession.builder().getOrCreate();
         return session.createDataset(rdd.rdd(), RowEncoder.apply(createFileInfoSchema()));

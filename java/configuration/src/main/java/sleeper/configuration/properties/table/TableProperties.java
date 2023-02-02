@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
@@ -35,7 +36,7 @@ import java.util.Arrays;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class TableProperties extends SleeperProperties<ITableProperty> {
+public class TableProperties extends SleeperProperties<TableProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
     public static final String TABLES_PREFIX = "tables";
@@ -76,12 +77,12 @@ public class TableProperties extends SleeperProperties<ITableProperty> {
     }
 
     @Override
-    public String get(ITableProperty property) {
+    public String get(TableProperty property) {
         SleeperProperty defaultProperty = property.getDefaultProperty();
         if (defaultProperty == null) {
             return super.get(property);
-        } else if (defaultProperty instanceof ITableProperty) {
-            return getProperties().getProperty(property.getPropertyName(), get((ITableProperty) defaultProperty));
+        } else if (defaultProperty instanceof TableProperty) {
+            return getProperties().getProperty(property.getPropertyName(), get((TableProperty) defaultProperty));
         } else if (defaultProperty instanceof InstanceProperty) {
             return getProperties().getProperty(property.getPropertyName(), instanceProperties.get((InstanceProperty) defaultProperty));
         } else {

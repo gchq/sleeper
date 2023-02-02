@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.utils.HadoopConfigurationProvider;
@@ -56,16 +56,16 @@ public class IngestRandomData {
 
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, systemTestProperties).getTableProperties(args[1]);
 
-        StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties, HadoopConfigurationProvider.getConfigurationForECS(systemTestProperties))
-                .getStateStore(tableProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, systemTestProperties,
+                HadoopConfigurationProvider.getConfigurationForECS(systemTestProperties));
 
         s3Client.shutdown();
 
         String ingestMode = systemTestProperties.get(INGEST_MODE);
         if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {
-            new WriteRandomDataViaQueueJob(ingestMode, objectFactory, systemTestProperties, tableProperties, stateStore).run();
+            new WriteRandomDataViaQueueJob(ingestMode, objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
         } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
-            new UploadMultipleShardedSortedParquetFiles(objectFactory, systemTestProperties, tableProperties, stateStore).run();
+            new UploadMultipleShardedSortedParquetFiles(objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
         } else {
             throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode +
                     ". Only direct and queue ingest modes are available.");

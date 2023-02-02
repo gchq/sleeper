@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package sleeper.configuration.properties.table;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -84,7 +85,7 @@ public class TablePropertiesTest {
         tableProperties.set(TABLE_NAME, "id");
 
         // When
-        ITableProperty defaultingProperty = new ITableProperty() {
+        TableProperty defaultingProperty = new TableProperty() {
             @Override
             public SleeperProperty getDefaultProperty() {
                 return TABLE_NAME;
@@ -97,6 +98,11 @@ public class TablePropertiesTest {
 
             @Override
             public String getDefaultValue() {
+                return null;
+            }
+
+            @Override
+            public String getDescription() {
                 return null;
             }
         };
@@ -122,9 +128,14 @@ public class TablePropertiesTest {
             public String getDefaultValue() {
                 return null;
             }
+
+            @Override
+            public String getDescription() {
+                return null;
+            }
         };
 
-        ITableProperty defaultingProperty = new ITableProperty() {
+        TableProperty defaultingProperty = new TableProperty() {
             @Override
             public SleeperProperty getDefaultProperty() {
                 return sleeperProperty;
@@ -137,6 +148,11 @@ public class TablePropertiesTest {
 
             @Override
             public String getDefaultValue() {
+                return null;
+            }
+
+            @Override
+            public String getDescription() {
                 return null;
             }
         };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sleeper.systemtest.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
@@ -24,9 +25,9 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
-import sleeper.statestore.StateStore;
+import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -36,12 +37,20 @@ import java.io.IOException;
  */
 public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob {
 
+    private final IngestFactory ingestFactory;
+
     public UploadMultipleShardedSortedParquetFiles(
             ObjectFactory objectFactory,
             SystemTestProperties properties,
             TableProperties tableProperties,
-            StateStore stateStore) {
-        super(objectFactory, properties, tableProperties, stateStore);
+            StateStoreProvider stateStoreProvider) {
+        super(objectFactory, properties, tableProperties, stateStoreProvider);
+        this.ingestFactory = IngestFactory.builder()
+                .objectFactory(objectFactory)
+                .localDir("/mnt/scratch")
+                .stateStoreProvider(stateStoreProvider)
+                .instanceProperties(properties)
+                .build();
     }
 
     public void run() throws IOException {
@@ -52,18 +61,7 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(createRecordIterator(schema));
 
         try {
-            IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                    getClassFactory(),
-                    getStateStore(),
-                    getSystemTestProperties(),
-                    getTableProperties(),
-                    "/mnt/scratch",
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    recordIterator);
+            ingestFactory.ingestFromRecordIteratorAndClose(getTableProperties(), recordIterator);
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

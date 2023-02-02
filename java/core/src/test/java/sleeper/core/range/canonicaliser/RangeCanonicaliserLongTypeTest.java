@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package sleeper.core.range.canonicaliser;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.RangeCanonicaliser;
@@ -30,7 +31,7 @@ public class RangeCanonicaliserLongTypeTest {
     private Field field;
     private RangeFactory rangeFactory;
 
-    @Before
+    @BeforeEach
     public void setup() {
         field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();

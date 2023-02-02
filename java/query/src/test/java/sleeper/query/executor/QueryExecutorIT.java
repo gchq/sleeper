@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -50,18 +50,19 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,23 +75,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
+@Testcontainers
 public class QueryExecutorIT {
     protected static final int DYNAMO_PORT = 8000;
     protected static AmazonDynamoDB dynamoDBClient;
     protected static ExecutorService executorService;
 
-    @ClassRule
+    @Container
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
-    @BeforeClass
+    @BeforeAll
     public static void initDynamoClient() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
                 new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
@@ -102,7 +108,7 @@ public class QueryExecutorIT {
         executorService = Executors.newFixedThreadPool(10);
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdownDynamoClient() {
         dynamoDBClient.shutdown();
         executorService.shutdown();
@@ -159,7 +165,8 @@ public class QueryExecutorIT {
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
         Partition rootPartition = stateStore.getAllPartitions().get(0);
-        ingestData(instanceProperties, stateStore, schema, getRecords().iterator());
+        tableProperties.set(COMPRESSION_CODEC, "snappy");
+        ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         List<String> files = stateStore.getActiveFiles().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -228,7 +235,7 @@ public class QueryExecutorIT {
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
         Partition rootPartition = stateStore.getAllPartitions().get(0);
-        ingestData(instanceProperties, stateStore, schema, getMultipleIdenticalRecords().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
         List<String> files = stateStore.getActiveFiles().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -281,8 +288,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWhenIdenticalRecordsInMultipleFilesInOnePartition()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+            throws StateStoreException, IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -292,7 +298,7 @@ public class QueryExecutorIT {
         StateStore stateStore = getStateStore(schema);
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, schema, getRecords().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         }
         List<String> files = stateStore.getActiveFiles().stream()
                 .map(FileInfo::getFilename)
@@ -346,8 +352,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInOnePartition()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+            throws StateStoreException, IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -357,7 +362,7 @@ public class QueryExecutorIT {
         StateStore stateStore = getStateStore(schema);
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, schema, getMultipleRecords().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
         List<String> files = stateStore.getActiveFiles().stream()
                 .map(FileInfo::getFilename)
@@ -479,8 +484,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitions()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+            throws StateStoreException, IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -497,7 +501,7 @@ public class QueryExecutorIT {
                 .findFirst()
                 .get();
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, schema, getMultipleRecords().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
         List<String> filesInLeftPartition = stateStore.getActiveFiles().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
@@ -591,8 +595,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWithMultidimRowKey()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+            throws StateStoreException, IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
@@ -613,7 +616,7 @@ public class QueryExecutorIT {
                 .findFirst()
                 .get();
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, schema, getMultipleRecordsMultidimRowKey().iterator());
+            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsMultidimRowKey().iterator());
         }
         List<String> filesInLeftPartition = stateStore.getActiveFiles().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
@@ -720,7 +723,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitionsMultidimensionalKey()
-            throws StateStoreException, InterruptedException, QueryException,
+            throws StateStoreException, QueryException,
             IOException, IteratorException, ObjectFactoryException {
         // Given
         Field field1 = new Field("key1", new StringType());
@@ -755,7 +758,7 @@ public class QueryExecutorIT {
         Record record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
         Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
         List<Record> records = Arrays.asList(record1, record2, record3, record4);
-        ingestData(instanceProperties, stateStore, schema, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         // Split the root partition into 2: 1 and 3, and 2 and 4
         Range leftRange1 = new RangeFactory(schema).createRange(field1, "", "I");
         Range leftRange2 = new RangeFactory(schema).createRange(field2, "", null);
@@ -785,7 +788,7 @@ public class QueryExecutorIT {
         rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition,
                 leftPartition, rightPartition);
-        ingestData(instanceProperties, stateStore, schema, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
         // 4 leaf partitions
         Range range11 = new RangeFactory(schema).createRange(field1, "", "I");
@@ -846,7 +849,7 @@ public class QueryExecutorIT {
         rightPartition.setChildPartitionIds(Arrays.asList("P2", "P4"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rightPartition,
                 partition2, partition4);
-        ingestData(instanceProperties, stateStore, schema, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
                 .filter(f -> f.getPartitionId().equals(partition1.getId()) || f.getPartitionId().equals(leftPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
@@ -1097,8 +1100,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnDataCorrectlySorted()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+            throws StateStoreException, IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder()
@@ -1110,7 +1112,7 @@ public class QueryExecutorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
-        ingestData(instanceProperties, stateStore, schema, getMultipleRecordsForTestingSorting().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
@@ -1156,8 +1158,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartitionAndCompactionIteratorApplied()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+            throws StateStoreException, IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("id", new StringType());
         Schema schema = Schema.builder()
@@ -1171,7 +1172,7 @@ public class QueryExecutorIT {
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
         StateStore stateStore = getStateStore(schema);
         List<Record> records = getRecordsForAgeOffIteratorTest();
-        ingestData(instanceProperties, stateStore, schema, records.iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
@@ -1225,8 +1226,7 @@ public class QueryExecutorIT {
 
     @Test
     public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied()
-            throws InterruptedException, IteratorException,
-            IOException, StateStoreException, ObjectFactoryException, QueryException {
+            throws IteratorException, IOException, StateStoreException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -1235,7 +1235,7 @@ public class QueryExecutorIT {
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, schema,
+            ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
         }
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -1259,7 +1259,8 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnOnlyRequestedValuesWhenSpecified() throws StateStoreException, InterruptedException, IteratorException, ObjectFactoryException, IOException, QueryException {
+    public void shouldReturnOnlyRequestedValuesWhenSpecified()
+            throws StateStoreException, IteratorException, ObjectFactoryException, IOException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -1267,7 +1268,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        ingestData(instanceProperties, stateStore, schema, getRecords().iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
@@ -1290,7 +1291,8 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws StateStoreException, InterruptedException, IteratorException, ObjectFactoryException, IOException, QueryException {
+    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser()
+            throws StateStoreException, IteratorException, ObjectFactoryException, IOException, QueryException {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -1298,7 +1300,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        ingestData(instanceProperties, stateStore, schema, getRecordsForQueryTimeIteratorTest("secret").iterator());
+        ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, "/tmp"), tableProperties, stateStore,
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
@@ -1334,23 +1336,19 @@ public class QueryExecutorIT {
                 .build();
     }
 
-    protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore, Schema schema, Iterator<Record> recordIterator)
-            throws IOException, ObjectFactoryException, InterruptedException, IteratorException, StateStoreException {
-        IngestProperties properties = IngestProperties.builder()
-                .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
-                .localDir(folder.newFolder().getAbsolutePath())
-                .maxRecordsToWriteLocally(100L)
-                .maxInMemoryBatchSize(100L)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("snappy")
-                .stateStore(stateStore)
-                .schema(schema)
-                .filePathPrefix("")
-                .bucketName(folder.newFolder().getAbsolutePath())
-                .ingestPartitionRefreshFrequencyInSecond(120)
+    protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
+                              TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
+        instanceProperties.set(FILE_SYSTEM, "");
+        tableProperties.set(COMPRESSION_CODEC, "snappy");
+        tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
+        IngestFactory factory = IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(createTempDirectory(folder, null).toString())
+                .instanceProperties(instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .hadoopConfiguration(new Configuration())
                 .build();
-        new IngestRecordsFromIterator(properties, recordIterator).write();
+        factory.ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
     protected List<Record> getRecords() {

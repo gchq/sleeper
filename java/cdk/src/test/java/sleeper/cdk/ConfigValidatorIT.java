@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,15 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.statestore.s3.S3StateStore;
@@ -41,6 +42,7 @@ import sleeper.statestore.s3.S3StateStore;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,28 +51,29 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 
+@Testcontainers
 public class ConfigValidatorIT {
 
-    @ClassRule
+    @Container
     public static final LocalStackContainer LOCALSTACK_CONTAINER
             = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public Path temporaryFolder;
 
     private static AmazonS3 amazonS3;
     private static AmazonDynamoDB amazonDynamoDB;
     private ConfigValidator configValidator;
     private final InstanceProperties instanceProperties = new InstanceProperties();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         amazonS3 = getS3Client();
         amazonDynamoDB = createDynamoClient();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         configValidator = new ConfigValidator(amazonS3, amazonDynamoDB);
     }
@@ -234,7 +237,7 @@ public class ConfigValidatorIT {
                 "  ]\n" +
                 "}\n";
 
-        File tableSchemaFile = temporaryFolder.newFile("schema.json");
+        File tableSchemaFile = new File(temporaryFolder.toString(), "schema.json");
         FileUtils.write(tableSchemaFile, tableSchema, Charset.defaultCharset());
 
         String tableConfiguration = "" +
@@ -242,7 +245,7 @@ public class ConfigValidatorIT {
                 String.format("sleeper.table.statestore.classname=%s\n", stateStore) +
                 String.format("sleeper.table.schema.file=%s\n", tableSchemaFile.getAbsolutePath());
 
-        File tablePropertiesFile = temporaryFolder.newFile("table.properties");
+        File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());
 
         instanceProperties.set(TABLE_PROPERTIES, tablePropertiesFile.getAbsolutePath());

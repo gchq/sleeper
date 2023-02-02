@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  */
 package sleeper.configuration.properties;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import sleeper.core.CommonTestConstants;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -47,9 +47,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
@@ -87,8 +88,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class InstancePropertiesTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    @TempDir
+    public Path folder;
 
     @Test
     public void shouldCreateFromFile() throws IOException {
@@ -96,7 +97,7 @@ public class InstancePropertiesTest {
         InstanceProperties instanceProperties = getSleeperProperties();
 
         // When
-        File file = new File(folder.newFolder() + "/props");
+        File file = new File(createTempDirectory(folder, null).toString() + "/props");
         instanceProperties.save(file);
         InstanceProperties loaded = new InstanceProperties();
         loaded.load(file);
@@ -152,8 +153,8 @@ public class InstancePropertiesTest {
 
         // Then
         assertThat(pageSizeString).isEqualTo("100");
-        assertThat(pageSizeInt).isEqualTo(new Integer(100));
-        assertThat(pageSizeLong).isEqualTo(new Long(100));
+        assertThat(pageSizeInt).isEqualTo(Integer.valueOf(100));
+        assertThat(pageSizeLong).isEqualTo(Long.valueOf(100L));
     }
 
     @Test
@@ -260,8 +261,9 @@ public class InstancePropertiesTest {
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000L);
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
-        instanceProperties.setNumber(COMPACTION_TASK_CPU, 2048);
-        instanceProperties.setNumber(COMPACTION_TASK_MEMORY, 4096);
+        instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "ARM64");
+        instanceProperties.setNumber(COMPACTION_TASK_ARM_CPU, 2048);
+        instanceProperties.setNumber(COMPACTION_TASK_ARM_MEMORY, 4096);
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 100_000_000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000L);
         instanceProperties.set(S3A_INPUT_FADVISE, "normal");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package sleeper.configuration.properties;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS_
  * Contains all the properties needed to deploy an instance of Sleeper.
  */
 public class InstanceProperties extends SleeperProperties<InstanceProperty> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstanceProperties.class);
 
     public static final String S3_INSTANCE_PROPERTIES_FILE = "config";
 
@@ -45,6 +48,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super(properties);
     }
 
+    @Override
     protected void init() {
         // Tags
         String tagsCsv = get(TAGS);
@@ -104,6 +108,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     public void saveToS3(AmazonS3 s3Client) throws IOException {
         super.saveToS3(s3Client, get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
+        LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
     }
 
     public static Map<String, String> csvTagsToMap(String csvTags) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package sleeper.statestore.inmemory;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class FixedPartitionStoreTest {
@@ -37,10 +39,9 @@ public class FixedPartitionStoreTest {
     public void shouldInitialiseStoreWithSinglePartition() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionStore store = new FixedPartitionStore(schema);
 
         // When
-        store.initialise();
+        PartitionStore store = new FixedPartitionStore(schema);
         PartitionTree tree = new PartitionTree(schema, store.getAllPartitions());
         Partition root = tree.getRootPartition();
 
@@ -48,13 +49,13 @@ public class FixedPartitionStoreTest {
         assertThat(store.getAllPartitions()).containsExactly(root);
         assertThat(store.getLeafPartitions()).containsExactly(root);
         assertThat(root.getChildPartitionIds()).isEmpty();
+        assertThatCode(store::initialise).doesNotThrowAnyException();
     }
 
     @Test
     public void shouldInitialiseStoreWithPartitionTree() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionStore store = new FixedPartitionStore(schema);
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
                 .parentJoining("C", "A", "B")
@@ -62,24 +63,24 @@ public class FixedPartitionStoreTest {
         PartitionTree tree = new PartitionTree(schema, partitions);
 
         // When
-        store.initialise(partitions);
+        PartitionStore store = new FixedPartitionStore(partitions);
 
         // Then
         assertThat(store.getAllPartitions()).containsExactlyInAnyOrder(
                 tree.getPartition("A"), tree.getPartition("B"), tree.getPartition("C"));
         assertThat(store.getLeafPartitions()).containsExactlyInAnyOrder(
                 tree.getPartition("A"), tree.getPartition("B"));
+        assertThatCode(() -> store.initialise(partitions)).doesNotThrowAnyException();
     }
 
     @Test
-    public void shouldRefusePartitionSplit() throws Exception {
+    public void shouldRefusePartitionSplit() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         List<Partition> partitionsInit = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildList();
-        PartitionStore store = new FixedPartitionStore(schema);
-        store.initialise(partitionsInit);
+        PartitionStore store = new FixedPartitionStore(partitionsInit);
 
         // When / Then
         PartitionTree updateTree = new PartitionsBuilder(schema)
@@ -94,14 +95,13 @@ public class FixedPartitionStoreTest {
     }
 
     @Test
-    public void shouldRefuseInitialiseWhenAlreadyInitialised() throws Exception {
+    public void shouldRefuseInitialiseThatChangesPartitions() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         List<Partition> partitionsInit = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildList();
-        PartitionStore store = new FixedPartitionStore(schema);
-        store.initialise(partitionsInit);
+        PartitionStore store = new FixedPartitionStore(partitionsInit);
 
         // When / Then
         List<Partition> partitionsUpdate = new PartitionsBuilder(schema)
@@ -109,6 +109,21 @@ public class FixedPartitionStoreTest {
                 .parentJoining("root", "left", "right")
                 .buildList();
         assertThatThrownBy(() -> store.initialise(partitionsUpdate))
+                .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    public void shouldRefuseEmptyInitialiseThatChangesPartitions() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        List<Partition> partitionsInit = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("aaa"))
+                .parentJoining("root", "left", "right")
+                .buildList();
+        PartitionStore store = new FixedPartitionStore(partitionsInit);
+
+        // When / Then
+        assertThatThrownBy(store::initialise)
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 }

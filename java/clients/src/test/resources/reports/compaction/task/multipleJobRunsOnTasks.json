@@ -1,0 +1,30 @@
+[
+  {
+    "taskId": "B",
+    "type": "SPLITTING",
+    "startTime": "2022-10-06T12:24:00.001Z",
+    "finishedStatus": {
+      "finishTime": "2022-10-06T12:24:50.001Z",
+      "totalJobRuns": 4,
+      "timeSpentOnJobs": 40.0,
+      "totalRecordsRead": 1600,
+      "totalRecordsWritten": 800,
+      "recordsReadPerSecond": 40.0,
+      "recordsWrittenPerSecond": 20.0
+    }
+  },
+  {
+    "taskId": "A",
+    "type": "COMPACTION",
+    "startTime": "2022-10-06T12:20:00.001Z",
+    "finishedStatus": {
+      "finishTime": "2022-10-06T12:20:50.001Z",
+      "totalJobRuns": 4,
+      "timeSpentOnJobs": 40.0,
+      "totalRecordsRead": 800,
+      "totalRecordsWritten": 400,
+      "recordsReadPerSecond": 20.0,
+      "recordsWrittenPerSecond": 10.0
+    }
+  }
+]
