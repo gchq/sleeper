@@ -533,6 +533,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     // Bulk import using EKS
     UserDefinedInstanceProperty BULK_IMPORT_REPO = named("sleeper.bulk.import.eks.repo")
             .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")
+            .propertyGroup(PropertyGroup.BULK_IMPORT)
             .build();
 
     // Partition splitting
