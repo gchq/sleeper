@@ -170,7 +170,8 @@ public class Utils {
 
         String validate = (String) scope.getNode().tryGetContext("validate");
         if ("true".equalsIgnoreCase(validate)) {
-            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
+            new ConfigValidator().validate(properties, propertiesFile);
+            new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
 

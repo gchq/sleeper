@@ -82,6 +82,6 @@ public class ConfigValidatorTest {
     private void validate() throws IOException {
         Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
         Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
-        configValidator.validateConfigOnly(instanceProperties, instancePropertiesPath);
+        configValidator.validate(instanceProperties, instancePropertiesPath);
     }
 }
