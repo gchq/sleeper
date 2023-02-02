@@ -59,7 +59,7 @@ class UtilsInstancePropertiesTest {
     }
 
     @Test
-    void shouldIgnoreTagFileIfMissingNextToInstancePropertiesFile() throws IOException {
+    void shouldSetNoTagsWhenTagsFileAndPropertyMissing() throws IOException {
         // Given
         instanceProperties.save(instancePropertiesFile);
 
@@ -69,6 +69,20 @@ class UtilsInstancePropertiesTest {
         // Then
         assertThat(loaded.getTags())
                 .isEmpty();
+    }
+
+    @Test
+    void shouldKeepTagsPropertyWhenTagsFileMissing() throws IOException {
+        // Given
+        instanceProperties.setTags(Map.of("tag-1", "property-value-1"));
+        instanceProperties.save(instancePropertiesFile);
+
+        // When
+        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+
+        // Then
+        assertThat(loaded.getTags())
+                .isEqualTo(Map.of("tag-1", "property-value-1"));
     }
 
     @Test
