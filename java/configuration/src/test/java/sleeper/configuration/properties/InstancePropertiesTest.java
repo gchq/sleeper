@@ -21,9 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -292,12 +290,21 @@ public class InstancePropertiesTest {
     void shouldOrderAllPropertiesBasedOnGroup() {
         // Given/When
         InstanceProperties properties = new InstanceProperties();
-        List<InstanceProperty> propertyList = properties.getAllProperties();
-        List<InstanceProperty> orderedPropertyList = new ArrayList<>(propertyList);
-        orderedPropertyList.sort(Comparator.comparingInt(a -> PropertyGroup.all().indexOf(a.getPropertyGroup())));
+        List<InstanceProperty> propertyList = properties.getAllGroupedProperties();
 
         // Then
-        assertThat(propertyList)
-                .isEqualTo(orderedPropertyList);
+        // Order COMMON before INGEST
+        assertThat(propertyList.indexOf(UserDefinedInstanceProperty.ID))
+                .isLessThan(propertyList.indexOf(UserDefinedInstanceProperty.ECR_INGEST_REPO));
+        // Order BULK_IMPORT before PARTITION_SPLITTING
+        assertThat(propertyList.indexOf(UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME))
+                .isLessThan(propertyList.indexOf(UserDefinedInstanceProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES));
+
+        // Order COMMON before INGEST
+        assertThat(propertyList.indexOf(SystemDefinedInstanceProperty.CONFIG_BUCKET))
+                .isLessThan(propertyList.indexOf(SystemDefinedInstanceProperty.INGEST_CLUSTER));
+        // Order BULK_IMPORT before PARTITION_SPLITTING
+        assertThat(propertyList.indexOf(SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET))
+                .isLessThan(propertyList.indexOf(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL));
     }
 }

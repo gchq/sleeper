@@ -20,6 +20,8 @@ import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.table.CompressionCodec;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -101,5 +103,11 @@ public class Utils {
         }
         int stringAsInt = Integer.parseInt(string);
         return stringAsInt >= 1 && stringAsInt <= maxValue;
+    }
+
+    public static <T> List<T> combineLists(List<T> list1, List<T> list2) {
+        List<T> combinedList = new ArrayList<>(list1);
+        combinedList.addAll(list2);
+        return combinedList;
     }
 }

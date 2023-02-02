@@ -21,16 +21,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static sleeper.configuration.Utils.combineLists;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS_FILE;
@@ -142,11 +140,13 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         return builder.toString();
     }
 
+    public List<InstanceProperty> getAllGroupedProperties() {
+        List<InstanceProperty> allProperties = getAllProperties();
+        allProperties.sort(Comparator.comparingInt(p -> PropertyGroup.all().indexOf(p.getPropertyGroup())));
+        return allProperties;
+    }
+
     public List<InstanceProperty> getAllProperties() {
-        List<InstanceProperty> userProperties = Arrays.asList(UserDefinedInstanceProperty.values());
-        List<InstanceProperty> systemProperties = Arrays.asList(SystemDefinedInstanceProperty.values());
-        return Stream.concat(userProperties.stream(), systemProperties.stream())
-                .sorted(Comparator.comparing(property -> PropertyGroup.all().indexOf(property.getPropertyGroup())))
-                .collect(Collectors.toList());
+        return combineLists(List.of(UserDefinedInstanceProperty.values()), List.of(SystemDefinedInstanceProperty.values()));
     }
 }
