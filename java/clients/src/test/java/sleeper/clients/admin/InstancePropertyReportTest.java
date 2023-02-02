@@ -37,7 +37,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class InstancePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintInstancePropertyReportWhenChosen() {
+    public void shouldPrintAllInstanceProperties() {
         // Given
         setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
@@ -50,15 +50,29 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                // Then check all the user defined properties are present in the output
+                // Check all the user defined properties are present in the output
                 .contains(Stream.of(UserDefinedInstanceProperty.values())
                         .map(UserDefinedInstanceProperty::getPropertyName)
                         .collect(Collectors.toList()))
-                // Then check at least one system-defined property is present in the output
+                // Check at least one system-defined property is present in the output
                 .containsAnyOf(Stream.of(SystemDefinedInstanceProperty.values())
                         .map(SystemDefinedInstanceProperty::getPropertyName)
-                        .toArray(String[]::new))
-                // Then check some set property values and their descriptions are present in the output
+                        .toArray(String[]::new));
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintPropertiesAndDescriptions() {
+        // Given
+        setInstanceProperties(createValidInstanceProperties());
+        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+        // Then
+        assertThat(output)
+                // Check some set property values and their descriptions are present in the output
                 .contains("# The AWS account number. This is the AWS account that the instance will be deployed to\n" +
                         "sleeper.account: 1234567890\n")
                 .contains("# The length of time in days that CloudWatch logs are retained\n" +
@@ -69,7 +83,28 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.vpc: aVPC\n")
                 .contains("# The S3 bucket name used to store configuration files.\n" +
                         "sleeper.config.bucket: sleeper-test-instance-config\n")
-                // Then check properties in sequence to check spacing between them
+                // Check property with multi-line description
+                .contains("# The minimum number of files to read in a compaction job. Note that the state store\n" +
+                        "# must support atomic updates for this many files. For the DynamoDBStateStore this\n" +
+                        "# is 11. It can be overridden on a per-table basis.\n" +
+                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
+                        "# This is a default value and will be used if not specified in the table.properties file\n" +
+                        "sleeper.default.compaction.files.batch.size: 11");
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintSpacingBetweenProperties() {
+        // Given
+        setInstanceProperties(createValidInstanceProperties());
+        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output)
                 .contains("# The logging level for Parquet logs.\n" +
                         "sleeper.logging.parquet.level: null\n" +
                         "\n" +
@@ -77,15 +112,22 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.logging.aws.level: null\n" +
                         "\n" +
                         "# The logging level for everything else.\n" +
-                        "sleeper.logging.root.level: null")
-                // Then check property with multi-line description
-                .contains("# The minimum number of files to read in a compaction job. Note that the state store\n" +
-                        "# must support atomic updates for this many files. For the DynamoDBStateStore this\n" +
-                        "# is 11. It can be overridden on a per-table basis.\n" +
-                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                        "# This is a default value and will be used if not specified in the table.properties file\n" +
-                        "sleeper.default.compaction.files.batch.size: 11")
-                // Then check some property groups are printed
+                        "sleeper.logging.root.level: null");
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintPropertyGroupDescriptions() {
+        // Given
+        setInstanceProperties(createValidInstanceProperties());
+        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output)
                 .contains("# The following properties are commonly used throughout Sleeper\n\n")
                 .contains("# The following properties relate to standard ingest\n\n")
                 .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.\n\n")
@@ -93,18 +135,57 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .contains("# The following properties relate to compactions.\n\n")
                 .contains("# The following properties relate to queries.\n\n");
 
+        confirmAndVerifyNoMoreInteractions();
+    }
 
-        // Then check the order of some property names are correct
+    @Test
+    void shouldPrintPropertiesInTheCorrectOrder() {
+        // Given
+        setInstanceProperties(createValidInstanceProperties());
+        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
         assertThat(output.indexOf("sleeper.account"))
                 .isLessThan(output.indexOf("sleeper.log.retention.days"))
                 .isLessThan(output.indexOf("sleeper.vpc"));
         assertThat(output.indexOf("sleeper.ingest"))
                 .isLessThan(output.indexOf("sleeper.compaction"));
-        // Then check the order of some groups are correct
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintPropertyGroupsInTheCorrectOrder() {
+        // Given
+        setInstanceProperties(createValidInstanceProperties());
+        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
         assertThat(output.indexOf("The following properties relate to standard ingest"))
                 .isLessThan(output.indexOf("The following properties relate to bulk import"));
         assertThat(output.indexOf("The following properties relate to garbage collection"))
                 .isLessThan(output.indexOf("The following properties relate to compactions"));
+        assertThat(output.indexOf("The following properties relate to compactions"))
+                .isLessThan(output.indexOf("The following properties relate to queries"));
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldDisplayPropertiesInTheCorrectGroup() {
+        // Given
+        setInstanceProperties(createValidInstanceProperties());
+        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
         // Then check that one UserDefinedInstanceProperty is in the correct group
         assertThat(output.indexOf("sleeper.id"))
                 .isBetween(
@@ -116,6 +197,10 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         output.indexOf("The following properties are commonly used throughout Sleeper"),
                         output.indexOf("The following properties relate to standard ingest"));
 
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    private void confirmAndVerifyNoMoreInteractions() {
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();
