@@ -39,7 +39,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         defaultValue = builder.defaultValue;
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
-        propertyGroup = builder.propertyGroup;
+        propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
     }
 
     public static Builder builder() {
@@ -92,7 +92,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description = "No description available";
-        private PropertyGroup propertyGroup = PropertyGroup.UNKNOWN;
+        private PropertyGroup propertyGroup;
 
         private Builder() {
         }

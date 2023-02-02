@@ -56,9 +56,6 @@ public interface PropertyGroup {
     PropertyGroup ATHENA = group("Athena")
             .description("The following properties relate to the integration with Athena.")
             .build();
-    PropertyGroup UNKNOWN = group("Unknown")
-            .description("The following properties have no defined property grouping")
-            .build();
 
     static List<PropertyGroup> all() {
         return PropertyGroupImpl.all();
