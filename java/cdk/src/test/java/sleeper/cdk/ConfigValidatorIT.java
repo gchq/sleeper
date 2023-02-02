@@ -17,15 +17,8 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,18 +30,14 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
-import sleeper.statestore.s3.S3StateStore;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 @Testcontainers
@@ -82,7 +71,7 @@ public class ConfigValidatorIT {
     public void shouldNotThrowAnErrorWithValidConfiguration() throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-valid-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-valid-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
         // When / Then
         assertThatCode(this::validate)
@@ -94,7 +83,7 @@ public class ConfigValidatorIT {
     public void shouldThrowAnErrorWhenTableNameIsNotValid() throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example--invalid-name-tab$$-le", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example--invalid-name-tab$$-le", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
         // When / Then
         assertThatThrownBy(this::validate)
@@ -132,55 +121,5 @@ public class ConfigValidatorIT {
                 .withEndpointConfiguration(LOCALSTACK_CONTAINER.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
                 .withCredentials(LOCALSTACK_CONTAINER.getDefaultCredentialsProvider())
                 .build();
-    }
-
-    private void createDynamoTable(String tableName) {
-        // These attributes are for the S3 state store, but for these tests it
-        // doesn't matter if the attributes are correct for the DynamoDB state
-        // store as we just need the table to exist.
-        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.HASH));
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(tableName)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
-        amazonDynamoDB.createTable(request);
-
-    }
-
-    private void setupTablesPropertiesFile(InstanceProperties instanceProperties, String tableName, String stateStore) throws IOException {
-        String tableSchema = "{\n" +
-                "  \"rowKeyFields\": [ \n" +
-                "    {\n" +
-                "      \"name\": \"key\",\n" +
-                "      \"type\": \"StringType\"\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"sortKeyFields\": [\n" +
-                "    {\n" +
-                "      \"name\": \"timestamp\",\n" +
-                "      \"type\": \"LongType\"\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"valueFields\": [\n" +
-                "    {\n" +
-                "      \"name\": \"value\",\n" +
-                "      \"type\": \"StringType\"\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}\n";
-
-        File tableSchemaFile = new File(temporaryFolder.toString(), "schema.json");
-        FileUtils.write(tableSchemaFile, tableSchema, Charset.defaultCharset());
-
-        String tableConfiguration = "" +
-                String.format("sleeper.table.name=%s\n", tableName) +
-                String.format("sleeper.table.statestore.classname=%s\n", stateStore);
-
-        File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
-        FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());
     }
 }
