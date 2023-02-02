@@ -207,7 +207,7 @@ Docker container multiple times you will still have details of the last Sleeper 
 If you add a command on the end, you can run a specific script like this:
 
 ```shell
-./runInDocker.sh sleeper ./test/deployTest.sh myinstanceid myvpc mysubnet
+./runInDocker.sh sleeper ./test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
 ### Manual Deployment
@@ -260,7 +260,7 @@ docker push ${REPO_PREFIX}/compaction-job-execution:${VERSION}
 ```
 
 If you will be using the experimental bulk import using EKS then upload the container as
-follows (note this container will take around 35 minutesto build and it is not needed for bulk
+follows (note this container will take around 35 minutes to build and it is not needed for bulk
 importing data using EMR):
 
 ```bash
@@ -354,7 +354,7 @@ You may optionally want to predefine your split points for a given table.
 You can do this by setting the `sleeper.table.splits.file` property in the
 table properties file. There's an example of this in the
 [full example](../example/full/table.properties). If you decide not to set
-this, your statestore will be initialised with a single root partition. Note that
+this, your state store will be initialised with a single root partition. Note that
 pre-splitting a table is important for any large-scale use of Sleeper, and is essential
 for running bulk import jobs.
 
@@ -383,7 +383,7 @@ add "--require-approval never" to the command.
 By default all the stacks are deployed. However, if you don't
 need them, you can customise which stacks are deployed.
 
-The mandatory ones are the `TableStack` which deploys the statestore and
+The mandatory ones are the `TableStack` which deploys the state store and
 data bucket for each table you specify, the `TopicStack` which creates an
 SNS topic used by other stacks to send errors and finally the
 `ConfigurationStack` and `PropertiesStack` which writes the instance properties
