@@ -47,9 +47,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "bucket contains two iterator jars called iterator1.jar and iterator2.jar then the\n" +
                     "property should be sleeper.userjars=iterator1.jar,iterator2.jar")
             .build();
-    UserDefinedInstanceProperty TAGS_FILE = named("sleeper.tags.file")
-            .description("A file of key-value tags. These will be added to all the resources in this deployment.")
-            .build();
     UserDefinedInstanceProperty TAGS = named("sleeper.tags")
             .description("A list of tags for the project")
             .build();

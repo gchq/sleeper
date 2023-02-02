@@ -104,7 +104,6 @@ sed_in_place \
 	-e "s|^sleeper.bulk.import.eks.repo=.*|sleeper.bulk.import.eks.repo=${INSTANCE_ID}/bulk-import-runner|" \
 	-e "s|^sleeper.vpc=.*|sleeper.vpc=${VPC}|" \
 	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
-	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	"${INSTANCE_PROPERTIES}"
 
 ###################################
