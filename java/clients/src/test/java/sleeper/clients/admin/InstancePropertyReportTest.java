@@ -20,7 +20,6 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
@@ -86,10 +85,13 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
                         "# This is a default value and will be used if not specified in the table.properties file\n" +
                         "sleeper.default.compaction.files.batch.size: 11")
-                // Then check property groups are printed
-                .contains(PropertyGroup.all().stream()
-                        .map(PropertyGroup::getDescription)
-                        .toArray(String[]::new));
+                // Then check some property groups are printed
+                .contains("# The following properties are commonly used throughout Sleeper\n\n")
+                .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.\n\n")
+                .contains("# The following properties relate to standard ingest\n\n")
+                .contains("# The following properties relate to compactions.\n\n")
+                .contains("# The following properties relate to queries.\n\n")
+                .contains("# The following properties relate to the splitting of partitions\n\n");
 
 
         // Then check the order of some property names are correct
@@ -99,28 +101,28 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
         assertThat(output.indexOf("sleeper.ingest"))
                 .isLessThan(output.indexOf("sleeper.compaction"));
         // Then check the order of some groups are correct
-        assertThat(output.indexOf(PropertyGroup.INGEST.getDescription()))
-                .isLessThan(output.indexOf(PropertyGroup.BULK_IMPORT.getDescription()));
-        assertThat(output.indexOf(PropertyGroup.GARBAGE_COLLECTOR.getDescription()))
-                .isLessThan(output.indexOf(PropertyGroup.COMPACTION.getDescription()));
+        assertThat(output.indexOf("The following properties relate to standard ingest"))
+                .isLessThan(output.indexOf("The following properties relate to bulk import"));
+        assertThat(output.indexOf("The following properties relate to garbage collection"))
+                .isLessThan(output.indexOf("The following properties relate to compactions"));
         // Then check that some UserDefinedProperties are in the correct group
         assertThat(output.indexOf("sleeper.ingest.task.cpu"))
                 .isBetween(
-                        output.indexOf(PropertyGroup.INGEST.getDescription()),
-                        output.indexOf(PropertyGroup.BULK_IMPORT.getDescription()));
+                        output.indexOf("The following properties relate to standard ingest"),
+                        output.indexOf("The following properties relate to bulk import"));
         assertThat(output.indexOf("sleeper.compaction.job.creation.memory"))
                 .isBetween(
-                        output.indexOf(PropertyGroup.COMPACTION.getDescription()),
-                        output.indexOf(PropertyGroup.QUERY.getDescription()));
+                        output.indexOf("The following properties relate to compactions"),
+                        output.indexOf("The following properties relate to queries"));
         // Then check that SystemDefinedProperty is in the correct group
         assertThat(output.indexOf("sleeper.query.role.arn"))
                 .isBetween(
-                        output.indexOf(PropertyGroup.QUERY.getDescription()),
-                        output.indexOf(PropertyGroup.LOGGING.getDescription()));
+                        output.indexOf("The following properties relate to queries"),
+                        output.indexOf("The following properties relate to logging"));
         assertThat(output.indexOf("sleeper.partition.splitting.queue.url"))
                 .isBetween(
-                        output.indexOf(PropertyGroup.PARTITION_SPLITTING.getDescription()),
-                        output.indexOf(PropertyGroup.GARBAGE_COLLECTOR.getDescription()));
+                        output.indexOf("The following properties relate to the splitting of partitions"),
+                        output.indexOf("The following properties relate to garbage collection"));
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();
