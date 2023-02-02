@@ -71,13 +71,13 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .contains("# The S3 bucket name used to store configuration files.\n" +
                         "sleeper.config.bucket: sleeper-test-instance-config\n")
                 // Then check properties in sequence to check spacing between them
-                .contains("# The loging level for Parquet logs.\n" +
+                .contains("# The logging level for Parquet logs.\n" +
                         "sleeper.logging.parquet.level: null\n" +
                         "\n" +
-                        "# The loging level for AWS logs.\n" +
+                        "# The logging level for AWS logs.\n" +
                         "sleeper.logging.aws.level: null\n" +
                         "\n" +
-                        "# The loging level for everything else.\n" +
+                        "# The logging level for everything else.\n" +
                         "sleeper.logging.root.level: null")
                 // Then check property with multi-line description
                 .contains("# The minimum number of files to read in a compaction job. Note that the state store\n" +

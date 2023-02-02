@@ -286,14 +286,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(PropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.ingest.job.status.ttl")
             .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week")
-            .defaultValue("604800")
-            .validationPredicate(Utils::isPositiveInteger) // Default is 1 week
+            .defaultValue("604800") // Default is 1 week
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(PropertyGroup.INGEST).build();
 
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.ingest.task.status.ttl")
             .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week")
-            .defaultValue("604800")
-            .validationPredicate(Utils::isPositiveInteger) // Default is 1 week
+            .defaultValue("604800") // Default is 1 week
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(PropertyGroup.INGEST).build();
 
     // Bulk Import - properties that are applicable to all bulk import platforms
@@ -303,24 +303,23 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner")
             .propertyGroup(PropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC = named("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec")
-            .description("The compression codec for map status results.\n" +
-                    "Used to set spark.shuffle.mapStatus.compression.codec.")
+            .description("The compression codec for map status results." +
+                    "Stops \"Decompression error: Version not supported\" errors - only a value of \"lz4\" has been tested. " +
+                    "This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.")
             .defaultValue("lz4")
-            // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
             .propertyGroup(PropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION = named("sleeper.bulk.import.emr.spark.speculation")
-            .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
+            .description("This is used to set the value of spark.speculation on the Spark configuration. " +
+                    "If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(PropertyGroup.BULK_IMPORT).build();
-    // This is used to set the value of spark.speculation on the Spark configuration.
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION_QUANTILE = named("sleeper.bulk.import.spark.speculation.quantile")
-            .description("Fraction of tasks which must be complete before speculation is enabled for a particular stage.\n" +
-                    "Used to set spark.speculation.quantile.\n" +
+            .description("This is used to set the value of spark.speculation.quantile on the Spark configuration." +
+                    "The fraction of tasks which must be complete before speculation is enabled for a particular stage.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("0.75")
-            // This is used to set the value of spark.speculation.quantile on the Spark configuration.
             .propertyGroup(PropertyGroup.BULK_IMPORT).build();
 
     // Bulk import using EMR - these properties are used by both the persistent
@@ -625,8 +624,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(PropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES = named("sleeper.compaction.task.creation.period.minutes")
             .description("The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes, must be >= 1).")
-            .defaultValue("1")
-            // >0
+            .defaultValue("1") // >0
             .propertyGroup(PropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = named("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on.")
@@ -654,15 +652,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(PropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.job.status.ttl")
             .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week")
-            .defaultValue("604800")
+            .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
-            // Default is 1 week
+
             .propertyGroup(PropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.task.status.ttl")
             .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week")
-            .defaultValue("604800")
+            .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
-            // Default is 1 week
             .propertyGroup(PropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = named("sleeper.default.compaction.strategy.class")
             .description("\"The name of the class that defines how compaction jobs should be created.\n" +
@@ -739,8 +736,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty DEFAULT_RESULTS_PAGE_SIZE = named("sleeper.default.query.results.page.size")
             .description("The default value of the page size used when the results of queries are written to Parquet files. The\n" +
                     "value given below is 128KiB. This value can be overridden using the query config.")
-            .defaultValue("" + (128 * 1024))
-            // 128 KiB
+            .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(PropertyGroup.QUERY).build();
 
     // Dashboard
@@ -795,13 +791,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(PropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = named("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
-            .defaultValue("" + (8 * 1024 * 1024))
-            // 8 MiB
+            .defaultValue("" + (8 * 1024 * 1024)) // 8 MiB
             .propertyGroup(PropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_PAGE_SIZE = named("sleeper.default.page.size")
             .description("The size of the pages in the Parquet files (default is 128KiB).")
-            .defaultValue("" + (128 * 1024))
-            // 128 KiB
+            .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(PropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = named("sleeper.default.compression.codec")
             .description("The compression codec to use in the Parquet files")
