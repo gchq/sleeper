@@ -15,8 +15,6 @@
  */
 package sleeper.cdk;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -170,8 +168,7 @@ public class Utils {
 
         String validate = (String) scope.getNode().tryGetContext("validate");
         if ("true".equalsIgnoreCase(validate)) {
-            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
+            new ConfigValidator().validate(properties, propertiesFile);
         }
 
         return properties;

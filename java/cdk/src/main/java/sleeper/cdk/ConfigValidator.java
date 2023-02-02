@@ -15,44 +15,21 @@
  */
 package sleeper.cdk;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 
 import static sleeper.cdk.Utils.getAllTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class ConfigValidator {
-    private final AmazonS3 amazonS3;
-    private final AmazonDynamoDB amazonDynamoDB;
-
-    public ConfigValidator(AmazonS3 amazonS3, AmazonDynamoDB amazonDynamoDB) {
-        this.amazonS3 = amazonS3;
-        this.amazonDynamoDB = amazonDynamoDB;
-    }
 
     public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
         checkForValidInstanceId(instanceProperties);
-        checkQueryResultsBucketDoesNotExist(instanceProperties);
         checkTableConfiguration(instanceProperties, instancePropertyPath);
-    }
-
-    private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
-        String instanceName = instanceProperties.get(ID);
-        String bucketName = String.join("-", "sleeper", instanceName, "query-results");
-
-        if (amazonS3.doesBucketExistV2(bucketName)) {
-            throw new IllegalArgumentException("Sleeper query results bucket exists: " + bucketName);
-        }
     }
 
     private void checkForValidInstanceId(InstanceProperties instanceProperties) {
@@ -68,20 +45,6 @@ public class ConfigValidator {
             String tableName = tableProperties.get(TABLE_NAME);
 
             checkBucketConfigurationForTable(instanceName, tableName);
-
-            if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equalsIgnoreCase(tableProperties.get(STATESTORE_CLASSNAME))) {
-                checkDynamoDBConfigurationForTable(instanceName, tableName);
-            }
-        });
-    }
-
-    private void checkDynamoDBConfigurationForTable(String instanceName, String tableName) {
-        List<String> tableTypes = Arrays.asList("active-files", "gc-files", "partitions");
-        tableTypes.forEach(tableType -> {
-            String dynamodbTableName = String.join("-", "sleeper", instanceName, "table", tableName, tableType);
-            if (doesDynamoTableExist(dynamodbTableName)) {
-                throw new IllegalArgumentException("Sleeper DynamoDBTable exists: " + dynamodbTableName);
-            }
         });
     }
 
@@ -90,18 +53,6 @@ public class ConfigValidator {
         if (!BucketNameUtils.isValidV2BucketName(bucketName)) {
             throw new IllegalArgumentException("Sleeper table bucket name is illegal: " + bucketName);
         }
-        if (amazonS3.doesBucketExistV2(bucketName)) {
-            throw new IllegalArgumentException("Sleeper table bucket exists: " + bucketName);
-        }
     }
 
-    private boolean doesDynamoTableExist(String name) {
-        boolean tableExists = true;
-        try {
-            amazonDynamoDB.describeTable(name);
-        } catch (ResourceNotFoundException e) {
-            tableExists = false;
-        }
-        return tableExists;
-    }
 }
