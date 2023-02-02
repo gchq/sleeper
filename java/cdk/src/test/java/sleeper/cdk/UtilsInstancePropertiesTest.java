@@ -40,32 +40,57 @@ class UtilsInstancePropertiesTest {
     private Path instancePropertiesFile;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         instancePropertiesFile = tempDir.resolve("instance.properties");
-        instanceProperties.save(instancePropertiesFile);
     }
 
     @Test
     void shouldLoadTagsFromTagsFileNextToInstancePropertiesFile() throws IOException {
         // Given
-        Properties tags = new Properties();
-        tags.setProperty("tag-1", "value-1");
-        Files.writeString(tempDir.resolve("tags.properties"), propertiesString(tags));
+        instanceProperties.save(instancePropertiesFile);
+        writeTagsFile(Map.of("tag-1", "value-1"));
 
         // When
         InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
 
         // Then
-        instanceProperties.setTags(Map.of("tag-1", "value-1"));
-        assertThat(loaded).isEqualTo(instanceProperties);
+        assertThat(loaded.getTags())
+                .isEqualTo(Map.of("tag-1", "value-1"));
     }
 
     @Test
     void shouldIgnoreTagFileIfMissingNextToInstancePropertiesFile() throws IOException {
-        // Given/When
+        // Given
+        instanceProperties.save(instancePropertiesFile);
+
+        // When
         InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
 
         // Then
-        assertThat(loaded).isEqualTo(instanceProperties);
+        assertThat(loaded.getTags())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldOverrideTagsWithValuesFromFile() throws IOException {
+        // Given
+        instanceProperties.setTags(Map.of(
+                "tag-1", "property-value-1",
+                "tag-2", "property-value-2"));
+        instanceProperties.save(instancePropertiesFile);
+        writeTagsFile(Map.of("tag-1", "file-value"));
+
+        // When
+        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+
+        // Then
+        assertThat(loaded.getTags())
+                .isEqualTo(Map.of("tag-1", "file-value"));
+    }
+
+    private void writeTagsFile(Map<String, String> tagMap) throws IOException {
+        Properties tags = new Properties();
+        tagMap.forEach(tags::setProperty);
+        Files.writeString(tempDir.resolve("tags.properties"), propertiesString(tags));
     }
 }
