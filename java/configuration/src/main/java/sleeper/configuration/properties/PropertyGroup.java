@@ -50,11 +50,11 @@ public interface PropertyGroup {
     PropertyGroup LOGGING = group("Logging")
             .description("The following properties relate to logging.")
             .build();
-    PropertyGroup DEFAULT = group("Default")
-            .description("The following properties relate to default values.")
-            .build();
     PropertyGroup ATHENA = group("Athena")
             .description("The following properties relate to the integration with Athena.")
+            .build();
+    PropertyGroup DEFAULT = group("Default")
+            .description("The following properties relate to default values.")
             .build();
 
     static List<PropertyGroup> all() {

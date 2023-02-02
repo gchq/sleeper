@@ -87,11 +87,11 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.default.compaction.files.batch.size: 11")
                 // Then check some property groups are printed
                 .contains("# The following properties are commonly used throughout Sleeper\n\n")
-                .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.\n\n")
                 .contains("# The following properties relate to standard ingest\n\n")
+                .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR or EKS.\n\n")
+                .contains("# The following properties relate to the splitting of partitions\n\n")
                 .contains("# The following properties relate to compactions.\n\n")
-                .contains("# The following properties relate to queries.\n\n")
-                .contains("# The following properties relate to the splitting of partitions\n\n");
+                .contains("# The following properties relate to queries.\n\n");
 
 
         // Then check the order of some property names are correct
@@ -105,24 +105,44 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .isLessThan(output.indexOf("The following properties relate to bulk import"));
         assertThat(output.indexOf("The following properties relate to garbage collection"))
                 .isLessThan(output.indexOf("The following properties relate to compactions"));
-        // Then check that some UserDefinedProperties are in the correct group
-        assertThat(output.indexOf("sleeper.ingest.task.cpu"))
+        // Then check that one property in each group is in the correct place
+        assertThat(output.indexOf("sleeper.id"))
+                .isBetween(
+                        output.indexOf("The following properties are commonly used throughout Sleeper"),
+                        output.indexOf("The following properties relate to standard ingest"));
+        assertThat(output.indexOf("sleeper.ingest.repo"))
                 .isBetween(
                         output.indexOf("The following properties relate to standard ingest"),
                         output.indexOf("The following properties relate to bulk import"));
-        assertThat(output.indexOf("sleeper.compaction.job.creation.memory"))
+        assertThat(output.indexOf("sleeper.bulk.import.class.name"))
                 .isBetween(
-                        output.indexOf("The following properties relate to compactions"),
-                        output.indexOf("The following properties relate to queries"));
-        // Then check that SystemDefinedProperty is in the correct group
-        assertThat(output.indexOf("sleeper.query.role.arn"))
-                .isBetween(
-                        output.indexOf("The following properties relate to queries"),
-                        output.indexOf("The following properties relate to logging"));
-        assertThat(output.indexOf("sleeper.partition.splitting.queue.url"))
+                        output.indexOf("The following properties relate to bulk import"),
+                        output.indexOf("The following properties relate to the splitting of partitions"));
+        assertThat(output.indexOf("sleeper.partition.splitting.period.minutes"))
                 .isBetween(
                         output.indexOf("The following properties relate to the splitting of partitions"),
                         output.indexOf("The following properties relate to garbage collection"));
+        assertThat(output.indexOf("sleeper.gc.period.minutes"))
+                .isBetween(
+                        output.indexOf("The following properties relate to garbage collection"),
+                        output.indexOf("The following properties relate to compactions"));
+        assertThat(output.indexOf("sleeper.compaction.repo"))
+                .isBetween(
+                        output.indexOf("The following properties relate to compactions"),
+                        output.indexOf("The following properties relate to queries"));
+        assertThat(output.indexOf("sleeper.query.s3.max-connections"))
+                .isBetween(
+                        output.indexOf("The following properties relate to queries"),
+                        output.indexOf("The following properties relate to logging"));
+        assertThat(output.indexOf("sleeper.logging.level"))
+                .isBetween(
+                        output.indexOf("The following properties relate to logging"),
+                        output.indexOf("The following properties relate to the integration with Athena"));
+        assertThat(output.indexOf("sleeper.athena.spill.bucket.ageoff.days"))
+                .isBetween(
+                        output.indexOf("The following properties relate to the integration with Athena"),
+                        output.indexOf("The following properties relate to default values."));
+
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock).promptLine(any());
         order.verify(in.mock).waitForLine();
