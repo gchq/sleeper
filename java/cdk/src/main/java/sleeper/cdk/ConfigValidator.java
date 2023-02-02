@@ -28,16 +28,23 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class ConfigValidator {
-    private final NewInstanceValidator newInstanceValidator;
+    private NewInstanceValidator newInstanceValidator;
+
+    public ConfigValidator() {
+    }
 
     public ConfigValidator(AmazonS3 amazonS3, AmazonDynamoDB amazonDynamoDB) {
         this.newInstanceValidator = new NewInstanceValidator(amazonS3, amazonDynamoDB);
     }
 
     public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
+        validateConfigOnly(instanceProperties, instancePropertyPath);
+        newInstanceValidator.validate(instanceProperties, instancePropertyPath);
+    }
+
+    public void validateConfigOnly(InstanceProperties instanceProperties, Path instancePropertyPath) {
         checkForValidInstanceId(instanceProperties);
         checkTableConfiguration(instanceProperties, instancePropertyPath);
-        newInstanceValidator.validate(instanceProperties, instancePropertyPath);
     }
 
     private void checkForValidInstanceId(InstanceProperties instanceProperties) {
