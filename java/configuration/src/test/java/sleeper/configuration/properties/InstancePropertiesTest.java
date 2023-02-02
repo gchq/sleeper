@@ -20,13 +20,16 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -86,12 +89,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
-public class InstancePropertiesTest {
+class InstancePropertiesTest {
     @TempDir
     public Path folder;
 
     @Test
-    public void shouldCreateFromFile() throws IOException {
+    void shouldCreateFromFile() throws IOException {
         // Given
         InstanceProperties instanceProperties = getSleeperProperties();
 
@@ -106,7 +109,7 @@ public class InstancePropertiesTest {
     }
 
     @Test
-    public void shouldLoadAndSaveFromString() throws IOException {
+    void shouldLoadAndSaveFromString() throws IOException {
         // Given
         InstanceProperties instanceProperties = getSleeperProperties();
 
@@ -120,14 +123,14 @@ public class InstancePropertiesTest {
     }
 
     @Test
-    public void shouldBeAbleToUseStandardGetMethod() {
+    void shouldBeAbleToUseStandardGetMethod() {
         InstanceProperties instanceProperties = getSleeperProperties();
         String expectedAccount = "1234567890";
         assertThat(instanceProperties.get(ACCOUNT)).isEqualTo(expectedAccount);
     }
 
     @Test
-    public void shouldBeAbleToUseStandardSetMethod() {
+    void shouldBeAbleToUseStandardSetMethod() {
         InstanceProperties instanceProperties = new InstanceProperties();
 
         instanceProperties.set(FILE_SYSTEM, "file://");
@@ -136,12 +139,12 @@ public class InstancePropertiesTest {
     }
 
     @Test
-    public void shouldTranslatePropertyNamesIntoCompliantEnvironmentVariables() {
+    void shouldTranslatePropertyNamesIntoCompliantEnvironmentVariables() {
         assertThat(ID.toEnvironmentVariable()).isEqualTo("SLEEPER_ID");
     }
 
     @Test
-    public void shouldBeAbleToDetermineClassAtRuntime() {
+    void shouldBeAbleToDetermineClassAtRuntime() {
         // Given
         InstanceProperties instanceProperties = getSleeperProperties();
 
@@ -157,7 +160,7 @@ public class InstancePropertiesTest {
     }
 
     @Test
-    public void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
+    void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
         // Given - no account set
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(REGION, "eu-west-2");
@@ -177,7 +180,7 @@ public class InstancePropertiesTest {
     }
 
     @Test
-    public void shouldThrowExceptionOnLoadIfPropertyIsInvalid() throws IOException {
+    void shouldThrowExceptionOnLoadIfPropertyIsInvalid() throws IOException {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "12345");
@@ -196,6 +199,21 @@ public class InstancePropertiesTest {
         InstanceProperties properties = new InstanceProperties();
         assertThatThrownBy(() -> properties.loadFromString(serialised))
                 .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
+    }
+
+    @Test
+    void shouldLoadTagsFromFile() throws IOException {
+        // Given
+        Properties tags = new Properties();
+        tags.setProperty("tag-1", "value-1");
+        tags.setProperty("tag-2", "value-2");
+
+        InstanceProperties properties = new InstanceProperties();
+        properties.loadTags(new StringReader(propertiesString(tags)));
+
+        assertThat(properties.getTags()).isEqualTo(Map.of(
+                "tag-1", "value-1",
+                "tag-2", "value-2"));
     }
 
     private static InstanceProperties getSleeperProperties() {

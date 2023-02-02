@@ -32,6 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -165,7 +166,7 @@ public class Utils {
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) throws IOException {
         Path propertiesFile = getInstancePropertiesPath(scope);
-        properties.load(propertiesFile);
+        loadInstanceProperties(properties, propertiesFile);
 
         String validate = (String) scope.getNode().tryGetContext("validate");
         if ("true".equalsIgnoreCase(validate)) {
@@ -173,6 +174,15 @@ public class Utils {
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
 
+        return properties;
+    }
+
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) throws IOException {
+        properties.load(file);
+        try (Reader reader = Files.newBufferedReader(
+                directoryOf(file).resolve("tags.properties"))) {
+            properties.loadTags(reader);
+        }
         return properties;
     }
 
