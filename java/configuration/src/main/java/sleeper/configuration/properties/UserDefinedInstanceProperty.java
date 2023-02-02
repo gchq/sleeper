@@ -752,19 +752,19 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     // Logging levels
     UserDefinedInstanceProperty LOGGING_LEVEL = named("sleeper.logging.level")
-            .description("The loging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
+            .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
             .propertyGroup(PropertyGroup.LOGGING).build();
     UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = named("sleeper.logging.apache.level")
-            .description("The loging level for Apache logs that are not Parquet.")
+            .description("The logging level for Apache logs that are not Parquet.")
             .propertyGroup(PropertyGroup.LOGGING).build();
     UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = named("sleeper.logging.parquet.level")
-            .description("The loging level for Parquet logs.")
+            .description("The logging level for Parquet logs.")
             .propertyGroup(PropertyGroup.LOGGING).build();
     UserDefinedInstanceProperty AWS_LOGGING_LEVEL = named("sleeper.logging.aws.level")
-            .description("The loging level for AWS logs.")
+            .description("The logging level for AWS logs.")
             .propertyGroup(PropertyGroup.LOGGING).build();
     UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = named("sleeper.logging.root.level")
-            .description("The loging level for everything else.")
+            .description("The logging level for everything else.")
             .propertyGroup(PropertyGroup.LOGGING).build();
 
     // Athena
