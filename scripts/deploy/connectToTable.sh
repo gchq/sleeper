@@ -42,11 +42,11 @@ mkdir -p "${GENERATED_DIR}"
 # Output Bucket Names #
 #######################
 CONFIG_BUCKET=sleeper-${INSTANCE_ID}-config
-echo "${CONFIG_BUCKET}" > ${GENERATED_DIR}/configBucket.txt
+echo "${CONFIG_BUCKET}" > "${GENERATED_DIR}"/configBucket.txt
 TABLE_BUCKET=sleeper-${INSTANCE_ID}-table-${TABLE_NAME}
-echo "${TABLE_BUCKET}" > ${GENERATED_DIR}/tableBucket.txt
+echo "${TABLE_BUCKET}" > "${GENERATED_DIR}"/tableBucket.txt
 QUERY_BUCKET=sleeper-${INSTANCE_ID}-query-results
-echo "${QUERY_BUCKET}" > ${GENERATED_DIR}/queryResultsBucket.txt
+echo "${QUERY_BUCKET}" > "${GENERATED_DIR}"/queryResultsBucket.txt
 
 ###################
 # Read properties #
@@ -54,16 +54,19 @@ echo "${QUERY_BUCKET}" > ${GENERATED_DIR}/queryResultsBucket.txt
 
 echo "Reading properties from S3"
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
-TABLE_PROPERTIES=${GENERATED_DIR}/table.properties
 TAGS=${GENERATED_DIR}/tags.properties
-SCHEMA=${GENERATED_DIR}/schema.json
-aws s3api get-object --bucket ${CONFIG_BUCKET} --key config ${INSTANCE_PROPERTIES}
-aws s3api get-object --bucket ${CONFIG_BUCKET} --key tables/${TABLE_NAME} ${TABLE_PROPERTIES}
+TABLE_DIR=${GENERATED_DIR}/tables/${TABLE_NAME}
+TABLE_PROPERTIES=${TABLE_DIR}/table.properties
+SCHEMA=${TABLE_DIR}/schema.json
+mkdir -p "$TABLE_DIR"
+
+aws s3api get-object --bucket "${CONFIG_BUCKET}" --key config "${INSTANCE_PROPERTIES}"
+aws s3api get-object --bucket "${CONFIG_BUCKET}" --key tables/"${TABLE_NAME}" "${TABLE_PROPERTIES}"
 
 # Tags
-grep "^sleeper.tags=" ${INSTANCE_PROPERTIES} | cut -d'=' -f2 | sed 's/\([^,]\{1,\}\),\([^,]\{1,\}\),\{0,1\}/\1=\2\n/g' \
-  > ${TAGS}
+grep "^sleeper.tags=" "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | sed 's/\([^,]\{1,\}\),\([^,]\{1,\}\),\{0,1\}/\1=\2\n/g' \
+  > "${TAGS}"
 
 # Schema
-grep "^sleeper.table.schema=" ${TABLE_PROPERTIES} | cut -d'=' -f2 | sed 's/\\:/:/g' \
-  > ${SCHEMA}
+grep "^sleeper.table.schema=" "${TABLE_PROPERTIES}" | cut -d'=' -f2 | sed 's/\\:/:/g' \
+  > "${SCHEMA}"

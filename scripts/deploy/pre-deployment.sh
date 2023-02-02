@@ -71,9 +71,11 @@ echo "VERSION: ${VERSION}"
 
 echo "Generating properties"
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
-TABLE_PROPERTIES=${GENERATED_DIR}/table.properties
 TAGS=${GENERATED_DIR}/tags.properties
-SCHEMA=${GENERATED_DIR}/schema.json
+TABLE_DIR=${GENERATED_DIR}/tables/${TABLE_NAME}
+TABLE_PROPERTIES=${TABLE_DIR}/table.properties
+SCHEMA=${TABLE_DIR}/schema.json
+mkdir -p "$TABLE_DIR"
 
 # Tags
 sed -e "s/Name=.*/Name=${INSTANCE_ID}/" \

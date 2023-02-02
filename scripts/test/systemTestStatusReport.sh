@@ -21,7 +21,6 @@ GENERATED_DIR=${SCRIPTS_DIR}/generated
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
-SYSTEM_TEST_TABLE_PROPERTIES=${GENERATED_DIR}/table.properties
-TABLE_NAME=$(grep sleeper.table.name "${SYSTEM_TEST_TABLE_PROPERTIES}" | cut -d'=' -f2)
+TABLE_NAME="system-test"
 
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
