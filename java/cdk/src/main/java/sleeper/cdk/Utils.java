@@ -179,9 +179,11 @@ public class Utils {
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) throws IOException {
         properties.load(file);
-        try (Reader reader = Files.newBufferedReader(
-                directoryOf(file).resolve("tags.properties"))) {
-            properties.loadTags(reader);
+        Path tagsFile = directoryOf(file).resolve("tags.properties");
+        if (Files.exists(tagsFile)) {
+            try (Reader reader = Files.newBufferedReader(tagsFile)) {
+                properties.loadTags(reader);
+            }
         }
         return properties;
     }

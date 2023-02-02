@@ -59,4 +59,13 @@ class UtilsInstancePropertiesTest {
         instanceProperties.setTags(Map.of("tag-1", "value-1"));
         assertThat(loaded).isEqualTo(instanceProperties);
     }
+
+    @Test
+    void shouldIgnoreTagFileIfMissingNextToInstancePropertiesFile() throws IOException {
+        // Given/When
+        InstanceProperties loaded = loadInstanceProperties(new InstanceProperties(), instancePropertiesFile);
+
+        // Then
+        assertThat(loaded).isEqualTo(instanceProperties);
+    }
 }
