@@ -37,7 +37,4 @@ public interface SleeperProperty {
         return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
 
-    default PropertyGroup getPropertyGroup() {
-        return PropertyGroup.UNKNOWN;
-    }
 }
