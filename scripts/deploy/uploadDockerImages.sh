@@ -29,7 +29,7 @@ BASE_DOCKERFILE_DIR=$5
 REGION=$(echo ${DOCKER_REGISTRY} | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
 DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
-FUNCTIONS_DIR=$(cd $(dirname $0) && cd "../functions" && pwd)
+FUNCTIONS_DIR=$(cd "$(dirname "$0")" && cd "../functions" && pwd)
 source "${FUNCTIONS_DIR}/arrayUtils.sh"
 union_arrays_to_variable STACKS DOCKER_STACKS_ALL DOCKER_STACKS
 
