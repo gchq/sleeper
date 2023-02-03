@@ -39,6 +39,9 @@ echo "QUERY_BUCKET: ${QUERY_BUCKET}"
 echo "Pausing the system"
 java -cp "${SCRIPTS_DIR}/jars/clients-*-utility.jar" "sleeper.status.update.PauseSystem" "${INSTANCE_ID}"
 
+# Download latest instance configuration (don't fail script if buckets don't exist)
+"${THIS_DIR}/downloadConfig.sh" "${INSTANCE_ID}" || true
+
 RETAIN_INFRA=$(grep sleeper.retain.infra.after.destroy "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | awk '{print tolower($0)}')
 if [[ "${RETAIN_INFRA}" == "false" ]]; then
   echo "Removing all data from config, table and query results buckets"

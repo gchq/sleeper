@@ -27,7 +27,7 @@ GENERATED_DIR=${SCRIPTS_DIR}/generated
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 
 echo "-------------------------------------------------------------------------------"
-echo "Connecting to table"
+echo "Downloading instance configuration"
 echo "-------------------------------------------------------------------------------"
 echo "INSTANCE_ID: ${INSTANCE_ID}"
 echo "GENERATED_DIR:${GENERATED_DIR}"
