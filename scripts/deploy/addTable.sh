@@ -23,13 +23,11 @@ fi
 INSTANCE_ID=$1
 TABLE_NAME=$2
 
-echo "-------------------------------------------------------------------------------"
-echo "Running Deployment"
-echo "-------------------------------------------------------------------------------"
-echo "INSTANCE_ID: ${INSTANCE_ID}"
-echo "TABLE_NAME: ${TABLE_NAME}"
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+# Download latest instance configuration
+"${THIS_DIR}/downloadConfig.sh" "${INSTANCE_ID}" || true
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 GENERATED_DIR=${SCRIPTS_DIR}/generated
@@ -39,6 +37,11 @@ TABLE_DIR=${GENERATED_DIR}/tables/${TABLE_NAME}
 TABLE_PROPERTIES=${TABLE_DIR}/table.properties
 SCHEMA=${TABLE_DIR}/schema.json
 
+echo "-------------------------------------------------------------------------------"
+echo "Running Deployment"
+echo "-------------------------------------------------------------------------------"
+echo "INSTANCE_ID: ${INSTANCE_ID}"
+echo "TABLE_NAME: ${TABLE_NAME}"
 echo "TEMPLATE_DIR: ${TEMPLATE_DIR}"
 echo "GENERATED_DIR:${GENERATED_DIR}"
 echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
