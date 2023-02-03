@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package sleeper.trino;
 
-import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ConnectorPageSink;
 import io.trino.spi.connector.SchemaTableName;
+
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
@@ -99,7 +99,7 @@ public class SleeperPageSink implements ConnectorPageSink {
                 "SleeperPageSink is finishing: %d positions written in %d appends, mean %.1f positions per append",
                 noOfPositionsWritten, noOfAppends, ((float) noOfPositionsWritten) / noOfAppends));
         try {
-            return ingestRecordsPageAsync.asyncCloseReturningFileInfoList().thenApply(dummy -> ImmutableList.of());
+            return ingestRecordsPageAsync.asyncCloseReturningResult().thenApply(dummy -> List.of());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
