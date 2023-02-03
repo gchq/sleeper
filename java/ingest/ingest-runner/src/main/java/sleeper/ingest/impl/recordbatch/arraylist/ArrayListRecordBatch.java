@@ -30,6 +30,7 @@ import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
+import sleeper.ingest.impl.recordbatch.RecordMapper;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
@@ -40,28 +41,14 @@ import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * This abstract class implements a {@link RecordBatch} where the batch of records is stored in an ArrayList in memory,
- * and spilled to local disk as Parquet files when the ArrayList contains a set number of records. Each time the records
- * are spilled to disk, they are sorted.
- * <p>
- * When the batch is read, all of the sorted files and the sorted in-memory batch are merged together into a single
- * iterator of sorted records.
- * <p>
- * The batch is considered to be full when the local disk contains more than a specified number of records.
- * <p>
- * This class must be extended to implement the {@link #append(Object)} method. Note that data is always retrieved from
- * this batch as @link Record} objects and this class is responsible for any type conversion.
- *
- * @param <INCOMINGDATATYPE> The type of data that can be added to this batch.
- */
-public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchBase.class);
+public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
     private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
     private final long maxNoOfRecordsInLocalStore;
+    private final RecordMapper<INCOMINGDATATYPE> mapToRecord;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
     private final List<Record> inMemoryBatch;
@@ -82,15 +69,17 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
      * @param maxNoOfRecordsInMemory     The maximum number of records to store in the internal ArrayList
      * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
      */
-    public ArrayListRecordBatchBase(ParquetConfiguration parquetConfiguration,
-                                    String localWorkingDirectory,
-                                    int maxNoOfRecordsInMemory,
-                                    long maxNoOfRecordsInLocalStore) {
+    public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
+                                String localWorkingDirectory,
+                                int maxNoOfRecordsInMemory,
+                                long maxNoOfRecordsInLocalStore,
+                                RecordMapper<INCOMINGDATATYPE> mapToRecord) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfRecordsInMemory = maxNoOfRecordsInMemory;
         this.maxNoOfRecordsInLocalStore = maxNoOfRecordsInLocalStore;
+        this.mapToRecord = mapToRecord;
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.uniqueIdentifier = UUID.randomUUID();
         this.internalOrderedRecordIterator = null;
@@ -155,6 +144,11 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
         }
         batchNo++;
         inMemoryBatch.clear();
+    }
+
+    @Override
+    public void append(INCOMINGDATATYPE data) throws IOException {
+        addRecordToBatch(mapToRecord.map(data));
     }
 
     /**
@@ -259,4 +253,5 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
         }
         localFileNames.clear();
     }
+
 }
