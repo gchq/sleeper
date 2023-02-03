@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class InstanceConfiguration {
     private final AmazonS3 s3;
@@ -67,6 +68,14 @@ public class InstanceConfiguration {
 
     public String getConfigBucket() {
         return instanceProperties.get(CONFIG_BUCKET);
+    }
+
+    public String getQueryResultsBucket() {
+        return instanceProperties.get(QUERY_RESULTS_BUCKET);
+    }
+
+    public String getTags() throws IOException {
+        return instanceProperties.getTagsPropertiesAsString();
     }
 
     public List<TableProperties> getTables() {

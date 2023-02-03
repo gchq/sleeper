@@ -100,4 +100,23 @@ public class InstanceConfigurationIT {
         assertThat(configuration.getTables())
                 .containsExactly(table1, table2);
     }
+
+    @Test
+    void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() throws IOException {
+        // Given
+        AmazonS3 s3Client = createS3Client();
+        s3Client.createBucket("sleeper-test-instance-config");
+
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(UserDefinedInstanceProperty.ID, "test-instance");
+        properties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "sleeper-test-instance-config");
+        properties.saveToS3(s3Client);
+
+        // When
+        InstanceConfiguration configuration = loadFromS3(s3Client, "test-instance");
+
+        // Then
+        assertThat(configuration.getTables())
+                .isEmpty();
+    }
 }
