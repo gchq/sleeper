@@ -59,7 +59,7 @@ echo "Clear buckets finished at $(recorded_time_str "$END_CLEAR_BUCKETS_TIME"), 
 
 echo "Running cdk destroy to remove the system"
 cdk -a "java -cp ${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
-destroy --force -c propertiesfile="${INSTANCE_PROPERTIES}" "*"
+destroy --force -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
 
 END_CDK_DESTROY_TIME=$(record_time)
 echo "CDK destroy finished at $(recorded_time_str "$END_CDK_DESTROY_TIME"), took $(elapsed_time_str "$END_CLEAR_BUCKETS_TIME" "$END_CDK_DESTROY_TIME")"

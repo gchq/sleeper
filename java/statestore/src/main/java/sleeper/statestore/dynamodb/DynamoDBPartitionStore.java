@@ -30,7 +30,6 @@ import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -43,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStoreException;
 
@@ -57,8 +55,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
 
 public class DynamoDBPartitionStore implements PartitionStore {
@@ -68,7 +68,6 @@ public class DynamoDBPartitionStore implements PartitionStore {
     private final AmazonDynamoDB dynamoDB;
     private final String tableName;
     private final Schema schema;
-    private final List<PrimitiveType> rowKeyTypes;
     private final boolean stronglyConsistentReads;
     private final DynamoDBPartitionFormat partitionFormat;
 
@@ -77,7 +76,6 @@ public class DynamoDBPartitionStore implements PartitionStore {
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        rowKeyTypes = schema.getRowKeyTypes();
         partitionFormat = new DynamoDBPartitionFormat(schema);
     }
 
@@ -155,24 +153,16 @@ public class DynamoDBPartitionStore implements PartitionStore {
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         try {
-            double totalCapacity = 0.0D;
             ScanRequest scanRequest = new ScanRequest()
                     .withTableName(tableName)
                     .withConsistentRead(stronglyConsistentReads)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            ScanResult scanResult = dynamoDB.scan(scanRequest);
-            totalCapacity += scanResult.getConsumedCapacity().getCapacityUnits();
-            List<Map<String, AttributeValue>> results = new ArrayList<>(scanResult.getItems());
-            while (null != scanResult.getLastEvaluatedKey()) {
-                scanRequest = new ScanRequest()
-                        .withTableName(tableName)
-                        .withConsistentRead(stronglyConsistentReads)
-                        .withExclusiveStartKey(scanResult.getLastEvaluatedKey())
-                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-                scanResult = dynamoDB.scan(scanRequest);
-                totalCapacity += scanResult.getConsumedCapacity().getCapacityUnits();
-                results.addAll(scanResult.getItems());
-            }
+            AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+            List<Map<String, AttributeValue>> results = streamPagedResults(dynamoDB, scanRequest)
+                    .flatMap(result -> {
+                        totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
+                        return result.getItems().stream();
+                    }).collect(Collectors.toList());
             LOGGER.debug("Scanned for all partitions, capacity consumed = {}", totalCapacity);
             List<Partition> partitionResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
@@ -217,7 +207,7 @@ public class DynamoDBPartitionStore implements PartitionStore {
                     .withItem(map)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
             PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
-            LOGGER.debug("Added partition with id {}, capacity consumed = ",
+            LOGGER.debug("Added partition with id {}, capacity consumed = {}",
                     partition.getId(), putItemResult.getConsumedCapacity().getCapacityUnits());
         } catch (IOException | ConditionalCheckFailedException | ProvisionedThroughputExceededException
                  | ResourceNotFoundException | ItemCollectionSizeLimitExceededException

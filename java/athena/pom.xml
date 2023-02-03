@@ -26,10 +26,6 @@
 
     <artifactId>athena</artifactId>
 
-    <properties>
-        <athena.version>2021.21.1</athena.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>sleeper</groupId>
@@ -55,6 +51,17 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-athena-federation-sdk</artifactId>
             <version>${athena.version}</version>
+        </dependency>
+        <!-- Arrow dependencies -->
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-vector</artifactId>
+            <version>${arrow.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-memory-unsafe</artifactId>
+            <version>${arrow.version}</version>
         </dependency>
         <!-- Test dependencies -->
         <dependency>
