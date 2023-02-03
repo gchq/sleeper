@@ -364,7 +364,7 @@ INSTANCE_PROPERTIES=/path/to/instance.properties
 cd java
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
 cd ..
-cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=true -c newinstance=true "*"
+cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks,
@@ -418,7 +418,7 @@ will only work if you deployed Sleeper automatically and you still have the `gen
 in the project root directory. If you do you can simply run:
 
 ```bash
-./scripts/deploy/teardown.sh
+./scripts/deploy/tearDown.sh
 ```
 
 To delete the resources manually use the following commands from the project root directory:
@@ -426,7 +426,7 @@ To delete the resources manually use the following commands from the project roo
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
 cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
-destroy -c propertiesfile=${INSTANCE_PROPERTIES} "*"
+destroy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=false "*"
 ```
 
 To delete the jars bucket and all the jars in it:

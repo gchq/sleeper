@@ -170,7 +170,7 @@ public class Utils {
 
         String validate = (String) scope.getNode().tryGetContext("validate");
         String newinstance = (String) scope.getNode().tryGetContext("newinstance");
-        if ("true".equalsIgnoreCase(validate)) {
+        if (!"false".equalsIgnoreCase(validate)) {
             new ConfigValidator().validate(properties, propertiesFile);
         }
         if ("true".equalsIgnoreCase(newinstance)) {
