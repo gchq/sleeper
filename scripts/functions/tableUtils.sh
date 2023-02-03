@@ -14,11 +14,11 @@
 # limitations under the License.
 
 list_table_names() {
-  NAMES=()
-  PROPERTIES_DIR=$1
+  local NAMES=()
+  local PROPERTIES_DIR=$1
   for dir in "$PROPERTIES_DIR"/tables/*
   do
-    TABLE_PROPERTIES="$dir/table.properties"
+    local TABLE_PROPERTIES="$dir/table.properties"
     NAMES+=("$(get_table_name_from_file "$TABLE_PROPERTIES")")
   done
   echo "${NAMES[*]}"
