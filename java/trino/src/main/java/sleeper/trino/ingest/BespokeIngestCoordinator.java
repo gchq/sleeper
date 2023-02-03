@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,19 @@ import io.trino.spi.Page;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
-import sleeper.ingest.impl.recordbatch.RecordBatch;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStore;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-
-import java.io.IOException;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class BespokeIngestCoordinator {
 
@@ -56,40 +53,39 @@ public class BespokeIngestCoordinator {
         long maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
         long maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();
 
-        Supplier<RecordBatch<Page>> recordBatchFactoryFn = () ->
-                new ArrowRecordBatchAcceptingPages(
-                        arrowBufferAllocator,
-                        sleeperSchema,
-                        localWorkingDirectory,
-                        SleeperRawAwsConnection.WORKING_ARROW_BUFFER_ALLOCATOR_BYTES,
-                        SleeperRawAwsConnection.BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN,
-                        maxBatchArrowBufferAllocatorBytes,
-                        maxBytesToWriteLocally,
-                        SleeperRawAwsConnection.MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE);
-        Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
-            try {
-                return new AsyncS3PartitionFileWriter(
-                        sleeperSchema,
-                        partition,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        SleeperRawAwsConnection.INGEST_COMPRESSION_CODEC,
-                        hadoopConfiguration,
-                        s3BucketName,
-                        s3AsyncClient,
-                        localWorkingDirectory);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-        return new IngestCoordinator<>(
-                objectFactory,
-                sleeperStateStore,
-                sleeperSchema,
-                sleeperIteratorClassName,
-                sleeperIteratorConfig,
-                ingestPartitionRefreshFrequencyInSeconds,
-                recordBatchFactoryFn,
-                partitionFileFactoryFn);
+        RecordBatchFactory<Page> recordBatchFactory = ArrowRecordBatchFactory.builder()
+                .bufferAllocator(arrowBufferAllocator)
+                .schema(sleeperSchema)
+                .localWorkingDirectory(localWorkingDirectory)
+                .workingBufferAllocatorBytes(SleeperRawAwsConnection.WORKING_ARROW_BUFFER_ALLOCATOR_BYTES)
+                .minBatchBufferAllocatorBytes(SleeperRawAwsConnection.BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN)
+                .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
+                .maxNoOfBytesToWriteLocally(maxBytesToWriteLocally)
+                .maxNoOfRecordsToWriteToArrowFileAtOnce(SleeperRawAwsConnection.MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE)
+                .recordWriter(new ArrowRecordWriterAcceptingPages())
+                .build();
+        ParquetConfiguration parquetConfiguration = ParquetConfiguration.builder()
+                .sleeperSchema(sleeperSchema)
+                .parquetCompressionCodec(SleeperRawAwsConnection.INGEST_COMPRESSION_CODEC)
+                .parquetRowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .parquetPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .hadoopConfiguration(hadoopConfiguration)
+                .build();
+        PartitionFileWriterFactory partitionFileWriterFactory = AsyncS3PartitionFileWriterFactory.builder()
+                .parquetConfiguration(parquetConfiguration)
+                .s3AsyncClient(s3AsyncClient)
+                .s3BucketName(s3BucketName)
+                .localWorkingDirectory(localWorkingDirectory)
+                .build();
+        return IngestCoordinator.builder()
+                .objectFactory(objectFactory)
+                .stateStore(sleeperStateStore)
+                .schema(sleeperSchema)
+                .iteratorClassName(sleeperIteratorClassName)
+                .iteratorConfig(sleeperIteratorConfig)
+                .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
+                .recordBatchFactory(recordBatchFactory)
+                .partitionFileWriterFactory(partitionFileWriterFactory)
+                .build();
     }
 }
