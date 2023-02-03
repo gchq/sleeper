@@ -43,3 +43,7 @@ chunks:
     name: State Store
     workflow: chunk-statestore.yaml
     modules: [ statestore ]
+  trino:
+    name: Trino
+    workflow: chunk-trino.yaml
+    modules: [ trino ]
