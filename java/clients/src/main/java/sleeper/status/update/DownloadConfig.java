@@ -18,16 +18,19 @@ package sleeper.status.update;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.commons.io.FileUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class DownloadConfig {
@@ -40,13 +43,20 @@ public class DownloadConfig {
             throw new IllegalArgumentException("Usage: <instance id>");
         }
         String instanceId = args[0];
+        Path basePath = Path.of("./");
+        clearDirectory(basePath);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        instanceProperties.save(Path.of("./instance.properties"));
+        instanceProperties.save(basePath.resolve("instance.properties"));
 
         String configBucket = instanceProperties.get(CONFIG_BUCKET);
+        String queryBucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
+        Files.writeString(basePath.resolve("configBucket.txt"), configBucket);
+        Files.writeString(basePath.resolve("queryResultsBucket.txt"), queryBucket);
+        Files.writeString(basePath.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
+
         for (S3ObjectSummary tableConfigObject : s3
                 .listObjectsV2(configBucket, "tables/")
                 .getObjectSummaries()) {
@@ -65,6 +75,17 @@ public class DownloadConfig {
             // Unpack properties for schema & table bucket
             tableProperties.getSchema().save(tableFolder.resolve("schema.json"));
             Files.writeString(tableFolder.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
+        }
+    }
+
+    private static void clearDirectory(Path directory) throws IOException {
+        Files.createDirectories(directory);
+        File[] children = directory.toFile().listFiles();
+        if (children == null) {
+            return;
+        }
+        for (File child : children) {
+            FileUtils.delete(child);
         }
     }
 }
