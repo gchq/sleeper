@@ -40,6 +40,21 @@ import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * This class implements a {@link RecordBatch} where the batch of records is stored in an ArrayList in memory,
+ * and spilled to local disk as Parquet files when the ArrayList contains a set number of records. Each time the records
+ * are spilled to disk, they are sorted.
+ * <p>
+ * When the batch is read, all of the sorted files and the sorted in-memory batch are merged together into a single
+ * iterator of sorted records.
+ * <p>
+ * The batch is considered to be full when the local disk contains more than a specified number of records.
+ * <p>
+ * This class needs a mapper extending the {@link ArrayListRecordMapper} interface. Data is always retrieved from
+ * this batch as @link Record} objects and the mapper is responsible for any type conversion.
+ *
+ * @param <INCOMINGDATATYPE> The type of data that can be added to this batch.
+ */
 public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
     private final ParquetConfiguration parquetConfiguration;
