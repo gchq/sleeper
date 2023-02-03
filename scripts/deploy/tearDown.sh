@@ -22,7 +22,6 @@ GENERATED_DIR=${SCRIPTS_DIR}/generated
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 CONFIG_BUCKET=$(cat "${GENERATED_DIR}/configBucket.txt")
-TABLE_BUCKET=$(cat "${GENERATED_DIR}/tableBucket.txt")
 QUERY_BUCKET=$(cat "${GENERATED_DIR}/queryResultsBucket.txt")
 
 echo "--------------------------------------------------------"
@@ -35,7 +34,6 @@ echo "GENERATED_DIR: ${GENERATED_DIR}"
 echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
 echo "INSTANCE_ID: ${INSTANCE_ID}"
 echo "CONFIG_BUCKET: ${CONFIG_BUCKET}"
-echo "TABLE_BUCKET: ${TABLE_BUCKET}"
 echo "QUERY_BUCKET: ${QUERY_BUCKET}"
 
 echo "Pausing the system"
@@ -44,13 +42,18 @@ java -cp "${SCRIPTS_DIR}/jars/clients-*-utility.jar" "sleeper.status.update.Paus
 RETAIN_INFRA=$(grep sleeper.retain.infra.after.destroy "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | awk '{print tolower($0)}')
 if [[ "${RETAIN_INFRA}" == "false" ]]; then
   echo "Removing all data from config, table and query results buckets"
-  echo "Removing: ${CONFIG_BUCKET}"
-  echo "Removing: ${TABLE_BUCKET}"
-  echo "Removing: ${QUERY_BUCKET}"
   # Don't fail script if buckets don't exist
+  echo "Removing: ${CONFIG_BUCKET}"
   aws s3 rm "s3://${CONFIG_BUCKET}" --recursive || true
-  aws s3 rm "s3://${TABLE_BUCKET}" --recursive || true
+  
+  echo "Removing: ${QUERY_BUCKET}"
   aws s3 rm "s3://${QUERY_BUCKET}" --recursive || true
+  
+  for dir in "$GENERATED_DIR"/tables/*; do
+    TABLE_BUCKET=$(cat "${dir}/tableBucket.txt")
+    echo "Removing: ${TABLE_BUCKET}"
+    aws s3 rm "s3://${TABLE_BUCKET}" --recursive || true
+  done
 fi
 
 SLEEPER_VERSION=$(grep sleeper.version "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
