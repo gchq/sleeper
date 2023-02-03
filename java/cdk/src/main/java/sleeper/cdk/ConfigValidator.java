@@ -25,8 +25,8 @@ import static sleeper.cdk.Utils.getAllTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class ConfigValidator {
-    public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
+class ConfigValidator {
+    void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
         checkForValidInstanceId(instanceProperties);
         checkTableConfiguration(instanceProperties, instancePropertyPath);
     }

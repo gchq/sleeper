@@ -31,11 +31,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class NewInstanceValidator {
+class NewInstanceValidator {
     private final AmazonS3 amazonS3;
     private final AmazonDynamoDB amazonDynamoDB;
 
-    public NewInstanceValidator(AmazonS3 amazonS3, AmazonDynamoDB amazonDynamoDB) {
+    NewInstanceValidator(AmazonS3 amazonS3, AmazonDynamoDB amazonDynamoDB) {
         this.amazonS3 = amazonS3;
         this.amazonDynamoDB = amazonDynamoDB;
     }
@@ -45,7 +45,7 @@ public class NewInstanceValidator {
         checkTableConfiguration(instanceProperties, instancePropertyPath);
     }
 
-    void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
+    private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
         String instanceName = instanceProperties.get(ID);
         String bucketName = String.join("-", "sleeper", instanceName, "query-results");
 
@@ -54,7 +54,7 @@ public class NewInstanceValidator {
         }
     }
 
-    void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) {
+    private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) {
         String instanceName = instanceProperties.get(ID);
 
         getAllTableProperties(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
