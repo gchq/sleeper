@@ -27,5 +27,11 @@ fi
 INSTANCE_ID=$1
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+GENERATED_DIR=${SCRIPTS_DIR}/generated
+
+mkdir -p "${GENERATED_DIR}"
+pushd "$GENERATED_DIR"
 
 java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.update.DownloadConfig "${INSTANCE_ID}"
+
+popd
