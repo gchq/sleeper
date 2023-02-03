@@ -17,21 +17,19 @@ package sleeper.status.update;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FileUtils;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.InstanceConfiguration;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.InstanceConfiguration.loadFromS3;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DownloadConfig {
 
@@ -47,28 +45,18 @@ public class DownloadConfig {
         clearDirectory(basePath);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        instanceProperties.save(basePath.resolve("instance.properties"));
+        InstanceConfiguration configuration = loadFromS3(s3, instanceId);
+        configuration.getInstanceProperties().save(basePath.resolve("instance.properties"));
 
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        String queryBucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
+        String configBucket = configuration.getConfigBucket();
+        String queryBucket = configuration.getQueryResultsBucket();
         Files.writeString(basePath.resolve("configBucket.txt"), configBucket);
         Files.writeString(basePath.resolve("queryResultsBucket.txt"), queryBucket);
-        Files.writeString(basePath.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
+        Files.writeString(basePath.resolve("tags.properties"), configuration.getTags());
 
-        for (S3ObjectSummary tableConfigObject : s3
-                .listObjectsV2(configBucket, "tables/")
-                .getObjectSummaries()) {
-
-            String key = tableConfigObject.getKey();
-            TableProperties tableProperties = new TableProperties(instanceProperties);
-            try (InputStream in = s3.getObject(configBucket, key).getObjectContent()) {
-                tableProperties.load(in);
-            }
-
+        for (TableProperties tableProperties : configuration.getTables()) {
             // Store in the same directory structure as in S3 (tables/table-name)
-            Path tableFolder = basePath.resolve(key);
+            Path tableFolder = basePath.resolve(tableProperties.get(TABLE_NAME));
             Files.createDirectories(tableFolder);
             tableProperties.save(tableFolder.resolve("table.properties"));
 
