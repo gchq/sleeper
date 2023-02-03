@@ -15,22 +15,19 @@
  */
 package sleeper.systemtest.cdk;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 
-import sleeper.cdk.ConfigValidator;
 import sleeper.cdk.SleeperCdkApp;
+import sleeper.cdk.Utils;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -84,17 +81,10 @@ public class SystemTestApp extends SleeperCdkApp {
         throw new RuntimeException("Error when retrieving instance properties");
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         App app = new App();
 
-        String systemTestPropertiesFile = (String) app.getNode().tryGetContext("testpropertiesfile");
-        String validate = (String) app.getNode().tryGetContext("validate");
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.load(new File(systemTestPropertiesFile));
-        if ("true".equalsIgnoreCase(validate)) {
-            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
-                    AmazonDynamoDBClientBuilder.defaultClient()).validate(systemTestProperties);
-        }
+        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(new SystemTestProperties(), app);
 
         String id = systemTestProperties.get(ID);
         Environment environment = Environment.builder()

@@ -311,10 +311,8 @@ files you use as your starting point, you will need to set sensible values for t
 properties:
 
 * `sleeper.id`
-* `sleeper.table.properties` - see below
 * `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
   `sleeper-${INSTANCE_ID}-jars`
-* `sleeper.tags.file` - see below
 * `sleeper.account`
 * `sleeper.region`
 * `sleeper.version` - set this to the value of ${VERSION}
@@ -323,32 +321,30 @@ properties:
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
 
-To include a table in your instance you need to set the `sleeper.table.properties`
-property in your instance properties file to point to a table propertes file.
-You can add more than one, separating each one with a comma, for example:
+To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
+You can add more than one by creating a `tables` directory, with a subfolder for each table.
 
-```properties
-sleeper.table.properties=/path/to/first.properties,/path/to/second.properties
+Each table will also need a `schema.json` file next to the `table.properties` file.
+See [create a schema](03-schema.md) for how to create a schema.
+
+You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
+deployed by Sleeper. An example tags.properties file can be found [here](../example/full/tags.properties).
+
+Here's a full example with two tables:
+
 ```
-
-Alternatively if you have all your table properties in one directory, you
-can just specify the directory. This is handy if you have more than one or two
-tables. If you want, you can specify more than one directory. Be sure that all
-the files in these directories are table properties.
-
-```properties
-sleeper.table.properties=/sleeper/config/tables
+instance.properties
+tags.properties
+tables/table-1/table.properties
+tables/table-1/schema.json
+tables/table-2/table.properties
+tables/table-2/schema.json
 ```
 
 Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false
 when deploying then however you choose to tear down Sleeper later on
 you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.
-
-The table properties file needs to contain a link to a file containing the schema
-for that table. See [create a schema](03-schema.md) for how to create a schema.
-Once you've got your schema, add a link to it in the table properties file under
-`sleeper.schema.file`.
 
 You may optionally want to predefine your split points for a given table.
 You can do this by setting the `sleeper.table.splits.file` property in the
@@ -357,10 +353,6 @@ table properties file. There's an example of this in the
 this, your state store will be initialised with a single root partition. Note that
 pre-splitting a table is important for any large-scale use of Sleeper, and is essential
 for running bulk import jobs.
-
-To make sure you tag the Sleeper infrastructure correctly you will need set
-the following property in your instance.properties. An example tags.properties file
-can be found [here](../example/full/tags.properties).
 
 #### Deploy with the CDK
 

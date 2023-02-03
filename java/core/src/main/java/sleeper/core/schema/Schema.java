@@ -17,6 +17,9 @@ package sleeper.core.schema;
 
 import sleeper.core.schema.type.PrimitiveType;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,6 +50,14 @@ public class Schema {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Schema load(Path schemaPath) throws IOException {
+        return loadFromString(Files.readString(schemaPath));
+    }
+
+    public static Schema loadFromString(String schemaJson) {
+        return new SchemaSerDe().fromJson(schemaJson);
     }
 
     public List<Field> getRowKeyFields() {
@@ -90,13 +101,13 @@ public class Schema {
     }
 
     private <T> List<T> getMappedFields(Stream<Field> fields, Function<Field, T> mapping) {
-        return Collections.unmodifiableList(fields
+        return fields
                 .map(mapping)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public List<Field> getAllFields() {
-        return Collections.unmodifiableList(streamAllFields().collect(Collectors.toList()));
+        return streamAllFields().collect(Collectors.toUnmodifiableList());
     }
 
     public Stream<Field> streamAllFields() {
@@ -107,6 +118,10 @@ public class Schema {
         return streamAllFields()
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
+    }
+
+    public void save(Path path) throws IOException {
+        Files.writeString(path, new SchemaSerDe().toJson(this));
     }
 
     @Override

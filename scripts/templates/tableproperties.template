@@ -9,9 +9,6 @@
 # The name of the table
 sleeper.table.name=changeme
 
-# A JSON file containing the schema for this table
-sleeper.table.schema.file=changeme
-
 # The size of the row group in the Parquet files
 sleeper.table.rowgroup.size=4194304
 

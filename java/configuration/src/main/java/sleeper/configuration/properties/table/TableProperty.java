@@ -62,9 +62,6 @@ public interface TableProperty extends SleeperProperty {
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
             .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.")
             .build();
-    TableProperty SCHEMA_FILE = named("sleeper.table.schema.file")
-            .description("A JSON file containing the schema for this table.")
-            .build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")

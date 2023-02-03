@@ -21,15 +21,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
+import static sleeper.cdk.Utils.getAllTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -42,10 +40,10 @@ public class ConfigValidator {
         this.amazonDynamoDB = amazonDynamoDB;
     }
 
-    public void validate(InstanceProperties instanceProperties) {
+    public void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
         checkForValidInstanceId(instanceProperties);
         checkQueryResultsBucketDoesNotExist(instanceProperties);
-        checkTableConfiguration(instanceProperties);
+        checkTableConfiguration(instanceProperties, instancePropertyPath);
     }
 
     private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
@@ -63,31 +61,23 @@ public class ConfigValidator {
         }
     }
 
-    private void checkTableConfiguration(InstanceProperties instanceProperties) {
+    private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) {
         String instanceName = instanceProperties.get(ID);
 
-        if (instanceProperties.getList(TABLE_PROPERTIES) != null) {
-            for (String propertiesFilePath : instanceProperties.getList(TABLE_PROPERTIES)) {
-                try {
-                    TableProperties tableProperties = new TableProperties(instanceProperties);
-                    tableProperties.load(new FileInputStream(propertiesFilePath));
-                    String tableName = tableProperties.get(TABLE_NAME);
+        getAllTableProperties(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
+            String tableName = tableProperties.get(TABLE_NAME);
 
-                    checkBucketConfigurationForTable(instanceName, tableName);
+            checkBucketConfigurationForTable(instanceName, tableName);
 
-                    if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equalsIgnoreCase(tableProperties.get(STATESTORE_CLASSNAME))) {
-                        checkDynamoDBConfigurationForTable(instanceName, tableName);
-                    }
-                } catch (FileNotFoundException ep) {
-                    throw new IllegalArgumentException("Could not find table properties file");
-                }
+            if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equalsIgnoreCase(tableProperties.get(STATESTORE_CLASSNAME))) {
+                checkDynamoDBConfigurationForTable(instanceName, tableName);
             }
-        }
+        });
     }
 
     private void checkDynamoDBConfigurationForTable(String instanceName, String tableName) {
         List<String> tableTypes = Arrays.asList("active-files", "gc-files", "partitions");
-        tableTypes.stream().forEach(tableType -> {
+        tableTypes.forEach(tableType -> {
             String dynamodbTableName = String.join("-", "sleeper", instanceName, "table", tableName, tableType);
             if (doesDynamoTableExist(dynamodbTableName)) {
                 throw new IllegalArgumentException("Sleeper DynamoDBTable exists: " + dynamodbTableName);

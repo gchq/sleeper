@@ -19,8 +19,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -28,7 +28,6 @@ import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS_FILE;
 
 /**
  * Contains all the properties needed to deploy an instance of Sleeper.
@@ -50,24 +49,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     @Override
     protected void init() {
-        // Tags
-        String tagsCsv = get(TAGS);
-        if (null != tagsCsv) {
-            this.tags = csvTagsToMap(tagsCsv);
-        } else {
-            String tagsFile = get(TAGS_FILE);
-            Properties tagsProperties = new Properties();
-            if (null != tagsFile) {
-                try (FileInputStream inputStream = new FileInputStream(tagsFile)) {
-                    tagsProperties.load(inputStream);
-                } catch (IOException e) {
-                    throw new RuntimeException("Exception loading tags from file: " + tagsFile, e);
-                }
-            }
-            tagsProperties.stringPropertyNames()
-                    .forEach(p -> this.tags.put(p, tagsProperties.getProperty(p)));
-            set(TAGS, tagsToString(tags));
-        }
+        tags = csvTagsToMap(get(TAGS));
         super.init();
     }
 
@@ -90,6 +72,15 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     public void setTags(Map<String, String> tagsMap) {
         tags.clear();
         tags.putAll(tagsMap);
+        set(TAGS, tagsToString(tags));
+    }
+
+    public void loadTags(Reader reader) throws IOException {
+        Properties tagsProperties = new Properties();
+        tagsProperties.load(reader);
+        tags.clear();
+        tagsProperties.stringPropertyNames().forEach(tagName ->
+                tags.put(tagName, tagsProperties.getProperty(tagName)));
         set(TAGS, tagsToString(tags));
     }
 

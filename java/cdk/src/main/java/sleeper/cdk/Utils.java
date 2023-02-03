@@ -15,11 +15,11 @@
  */
 package sleeper.cdk;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.ecs.AwsLogDriver;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -28,19 +28,25 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
@@ -80,9 +86,8 @@ public class Utils {
         StringBuilder sb = new StringBuilder();
         Arrays.stream(propertyNames)
                 .filter(s -> instanceProperties.get(s) != null)
-                .forEach(s -> {
-                    sb.append("-D").append(s.getPropertyName()).append("=").append(instanceProperties.get(s)).append(" ");
-                });
+                .forEach(s -> sb.append("-D").append(s.getPropertyName())
+                        .append("=").append(instanceProperties.get(s)).append(" "));
 
         return sb.toString();
     }
@@ -99,7 +104,7 @@ public class Utils {
     }
 
     /**
-     * Valid values are taken from https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
+     * Valid values are taken from <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html">here</a>
      * A value of -1 represents an infinite number of days.
      *
      * @param numberOfDays number of days you want to retain the logs
@@ -156,36 +161,98 @@ public class Utils {
                         .retention(getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                         .build())
                 .build();
-        return AwsLogDriver.awsLogs(logDriverProps);
+        return LogDriver.awsLogs(logDriverProps);
     }
 
-    public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
-        return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
-                .map(File::new)
-                .flatMap(Utils::processDirectory)
-                .map(f -> processFile(f, instanceProperties));
-    }
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) throws IOException {
+        Path propertiesFile = getInstancePropertiesPath(scope);
+        loadInstanceProperties(properties, propertiesFile);
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private static Stream<File> processDirectory(File f) {
-        if (!f.exists()) {
-            throw new RuntimeException("There was a problem with the table configuration. " +
-                    f.getAbsolutePath() + " doesn't exist");
+        String validate = (String) scope.getNode().tryGetContext("validate");
+        if ("true".equalsIgnoreCase(validate)) {
+            new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
+                    AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
-        if (f.isDirectory()) {
-            return Arrays.stream(Objects.requireNonNull(f.listFiles()));
-        }
-        return Stream.of(f);
+
+        return properties;
     }
 
-    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
-        try (FileInputStream fis = new FileInputStream(file)) {
-            TableProperties tableProperties = new TableProperties(instanceProperties);
-            tableProperties.load(fis);
-            return tableProperties;
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) throws IOException {
+        properties.load(file);
+        Path tagsFile = directoryOf(file).resolve("tags.properties");
+        if (Files.exists(tagsFile)) {
+            try (Reader reader = Files.newBufferedReader(tagsFile)) {
+                properties.loadTags(reader);
+            }
+        }
+        return properties;
+    }
+
+    private static Path getInstancePropertiesPath(Construct scope) {
+        return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
+    }
+
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Construct scope) {
+        return getAllTableProperties(instanceProperties, getInstancePropertiesPath(scope));
+    }
+
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Path instancePropertiesFile) {
+        Path baseDir = directoryOf(instancePropertiesFile);
+        return streamBaseAndTableFolders(baseDir)
+                .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
+                .filter(Objects::nonNull);
+    }
+
+    private static TableProperties readTablePropertiesFolderOrNull(
+            InstanceProperties instanceProperties, Path folder) {
+        Path propertiesPath = folder.resolve("table.properties");
+        Path schemaPath = folder.resolve("schema.json");
+        if (!Files.exists(propertiesPath)) {
+            return null;
+        }
+        try {
+            Properties properties = loadProperties(propertiesPath);
+            if (Files.exists(schemaPath)) {
+                Schema schema = Schema.load(schemaPath);
+                return new TableProperties(instanceProperties, schema, properties);
+            }
+            return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
+            throw new RuntimeException(e);
         }
+    }
+
+    private static Path directoryOf(Path filePath) {
+        Path parent = filePath.getParent();
+        if (parent == null) {
+            return Paths.get(".");
+        } else {
+            return parent;
+        }
+    }
+
+    private static Stream<Path> streamBaseAndTableFolders(Path baseDir) {
+        return Stream.concat(
+                Stream.of(baseDir),
+                streamTableFolders(baseDir));
+    }
+
+    private static Stream<Path> streamTableFolders(Path baseDir) {
+        Path tablesFolder = baseDir.resolve("tables");
+        if (!Files.isDirectory(tablesFolder)) {
+            return Stream.empty();
+        }
+        List<Path> tables;
+        try (Stream<Path> pathStream = Files.list(tablesFolder)) {
+            tables = pathStream
+                    .filter(Files::isDirectory)
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list table configuration directories", e);
+        }
+        return tables.stream().sorted();
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {

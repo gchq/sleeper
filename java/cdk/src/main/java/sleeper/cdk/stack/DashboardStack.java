@@ -73,7 +73,7 @@ public class DashboardStack extends NestedStack {
         this.partitionSplittingStack = partitionSplittingStack;
 
         instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
-        tableNames = Utils.getAllTableProperties(instanceProperties)
+        tableNames = Utils.getAllTableProperties(instanceProperties, scope)
                 .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
                 .sorted()
                 .collect(Collectors.toList());
