@@ -14,5 +14,16 @@
 # limitations under the License.
 
 list_table_names() {
-  echo "table-1 table-2"
+  NAMES=()
+  PROPERTIES_DIR=$1
+  for dir in "$PROPERTIES_DIR"/tables/*
+  do
+    TABLE_PROPERTIES="$dir/table.properties"
+    NAMES+=("$(get_table_name_from_file "$TABLE_PROPERTIES")")
+  done
+  echo "${NAMES[*]}"
+}
+
+get_table_name_from_file(){
+  grep "sleeper.table.name" "$1" | cut -d'=' -f2
 }
