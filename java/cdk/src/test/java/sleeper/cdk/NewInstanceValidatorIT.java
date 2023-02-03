@@ -51,7 +51,7 @@ import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 @Testcontainers
-public class NewInstanceValidatorIT {
+class NewInstanceValidatorIT {
     @Container
     public static final LocalStackContainer LOCALSTACK_CONTAINER
             = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -77,7 +77,18 @@ public class NewInstanceValidatorIT {
     }
 
     @Test
-    public void shouldThrowAnErrorWhenABucketExistsWithSameNameAsTable() throws IOException {
+    void shouldNotThrowAnErrorWhenNoBucketsOrTablesExist() throws IOException {
+        // Given
+        instanceProperties.set(ID, "valid-id");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+
+        // When / Then
+        assertThatCode(this::validate)
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldThrowAnErrorWhenABucketExistsWithSameNameAsTable() throws IOException {
         // Given
         String bucketName = String.join("-", "sleeper", "valid-id", "table", "example-table");
         instanceProperties.set(ID, "valid-id");
@@ -92,7 +103,7 @@ public class NewInstanceValidatorIT {
     }
 
     @Test
-    public void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
+    void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
         // Given
         String bucketName = String.join("-", "sleeper", "valid-id", "query-results");
         instanceProperties.set(ID, "valid-id");
@@ -107,22 +118,22 @@ public class NewInstanceValidatorIT {
     }
 
     @Test
-    public void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsTableActiveFiles() throws IOException {
+    void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsTableActiveFiles() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-active-files");
     }
 
     @Test
-    public void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTableGCFiles() throws IOException {
+    void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTableGCFiles() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-gc-files");
     }
 
     @Test
-    public void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTablePartitions() throws IOException {
+    void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTablePartitions() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-partitions");
     }
 
     @Test
-    public void checkNoErrorIsThrownWhenTableExistsButUsingS3StateStore() throws IOException {
+    void shouldNotThrowAnErrorWhenTableExistsButUsingS3StateStore() throws IOException {
         // Given
         String dynamoTable = "sleeper-valid-id-table-example-table-partitions";
         instanceProperties.set(ID, "valid-id");
