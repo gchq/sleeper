@@ -68,7 +68,7 @@ public class DownloadConfig {
             }
 
             // Store in the same directory structure as in S3 (tables/table-name)
-            Path tableFolder = Path.of("./", key);
+            Path tableFolder = basePath.resolve(key);
             Files.createDirectories(tableFolder);
             tableProperties.save(tableFolder.resolve("table.properties"));
 
