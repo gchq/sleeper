@@ -44,10 +44,10 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
     private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
+    private final ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper;
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
     private final long maxNoOfRecordsInLocalStore;
-    private final ArrayListRecordMapper<INCOMINGDATATYPE> mapToRecord;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
     private final List<Record> inMemoryBatch;
@@ -69,16 +69,16 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
      * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
      */
     public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
+                                ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
                                 String localWorkingDirectory,
                                 int maxNoOfRecordsInMemory,
-                                long maxNoOfRecordsInLocalStore,
-                                ArrayListRecordMapper<INCOMINGDATATYPE> mapToRecord) {
+                                long maxNoOfRecordsInLocalStore) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getSleeperSchema();
+        this.recordMapper = recordMapper;
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfRecordsInMemory = maxNoOfRecordsInMemory;
         this.maxNoOfRecordsInLocalStore = maxNoOfRecordsInLocalStore;
-        this.mapToRecord = mapToRecord;
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.uniqueIdentifier = UUID.randomUUID();
         this.internalOrderedRecordIterator = null;
@@ -147,7 +147,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
 
     @Override
     public void append(INCOMINGDATATYPE data) throws IOException {
-        addRecordToBatch(mapToRecord.map(data));
+        addRecordToBatch(recordMapper.map(data));
     }
 
     /**

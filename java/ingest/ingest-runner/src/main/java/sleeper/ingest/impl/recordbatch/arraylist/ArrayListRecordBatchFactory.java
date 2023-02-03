@@ -67,9 +67,8 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
     @Override
     public RecordBatch<INCOMINGDATATYPE> createRecordBatch() {
         return new ArrayListRecordBatch<>(
-                parquetConfiguration, localWorkingDirectory,
-                maxNoOfRecordsInMemory, maxNoOfRecordsInLocalStore,
-                recordMapper);
+                parquetConfiguration, recordMapper, localWorkingDirectory,
+                maxNoOfRecordsInMemory, maxNoOfRecordsInLocalStore);
     }
 
     public static final class Builder<T> {
