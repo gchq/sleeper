@@ -125,6 +125,6 @@ STACKS=$(grep sleeper.optional.stacks "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 CONFIG_BUCKET=sleeper-${INSTANCE_ID}-config
 echo "${CONFIG_BUCKET}" > "${GENERATED_DIR}/configBucket.txt"
 TABLE_BUCKET=sleeper-${INSTANCE_ID}-table-${TABLE_NAME}
-echo "${TABLE_BUCKET}" > "${GENERATED_DIR}/tableBucket.txt"
+echo "${TABLE_BUCKET}" > "${TABLE_DIR}/tableBucket.txt"
 QUERY_BUCKET=sleeper-${INSTANCE_ID}-query-results
 echo "${QUERY_BUCKET}" > "${GENERATED_DIR}/queryResultsBucket.txt"
