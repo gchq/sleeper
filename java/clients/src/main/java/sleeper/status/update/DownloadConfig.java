@@ -57,9 +57,12 @@ public class DownloadConfig {
                 tableProperties.load(in);
             }
 
+            // Store in the same directory structure as in S3 (tables/table-name)
             Path tableFolder = Path.of("./", key);
             Files.createDirectories(tableFolder);
             tableProperties.save(tableFolder.resolve("table.properties"));
+
+            // Unpack properties for schema & table bucket
             tableProperties.getSchema().save(tableFolder.resolve("schema.json"));
             Files.writeString(tableFolder.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
         }
