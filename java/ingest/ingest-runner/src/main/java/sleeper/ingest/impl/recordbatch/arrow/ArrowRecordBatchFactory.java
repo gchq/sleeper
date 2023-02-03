@@ -28,7 +28,6 @@ import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
@@ -45,14 +44,12 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
     private final long maxBatchBufferAllocatorBytes;
     private final long maxNoOfBytesToWriteLocally;
     private final int maxNoOfRecordsToWriteToArrowFileAtOnce;
-    private final Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn;
+    private final ArrowRecordWriter<INCOMINGDATATYPE> recordWriter;
     private final BufferAllocator bufferAllocator;
     private final boolean closeBufferAllocator;
 
     private ArrowRecordBatchFactory(
-            Builder builder,
-            Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn,
-            String createBatchFnName) {
+            Builder<INCOMINGDATATYPE> builder) {
         this.schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         if (builder.workingBufferAllocatorBytes < 1) {
@@ -72,7 +69,7 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         this.maxBatchBufferAllocatorBytes = builder.maxBatchBufferAllocatorBytes;
         this.maxNoOfBytesToWriteLocally = builder.maxNoOfBytesToWriteLocally;
         this.maxNoOfRecordsToWriteToArrowFileAtOnce = builder.maxNoOfRecordsToWriteToArrowFileAtOnce;
-        this.createBatchFn = Objects.requireNonNull(createBatchFn, "createBatchFn must not be null");
+        this.recordWriter = Objects.requireNonNull(builder.recordWriter, "recordWriter must not be null");
         if (builder.bufferAllocator == null) {
             this.closeBufferAllocator = true;
             this.bufferAllocator = new RootAllocator(workingBufferAllocatorBytes + maxBatchBufferAllocatorBytes);
@@ -87,29 +84,26 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
                         "\tmaxBatchBufferAllocatorBytes of {}\n" +
                         "\tmaxNoOfBytesToWriteLocally of {}\n" +
                         "\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}\n" +
-                        "\tcreateBatchFn of {}",
+                        "\trecordWriter of type {}",
                 this.schema, this.localWorkingDirectory, this.workingBufferAllocatorBytes,
                 this.maxBatchBufferAllocatorBytes, this.maxNoOfBytesToWriteLocally,
-                this.maxNoOfRecordsToWriteToArrowFileAtOnce, createBatchFnName);
+                this.maxNoOfRecordsToWriteToArrowFileAtOnce, recordWriter.getClass().getSimpleName());
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
-    public static Builder builderWith(InstanceProperties instanceProperties) {
+    public static Builder<?> builderWith(InstanceProperties instanceProperties) {
         return builder().instanceProperties(instanceProperties);
     }
 
     @Override
     public RecordBatch<INCOMINGDATATYPE> createRecordBatch() {
-        return createBatchFn.apply(this);
-    }
-
-    public RecordBatch<Record> createRecordBatchAcceptingRecords() {
-        return new ArrowRecordBatchAcceptingRecords(
+        return new ArrowRecordBatch<>(
                 bufferAllocator,
                 schema,
+                recordWriter,
                 localWorkingDirectory,
                 workingBufferAllocatorBytes,
                 minBatchBufferAllocatorBytes,
@@ -125,7 +119,7 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         }
     }
 
-    public static final class Builder {
+    public static final class Builder<T> {
 
         private Schema schema;
         private String localWorkingDirectory;
@@ -135,51 +129,52 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         private long maxNoOfBytesToWriteLocally;
         private int maxNoOfRecordsToWriteToArrowFileAtOnce;
         private BufferAllocator bufferAllocator;
+        private ArrowRecordWriter<T> recordWriter;
 
         private Builder() {
         }
 
-        public Builder schema(Schema schema) {
+        public Builder<T> schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
-        public Builder localWorkingDirectory(String localWorkingDirectory) {
+        public Builder<T> localWorkingDirectory(String localWorkingDirectory) {
             this.localWorkingDirectory = localWorkingDirectory;
             return this;
         }
 
-        public Builder workingBufferAllocatorBytes(long workingBufferAllocatorBytes) {
+        public Builder<T> workingBufferAllocatorBytes(long workingBufferAllocatorBytes) {
             this.workingBufferAllocatorBytes = workingBufferAllocatorBytes;
             return this;
         }
 
-        public Builder minBatchBufferAllocatorBytes(long minBatchBufferAllocatorBytes) {
+        public Builder<T> minBatchBufferAllocatorBytes(long minBatchBufferAllocatorBytes) {
             this.minBatchBufferAllocatorBytes = minBatchBufferAllocatorBytes;
             return this;
         }
 
-        public Builder maxBatchBufferAllocatorBytes(long maxBatchBufferAllocatorBytes) {
+        public Builder<T> maxBatchBufferAllocatorBytes(long maxBatchBufferAllocatorBytes) {
             this.maxBatchBufferAllocatorBytes = maxBatchBufferAllocatorBytes;
             return this;
         }
 
-        public Builder maxNoOfBytesToWriteLocally(long maxNoOfBytesToWriteLocally) {
+        public Builder<T> maxNoOfBytesToWriteLocally(long maxNoOfBytesToWriteLocally) {
             this.maxNoOfBytesToWriteLocally = maxNoOfBytesToWriteLocally;
             return this;
         }
 
-        public Builder maxNoOfRecordsToWriteToArrowFileAtOnce(int maxNoOfRecordsToWriteToArrowFileAtOnce) {
+        public Builder<T> maxNoOfRecordsToWriteToArrowFileAtOnce(int maxNoOfRecordsToWriteToArrowFileAtOnce) {
             this.maxNoOfRecordsToWriteToArrowFileAtOnce = maxNoOfRecordsToWriteToArrowFileAtOnce;
             return this;
         }
 
-        public Builder bufferAllocator(BufferAllocator bufferAllocator) {
+        public Builder<T> bufferAllocator(BufferAllocator bufferAllocator) {
             this.bufferAllocator = bufferAllocator;
             return this;
         }
 
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
+        public Builder<T> instanceProperties(InstanceProperties instanceProperties) {
             return maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
                     .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
                     .minBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
@@ -187,10 +182,17 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
                     .maxNoOfBytesToWriteLocally(instanceProperties.getLong(ARROW_INGEST_MAX_LOCAL_STORE_BYTES));
         }
 
+        public <INCOMINGDATATYPE> Builder<INCOMINGDATATYPE> recordWriter(ArrowRecordWriter<INCOMINGDATATYPE> recordWriter) {
+            this.recordWriter = (ArrowRecordWriter<T>) recordWriter;
+            return (Builder<INCOMINGDATATYPE>) this;
+        }
+
         public ArrowRecordBatchFactory<Record> buildAcceptingRecords() {
-            return new ArrowRecordBatchFactory<>(this,
-                    ArrowRecordBatchFactory::createRecordBatchAcceptingRecords,
-                    "createRecordBatchAcceptingRecords");
+            return recordWriter(new ArrowRecordWriterAcceptingRecords()).build();
+        }
+
+        public ArrowRecordBatchFactory<T> build() {
+            return new ArrowRecordBatchFactory<>(this);
         }
     }
 }
