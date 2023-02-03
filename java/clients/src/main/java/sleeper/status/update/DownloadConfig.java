@@ -39,11 +39,11 @@ public class DownloadConfig {
     }
 
     public static void main(String[] args) throws IOException {
-        if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Usage: <instance id> <directory to write to>");
         }
         String instanceId = args[0];
-        Path basePath = Path.of("./");
+        Path basePath = Path.of(args[1]);
         clearDirectory(basePath);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
