@@ -65,6 +65,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
      * @throws OutOfMemoryException When the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
      *                              provide enough memory
      */
+    @Override
     public void insert(List<Field> allFields,
                        VectorSchemaRoot vectorSchemaRoot,
                        Record record,
