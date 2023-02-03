@@ -20,8 +20,8 @@ set -e
 #####################
 
 if [ "$#" -ne 6 ]; then
-	echo "Usage: $0 <instance-id> <vpc> <subnet> <table-name> <template-dir> <generated-dir>"
-	exit 1
+  echo "Usage: $0 <instance-id> <vpc> <subnet> <table-name> <template-dir> <generated-dir>"
+  exit 1
 fi
 
 INSTANCE_ID=$1
@@ -88,25 +88,25 @@ cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
 # Table Properties
 sed \
   -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
-	"${TEMPLATE_DIR}/tableproperties.template" \
-	> "${TABLE_PROPERTIES}"
+  "${TEMPLATE_DIR}/tableproperties.template" \
+  > "${TABLE_PROPERTIES}"
 
 # Instance Properties
 # Note this sed command uses the file in generated dir not the template dir
 # as this was required to include some pre-generated system test specific properties
 source "${SCRIPTS_DIR}/functions/sedInPlace.sh"
 sed_in_place \
-	-e "s|^sleeper.account=.*|sleeper.account=${ACCOUNT}|" \
-	-e "s|^sleeper.region=.*|sleeper.region=${REGION}|" \
-	-e "s|^sleeper.id=.*|sleeper.id=${INSTANCE_ID}|" \
-	-e "s|^sleeper.version=.*|sleeper.version=${VERSION}|" \
-	-e "s|^sleeper.jars.bucket=.*|sleeper.jars.bucket=${SLEEPER_JARS}|" \
-	-e "s|^sleeper.compaction.repo=.*|sleeper.compaction.repo=${INSTANCE_ID}/compaction-job-execution|" \
-	-e "s|^sleeper.ingest.repo=.*|sleeper.ingest.repo=${INSTANCE_ID}/ingest|" \
-	-e "s|^sleeper.bulk.import.eks.repo=.*|sleeper.bulk.import.eks.repo=${INSTANCE_ID}/bulk-import-runner|" \
-	-e "s|^sleeper.vpc=.*|sleeper.vpc=${VPC}|" \
-	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
-	"${INSTANCE_PROPERTIES}"
+  -e "s|^sleeper.account=.*|sleeper.account=${ACCOUNT}|" \
+  -e "s|^sleeper.region=.*|sleeper.region=${REGION}|" \
+  -e "s|^sleeper.id=.*|sleeper.id=${INSTANCE_ID}|" \
+  -e "s|^sleeper.version=.*|sleeper.version=${VERSION}|" \
+  -e "s|^sleeper.jars.bucket=.*|sleeper.jars.bucket=${SLEEPER_JARS}|" \
+  -e "s|^sleeper.compaction.repo=.*|sleeper.compaction.repo=${INSTANCE_ID}/compaction-job-execution|" \
+  -e "s|^sleeper.ingest.repo=.*|sleeper.ingest.repo=${INSTANCE_ID}/ingest|" \
+  -e "s|^sleeper.bulk.import.eks.repo=.*|sleeper.bulk.import.eks.repo=${INSTANCE_ID}/bulk-import-runner|" \
+  -e "s|^sleeper.vpc=.*|sleeper.vpc=${VPC}|" \
+  -e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
+  "${INSTANCE_PROPERTIES}"
 
 ###################################
 # Build and publish Docker images #

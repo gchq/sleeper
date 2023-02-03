@@ -82,7 +82,7 @@ for stack in "${DOCKER_STACKS[@]}"; do
       if [ $STATUS -ne 0 ]; then
         echo "Creating repository ${INSTANCE_ID}/${REPO}"
         aws ecr create-repository --repository-name ${INSTANCE_ID}/${REPO} \
-	      --image-scanning-configuration scanOnPush=true --no-cli-pager
+        --image-scanning-configuration scanOnPush=true --no-cli-pager
       fi
 
       pushd ${BASE_DOCKERFILE_DIR}/${DIR}
@@ -96,5 +96,5 @@ for stack in "${DOCKER_STACKS[@]}"; do
         docker push ${REPO_PREFIX}/${REPO}:${VERSION}
       fi
       popd
-	fi
+  fi
 done

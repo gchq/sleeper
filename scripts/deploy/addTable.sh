@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -ne 2 ]; then
-	echo "Usage: $0 <uniqueId> <table-name>"
-	exit 1
+  echo "Usage: $0 <uniqueId> <table-name>"
+  exit 1
 fi
 
 INSTANCE_ID=$1
@@ -63,8 +63,8 @@ cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
 # Table Properties
 sed \
   -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
-	"${TEMPLATE_DIR}/tableproperties.template" \
-	> "${TABLE_PROPERTIES}"
+  "${TEMPLATE_DIR}/tableproperties.template" \
+  > "${TABLE_PROPERTIES}"
 
 echo "-------------------------------------------------------"
 echo "Deploying Stacks"

@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -ne 1 ]; then
-	echo "Usage: $0 <instance-id>"
-	exit 1
+  echo "Usage: $0 <instance-id>"
+  exit 1
 fi
 
 INSTANCE_ID=$1
