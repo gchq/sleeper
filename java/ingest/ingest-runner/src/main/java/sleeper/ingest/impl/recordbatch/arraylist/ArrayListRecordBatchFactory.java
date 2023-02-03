@@ -24,7 +24,6 @@ import sleeper.core.record.Record;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.RecordMapper;
 
 import java.util.Objects;
 
@@ -38,7 +37,7 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
     private final long maxNoOfRecordsInLocalStore;
-    private final RecordMapper<INCOMINGDATATYPE> recordMapper;
+    private final ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper;
 
     private ArrayListRecordBatchFactory(Builder<INCOMINGDATATYPE> builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetConfiguration must not be null");
@@ -78,7 +77,7 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
         private String localWorkingDirectory;
         private int maxNoOfRecordsInMemory;
         private long maxNoOfRecordsInLocalStore;
-        private RecordMapper<T> recordMapper;
+        private ArrayListRecordMapper<T> recordMapper;
 
         private Builder() {
         }
@@ -108,13 +107,13 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
                     .maxNoOfRecordsInLocalStore(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
         }
 
-        public <INCOMINGDATATYPE> Builder<INCOMINGDATATYPE> recordMapper(RecordMapper<INCOMINGDATATYPE> recordMapper) {
-            this.recordMapper = (RecordMapper<T>) recordMapper;
+        public <INCOMINGDATATYPE> Builder<INCOMINGDATATYPE> recordMapper(ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper) {
+            this.recordMapper = (ArrayListRecordMapper<T>) recordMapper;
             return (Builder<INCOMINGDATATYPE>) this;
         }
 
         public ArrayListRecordBatchFactory<Record> buildAcceptingRecords() {
-            return recordMapper((RecordMapper<Record>) data -> data).build();
+            return recordMapper((ArrayListRecordMapper<Record>) data -> data).build();
         }
 
         public ArrayListRecordBatchFactory<T> build() {

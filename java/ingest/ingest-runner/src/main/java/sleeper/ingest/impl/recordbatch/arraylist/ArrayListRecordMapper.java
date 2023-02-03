@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.impl.recordbatch;
+package sleeper.ingest.impl.recordbatch.arraylist;
 
 import sleeper.core.record.Record;
 
-public interface RecordMapper<T> {
+public interface ArrayListRecordMapper<T> {
     Record map(T data);
 }
