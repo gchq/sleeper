@@ -30,7 +30,7 @@ IFS=" " read -r -a TABLE_NAMES <<< "$(list_table_names "$PROPERTIES_DIR")"
 
 # Then
 EXPECTED_NAMES=("test-table")
-array_equals TABLE_NAMES EXPECTED_NAMES || fail_test 'TABLE_NAMES should be ("test-table")'
+array_equals TABLE_NAMES EXPECTED_NAMES || fail_test "TABLE_NAMES should be (${EXPECTED_NAMES[*]}). Found (${TABLE_NAMES[*]})"
 
 rm -rf "$PROPERTIES_DIR"
 
@@ -48,6 +48,8 @@ IFS=" " read -r -a TABLE_NAMES <<< "$(list_table_names "$PROPERTIES_DIR")"
 
 # Then
 EXPECTED_NAMES=("table-1" "table-2")
-array_equals TABLE_NAMES EXPECTED_NAMES || fail_test 'TABLE_NAMES should be ("table-1" "table-2")'
+array_equals TABLE_NAMES EXPECTED_NAMES || fail_test "TABLE_NAMES should be (${EXPECTED_NAMES[*]}). Found (${TABLE_NAMES[*]})"
 
 rm -rf "$PROPERTIES_DIR"
+
+end_tests
