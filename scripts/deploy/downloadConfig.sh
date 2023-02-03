@@ -59,7 +59,11 @@ grep "^sleeper.tags=" "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | sed 's/\([^,]\{
   > "${TAGS}"
 
 # Tables
-TABLE_OBJECTS="$(aws s3api list-objects-v2 --bucket "${CONFIG_BUCKET}" --prefix tables/ --output text | tail -n +2 | cut -d$'\t' -f3)"
+TABLE_OBJECTS="$(
+    aws s3api list-objects-v2 --bucket "${CONFIG_BUCKET}" \
+      --prefix tables/ --output text \
+      | tail -n +2 | cut -d$'\t' -f3 # Ignore header line, get object name field
+    )"
 echo "$TABLE_OBJECTS" | while IFS='' read -r table_object; do
 
   TABLE_DIR=${GENERATED_DIR}/${table_object}
