@@ -45,7 +45,7 @@ END_PAUSE_TIME=$(record_time)
 echo "Pause finished at $(recorded_time_str "$END_PAUSE_TIME"), took $(elapsed_time_str "$START_TIME" "$END_PAUSE_TIME")"
 
 # Download latest instance configuration (don't fail script if buckets don't exist)
-"${DEPLOY_SCRIPTS_DIR}/downloadConfig.sh" "${INSTANCE_ID}" || true
+"${SCRIPTS_DIR}/utility/downloadConfig.sh" "${INSTANCE_ID}" || true
 
 END_DOWNLOAD_CONFIG_TIME=$(record_time)
 echo "Download instance configuration finished at $(recorded_time_str "$END_DOWNLOAD_CONFIG_TIME")," \

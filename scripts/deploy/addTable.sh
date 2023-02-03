@@ -23,11 +23,10 @@ fi
 INSTANCE_ID=$1
 TABLE_NAME=$2
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
 # Download latest instance configuration
-"${THIS_DIR}/downloadConfig.sh" "${INSTANCE_ID}" || true
+"${SCRIPTS_DIR}/utility/downloadConfig.sh" "${INSTANCE_ID}"
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 GENERATED_DIR=${SCRIPTS_DIR}/generated
