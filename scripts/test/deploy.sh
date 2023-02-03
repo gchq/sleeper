@@ -65,7 +65,7 @@ echo "--------------------------------------------------------------------------
 echo "Deploying Stack"
 echo "-------------------------------------------------------------------------------"
 cdk -a "java -cp ${SYSTEM_TEST_JAR} sleeper.systemtest.cdk.SystemTestApp" deploy \
---require-approval never -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=true "*"
+--require-approval never -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=true -c newinstance=true "*"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

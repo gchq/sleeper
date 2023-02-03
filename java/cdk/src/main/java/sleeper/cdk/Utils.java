@@ -169,12 +169,14 @@ public class Utils {
         loadInstanceProperties(properties, propertiesFile);
 
         String validate = (String) scope.getNode().tryGetContext("validate");
+        String newinstance = (String) scope.getNode().tryGetContext("newinstance");
         if ("true".equalsIgnoreCase(validate)) {
             new ConfigValidator().validate(properties, propertiesFile);
+        }
+        if ("true".equalsIgnoreCase(newinstance)) {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
-
         return properties;
     }
 

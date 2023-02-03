@@ -364,7 +364,7 @@ INSTANCE_PROPERTIES=/path/to/instance.properties
 cd java
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
 cd ..
-cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=true "*"
+cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=true -c newinstance=true "*"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks,
