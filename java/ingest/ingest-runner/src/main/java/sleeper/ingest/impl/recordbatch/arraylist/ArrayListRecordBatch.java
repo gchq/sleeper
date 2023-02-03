@@ -30,7 +30,6 @@ import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
-import sleeper.ingest.impl.recordbatch.RecordMapper;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
@@ -48,7 +47,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
     private final long maxNoOfRecordsInLocalStore;
-    private final RecordMapper<INCOMINGDATATYPE> mapToRecord;
+    private final ArrayListRecordMapper<INCOMINGDATATYPE> mapToRecord;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
     private final List<Record> inMemoryBatch;
@@ -73,7 +72,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                                 String localWorkingDirectory,
                                 int maxNoOfRecordsInMemory,
                                 long maxNoOfRecordsInLocalStore,
-                                RecordMapper<INCOMINGDATATYPE> mapToRecord) {
+                                ArrayListRecordMapper<INCOMINGDATATYPE> mapToRecord) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
