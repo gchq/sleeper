@@ -21,7 +21,7 @@ import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-import static sleeper.util.ClientUtils.formatString;
+import static sleeper.util.ClientUtils.formatPropertyDescription;
 
 public class TablePropertyReport {
 
@@ -43,7 +43,7 @@ public class TablePropertyReport {
         out.println("\n\n Table Property Report \n -------------------------");
         for (TableProperty property : TableProperty.values()) {
             out.println();
-            out.println(formatString(property.getDescription()));
+            out.println(formatPropertyDescription(property.getDescription()));
             out.println(property.getPropertyName() + ": " + tableProperties.get(property));
         }
         confirmReturnToMainScreen(out, in);
