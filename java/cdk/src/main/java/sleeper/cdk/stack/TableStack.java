@@ -107,17 +107,18 @@ public class TableStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
 
-        createTables(instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, jarsBucket);
+        createTables(scope, instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, jarsBucket);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private void createTables(InstanceProperties instanceProperties,
+    private void createTables(Construct scope,
+                              InstanceProperties instanceProperties,
                               Provider tablesProvider,
                               Function sleeperTableLambda,
                               IBucket configBucket,
                               IBucket jarsBucket) {
-        Utils.getAllTableProperties(instanceProperties).forEach(tableProperties ->
+        Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
                 createTable(instanceProperties, tableProperties, tablesProvider, sleeperTableLambda, configBucket, jarsBucket));
     }
 

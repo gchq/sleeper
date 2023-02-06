@@ -35,7 +35,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
@@ -69,7 +68,6 @@ public abstract class AdminClientTestBase {
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
         instanceProperties.set(JARS_BUCKET, "bucket");
         instanceProperties.set(SUBNET, "subnet1");
-        instanceProperties.set(TABLE_PROPERTIES, "/path/to/table.properties");
         Map<String, String> tags = new HashMap<>();
         tags.put("name", "abc");
         tags.put("project", "test");

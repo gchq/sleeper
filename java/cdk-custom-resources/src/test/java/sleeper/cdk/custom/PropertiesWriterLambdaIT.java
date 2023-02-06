@@ -38,7 +38,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
@@ -66,7 +65,6 @@ public class PropertiesWriterLambdaIT {
         instanceProperties.set(SUBNET, "subnet-12345");
         instanceProperties.set(VPC_ID, "vpc-12345");
         instanceProperties.set(ACCOUNT, account);
-        instanceProperties.set(TABLE_PROPERTIES, "/path/to/table.properties");
         return instanceProperties;
     }
 

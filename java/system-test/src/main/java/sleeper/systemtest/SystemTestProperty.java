@@ -36,9 +36,9 @@ public interface SystemTestProperty extends InstanceProperty {
             .validationPredicate(Objects::nonNull).build();
     SystemTestProperty INGEST_MODE = named("sleeper.systemtest.ingest.mode")
             .description("The ingest mode to write random data. This should be either 'direct' or 'queue'.\n" +
-                    "'Direct' means that the data is written directly. 'Queue' means that the data\n" +
-                    "is written to a Parquet file and an ingest job is created and posted to the\n" +
-                    "ingest queue.")
+                    "'Direct' means that the data is written directly.\n" +
+                    "'Queue' means that the data is written to a Parquet file and an ingest job is created " +
+                    "and posted to the ingest queue.")
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = named("sleeper.systemtest.cluster")
             .description("The name of the cluster to use when performing system tests").build();

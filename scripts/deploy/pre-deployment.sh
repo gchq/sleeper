@@ -85,7 +85,6 @@ cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
 
 # Table Properties
 sed \
-  -e "s|^sleeper.table.schema.file=.*|sleeper.table.schema.file=${SCHEMA}|" \
   -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
 	"${TEMPLATE_DIR}/tableproperties.template" \
 	> "${TABLE_PROPERTIES}"
@@ -105,8 +104,6 @@ sed_in_place \
 	-e "s|^sleeper.bulk.import.eks.repo=.*|sleeper.bulk.import.eks.repo=${INSTANCE_ID}/bulk-import-runner|" \
 	-e "s|^sleeper.vpc=.*|sleeper.vpc=${VPC}|" \
 	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
-	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
-	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
 	"${INSTANCE_PROPERTIES}"
 
 ###################################

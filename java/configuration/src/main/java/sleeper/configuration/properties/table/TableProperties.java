@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -29,12 +30,14 @@ import sleeper.configuration.properties.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
@@ -49,21 +52,29 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         this.instanceProperties = instanceProperties;
     }
 
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR") // Needed until we have an immutable model
+    public TableProperties(InstanceProperties instanceProperties, Schema schema, Properties properties) {
+        super(properties);
+        this.instanceProperties = instanceProperties;
+        setSchema(schema);
+        validate();
+    }
+
+    public TableProperties(InstanceProperties instanceProperties, Properties properties) {
+        this(instanceProperties, loadSchema(properties), properties);
+    }
+
+    private static Schema loadSchema(Properties properties) {
+        return Schema.loadFromString(
+                Objects.requireNonNull(properties.getProperty(SCHEMA.getPropertyName()),
+                        "Schema not set in property " + SCHEMA.getPropertyName()));
+    }
+
     @Override
     protected void init() {
-        String schemaFile = get(TableProperty.SCHEMA_FILE);
-        String schema = get(TableProperty.SCHEMA);
-        SchemaSerDe schemaSerDe = new SchemaSerDe();
-        if (schema == null) {
-            if (schemaFile != null) {
-                try {
-                    setSchema(schemaSerDe.fromJsonFile(schemaFile));
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException("Unable to load file from JSON", e);
-                }
-            }
-        } else {
-            this.schema = schemaSerDe.fromJson(schema);
+        String schemaProperty = get(TableProperty.SCHEMA);
+        if (schemaProperty != null) {
+            schema = Schema.loadFromString(schemaProperty);
         }
         super.init();
     }
@@ -107,7 +118,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
-        LOGGER.info("Loading table properties from bucket {}, key {}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
+        LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
     }
 

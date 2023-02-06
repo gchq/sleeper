@@ -34,10 +34,10 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class InstancePropertyReportTest extends AdminClientMockStoreBase {
+class InstancePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintAllInstanceProperties() {
+    void shouldPrintAllInstanceProperties() {
         // Given
         setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
@@ -84,12 +84,11 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .contains("# The S3 bucket name used to store configuration files.\n" +
                         "sleeper.config.bucket: sleeper-test-instance-config\n")
                 // Check property with multi-line description
-                .contains("# The minimum number of files to read in a compaction job. Note that the state store\n" +
-                        "# must support atomic updates for this many files. For the DynamoDBStateStore this\n" +
-                        "# is 11. It can be overridden on a per-table basis.\n" +
-                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                        "# This is a default value and will be used if not specified in the table.properties file\n" +
-                        "sleeper.default.compaction.files.batch.size: 11");
+                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
+                        "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
+                        "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
+                        "# can be overridden on a per-table basis.\n" +
+                        "sleeper.default.gc.delay.seconds: 600");
 
         confirmAndVerifyNoMoreInteractions();
     }

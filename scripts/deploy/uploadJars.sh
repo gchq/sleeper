@@ -35,16 +35,23 @@ echo "REGION: ${REGION}"
 echo "VERSION: ${VERSION}"
 echo "JAR_DIR: ${JAR_DIR}"
 
-set +e
-aws s3api head-bucket --bucket ${JARS_BUCKET} >/dev/null 2>&1
-STATUS=$?
-set -e
+check_bucket_exists() {
+  set +e
+  aws s3api head-bucket --bucket "${JARS_BUCKET}" >/dev/null 2>&1
+  STATUS=$?
+  set -e
+  echo "$STATUS"
+}
 
-if [ $STATUS -ne 0 ]; then
+if [ "$(check_bucket_exists)" -ne 0 ]; then
   echo "Creating JARs bucket"
-  (aws s3api create-bucket --acl private --bucket ${JARS_BUCKET} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION} && \
-  aws s3api put-public-access-block --bucket ${JARS_BUCKET} --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true")
+  aws s3api create-bucket --acl private --bucket "${JARS_BUCKET}" --region "${REGION}" --create-bucket-configuration "LocationConstraint=${REGION}"
+  aws s3api put-public-access-block --bucket "${JARS_BUCKET}" --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+  while [ "$(check_bucket_exists)" -ne 0 ]; do
+    echo "Waiting for bucket to be available..."
+    sleep 5
+  done
 fi
 
-echo "Uploading JARS"
-aws s3 sync --size-only ${JAR_DIR} s3://${JARS_BUCKET}
+echo "Uploading JARs"
+aws s3 sync --size-only "${JAR_DIR}" "s3://${JARS_BUCKET}"
