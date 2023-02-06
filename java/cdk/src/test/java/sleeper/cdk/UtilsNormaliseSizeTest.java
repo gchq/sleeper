@@ -18,9 +18,9 @@ package sleeper.cdk;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.cdk.stack.CompactionStack.normaliseSize;
+import static sleeper.cdk.Utils.normaliseSize;
 
-public class SizeRegexTest {
+public class UtilsNormaliseSizeTest {
 
     @Test
     public void shouldReturnNull() {

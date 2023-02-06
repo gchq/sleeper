@@ -143,7 +143,7 @@ public class Scaler {
             return;
         }
 
-        // if details were passed in, use them, otherwise find them ourselves
+        // If details were passed in, use them, otherwise find them ourselves
         Map<String, InstanceDetails> details;
         if (passedDetails == null) {
             // fetch details from ECS cluster
@@ -152,7 +152,7 @@ public class Scaler {
             details = passedDetails;
         }
 
-        // get the first one, we assume the containers are homogenous
+        // Get the first one, we assume the containers are homogenous
         Optional<InstanceDetails> det = details.values().stream().findFirst();
         det.ifPresent(d -> {
             this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,

@@ -75,7 +75,9 @@ public class CommonJobUtils {
         }
     }
 
-    /** Basic metadata class about where this container is running. */
+    /**
+     * Basic metadata class about where this container is running.
+     */
     public static class ContainerMetadata {
         public final String clusterName;
         public final String instanceARN;
@@ -128,7 +130,6 @@ public class CommonJobUtils {
      */
     public static Optional<ContainerMetadata> retrieveContainerMetadata(AmazonECS ecsClient) throws IOException {
         if (ECS_EC2_ENV.equalsIgnoreCase(System.getenv(EXECUTION_ENV))) {
-
             Optional<Triple<String, String, String>> metadata = retrieveContainerMetadataViaEnvFile();
             if (metadata.isPresent()) {
                 Optional<ContainerInstance> instanceDetails = describeContainerInstance(ecsClient, metadata.get().getLeft(), metadata.get().getMiddle());
@@ -163,7 +164,7 @@ public class CommonJobUtils {
     }
 
     /**
-     * Get some container metadata from the container metadata file at the given path
+     * Get some container metadata from the container metadata file at the given path.
      *
      * @param file the path to the metadata
      * @return triple of cluster name, instanceARN and availability zone in that order

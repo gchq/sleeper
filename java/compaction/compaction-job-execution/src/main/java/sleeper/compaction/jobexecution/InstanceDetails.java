@@ -184,20 +184,20 @@ public class InstanceDetails {
              */
             private boolean refillQueue() {
                 if (anotherPageWaiting) {
-                    LOGGER.debug("Retrieving upto {} instances for ECS cluster {}", pageSize, ecsClusterName);
+                    LOGGER.debug("Retrieving up to {} instances for ECS cluster {}", pageSize, ecsClusterName);
 
                     ListContainerInstancesResult result = ecsClient.listContainerInstances(req);
                     // More to come?
                     anotherPageWaiting = result.getNextToken() != null;
                     req = req.withNextToken(result.getNextToken());
 
-                    // check to see if there are any at all
+                    // Check to see if there are any at all
                     if (result.getContainerInstanceArns().isEmpty()) {
                         anotherPageWaiting = false;
                         return false;
                     }
 
-                    // now get a description of these instances
+                    // Now get a description of these instances
                     DescribeContainerInstancesRequest conReq = new DescribeContainerInstancesRequest()
                                     .withCluster(ecsClusterName)
                                     .withContainerInstances(result.getContainerInstanceArns());
@@ -220,7 +220,7 @@ public class InstanceDetails {
                                         c.getPendingTasksCount()));
                     }
                     return true;
-                } else { // no more data pages
+                } else { // No more data pages
                     return false;
                 }
             }
@@ -228,9 +228,9 @@ public class InstanceDetails {
             @Override
             public boolean hasNext() {
                 if (instanceQueue.isEmpty()) {
-                    // queue empty, attempt to get more items
+                    // Queue empty, attempt to get more items
                     return refillQueue();
-                } else { // items in queue, so next item definitely exists
+                } else { // Items in queue, so next item definitely exists
                     return true;
                 }
             }

@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,9 +65,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK
  */
 public class Utils {
 
-    /**Region environment variable for setting in EC2 based ECS containers.
+    /**
+     * Region environment variable for setting in EC2 based ECS containers.
      */
     public static final String AWS_REGION = "AWS_REGION";
+
+    private static final Pattern NUM_MATCH = Pattern.compile("^(\\d+)(\\D*)$");
 
     private Utils() {
         // Prevents instantiation
@@ -272,6 +277,26 @@ public class Utils {
             return RemovalPolicy.RETAIN;
         } else {
             return RemovalPolicy.DESTROY;
+        }
+    }
+
+    /**
+     * Normalises EC2 instance size strings so they can be looked up in the {@link InstanceSize}
+     * enum. Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     *
+     * @param size the human readable size
+     * @return the internal enum name
+     */
+    public static String normaliseSize(String size) {
+        if (size == null) {
+            return null;
+        }
+        Matcher sizeMatch = NUM_MATCH.matcher(size);
+        if (sizeMatch.matches()) {
+            // Match occurred so switch the capture groups
+            return sizeMatch.group(2) + sizeMatch.group(1);
+        } else {
+            return size;
         }
     }
 }

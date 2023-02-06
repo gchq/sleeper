@@ -87,8 +87,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -133,15 +131,16 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 /**
- * A {@link Stack} to deploy the {@link Queue}s, ECS {@link Cluster}s,
- * {@link FargateTaskDefinition}s, {@link Function}s, CloudWatch {@link Rule}s needed to perform
- * compaction jobs. Specifically, there is:
+ * A {@link Stack} to deploy the {@link Queue}s, ECS {@link Cluster}s, a {@link FargateTaskDefinition} or
+ * an {@link Ec2TaskDefinition}, {@link Function}s, CloudWatch {@link Rule}s needed to perform compaction
+ * jobs. Specifically, there is:
  * <p>
  * - a lambda, that is periodically triggered by a CloudWatch rule, to query the state store for
  * information about active files with no job id, to create compaction job definitions as
- * appropriate and post them to a queue; - an ECS {@link Cluster} and a
- * {@link FargateTaskDefinition} and a {@link Ec2TaskDefinition} for tasks that will perform
- * compaction jobs; - a lambda, that is periodically triggered by a CloudWatch rule, to look at the
+ * appropriate and post them to a queue;
+ * - an ECS {@link Cluster} and either a {@link FargateTaskDefinition} or a {@link Ec2TaskDefinition}
+ * for tasks that will perform compaction jobs;
+ * - a lambda, that is periodically triggered by a CloudWatch rule, to look at the
  * size of the queue and the number of running tasks and create more tasks if necessary.
  * <p>
  * Note that there are two of each of the above: one for non-splitting compaction jobs and one for
@@ -154,8 +153,6 @@ public class CompactionStack extends NestedStack {
     public static final String SPLITTING_COMPACTION_STACK_DL_QUEUE_URL = "SplittingCompactionStackDLQueueUrlKey";
     public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
     public static final String SPLITTING_COMPACTION_CLUSTER_NAME = "SplittingCompactionClusterName";
-
-    private static final Pattern NUM_MATCH = Pattern.compile("^(\\d+)(\\D*)$");
 
     private Queue compactionJobQ;
     private Queue compactionDLQ;
@@ -179,19 +176,18 @@ public class CompactionStack extends NestedStack {
         // - An SQS queue for the compaction jobs.
         // - An SQS queue for the splitting compaction jobs.
         // - A lambda to periodically check for compaction jobs that should be created.
-        // This lambda is fired periodically by a CloudWatch rule. It queries the
-        // StateStore for information about the current partitions and files,
-        // identifies files that should be compacted, creates a job definition
-        // and sends it to an SQS queue.
+        //   This lambda is fired periodically by a CloudWatch rule. It queries the
+        //   StateStore for information about the current partitions and files,
+        //   identifies files that should be compacted, creates a job definition
+        //   and sends it to an SQS queue.
         // - An ECS cluster, task definition, etc., for compaction jobs.
         // - An ECS cluster, task definition, etc., for splitting compaction jobs.
         // - A lambda that periodically checks the number of running compaction tasks
-        // and if there are not enough (i.e. there is a backlog on the queue
-        // then it creates more tasks).
+        //   and if there are not enough (i.e. there is a backlog on the queue
+        //   then it creates more tasks).
         // - A lambda that periodically checks the number of running splitting
-        // compaction tasks
-        // and if there are not enough (i.e. there is a backlog on the queue
-        // then it creates more tasks).
+        //   compaction tasks and if there are not enough (i.e. there is a backlog
+        //   on the queue then it creates more tasks).
 
         // Config bucket
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
@@ -226,9 +222,8 @@ public class CompactionStack extends NestedStack {
     }
 
     // TODO Code duplication because we have separate queues for splitting
-    // compaction
-    // jobs and non-splitting compaction jobs. Either merge them both into one
-    // queue, ECS cluster, etc., or reduce code duplication.
+    // compaction jobs and non-splitting compaction jobs. Either merge
+    // them both into one queue, ECS cluster, etc., or reduce code duplication.
     private Queue sqsQueueForCompactionJobs(Topic topic) {
         // Create queue for compaction job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobDLQ");
@@ -432,12 +427,7 @@ public class CompactionStack extends NestedStack {
             compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };
 
-        // set default values
-        instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, "void");
-        instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, "void");
-
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-
         if (launchType.equalsIgnoreCase("FARGATE")) {
             FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("Merge");
             String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
@@ -455,9 +445,8 @@ public class CompactionStack extends NestedStack {
                             environmentVariables, instanceProperties, "Merge");
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
             grantPermissions.accept(ec2TaskDefinition);
+            addEC2CapacityProvider(cluster, "MergeCompaction", vpc, COMPACTION_AUTO_SCALING_GROUP, configBucket, jarsBucket, "compaction");
         }
-
-        addEC2CapacityProvider(cluster, "MergeCompaction", vpc, COMPACTION_AUTO_SCALING_GROUP, configBucket, jarsBucket, "compaction");
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                         .value(cluster.getClusterName())
@@ -513,10 +502,6 @@ public class CompactionStack extends NestedStack {
             compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };
 
-        // set default values
-        instanceProperties.set(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, "void");
-        instanceProperties.set(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY, "void");
-
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 
         if (launchType.equalsIgnoreCase("FARGATE")) {
@@ -537,9 +522,8 @@ public class CompactionStack extends NestedStack {
             ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
                             ec2ContainerDefinitionOptions);
             grantPermissions.accept(ec2TaskDefinition);
+            addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc, SPLITTING_COMPACTION_AUTO_SCALING_GROUP, configBucket, jarsBucket, "splittingcompaction");
         }
-
-        addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc, SPLITTING_COMPACTION_AUTO_SCALING_GROUP, configBucket, jarsBucket, "splittingcompaction");
 
         CfnOutputProps splittingCompactionClusterProps = new CfnOutputProps.Builder()
                         .value(cluster.getClusterName())
@@ -553,7 +537,7 @@ public class CompactionStack extends NestedStack {
     private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc,
                     SystemDefinedInstanceProperty scalingProperty, IBucket configBucket, IBucket jarsBucket, String type) {
 
-        // create some extra user data to enable ECS container metadata file
+        // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
         customUserData.addCommands("echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config");
 
@@ -575,14 +559,14 @@ public class CompactionStack extends NestedStack {
                         .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                         .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
                         .instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-                        .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.GPU,
+                        .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD,
                                         EcsOptimizedImageOptions.builder()
                                                         .cachedInContext(false)
                                                         .build()))
                         .build();
 
         Function customTermination = lambdaForCustomTerminationPolicy(configBucket, jarsBucket, type);
-        // set this by accessing underlying CloudFormation as CDK doesn't yet support custom
+        // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
         ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
                         Arrays.asList(customTermination.getFunctionArn()));
@@ -624,35 +608,15 @@ public class CompactionStack extends NestedStack {
         String family = ec2InstanceType.substring(0, pos).toUpperCase(Locale.getDefault());
         String size = ec2InstanceType.substring(pos + 1).toUpperCase(Locale.getDefault());
 
-        // since Java identifiers can't start with a number, sizes like "2xlarge"
+        // Since Java identifiers can't start with a number, sizes like "2xlarge"
         // become "xlarge2" in the enum namespace.
-        String normalisedSize = normaliseSize(size);
+        String normalisedSize = Utils.normaliseSize(size);
 
-        // now perform lookup of these against known types
+        // Now perform lookup of these against known types
         InstanceClass instanceClass = InstanceClass.valueOf(family);
         InstanceSize instanceSize = InstanceSize.valueOf(normalisedSize);
 
         return InstanceType.of(instanceClass, instanceSize);
-    }
-
-    /**
-     * Normalises EC2 instance size strings so they can be looked up in the {@link InstanceSize}
-     * enum. Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
-     *
-     * @param size the human readable size
-     * @return the internal enum name
-     */
-    public static String normaliseSize(String size) {
-        if (size == null) {
-            return null;
-        }
-        Matcher sizeMatch = NUM_MATCH.matcher(size);
-        if (sizeMatch.matches()) {
-            // Match occurred so switch the capture groups
-            return sizeMatch.group(2) + sizeMatch.group(1);
-        } else {
-            return size;
-        }
     }
 
     private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {

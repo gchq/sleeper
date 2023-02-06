@@ -678,28 +678,28 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = named("sleeper.compaction.ec2.type")
-            .description("The EC2 instance type to use for compaction tasks (when not using Fargate).")
+            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
             .defaultValue("t3.xlarge")
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = named("sleeper.compaction.ec2.pool.minimum")
-            .description("The minimum number of instances for the EC2 cluster.")
+            .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
             .defaultValue("0")
             .validationPredicate(Utils::isNonNegativeInteger)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = named("sleeper.compaction.ec2.pool.desired")
-            .description("The initial desired number of instances for the EC2 cluster." +
+            .description("The initial desired number of instances for the EC2 cluster (when using EC2-based compactions)." +
                     "Can be set by dividing initial maximum containers by number that should fit on instance type.")
             .defaultValue("0")
             .validationPredicate(Utils::isNonNegativeInteger)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = named("sleeper.compaction.ec2.pool.maximum")
-            .description("The maximum number of instances for the EC2 cluster.")
+            .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
             .defaultValue("75")
             .validationPredicate(Utils::isNonNegativeInteger)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_ROOT_SIZE = named("sleeper.compaction.ec2.root.size")
-            .description("The size in GiB of the root EBS volume attached to the EC2 instances.")
+            .description("The size in GiB of the root EBS volume attached to the EC2 instancesn (when using EC2-based compactions).")
             .defaultValue("50")
             .validationPredicate(Utils::isPositiveInteger)
             .build();

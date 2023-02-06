@@ -62,6 +62,7 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -70,14 +71,11 @@ import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZ
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
- * them. It delegates
- * the actual execution of the job to an instance of {@link CompactSortedFiles}.
- * It passes a
+ * them. It delegates the actual execution of the job to an instance of
+ * {@link CompactSortedFiles}. It passes a
  * {@link sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction} to
- * that class so that the
- * message on the SQS queue can be kept alive whilst the job is executing. It
- * also handles deletion
- * of the message when the job is completed.
+ * that class so that the message on the SQS queue can be kept alive whilst the job
+ * is executing. It also handles deletion of the message when the job is completed.
  */
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
@@ -153,17 +151,19 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Starting task {}", taskId);
 
         // Log some basic data if running on EC2 inside ECS
-        try {
-            if (this.ecsClient != null) {
-                CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> {
-                    LOGGER.info("Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
-                            info.instanceID, info.az, info.instanceARN, info.clusterName, info.status);
-                });
-            } else {
-                LOGGER.warn("ECS client is null");
+        if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
+            try {
+                if (this.ecsClient != null) {
+                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> {
+                        LOGGER.info("Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
+                                info.instanceID, info.az, info.instanceARN, info.clusterName, info.status);
+                    });
+                } else {
+                    LOGGER.warn("ECS client is null");
+                }
+            } catch (IOException e) {
+                LOGGER.warn("EC2 instance data not available", e);
             }
-        } catch (IOException e) {
-            LOGGER.warn("EC2 instance data not available", e);
         }
 
         taskStatusStore.taskStarted(taskStatusBuilder.build());
@@ -240,8 +240,7 @@ public class CompactSortedFilesRunner {
     public static void main(String[] args)
             throws InterruptedException, IOException, ObjectFactoryException, ActionException {
         if (2 != args.length) {
-            System.err.println(
-                    "Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
+            System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
                             + args.length
                             + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
@@ -274,8 +273,7 @@ public class CompactSortedFilesRunner {
             type = CompactionTaskType.SPLITTING;
             sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
         } else {
-            throw new RuntimeException(
-                    "Invalid type: got " + typeStr + ", should be 'compaction' or 'splittingcompaction'");
+            throw new RuntimeException("Invalid type: got " + typeStr + ", should be 'compaction' or 'splittingcompaction'");
         }
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");

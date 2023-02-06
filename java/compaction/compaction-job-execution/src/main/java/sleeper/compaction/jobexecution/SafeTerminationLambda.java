@@ -71,11 +71,11 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
 
-        // find the instance properties from S3
+        // Find the instance properties from S3
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        // find ECS cluster name
+        // Find ECS cluster name
         if (type.equals("compaction")) {
             this.ecsClusterName = instanceProperties.get(COMPACTION_CLUSTER);
         } else if (type.equals("splittingcompaction")) {
@@ -111,7 +111,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
 
         int terminationCount = 0;
 
-        // loop over each element and extract the capacity count
+        // Loop over each element and extract the capacity count
         for (JsonElement e : capacities) {
             terminationCount += e.getAsJsonObject().getAsJsonPrimitive("Capacity").getAsInt();
         }
@@ -135,17 +135,17 @@ public class SafeTerminationLambda implements RequestStreamHandler {
         Objects.requireNonNull(detailsIt, "detailsIt");
         Objects.requireNonNull(context, "context");
 
-        // total the number of terminations to make
+        // Total the number of terminations to make
         int suggestTerminationCount = totalTerminations(input);
 
         LOGGER.info("AWS AutoScaling wants to terminate {} instances", suggestTerminationCount);
 
-        // filter out ones that are not running tasks
+        // Filter out ones that are not running tasks
         Set<String> emptyInstances = findEmptyInstances(detailsIt, suggestTerminationCount, context);
 
         LOGGER.info("Returned list of instances to terminate {}", emptyInstances);
 
-        // return this back to AWS
+        // Return this back to AWS
         Map<String, Set<String>> returnData = new HashMap<>();
         returnData.put("InstanceIDs", emptyInstances);
         String outputJson = GSON.toJson(returnData);
@@ -177,7 +177,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
             if (d.numPendingTasks + d.numRunningTasks == 0) {
                 emptyInstances.add(d.instanceId);
             }
-            // running out of time?
+            // Running out of time?
             if (emptyInstances.size() >= suggestedSize || context.getRemainingTimeInMillis() < SAFE_TIME_LIMIT) {
                 break;
             }

@@ -127,7 +127,7 @@ public class RunTasks {
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
                         instanceProperties);
 
-        // bit hacky: EC2s don't give 100% of their memory for container use (OS
+        // Bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
         // the EC2 memory requirement by 5%. If we don't we end up asking for
         // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
@@ -198,11 +198,9 @@ public class RunTasks {
             String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
             RunTaskRequest runTaskRequest = createRunTaskRequest(clusterName, launchType, fargateVersion,
                             override, networkConfiguration, defUsed);
-
             try {
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                LOGGER.info(
-                                "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                                 clusterName, launchType, containerName, defUsed);
                 runTaskResult.getTasks().stream()
                                 .filter(task -> task.getContainerInstanceArn() != null)
@@ -293,9 +291,8 @@ public class RunTasks {
     private static void maybeSleep(int numTasksCreated) throws InterruptedException {
         if (0 == numTasksCreated % 10) {
             // Sleep for 10 seconds - API allows 1 job per second
-            // with a burst of 10 jobs in
-            // a second
-            // so run 10 every 11 seconds for safety
+            // with a burst of 10 jobs in a second so run 10 every
+            // 11 seconds for safety
             LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
             Thread.sleep(11000L);
         }
