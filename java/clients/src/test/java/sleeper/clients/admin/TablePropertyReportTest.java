@@ -77,11 +77,11 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                 .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
                         "sleeper.table.encrypted: false\n" +
                         "\n" +
-                        "# A JSON file containing the schema for this table.\n" +
-                        "sleeper.table.schema.file: null\n" +
-                        "\n" +
                         "# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
-                        "sleeper.table.rowgroup.size: 8388608")
+                        "sleeper.table.rowgroup.size: 8388608\n" +
+                        "\n" +
+                        "# The size of the page in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.page.size: 131072\n")
                 // Then check property with multi-line description
                 .contains("# The minimum number of files to read in a compaction job. Note that the state store must support\n" +
                         "# atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
