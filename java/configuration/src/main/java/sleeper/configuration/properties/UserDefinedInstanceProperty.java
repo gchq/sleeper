@@ -294,9 +294,10 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner")
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC = named("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec")
-            .description("The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.")
+            .description("The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.\n" +
+                    "Stops \"Decompression error: Version not supported\" errors - only a value of \"lz4\" has been tested.")
             .defaultValue("lz4")
-            .build(); // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
+            .build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION = named("sleeper.bulk.import.emr.spark.speculation")
             .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -632,7 +633,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES = named("sleeper.compaction.task.creation.period.minutes")
             .description("The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes, must be >= 1).")
             .defaultValue("1")
-            .build(); // >0
+            .validationPredicate(Utils::isPositiveInteger)
+            .build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = named("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on.")
             .defaultValue("X86_64")
@@ -659,14 +661,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.job.status.ttl")
             .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week")
-            .defaultValue("604800")
+            .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
-            .build(); // Default is 1 week
+            .build();
     UserDefinedInstanceProperty COMPACTION_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.task.status.ttl")
             .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week")
-            .defaultValue("604800")
+            .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
-            .build(); // Default is 1 week
+            .build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = named("sleeper.default.compaction.strategy.class")
             .description("\"The name of the class that defines how compaction jobs should be created. " +
                     "This should implement sleeper.compaction.strategy.CompactionStrategy. The value of this property is the " +
@@ -736,13 +738,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty DEFAULT_RESULTS_ROW_GROUP_SIZE = named("sleeper.default.query.results.rowgroup.size")
             .description("The default value of the rowgroup size used when the results of queries are written to Parquet files. The " +
                     "value given below is 8MiB. This value can be overridden using the query config.")
-            .defaultValue("" + (8 * 1024 * 1024))
-            .build(); // 8 MiB
+            .defaultValue("" + (8 * 1024 * 1024)) // 8 MiB
+            .build();
     UserDefinedInstanceProperty DEFAULT_RESULTS_PAGE_SIZE = named("sleeper.default.query.results.page.size")
             .description("The default value of the page size used when the results of queries are written to Parquet files. The " +
                     "value given below is 128KiB. This value can be overridden using the query config.")
-            .defaultValue("" + (128 * 1024))
-            .build(); // 128 KiB
+            .defaultValue("" + (128 * 1024)) // 128 KiB
+            .build();
 
     // Dashboard
     UserDefinedInstanceProperty DASHBOARD_TIME_WINDOW_MINUTES = named("sleeper.dashboard.time.window.minutes")
@@ -796,12 +798,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = named("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
-            .defaultValue("" + (8 * 1024 * 1024))
-            .build(); // 8 MiB
+            .defaultValue("" + (8 * 1024 * 1024)) // 8 MiB
+            .build();
     UserDefinedInstanceProperty DEFAULT_PAGE_SIZE = named("sleeper.default.page.size")
             .description("The size of the pages in the Parquet files (default is 128KiB).")
-            .defaultValue("" + (128 * 1024))
-            .build(); // 128 KiB
+            .defaultValue("" + (128 * 1024)) // 128 KiB
+            .build();
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = named("sleeper.default.compression.codec")
             .description("The compression codec to use in the Parquet files")
             .defaultValue("ZSTD")
