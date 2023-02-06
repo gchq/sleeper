@@ -59,6 +59,16 @@ public class TablesConfiguration {
         return new TablesConfiguration(List.of(tables));
     }
 
+    public void saveToS3(AmazonS3 s3Client) {
+        tables.forEach(table -> {
+            try {
+                table.saveToS3(s3Client);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     public void saveToPath(Path instancePropertiesFile) {
         Path baseDir = directoryOf(instancePropertiesFile);
         tables.forEach(table -> {
