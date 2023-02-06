@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromPath;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
@@ -59,7 +60,7 @@ class LoadLocalPropertiesTablesTest {
     }
 
     private Stream<TableProperties> loadTablePropertiesWithInstancePropertiesFile(Path file) {
-        return LoadLocalProperties.loadFromPath(file, instanceProperties).getTables().stream();
+        return loadTablesFromPath(instanceProperties, file);
     }
 
     @Test
@@ -121,7 +122,10 @@ class LoadLocalPropertiesTablesTest {
         properties.save(tempDir.resolve("table.properties"));
 
         // When/Then
-        assertThatThrownBy(this::loadTableProperties)
+        assertThatThrownBy(() -> loadTableProperties()
+                .forEach(table -> {
+                    // Consume the stream to trigger reading the properties file
+                }))
                 .hasMessage("Schema not set in property sleeper.table.schema");
     }
 

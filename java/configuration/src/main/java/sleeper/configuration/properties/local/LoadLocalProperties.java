@@ -49,11 +49,6 @@ public class LoadLocalProperties {
                 loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
     }
 
-    public static LoadLocalProperties loadFromPath(Path path, InstanceProperties instanceProperties) {
-        return new LoadLocalProperties(
-                loadTablesFromPath(instanceProperties, path).collect(Collectors.toList()));
-    }
-
     public List<TableProperties> getTables() {
         return tables;
     }
