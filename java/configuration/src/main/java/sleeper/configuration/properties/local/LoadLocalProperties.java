@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration;
+package sleeper.configuration.properties.local;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -37,20 +37,20 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class TablesConfiguration {
+public class LoadLocalProperties {
     private final List<TableProperties> tables;
 
-    private TablesConfiguration(List<TableProperties> tables) {
+    private LoadLocalProperties(List<TableProperties> tables) {
         this.tables = tables;
     }
 
-    public static TablesConfiguration loadFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        return new TablesConfiguration(
+    public static LoadLocalProperties loadFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
+        return new LoadLocalProperties(
                 loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
     }
 
-    public static TablesConfiguration loadFromPath(Path path, InstanceProperties instanceProperties) {
-        return new TablesConfiguration(
+    public static LoadLocalProperties loadFromPath(Path path, InstanceProperties instanceProperties) {
+        return new LoadLocalProperties(
                 loadTablesFromPath(instanceProperties, path).collect(Collectors.toList()));
     }
 

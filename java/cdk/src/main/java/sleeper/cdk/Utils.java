@@ -26,9 +26,9 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
-import sleeper.configuration.TablesConfiguration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.TablesConfiguration.directoryOf;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
@@ -53,6 +52,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK_TAG_NAME;
+import static sleeper.configuration.properties.local.LoadLocalProperties.directoryOf;
 
 /**
  * Collection of utility methods related to the CDK deployment
@@ -193,7 +193,7 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
-        return TablesConfiguration.loadTablesFromPath(instanceProperties, getInstancePropertiesPath(scope));
+        return LoadLocalProperties.loadTablesFromPath(instanceProperties, getInstancePropertiesPath(scope));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {

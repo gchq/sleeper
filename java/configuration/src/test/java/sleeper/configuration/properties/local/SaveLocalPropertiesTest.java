@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.configuration.properties.local;
 
 
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-class InstanceConfigurationTest {
+class SaveLocalPropertiesTest {
     @TempDir
     public Path folder;
 
@@ -43,7 +43,7 @@ class InstanceConfigurationTest {
         properties.save(path);
 
         // When
-        InstanceConfiguration configuration = InstanceConfiguration.loadFromPath(path);
+        SaveLocalProperties configuration = SaveLocalProperties.loadFromPath(path);
 
         // Then
         assertThat(configuration.getInstanceProperties())
@@ -56,7 +56,7 @@ class InstanceConfigurationTest {
         Path path = Path.of(createTempDirectory(folder, null).toString() + "/instance.properties");
 
         // When/Then
-        assertThatThrownBy(() -> InstanceConfiguration.loadFromPath(path))
+        assertThatThrownBy(() -> SaveLocalProperties.loadFromPath(path))
                 .isInstanceOf(UncheckedIOException.class);
     }
 }

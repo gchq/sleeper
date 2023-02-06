@@ -19,7 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.FileUtils;
 
-import sleeper.configuration.InstanceConfiguration;
+import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.File;
@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static sleeper.configuration.InstanceConfiguration.loadFromS3;
+import static sleeper.configuration.properties.local.SaveLocalProperties.loadFromS3;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -45,7 +45,7 @@ public class DownloadConfig {
         clearDirectory(basePath);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceConfiguration configuration = loadFromS3(s3, instanceId);
+        SaveLocalProperties configuration = loadFromS3(s3, instanceId);
         configuration.getInstanceProperties().save(basePath.resolve("instance.properties"));
 
         String configBucket = configuration.getConfigBucket();

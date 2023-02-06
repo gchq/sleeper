@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.configuration.properties.local;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -37,12 +37,12 @@ import sleeper.core.schema.type.StringType;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.InstanceConfiguration.loadFromS3;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.local.SaveLocalProperties.loadFromS3;
 
 @Testcontainers
-class InstanceConfigurationIT {
+class SaveLocalPropertiesIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
@@ -62,7 +62,7 @@ class InstanceConfigurationIT {
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
         // When
-        InstanceConfiguration configuration = loadFromS3(s3Client, properties.get(ID));
+        SaveLocalProperties configuration = loadFromS3(s3Client, properties.get(ID));
 
         // Then
         assertThat(configuration.getInstanceProperties())
@@ -83,7 +83,7 @@ class InstanceConfigurationIT {
         table2.saveToS3(s3Client);
 
         // When
-        InstanceConfiguration configuration = loadFromS3(s3Client, properties.get(ID));
+        SaveLocalProperties configuration = loadFromS3(s3Client, properties.get(ID));
 
         // Then
         assertThat(configuration.getTables())
@@ -96,7 +96,7 @@ class InstanceConfigurationIT {
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
         // When
-        InstanceConfiguration configuration = loadFromS3(s3Client, properties.get(ID));
+        SaveLocalProperties configuration = loadFromS3(s3Client, properties.get(ID));
 
         // Then
         assertThat(configuration.getTables())

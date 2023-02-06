@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration;
+package sleeper.configuration.properties.local;
 
 import com.amazonaws.services.s3.AmazonS3;
 
@@ -29,34 +29,34 @@ import java.util.List;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
-public class InstanceConfiguration {
+public class SaveLocalProperties {
     private final InstanceProperties instanceProperties;
-    private final TablesConfiguration tables;
+    private final LoadLocalProperties tables;
 
-    private InstanceConfiguration(InstanceProperties instanceProperties, TablesConfiguration tables) {
+    private SaveLocalProperties(InstanceProperties instanceProperties, LoadLocalProperties tables) {
         this.instanceProperties = instanceProperties;
         this.tables = tables;
     }
 
-    public static InstanceConfiguration loadFromS3(AmazonS3 s3, String instanceId) throws IOException {
+    public static SaveLocalProperties loadFromS3(AmazonS3 s3, String instanceId) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         try {
             instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return new InstanceConfiguration(instanceProperties,
-                TablesConfiguration.loadFromS3(s3, instanceProperties));
+        return new SaveLocalProperties(instanceProperties,
+                LoadLocalProperties.loadFromS3(s3, instanceProperties));
     }
 
-    public static InstanceConfiguration loadFromPath(Path path) {
+    public static SaveLocalProperties loadFromPath(Path path) {
         InstanceProperties instanceProperties = new InstanceProperties();
         try {
             instanceProperties.load(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return new InstanceConfiguration(instanceProperties, null);
+        return new SaveLocalProperties(instanceProperties, null);
     }
 
     public InstanceProperties getInstanceProperties() {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration;
+package sleeper.configuration.properties.local;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
-class TablesConfigurationTest {
+class LoadLocalPropertiesTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
@@ -59,7 +59,7 @@ class TablesConfigurationTest {
     }
 
     private Stream<TableProperties> loadTablePropertiesWithInstancePropertiesFile(Path file) {
-        return TablesConfiguration.loadFromPath(file, instanceProperties).getTables().stream();
+        return LoadLocalProperties.loadFromPath(file, instanceProperties).getTables().stream();
     }
 
     @Test
