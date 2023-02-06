@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 public class TablesConfiguration {
     private final List<TableProperties> tables;
 
-    public TablesConfiguration(List<TableProperties> tables) {
+    private TablesConfiguration(List<TableProperties> tables) {
         this.tables = tables;
     }
 
