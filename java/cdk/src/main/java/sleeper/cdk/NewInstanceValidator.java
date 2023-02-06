@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.configuration.TablesConfiguration.getAllTableProperties;
+import static sleeper.configuration.TablesConfiguration.loadTablesFromPath;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -57,7 +57,7 @@ class NewInstanceValidator {
     private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) {
         String instanceName = instanceProperties.get(ID);
 
-        getAllTableProperties(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
+        loadTablesFromPath(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
             String tableName = tableProperties.get(TABLE_NAME);
 
             checkBucketExistsForTable(instanceName, tableName);

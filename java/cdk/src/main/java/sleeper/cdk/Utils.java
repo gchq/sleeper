@@ -193,7 +193,7 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
-        return TablesConfiguration.getAllTableProperties(instanceProperties, getInstancePropertiesPath(scope));
+        return TablesConfiguration.loadTablesFromPath(instanceProperties, getInstancePropertiesPath(scope));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {

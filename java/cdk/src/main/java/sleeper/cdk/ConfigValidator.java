@@ -21,7 +21,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.nio.file.Path;
 
-import static sleeper.configuration.TablesConfiguration.getAllTableProperties;
+import static sleeper.configuration.TablesConfiguration.loadTablesFromPath;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -40,7 +40,7 @@ class ConfigValidator {
     private void checkTableConfiguration(InstanceProperties instanceProperties, Path instancePropertyPath) {
         String instanceName = instanceProperties.get(ID);
 
-        getAllTableProperties(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
+        loadTablesFromPath(instanceProperties, instancePropertyPath).forEach(tableProperties -> {
             String tableName = tableProperties.get(TABLE_NAME);
 
             checkBucketConfigurationForTable(instanceName, tableName);

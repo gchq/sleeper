@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.configuration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,17 +28,14 @@ import sleeper.core.schema.type.StringType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.TablesConfiguration.getAllTableProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
-class UtilsTablePropertiesTest {
+class TablesConfigurationTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
@@ -63,9 +60,12 @@ class UtilsTablePropertiesTest {
         Schema schema = schemaWithKey("test-key");
         schema.save(tempDir.resolve("schema.json"));
 
-        // When / Then
+        // When
+        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
+
+        // Then
         properties.setSchema(schema);
-        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(tablesConfiguration.getTables())
                 .containsExactly(properties);
     }
 
@@ -85,24 +85,33 @@ class UtilsTablePropertiesTest {
         Schema schema2 = schemaWithKey("test-key2");
         schema2.save(tempDir.resolve("tables/table2/schema.json"));
 
-        // When / Then
+        // When
+        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
+
+        // Then
         properties1.setSchema(schema1);
         properties2.setSchema(schema2);
-        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(tablesConfiguration.getTables())
                 .containsExactly(properties1, properties2);
     }
 
     @Test
     void shouldFindNoTablePropertiesFilesWhenNonePresent() {
-        // When / Then
-        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
+        // When
+        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
+
+        // Then
+        assertThat(tablesConfiguration.getTables())
                 .isEmpty();
     }
 
     @Test
     void shouldFindNothingInWorkingDirectoryWhenInstancePropertiesDirectoryNotSpecified() {
-        // When / Then
-        assertThat(getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
+        // When
+        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
+
+        // Then
+        assertThat(tablesConfiguration.getTables())
                 .isEmpty();
     }
 
@@ -112,12 +121,8 @@ class UtilsTablePropertiesTest {
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
 
-        // When / Then
-        Stream<TableProperties> stream = getAllTableProperties(instanceProperties, instancePropertiesFile);
-        assertThatThrownBy(() -> stream
-                .forEach(tableProperties -> {
-                    // Consume the stream to trigger reading the properties file
-                }))
+        // When/Then
+        assertThatThrownBy(() -> TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties))
                 .hasMessage("Schema not set in property sleeper.table.schema");
     }
 
@@ -127,8 +132,11 @@ class UtilsTablePropertiesTest {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
         properties.save(tempDir.resolve("table.properties"));
 
-        // When / Then
-        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
+        // When
+        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
+
+        // Then
+        assertThat(tablesConfiguration.getTables())
                 .containsExactly(properties);
     }
 
@@ -142,8 +150,11 @@ class UtilsTablePropertiesTest {
         TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
         properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
-        // When / Then
-        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
+        // When
+        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
+
+        // Then
+        assertThat(tablesConfiguration.getTables())
                 .containsExactly(properties1, properties2);
     }
 }

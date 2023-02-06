@@ -49,6 +49,10 @@ public class TablesConfiguration {
                 loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
     }
 
+    public static TablesConfiguration loadFromPath(Path path, InstanceProperties instanceProperties) {
+        return new TablesConfiguration(
+                loadTablesFromPath(instanceProperties, path).collect(Collectors.toList()));
+    }
 
     public List<TableProperties> getTables() {
         return tables;
@@ -75,7 +79,7 @@ public class TablesConfiguration {
         return tableProperties;
     }
 
-    public static Stream<TableProperties> getAllTableProperties(
+    public static Stream<TableProperties> loadTablesFromPath(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
         Path baseDir = directoryOf(instancePropertiesFile);
         return streamBaseAndTableFolders(baseDir)
