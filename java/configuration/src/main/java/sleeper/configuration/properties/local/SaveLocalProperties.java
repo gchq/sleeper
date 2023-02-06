@@ -25,7 +25,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,16 +50,6 @@ public class SaveLocalProperties {
         }
         return new SaveLocalProperties(instanceProperties,
                 loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
-    }
-
-    public static SaveLocalProperties loadFromPath(Path path) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.load(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return new SaveLocalProperties(instanceProperties, null);
     }
 
     public InstanceProperties getInstanceProperties() {
