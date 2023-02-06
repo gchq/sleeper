@@ -85,7 +85,7 @@ The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk
 While connected to your EC2 instance, from the sleeper repository directory run:
 
 ```bash
-./scripts/test/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
 This will use Maven to build Sleeper (this will take around 3 minutes, and the script will be silent during this time).
@@ -148,7 +148,7 @@ To tear all the infrastructure down, run
 Note that this will sometimes fail if there are ECS tasks running. Ensure that there are no compaction tasks running
 before doing this.
 
-It is possible to run variations on this system-test by editing the following files:
-`scripts/test/system-test-instance.properties` and `scripts/templates/instanceproperties.template`.
+It is possible to run variations on this system-test by editing the following file:
+`scripts/test/deployAll/system-test-instance.properties`.
 
 To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide.md).

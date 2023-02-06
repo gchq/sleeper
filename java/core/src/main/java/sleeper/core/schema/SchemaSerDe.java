@@ -78,7 +78,7 @@ public class SchemaSerDe {
     }
 
     public Schema fromJson(String jsonSchema) {
-        return gson.fromJson(jsonSchema, Schema.class);
+        return gson.fromJson(jsonSchema, Schema.Builder.class).build();
     }
 
     public Schema fromJson(InputStream inputStream) {

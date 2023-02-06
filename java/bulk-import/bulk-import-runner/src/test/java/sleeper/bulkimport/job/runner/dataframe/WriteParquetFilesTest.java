@@ -51,7 +51,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -73,7 +72,6 @@ public class WriteParquetFilesTest {
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
-        instanceProperties.set(TABLE_PROPERTIES, "");
         instanceProperties.set(FILE_SYSTEM, fs);
         return instanceProperties;
     }

@@ -125,7 +125,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -772,7 +771,6 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(SUBNET, "unused");
         instanceProperties.set(JARS_BUCKET, "unused");
         instanceProperties.set(VERSION, "unused");
-        instanceProperties.set(TABLE_PROPERTIES, "unused");
         instanceProperties.set(FILE_SYSTEM, dir);
 
         AmazonDynamoDB dynamoClient = createDynamoClient();

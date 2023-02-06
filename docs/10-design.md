@@ -20,7 +20,7 @@ in a properties file, which is stored in a bucket in S3. The name of this S3 buc
 instance id followed by `-config`, e.g. `sleeper-mySleeperInstance-config`.
 
 An instance of Sleeper can contain one or more tables. Each table contains records with fields matching a schema.
-Each table has its own S3 bucket for storing data and a state store for storing metadata about that table. 
+Each table has its own S3 bucket for storing data and a state store for storing metadata about that table.
 
 The Sleeper instance also contains infrastructure to ingest data, compact data, garbage collect data, split
 partitions, execute queries, and run Athena queries. Each of these are provided by a separate CDK stack. All of
@@ -64,7 +64,7 @@ To achieve this, the table stack obtains a list of the table properties files fr
 each table properties file, it creates the data bucket for that table and creates the state store. The creation
 of the state store is delegated to either the DynamoDB state store stack or the S3 state store stack, as appropriate.
 A custom CDK resource is then used to call `sleeper.cdk.custom.SleeperTableLambda`. This lambda initialises the
-statestore and updates the table properties file which is stored in the instance's config bucket.
+state store and updates the table properties file which is stored in the instance's config bucket.
 
 The name of the bucket containing a table's data is called `sleeper-<instance-id>-table-tablename`, e.g.
 `sleeper-mySleeperInstance-table-table1`.
@@ -78,7 +78,7 @@ this because it stores a footer than contains the minimum and maximum values of 
 page. This means that to retrieve a row where the key field takes a value only requires reading one page per column.
 Pages are small (128KiB by default), so even if the file is many GiBs in size only a few hundred KiB need to be read
 to retrieve an individual row.
- 
+
 ## Partitions
 
 Data within a table is split into partitions. Each partition contains records with keys from a certain range, e.g.
@@ -173,7 +173,8 @@ two ways to do this: standard ingest and bulk import.
 
 ### Standard ingest
 
-Standard ingest is performed by the `sleeper.ingest.IngestRecords` class. This performs ingest using the following steps:
+Standard ingest is performed by the `sleeper.ingest.IngestRecords` class. This performs ingest using the following
+steps:
 
 - A batch of records is read into memory.
 - This batch is sorted in memory and then flushed to a local file.

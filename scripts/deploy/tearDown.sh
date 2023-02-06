@@ -57,7 +57,7 @@ SLEEPER_VERSION=$(grep sleeper.version "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 
 echo "Running cdk destroy to remove the system"
 cdk -a "java -cp ${SCRIPTS_DIR}/jars/cdk-${SLEEPER_VERSION}.jar sleeper.cdk.SleeperCdkApp" \
-destroy -c propertiesfile="${INSTANCE_PROPERTIES}" "*"
+destroy -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
 
 echo "Removing the Jars bucket and docker containers"
 "${THIS_DIR}/removeUploads.sh" "${INSTANCE_PROPERTIES}"

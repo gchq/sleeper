@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -25,7 +26,6 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,21 +39,19 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.statestore.s3.S3StateStore;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 
 @Testcontainers
-public class ConfigValidatorIT {
-
+class NewInstanceValidatorIT {
     @Container
     public static final LocalStackContainer LOCALSTACK_CONTAINER
             = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -64,7 +62,7 @@ public class ConfigValidatorIT {
 
     private static AmazonS3 amazonS3;
     private static AmazonDynamoDB amazonDynamoDB;
-    private ConfigValidator configValidator;
+    private NewInstanceValidator newInstanceValidator;
     private final InstanceProperties instanceProperties = new InstanceProperties();
 
     @BeforeAll
@@ -75,98 +73,75 @@ public class ConfigValidatorIT {
 
     @BeforeEach
     public void setUp() {
-        configValidator = new ConfigValidator(amazonS3, amazonDynamoDB);
+        newInstanceValidator = new NewInstanceValidator(amazonS3, amazonDynamoDB);
     }
 
     @Test
-    public void shouldNotThrowAnErrorWithValidConfiguration() throws IOException {
+    void shouldNotThrowAnErrorWhenNoBucketsOrTablesExist() throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-valid-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
         // When / Then
-        assertThatCode(() -> configValidator.validate(instanceProperties))
+        assertThatCode(this::validate)
                 .doesNotThrowAnyException();
     }
 
     @Test
-    public void shouldThrowAnErrorWhenABucketExistsWithSameNameAsTable() throws IOException {
+    void shouldThrowAnErrorWhenABucketExistsWithSameNameAsTable() throws IOException {
         // Given
         String bucketName = String.join("-", "sleeper", "valid-id", "table", "example-table");
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
         amazonS3.createBucket(bucketName);
 
         // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper table bucket exists: sleeper-valid-id-table-example-table");
         amazonS3.deleteBucket(bucketName);
     }
 
     @Test
-    public void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
+    void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
         // Given
         String bucketName = String.join("-", "sleeper", "valid-id", "query-results");
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
         amazonS3.createBucket(bucketName);
 
         // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper query results bucket exists: " + bucketName);
         amazonS3.deleteBucket(bucketName);
     }
 
     @Test
-    public void shouldThrowAnErrorWhenTableNameIsNotValid() throws IOException {
-        // Given
-        instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example--invalid-name-tab$$-le", "sleeper.statestore.dynamodb.DynamoDBStateStore");
-
-        // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
-    }
-
-    @Test
-    public void shouldThrowAnErrorWithAnInvalidSleeperId() {
-        // Given
-        instanceProperties.set(ID, "aa$$aa");
-
-        // When / Then
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Sleeper instance id is illegal: aa$$aa");
-    }
-
-    @Test
-    public void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsTableActiveFiles() throws IOException {
+    void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsTableActiveFiles() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-active-files");
     }
 
     @Test
-    public void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTableGCFiles() throws IOException {
+    void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTableGCFiles() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-gc-files");
     }
 
     @Test
-    public void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTablePartitions() throws IOException {
+    void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTablePartitions() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-partitions");
     }
 
     @Test
-    public void checkNoErrorIsThrownWhenTableExistsButUsingS3StateStore() throws IOException {
+    void shouldNotThrowAnErrorWhenTableExistsButUsingS3StateStore() throws IOException {
         // Given
         String dynamoTable = "sleeper-valid-id-table-example-table-partitions";
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.s3.S3StateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.s3.S3StateStore");
         createDynamoTable(dynamoTable);
 
         // When
-        assertThatCode(() -> configValidator.validate(instanceProperties))
+        assertThatCode(this::validate)
                 .doesNotThrowAnyException();
         amazonDynamoDB.deleteTable(dynamoTable);
     }
@@ -174,14 +149,20 @@ public class ConfigValidatorIT {
     private void checkErrorIsThrownWhenTableExists(String dynamoTable) throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
         createDynamoTable(dynamoTable);
 
         // When
-        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+        assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper DynamoDBTable exists: " + dynamoTable);
         amazonDynamoDB.deleteTable(dynamoTable);
+    }
+
+    private void validate() throws IOException {
+        Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
+        Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
+        newInstanceValidator.validate(instanceProperties, instancePropertiesPath);
     }
 
     private static AmazonS3 getS3Client() {
@@ -213,41 +194,5 @@ public class ConfigValidatorIT {
                 .withBillingMode(BillingMode.PAY_PER_REQUEST);
         amazonDynamoDB.createTable(request);
 
-    }
-
-    private void setupTablesPropertiesFile(InstanceProperties instanceProperties, String tableName, String stateStore) throws IOException {
-        String tableSchema = "{\n" +
-                "  \"rowKeyFields\": [ \n" +
-                "    {\n" +
-                "      \"name\": \"key\",\n" +
-                "      \"type\": \"StringType\"\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"sortKeyFields\": [\n" +
-                "    {\n" +
-                "      \"name\": \"timestamp\",\n" +
-                "      \"type\": \"LongType\"\n" +
-                "    }\n" +
-                "  ],\n" +
-                "  \"valueFields\": [\n" +
-                "    {\n" +
-                "      \"name\": \"value\",\n" +
-                "      \"type\": \"StringType\"\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}\n";
-
-        File tableSchemaFile = new File(temporaryFolder.toString(), "schema.json");
-        FileUtils.write(tableSchemaFile, tableSchema, Charset.defaultCharset());
-
-        String tableConfiguration = "" +
-                String.format("sleeper.table.name=%s\n", tableName) +
-                String.format("sleeper.table.statestore.classname=%s\n", stateStore) +
-                String.format("sleeper.table.schema.file=%s\n", tableSchemaFile.getAbsolutePath());
-
-        File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
-        FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());
-
-        instanceProperties.set(TABLE_PROPERTIES, tablePropertiesFile.getAbsolutePath());
     }
 }

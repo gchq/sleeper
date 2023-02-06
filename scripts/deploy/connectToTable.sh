@@ -67,13 +67,3 @@ grep "^sleeper.tags=" ${INSTANCE_PROPERTIES} | cut -d'=' -f2 | sed 's/\([^,]\{1,
 # Schema
 grep "^sleeper.table.schema=" ${TABLE_PROPERTIES} | cut -d'=' -f2 | sed 's/\\:/:/g' \
   > ${SCHEMA}
-
-# Overwrite references to local files
-source "${SCRIPTS_DIR}/functions/sedInPlace.sh"
-sed_in_place \
-	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
-	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
-	${INSTANCE_PROPERTIES}
-sed_in_place \
-	-e "s|^sleeper.table.schema.file=.*|sleeper.table.schema.file=${SCHEMA}|" \
-	${TABLE_PROPERTIES}

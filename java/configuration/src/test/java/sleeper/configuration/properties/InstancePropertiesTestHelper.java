@@ -17,6 +17,9 @@ package sleeper.configuration.properties;
 
 import com.amazonaws.services.s3.AmazonS3;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Properties;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
@@ -26,7 +29,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
@@ -57,7 +59,12 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
-        instanceProperties.set(TABLE_PROPERTIES, "");
         return instanceProperties;
+    }
+
+    public static String propertiesString(Properties properties) throws IOException {
+        StringWriter writer = new StringWriter();
+        properties.store(writer, "");
+        return writer.toString();
     }
 }
