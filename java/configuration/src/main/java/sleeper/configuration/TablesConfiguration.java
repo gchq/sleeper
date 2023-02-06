@@ -20,14 +20,21 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class TablesConfiguration {
@@ -41,6 +48,7 @@ public class TablesConfiguration {
         return new TablesConfiguration(
                 loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
     }
+
 
     public List<TableProperties> getTables() {
         return tables;
@@ -65,5 +73,63 @@ public class TablesConfiguration {
             throw new UncheckedIOException(e);
         }
         return tableProperties;
+    }
+
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Path instancePropertiesFile) {
+        Path baseDir = directoryOf(instancePropertiesFile);
+        return streamBaseAndTableFolders(baseDir)
+                .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
+                .filter(Objects::nonNull);
+    }
+
+    private static TableProperties readTablePropertiesFolderOrNull(
+            InstanceProperties instanceProperties, Path folder) {
+        Path propertiesPath = folder.resolve("table.properties");
+        Path schemaPath = folder.resolve("schema.json");
+        if (!Files.exists(propertiesPath)) {
+            return null;
+        }
+        try {
+            Properties properties = loadProperties(propertiesPath);
+            if (Files.exists(schemaPath)) {
+                Schema schema = Schema.load(schemaPath);
+                return new TableProperties(instanceProperties, schema, properties);
+            }
+            return new TableProperties(instanceProperties, properties);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Path directoryOf(Path filePath) {
+        Path parent = filePath.getParent();
+        if (parent == null) {
+            return Paths.get(".");
+        } else {
+            return parent;
+        }
+    }
+
+    private static Stream<Path> streamBaseAndTableFolders(Path baseDir) {
+        return Stream.concat(
+                Stream.of(baseDir),
+                streamTableFolders(baseDir));
+    }
+
+    private static Stream<Path> streamTableFolders(Path baseDir) {
+        Path tablesFolder = baseDir.resolve("tables");
+        if (!Files.isDirectory(tablesFolder)) {
+            return Stream.empty();
+        }
+        List<Path> tables;
+        try (Stream<Path> pathStream = Files.list(tablesFolder)) {
+            tables = pathStream
+                    .filter(Files::isDirectory)
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list table configuration directories", e);
+        }
+        return tables.stream().sorted();
     }
 }

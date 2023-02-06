@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.TablesConfiguration.getAllTableProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -64,7 +65,7 @@ class UtilsTablePropertiesTest {
 
         // When / Then
         properties.setSchema(schema);
-        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties);
     }
 
@@ -87,21 +88,21 @@ class UtilsTablePropertiesTest {
         // When / Then
         properties1.setSchema(schema1);
         properties2.setSchema(schema2);
-        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties1, properties2);
     }
 
     @Test
     void shouldFindNoTablePropertiesFilesWhenNonePresent() {
         // When / Then
-        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .isEmpty();
     }
 
     @Test
     void shouldFindNothingInWorkingDirectoryWhenInstancePropertiesDirectoryNotSpecified() {
         // When / Then
-        assertThat(Utils.getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
+        assertThat(getAllTableProperties(instanceProperties, Paths.get("instance.properties")))
                 .isEmpty();
     }
 
@@ -112,7 +113,7 @@ class UtilsTablePropertiesTest {
         properties.save(tempDir.resolve("table.properties"));
 
         // When / Then
-        Stream<TableProperties> stream = Utils.getAllTableProperties(instanceProperties, instancePropertiesFile);
+        Stream<TableProperties> stream = getAllTableProperties(instanceProperties, instancePropertiesFile);
         assertThatThrownBy(() -> stream
                 .forEach(tableProperties -> {
                     // Consume the stream to trigger reading the properties file
@@ -127,7 +128,7 @@ class UtilsTablePropertiesTest {
         properties.save(tempDir.resolve("table.properties"));
 
         // When / Then
-        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties);
     }
 
@@ -142,7 +143,7 @@ class UtilsTablePropertiesTest {
         properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
         // When / Then
-        assertThat(Utils.getAllTableProperties(instanceProperties, instancePropertiesFile))
+        assertThat(getAllTableProperties(instanceProperties, instancePropertiesFile))
                 .containsExactly(properties1, properties2);
     }
 }
