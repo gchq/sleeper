@@ -35,8 +35,8 @@ public interface SystemTestProperty extends InstanceProperty {
             .description("The number of random records that each container should write")
             .validationPredicate(Objects::nonNull).build();
     SystemTestProperty INGEST_MODE = named("sleeper.systemtest.ingest.mode")
-            .description("The ingest mode to write random data. This should be either 'direct' or 'queue'." +
-                    "'Direct' means that the data is written directly. " +
+            .description("The ingest mode to write random data. This should be either 'direct' or 'queue'.\n" +
+                    "'Direct' means that the data is written directly.\n" +
                     "'Queue' means that the data is written to a Parquet file and an ingest job is created " +
                     "and posted to the ingest queue.")
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
@@ -72,11 +72,11 @@ public interface SystemTestProperty extends InstanceProperty {
             .description("The length of byte arrays generated randomly during random record generation")
             .defaultValue("10").build();
     SystemTestProperty MAX_ENTRIES_RANDOM_MAP = named("sleeper.systemtest.random.map.length")
-            .description("The maximum number of entries in maps generated randomly during random record generation " +
+            .description("The maximum number of entries in maps generated randomly during random record generation\n" +
                     "(the number of entries in the map will range randomly from 0 to this number)")
             .defaultValue("10").build();
     SystemTestProperty MAX_ENTRIES_RANDOM_LIST = named("sleeper.systemtest.random.list.length")
-            .description("The maximum number of entries in lists generated randomly during random record generation " +
+            .description("The maximum number of entries in lists generated randomly during random record generation\n" +
                     "(the number of entries in the list will range randomly from 0 to this number)")
             .defaultValue("10").build();
 

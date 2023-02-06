@@ -165,7 +165,7 @@ public interface TableProperty extends SleeperProperty {
     // Size ratio compaction strategy
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = named("sleeper.table.compaction.strategy.sizeratio.ratio")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
-            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted. " +
+            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
                     "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n")
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = named("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
