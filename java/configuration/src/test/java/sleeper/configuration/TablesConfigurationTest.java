@@ -157,4 +157,42 @@ class TablesConfigurationTest {
         assertThat(tablesConfiguration.getTables())
                 .containsExactly(properties1, properties2);
     }
+
+    @Test
+    void shouldSaveTablePropertiesFilesInTablesFolder() {
+        // Given
+        TableProperties properties1 = createTestTablePropertiesWithNoSchema(instanceProperties, "test-table-1");
+        TableProperties properties2 = createTestTablePropertiesWithNoSchema(instanceProperties, "test-table-2");
+        Schema schema1 = schemaWithKey("test-key1");
+        Schema schema2 = schemaWithKey("test-key2");
+        properties1.setSchema(schema1);
+        properties2.setSchema(schema2);
+
+        TablesConfiguration tablesConfiguration = TablesConfiguration.fromTables(properties1, properties2);
+
+        // When
+        tablesConfiguration.saveToPath(instancePropertiesFile);
+
+        // Then
+        assertThat(Files.exists(tempDir.resolve("tables/test-table-1/table.properties")))
+                .isTrue();
+        assertThat(Files.exists(tempDir.resolve("tables/test-table-1/schema.json")))
+                .isTrue();
+        assertThat(Files.exists(tempDir.resolve("tables/test-table-2/table.properties")))
+                .isTrue();
+        assertThat(Files.exists(tempDir.resolve("tables/test-table-2/schema.json")))
+                .isTrue();
+    }
+
+    @Test
+    void shouldFailToSaveTablePropertiesFilesWhenSchemaNotSpecified() {
+        // Given
+        TableProperties properties1 = createTestTablePropertiesWithNoSchema(instanceProperties, "test-table-1");
+
+        TablesConfiguration tablesConfiguration = TablesConfiguration.fromTables(properties1);
+
+        // When/Then
+        assertThatThrownBy(() -> tablesConfiguration.saveToPath(instancePropertiesFile))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
