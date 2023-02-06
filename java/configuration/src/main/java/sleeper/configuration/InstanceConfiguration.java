@@ -23,6 +23,7 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -46,6 +47,16 @@ public class InstanceConfiguration {
         }
         return new InstanceConfiguration(instanceProperties,
                 TablesConfiguration.loadFromS3(s3, instanceProperties));
+    }
+
+    public static InstanceConfiguration loadFromPath(Path path) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        try {
+            instanceProperties.load(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return new InstanceConfiguration(instanceProperties, null);
     }
 
     public InstanceProperties getInstanceProperties() {
