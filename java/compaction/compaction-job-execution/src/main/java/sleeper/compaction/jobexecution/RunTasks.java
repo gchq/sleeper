@@ -185,14 +185,12 @@ public class RunTasks {
      * @param maxNumTasksToCreate number of tasks to attempt to launch
      * @param override other container overrides
      * @param networkConfiguration container network configuration
-     * @return set of EC2 container instance ARNs containing new tasks
      * @throws InterruptedException if error occurs during sleep
      */
-    private Set<String> launchTasks(long startTime, int queueSize, int maxNumTasksToCreate,
+    private void launchTasks(long startTime, int queueSize, int maxNumTasksToCreate,
                     TaskOverride override, NetworkConfiguration networkConfiguration)
                     throws InterruptedException {
         int numTasksCreated = 0;
-        Set<String> recentArns = new HashSet<>();
 
         for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
             String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
@@ -202,11 +200,6 @@ public class RunTasks {
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
                 LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                                 clusterName, launchType, containerName, defUsed);
-                runTaskResult.getTasks().stream()
-                                .filter(task -> task.getContainerInstanceArn() != null)
-                                .forEach(task -> {
-                                    recentArns.add(task.getContainerInstanceArn());
-                                });
 
                 if (checkFailure(runTaskResult)) {
                     break;
@@ -228,8 +221,6 @@ public class RunTasks {
                 LOGGER.error("Couldn't launch tasks", e);
             }
         }
-
-        return recentArns;
     }
 
     /**
