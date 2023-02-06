@@ -25,8 +25,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 import sleeper.configuration.properties.table.TableProperty;
@@ -41,12 +39,15 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.InstanceConfiguration.loadFromS3;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 @Testcontainers
-public class InstanceConfigurationIT {
+class InstanceConfigurationIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
+
+    private final AmazonS3 s3Client = createS3Client();
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -58,16 +59,10 @@ public class InstanceConfigurationIT {
     @Test
     void shouldLoadInstancePropertiesFromS3() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket("sleeper-test-instance-config");
-
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(UserDefinedInstanceProperty.ID, "test-instance");
-        properties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "sleeper-test-instance-config");
-        properties.saveToS3(s3Client);
+        InstanceProperties properties = createTestInstanceProperties(s3Client);
 
         // When
-        InstanceConfiguration configuration = loadFromS3(s3Client, "test-instance");
+        InstanceConfiguration configuration = loadFromS3(s3Client, properties.get(ID));
 
         // Then
         assertThat(configuration.getInstanceProperties())
@@ -77,13 +72,7 @@ public class InstanceConfigurationIT {
     @Test
     void shouldLoadTablePropertiesFromS3() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket("sleeper-test-instance-config");
-
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(UserDefinedInstanceProperty.ID, "test-instance");
-        properties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "sleeper-test-instance-config");
-        properties.saveToS3(s3Client);
+        InstanceProperties properties = createTestInstanceProperties(s3Client);
         Schema schema1 = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         TableProperties table1 = TablePropertiesTestHelper.createTestTableProperties(properties, schema1);
         table1.set(TableProperty.TABLE_NAME, "test-table-1");
@@ -94,7 +83,7 @@ public class InstanceConfigurationIT {
         table2.saveToS3(s3Client);
 
         // When
-        InstanceConfiguration configuration = loadFromS3(s3Client, "test-instance");
+        InstanceConfiguration configuration = loadFromS3(s3Client, properties.get(ID));
 
         // Then
         assertThat(configuration.getTables())
@@ -104,16 +93,10 @@ public class InstanceConfigurationIT {
     @Test
     void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket("sleeper-test-instance-config");
-
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(UserDefinedInstanceProperty.ID, "test-instance");
-        properties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "sleeper-test-instance-config");
-        properties.saveToS3(s3Client);
+        InstanceProperties properties = createTestInstanceProperties(s3Client);
 
         // When
-        InstanceConfiguration configuration = loadFromS3(s3Client, "test-instance");
+        InstanceConfiguration configuration = loadFromS3(s3Client, properties.get(ID));
 
         // Then
         assertThat(configuration.getTables())
