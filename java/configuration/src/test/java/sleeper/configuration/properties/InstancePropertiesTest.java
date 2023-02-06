@@ -290,8 +290,7 @@ class InstancePropertiesTest {
     @Test
     void shouldGetAllUserDefinedAndSystemDefinedProperties() {
         // Given/When
-        InstanceProperties properties = new InstanceProperties();
-        List<InstanceProperty> propertyList = properties.getAllProperties();
+        List<InstanceProperty> propertyList = InstanceProperty.getAllProperties();
 
         // Then
         assertThat(propertyList)
@@ -303,8 +302,7 @@ class InstancePropertiesTest {
     @Test
     void shouldOrderAllPropertiesBasedOnGroup() {
         // Given/When
-        InstanceProperties properties = new InstanceProperties();
-        List<InstanceProperty> propertyList = properties.getAllGroupedProperties();
+        List<InstanceProperty> propertyList = InstanceProperty.getAllGroupedProperties();
 
         // Then
         // Order COMMON before INGEST
