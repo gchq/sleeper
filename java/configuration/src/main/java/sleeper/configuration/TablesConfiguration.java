@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablesConfiguration {
     private final List<TableProperties> tables;
@@ -54,38 +53,6 @@ public class TablesConfiguration {
         return new TablesConfiguration(
                 loadTablesFromPath(instanceProperties, path).collect(Collectors.toList()));
     }
-
-    public static TablesConfiguration fromTables(TableProperties... tables) {
-        return new TablesConfiguration(List.of(tables));
-    }
-
-    public void saveToS3(AmazonS3 s3Client) {
-        tables.forEach(table -> {
-            try {
-                table.saveToS3(s3Client);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    public void saveToPath(Path instancePropertiesFile) {
-        Path baseDir = directoryOf(instancePropertiesFile);
-        tables.forEach(table -> {
-            if (table.getSchema() == null) {
-                throw new IllegalArgumentException("Table " + table.get(TABLE_NAME) + " has no schema");
-            }
-            try {
-                Path tableDir = Files.createDirectories(baseDir.resolve("tables/" + table.get(TABLE_NAME)));
-                table.save(tableDir.resolve("table.properties"));
-
-                table.getSchema().save(tableDir.resolve("schema.json"));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
 
     public List<TableProperties> getTables() {
         return tables;
