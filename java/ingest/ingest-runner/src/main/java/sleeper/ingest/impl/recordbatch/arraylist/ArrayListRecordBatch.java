@@ -41,7 +41,7 @@ import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This abstract class implements a {@link RecordBatch} where the batch of records is stored in an ArrayList in memory,
+ * This class implements a {@link RecordBatch} where the batch of records is stored in an ArrayList in memory,
  * and spilled to local disk as Parquet files when the ArrayList contains a set number of records. Each time the records
  * are spilled to disk, they are sorted.
  * <p>
@@ -50,15 +50,16 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * The batch is considered to be full when the local disk contains more than a specified number of records.
  * <p>
- * This class must be extended to implement the {@link #append(Object)} method. Note that data is always retrieved from
- * this batch as @link Record} objects and this class is responsible for any type conversion.
+ * This class needs a mapper extending the {@link ArrayListRecordMapper} interface. Data is always retrieved from
+ * this batch as @link Record} objects and the mapper is responsible for any type conversion.
  *
  * @param <INCOMINGDATATYPE> The type of data that can be added to this batch.
  */
-public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchBase.class);
+public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatch.class);
     private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
+    private final ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper;
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
     private final long maxNoOfRecordsInLocalStore;
@@ -82,12 +83,14 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
      * @param maxNoOfRecordsInMemory     The maximum number of records to store in the internal ArrayList
      * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
      */
-    public ArrayListRecordBatchBase(ParquetConfiguration parquetConfiguration,
-                                    String localWorkingDirectory,
-                                    int maxNoOfRecordsInMemory,
-                                    long maxNoOfRecordsInLocalStore) {
+    public ArrayListRecordBatch(ParquetConfiguration parquetConfiguration,
+                                ArrayListRecordMapper<INCOMINGDATATYPE> recordMapper,
+                                String localWorkingDirectory,
+                                int maxNoOfRecordsInMemory,
+                                long maxNoOfRecordsInLocalStore) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
         this.sleeperSchema = parquetConfiguration.getSleeperSchema();
+        this.recordMapper = recordMapper;
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfRecordsInMemory = maxNoOfRecordsInMemory;
         this.maxNoOfRecordsInLocalStore = maxNoOfRecordsInLocalStore;
@@ -155,6 +158,11 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
         }
         batchNo++;
         inMemoryBatch.clear();
+    }
+
+    @Override
+    public void append(INCOMINGDATATYPE data) throws IOException {
+        addRecordToBatch(recordMapper.map(data));
     }
 
     /**
@@ -259,4 +267,5 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
         }
         localFileNames.clear();
     }
+
 }
