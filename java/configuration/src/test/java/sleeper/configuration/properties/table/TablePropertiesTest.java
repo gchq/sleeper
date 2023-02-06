@@ -28,14 +28,14 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class TablePropertiesTest {
+class TablePropertiesTest {
 
     @Test
-    public void shouldThrowExceptionIfCompressionCodecIsInvalidOnInit() {
+    void shouldThrowExceptionIfCompressionCodecIsInvalidOnInit() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n" +
-                "sleeper.table.schema={}\n" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n" +
                 "sleeper.table.compression.codec=madeUp";
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
@@ -44,10 +44,10 @@ public class TablePropertiesTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfTableNameIsAbsentOnInit() {
+    void shouldThrowExceptionIfTableNameIsAbsentOnInit() {
         // Given
         String input = "" +
-                "sleeper.table.schema={}\n";
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
         assertThatThrownBy(() -> tableProperties.loadFromString(input))
@@ -55,18 +55,7 @@ public class TablePropertiesTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfTableSchemaIsAbsentOnInit() {
-        // Given
-        String input = "" +
-                "sleeper.table.name=myTable\n";
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        // When / Then
-        assertThatThrownBy(() -> tableProperties.loadFromString(input))
-                .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
-    }
-
-    @Test
-    public void shouldDefaultToInstancePropertiesValueWhenConfigured() {
+    void shouldDefaultToInstancePropertiesValueWhenConfigured() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(DEFAULT_PAGE_SIZE, "20");
@@ -79,7 +68,7 @@ public class TablePropertiesTest {
     }
 
     @Test
-    public void shouldDefaultToAnotherTablePropertyIfConfigured() {
+    void shouldDefaultToAnotherTablePropertyIfConfigured() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(TABLE_NAME, "id");
@@ -112,7 +101,7 @@ public class TablePropertiesTest {
     }
 
     @Test
-    public void shouldThrowRuntimeExceptionIfConfiguredWithNonInstanceOrNonTableProperty() {
+    void shouldThrowRuntimeExceptionIfConfiguredWithNonInstanceOrNonTableProperty() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(TABLE_NAME, "id");
@@ -164,7 +153,7 @@ public class TablePropertiesTest {
     }
 
     @Test
-    public void shouldReturnTrueForEqualityWhenInstancePropertiesAreEqual() {
+    void shouldReturnTrueForEqualityWhenInstancePropertiesAreEqual() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
 
@@ -177,7 +166,7 @@ public class TablePropertiesTest {
     }
 
     @Test
-    public void shouldReturnFalseForEqualityWhenPropertiesAreDifferent() {
+    void shouldReturnFalseForEqualityWhenPropertiesAreDifferent() {
         // Given
         Properties properties = new Properties();
         properties.setProperty("a", "b");

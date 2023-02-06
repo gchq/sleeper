@@ -112,4 +112,18 @@ public class SchemaSerDeTest {
                 .build();
         assertThat(deserialisedSchema).isEqualTo(expectedSchema);
     }
+
+    @Test
+    void shouldDeserialiseFromJsonStringWithMissingSortKeyAndValueFields() {
+        // Given
+        String input = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}";
+        SchemaSerDe schemaSerDe = new SchemaSerDe();
+
+        // When
+        Schema deserializedSchema = schemaSerDe.fromJson(input);
+
+        // Then
+        assertThat(deserializedSchema.getSortKeyFields()).isEmpty();
+        assertThat(deserializedSchema.getValueFields()).isEmpty();
+    }
 }
