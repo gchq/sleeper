@@ -17,56 +17,35 @@
 package sleeper.configuration;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class InstanceConfiguration {
     private final InstanceProperties instanceProperties;
-    private final List<TableProperties> tables;
+    private final TablesConfiguration tables;
 
-    private InstanceConfiguration(InstanceProperties instanceProperties, List<TableProperties> tables) {
+    private InstanceConfiguration(InstanceProperties instanceProperties, TablesConfiguration tables) {
         this.instanceProperties = instanceProperties;
         this.tables = tables;
     }
 
     public static InstanceConfiguration loadFromS3(AmazonS3 s3, String instanceId) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        return new InstanceConfiguration(instanceProperties,
-                loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
-    }
-
-    private static Stream<TableProperties> loadTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        return s3.listObjectsV2(configBucket, "tables/")
-                .getObjectSummaries().stream()
-                .map(tableConfigObject -> loadTableFromS3(s3, instanceProperties, tableConfigObject));
-    }
-
-    private static TableProperties loadTableFromS3(
-            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        try (InputStream in = s3.getObject(
-                        tableConfigObject.getBucketName(),
-                        tableConfigObject.getKey())
-                .getObjectContent()) {
-            tableProperties.load(in);
+        try {
+            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return tableProperties;
+        return new InstanceConfiguration(instanceProperties,
+                TablesConfiguration.loadFromS3(s3, instanceProperties));
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -86,6 +65,6 @@ public class InstanceConfiguration {
     }
 
     public List<TableProperties> getTables() {
-        return tables;
+        return tables.getTables();
     }
 }
