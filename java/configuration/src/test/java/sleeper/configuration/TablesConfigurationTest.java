@@ -131,11 +131,8 @@ class TablesConfigurationTest {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
         properties.save(tempDir.resolve("table.properties"));
 
-        // When
-        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
-
-        // Then
-        assertThat(tablesConfiguration.getTables())
+        // When / Then
+        assertThat(loadTableProperties())
                 .containsExactly(properties);
     }
 
@@ -149,11 +146,8 @@ class TablesConfigurationTest {
         TableProperties properties2 = createTestTableProperties(instanceProperties, schemaWithKey("test-key2"));
         properties2.save(tempDir.resolve("tables/table2/table.properties"));
 
-        // When
-        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
-
-        // Then
-        assertThat(tablesConfiguration.getTables())
+        // When / Then
+        assertThat(loadTableProperties())
                 .containsExactly(properties1, properties2);
     }
 }
