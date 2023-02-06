@@ -26,8 +26,6 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -40,48 +38,17 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-/**
- * This class extends {@link ArrowRecordBatchBase} so that it accepts data as {@link Record} objects.
- */
-public class ArrowRecordBatchAcceptingRecords extends ArrowRecordBatchBase<Record> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchAcceptingRecords.class);
+import static sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatch.MAP_KEY_FIELD_NAME;
+import static sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatch.MAP_VALUE_FIELD_NAME;
 
-    /**
-     * Construct a {@link ArrowRecordBatchAcceptingRecords} object.
-     *
-     * @param arrowBufferAllocator                   The {@link BufferAllocator} to use to allocate memory
-     * @param sleeperSchema                          The Sleeper {@link Schema} of the records to be stored
-     * @param localWorkingDirectory                  The local directory to use to store the spilled Arrow files
-     * @param workingArrowBufferAllocatorBytes       -
-     * @param minBatchArrowBufferAllocatorBytes      -
-     * @param maxBatchArrowBufferAllocatorBytes      -
-     * @param maxNoOfBytesToWriteLocally             -
-     * @param maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
-     *                                               data of this size into a single file, to reduce the memory
-     *                                               footprint
-     */
-    public ArrowRecordBatchAcceptingRecords(BufferAllocator arrowBufferAllocator,
-                                            Schema sleeperSchema,
-                                            String localWorkingDirectory,
-                                            long workingArrowBufferAllocatorBytes,
-                                            long minBatchArrowBufferAllocatorBytes,
-                                            long maxBatchArrowBufferAllocatorBytes,
-                                            long maxNoOfBytesToWriteLocally,
-                                            int maxNoOfRecordsToWriteToArrowFileAtOnce) {
-        super(arrowBufferAllocator,
-                sleeperSchema,
-                localWorkingDirectory,
-                workingArrowBufferAllocatorBytes,
-                minBatchArrowBufferAllocatorBytes,
-                maxBatchArrowBufferAllocatorBytes,
-                maxNoOfBytesToWriteLocally,
-                maxNoOfRecordsToWriteToArrowFileAtOnce);
-    }
+/**
+ * This class extends {@link ArrowRecordBatch} so that it accepts data as {@link Record} objects.
+ */
+public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Record> {
 
     /**
      * Add a single Record to a VectorSchemaRoot at a specified row.
@@ -98,10 +65,11 @@ public class ArrowRecordBatchAcceptingRecords extends ArrowRecordBatchBase<Recor
      * @throws OutOfMemoryException When the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
      *                              provide enough memory
      */
-    private static void addRecordToVectorSchemaRoot(List<Field> allFields,
-                                                    VectorSchemaRoot vectorSchemaRoot,
-                                                    Record record,
-                                                    int insertAtRowNo) throws OutOfMemoryException {
+    @Override
+    public void insert(List<Field> allFields,
+                       VectorSchemaRoot vectorSchemaRoot,
+                       Record record,
+                       int insertAtRowNo) throws OutOfMemoryException {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the mutate
         // Note that setSafe() is used throughout so that more memory will be requested if required.
@@ -249,31 +217,6 @@ public class ArrowRecordBatchAcceptingRecords extends ArrowRecordBatchBase<Recor
             }
         } else {
             throw new AssertionError("Sleeper column type " + sleeperElementType.toString() + " is an element type sent to writeStructElement()");
-        }
-    }
-
-    @Override
-    public void append(Record record) throws IOException {
-        if (!isWriteable) {
-            throw new AssertionError();
-        }
-        // Add the record to the major batch of records (stored as an Arrow VectorSchemaRoot)
-        // If the addition to the major batch causes an Arrow out-of-memory error then flush the batch to local
-        // disk and then try adding the record again.
-        boolean writeRequired = true;
-        while (writeRequired) {
-            try {
-                addRecordToVectorSchemaRoot(
-                        super.allFields,
-                        super.vectorSchemaRoot,
-                        record,
-                        super.currentInsertIndex);
-                super.currentInsertIndex++;
-                writeRequired = false;
-            } catch (OutOfMemoryException e) {
-                LOGGER.debug("OutOfMemoryException occurred whilst writing a Record: flushing and retrying");
-                super.flushToLocalArrowFileThenClear();
-            }
         }
     }
 

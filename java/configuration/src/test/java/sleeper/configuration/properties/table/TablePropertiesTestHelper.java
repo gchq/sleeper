@@ -48,10 +48,15 @@ public class TablePropertiesTestHelper {
     }
 
     public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema) {
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
         tableProperties.set(DATA_BUCKET, tableName + "-data");
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
