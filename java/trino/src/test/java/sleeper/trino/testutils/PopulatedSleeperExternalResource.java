@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,17 @@ import com.amazonaws.services.s3.model.Bucket;
 import com.google.common.collect.ImmutableList;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -39,9 +41,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestProperties;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.StandardIngestCoordinator;
+import sleeper.ingest.IngestFactory;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -49,10 +49,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -70,7 +66,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
@@ -94,7 +89,7 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    private final TemporaryFolder temporaryFolder = new TemporaryFolder();
     private final LocalStackContainer localStackContainer =
             new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
                     .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3)
@@ -102,7 +97,6 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
                     .withEnv("DEBUG", "1");
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack(localStackContainer);
 
-    private BufferAllocator rootBufferAllocator;
     private AmazonS3 s3Client;
     private S3AsyncClient s3AsyncClient;
     private AmazonDynamoDB dynamoDBClient;
@@ -141,38 +135,19 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
     }
 
     private void ingestData(InstanceProperties instanceProperties,
-                            StateStore stateStore,
+                            StateStoreProvider stateStoreProvider,
                             TableProperties tableProperties,
                             Iterator<Record> recordIterator)
             throws Exception {
         Configuration hadoopConfiguration = this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties);
-        IngestProperties ingestProperties = IngestProperties.builder()
-                .objectFactory(new ObjectFactory(instanceProperties, null, temporaryFolder.toString()))
-                .stateStore(stateStore)
-                .schema(tableProperties.getSchema())
-                .bucketName(tableProperties.get(DATA_BUCKET))
+        IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
                 .localDir(temporaryFolder.newFolder().getAbsolutePath())
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("snappy")
+                .stateStoreProvider(stateStoreProvider)
+                .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConfiguration)
-                .ingestPartitionRefreshFrequencyInSecond(120)
-                .build();
-        IngestCoordinator<Record> ingestRecordsAsync = StandardIngestCoordinator.asyncS3WriteBackedByArrow(
-                ingestProperties,
-                tableProperties.get(DATA_BUCKET),
-                s3AsyncClient,
-                rootBufferAllocator,
-                30,
-                16 * 1024 * 1024L,
-                16 * 1024 * 1024L,
-                32 * 1024 * 1024L
-                );
-
-        while (recordIterator.hasNext()) {
-            ingestRecordsAsync.write(recordIterator.next());
-        }
-        ingestRecordsAsync.close();
+                .s3AsyncClient(s3AsyncClient)
+                .build().ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
     private InstanceProperties createInstanceProperties() throws IOException {
@@ -186,7 +161,6 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
         instanceProperties.set(FILE_SYSTEM, "s3a://");
-        instanceProperties.set(TABLE_PROPERTIES, "");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
@@ -246,10 +220,11 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
         this.s3Client = createS3Client();
         this.s3AsyncClient = createS3AsyncClient();
         this.dynamoDBClient = createDynamoClient();
-        this.rootBufferAllocator = new RootAllocator();
 
         System.out.println("S3 endpoint:       " + localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
         System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
+
+        sleeperConfig.setLocalWorkingDirectory(temporaryFolder.newFolder().getAbsolutePath());
 
         InstanceProperties instanceProperties = createInstanceProperties();
 
@@ -262,7 +237,7 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 InitialiseStateStore initialiseStateStore = new InitialiseStateStore(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
                 initialiseStateStore.run();
-                ingestData(instanceProperties, stateStore, tableProperties, tableDefinition.recordStream.iterator());
+                ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -294,7 +269,6 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
         this.dynamoDBClient.shutdown();
         this.localStackContainer.stop();
         this.temporaryFolder.delete();
-        this.rootBufferAllocator.close();
 
         // The Hadoop file system maintains a cache of the file system object to use. The S3AFileSystem object
         // retains the endpoint URL and so the cache needs to be cleared whenever the localstack instance changes.
