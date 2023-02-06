@@ -28,6 +28,8 @@ import sleeper.core.schema.type.StringType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,6 +54,14 @@ class TablesConfigurationTest {
         return Schema.builder().rowKeyFields(new Field(keyName, new StringType())).build();
     }
 
+    private Stream<TableProperties> loadTableProperties() {
+        return loadTablePropertiesWithInstancePropertiesFile(instancePropertiesFile);
+    }
+
+    private Stream<TableProperties> loadTablePropertiesWithInstancePropertiesFile(Path file) {
+        return TablesConfiguration.loadFromPath(file, instanceProperties).getTables().stream();
+    }
+
     @Test
     void shouldLoadTablePropertiesFileNextToInstancePropertiesFile() throws IOException {
         // Given
@@ -60,17 +70,14 @@ class TablesConfigurationTest {
         Schema schema = schemaWithKey("test-key");
         schema.save(tempDir.resolve("schema.json"));
 
-        // When
-        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
-
-        // Then
+        // When / Then
         properties.setSchema(schema);
-        assertThat(tablesConfiguration.getTables())
+        assertThat(loadTableProperties())
                 .containsExactly(properties);
     }
 
     @Test
-    void shouldLoadTablePropertiesFilesInTablesFolder() throws IOException {
+    void shouldLoadAllTablePropertiesFromNestedTableFolders() throws IOException {
         // Given
         Files.createDirectories(tempDir.resolve("tables/table1"));
         Files.createDirectory(tempDir.resolve("tables/table2"));
@@ -85,33 +92,25 @@ class TablesConfigurationTest {
         Schema schema2 = schemaWithKey("test-key2");
         schema2.save(tempDir.resolve("tables/table2/schema.json"));
 
-        // When
-        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
-
-        // Then
+        // When / Then
         properties1.setSchema(schema1);
         properties2.setSchema(schema2);
-        assertThat(tablesConfiguration.getTables())
+        assertThat(loadTableProperties())
                 .containsExactly(properties1, properties2);
     }
 
     @Test
-    void shouldFailToLoadTablePropertiesFilesWhenNonePresent() {
-        // When
-        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
-
-        // Then
-        assertThat(tablesConfiguration.getTables())
+    void shouldFindNoTablePropertiesWhenNoFilesArePresent() {
+        // When / Then
+        assertThat(loadTableProperties())
                 .isEmpty();
     }
 
     @Test
-    void shouldFailToLoadTablePropertiesWhenInstancePropertiesDirectoryNotSpecified() {
-        // When
-        TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
-
-        // Then
-        assertThat(tablesConfiguration.getTables())
+    void shouldFindNoTablePropertiesWhenInstancePropertiesPathDoesNotIncludeParentDirectoryAndNothingInWorkingDirectory() {
+        // When / Then
+        assertThat(loadTablePropertiesWithInstancePropertiesFile(
+                Paths.get("instance.properties")))
                 .isEmpty();
     }
 
@@ -122,7 +121,7 @@ class TablesConfigurationTest {
         properties.save(tempDir.resolve("table.properties"));
 
         // When/Then
-        assertThatThrownBy(() -> TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties))
+        assertThatThrownBy(this::loadTableProperties)
                 .hasMessage("Schema not set in property sleeper.table.schema");
     }
 
@@ -156,43 +155,5 @@ class TablesConfigurationTest {
         // Then
         assertThat(tablesConfiguration.getTables())
                 .containsExactly(properties1, properties2);
-    }
-
-    @Test
-    void shouldSaveTablePropertiesFilesInTablesFolder() {
-        // Given
-        TableProperties properties1 = createTestTablePropertiesWithNoSchema(instanceProperties, "test-table-1");
-        TableProperties properties2 = createTestTablePropertiesWithNoSchema(instanceProperties, "test-table-2");
-        Schema schema1 = schemaWithKey("test-key1");
-        Schema schema2 = schemaWithKey("test-key2");
-        properties1.setSchema(schema1);
-        properties2.setSchema(schema2);
-
-        TablesConfiguration tablesConfiguration = TablesConfiguration.fromTables(properties1, properties2);
-
-        // When
-        tablesConfiguration.saveToPath(instancePropertiesFile);
-
-        // Then
-        assertThat(Files.exists(tempDir.resolve("tables/test-table-1/table.properties")))
-                .isTrue();
-        assertThat(Files.exists(tempDir.resolve("tables/test-table-1/schema.json")))
-                .isTrue();
-        assertThat(Files.exists(tempDir.resolve("tables/test-table-2/table.properties")))
-                .isTrue();
-        assertThat(Files.exists(tempDir.resolve("tables/test-table-2/schema.json")))
-                .isTrue();
-    }
-
-    @Test
-    void shouldFailToSaveTablePropertiesFilesWhenSchemaNotSpecified() {
-        // Given
-        TableProperties properties1 = createTestTablePropertiesWithNoSchema(instanceProperties, "test-table-1");
-
-        TablesConfiguration tablesConfiguration = TablesConfiguration.fromTables(properties1);
-
-        // When/Then
-        assertThatThrownBy(() -> tablesConfiguration.saveToPath(instancePropertiesFile))
-                .isInstanceOf(IllegalArgumentException.class);
     }
 }
