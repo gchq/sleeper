@@ -121,7 +121,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("1024")
             .build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS = named("sleeper.task.runner.timeout.seconds")
-            .description("The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest jobs\n" +
+            .description("The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest jobs.\n" +
                     "This must be >0 and <= 900.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
@@ -170,7 +170,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("4096")
             .build();
     UserDefinedInstanceProperty INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = named("sleeper.ingest.partition.refresh.period")
-            .description("The frequeney in seconds with which ingest tasks refresh their view of the partitions\n" +
+            .description("The frequeney in seconds with which ingest tasks refresh their view of the partitions.\n" +
                     "(NB Refreshes only happen once a batch of data has been written so this is a lower bound " +
                     "on the refresh frequency.)")
             .defaultValue("120")
@@ -188,7 +188,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("arraylist")
             .build();
     UserDefinedInstanceProperty INGEST_PARTITION_FILE_WRITER_TYPE = named("sleeper.ingest.partition.file.writer.type")
-            .description("The way in which partition files are written to the main Sleeper store\n" +
+            .description("The way in which partition files are written to the main Sleeper store.\n" +
                     "Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then " +
                     "copies the completed Parquet file asynchronously into S3).\n" +
                     "The direct method is simpler but the async method should provide better performance when the number of partitions " +
