@@ -53,7 +53,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFindTableConfigurationNextToInstancePropertiesFile() throws IOException {
+    void shouldLoadTablePropertiesFileNextToInstancePropertiesFile() throws IOException {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
@@ -70,7 +70,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFindTablePropertiesFilesInTablesFolder() throws IOException {
+    void shouldLoadTablePropertiesFilesInTablesFolder() throws IOException {
         // Given
         Files.createDirectories(tempDir.resolve("tables/table1"));
         Files.createDirectory(tempDir.resolve("tables/table2"));
@@ -96,7 +96,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFindNoTablePropertiesFilesWhenNonePresent() {
+    void shouldFailToLoadTablePropertiesFilesWhenNonePresent() {
         // When
         TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
 
@@ -106,7 +106,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFindNothingInWorkingDirectoryWhenInstancePropertiesDirectoryNotSpecified() {
+    void shouldFailToLoadTablePropertiesWhenInstancePropertiesDirectoryNotSpecified() {
         // When
         TablesConfiguration tablesConfiguration = TablesConfiguration.loadFromPath(instancePropertiesFile, instanceProperties);
 
@@ -116,7 +116,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFailWhenNoSchemaSpecified() throws IOException {
+    void shouldFailToLoadTablePropertiesWhenNoSchemaSpecified() throws IOException {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
@@ -127,7 +127,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFindTablePropertiesFileNextToInstancePropertiesFileWithSchemaInProperties() throws IOException {
+    void shouldLoadTablePropertiesFileNextToInstancePropertiesFileWithSchemaInProperties() throws IOException {
         // Given
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
         properties.save(tempDir.resolve("table.properties"));
@@ -141,7 +141,7 @@ class TablesConfigurationTest {
     }
 
     @Test
-    void shouldFindTablePropertiesFilesInTablesFolderWithSchemaInProperties() throws IOException {
+    void shouldLoadTablePropertiesFilesInTablesFolderWithSchemaInProperties() throws IOException {
         // Given
         Files.createDirectories(tempDir.resolve("tables/table1"));
         Files.createDirectory(tempDir.resolve("tables/table2"));
