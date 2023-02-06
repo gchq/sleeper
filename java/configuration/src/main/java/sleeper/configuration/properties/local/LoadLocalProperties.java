@@ -15,15 +15,11 @@
  */
 package sleeper.configuration.properties.local;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,43 +31,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class LoadLocalProperties {
-    private final List<TableProperties> tables;
 
-    private LoadLocalProperties(List<TableProperties> tables) {
-        this.tables = tables;
-    }
-
-    public static LoadLocalProperties loadFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        return new LoadLocalProperties(
-                loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
-    }
-
-    public List<TableProperties> getTables() {
-        return tables;
-    }
-
-    private static Stream<TableProperties> loadTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        return s3.listObjectsV2(configBucket, "tables/")
-                .getObjectSummaries().stream()
-                .map(tableConfigObject -> loadTableFromS3(s3, instanceProperties, tableConfigObject));
-    }
-
-    private static TableProperties loadTableFromS3(
-            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        try (InputStream in = s3.getObject(
-                        tableConfigObject.getBucketName(),
-                        tableConfigObject.getKey())
-                .getObjectContent()) {
-            tableProperties.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return tableProperties;
+    private LoadLocalProperties() {
     }
 
     public static Stream<TableProperties> loadTablesFromPath(
@@ -97,7 +60,7 @@ public class LoadLocalProperties {
             }
             return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -127,7 +90,7 @@ public class LoadLocalProperties {
                     .filter(Files::isDirectory)
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            throw new RuntimeException("Failed to list table configuration directories", e);
+            throw new UncheckedIOException("Failed to list table configuration directories", e);
         }
         return tables.stream().sorted();
     }
