@@ -58,4 +58,35 @@ public class InstancePropertyGroupingTest {
         assertThat(sortedPropertyList)
                 .containsSequence(List.of(property3, property2, property1));
     }
+
+    @Test
+    void shouldOrderPropertiesWithDifferentTypesBasedOnGroup() {
+        // Given
+        List<InstanceProperty> propertyList = new ArrayList<>();
+        InstanceProperty userProperty1 = UserDefinedInstancePropertyImpl.named("User Property 1")
+                .propertyGroup(PropertyGroup.BULK_IMPORT)
+                .addToAllList(propertyList::add).build();
+        InstanceProperty userProperty2 = UserDefinedInstancePropertyImpl.named("User Property 2")
+                .propertyGroup(PropertyGroup.INGEST)
+                .addToAllList(propertyList::add).build();
+        InstanceProperty userProperty3 = UserDefinedInstancePropertyImpl.named("User Property 3")
+                .propertyGroup(PropertyGroup.COMMON)
+                .addToAllList(propertyList::add).build();
+        InstanceProperty systemProperty1 = UserDefinedInstancePropertyImpl.named("System Property 1")
+                .propertyGroup(PropertyGroup.BULK_IMPORT)
+                .addToAllList(propertyList::add).build();
+        InstanceProperty systemProperty2 = UserDefinedInstancePropertyImpl.named("System Property 2")
+                .propertyGroup(PropertyGroup.INGEST)
+                .addToAllList(propertyList::add).build();
+        InstanceProperty systemProperty3 = UserDefinedInstancePropertyImpl.named("System Property 3")
+                .propertyGroup(PropertyGroup.COMMON)
+                .addToAllList(propertyList::add).build();
+
+        // When
+        List<InstanceProperty> sortedPropertyList = InstanceProperty.sortProperties(propertyList);
+
+        // Then
+        assertThat(sortedPropertyList)
+                .containsSequence(List.of(userProperty3, systemProperty3, userProperty2, systemProperty2, userProperty1, systemProperty1));
+    }
 }
