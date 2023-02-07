@@ -47,14 +47,29 @@ public class SaveLocalProperties {
     public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
         SaveLocalProperties properties = loadFromS3(s3, instanceId);
         properties.instanceProperties.save(directory.resolve("instance.properties"));
-        for (TableProperties tableProperties : properties.tables) {
-            Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
-            Files.createDirectories(tableDir);
-            tableProperties.save(tableDir.resolve("table.properties"));
-        }
+        save(directory, properties.instanceProperties, properties.tables.stream());
     }
 
-    public static SaveLocalProperties loadFromS3(AmazonS3 s3, String instanceId) throws IOException {
+    public static void save(Path directory,
+                            InstanceProperties instanceProperties,
+                            Stream<TableProperties> tablePropertiesStream) {
+        try {
+            instanceProperties.save(directory.resolve("instance.properties"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        tablePropertiesStream.forEach(tableProperties -> {
+            Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
+            try {
+                Files.createDirectories(tableDir);
+                tableProperties.save(tableDir.resolve("table.properties"));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    public static SaveLocalProperties loadFromS3(AmazonS3 s3, String instanceId) {
         InstanceProperties instanceProperties = new InstanceProperties();
         try {
             instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
