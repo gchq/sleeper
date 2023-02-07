@@ -13,28 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.util;
+package sleeper.status.update;
 
-import sleeper.configuration.properties.local.LoadLocalProperties;
-import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.SystemTestProperty;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+import sleeper.configuration.properties.local.SaveLocalProperties;
 
 import java.nio.file.Path;
 
-public class ReadSystemTestProperty {
+public class DownloadConfig {
 
-    private ReadSystemTestProperty() {
+    private DownloadConfig() {
     }
 
     public static void main(String[] args) {
         if (args.length != 2) {
-            throw new IllegalArgumentException("Usage: <configuration directory> <property name>");
+            throw new IllegalArgumentException("Usage: <instance id> <directory to write to>");
         }
-
-        Path basePath = Path.of(args[0]);
-        String propertyName = args[1];
-        SystemTestProperties properties = LoadLocalProperties
-                .loadInstancePropertiesFromDirectory(new SystemTestProperties(), basePath);
-        System.out.println(properties.get(SystemTestProperty.fromName(propertyName)));
+        String instanceId = args[0];
+        Path basePath = Path.of(args[1]);
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
     }
 }

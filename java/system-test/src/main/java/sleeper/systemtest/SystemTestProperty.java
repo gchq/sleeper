@@ -83,8 +83,4 @@ public interface SystemTestProperty extends InstanceProperty {
     static SystemTestProperty[] values() {
         return SystemTestPropertyImpl.all().toArray(new SystemTestProperty[0]);
     }
-
-    static SystemTestProperty fromName(String propertyName) {
-        return SystemTestPropertyImpl.get(propertyName);
-    }
 }

@@ -191,7 +191,7 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
         return SystemDefinedInstancePropertyImpl.all().toArray(new SystemDefinedInstanceProperty[0]);
     }
 
-    static SystemDefinedInstanceProperty fromName(String propertyName) {
+    static SystemDefinedInstanceProperty from(String propertyName) {
         return SystemDefinedInstancePropertyImpl.get(propertyName);
     }
 

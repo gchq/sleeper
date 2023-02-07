@@ -195,7 +195,7 @@ public interface TableProperty extends SleeperProperty {
         return TablePropertyImpl.all().toArray(new TableProperty[0]);
     }
 
-    static TableProperty fromName(String propertyName) {
+    static TableProperty from(String propertyName) {
         return TablePropertyImpl.get(propertyName);
     }
 
