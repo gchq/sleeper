@@ -32,7 +32,6 @@ import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -137,10 +136,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 .appendSuper(super.equals(o))
                 .append(instanceProperties, that.instanceProperties)
                 .isEquals();
-    }
-
-    public List<TableProperty> getAllProperties() {
-        return Arrays.asList(TableProperty.values());
     }
 
     @Override
