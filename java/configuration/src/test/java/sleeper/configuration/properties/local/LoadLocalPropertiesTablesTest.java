@@ -21,9 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +35,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class LoadLocalPropertiesTablesTest {
 
@@ -49,10 +48,6 @@ class LoadLocalPropertiesTablesTest {
     void setUp() throws IOException {
         instancePropertiesFile = tempDir.resolve("instance.properties");
         instanceProperties.save(instancePropertiesFile);
-    }
-
-    private Schema schemaWithKey(String keyName) {
-        return Schema.builder().rowKeyFields(new Field(keyName, new StringType())).build();
     }
 
     private Stream<TableProperties> loadTableProperties() {

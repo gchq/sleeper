@@ -28,12 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -44,6 +39,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveFromS3;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
 class SaveLocalPropertiesIT {
@@ -79,13 +75,9 @@ class SaveLocalPropertiesIT {
     void shouldLoadTablePropertiesFromS3() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
-        Schema schema1 = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        TableProperties table1 = TablePropertiesTestHelper.createTestTableProperties(properties, schema1);
-        table1.set(TableProperty.TABLE_NAME, "test-table-1");
+        TableProperties table1 = TablePropertiesTestHelper.createTestTableProperties(properties, schemaWithKey("key1"));
         table1.saveToS3(s3Client);
-        Schema schema2 = Schema.builder().rowKeyFields(new Field("key2", new LongType())).build();
-        TableProperties table2 = TablePropertiesTestHelper.createTestTableProperties(properties, schema2);
-        table2.set(TableProperty.TABLE_NAME, "test-table-2");
+        TableProperties table2 = TablePropertiesTestHelper.createTestTableProperties(properties, schemaWithKey("key2"));
         table2.saveToS3(s3Client);
 
         // When
