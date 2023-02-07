@@ -31,7 +31,6 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -157,7 +156,7 @@ public class Utils {
         return LogDriver.awsLogs(logDriverProps);
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) throws IOException {
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) {
         Path propertiesFile = getInstancePropertiesPath(scope);
         LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
 

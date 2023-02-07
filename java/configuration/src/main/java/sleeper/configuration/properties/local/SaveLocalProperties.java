@@ -44,10 +44,14 @@ public class SaveLocalProperties {
         this.tables = tables;
     }
 
-    public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
-        SaveLocalProperties properties = loadFromS3(s3, instanceId);
-        properties.instanceProperties.save(directory.resolve("instance.properties"));
-        save(directory, properties.instanceProperties, properties.tables.stream());
+    public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        try {
+            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        save(directory, instanceProperties, loadTablesFromS3(s3, instanceProperties));
     }
 
     public static void save(Path directory,
