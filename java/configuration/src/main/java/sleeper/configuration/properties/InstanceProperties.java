@@ -79,7 +79,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         tags.clear();
         tagsProperties.stringPropertyNames().forEach(tagName ->
                 tags.put(tagName, tagsProperties.getProperty(tagName)));
-        set(TAGS, tagsToString(tags));
+        if (!tags.isEmpty()) {
+            set(TAGS, tagsToString(tags));
+        }
     }
 
     public Properties getTagsProperties() {

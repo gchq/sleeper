@@ -59,6 +59,7 @@ public class SaveLocalProperties {
                                        Stream<TableProperties> tablePropertiesStream) {
         try {
             instanceProperties.save(directory.resolve("instance.properties"));
+            Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

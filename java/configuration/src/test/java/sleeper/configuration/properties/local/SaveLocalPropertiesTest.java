@@ -22,11 +22,14 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
@@ -75,5 +78,22 @@ class SaveLocalPropertiesTest {
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldSaveTagsFile() throws IOException {
+        // Given
+        Properties tags = new Properties();
+        tags.setProperty("tag-1", "value-1");
+        tags.setProperty("tag-2", "value-2");
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.loadTags(tags);
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.empty());
+
+        // Then
+        assertThat(loadProperties(tempDir.resolve("tags.properties")))
+                .isEqualTo(tags);
     }
 }
