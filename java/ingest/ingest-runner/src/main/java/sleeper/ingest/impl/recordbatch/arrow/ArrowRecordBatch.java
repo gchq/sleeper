@@ -17,6 +17,7 @@ package sleeper.ingest.impl.recordbatch.arrow;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -76,13 +77,14 @@ import static java.util.Objects.requireNonNull;
  *
  * @param <INCOMINGDATATYPE> The type of data that can be appended to this record batch
  */
-public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchBase.class);
+public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatch.class);
     public static final String MAP_KEY_FIELD_NAME = "key";
     public static final String MAP_VALUE_FIELD_NAME = "value";
     private static final int INITIAL_ARROW_VECTOR_CAPACITY = 1024;
 
     protected final VectorSchemaRoot vectorSchemaRoot;
+    private final ArrowRecordWriter<INCOMINGDATATYPE> recordMapper;
     protected final BufferAllocator workingBufferAllocator;
     protected final BufferAllocator batchBufferAllocator;
     protected final Schema sleeperSchema;
@@ -99,7 +101,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
     protected boolean isWriteable;
 
     /**
-     * Construct an {@link ArrowRecordBatchBase} object.
+     * Construct an {@link ArrowRecordBatch} object.
      *
      * @param arrowBufferAllocator                   The {@link BufferAllocator} to use to allocate memory for this
      *                                               buffer
@@ -120,16 +122,18 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
      *                                               footprint
      */
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
-    public ArrowRecordBatchBase(BufferAllocator arrowBufferAllocator,
-                                Schema sleeperSchema,
-                                String localWorkingDirectory,
-                                long workingArrowBufferAllocatorBytes,
-                                long minBatchArrowBufferAllocatorBytes,
-                                long maxBatchArrowBufferAllocatorBytes,
-                                long maxNoOfBytesToWriteLocally,
-                                int maxNoOfRecordsToWriteToArrowFileAtOnce) {
+    public ArrowRecordBatch(BufferAllocator arrowBufferAllocator,
+                            Schema sleeperSchema,
+                            ArrowRecordWriter<INCOMINGDATATYPE> recordMapper,
+                            String localWorkingDirectory,
+                            long workingArrowBufferAllocatorBytes,
+                            long minBatchArrowBufferAllocatorBytes,
+                            long maxBatchArrowBufferAllocatorBytes,
+                            long maxNoOfBytesToWriteLocally,
+                            int maxNoOfRecordsToWriteToArrowFileAtOnce) {
         requireNonNull(arrowBufferAllocator);
         this.sleeperSchema = requireNonNull(sleeperSchema);
+        this.recordMapper = requireNonNull(recordMapper);
         this.allFields = sleeperSchema.getAllFields(); // This is an efficiency as getAllFields() is quite expensive
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfBytesToWriteLocally = maxNoOfBytesToWriteLocally;
@@ -289,7 +293,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
     private static org.apache.arrow.vector.types.pojo.Schema convertSleeperSchemaToArrowSchema(Schema sleeperSchema) {
         List<org.apache.arrow.vector.types.pojo.Field> arrowFields =
                 sleeperSchema.getAllFields().stream()
-                        .map(ArrowRecordBatchBase::convertSleeperFieldToArrowField)
+                        .map(ArrowRecordBatch::convertSleeperFieldToArrowField)
                         .collect(Collectors.toList());
         return new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
     }
@@ -520,6 +524,28 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                 }
             });
             throw e1;
+        }
+    }
+
+    @Override
+    public void append(INCOMINGDATATYPE data) throws IOException {
+        if (!isWriteable) {
+            throw new AssertionError();
+        }
+
+        // Add the record to the major batch of records (stored as an Arrow VectorSchemaRoot)
+        // If the addition to the major batch causes an Arrow out-of-memory error then flush the batch to local
+        // disk and then try adding the record again.
+        boolean writeRequired = true;
+        while (writeRequired) {
+            try {
+                recordMapper.insert(allFields, vectorSchemaRoot, data, currentInsertIndex);
+                currentInsertIndex++;
+                writeRequired = false;
+            } catch (OutOfMemoryException e) {
+                LOGGER.debug("OutOfMemoryException occurred whilst writing a Record: flushing and retrying");
+                flushToLocalArrowFileThenClear();
+            }
         }
     }
 

@@ -83,10 +83,15 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "# Partitions in this table with more than the following number of records in will be split\n" +
                         "sleeper.table.partition.splitting.threshold: 1000000000")
                 // Then check property with multi-line description
-                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as ready for\n" +
-                        "# garbage collection. The reason for not deleting files immediately after they have been marked as ready for\n" +
-                        "# garbage collection is that they may still be in use by queries. Defaults to the value set in the instance\n" +
-                        "# properties.\n" +
+                .contains("# The minimum number of files to read in a compaction job. Note that the state store must support\n" +
+                        "# atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
+                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
+                        "sleeper.table.compaction.files.batch.size: 11")
+                // Then check property with multi-line description  and custom line breaks
+                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
+                        "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
+                        "# marked as ready for garbage collection is that they may still be in use by queries. Defaults to the\n" +
+                        "# value set in the instance properties.\n" +
                         "sleeper.table.gc.delay.seconds: 600");
 
         // Then check the ordering of some property names are correct

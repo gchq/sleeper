@@ -55,15 +55,15 @@ public class ArrowToRecordConversionUtils {
                         fieldVector.getChildrenFromFields().size() == 1 &&
                                 fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
                                 fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
-                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRecordBatchBase.MAP_KEY_FIELD_NAME) &&
-                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRecordBatchBase.MAP_VALUE_FIELD_NAME);
+                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRecordBatch.MAP_KEY_FIELD_NAME) &&
+                                fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRecordBatch.MAP_VALUE_FIELD_NAME);
                 if (isActuallyMap) {
                     // Convert the list of structs into a map
                     value = ((List<?>) value).stream()
                             .map(obj -> (Map<?, ?>) obj)
                             .map(map -> new AbstractMap.SimpleEntry<>(
-                                    map.get(ArrowRecordBatchBase.MAP_KEY_FIELD_NAME),
-                                    map.get(ArrowRecordBatchBase.MAP_VALUE_FIELD_NAME)))
+                                    map.get(ArrowRecordBatch.MAP_KEY_FIELD_NAME),
+                                    map.get(ArrowRecordBatch.MAP_VALUE_FIELD_NAME)))
                             .collect(Collectors.toMap(
                                     entry -> (entry.getKey() instanceof Text) ? entry.getKey().toString() : entry.getKey(),
                                     entry -> (entry.getValue() instanceof Text) ? entry.getValue().toString() : entry.getValue()));
