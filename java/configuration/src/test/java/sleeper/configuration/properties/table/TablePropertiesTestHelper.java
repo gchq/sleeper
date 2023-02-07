@@ -35,6 +35,12 @@ public class TablePropertiesTestHelper {
     }
 
     public static TableProperties createTestTableProperties(
+            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3) {
+        return createTestTableProperties(instanceProperties, schema, s3, properties -> {
+        });
+    }
+
+    public static TableProperties createTestTableProperties(
             InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, Consumer<TableProperties> tableConfig) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableConfig.accept(tableProperties);

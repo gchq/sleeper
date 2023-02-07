@@ -22,7 +22,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -39,7 +38,7 @@ class SaveLocalPropertiesTest {
     private Path tempDir;
 
     @Test
-    void shouldSaveInstanceProperties() throws IOException {
+    void shouldSaveInstanceProperties() {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
 

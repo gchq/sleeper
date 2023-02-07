@@ -27,10 +27,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 import sleeper.core.CommonTestConstants;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,6 +37,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveFromS3;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
@@ -59,7 +58,7 @@ class SaveLocalPropertiesIT {
     }
 
     @Test
-    void shouldLoadInstancePropertiesFromS3() throws IOException {
+    void shouldLoadInstancePropertiesFromS3() {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
@@ -72,24 +71,22 @@ class SaveLocalPropertiesIT {
     }
 
     @Test
-    void shouldLoadTablePropertiesFromS3() throws IOException {
+    void shouldLoadTablePropertiesFromS3() {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
-        TableProperties table1 = TablePropertiesTestHelper.createTestTableProperties(properties, schemaWithKey("key1"));
-        table1.saveToS3(s3Client);
-        TableProperties table2 = TablePropertiesTestHelper.createTestTableProperties(properties, schemaWithKey("key2"));
-        table2.saveToS3(s3Client);
+        TableProperties table1 = createTestTableProperties(properties, schemaWithKey("key1"), s3Client);
+        TableProperties table2 = createTestTableProperties(properties, schemaWithKey("key2"), s3Client);
 
         // When
         saveFromS3(s3Client, properties.get(ID), tempDir);
 
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
-                .containsExactly(table1, table2);
+                .containsExactlyInAnyOrder(table1, table2);
     }
 
     @Test
-    void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() throws IOException {
+    void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
