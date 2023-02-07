@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+SCRIPTS_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)
+GENERATED_DIR="$SCRIPTS_DIR/generated"
 
-#####################
-# Initial variables #
-#####################
+read_instance_property() {
+  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.config.ReadInstanceProperty "$GENERATED_DIR" "$@"
+}
 
-if [[ -z $1 ]]; then
-	echo "Usage: $0 <instance-id>"
-	exit 1
-fi
+read_table_property() {
+  java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.config.ReadTableProperty "$GENERATED_DIR" "$@"
+}
 
-INSTANCE_ID=$1
-
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
-GENERATED_DIR=${SCRIPTS_DIR}/generated
-
-rm -r "${GENERATED_DIR:?}"/*
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.config.DownloadConfig "$INSTANCE_ID" "$GENERATED_DIR"
+read_system_test_property() {
+  java -cp "${SCRIPTS_DIR}"/jars/system-test-*-utility.jar sleeper.systemtest.util.ReadSystemTestProperty "$GENERATED_DIR" "$@"
+}

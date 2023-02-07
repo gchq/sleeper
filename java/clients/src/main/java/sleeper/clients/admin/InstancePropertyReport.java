@@ -59,10 +59,10 @@ public class InstancePropertyReport {
 
     private String formatDescription(String propertyName) {
         if (UserDefinedInstanceProperty.has(propertyName)) {
-            return ClientUtils.formatDescription(UserDefinedInstanceProperty.from(propertyName));
+            return ClientUtils.formatDescription(UserDefinedInstanceProperty.fromName(propertyName));
         }
         if (SystemDefinedInstanceProperty.has(propertyName)) {
-            return ClientUtils.formatDescription(SystemDefinedInstanceProperty.from(propertyName));
+            return ClientUtils.formatDescription(SystemDefinedInstanceProperty.fromName(propertyName));
         }
         return "# No description available";
     }

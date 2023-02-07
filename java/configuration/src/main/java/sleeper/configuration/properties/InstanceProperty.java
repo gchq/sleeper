@@ -16,4 +16,12 @@
 package sleeper.configuration.properties;
 
 public interface InstanceProperty extends SleeperProperty {
+
+    static InstanceProperty fromName(String propertyName) {
+        InstanceProperty userDefined = UserDefinedInstanceProperty.fromName(propertyName);
+        if (userDefined != null) {
+            return userDefined;
+        }
+        return SystemDefinedInstanceProperty.fromName(propertyName);
+    }
 }

@@ -826,7 +826,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
         return UserDefinedInstancePropertyImpl.all().toArray(new UserDefinedInstanceProperty[0]);
     }
 
-    static UserDefinedInstanceProperty from(String propertyName) {
+    static UserDefinedInstanceProperty fromName(String propertyName) {
         return UserDefinedInstancePropertyImpl.get(propertyName);
     }
 
