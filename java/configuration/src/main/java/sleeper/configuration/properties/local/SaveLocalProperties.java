@@ -51,12 +51,12 @@ public class SaveLocalProperties {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        save(directory, instanceProperties, loadTablesFromS3(s3, instanceProperties));
+        saveToDirectory(directory, instanceProperties, loadTablesFromS3(s3, instanceProperties));
     }
 
-    public static void save(Path directory,
-                            InstanceProperties instanceProperties,
-                            Stream<TableProperties> tablePropertiesStream) {
+    public static void saveToDirectory(Path directory,
+                                       InstanceProperties instanceProperties,
+                                       Stream<TableProperties> tablePropertiesStream) {
         try {
             instanceProperties.save(directory.resolve("instance.properties"));
         } catch (IOException e) {

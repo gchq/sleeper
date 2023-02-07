@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
-import static sleeper.configuration.properties.local.SaveLocalProperties.save;
+import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -43,7 +43,7 @@ class SaveLocalPropertiesTest {
         InstanceProperties properties = createTestInstanceProperties();
 
         // When
-        save(tempDir, properties, Stream.empty());
+        saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
         assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
@@ -57,10 +57,23 @@ class SaveLocalPropertiesTest {
         TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
 
         // When
-        save(tempDir, properties, Stream.of(tableProperties));
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
 
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
                 .containsExactly(tableProperties);
+    }
+
+    @Test
+    void shouldLoadNoTablePropertiesWhenNoneSaved() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.empty());
+
+        // Then
+        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
+                .isEmpty();
     }
 }
