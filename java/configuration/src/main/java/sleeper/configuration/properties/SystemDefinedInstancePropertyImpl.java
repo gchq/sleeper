@@ -96,7 +96,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
             return this;
         }
 
-        public Builder group(PropertyGroup group) {
+        public Builder propertyGroup(PropertyGroup group) {
             this.group = group;
             return this;
         }
