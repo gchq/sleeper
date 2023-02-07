@@ -21,6 +21,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +40,8 @@ import static sleeper.configuration.properties.local.LoadLocalProperties.loadIns
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SaveLocalPropertiesTest {
@@ -126,5 +131,37 @@ class SaveLocalPropertiesTest {
         // Then
         assertThat(Files.readString(tempDir.resolve("queryBucket.txt")))
                 .isEqualTo("test-query-bucket");
+    }
+
+    @Test
+    void shouldSaveTableBucketFile() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.set(DATA_BUCKET, "test-data-bucket");
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(Files.readString(tempDir.resolve("tables/test-table/tableBucket.txt")))
+                .isEqualTo("test-data-bucket");
+    }
+
+    @Test
+    void shouldSaveSchemaFile() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        Schema schema = Schema.builder().rowKeyFields(new Field("test-key", new LongType())).build();
+        TableProperties tableProperties = createTestTableProperties(properties, schema);
+        tableProperties.set(TABLE_NAME, "test-table");
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(Schema.load(tempDir.resolve("tables/test-table/schema.json")))
+                .isEqualTo(schema);
     }
 }

@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SaveLocalProperties {
@@ -71,6 +72,10 @@ public class SaveLocalProperties {
             try {
                 Files.createDirectories(tableDir);
                 tableProperties.save(tableDir.resolve("table.properties"));
+
+                // Unpack properties for schema & table bucket
+                tableProperties.getSchema().save(tableDir.resolve("schema.json"));
+                Files.writeString(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
