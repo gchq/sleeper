@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class PropertyGroupImpl implements PropertyGroup {
+class PropertyGroupImpl implements PropertyGroup {
     private static final List<PropertyGroup> ALL = new ArrayList<>();
     private final String name;
     private final String description;
