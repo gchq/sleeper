@@ -21,14 +21,21 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstanceProperty.getAllGroupedProperties;
+import static sleeper.configuration.properties.InstanceProperty.getAllProperties;
+import static sleeper.configuration.properties.InstanceProperty.sortProperties;
+import static sleeper.configuration.properties.PropertyGroup.BULK_IMPORT;
+import static sleeper.configuration.properties.PropertyGroup.COMMON;
+import static sleeper.configuration.properties.PropertyGroup.INGEST;
 
 public class InstancePropertyGroupingTest {
     @Test
     void shouldGetAllUserDefinedAndSystemDefinedProperties() {
         // Given/When
-        List<InstanceProperty> propertyList = InstanceProperty.getAllProperties();
+        List<InstanceProperty> propertyList = getAllProperties();
 
         // Then
         assertThat(propertyList)
@@ -40,8 +47,8 @@ public class InstancePropertyGroupingTest {
     @Test
     void shouldGetAllUserDefinedPropertiesOrderedByGroup() {
         // Given/When
-        List<InstanceProperty> propertyList = InstanceProperty.getAllGroupedProperties();
-        List<InstanceProperty> sortedUserDefinedProperties = InstanceProperty.sortProperties(
+        List<InstanceProperty> propertyList = getAllGroupedProperties();
+        List<InstanceProperty> sortedUserDefinedProperties = sortProperties(
                 Arrays.asList(UserDefinedInstanceProperty.values()));
 
         // Then
@@ -52,8 +59,8 @@ public class InstancePropertyGroupingTest {
     @Test
     void shouldGetAllSystemDefinedPropertiesOrderedByGroup() {
         // Given/When
-        List<InstanceProperty> propertyList = InstanceProperty.getAllGroupedProperties();
-        List<InstanceProperty> sortedSystemDefinedProperties = InstanceProperty.sortProperties(
+        List<InstanceProperty> propertyList = getAllGroupedProperties();
+        List<InstanceProperty> sortedSystemDefinedProperties = sortProperties(
                 Arrays.asList(SystemDefinedInstanceProperty.values()));
 
         // Then
@@ -65,18 +72,12 @@ public class InstancePropertyGroupingTest {
     void shouldOrderPropertiesBasedOnGroup() {
         // Given
         List<InstanceProperty> propertyList = new ArrayList<>();
-        InstanceProperty property1 = UserDefinedInstancePropertyImpl.named("Test Property 1")
-                .propertyGroup(PropertyGroup.BULK_IMPORT)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty property2 = UserDefinedInstancePropertyImpl.named("Test Property 2")
-                .propertyGroup(PropertyGroup.INGEST)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty property3 = UserDefinedInstancePropertyImpl.named("Test Property 3")
-                .propertyGroup(PropertyGroup.COMMON)
-                .addToAllList(propertyList::add).build();
+        InstanceProperty property1 = userProperty("user.property.1", BULK_IMPORT, propertyList::add);
+        InstanceProperty property2 = userProperty("user.property.2", INGEST, propertyList::add);
+        InstanceProperty property3 = userProperty("user.property.3", COMMON, propertyList::add);
 
         // When
-        List<InstanceProperty> sortedPropertyList = InstanceProperty.sortProperties(propertyList);
+        List<InstanceProperty> sortedPropertyList = sortProperties(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
@@ -87,27 +88,15 @@ public class InstancePropertyGroupingTest {
     void shouldOrderPropertiesWithDifferentTypesBasedOnGroup() {
         // Given
         List<InstanceProperty> propertyList = new ArrayList<>();
-        InstanceProperty userProperty1 = UserDefinedInstancePropertyImpl.named("User Property 1")
-                .propertyGroup(PropertyGroup.BULK_IMPORT)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty userProperty2 = UserDefinedInstancePropertyImpl.named("User Property 2")
-                .propertyGroup(PropertyGroup.INGEST)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty userProperty3 = UserDefinedInstancePropertyImpl.named("User Property 3")
-                .propertyGroup(PropertyGroup.COMMON)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty systemProperty1 = UserDefinedInstancePropertyImpl.named("System Property 1")
-                .propertyGroup(PropertyGroup.BULK_IMPORT)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty systemProperty2 = UserDefinedInstancePropertyImpl.named("System Property 2")
-                .propertyGroup(PropertyGroup.INGEST)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty systemProperty3 = UserDefinedInstancePropertyImpl.named("System Property 3")
-                .propertyGroup(PropertyGroup.COMMON)
-                .addToAllList(propertyList::add).build();
+        InstanceProperty userProperty1 = userProperty("user.property.1", BULK_IMPORT, propertyList::add);
+        InstanceProperty userProperty2 = userProperty("user.property.2", INGEST, propertyList::add);
+        InstanceProperty userProperty3 = userProperty("user.property.3", COMMON, propertyList::add);
+        InstanceProperty systemProperty1 = systemProperty("system.property.1", BULK_IMPORT, propertyList::add);
+        InstanceProperty systemProperty2 = systemProperty("system.property.2", INGEST, propertyList::add);
+        InstanceProperty systemProperty3 = systemProperty("system.property.3", COMMON, propertyList::add);
 
         // When
-        List<InstanceProperty> sortedPropertyList = InstanceProperty.sortProperties(propertyList);
+        List<InstanceProperty> sortedPropertyList = sortProperties(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
@@ -118,30 +107,32 @@ public class InstancePropertyGroupingTest {
     void shouldOrderPropertiesWithInterweavingTypesBasedOnGroup() {
         // Given
         List<InstanceProperty> propertyList = new ArrayList<>();
-        InstanceProperty userProperty1 = UserDefinedInstancePropertyImpl.named("User Property 1")
-                .propertyGroup(PropertyGroup.BULK_IMPORT)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty systemProperty1 = UserDefinedInstancePropertyImpl.named("System Property 1")
-                .propertyGroup(PropertyGroup.BULK_IMPORT)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty userProperty2 = UserDefinedInstancePropertyImpl.named("User Property 2")
-                .propertyGroup(PropertyGroup.INGEST)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty systemProperty2 = UserDefinedInstancePropertyImpl.named("System Property 2")
-                .propertyGroup(PropertyGroup.INGEST)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty userProperty3 = UserDefinedInstancePropertyImpl.named("User Property 3")
-                .propertyGroup(PropertyGroup.COMMON)
-                .addToAllList(propertyList::add).build();
-        InstanceProperty systemProperty3 = UserDefinedInstancePropertyImpl.named("System Property 3")
-                .propertyGroup(PropertyGroup.COMMON)
-                .addToAllList(propertyList::add).build();
+        InstanceProperty userProperty1 = userProperty("user.property.1", BULK_IMPORT, propertyList::add);
+        InstanceProperty systemProperty1 = systemProperty("system.property.1", BULK_IMPORT, propertyList::add);
+        InstanceProperty userProperty2 = userProperty("user.property.2", INGEST, propertyList::add);
+        InstanceProperty systemProperty2 = systemProperty("system.property.2", INGEST, propertyList::add);
+        InstanceProperty userProperty3 = userProperty("user.property.3", COMMON, propertyList::add);
+        InstanceProperty systemProperty3 = systemProperty("system.property.3", COMMON, propertyList::add);
 
         // When
-        List<InstanceProperty> sortedPropertyList = InstanceProperty.sortProperties(propertyList);
+        List<InstanceProperty> sortedPropertyList = sortProperties(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
                 .containsExactly(userProperty3, systemProperty3, userProperty2, systemProperty2, userProperty1, systemProperty1);
+    }
+
+    private static UserDefinedInstanceProperty userProperty(
+            String name, PropertyGroup group, Consumer<UserDefinedInstanceProperty> addToList) {
+        return UserDefinedInstancePropertyImpl.named(name)
+                .propertyGroup(group)
+                .addToAllList(addToList).build();
+    }
+
+    private static SystemDefinedInstanceProperty systemProperty(
+            String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToList) {
+        return SystemDefinedInstancePropertyImpl.named(name)
+                .propertyGroup(group)
+                .addToAllList(addToList).build();
     }
 }
