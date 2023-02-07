@@ -78,7 +78,7 @@ public class LoadLocalProperties {
         }
     }
 
-    public static Path directoryOf(Path filePath) {
+    private static Path directoryOf(Path filePath) {
         Path parent = filePath.getParent();
         if (parent == null) {
             return Paths.get(".");
