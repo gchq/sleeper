@@ -39,7 +39,6 @@ public class TablePropertiesTestHelper {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableConfig.accept(tableProperties);
         try {
-            s3.createBucket(tableProperties.get(DATA_BUCKET));
             tableProperties.saveToS3(s3);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save table properties", e);
