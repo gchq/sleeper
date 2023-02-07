@@ -32,11 +32,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The S3 bucket name used to store configuration files.")
             .build();
 
-    // Table management
-    SystemDefinedInstanceProperty TABLE_REQUEST_FUNCTION_NAME = named("sleeper.table.requests.function.name")
-            .description("Unknown - not used.")
-            .build();
-
     // Table metrics
     SystemDefinedInstanceProperty TABLE_METRICS_RULES = named("sleeper.table.metrics.rulenames")
             .description("The names of the CloudWatch rules that trigger generation of metrics for tables.")
@@ -66,9 +61,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Compactions
-    SystemDefinedInstanceProperty COMPACTION_CONTAINER = named("sleeper.compaction.container")
-            .description("Unknown - not used.")
-            .build();
     SystemDefinedInstanceProperty COMPACTION_CLUSTER = named("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")
             .build();
