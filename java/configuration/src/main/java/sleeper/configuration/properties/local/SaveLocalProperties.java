@@ -60,10 +60,13 @@ public class SaveLocalProperties {
         try {
             instanceProperties.save(directory.resolve("instance.properties"));
             Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
+            writeStringIfSet(directory.resolve("configBucket.txt"), instanceProperties.get(CONFIG_BUCKET));
+            writeStringIfSet(directory.resolve("queryBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         tablePropertiesStream.forEach(tableProperties -> {
+            // Store in the same directory structure as in S3 (tables/table-name)
             Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
             try {
                 Files.createDirectories(tableDir);
@@ -72,6 +75,12 @@ public class SaveLocalProperties {
                 throw new UncheckedIOException(e);
             }
         });
+    }
+
+    private static void writeStringIfSet(Path file, String value) throws IOException {
+        if (value != null) {
+            Files.writeString(file, value);
+        }
     }
 
     public static SaveLocalProperties loadFromS3(AmazonS3 s3, String instanceId) {

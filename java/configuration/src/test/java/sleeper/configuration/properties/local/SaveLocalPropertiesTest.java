@@ -23,6 +23,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -30,6 +31,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
@@ -95,5 +98,33 @@ class SaveLocalPropertiesTest {
         // Then
         assertThat(loadProperties(tempDir.resolve("tags.properties")))
                 .isEqualTo(tags);
+    }
+
+    @Test
+    void shouldSaveConfigBucketFile() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(CONFIG_BUCKET, "test-config-bucket");
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.empty());
+
+        // Then
+        assertThat(Files.readString(tempDir.resolve("configBucket.txt")))
+                .isEqualTo("test-config-bucket");
+    }
+
+    @Test
+    void shouldSaveQueryBucketFile() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(QUERY_RESULTS_BUCKET, "test-query-bucket");
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.empty());
+
+        // Then
+        assertThat(Files.readString(tempDir.resolve("queryBucket.txt")))
+                .isEqualTo("test-query-bucket");
     }
 }
