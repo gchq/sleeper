@@ -172,13 +172,14 @@ public class Utils {
         return properties;
     }
 
-    private static Path getInstancePropertiesPath(Construct scope) {
-        return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
-    }
-
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
-        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(instanceProperties, getInstancePropertiesPath(scope));
+        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
+                instanceProperties, getInstancePropertiesPath(scope));
+    }
+
+    private static Path getInstancePropertiesPath(Construct scope) {
+        return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
