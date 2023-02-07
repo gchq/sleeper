@@ -19,6 +19,7 @@ package sleeper.configuration.properties.local;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -35,11 +36,14 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.local.SaveLocalProperties.loadFromS3;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromPath;
+import static sleeper.configuration.properties.local.SaveLocalProperties.saveFromS3;
 
 @Testcontainers
 class SaveLocalPropertiesIT {
@@ -48,6 +52,8 @@ class SaveLocalPropertiesIT {
             .withServices(LocalStackContainer.Service.S3);
 
     private final AmazonS3 s3Client = createS3Client();
+    @TempDir
+    private Path tempDir;
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -62,10 +68,10 @@ class SaveLocalPropertiesIT {
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
         // When
-        SaveLocalProperties configuration = loadFromS3(s3Client, properties.get(ID));
+        saveFromS3(s3Client, properties.get(ID), tempDir);
 
         // Then
-        assertThat(configuration.getInstanceProperties())
+        assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
                 .isEqualTo(properties);
     }
 
@@ -83,10 +89,10 @@ class SaveLocalPropertiesIT {
         table2.saveToS3(s3Client);
 
         // When
-        SaveLocalProperties configuration = loadFromS3(s3Client, properties.get(ID));
+        saveFromS3(s3Client, properties.get(ID), tempDir);
 
         // Then
-        assertThat(configuration.getTables())
+        assertThat(loadTablesFromPath(properties, tempDir.resolve("instance.properties")))
                 .containsExactly(table1, table2);
     }
 
@@ -96,10 +102,9 @@ class SaveLocalPropertiesIT {
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
         // When
-        SaveLocalProperties configuration = loadFromS3(s3Client, properties.get(ID));
+        saveFromS3(s3Client, properties.get(ID), tempDir);
 
         // Then
-        assertThat(configuration.getTables())
-                .isEmpty();
+        assertThat(loadTablesFromPath(properties, tempDir.resolve("instance.properties"))).isEmpty();
     }
 }

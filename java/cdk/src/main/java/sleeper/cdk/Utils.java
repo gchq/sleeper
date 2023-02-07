@@ -32,8 +32,6 @@ import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -52,7 +50,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK_TAG_NAME;
-import static sleeper.configuration.properties.local.LoadLocalProperties.directoryOf;
 
 /**
  * Collection of utility methods related to the CDK deployment
@@ -162,7 +159,7 @@ public class Utils {
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) throws IOException {
         Path propertiesFile = getInstancePropertiesPath(scope);
-        loadInstanceProperties(properties, propertiesFile);
+        LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
 
         String validate = (String) scope.getNode().tryGetContext("validate");
         String newinstance = (String) scope.getNode().tryGetContext("newinstance");
@@ -172,17 +169,6 @@ public class Utils {
         if ("true".equalsIgnoreCase(newinstance)) {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
-        }
-        return properties;
-    }
-
-    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) throws IOException {
-        properties.load(file);
-        Path tagsFile = directoryOf(file).resolve("tags.properties");
-        if (Files.exists(tagsFile)) {
-            try (Reader reader = Files.newBufferedReader(tagsFile)) {
-                properties.loadTags(reader);
-            }
         }
         return properties;
     }

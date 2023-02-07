@@ -20,6 +20,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +36,17 @@ import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 public class LoadLocalProperties {
 
     private LoadLocalProperties() {
+    }
+
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) throws IOException {
+        properties.load(file);
+        Path tagsFile = directoryOf(file).resolve("tags.properties");
+        if (Files.exists(tagsFile)) {
+            try (Reader reader = Files.newBufferedReader(tagsFile)) {
+                properties.loadTags(reader);
+            }
+        }
+        return properties;
     }
 
     public static Stream<TableProperties> loadTablesFromPath(

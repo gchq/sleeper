@@ -25,12 +25,15 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SaveLocalProperties {
     private final InstanceProperties instanceProperties;
@@ -39,6 +42,16 @@ public class SaveLocalProperties {
     private SaveLocalProperties(InstanceProperties instanceProperties, List<TableProperties> tables) {
         this.instanceProperties = instanceProperties;
         this.tables = tables;
+    }
+
+    public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
+        SaveLocalProperties properties = loadFromS3(s3, instanceId);
+        properties.instanceProperties.save(directory.resolve("instance.properties"));
+        for (TableProperties tableProperties : properties.tables) {
+            Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
+            Files.createDirectories(tableDir);
+            tableProperties.save(tableDir.resolve("table.properties"));
+        }
     }
 
     public static SaveLocalProperties loadFromS3(AmazonS3 s3, String instanceId) throws IOException {
