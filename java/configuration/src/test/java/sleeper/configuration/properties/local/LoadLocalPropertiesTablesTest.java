@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromPath;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
@@ -60,7 +60,7 @@ class LoadLocalPropertiesTablesTest {
     }
 
     private Stream<TableProperties> loadTablePropertiesWithInstancePropertiesFile(Path file) {
-        return loadTablesFromPath(instanceProperties, file);
+        return loadTablesFromInstancePropertiesFile(instanceProperties, file);
     }
 
     @Test

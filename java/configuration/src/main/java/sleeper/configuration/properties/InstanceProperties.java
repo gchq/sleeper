@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Locale;
@@ -76,9 +75,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         set(TAGS, tagsToString(tags));
     }
 
-    public void loadTags(Reader reader) throws IOException {
-        Properties tagsProperties = new Properties();
-        tagsProperties.load(reader);
+    public void loadTags(Properties tagsProperties) {
         tags.clear();
         tagsProperties.stringPropertyNames().forEach(tagName ->
                 tags.put(tagName, tagsProperties.getProperty(tagName)));

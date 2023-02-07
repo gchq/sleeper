@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
-import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromPath;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveFromS3;
 
 @Testcontainers
@@ -92,7 +92,7 @@ class SaveLocalPropertiesIT {
         saveFromS3(s3Client, properties.get(ID), tempDir);
 
         // Then
-        assertThat(loadTablesFromPath(properties, tempDir.resolve("instance.properties")))
+        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
                 .containsExactly(table1, table2);
     }
 
@@ -105,6 +105,6 @@ class SaveLocalPropertiesIT {
         saveFromS3(s3Client, properties.get(ID), tempDir);
 
         // Then
-        assertThat(loadTablesFromPath(properties, tempDir.resolve("instance.properties"))).isEmpty();
+        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties"))).isEmpty();
     }
 }
