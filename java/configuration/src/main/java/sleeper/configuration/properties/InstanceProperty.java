@@ -22,9 +22,12 @@ import static sleeper.configuration.Utils.combineLists;
 
 public interface InstanceProperty extends SleeperProperty {
     static List<InstanceProperty> getAllGroupedProperties() {
-        List<InstanceProperty> allProperties = getAllProperties();
-        allProperties.sort(Comparator.comparingInt(p -> PropertyGroup.all().indexOf(p.getPropertyGroup())));
-        return allProperties;
+        return sortPropertiesByGroup(getAllProperties());
+    }
+
+    static List<InstanceProperty> sortPropertiesByGroup(List<InstanceProperty> properties) {
+        properties.sort(Comparator.comparingInt(p -> PropertyGroup.all().indexOf(p.getPropertyGroup())));
+        return properties;
     }
 
     static List<InstanceProperty> getAllProperties() {

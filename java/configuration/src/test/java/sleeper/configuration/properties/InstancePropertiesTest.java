@@ -22,9 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -285,38 +283,5 @@ class InstancePropertiesTest {
         instanceProperties.set(S3A_INPUT_FADVISE, "normal");
 
         return instanceProperties;
-    }
-
-    @Test
-    void shouldGetAllUserDefinedAndSystemDefinedProperties() {
-        // Given/When
-        List<InstanceProperty> propertyList = InstanceProperty.getAllProperties();
-
-        // Then
-        assertThat(propertyList)
-                .containsAll(Arrays.asList(UserDefinedInstanceProperty.values()));
-        assertThat(propertyList)
-                .containsAll(Arrays.asList(SystemDefinedInstanceProperty.values()));
-    }
-
-    @Test
-    void shouldOrderAllPropertiesBasedOnGroup() {
-        // Given/When
-        List<InstanceProperty> propertyList = InstanceProperty.getAllGroupedProperties();
-
-        // Then
-        // Order COMMON before INGEST
-        assertThat(propertyList.indexOf(UserDefinedInstanceProperty.ID))
-                .isLessThan(propertyList.indexOf(UserDefinedInstanceProperty.ECR_INGEST_REPO));
-        // Order BULK_IMPORT before PARTITION_SPLITTING
-        assertThat(propertyList.indexOf(UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME))
-                .isLessThan(propertyList.indexOf(UserDefinedInstanceProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES));
-
-        // Order COMMON before INGEST
-        assertThat(propertyList.indexOf(SystemDefinedInstanceProperty.CONFIG_BUCKET))
-                .isLessThan(propertyList.indexOf(SystemDefinedInstanceProperty.INGEST_CLUSTER));
-        // Order BULK_IMPORT before PARTITION_SPLITTING
-        assertThat(propertyList.indexOf(SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET))
-                .isLessThan(propertyList.indexOf(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL));
     }
 }

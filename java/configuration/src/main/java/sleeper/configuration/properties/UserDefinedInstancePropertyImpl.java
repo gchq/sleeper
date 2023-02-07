@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
@@ -93,6 +94,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private Predicate<String> validationPredicate = s -> true;
         private String description = "No description available";
         private PropertyGroup propertyGroup;
+        private Consumer<UserDefinedInstanceProperty> addToAllList = Builder::addToAll;
 
         private Builder() {
         }
@@ -122,18 +124,20 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
+        public Builder addToAllList(Consumer<UserDefinedInstanceProperty> addToAllList) {
+            this.addToAllList = addToAllList;
+            return this;
+        }
+
         public UserDefinedInstanceProperty build() {
-            return build(ALL);
-        }
-
-        public UserDefinedInstanceProperty build(List<UserDefinedInstanceProperty> list) {
-            return addToList(list, new UserDefinedInstancePropertyImpl(this));
-        }
-
-        private static UserDefinedInstanceProperty addToList(List<UserDefinedInstanceProperty> list, UserDefinedInstanceProperty property) {
-            ALL_MAP.put(property.getPropertyName(), property);
-            list.add(property);
+            UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
+            addToAllList.accept(property);
             return property;
+        }
+
+        private static void addToAll(UserDefinedInstanceProperty property) {
+            ALL_MAP.put(property.getPropertyName(), property);
+            ALL.add(property);
         }
     }
 }
