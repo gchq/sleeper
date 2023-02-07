@@ -48,6 +48,10 @@ public class PauseSystem {
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
         amazonS3.shutdown();
+        pause(instanceProperties);
+    }
+
+    public static void pause(InstanceProperties instanceProperties) {
 
         AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
 

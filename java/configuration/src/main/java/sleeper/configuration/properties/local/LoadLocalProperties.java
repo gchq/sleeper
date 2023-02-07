@@ -37,6 +37,10 @@ public class LoadLocalProperties {
     private LoadLocalProperties() {
     }
 
+    public static InstanceProperties loadInstancePropertiesFromDirectory(Path directory) {
+        return loadInstanceProperties(new InstanceProperties(), directory.resolve("instance.properties"));
+    }
+
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) {
         try {
             properties.load(file);
@@ -53,8 +57,12 @@ public class LoadLocalProperties {
 
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFile(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        Path baseDir = directoryOf(instancePropertiesFile);
-        return streamBaseAndTableFolders(baseDir)
+        return loadTablesFromDirectory(instanceProperties, directoryOf(instancePropertiesFile));
+    }
+
+    public static Stream<TableProperties> loadTablesFromDirectory(
+            InstanceProperties instanceProperties, Path directory) {
+        return streamBaseAndTableFolders(directory)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
                 .filter(Objects::nonNull);
     }
