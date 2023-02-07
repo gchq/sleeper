@@ -123,12 +123,16 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         }
 
         public UserDefinedInstanceProperty build() {
-            return addToAllList(new UserDefinedInstancePropertyImpl(this));
+            return build(ALL);
         }
 
-        private static UserDefinedInstanceProperty addToAllList(UserDefinedInstanceProperty property) {
+        public UserDefinedInstanceProperty build(List<UserDefinedInstanceProperty> list) {
+            return addToList(list, new UserDefinedInstancePropertyImpl(this));
+        }
+
+        private static UserDefinedInstanceProperty addToList(List<UserDefinedInstanceProperty> list, UserDefinedInstanceProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
-            ALL.add(property);
+            list.add(property);
             return property;
         }
     }
