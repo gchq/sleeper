@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
 
@@ -82,6 +83,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         private String propertyName;
         private String description = "No description available";
         private PropertyGroup group;
+        private Consumer<SystemDefinedInstanceProperty> addToAllList = Builder::addToAllList;
 
         private Builder() {
         }
@@ -101,14 +103,20 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
             return this;
         }
 
-        public SystemDefinedInstanceProperty build() {
-            return addToAllList(new SystemDefinedInstancePropertyImpl(this));
+        public Builder addToAllList(Consumer<SystemDefinedInstanceProperty> addToAllList) {
+            this.addToAllList = addToAllList;
+            return this;
         }
 
-        private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
+        public SystemDefinedInstanceProperty build() {
+            SystemDefinedInstanceProperty property = new SystemDefinedInstancePropertyImpl(this);
+            addToAllList.accept(property);
+            return property;
+        }
+
+        private static void addToAllList(SystemDefinedInstanceProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
-            return property;
         }
     }
 }
