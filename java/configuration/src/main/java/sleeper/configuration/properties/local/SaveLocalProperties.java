@@ -27,8 +27,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -37,12 +35,8 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SaveLocalProperties {
-    private final InstanceProperties instanceProperties;
-    private final List<TableProperties> tables;
 
-    private SaveLocalProperties(InstanceProperties instanceProperties, List<TableProperties> tables) {
-        this.instanceProperties = instanceProperties;
-        this.tables = tables;
+    private SaveLocalProperties() {
     }
 
     public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) {
@@ -66,6 +60,7 @@ public class SaveLocalProperties {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+
         tablePropertiesStream.forEach(tableProperties -> {
             // Store in the same directory structure as in S3 (tables/table-name)
             Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
@@ -86,37 +81,6 @@ public class SaveLocalProperties {
         if (value != null) {
             Files.writeString(file, value);
         }
-    }
-
-    public static SaveLocalProperties loadFromS3(AmazonS3 s3, String instanceId) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return new SaveLocalProperties(instanceProperties,
-                loadTablesFromS3(s3, instanceProperties).collect(Collectors.toList()));
-    }
-
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
-
-    public String getConfigBucket() {
-        return instanceProperties.get(CONFIG_BUCKET);
-    }
-
-    public String getQueryResultsBucket() {
-        return instanceProperties.get(QUERY_RESULTS_BUCKET);
-    }
-
-    public String getTags() throws IOException {
-        return instanceProperties.getTagsPropertiesAsString();
-    }
-
-    public List<TableProperties> getTables() {
-        return tables;
     }
 
     private static Stream<TableProperties> loadTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
