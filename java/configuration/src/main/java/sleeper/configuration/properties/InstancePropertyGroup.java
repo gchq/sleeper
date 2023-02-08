@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static sleeper.configuration.properties.PropertyGroupImpl.group;
+import static sleeper.configuration.properties.PropertyGroup.group;
 
 public class InstancePropertyGroup {
     private InstancePropertyGroup() {
@@ -60,7 +60,7 @@ public class InstancePropertyGroup {
             .description("The following properties relate to default values.")
             .build();
 
-    private static PropertyGroupImpl.Builder instanceGroup(String name) {
+    private static PropertyGroup.Builder instanceGroup(String name) {
         return group(name).addToList(ALL::add);
     }
 
