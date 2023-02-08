@@ -24,8 +24,8 @@ import java.util.List;
 import static sleeper.configuration.Utils.combineLists;
 
 public interface InstanceProperty extends SleeperProperty {
-    static List<InstanceProperty> getAllGroupedProperties() {
-        return sortProperties(getAllProperties());
+    static List<InstanceProperty> getAllGrouped() {
+        return sortProperties(getAll());
     }
 
     static <T extends InstanceProperty> List<T> sortProperties(List<T> properties) {
@@ -33,8 +33,8 @@ public interface InstanceProperty extends SleeperProperty {
         return properties;
     }
 
-    static List<InstanceProperty> getAllProperties() {
-        return combineLists(UserDefinedInstanceProperty.allList(), SystemDefinedInstanceProperty.allList());
+    static List<InstanceProperty> getAll() {
+        return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
     }
 
     PropertyGroup getPropertyGroup();

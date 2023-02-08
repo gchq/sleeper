@@ -827,15 +827,15 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
-    static List<UserDefinedInstanceProperty> allList() {
-        return UserDefinedInstancePropertyImpl.all();
+    static List<UserDefinedInstanceProperty> getAll() {
+        return UserDefinedInstancePropertyImpl.getAll();
     }
 
-    static Optional<UserDefinedInstanceProperty> from(String propertyName) {
-        return UserDefinedInstancePropertyImpl.get(propertyName);
+    static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
+        return UserDefinedInstancePropertyImpl.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return UserDefinedInstancePropertyImpl.get(propertyName).isPresent();
+        return UserDefinedInstancePropertyImpl.getByName(propertyName).isPresent();
     }
 }

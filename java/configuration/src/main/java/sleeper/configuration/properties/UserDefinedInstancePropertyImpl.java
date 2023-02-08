@@ -54,11 +54,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return builder().propertyName(name);
     }
 
-    public static List<UserDefinedInstanceProperty> all() {
+    public static List<UserDefinedInstanceProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static Optional<UserDefinedInstanceProperty> get(String propertyName) {
+    public static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
         return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 

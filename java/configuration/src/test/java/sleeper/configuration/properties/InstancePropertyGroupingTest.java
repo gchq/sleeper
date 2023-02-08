@@ -25,23 +25,22 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstanceProperty.getAllProperties;
+import static sleeper.configuration.properties.InstanceProperty.getAll;
 import static sleeper.configuration.properties.InstanceProperty.sortProperties;
 import static sleeper.configuration.properties.group.InstancePropertyGroup.BULK_IMPORT;
 import static sleeper.configuration.properties.group.InstancePropertyGroup.COMMON;
 import static sleeper.configuration.properties.group.InstancePropertyGroup.INGEST;
 
-public class InstancePropertyGroupingTest {
+class InstancePropertyGroupingTest {
     @Test
     void shouldGetAllUserDefinedAndSystemDefinedProperties() {
         // Given/When
-        List<InstanceProperty> propertyList = getAllProperties();
+        List<InstanceProperty> propertyList = getAll();
 
         // Then
         assertThat(propertyList)
-                .containsAll(UserDefinedInstanceProperty.allList());
-        assertThat(propertyList)
-                .containsAll(SystemDefinedInstanceProperty.allList());
+                .containsAll(UserDefinedInstanceProperty.getAll())
+                .containsAll(SystemDefinedInstanceProperty.getAll());
     }
 
     @Test

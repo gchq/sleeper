@@ -50,11 +50,11 @@ class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
                 // Check all the user defined properties are present in the output
-                .contains(UserDefinedInstanceProperty.allList().stream()
+                .contains(UserDefinedInstanceProperty.getAll().stream()
                         .map(UserDefinedInstanceProperty::getPropertyName)
                         .collect(Collectors.toList()))
                 // Check at least one system-defined property is present in the output
-                .containsAnyOf(SystemDefinedInstanceProperty.allList().stream()
+                .containsAnyOf(SystemDefinedInstanceProperty.getAll().stream()
                         .map(SystemDefinedInstanceProperty::getPropertyName)
                         .toArray(String[]::new));
 

@@ -29,7 +29,7 @@ public class SleeperPropertyUtils {
             throw new IllegalArgumentException(String.format(
                     "Sleeper property %s is a system-defined property and cannot be updated", propertyName));
         }
-        UserDefinedInstanceProperty property = UserDefinedInstanceProperty.from(propertyName)
+        UserDefinedInstanceProperty property = UserDefinedInstanceProperty.getByName(propertyName)
                 .orElseThrow(() -> new IllegalArgumentException(String.format(
                         "Sleeper property %s does not exist and cannot be updated", propertyName)));
         if (!property.validationPredicate().test(propertyValue)) {

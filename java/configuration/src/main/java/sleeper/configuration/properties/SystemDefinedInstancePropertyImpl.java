@@ -50,11 +50,11 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return builder().propertyName(propertyName);
     }
 
-    public static List<SystemDefinedInstanceProperty> all() {
+    public static List<SystemDefinedInstanceProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static Optional<SystemDefinedInstanceProperty> get(String propertyName) {
+    public static Optional<SystemDefinedInstanceProperty> getByName(String propertyName) {
         return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 

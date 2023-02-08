@@ -43,7 +43,7 @@ public class InstancePropertyReport {
     }
 
     private void print(InstanceProperties instanceProperties) {
-        List<InstanceProperty> propertyList = InstanceProperty.getAllGroupedProperties();
+        List<InstanceProperty> propertyList = InstanceProperty.getAllGrouped();
         PropertyGroup currentGroup = null;
         out.println("\n\n Instance Property Report \n -------------------------");
         for (InstanceProperty instanceProperty : propertyList) {

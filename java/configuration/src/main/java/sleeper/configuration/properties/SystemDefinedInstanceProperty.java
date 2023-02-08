@@ -237,15 +237,15 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
-    static List<SystemDefinedInstanceProperty> allList() {
-        return SystemDefinedInstancePropertyImpl.all();
+    static List<SystemDefinedInstanceProperty> getAll() {
+        return SystemDefinedInstancePropertyImpl.getAll();
     }
 
-    static Optional<SystemDefinedInstanceProperty> from(String propertyName) {
-        return SystemDefinedInstancePropertyImpl.get(propertyName);
+    static Optional<SystemDefinedInstanceProperty> getByName(String propertyName) {
+        return SystemDefinedInstancePropertyImpl.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return SystemDefinedInstancePropertyImpl.get(propertyName).isPresent();
+        return SystemDefinedInstancePropertyImpl.getByName(propertyName).isPresent();
     }
 }
