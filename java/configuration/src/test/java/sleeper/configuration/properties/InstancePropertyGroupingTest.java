@@ -27,9 +27,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstanceProperty.getAllGroupedProperties;
 import static sleeper.configuration.properties.InstanceProperty.getAllProperties;
 import static sleeper.configuration.properties.InstanceProperty.sortProperties;
-import static sleeper.configuration.properties.PropertyGroup.BULK_IMPORT;
-import static sleeper.configuration.properties.PropertyGroup.COMMON;
-import static sleeper.configuration.properties.PropertyGroup.INGEST;
+import static sleeper.configuration.properties.InstancePropertyGroup.BULK_IMPORT;
+import static sleeper.configuration.properties.InstancePropertyGroup.COMMON;
+import static sleeper.configuration.properties.InstancePropertyGroup.INGEST;
 
 public class InstancePropertyGroupingTest {
     @Test

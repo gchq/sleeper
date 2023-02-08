@@ -16,6 +16,7 @@
 
 package sleeper.systemtest;
 
+import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 
 import java.util.ArrayList;
@@ -78,7 +79,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
     @Override
     public PropertyGroup getPropertyGroup() {
-        return PropertyGroup.COMMON;
+        return InstancePropertyGroup.COMMON;
     }
 
     public String toString() {

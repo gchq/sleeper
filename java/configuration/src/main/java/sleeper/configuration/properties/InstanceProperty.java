@@ -26,7 +26,7 @@ public interface InstanceProperty extends SleeperProperty {
     }
 
     static List<InstanceProperty> sortProperties(List<InstanceProperty> properties) {
-        properties.sort(Comparator.comparingInt(p -> PropertyGroup.all().indexOf(p.getPropertyGroup())));
+        properties.sort(Comparator.comparingInt(p -> InstancePropertyGroup.all().indexOf(p.getPropertyGroup())));
         return properties;
     }
 

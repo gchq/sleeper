@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 class PropertyGroupImpl implements PropertyGroup {
     private static final List<PropertyGroup> ALL = new ArrayList<>();
@@ -77,6 +78,7 @@ class PropertyGroupImpl implements PropertyGroup {
     static final class Builder {
         private String name;
         private String description;
+        private Consumer<PropertyGroup> addToList = Builder::addToAllList;
 
         private Builder() {
         }
@@ -91,13 +93,19 @@ class PropertyGroupImpl implements PropertyGroup {
             return this;
         }
 
-        public PropertyGroup build() {
-            return addToAllList(new PropertyGroupImpl(this));
+        public Builder addToList(Consumer<PropertyGroup> addToList) {
+            this.addToList = addToList;
+            return this;
         }
 
-        private static PropertyGroup addToAllList(PropertyGroup property) {
+        public PropertyGroup build() {
+            PropertyGroup group = new PropertyGroupImpl(this);
+            addToList.accept(group);
+            return group;
+        }
+
+        private static void addToAllList(PropertyGroup property) {
             ALL.add(property);
-            return property;
         }
     }
 }
