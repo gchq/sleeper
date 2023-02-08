@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.group;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

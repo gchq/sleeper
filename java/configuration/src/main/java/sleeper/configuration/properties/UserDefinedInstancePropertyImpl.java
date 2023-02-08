@@ -16,6 +16,8 @@
 
 package sleeper.configuration.properties;
 
+import sleeper.configuration.properties.group.PropertyGroup;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

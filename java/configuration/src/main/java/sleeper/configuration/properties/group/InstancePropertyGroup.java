@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.group;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static sleeper.configuration.properties.PropertyGroupImpl.group;
+import static sleeper.configuration.properties.group.PropertyGroupImpl.group;
 
 public class InstancePropertyGroup {
     private InstancePropertyGroup() {

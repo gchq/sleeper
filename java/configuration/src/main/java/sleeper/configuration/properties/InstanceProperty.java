@@ -15,6 +15,9 @@
  */
 package sleeper.configuration.properties;
 
+import sleeper.configuration.properties.group.InstancePropertyGroup;
+import sleeper.configuration.properties.group.PropertyGroup;
+
 import java.util.Comparator;
 import java.util.List;
 

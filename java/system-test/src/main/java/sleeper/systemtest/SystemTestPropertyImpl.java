@@ -16,8 +16,8 @@
 
 package sleeper.systemtest;
 
-import sleeper.configuration.properties.InstancePropertyGroup;
-import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.group.InstancePropertyGroup;
+import sleeper.configuration.properties.group.PropertyGroup;
 
 import java.util.ArrayList;
 import java.util.Collections;
