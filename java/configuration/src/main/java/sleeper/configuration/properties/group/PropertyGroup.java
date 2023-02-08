@@ -16,10 +16,6 @@
 
 package sleeper.configuration.properties.group;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-// Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
-@SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface PropertyGroup {
     String getName();
 
