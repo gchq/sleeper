@@ -93,8 +93,12 @@ public class CleanUpBeforeDestroy {
     }
 
     private static void emptyBucket(AmazonS3 s3, String bucketName) {
-        S3Objects.inBucket(s3, bucketName).forEach(object ->
-                s3.deleteObject(bucketName, object.getKey()));
+        try {
+            S3Objects.inBucket(s3, bucketName).forEach(object ->
+                    s3.deleteObject(bucketName, object.getKey()));
+        } catch (Exception e) {
+            LOGGER.warn("Failed emptying S3 bucket {}, continuing", bucketName, e);
+        }
     }
 
     private static void stopTasks(AmazonECS ecs, String clusterName) {
