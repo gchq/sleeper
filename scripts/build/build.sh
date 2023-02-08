@@ -39,7 +39,7 @@ echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
 SCRIPTS_DISTRIBUTION_DIR="$MAVEN_DIR/distribution/target/distribution-$VERSION-bin/scripts"
-mvn "${MAVEN_PARAMS[@]}"
+mvn ${MAVEN_PARAMS[@]}
 
 mkdir -p "$JARS_DIR"
 mkdir -p "$DOCKER_DIR"

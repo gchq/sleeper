@@ -153,6 +153,21 @@ sleeper.query.processor.results.batch.size=2000
 # Fargate version
 sleeper.fargate.version=1.4.0
 
+# The EC2 instance type to use for compaction tasks (when not using Fargate).
+sleeper.compaction.ec2.type=t3.xlarge
+
+# The minimum / initial desired / maximum number of instances for the cluster.
+sleeper.compaction.ec2.pool.minimum=0
+sleeper.compaction.ec2.pool.desired=0
+# Maximum set by dividing initial maximum containers by number that should fit on instance type
+sleeper.compaction.ec2.pool.maximum=75
+
+# What launch type should compaction containers use? Valid options: FARGATE, EC2
+sleeper.compaction.ecs.launch.type=FARGATE
+
+# The size in GiB of the root EBS volume attached to the EC2 instances.
+sleeper.compaction.ec2.root.size=50
+
 # The frequency with which the WriteData class refreshes the list of partitions from the state store
 # (NB Refreshes only happen once a batch of data has been written so this is a lower bound
 # on the refresh frequency.)

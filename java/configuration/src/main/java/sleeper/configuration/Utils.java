@@ -43,6 +43,10 @@ public class Utils {
         return Integer.parseInt(integer) > 0;
     }
 
+    public static boolean isNonNegativeInteger(String integer) {
+        return Integer.parseInt(integer) >= 0;
+    }
+
     public static boolean isPositiveLong(String value) {
         return Long.parseLong(value) > 0;
     }
