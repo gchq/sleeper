@@ -299,8 +299,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("lz4")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION = named("sleeper.bulk.import.emr.spark.speculation")
-            .description("This is used to set the value of spark.speculation on the Spark configuration. " +
-                    "If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
+            .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
