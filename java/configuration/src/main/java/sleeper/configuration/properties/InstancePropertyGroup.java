@@ -64,12 +64,12 @@ public class InstancePropertyGroup {
         return group(name).afterBuild(ALL::add);
     }
 
-    public static List<PropertyGroup> all() {
+    public static List<PropertyGroup> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
     public static <T extends InstanceProperty> List<T> sortProperties(List<T> properties) {
-        properties.sort(Comparator.comparingInt(p -> all().indexOf(p.getPropertyGroup())));
+        properties.sort(Comparator.comparingInt(p -> getAll().indexOf(p.getPropertyGroup())));
         return properties;
     }
 }
