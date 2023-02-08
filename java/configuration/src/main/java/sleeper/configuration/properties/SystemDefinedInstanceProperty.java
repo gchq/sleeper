@@ -20,8 +20,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl.named;
 
 /**
- * Properties set internally by sleeper and not by the user. These are set by the system itself at deployment time
- * so require no default or validation. Even if you set these in your properties file, they will be overwritten.
+ * Properties set internally by sleeper and not by the user. These are set by the system itself at
+ * deployment time so require no default or validation. Even if you set these in your properties
+ * file, they will be overwritten.
  */
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
@@ -66,8 +67,11 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_CLUSTER = named("sleeper.compaction.splitting.cluster")
             .description("The name of the cluster used for splitting compactions.")
             .build();
-    SystemDefinedInstanceProperty COMPACTION_TASK_DEFINITION_FAMILY = named("sleeper.compaction.task.definition")
-            .description("The name of the family of task definitions used for compactions.")
+    SystemDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = named("sleeper.compaction.ec2.task.definition")
+            .description("The name of the family of EC2 task definitions used for compactions.")
+            .build();
+    SystemDefinedInstanceProperty COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = named("sleeper.compaction.fargate.task.definition")
+            .description("The name of the family of Fargate task definitions used for compactions.")
             .build();
     SystemDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = named("sleeper.compaction.job.creation.lambda.function")
             .description("The function name of the compaction job creation lambda.")
@@ -87,10 +91,15 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = named("sleeper.compaction.task.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the compaction task creation lambda.")
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY = named("sleeper.compaction.splitting.task.definition")
-            .description("The name of the family of task definitions used for splitting compactions.")
+    SystemDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = named("sleeper.compaction.scaling.group")
+            .description("The name of the compaction EC2 auto scaling group.")
             .build();
-
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = named("sleeper.compaction.splitting.ec2.task.definition")
+            .description("The name of the family of EC2 task definitions used for splitting compactions.")
+            .build();
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = named("sleeper.compaction.splitting.fargate.task.definition")
+            .description("The name of the family of Fargate task definitions used for splitting compactions.")
+            .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = named("sleeper.compaction.splitting.job.queue.url")
             .description("The URL of the queue for splitting compaction jobs.")
             .build();
@@ -102,6 +111,9 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = named("sleeper.compaction.splitting.task.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the splitting compaction task creation lambda.")
+            .build();
+   SystemDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = named("sleeper.compaction.splitting.scaling.group")
+            .description("The name of the splitting compaction EC2 auto scaling group.")
             .build();
 
     // Partition splitting
