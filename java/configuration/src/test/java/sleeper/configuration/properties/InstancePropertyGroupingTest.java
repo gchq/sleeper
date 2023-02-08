@@ -18,18 +18,16 @@ package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.group.PropertyGroup;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstanceProperty.getAll;
-import static sleeper.configuration.properties.InstanceProperty.sortProperties;
-import static sleeper.configuration.properties.group.InstancePropertyGroup.BULK_IMPORT;
-import static sleeper.configuration.properties.group.InstancePropertyGroup.COMMON;
-import static sleeper.configuration.properties.group.InstancePropertyGroup.INGEST;
+import static sleeper.configuration.properties.InstancePropertyGroup.BULK_IMPORT;
+import static sleeper.configuration.properties.InstancePropertyGroup.COMMON;
+import static sleeper.configuration.properties.InstancePropertyGroup.INGEST;
+import static sleeper.configuration.properties.InstancePropertyGroup.sortProperties;
 
 class InstancePropertyGroupingTest {
     @Test

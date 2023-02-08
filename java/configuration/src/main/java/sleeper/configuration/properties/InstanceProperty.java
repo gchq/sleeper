@@ -15,22 +15,13 @@
  */
 package sleeper.configuration.properties;
 
-import sleeper.configuration.properties.group.InstancePropertyGroup;
-import sleeper.configuration.properties.group.PropertyGroup;
-
-import java.util.Comparator;
 import java.util.List;
 
 import static sleeper.configuration.Utils.combineLists;
 
 public interface InstanceProperty extends SleeperProperty {
     static List<InstanceProperty> getAllGrouped() {
-        return sortProperties(getAll());
-    }
-
-    static <T extends InstanceProperty> List<T> sortProperties(List<T> properties) {
-        properties.sort(Comparator.comparingInt(p -> InstancePropertyGroup.all().indexOf(p.getPropertyGroup())));
-        return properties;
+        return InstancePropertyGroup.sortProperties(getAll());
     }
 
     static List<InstanceProperty> getAll() {

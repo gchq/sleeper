@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.group;
+package sleeper.configuration.properties;
 
 import java.util.ArrayList;
 import java.util.Collections;

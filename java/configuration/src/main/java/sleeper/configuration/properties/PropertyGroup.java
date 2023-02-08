@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.group;
+package sleeper.configuration.properties;
 
 public interface PropertyGroup {
     String getName();

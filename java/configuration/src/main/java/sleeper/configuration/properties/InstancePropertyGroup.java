@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties.group;
+package sleeper.configuration.properties;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
-import static sleeper.configuration.properties.group.PropertyGroupImpl.group;
+import static sleeper.configuration.properties.PropertyGroupImpl.group;
 
 public class InstancePropertyGroup {
     private InstancePropertyGroup() {
@@ -65,5 +66,10 @@ public class InstancePropertyGroup {
 
     public static List<PropertyGroup> all() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static <T extends InstanceProperty> List<T> sortProperties(List<T> properties) {
+        properties.sort(Comparator.comparingInt(p -> all().indexOf(p.getPropertyGroup())));
+        return properties;
     }
 }

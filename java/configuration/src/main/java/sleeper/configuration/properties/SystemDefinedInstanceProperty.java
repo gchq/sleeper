@@ -17,8 +17,6 @@ package sleeper.configuration.properties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.configuration.properties.group.InstancePropertyGroup;
-
 import java.util.List;
 import java.util.Optional;
 
