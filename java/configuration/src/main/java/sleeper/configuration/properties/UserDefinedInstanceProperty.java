@@ -38,11 +38,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).appliedByCDK(true).build();
     UserDefinedInstanceProperty JARS_BUCKET = named("sleeper.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).appliedByCDK(true).build();
     UserDefinedInstanceProperty USER_JARS = named("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
@@ -51,22 +51,22 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TAGS = named("sleeper.tags")
             .description("A list of tags for the project")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).appliedByCDK(true).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = named("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")
             .defaultValue("DeploymentStack")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).appliedByCDK(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = named("sleeper.retain.infra.after.destroy")
             .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc.,  " +
                     "when the instance is destroyed")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).appliedByCDK(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = named("sleeper.optional.stacks")
             .description("The optional stacks to deploy")
             .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).appliedByCDK(true).build();
     UserDefinedInstanceProperty ACCOUNT = named("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to")
             .validationPredicate(Objects::nonNull)
