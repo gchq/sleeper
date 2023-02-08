@@ -129,7 +129,7 @@ class SaveLocalPropertiesTest {
         saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
-        assertThat(Files.readString(tempDir.resolve("queryBucket.txt")))
+        assertThat(Files.readString(tempDir.resolve("queryResultsBucket.txt")))
                 .isEqualTo("test-query-bucket");
     }
 

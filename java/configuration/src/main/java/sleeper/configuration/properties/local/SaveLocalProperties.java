@@ -56,7 +56,7 @@ public class SaveLocalProperties {
             instanceProperties.save(directory.resolve("instance.properties"));
             Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
             writeStringIfSet(directory.resolve("configBucket.txt"), instanceProperties.get(CONFIG_BUCKET));
-            writeStringIfSet(directory.resolve("queryBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
+            writeStringIfSet(directory.resolve("queryResultsBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
