@@ -42,8 +42,8 @@ class InstancePropertyGroupingTest {
     }
 
     @Test
-    void shouldOrderPropertiesBasedOnGroup() {
-        // Given
+    void shouldOrderByGroup() {
+        // Given groups are out of order and each property has a different group
         List<InstanceProperty> propertyList = new ArrayList<>();
         InstanceProperty property1 = userProperty("user.property.1", BULK_IMPORT, propertyList::add);
         InstanceProperty property2 = userProperty("user.property.2", INGEST, propertyList::add);
@@ -58,41 +58,38 @@ class InstancePropertyGroupingTest {
     }
 
     @Test
-    void shouldOrderPropertiesWithDifferentTypesBasedOnGroup() {
+    void shouldPreserveOrderingWithinAGroup() {
         // Given
         List<InstanceProperty> propertyList = new ArrayList<>();
-        InstanceProperty userProperty1 = userProperty("user.property.1", BULK_IMPORT, propertyList::add);
-        InstanceProperty userProperty2 = userProperty("user.property.2", INGEST, propertyList::add);
-        InstanceProperty userProperty3 = userProperty("user.property.3", COMMON, propertyList::add);
-        InstanceProperty systemProperty1 = systemProperty("system.property.1", BULK_IMPORT, propertyList::add);
-        InstanceProperty systemProperty2 = systemProperty("system.property.2", INGEST, propertyList::add);
-        InstanceProperty systemProperty3 = systemProperty("system.property.3", COMMON, propertyList::add);
+        InstanceProperty property1 = userProperty("user.property.1", COMMON, propertyList::add);
+        InstanceProperty property2 = userProperty("user.property.second", COMMON, propertyList::add);
+        InstanceProperty property3 = userProperty("user.property.c", COMMON, propertyList::add);
 
         // When
         List<InstanceProperty> sortedPropertyList = sortPropertiesByGroup(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
-                .containsExactly(userProperty3, systemProperty3, userProperty2, systemProperty2, userProperty1, systemProperty1);
+                .containsExactly(property1, property2, property3);
     }
 
     @Test
-    void shouldOrderPropertiesWithInterweavingTypesBasedOnGroup() {
+    void shouldBringPropertiesInAGroupTogetherWhenNotSpecifiedTogether() {
         // Given
         List<InstanceProperty> propertyList = new ArrayList<>();
-        InstanceProperty userProperty1 = userProperty("user.property.1", BULK_IMPORT, propertyList::add);
-        InstanceProperty systemProperty1 = systemProperty("system.property.1", BULK_IMPORT, propertyList::add);
+        InstanceProperty userProperty1 = userProperty("user.property.1", COMMON, propertyList::add);
         InstanceProperty userProperty2 = userProperty("user.property.2", INGEST, propertyList::add);
+        InstanceProperty userProperty3 = userProperty("user.property.3", BULK_IMPORT, propertyList::add);
+        InstanceProperty systemProperty1 = systemProperty("system.property.1", COMMON, propertyList::add);
         InstanceProperty systemProperty2 = systemProperty("system.property.2", INGEST, propertyList::add);
-        InstanceProperty userProperty3 = userProperty("user.property.3", COMMON, propertyList::add);
-        InstanceProperty systemProperty3 = systemProperty("system.property.3", COMMON, propertyList::add);
+        InstanceProperty systemProperty3 = systemProperty("system.property.3", BULK_IMPORT, propertyList::add);
 
         // When
         List<InstanceProperty> sortedPropertyList = sortPropertiesByGroup(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
-                .containsExactly(userProperty3, systemProperty3, userProperty2, systemProperty2, userProperty1, systemProperty1);
+                .containsExactly(userProperty1, systemProperty1, userProperty2, systemProperty2, userProperty3, systemProperty3);
     }
 
     private static UserDefinedInstanceProperty userProperty(
