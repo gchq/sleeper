@@ -755,7 +755,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The period in minutes used in the dashboard.")
             .defaultValue("5")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.DASHBOARD).build();
 
     // Logging levels
     UserDefinedInstanceProperty LOGGING_LEVEL = named("sleeper.logging.level")
