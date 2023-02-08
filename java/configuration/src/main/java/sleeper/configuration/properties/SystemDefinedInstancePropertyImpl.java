@@ -80,6 +80,11 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return group;
     }
 
+    @Override
+    public boolean isAppliedByCDK() {
+        return false;
+    }
+
     public static final class Builder {
         private String propertyName;
         private String description = "No description available";

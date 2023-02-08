@@ -17,6 +17,7 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -74,27 +75,7 @@ class TablePropertiesTest {
         tableProperties.set(TABLE_NAME, "id");
 
         // When
-        TableProperty defaultingProperty = new TableProperty() {
-            @Override
-            public SleeperProperty getDefaultProperty() {
-                return TABLE_NAME;
-            }
-
-            @Override
-            public String getPropertyName() {
-                return "made.up";
-            }
-
-            @Override
-            public String getDefaultValue() {
-                return null;
-            }
-
-            @Override
-            public String getDescription() {
-                return null;
-            }
-        };
+        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(TABLE_NAME);
 
         // Then
         assertThat(tableProperties.get(defaultingProperty)).isEqualTo("id");
@@ -107,44 +88,8 @@ class TablePropertiesTest {
         tableProperties.set(TABLE_NAME, "id");
 
         // When
-        SleeperProperty sleeperProperty = new SleeperProperty() {
-            @Override
-            public String getPropertyName() {
-                return null;
-            }
-
-            @Override
-            public String getDefaultValue() {
-                return null;
-            }
-
-            @Override
-            public String getDescription() {
-                return null;
-            }
-        };
-
-        TableProperty defaultingProperty = new TableProperty() {
-            @Override
-            public SleeperProperty getDefaultProperty() {
-                return sleeperProperty;
-            }
-
-            @Override
-            public String getPropertyName() {
-                return "made.up";
-            }
-
-            @Override
-            public String getDefaultValue() {
-                return null;
-            }
-
-            @Override
-            public String getDescription() {
-                return null;
-            }
-        };
+        SleeperProperty sleeperProperty = new DummySleeperProperty();
+        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(sleeperProperty);
 
         // Then
         assertThatThrownBy(() -> tableProperties.get(defaultingProperty))

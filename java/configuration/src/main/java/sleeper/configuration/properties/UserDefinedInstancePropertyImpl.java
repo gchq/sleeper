@@ -89,6 +89,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return description;
     }
 
+    @Override
+    public boolean isAppliedByCDK() {
+        return false;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;

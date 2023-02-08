@@ -87,6 +87,11 @@ class TablePropertyImpl implements TableProperty {
         return description;
     }
 
+    @Override
+    public boolean isAppliedByCDK() {
+        return false;
+    }
+
     public String toString() {
         return propertyName;
     }

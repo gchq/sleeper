@@ -15,28 +15,24 @@
  */
 package sleeper.configuration.properties;
 
-import java.util.Locale;
-import java.util.function.Predicate;
-
-/**
- * Interface to be implemented by all property enums. Allows SleeperProperties to set generically. Depending on
- * implementation the class may want to provide a means of validating the provided property.
- */
-public interface SleeperProperty {
-    String getPropertyName();
-
-    String getDefaultValue();
-
-    String getDescription();
-
-    default Predicate<String> validationPredicate() {
-        return s -> true;
+public class DummySleeperProperty implements SleeperProperty {
+    @Override
+    public String getPropertyName() {
+        return "made.up";
     }
 
-    default String toEnvironmentVariable() {
-        return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
+    @Override
+    public String getDefaultValue() {
+        return null;
     }
 
-    boolean isAppliedByCDK();
+    @Override
+    public String getDescription() {
+        return null;
+    }
 
+    @Override
+    public boolean isAppliedByCDK() {
+        return false;
+    }
 }
