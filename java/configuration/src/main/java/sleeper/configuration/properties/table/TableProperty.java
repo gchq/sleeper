@@ -20,6 +20,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -192,16 +193,16 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .build();
 
-    static TableProperty[] values() {
-        return TablePropertyImpl.all().toArray(new TableProperty[0]);
+    static List<TableProperty> getAll() {
+        return TablePropertyImpl.getAll();
     }
 
-    static Optional<TableProperty> from(String propertyName) {
-        return TablePropertyImpl.get(propertyName);
+    static Optional<TableProperty> getByName(String propertyName) {
+        return TablePropertyImpl.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return TablePropertyImpl.get(propertyName).isPresent();
+        return TablePropertyImpl.getByName(propertyName).isPresent();
     }
 
     SleeperProperty getDefaultProperty();

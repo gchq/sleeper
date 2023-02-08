@@ -41,7 +41,7 @@ public class TablePropertyReport {
 
     private void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
-        for (TableProperty property : TableProperty.values()) {
+        for (TableProperty property : TableProperty.getAll()) {
             out.println();
             out.println(formatPropertyDescription(property.getDescription()));
             out.println(property.getPropertyName() + ": " + tableProperties.get(property));

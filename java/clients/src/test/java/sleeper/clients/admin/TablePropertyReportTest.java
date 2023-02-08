@@ -25,7 +25,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,10 +40,10 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_P
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TablePropertyReportTest extends AdminClientMockStoreBase {
+class TablePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintTablePropertyReportWhenChosen() {
+    void shouldPrintTablePropertyReportWhenChosen() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
@@ -60,7 +59,7 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
                 // Then check all table properties are present in the output
-                .contains(Stream.of(TableProperty.values())
+                .contains(TableProperty.getAll().stream()
                         .map(TableProperty::getPropertyName)
                         .collect(Collectors.toList()))
                 // Then check some set table property values are present in the output
@@ -109,7 +108,7 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldExitWhenChosenOnTablePropertyReportScreen() {
+    void shouldExitWhenChosenOnTablePropertyReportScreen() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
@@ -128,7 +127,7 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() {
+    void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);

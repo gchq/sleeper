@@ -39,7 +39,7 @@ public class SleeperPropertyUtils {
     }
 
     public static TableProperty getValidTableProperty(String propertyName, String propertyValue) {
-        TableProperty property = TableProperty.from(propertyName)
+        TableProperty property = TableProperty.getByName(propertyName)
                 .orElseThrow(() -> new IllegalArgumentException(String.format(
                         "Sleeper property %s does not exist and cannot be updated", propertyName)));
         if (!property.validationPredicate().test(propertyValue)) {

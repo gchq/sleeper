@@ -54,11 +54,11 @@ class TablePropertyImpl implements TableProperty {
         return builder().propertyName(name);
     }
 
-    public static List<TableProperty> all() {
+    public static List<TableProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static Optional<TableProperty> get(String propertyName) {
+    public static Optional<TableProperty> getByName(String propertyName) {
         return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
