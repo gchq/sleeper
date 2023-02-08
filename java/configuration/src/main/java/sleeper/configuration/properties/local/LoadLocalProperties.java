@@ -38,7 +38,12 @@ public class LoadLocalProperties {
     }
 
     public static InstanceProperties loadInstancePropertiesFromDirectory(Path directory) {
-        return loadInstanceProperties(new InstanceProperties(), directory.resolve("instance.properties"));
+        return loadInstancePropertiesFromDirectory(new InstanceProperties(), directory);
+    }
+
+    public static <T extends InstanceProperties> T loadInstancePropertiesFromDirectory(
+            T instanceProperties, Path directory) {
+        return loadInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) {

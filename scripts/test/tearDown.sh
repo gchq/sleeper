@@ -45,7 +45,7 @@ END_DOWNLOAD_CONFIG_TIME=$(record_time)
 echo "Download instance configuration finished at $(recorded_time_str "$END_DOWNLOAD_CONFIG_TIME")," \
   "took $(elapsed_time_str "$START_TIME" "$END_DOWNLOAD_CONFIG_TIME")"
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.status.update.CleanUpBeforeDestroy "$GENERATED_DIR"
+java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.util.CleanUpTestBeforeDestroy "$GENERATED_DIR"
 
 END_CLEANUP_TIME=$(record_time)
 echo "Clean up finished at $(recorded_time_str "$END_CLEANUP_TIME"), took $(elapsed_time_str "$END_DOWNLOAD_CONFIG_TIME" "$END_CLEANUP_TIME")"

@@ -23,6 +23,8 @@ import com.amazonaws.services.ecs.model.StopTaskRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
@@ -37,10 +39,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class CleanUpBeforeDestroy {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CleanUpBeforeDestroy.class);
 
     private CleanUpBeforeDestroy() {
     }
@@ -54,15 +58,23 @@ public class CleanUpBeforeDestroy {
         List<TableProperties> tablePropertiesList = LoadLocalProperties
                 .loadTablesFromDirectory(instanceProperties, baseDir).collect(Collectors.toList());
 
+        cleanUp(instanceProperties, tablePropertiesList, List.of());
+    }
+
+    public static void cleanUp(
+            InstanceProperties instanceProperties,
+            List<TableProperties> tableProperties,
+            List<String> extraECSClusters) {
+        LOGGER.info("Pausing the system");
         PauseSystem.pause(instanceProperties);
-        stopECSTasks(instanceProperties);
-        cleanUnretainedInfra(instanceProperties, tablePropertiesList);
+        stopECSTasks(instanceProperties, extraECSClusters);
+        cleanUnretainedInfra(instanceProperties, tableProperties);
     }
 
     private static void cleanUnretainedInfra(
             InstanceProperties instanceProperties, List<TableProperties> tablePropertiesList) {
         if (!instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            System.out.println("Removing all data from config, table and query results buckets");
+            LOGGER.info("Removing all data from config, table and query results buckets");
             AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
             emptyBucket(s3, instanceProperties.get(CONFIG_BUCKET));
             emptyBucket(s3, instanceProperties.get(QUERY_RESULTS_BUCKET));
@@ -71,10 +83,12 @@ public class CleanUpBeforeDestroy {
         }
     }
 
-    private static void stopECSTasks(InstanceProperties instanceProperties) {
+    private static void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
         AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
         stopTasks(ecs, instanceProperties.get(INGEST_CLUSTER));
         stopTasks(ecs, instanceProperties.get(COMPACTION_CLUSTER));
+        stopTasks(ecs, instanceProperties.get(SPLITTING_COMPACTION_CLUSTER));
+        extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
     }
 
     private static void emptyBucket(AmazonS3 s3, String bucketName) {
@@ -83,12 +97,12 @@ public class CleanUpBeforeDestroy {
     }
 
     private static void stopTasks(AmazonECS ecs, String clusterName) {
-        forEachTaskArn(ecs, clusterName, taskArn -> {
-            ecs.stopTask(new StopTaskRequest()
-                    .withCluster(clusterName)
-                    .withTask(taskArn)
-                    .withReason("Cleaning up before cdk destroy"));
-        });
+        LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
+        forEachTaskArn(ecs, clusterName, taskArn ->
+                ecs.stopTask(new StopTaskRequest()
+                        .withCluster(clusterName)
+                        .withTask(taskArn)
+                        .withReason("Cleaning up before cdk destroy")));
     }
 
     private static void forEachTaskArn(AmazonECS ecs, String clusterName, Consumer<String> consumer) {
@@ -96,6 +110,8 @@ public class CleanUpBeforeDestroy {
         do {
             ListTasksResult result = ecs.listTasks(new ListTasksRequest()
                     .withCluster(clusterName).withNextToken(nextToken));
+
+            LOGGER.info("Found {} tasks", result.getTaskArns().size());
             result.getTaskArns().forEach(consumer);
             nextToken = result.getNextToken();
         } while (nextToken != null);
