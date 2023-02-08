@@ -42,6 +42,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUE
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class CleanUpBeforeDestroy {
     private static final Logger LOGGER = LoggerFactory.getLogger(CleanUpBeforeDestroy.class);
@@ -103,11 +104,15 @@ public class CleanUpBeforeDestroy {
 
     private static void stopTasks(AmazonECS ecs, String clusterName) {
         LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
-        forEachTaskArn(ecs, clusterName, taskArn ->
-                ecs.stopTask(new StopTaskRequest()
-                        .withCluster(clusterName)
-                        .withTask(taskArn)
-                        .withReason("Cleaning up before cdk destroy")));
+        forEachTaskArn(ecs, clusterName, taskArn -> {
+            // Rate limit for ECS StopTask is 100 burst, 40 sustained:
+            // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
+            sleepForSustainedRatePerSecond(30);
+            ecs.stopTask(new StopTaskRequest()
+                    .withCluster(clusterName)
+                    .withTask(taskArn)
+                    .withReason("Cleaning up before cdk destroy"));
+        });
     }
 
     private static void forEachTaskArn(AmazonECS ecs, String clusterName, Consumer<String> consumer) {
