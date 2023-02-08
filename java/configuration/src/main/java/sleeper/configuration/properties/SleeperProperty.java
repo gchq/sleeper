@@ -37,6 +37,9 @@ public interface SleeperProperty {
         return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
 
+    /**
+     * @return True if the property can only be applied by running the CDK, and not just by saving it to S3
+     */
     boolean isAppliedByCDK();
 
 }
