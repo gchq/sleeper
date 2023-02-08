@@ -82,7 +82,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     @Override
     public boolean isAppliedByCDK() {
-        return false;
+        return true;
     }
 
     public static final class Builder {
