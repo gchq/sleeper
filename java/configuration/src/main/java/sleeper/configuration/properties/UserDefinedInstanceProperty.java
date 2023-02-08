@@ -20,7 +20,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.group.InstancePropertyGroup;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.named;
 
@@ -825,15 +827,15 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
-    static UserDefinedInstanceProperty[] values() {
-        return UserDefinedInstancePropertyImpl.all().toArray(new UserDefinedInstanceProperty[0]);
+    static List<UserDefinedInstanceProperty> allList() {
+        return UserDefinedInstancePropertyImpl.all();
     }
 
-    static UserDefinedInstanceProperty from(String propertyName) {
+    static Optional<UserDefinedInstanceProperty> from(String propertyName) {
         return UserDefinedInstancePropertyImpl.get(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return UserDefinedInstancePropertyImpl.get(propertyName) != null;
+        return UserDefinedInstancePropertyImpl.get(propertyName).isPresent();
     }
 }

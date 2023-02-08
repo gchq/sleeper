@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
@@ -53,8 +54,8 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return Collections.unmodifiableList(ALL);
     }
 
-    public static SystemDefinedInstanceProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
+    public static Optional<SystemDefinedInstanceProperty> get(String propertyName) {
+        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override

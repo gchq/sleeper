@@ -15,47 +15,21 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperty;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
 
 public class SleeperPropertyUtils {
 
     private SleeperPropertyUtils() {
     }
 
-    public static <T extends SleeperProperty> NavigableMap<Object, Object> orderedPropertyMapWithIncludes(
-            SleeperProperties<T> properties, List<T> includeIfMissing) {
-        TreeMap<Object, Object> orderedMap = new TreeMap<>();
-        Iterator<Map.Entry<Object, Object>> iterator = properties.getPropertyIterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Object, Object> entry = iterator.next();
-            orderedMap.put(entry.getKey(), entry.getValue());
-        }
-        for (T property : includeIfMissing) {
-            if (!orderedMap.containsKey(property.getPropertyName())) {
-                orderedMap.put(property.getPropertyName(), properties.get(property));
-            }
-        }
-        return orderedMap;
-    }
-
     public static UserDefinedInstanceProperty getValidInstanceProperty(String propertyName, String propertyValue) {
-        getProperty(propertyName, SystemDefinedInstanceProperty.values())
-                .ifPresent(property -> {
-                    throw new IllegalArgumentException(String.format(
-                            "Sleeper property %s is a system-defined property and cannot be updated", propertyName));
-                });
-        UserDefinedInstanceProperty property = getProperty(propertyName, UserDefinedInstanceProperty.values())
+        if (SystemDefinedInstanceProperty.has(propertyName)) {
+            throw new IllegalArgumentException(String.format(
+                    "Sleeper property %s is a system-defined property and cannot be updated", propertyName));
+        }
+        UserDefinedInstanceProperty property = UserDefinedInstanceProperty.from(propertyName)
                 .orElseThrow(() -> new IllegalArgumentException(String.format(
                         "Sleeper property %s does not exist and cannot be updated", propertyName)));
         if (!property.validationPredicate().test(propertyValue)) {
@@ -65,7 +39,7 @@ public class SleeperPropertyUtils {
     }
 
     public static TableProperty getValidTableProperty(String propertyName, String propertyValue) {
-        TableProperty property = getProperty(propertyName, TableProperty.values())
+        TableProperty property = TableProperty.from(propertyName)
                 .orElseThrow(() -> new IllegalArgumentException(String.format(
                         "Sleeper property %s does not exist and cannot be updated", propertyName)));
         if (!property.validationPredicate().test(propertyValue)) {
@@ -73,14 +47,4 @@ public class SleeperPropertyUtils {
         }
         return property;
     }
-
-    private static <T extends SleeperProperty> Optional<T> getProperty(String propertyName, T[] properties) {
-        for (T property : properties) {
-            if (property.getPropertyName().equals(propertyName)) {
-                return Optional.of(property);
-            }
-        }
-        return Optional.empty();
-    }
-
 }

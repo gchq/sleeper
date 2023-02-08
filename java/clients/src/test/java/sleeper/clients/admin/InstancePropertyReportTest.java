@@ -24,7 +24,6 @@ import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,11 +50,11 @@ class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
                 // Check all the user defined properties are present in the output
-                .contains(Stream.of(UserDefinedInstanceProperty.values())
+                .contains(UserDefinedInstanceProperty.allList().stream()
                         .map(UserDefinedInstanceProperty::getPropertyName)
                         .collect(Collectors.toList()))
                 // Check at least one system-defined property is present in the output
-                .containsAnyOf(Stream.of(SystemDefinedInstanceProperty.values())
+                .containsAnyOf(SystemDefinedInstanceProperty.allList().stream()
                         .map(SystemDefinedInstanceProperty::getPropertyName)
                         .toArray(String[]::new));
 

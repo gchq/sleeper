@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -57,8 +58,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static UserDefinedInstanceProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
+    public static Optional<UserDefinedInstanceProperty> get(String propertyName) {
+        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override

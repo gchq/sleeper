@@ -28,13 +28,13 @@ public interface InstanceProperty extends SleeperProperty {
         return sortProperties(getAllProperties());
     }
 
-    static List<InstanceProperty> sortProperties(List<InstanceProperty> properties) {
+    static <T extends InstanceProperty> List<T> sortProperties(List<T> properties) {
         properties.sort(Comparator.comparingInt(p -> InstancePropertyGroup.all().indexOf(p.getPropertyGroup())));
         return properties;
     }
 
     static List<InstanceProperty> getAllProperties() {
-        return combineLists(List.of(UserDefinedInstanceProperty.values()), List.of(SystemDefinedInstanceProperty.values()));
+        return combineLists(UserDefinedInstanceProperty.allList(), SystemDefinedInstanceProperty.allList());
     }
 
     PropertyGroup getPropertyGroup();

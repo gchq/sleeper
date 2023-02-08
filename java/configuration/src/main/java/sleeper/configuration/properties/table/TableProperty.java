@@ -21,6 +21,7 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -195,12 +196,12 @@ public interface TableProperty extends SleeperProperty {
         return TablePropertyImpl.all().toArray(new TableProperty[0]);
     }
 
-    static TableProperty from(String propertyName) {
+    static Optional<TableProperty> from(String propertyName) {
         return TablePropertyImpl.get(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return TablePropertyImpl.get(propertyName) != null;
+        return TablePropertyImpl.get(propertyName).isPresent();
     }
 
     SleeperProperty getDefaultProperty();

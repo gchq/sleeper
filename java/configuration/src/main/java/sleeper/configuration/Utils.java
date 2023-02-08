@@ -105,7 +105,7 @@ public class Utils {
         return stringAsInt >= 1 && stringAsInt <= maxValue;
     }
 
-    public static <T> List<T> combineLists(List<T> list1, List<T> list2) {
+    public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
         List<T> combinedList = new ArrayList<>(list1);
         combinedList.addAll(list2);
         return combinedList;

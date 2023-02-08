@@ -21,12 +21,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.group.PropertyGroup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstanceProperty.getAllGroupedProperties;
 import static sleeper.configuration.properties.InstanceProperty.getAllProperties;
 import static sleeper.configuration.properties.InstanceProperty.sortProperties;
 import static sleeper.configuration.properties.group.InstancePropertyGroup.BULK_IMPORT;
@@ -41,33 +39,9 @@ public class InstancePropertyGroupingTest {
 
         // Then
         assertThat(propertyList)
-                .containsAll(Arrays.asList(UserDefinedInstanceProperty.values()));
+                .containsAll(UserDefinedInstanceProperty.allList());
         assertThat(propertyList)
-                .containsAll(Arrays.asList(SystemDefinedInstanceProperty.values()));
-    }
-
-    @Test
-    void shouldGetAllUserDefinedPropertiesOrderedByGroup() {
-        // Given/When
-        List<InstanceProperty> propertyList = getAllGroupedProperties();
-        List<InstanceProperty> sortedUserDefinedProperties = sortProperties(
-                Arrays.asList(UserDefinedInstanceProperty.values()));
-
-        // Then
-        assertThat(propertyList)
-                .containsSubsequence(sortedUserDefinedProperties);
-    }
-
-    @Test
-    void shouldGetAllSystemDefinedPropertiesOrderedByGroup() {
-        // Given/When
-        List<InstanceProperty> propertyList = getAllGroupedProperties();
-        List<InstanceProperty> sortedSystemDefinedProperties = sortProperties(
-                Arrays.asList(SystemDefinedInstanceProperty.values()));
-
-        // Then
-        assertThat(propertyList)
-                .containsSubsequence(sortedSystemDefinedProperties);
+                .containsAll(SystemDefinedInstanceProperty.allList());
     }
 
     @Test

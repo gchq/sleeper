@@ -19,6 +19,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.group.InstancePropertyGroup;
 
+import java.util.List;
+import java.util.Optional;
+
 import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl.named;
 
 /**
@@ -234,15 +237,15 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
-    static SystemDefinedInstanceProperty[] values() {
-        return SystemDefinedInstancePropertyImpl.all().toArray(new SystemDefinedInstanceProperty[0]);
+    static List<SystemDefinedInstanceProperty> allList() {
+        return SystemDefinedInstancePropertyImpl.all();
     }
 
-    static SystemDefinedInstanceProperty from(String propertyName) {
+    static Optional<SystemDefinedInstanceProperty> from(String propertyName) {
         return SystemDefinedInstancePropertyImpl.get(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return SystemDefinedInstancePropertyImpl.get(propertyName) != null;
+        return SystemDefinedInstancePropertyImpl.get(propertyName).isPresent();
     }
 }
