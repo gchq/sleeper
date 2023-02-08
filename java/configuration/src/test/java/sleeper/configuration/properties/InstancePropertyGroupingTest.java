@@ -27,7 +27,7 @@ import static sleeper.configuration.properties.InstanceProperty.getAll;
 import static sleeper.configuration.properties.InstancePropertyGroup.BULK_IMPORT;
 import static sleeper.configuration.properties.InstancePropertyGroup.COMMON;
 import static sleeper.configuration.properties.InstancePropertyGroup.INGEST;
-import static sleeper.configuration.properties.InstancePropertyGroup.sortProperties;
+import static sleeper.configuration.properties.InstancePropertyGroup.sortPropertiesByGroup;
 
 class InstancePropertyGroupingTest {
     @Test
@@ -50,7 +50,7 @@ class InstancePropertyGroupingTest {
         InstanceProperty property3 = userProperty("user.property.3", COMMON, propertyList::add);
 
         // When
-        List<InstanceProperty> sortedPropertyList = sortProperties(propertyList);
+        List<InstanceProperty> sortedPropertyList = sortPropertiesByGroup(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
@@ -69,7 +69,7 @@ class InstancePropertyGroupingTest {
         InstanceProperty systemProperty3 = systemProperty("system.property.3", COMMON, propertyList::add);
 
         // When
-        List<InstanceProperty> sortedPropertyList = sortProperties(propertyList);
+        List<InstanceProperty> sortedPropertyList = sortPropertiesByGroup(propertyList);
 
         // Then
         assertThat(sortedPropertyList)
@@ -88,7 +88,7 @@ class InstancePropertyGroupingTest {
         InstanceProperty systemProperty3 = systemProperty("system.property.3", COMMON, propertyList::add);
 
         // When
-        List<InstanceProperty> sortedPropertyList = sortProperties(propertyList);
+        List<InstanceProperty> sortedPropertyList = sortPropertiesByGroup(propertyList);
 
         // Then
         assertThat(sortedPropertyList)

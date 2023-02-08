@@ -21,7 +21,7 @@ import static sleeper.configuration.Utils.combineLists;
 
 public interface InstanceProperty extends SleeperProperty {
     static List<InstanceProperty> getAllGrouped() {
-        return InstancePropertyGroup.sortProperties(getAll());
+        return InstancePropertyGroup.sortPropertiesByGroup(getAll());
     }
 
     static List<InstanceProperty> getAll() {
