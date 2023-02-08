@@ -61,7 +61,7 @@ public class InstancePropertyGroup {
             .build();
 
     private static PropertyGroup.Builder instanceGroup(String name) {
-        return group(name).addToList(ALL::add);
+        return group(name).afterBuild(ALL::add);
     }
 
     public static List<PropertyGroup> all() {

@@ -16,14 +16,10 @@
 
 package sleeper.configuration.properties;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 public class PropertyGroup {
-    private static final List<PropertyGroup> ALL = new ArrayList<>();
     private final String name;
     private final String description;
 
@@ -34,10 +30,6 @@ public class PropertyGroup {
 
     public static Builder group(String name) {
         return new Builder().name(name);
-    }
-
-    public static List<PropertyGroup> all() {
-        return Collections.unmodifiableList(ALL);
     }
 
     public String getName() {
@@ -73,7 +65,8 @@ public class PropertyGroup {
     static final class Builder {
         private String name;
         private String description;
-        private Consumer<PropertyGroup> addToList = Builder::addToAllList;
+        private Consumer<PropertyGroup> afterBuild = group -> {
+        };
 
         private Builder() {
         }
@@ -88,19 +81,15 @@ public class PropertyGroup {
             return this;
         }
 
-        public Builder addToList(Consumer<PropertyGroup> addToList) {
-            this.addToList = addToList;
+        public Builder afterBuild(Consumer<PropertyGroup> afterBuild) {
+            this.afterBuild = afterBuild;
             return this;
         }
 
         public PropertyGroup build() {
             PropertyGroup group = new PropertyGroup(this);
-            addToList.accept(group);
+            afterBuild.accept(group);
             return group;
-        }
-
-        private static void addToAllList(PropertyGroup property) {
-            ALL.add(property);
         }
     }
 }
