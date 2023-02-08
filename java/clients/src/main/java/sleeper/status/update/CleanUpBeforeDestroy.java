@@ -89,6 +89,7 @@ public class CleanUpBeforeDestroy {
         stopTasks(ecs, instanceProperties.get(COMPACTION_CLUSTER));
         stopTasks(ecs, instanceProperties.get(SPLITTING_COMPACTION_CLUSTER));
         extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
+        ecs.shutdown();
     }
 
     private static void emptyBucket(AmazonS3 s3, String bucketName) {
