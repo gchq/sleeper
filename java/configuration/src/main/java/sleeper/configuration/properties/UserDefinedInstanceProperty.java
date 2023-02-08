@@ -213,7 +213,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "the data is written to sorted files in S3.)\n" +
                     "(arraylist-based ingest only)")
             .defaultValue("1000000")
-
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     // Arrow ingest
     UserDefinedInstanceProperty ARROW_INGEST_WORKING_BUFFER_BYTES = named("sleeper.ingest.arrow.working.buffer.bytes")
@@ -270,7 +269,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "(CRT async ingest only)")
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveDouble)
-
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     // Status Store
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = named("sleeper.ingest.status.store.enabled")
