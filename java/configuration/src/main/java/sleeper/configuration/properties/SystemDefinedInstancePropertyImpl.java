@@ -81,7 +81,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     }
 
     @Override
-    public boolean isAppliedByCDK() {
+    public boolean isRunCDKDeployWhenChanged() {
         return true;
     }
 

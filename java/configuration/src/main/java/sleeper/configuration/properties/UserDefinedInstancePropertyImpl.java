@@ -35,7 +35,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final Predicate<String> validationPredicate;
     private final String description;
     private final PropertyGroup propertyGroup;
-    private final boolean appliedByCDK;
+    private final boolean runCDKDeployWhenChanged;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -43,7 +43,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
-        appliedByCDK = builder.appliedByCDK;
+        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
     }
 
     public static Builder builder() {
@@ -92,8 +92,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
-    public boolean isAppliedByCDK() {
-        return appliedByCDK;
+    public boolean isRunCDKDeployWhenChanged() {
+        return runCDKDeployWhenChanged;
     }
 
     static final class Builder {
@@ -102,7 +102,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private Predicate<String> validationPredicate = s -> true;
         private String description = "No description available";
         private PropertyGroup propertyGroup;
-        private boolean appliedByCDK;
+        private boolean runCDKDeployWhenChanged;
         private Consumer<UserDefinedInstanceProperty> addToAllList = Builder::addToAll;
 
         private Builder() {
@@ -133,8 +133,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public Builder appliedByCDK(boolean appliedByCDK) {
-            this.appliedByCDK = appliedByCDK;
+        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
+            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
             return this;
         }
 

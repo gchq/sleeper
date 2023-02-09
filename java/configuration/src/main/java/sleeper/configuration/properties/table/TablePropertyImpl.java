@@ -90,7 +90,7 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
-    public boolean isAppliedByCDK() {
+    public boolean isRunCDKDeployWhenChanged() {
         return appliedByCDK;
     }
 

@@ -45,7 +45,7 @@ public class DummyTableProperty implements TableProperty {
     }
 
     @Override
-    public boolean isAppliedByCDK() {
+    public boolean isRunCDKDeployWhenChanged() {
         return false;
     }
 
