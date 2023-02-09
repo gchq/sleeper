@@ -47,10 +47,10 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("A comma-separated list of the jars containing application specific iterator code. " +
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
                     "bucket contains two iterator jars called iterator1.jar and iterator2.jar then the " +
-                    "property should be sleeper.userjars=iterator1.jar,iterator2.jar")
+                    "property should be 'sleeper.userjars=iterator1.jar,iterator2.jar'.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TAGS = named("sleeper.tags")
-            .description("A list of tags for the project")
+            .description("A list of tags for the project.")
             .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = named("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
@@ -59,20 +59,20 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = named("sleeper.retain.infra.after.destroy")
             .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc.,  " +
-                    "when the instance is destroyed")
+                    "when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = named("sleeper.optional.stacks")
-            .description("The optional stacks to deploy")
+            .description("The optional stacks to deploy.")
             .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack")
             .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ACCOUNT = named("sleeper.account")
-            .description("The AWS account number. This is the AWS account that the instance will be deployed to")
+            .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty REGION = named("sleeper.region")
-            .description("The AWS region to deploy to")
+            .description("The AWS region to deploy to.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty VERSION = named("sleeper.version")
@@ -81,15 +81,15 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty VPC_ID = named("sleeper.vpc")
-            .description("The id of the VPC to deploy to")
+            .description("The id of the VPC to deploy to.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty VPC_ENDPOINT_CHECK = named("sleeper.vpc.endpoint.check")
-            .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint")
+            .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty SUBNET = named("sleeper.subnet")
-            .description("The subnet to deploy ECS tasks to")
+            .description("The subnet to deploy ECS tasks to.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FILE_SYSTEM = named("sleeper.filesystem")
@@ -97,29 +97,29 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("s3a://")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = named("sleeper.errors.email")
-            .description("An email address used by the TopicStack to publish SNS notifications of errors")
+            .description("An email address used by the TopicStack to publish SNS notifications of errors.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = named("sleeper.queue.visibility.timeout.seconds")
-            .description("The visibility timeout on the queues used in compactions, partition splitting, etc")
+            .description("The visibility timeout on the queues used in compactions, partition splitting, etc.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = named("sleeper.log.retention.days")
-            .description("The length of time in days that CloudWatch logs are retained")
+            .description("The length of time in days that CloudWatch logs are retained.")
             .defaultValue("30")
             .validationPredicate(Utils::isValidLogRetention)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = named("sleeper.s3.max-connections")
-            .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration")
+            .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.")
             .defaultValue("25")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FARGATE_VERSION = named("sleeper.fargate.version")
-            .description("The version of Fargate to use")
+            .description("The version of Fargate to use.")
             .defaultValue("1.4.0")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_MEMORY_IN_MB = named("sleeper.task.runner.memory")
-            .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs")
+            .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS = named("sleeper.task.runner.timeout.seconds")
@@ -129,7 +129,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty METRICS_NAMESPACE = named("sleeper.metrics.namespace")
-            .description("The namespaces for the metrics used in the metrics stack")
+            .description("The namespaces for the metrics used in the metrics stack.")
             .defaultValue("Sleeper")
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
@@ -140,7 +140,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_INGEST_TASKS = named("sleeper.ingest.max.concurrent.tasks")
-            .description("The maximum number of concurrent ECS tasks to run")
+            .description("The maximum number of concurrent ECS tasks to run.")
             .defaultValue("200")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_CREATION_PERIOD_IN_MINUTES = named("sleeper.ingest.task.creation.period.minutes")
@@ -159,20 +159,20 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("This sets the value of fs.s3a.experimental.input.fadvise on the Hadoop configuration used to read and write " +
                     "files to and from S3 in ingest jobs. Changing this value allows you to fine-tune how files are read. Possible " +
                     "values are \"normal\", \"sequential\" and \"random\". More information is available here:\n" +
-                    "https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/performance.html#fadvise")
+                    "https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/performance.html#fadvise.")
             .defaultValue("sequential")
             .validationPredicate(Utils::isValidFadvise)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_CPU = named("sleeper.ingest.task.cpu")
-            .description("The amount of CPU used by Fargate tasks that perform ingest jobs")
+            .description("The amount of CPU used by Fargate tasks that perform ingest jobs.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_MEMORY = named("sleeper.ingest.task.memory")
-            .description("The amount of memory used by Fargate tasks that perform ingest jobs")
+            .description("The amount of memory used by Fargate tasks that perform ingest jobs.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = named("sleeper.ingest.partition.refresh.period")
-            .description("The frequeney in seconds with which ingest tasks refresh their view of the partitions.\n" +
+            .description("The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
                     "(NB Refreshes only happen once a batch of data has been written so this is a lower bound " +
                     "on the refresh frequency.)")
             .defaultValue("120")
@@ -272,17 +272,17 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     // Status Store
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = named("sleeper.ingest.status.store.enabled")
-            .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks")
+            .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.ingest.job.status.ttl")
-            .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week")
+            .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.ingest.task.status.ttl")
-            .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week")
+            .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
@@ -318,7 +318,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = named("sleeper.bulk.import.emr.master.additional.security.group")
             .description("(Non-persistent or persistent EMR mode only) Specifying this security group causes the group " +
-                    "to be added to the EMR master's list of security groups")
+                    "to be added to the EMR master's list of security groups.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     //  - The following properties depend on the instance type and number of instances - they have been chosen
     //          based on the default settings for the EMR and persistent EMR clusters (these are currently the
@@ -492,7 +492,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = named("sleeper.default.bulk.import.emr.executor.instance.type")
             .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor nodes of the EMR cluster. " +
-                    "This default can be overridden by a table property or by a property in the bulk import job specification")
+                    "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = named("sleeper.default.bulk.import.emr.executor.initial.instances")
@@ -661,12 +661,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.job.status.ttl")
-            .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week")
+            .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.task.status.ttl")
-            .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week")
+            .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
@@ -681,7 +681,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "must support atomic updates for this many files. For the DynamoDBStateStore this " +
                     "is 11. It can be overridden on a per-table basis.\n" +
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                    "This is a default value and will be used if not specified in the table.properties file")
+                    "This is a default value and will be used if not specified in the table.properties file.")
             .defaultValue("11")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = named("sleeper.default.table.compaction.strategy.sizeratio.ratio")
@@ -782,11 +782,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler")
             .propertyGroup(InstancePropertyGroup.ATHENA).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = named("sleeper.athena.handler.memory")
-            .description("The amount of memory (GB) the athena composite handler has")
+            .description("The amount of memory (GB) the athena composite handler has.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.ATHENA).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS = named("sleeper.athena.handler.timeout.seconds")
-            .description("The timeout in seconds for the athena composite handler")
+            .description("The timeout in seconds for the athena composite handler.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.ATHENA).build();
@@ -806,7 +806,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = named("sleeper.default.compression.codec")
-            .description("The compression codec to use in the Parquet files")
+            .description("The compression codec to use in the Parquet files.")
             .defaultValue("ZSTD")
             .validationPredicate(Utils::isValidCompressionCodec)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();

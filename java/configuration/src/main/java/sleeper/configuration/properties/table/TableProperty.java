@@ -119,7 +119,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = named("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
-            .description("Partitions in this table with more than the following number of records in will be split")
+            .description("Partitions in this table with more than the following number of records in will be split.")
             .build();
     TableProperty STATESTORE_CLASSNAME = named("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
@@ -165,7 +165,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = named("sleeper.table.compaction.strategy.sizeratio.ratio")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
-                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n")
+                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = named("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
