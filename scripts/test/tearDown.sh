@@ -23,7 +23,6 @@ GENERATED_DIR="${SCRIPTS_DIR}/generated"
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 CONFIG_BUCKET=$(cat "${GENERATED_DIR}/configBucket.txt")
-TABLE_BUCKET=$(cat "${GENERATED_DIR}/tableBucket.txt")
 QUERY_BUCKET=$(cat "${GENERATED_DIR}/queryResultsBucket.txt")
 RETAIN_INFRA=$(grep sleeper.retain.infra.after.destroy "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | awk '{print tolower($0)}')
 
@@ -32,7 +31,6 @@ echo "SCRIPTS_DIR:${SCRIPTS_DIR}"
 echo "GENERATED_DIR:${GENERATED_DIR}"
 echo "INSTANCE_PROPERTIES:${INSTANCE_PROPERTIES}"
 echo "CONFIG_BUCKET:${CONFIG_BUCKET}"
-echo "TABLE_BUCKET:${TABLE_BUCKET}"
 echo "QUERY_BUCKET:${QUERY_BUCKET}"
 echo "DEPLOY_SCRIPTS_DIR:${DEPLOY_SCRIPTS_DIR}"
 
@@ -46,16 +44,26 @@ java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" "sleeper.status.up
 END_PAUSE_TIME=$(record_time)
 echo "Pause finished at $(recorded_time_str "$END_PAUSE_TIME"), took $(elapsed_time_str "$START_TIME" "$END_PAUSE_TIME")"
 
+# Download latest instance configuration (don't fail script if buckets don't exist)
+"${SCRIPTS_DIR}/utility/downloadConfig.sh" "${INSTANCE_ID}" || true
+
+END_DOWNLOAD_CONFIG_TIME=$(record_time)
+echo "Download instance configuration finished at $(recorded_time_str "$END_DOWNLOAD_CONFIG_TIME")," \
+  "took $(elapsed_time_str "$END_PAUSE_TIME" "$END_DOWNLOAD_CONFIG_TIME")"
+
 if [[ "${RETAIN_INFRA}" == "false" ]]; then
   echo "Removing all data from config, table and query results buckets"
   # Don't fail script if buckets don't exist
   aws s3 rm "s3://${CONFIG_BUCKET}" --recursive || true
-  aws s3 rm "s3://${TABLE_BUCKET}" --recursive || true
   aws s3 rm "s3://${QUERY_BUCKET}" --recursive || true
+  for dir in "$GENERATED_DIR"/tables/*; do
+    TABLE_BUCKET=$(cat "${dir}/tableBucket.txt")
+    aws s3 rm "s3://${TABLE_BUCKET}" --recursive || true
+  done
 fi
 
 END_CLEAR_BUCKETS_TIME=$(record_time)
-echo "Clear buckets finished at $(recorded_time_str "$END_CLEAR_BUCKETS_TIME"), took $(elapsed_time_str "$END_PAUSE_TIME" "$END_CLEAR_BUCKETS_TIME")"
+echo "Clear buckets finished at $(recorded_time_str "$END_CLEAR_BUCKETS_TIME"), took $(elapsed_time_str "$END_DOWNLOAD_CONFIG_TIME" "$END_CLEAR_BUCKETS_TIME")"
 
 echo "Running cdk destroy to remove the system"
 cdk -a "java -cp ${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
@@ -75,7 +83,9 @@ echo "Successfully torn down"
 FINISH_TIME=$(record_time)
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Pause finished at $(recorded_time_str "$END_PAUSE_TIME"), took $(elapsed_time_str "$START_TIME" "$END_PAUSE_TIME")"
-echo "Clear buckets finished at $(recorded_time_str "$END_CLEAR_BUCKETS_TIME"), took $(elapsed_time_str "$END_PAUSE_TIME" "$END_CLEAR_BUCKETS_TIME")"
+echo "Download instance configuration finished at $(recorded_time_str "$END_DOWNLOAD_CONFIG_TIME")," \
+  "took $(elapsed_time_str "$END_PAUSE_TIME" "$END_DOWNLOAD_CONFIG_TIME")"
+echo "Clear buckets finished at $(recorded_time_str "$END_CLEAR_BUCKETS_TIME"), took $(elapsed_time_str "$END_DOWNLOAD_CONFIG_TIME" "$END_CLEAR_BUCKETS_TIME")"
 echo "CDK destroy finished at $(recorded_time_str "$END_CDK_DESTROY_TIME"), took $(elapsed_time_str "$END_CLEAR_BUCKETS_TIME" "$END_CDK_DESTROY_TIME")"
 echo "Removing buckets & files finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CDK_DESTROY_TIME" "$FINISH_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

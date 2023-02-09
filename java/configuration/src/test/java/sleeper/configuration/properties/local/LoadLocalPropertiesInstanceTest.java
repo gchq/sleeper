@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.configuration.properties.local;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,11 +28,11 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.cdk.Utils.loadInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 
-class UtilsInstancePropertiesTest {
+class LoadLocalPropertiesInstanceTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir

@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class DynamoDBStateStoreTestHelper {
 
@@ -36,6 +37,7 @@ public class DynamoDBStateStoreTestHelper {
             Consumer<TableProperties> tableConfig) {
 
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, s3, tableConfig);
+        s3.createBucket(tableProperties.get(DATA_BUCKET));
         try {
             new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
         } catch (Exception e) {
