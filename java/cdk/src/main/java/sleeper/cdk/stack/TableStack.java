@@ -16,8 +16,11 @@
 package sleeper.cdk.stack;
 
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.s3.S3StateStore;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -40,12 +43,6 @@ import software.amazon.awscdk.services.s3.deployment.BucketDeployment;
 import software.amazon.awscdk.services.s3.deployment.Source;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.s3.S3StateStore;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,7 +59,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
@@ -71,7 +67,6 @@ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CL
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableStack extends NestedStack {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TableStack.class);
 
     private final List<StateStoreStack> stateStoreStacks = new ArrayList<>();
     private final List<IBucket> dataBuckets = new ArrayList<>();
@@ -150,16 +145,10 @@ public class TableStack extends NestedStack {
 
         tableProperties.set(DATA_BUCKET, databucket.getBucketName());
 
-        StateStoreStack stateStoreStack = null;
+        StateStoreStack stateStoreStack;
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
         if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {
             stateStoreStack = createDynamoDBStateStore(instanceProperties, tableProperties, sleeperTablesProvider);
-            if (tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE) > 11) {
-                LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
-                        "chosen statestore.");
-                LOGGER.warn("Setting to maximum value of 11");
-                tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 11);
-            }
         } else if (stateStoreClassName.equals(S3StateStore.class.getName())) {
             stateStoreStack = createS3StateStore(instanceProperties, tableProperties, databucket, sleeperTablesProvider);
         } else {
@@ -239,16 +228,14 @@ public class TableStack extends NestedStack {
     private StateStoreStack createDynamoDBStateStore(InstanceProperties instanceProperties,
                                                      TableProperties tableProperties,
                                                      Provider sleeperTablesProvider) {
-        StateStoreStack stateStoreStack = new DynamoDBStateStoreStack(this, sleeperTablesProvider, instanceProperties, tableProperties);
-        return stateStoreStack;
+        return new DynamoDBStateStoreStack(this, sleeperTablesProvider, instanceProperties, tableProperties);
     }
 
     private StateStoreStack createS3StateStore(InstanceProperties instanceProperties,
                                                TableProperties tableProperties,
                                                Bucket dataBucket,
                                                Provider sleeperTablesProvider) {
-        StateStoreStack stateStoreStack = new S3StateStoreStack(this, dataBucket, instanceProperties, tableProperties, sleeperTablesProvider);
-        return stateStoreStack;
+        return new S3StateStoreStack(this, dataBucket, instanceProperties, tableProperties, sleeperTablesProvider);
     }
 
     public List<StateStoreStack> getStateStoreStacks() {
