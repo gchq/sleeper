@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -116,8 +115,12 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COMPACTION_FILES_BATCH_SIZE = named("sleeper.table.compaction.files.batch.size")
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
-            .description("The minimum number of files to read in a compaction job. Note that the state store " +
-                    "must support atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
+            .description("The number of files to read in a compaction job. Note that the state store " +
+                    "must support atomic updates for this many files.\n" +
+                    "The DynamoDBStateStore must be able to atomically apply 2 updates to create the output files for a " +
+                    "splitting compaction, and 2 updates for each input file to mark them as ready for garbage " +
+                    "collection. There's a limit of 100 atomic updates, which equates to 48 files in a compaction.\n" +
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html\n" +
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = named("sleeper.table.partition.splitting.threshold")

@@ -84,6 +84,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 .forEach(prop -> {
                     throw new TablePropertyInvalidException(prop, get(prop));
                 });
+
+        // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
+        // Also see the DynamoDB documentation:
+        // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html
         if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equals(get(STATESTORE_CLASSNAME))
                 && getInt(COMPACTION_FILES_BATCH_SIZE) > 11) {
             LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
