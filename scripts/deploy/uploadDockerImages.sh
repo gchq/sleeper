@@ -26,10 +26,10 @@ DOCKER_REGISTRY=$2
 VERSION=$3
 IFS="," read -r -a STACKS <<< "$4"
 BASE_DOCKERFILE_DIR=$5
-REGION=$(echo ${DOCKER_REGISTRY} | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
+REGION=$(echo "${DOCKER_REGISTRY}" | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
 DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
-FUNCTIONS_DIR=$(cd $(dirname $0) && cd "../functions" && pwd)
+FUNCTIONS_DIR=$(cd "$(dirname "$0")" && cd "../functions" && pwd)
 source "${FUNCTIONS_DIR}/arrayUtils.sh"
 union_arrays_to_variable STACKS DOCKER_STACKS_ALL DOCKER_STACKS
 
@@ -53,7 +53,7 @@ Stacks_EksBulkImportStack="bulk-import-runner"
 
 echo "Beginning docker build and push of images for the following stacks: ${DOCKER_STACKS}"
 
-aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}
+aws ecr get-login-password --region "${REGION}" | docker login --username AWS --password-stdin "${DOCKER_REGISTRY}"
 
 BUILDX_STACKS=("CompactionStack")
 
@@ -64,37 +64,38 @@ fi
 
 for stack in "${DOCKER_STACKS[@]}"; do
 
-    Key=Stacks_${stack}
-    DIR=${!Key}
+  Key=Stacks_${stack}
+  DIR=${!Key}
 
-    if [[ -n "${DIR}" ]]; then
-      echo "Building Stack: $stack"
-      REPO=${DIR}
+  if [[ -n "${DIR}" ]]; then
+    echo "Building Stack: $stack"
+    REPO=${DIR}
 
-      # Check the return code
-      # Do not fail the script, this creates the repository if needed
-      set +e
-      aws ecr describe-repositories --repository-names ${INSTANCE_ID}/${REPO} --no-cli-pager >/dev/null 2>&1
-      STATUS=$?
-      set -e
+    # Check the return code
+    # Do not fail the script, this creates the repository if needed
+    set +e
+    aws ecr describe-repositories --repository-names "${INSTANCE_ID}/${REPO}" --no-cli-pager >/dev/null 2>&1
+    STATUS=$?
+    set -e
 
-      # Create the docker repository if required
-      if [ $STATUS -ne 0 ]; then
-        echo "Creating repository ${INSTANCE_ID}/${REPO}"
-        aws ecr create-repository --repository-name ${INSTANCE_ID}/${REPO} \
-	      --image-scanning-configuration scanOnPush=true --no-cli-pager
-      fi
+    # Create the docker repository if required
+    if [ $STATUS -ne 0 ]; then
+      echo "Creating repository ${INSTANCE_ID}/${REPO}"
+      aws ecr create-repository --repository-name "${INSTANCE_ID}/${REPO}" \
+        --image-scanning-configuration scanOnPush=true --no-cli-pager
+    fi
 
-      pushd ${BASE_DOCKERFILE_DIR}/${DIR}
+    pushd "${BASE_DOCKERFILE_DIR}/${DIR}"
 
-      echo "Building and Pushing Docker image ${REPO} to repository ${INSTANCE_ID}/${REPO}"
+    echo "Building and Pushing Docker image ${REPO} to repository ${INSTANCE_ID}/${REPO}"
+    TAG="${REPO_PREFIX}/${REPO}:${VERSION}"
 
-      if is_in_array ${stack} BUILDX_STACKS; then
-        docker buildx build --platform linux/amd64,linux/arm64 -t ${REPO_PREFIX}/${REPO}:${VERSION} --push ./
-      else
-        docker build -t ${REPO_PREFIX}/${REPO}:${VERSION} ./
-        docker push ${REPO_PREFIX}/${REPO}:${VERSION}
-      fi
-      popd
-	fi
+    if is_in_array "${stack}" BUILDX_STACKS; then
+      docker buildx build --platform linux/amd64,linux/arm64 -t "${TAG}" --push ./
+    else
+      docker build -t "${TAG}" ./
+      docker push "${TAG}"
+    fi
+    popd
+  fi
 done

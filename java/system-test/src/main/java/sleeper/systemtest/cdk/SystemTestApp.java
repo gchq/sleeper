@@ -27,8 +27,6 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
@@ -81,7 +79,7 @@ public class SystemTestApp extends SleeperCdkApp {
         throw new RuntimeException("Error when retrieving instance properties");
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         App app = new App();
 
         SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(new SystemTestProperties(), app);

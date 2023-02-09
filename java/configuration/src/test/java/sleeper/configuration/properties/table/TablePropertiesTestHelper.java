@@ -35,11 +35,16 @@ public class TablePropertiesTestHelper {
     }
 
     public static TableProperties createTestTableProperties(
+            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3) {
+        return createTestTableProperties(instanceProperties, schema, s3, properties -> {
+        });
+    }
+
+    public static TableProperties createTestTableProperties(
             InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, Consumer<TableProperties> tableConfig) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableConfig.accept(tableProperties);
         try {
-            s3.createBucket(tableProperties.get(DATA_BUCKET));
             tableProperties.saveToS3(s3);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save table properties", e);
@@ -54,7 +59,10 @@ public class TablePropertiesTestHelper {
     }
 
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
-        String tableName = UUID.randomUUID().toString();
+        return createTestTablePropertiesWithNoSchema(instanceProperties, UUID.randomUUID().toString());
+    }
+
+    public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties, String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(DATA_BUCKET, tableName + "-data");

@@ -28,25 +28,19 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
@@ -62,6 +56,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK
  * Collection of utility methods related to the CDK deployment
  */
 public class Utils {
+
+    /**
+     * Region environment variable for setting in EC2 based ECS containers.
+     */
+    public static final String AWS_REGION = "AWS_REGION";
+
+    private static final Pattern NUM_MATCH = Pattern.compile("^(\\d+)(\\D*)$");
 
     private Utils() {
         // Prevents instantiation
@@ -153,7 +154,7 @@ public class Utils {
         }
     }
 
-    public static LogDriver createFargateContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
         AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
                 .streamPrefix(instanceProperties.get(ID) + "-" + id)
                 .logGroup(LogGroup.Builder.create(scope, id)
@@ -164,9 +165,9 @@ public class Utils {
         return LogDriver.awsLogs(logDriverProps);
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) throws IOException {
+    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) {
         Path propertiesFile = getInstancePropertiesPath(scope);
-        loadInstanceProperties(properties, propertiesFile);
+        LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
 
         String validate = (String) scope.getNode().tryGetContext("validate");
         String newinstance = (String) scope.getNode().tryGetContext("newinstance");
@@ -180,82 +181,14 @@ public class Utils {
         return properties;
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) throws IOException {
-        properties.load(file);
-        Path tagsFile = directoryOf(file).resolve("tags.properties");
-        if (Files.exists(tagsFile)) {
-            try (Reader reader = Files.newBufferedReader(tagsFile)) {
-                properties.loadTags(reader);
-            }
-        }
-        return properties;
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Construct scope) {
+        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
+                instanceProperties, getInstancePropertiesPath(scope));
     }
 
     private static Path getInstancePropertiesPath(Construct scope) {
         return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Construct scope) {
-        return getAllTableProperties(instanceProperties, getInstancePropertiesPath(scope));
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        Path baseDir = directoryOf(instancePropertiesFile);
-        return streamBaseAndTableFolders(baseDir)
-                .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
-                .filter(Objects::nonNull);
-    }
-
-    private static TableProperties readTablePropertiesFolderOrNull(
-            InstanceProperties instanceProperties, Path folder) {
-        Path propertiesPath = folder.resolve("table.properties");
-        Path schemaPath = folder.resolve("schema.json");
-        if (!Files.exists(propertiesPath)) {
-            return null;
-        }
-        try {
-            Properties properties = loadProperties(propertiesPath);
-            if (Files.exists(schemaPath)) {
-                Schema schema = Schema.load(schemaPath);
-                return new TableProperties(instanceProperties, schema, properties);
-            }
-            return new TableProperties(instanceProperties, properties);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Path directoryOf(Path filePath) {
-        Path parent = filePath.getParent();
-        if (parent == null) {
-            return Paths.get(".");
-        } else {
-            return parent;
-        }
-    }
-
-    private static Stream<Path> streamBaseAndTableFolders(Path baseDir) {
-        return Stream.concat(
-                Stream.of(baseDir),
-                streamTableFolders(baseDir));
-    }
-
-    private static Stream<Path> streamTableFolders(Path baseDir) {
-        Path tablesFolder = baseDir.resolve("tables");
-        if (!Files.isDirectory(tablesFolder)) {
-            return Stream.empty();
-        }
-        List<Path> tables;
-        try (Stream<Path> pathStream = Files.list(tablesFolder)) {
-            tables = pathStream
-                    .filter(Files::isDirectory)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to list table configuration directories", e);
-        }
-        return tables.stream().sorted();
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
@@ -268,6 +201,26 @@ public class Utils {
             return RemovalPolicy.RETAIN;
         } else {
             return RemovalPolicy.DESTROY;
+        }
+    }
+
+    /**
+     * Normalises EC2 instance size strings so they can be looked up in the {@link InstanceSize}
+     * enum. Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     *
+     * @param size the human readable size
+     * @return the internal enum name
+     */
+    public static String normaliseSize(String size) {
+        if (size == null) {
+            return null;
+        }
+        Matcher sizeMatch = NUM_MATCH.matcher(size);
+        if (sizeMatch.matches()) {
+            // Match occurred so switch the capture groups
+            return sizeMatch.group(2) + sizeMatch.group(1);
+        } else {
+            return size;
         }
     }
 }

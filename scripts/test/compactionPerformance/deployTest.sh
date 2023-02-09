@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -ne 3 ]; then
-	echo "Usage: $0 <uniqueId> <vpc> <subnet>"
-	exit 1
+  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+  exit 1
 fi
 
 INSTANCE_ID=$1

@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -ne 4 ]; then
-	echo "Usage: $0 <properties_template> <uniqueId> <vpc> <subnet>"
-	exit 1
+  echo "Usage: $0 <properties_template> <uniqueId> <vpc> <subnet>"
+  exit 1
 fi
 
 PROPERTIES_TEMPLATE=$1

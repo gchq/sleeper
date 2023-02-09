@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.Reader;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -75,13 +75,26 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         set(TAGS, tagsToString(tags));
     }
 
-    public void loadTags(Reader reader) throws IOException {
-        Properties tagsProperties = new Properties();
-        tagsProperties.load(reader);
+    public void loadTags(Properties tagsProperties) {
         tags.clear();
         tagsProperties.stringPropertyNames().forEach(tagName ->
                 tags.put(tagName, tagsProperties.getProperty(tagName)));
-        set(TAGS, tagsToString(tags));
+        if (!tags.isEmpty()) {
+            set(TAGS, tagsToString(tags));
+        }
+    }
+
+    public Properties getTagsProperties() {
+        Properties tagsProperties = new Properties();
+        tags.forEach(tagsProperties::setProperty);
+        return tagsProperties;
+    }
+
+    public String getTagsPropertiesAsString() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        Properties tagsProperties = getTagsProperties();
+        tagsProperties.store(stringWriter, "");
+        return stringWriter.toString();
     }
 
     public static String getConfigBucketFromInstanceId(String instanceId) {

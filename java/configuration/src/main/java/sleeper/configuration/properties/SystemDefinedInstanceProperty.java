@@ -18,7 +18,6 @@ package sleeper.configuration.properties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
-import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl.named;
 
@@ -80,8 +79,12 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the cluster used for splitting compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_TASK_DEFINITION_FAMILY = named("sleeper.compaction.task.definition")
-            .description("The name of the family of task definitions used for compactions.")
+    SystemDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = named("sleeper.compaction.ec2.task.definition")
+            .description("The name of the family of EC2 task definitions used for compactions.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = named("sleeper.compaction.fargate.task.definition")
+            .description("The name of the family of Fargate task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = named("sleeper.compaction.job.creation.lambda.function")
@@ -108,8 +111,16 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the CloudWatch rule that periodically triggers the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY = named("sleeper.compaction.splitting.task.definition")
-            .description("The name of the family of task definitions used for splitting compactions.")
+    SystemDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = named("sleeper.compaction.scaling.group")
+            .description("The name of the compaction EC2 auto scaling group.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = named("sleeper.compaction.splitting.ec2.task.definition")
+            .description("The name of the family of EC2 task definitions used for splitting compactions.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = named("sleeper.compaction.splitting.fargate.task.definition")
+            .description("The name of the family of Fargate task definitions used for splitting compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 
@@ -127,6 +138,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = named("sleeper.compaction.splitting.task.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the splitting compaction task creation lambda.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = named("sleeper.compaction.splitting.scaling.group")
+            .description("The name of the splitting compaction EC2 auto scaling group.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 
@@ -237,10 +252,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
 
     static List<SystemDefinedInstanceProperty> getAll() {
         return SystemDefinedInstancePropertyImpl.getAll();
-    }
-
-    static Optional<SystemDefinedInstanceProperty> getByName(String propertyName) {
-        return SystemDefinedInstancePropertyImpl.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {

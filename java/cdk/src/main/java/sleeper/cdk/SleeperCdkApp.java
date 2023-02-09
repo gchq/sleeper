@@ -39,7 +39,6 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 
-import java.io.IOException;
 import java.util.List;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -208,7 +207,7 @@ public class SleeperCdkApp extends Stack {
         new PropertiesStack(this, "Properties", instanceProperties);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         App app = new App();
 
         InstanceProperties instanceProperties = Utils.loadInstanceProperties(new InstanceProperties(), app);
