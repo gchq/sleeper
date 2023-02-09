@@ -37,11 +37,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty JARS_BUCKET = named("sleeper.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty USER_JARS = named("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
@@ -50,22 +51,26 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty TAGS = named("sleeper.tags")
             .description("A list of tags for the project.")
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = named("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")
             .defaultValue("DeploymentStack")
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = named("sleeper.retain.infra.after.destroy")
             .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc.,  " +
                     "when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = named("sleeper.optional.stacks")
             .description("The optional stacks to deploy.")
             .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack")
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ACCOUNT = named("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)
@@ -97,17 +102,20 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = named("sleeper.errors.email")
             .description("An email address used by the TopicStack to publish SNS notifications of errors.")
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = named("sleeper.queue.visibility.timeout.seconds")
             .description("The visibility timeout on the queues used in compactions, partition splitting, etc.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = named("sleeper.log.retention.days")
             .description("The length of time in days that CloudWatch logs are retained.")
             .defaultValue("30")
             .validationPredicate(Utils::isValidLogRetention)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = named("sleeper.s3.max-connections")
             .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.")
             .defaultValue("25")
@@ -120,24 +128,28 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_MEMORY_IN_MB = named("sleeper.task.runner.memory")
             .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
             .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS = named("sleeper.task.runner.timeout.seconds")
             .description("The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest jobs.\n" +
                     "This must be >0 and <= 900.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty METRICS_NAMESPACE = named("sleeper.metrics.namespace")
             .description("The namespaces for the metrics used in the metrics stack.")
             .defaultValue("Sleeper")
             .validationPredicate(Utils::isNonNullNonEmptyString)
-            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
 
     // Ingest
     UserDefinedInstanceProperty ECR_INGEST_REPO = named("sleeper.ingest.repo")
             .description("The name of the ECR repository for the ingest container. The Docker image from the ingest module should have been " +
                     "uploaded to an ECR repository of this name in this account.")
-            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_INGEST_TASKS = named("sleeper.ingest.max.concurrent.tasks")
             .description("The maximum number of concurrent ECS tasks to run.")
             .defaultValue("200")
@@ -147,7 +159,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "tasks to perform ingest jobs.")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = named("sleeper.ingest.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the ingest queue so that they are not processed by other processes.\n" +
@@ -165,11 +178,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty INGEST_TASK_CPU = named("sleeper.ingest.task.cpu")
             .description("The amount of CPU used by Fargate tasks that perform ingest jobs.")
             .defaultValue("2048")
-            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_TASK_MEMORY = named("sleeper.ingest.task.memory")
             .description("The amount of memory used by Fargate tasks that perform ingest jobs.")
             .defaultValue("4096")
-            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = named("sleeper.ingest.partition.refresh.period")
             .description("The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
                     "(NB Refreshes only happen once a batch of data has been written so this is a lower bound " +
@@ -180,7 +195,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The name of a bucket that contains files to be ingested via ingest jobs. This bucket should already " +
                     "exist, i.e. it will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
                     "and bulk import stacks will be given read access to this bucket so that they can consume data from it.")
-            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = named("sleeper.ingest.record.batch.type")
             .description("The way in which records are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +
