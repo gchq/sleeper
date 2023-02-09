@@ -36,33 +36,15 @@ echo "INSTANCE_ID: ${INSTANCE_ID}"
 echo "CONFIG_BUCKET: ${CONFIG_BUCKET}"
 echo "QUERY_BUCKET: ${QUERY_BUCKET}"
 
-echo "Pausing the system"
-java -cp "${SCRIPTS_DIR}/jars/clients-*-utility.jar" "sleeper.status.update.PauseSystem" "${INSTANCE_ID}"
-
 # Download latest instance configuration (don't fail script if buckets don't exist)
 "${SCRIPTS_DIR}/utility/downloadConfig.sh" "${INSTANCE_ID}" || true
 
-RETAIN_INFRA=$(grep sleeper.retain.infra.after.destroy "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | awk '{print tolower($0)}')
-if [[ "${RETAIN_INFRA}" == "false" ]]; then
-  echo "Removing all data from config, table and query results buckets"
-  # Don't fail script if buckets don't exist
-  echo "Removing: ${CONFIG_BUCKET}"
-  aws s3 rm "s3://${CONFIG_BUCKET}" --recursive || true
-  
-  echo "Removing: ${QUERY_BUCKET}"
-  aws s3 rm "s3://${QUERY_BUCKET}" --recursive || true
-  
-  for dir in "$GENERATED_DIR"/tables/*; do
-    TABLE_BUCKET=$(cat "${dir}/tableBucket.txt")
-    echo "Removing: ${TABLE_BUCKET}"
-    aws s3 rm "s3://${TABLE_BUCKET}" --recursive || true
-  done
-fi
+VERSION=$(grep sleeper.version "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 
-SLEEPER_VERSION=$(grep sleeper.version "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.status.update.CleanUpBeforeDestroy "$GENERATED_DIR"
 
 echo "Running cdk destroy to remove the system"
-cdk -a "java -cp ${SCRIPTS_DIR}/jars/cdk-${SLEEPER_VERSION}.jar sleeper.cdk.SleeperCdkApp" \
+cdk -a "java -cp ${SCRIPTS_DIR}/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
 destroy -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
 
 echo "Removing the Jars bucket and docker containers"
