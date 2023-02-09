@@ -20,6 +20,8 @@ import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.table.CompressionCodec;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,6 +41,10 @@ public class Utils {
 
     public static boolean isPositiveInteger(String integer) {
         return Integer.parseInt(integer) > 0;
+    }
+
+    public static boolean isNonNegativeInteger(String integer) {
+        return Integer.parseInt(integer) >= 0;
     }
 
     public static boolean isPositiveLong(String value) {
@@ -101,5 +107,11 @@ public class Utils {
         }
         int stringAsInt = Integer.parseInt(string);
         return stringAsInt >= 1 && stringAsInt <= maxValue;
+    }
+
+    public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
+        List<T> combinedList = new ArrayList<>(list1);
+        combinedList.addAll(list2);
+        return combinedList;
     }
 }

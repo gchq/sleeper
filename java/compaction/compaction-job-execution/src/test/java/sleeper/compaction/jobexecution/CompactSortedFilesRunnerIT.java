@@ -80,35 +80,34 @@ public class CompactSortedFilesRunnerIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB
-    );
+                    LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+                        .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
+                        .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                        .build();
     }
 
     private AmazonSQS createSQSClient() {
         return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+                        .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
+                        .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                        .build();
     }
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
+                        .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                        .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
+                        .build();
     }
 
     private Schema createSchema() {
         return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
+                        .rowKeyFields(new Field("key", new LongType()))
+                        .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                        .build();
     }
 
     private InstanceProperties createProperties(AmazonS3 s3) {
@@ -146,13 +145,13 @@ public class CompactSortedFilesRunnerIT {
     @Test
     public void shouldDeleteMessages() throws IOException, StateStoreException, ObjectFactoryException, InterruptedException, ActionException {
         // Given
-        //  - Clients
+        // - Clients
         AmazonS3 s3 = createS3Client();
         AmazonDynamoDB dynamoDB = createDynamoClient();
         AmazonSQS sqsClient = createSQSClient();
-        //  - Schema
+        // - Schema
         Schema schema = createSchema();
-        //  - Create table and state store
+        // - Create table and state store
         String tableName = UUID.randomUUID().toString();
         InstanceProperties instanceProperties = createProperties(s3);
         TableProperties tableProperties = createTable(s3, dynamoDB, instanceProperties, tableName, schema);
@@ -164,48 +163,48 @@ public class CompactSortedFilesRunnerIT {
         CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
-        //  - Create four files of sorted data
+        // - Create four files of sorted data
         String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
         String file4 = folderName + "/file4.parquet";
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
-                .build();
+                        .rowKeyTypes(new LongType())
+                        .filename(file1)
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .partitionId("1")
+                        .numberOfRecords(100L)
+                        .minRowKey(Key.create(0L))
+                        .maxRowKey(Key.create(198L))
+                        .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
-                .build();
+                        .rowKeyTypes(new LongType())
+                        .filename(file2)
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .partitionId("1")
+                        .numberOfRecords(100L)
+                        .minRowKey(Key.create(1L))
+                        .maxRowKey(Key.create(199L))
+                        .build();
         FileInfo fileInfo3 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file3)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
-                .build();
+                        .rowKeyTypes(new LongType())
+                        .filename(file3)
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .partitionId("1")
+                        .numberOfRecords(100L)
+                        .minRowKey(Key.create(0L))
+                        .maxRowKey(Key.create(198L))
+                        .build();
         FileInfo fileInfo4 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file4)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
-                .build();
+                        .rowKeyTypes(new LongType())
+                        .filename(file4)
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .partitionId("1")
+                        .numberOfRecords(100L)
+                        .minRowKey(Key.create(1L))
+                        .maxRowKey(Key.create(199L))
+                        .build();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -242,56 +241,56 @@ public class CompactSortedFilesRunnerIT {
             writer4.write(record);
         }
         writer4.close();
-        //  - Update Dynamo state store with details of files
+        // - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
-        //  - Create two compaction jobs and put on queue
+        // - Create two compaction jobs and put on queue
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName(tableName)
-                .jobId("job1")
-                .partitionId("root")
-                .dimension(0)
-                .inputFiles(Arrays.asList(file1, file2))
-                .isSplittingJob(false)
-                .outputFile(folderName + "/output1.parquet").build();
+                        .tableName(tableName)
+                        .jobId("job1")
+                        .partitionId("root")
+                        .dimension(0)
+                        .inputFiles(Arrays.asList(file1, file2))
+                        .isSplittingJob(false)
+                        .outputFile(folderName + "/output1.parquet").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName(tableName)
-                .jobId("job2")
-                .partitionId("root")
-                .dimension(0)
-                .inputFiles(Arrays.asList(file3, file4))
-                .isSplittingJob(false)
-                .outputFile(folderName + "/output2.parquet").build();
+                        .tableName(tableName)
+                        .jobId("job2")
+                        .partitionId("root")
+                        .dimension(0)
+                        .inputFiles(Arrays.asList(file3, file4))
+                        .isSplittingJob(false)
+                        .outputFile(folderName + "/output2.parquet").build();
         CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         String job1Json = jobSerDe.serialiseToString(compactionJob1);
         String job2Json = jobSerDe.serialiseToString(compactionJob2);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMessageBody(job1Json);
+                        .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                        .withMessageBody(job1Json);
         sqsClient.sendMessage(sendMessageRequest);
         sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMessageBody(job2Json);
+                        .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                        .withMessageBody(job2Json);
         sqsClient.sendMessage(sendMessageRequest);
 
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
-                instanceProperties, ObjectFactory.noUserJars(),
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatusStore,
-                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient, CompactionTaskType.COMPACTION,
-                1, 5);
+                        instanceProperties, ObjectFactory.noUserJars(),
+                        tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatusStore,
+                        "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient, null, CompactionTaskType.COMPACTION,
+                        1, 5);
         runner.run();
 
         // Then
-        //  - There should be no messages left on the queue
+        // - There should be no messages left on the queue
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withWaitTimeSeconds(2);
+                        .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                        .withWaitTimeSeconds(2);
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles();
         assertThat(activeFiles)
-                .extracting(FileInfo::getFilename)
-                .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
+                        .extracting(FileInfo::getFilename)
+                        .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
     }
 }

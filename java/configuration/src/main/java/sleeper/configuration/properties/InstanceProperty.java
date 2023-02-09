@@ -15,5 +15,18 @@
  */
 package sleeper.configuration.properties;
 
+import java.util.List;
+
+import static sleeper.configuration.Utils.combineLists;
+
 public interface InstanceProperty extends SleeperProperty {
+    static List<InstanceProperty> getAllGrouped() {
+        return InstancePropertyGroup.sortPropertiesByGroup(getAll());
+    }
+
+    static List<InstanceProperty> getAll() {
+        return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
+    }
+
+    PropertyGroup getPropertyGroup();
 }

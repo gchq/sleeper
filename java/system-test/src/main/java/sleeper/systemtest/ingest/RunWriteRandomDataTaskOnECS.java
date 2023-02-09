@@ -50,6 +50,7 @@ import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 import static sleeper.systemtest.cdk.SystemTestStack.SYSTEM_TEST_CONTAINER;
+import static sleeper.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 /**
  * Runs ECS tasks to write random data.
@@ -67,7 +68,7 @@ public class RunWriteRandomDataTaskOnECS {
         this.ecsClient = ecsClient;
     }
 
-    public List<RunTaskResult> run() throws InterruptedException {
+    public List<RunTaskResult> run() {
 
         List<String> args = Arrays.asList(
                 systemTestProperties.get(CONFIG_BUCKET),
@@ -97,10 +98,10 @@ public class RunWriteRandomDataTaskOnECS {
 
         List<RunTaskResult> results = new ArrayList<>();
         for (int i = 0; i < systemTestProperties.getInt(NUMBER_OF_WRITERS); i++) {
-            if (i > 0 && i % 10 == 0) {
-                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in a second
-                Thread.sleep(10 * 1000L);
-                LOGGER.debug("10 tasks submitted, sleeping for 10 seconds");
+            // Rate limit for Fargate tasks is 100 burst, 20 sustained:
+            // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
+            if (i > 0) {
+                sleepForSustainedRatePerSecond(10);
             }
             RunTaskResult result = ecsClient.runTask(runTaskRequest);
             List<Failure> failures = result.getFailures();
@@ -113,7 +114,7 @@ public class RunWriteRandomDataTaskOnECS {
         return results;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance id> <table name> <optional_output_file>");
             return;

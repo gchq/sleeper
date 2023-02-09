@@ -19,13 +19,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
-import sleeper.util.ClientUtils;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.NavigableMap;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.util.ClientUtils.formatPropertyDescription;
 
 public class TablePropertyReport {
 
@@ -44,22 +40,12 @@ public class TablePropertyReport {
     }
 
     private void print(TableProperties tableProperties) {
-
-        NavigableMap<Object, Object> orderedProperties = SleeperPropertyUtils.orderedPropertyMapWithIncludes(
-                tableProperties, Arrays.asList(TableProperty.values()));
         out.println("\n\n Table Property Report \n -------------------------");
-        for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
+        for (TableProperty property : TableProperty.getAll()) {
             out.println();
-            out.println(formatDescription(entry.getKey().toString()));
-            out.println(entry.getKey() + ": " + entry.getValue());
+            out.println(formatPropertyDescription(property.getDescription()));
+            out.println(property.getPropertyName() + ": " + tableProperties.get(property));
         }
         confirmReturnToMainScreen(out, in);
-    }
-
-    private String formatDescription(String propertyName) {
-        if (TableProperty.has(propertyName)) {
-            return ClientUtils.formatDescription(TableProperty.from(propertyName));
-        }
-        return "# No description available";
     }
 }

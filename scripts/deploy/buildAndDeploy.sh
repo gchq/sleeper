@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -ne 4 ]; then
-	echo "Usage: $0 <uniqueId> <vpc> <subnet> <table-name>"
-	exit 1
+  echo "Usage: $0 <uniqueId> <vpc> <subnet> <table-name>"
+  exit 1
 fi
 
 INSTANCE_ID=$1

@@ -18,11 +18,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
 
 A_B=("A" "B")
 A_B_C=("A" "B" "C")
+A_C=("A" "C")
 C_D=("C" "D")
 EMPTY=()
 
 array_equals A_B C_D && fail_test "A_B should not equal C_D"
 array_equals A_B A_B_C && fail_test "A_B should not equal A_B_C"
+array_equals A_B A_C && fail_test "A_B should not equal A_C"
 array_equals A_B A_B || fail_test "A_B should equal A_B"
 array_equals EMPTY EMPTY || fail_test "EMPTY should equal EMPTY"
 array_equals A_B EMPTY && fail_test "A_B should not equal EMPTY"
