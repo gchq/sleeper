@@ -1,4 +1,4 @@
-#!/bin/bash
+
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+list_table_names() {
+  local NAMES=()
+  local PROPERTIES_DIR=$1
+  for dir in "$PROPERTIES_DIR"/tables/*
+  do
+    local TABLE_PROPERTIES="$dir/table.properties"
+    NAMES+=("$(get_table_name_from_file "$TABLE_PROPERTIES")")
+  done
+  echo "${NAMES[*]}"
+}
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-TEMPLATE_DIR=${SCRIPTS_DIR}/templates
-GENERATED_DIR=${SCRIPTS_DIR}/generated
-INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
-INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
-VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
-TABLE_NAME="system-test"
-
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.status.report.StatusReport "${INSTANCE_ID}" "${TABLE_NAME}"
+get_table_name_from_file(){
+  grep "sleeper.table.name" "$1" | cut -d'=' -f2
+}

@@ -43,7 +43,10 @@ union_arrays_to_variable() {
 
 array_equals() {
   # Use eval to get lengths of named arrays
-  if [[ $(eval "echo \${#$1[@]}") -ne $(eval "echo \${#$2[@]}") ]]; then
+  local LENGTH_1 LENGTH_2
+  LENGTH_1=$(eval "echo \${#$1[@]}")
+  LENGTH_2=$(eval "echo \${#$2[@]}")
+  if [[ $LENGTH_1 -ne $LENGTH_2 ]]; then
     return 1
   fi
   for ((i=0;i<=LENGTH_1;i++)); do

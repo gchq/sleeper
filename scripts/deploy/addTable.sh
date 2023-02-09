@@ -15,51 +15,58 @@
 
 set -e
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet> <table-name>"
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <uniqueId> <table-name>"
   exit 1
 fi
 
 INSTANCE_ID=$1
-VPC=$2
-SUBNET=$3
-TABLE_NAME=$4
+TABLE_NAME=$2
+
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+# Download latest instance configuration
+"${SCRIPTS_DIR}/utility/downloadConfig.sh" "${INSTANCE_ID}"
+
+TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+GENERATED_DIR=${SCRIPTS_DIR}/generated
+JAR_DIR=${SCRIPTS_DIR}/jars
+INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
+TABLE_DIR=${GENERATED_DIR}/tables/${TABLE_NAME}
+TABLE_PROPERTIES=${TABLE_DIR}/table.properties
+SCHEMA=${TABLE_DIR}/schema.json
 
 echo "-------------------------------------------------------------------------------"
 echo "Running Deployment"
 echo "-------------------------------------------------------------------------------"
 echo "INSTANCE_ID: ${INSTANCE_ID}"
-echo "VPC: ${VPC}"
-echo "SUBNET:${SUBNET}"
 echo "TABLE_NAME: ${TABLE_NAME}"
-
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-
-TEMPLATE_DIR=${SCRIPTS_DIR}/templates
-GENERATED_DIR=${SCRIPTS_DIR}/generated
-INSTANCE_PROPERTIES_PATH=${GENERATED_DIR}/instance.properties
-JAR_DIR=${SCRIPTS_DIR}/jars
-
-
 echo "TEMPLATE_DIR: ${TEMPLATE_DIR}"
 echo "GENERATED_DIR:${GENERATED_DIR}"
-echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES_PATH}"
+echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
+echo "TABLE_PROPERTIES: ${TABLE_PROPERTIES}"
+echo "SCHEMA: ${SCHEMA}"
 echo "SCRIPTS_DIR: ${SCRIPTS_DIR}"
 echo "JAR_DIR: ${JAR_DIR}"
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 echo "VERSION: ${VERSION}"
 
-mkdir -p "${GENERATED_DIR}"
+echo "Generating properties"
 
-echo "Copying instance properties template into generated files for use in pre-deployment steps"
-cp "${TEMPLATE_DIR}/instanceproperties.template" "${INSTANCE_PROPERTIES_PATH}"
+mkdir -p "${TABLE_DIR}"
 
-echo "Running Pre-deployment steps"
-"${SCRIPTS_DIR}/deploy/pre-deployment.sh" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}" "${TEMPLATE_DIR}" "${GENERATED_DIR}"
+# Schema
+cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
+
+# Table Properties
+sed \
+  -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
+  "${TEMPLATE_DIR}/tableproperties.template" \
+  > "${TABLE_PROPERTIES}"
 
 echo "-------------------------------------------------------"
 echo "Deploying Stacks"
 echo "-------------------------------------------------------"
 cdk -a "java -cp ${JAR_DIR}/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy \
---require-approval never -c propertiesfile="${INSTANCE_PROPERTIES_PATH}" -c newinstance=true "*"
+--require-approval never -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"

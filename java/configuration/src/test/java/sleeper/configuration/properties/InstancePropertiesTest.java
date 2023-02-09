@@ -20,7 +20,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +28,6 @@ import java.util.Properties;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.propertiesString;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -210,18 +208,29 @@ class InstancePropertiesTest {
     }
 
     @Test
-    void shouldLoadTagsFromFile() throws IOException {
+    void shouldLoadTagsFromProperties() {
         // Given
         Properties tags = new Properties();
         tags.setProperty("tag-1", "value-1");
         tags.setProperty("tag-2", "value-2");
 
         InstanceProperties properties = new InstanceProperties();
-        properties.loadTags(new StringReader(propertiesString(tags)));
+        properties.loadTags(tags);
 
         assertThat(properties.getTags()).isEqualTo(Map.of(
                 "tag-1", "value-1",
                 "tag-2", "value-2"));
+    }
+
+    @Test
+    void shouldLoadNoTagsFromProperties() {
+        // Given
+        Properties tags = new Properties();
+
+        InstanceProperties properties = new InstanceProperties();
+        properties.loadTags(tags);
+
+        assertThat(properties.getTags()).isEmpty();
     }
 
     private static InstanceProperties getSleeperProperties() {

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,20 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source "$(dirname "${BASH_SOURCE[0]}")/../arrayUtils.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
+set -e
 
-A_B=("A" "B")
-A_B_C=("A" "B" "C")
-A_C=("A" "C")
-C_D=("C" "D")
-EMPTY=()
+#####################
+# Initial variables #
+#####################
 
-array_equals A_B C_D && fail_test "A_B should not equal C_D"
-array_equals A_B A_B_C && fail_test "A_B should not equal A_B_C"
-array_equals A_B A_C && fail_test "A_B should not equal A_C"
-array_equals A_B A_B || fail_test "A_B should equal A_B"
-array_equals EMPTY EMPTY || fail_test "EMPTY should equal EMPTY"
-array_equals A_B EMPTY && fail_test "A_B should not equal EMPTY"
+if [[ -z $1 ]]; then
+	echo "Usage: $0 <instance-id>"
+	exit 1
+fi
 
-end_tests
+INSTANCE_ID=$1
+
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+GENERATED_DIR=${SCRIPTS_DIR}/generated
+
+rm -rf "${GENERATED_DIR:?}"/*
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.update.DownloadConfig "$INSTANCE_ID" "$GENERATED_DIR"
