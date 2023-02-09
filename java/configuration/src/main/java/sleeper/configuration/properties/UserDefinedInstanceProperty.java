@@ -138,7 +138,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty ECR_INGEST_REPO = named("sleeper.ingest.repo")
             .description("The name of the ECR repository for the ingest container. The Docker image from the ingest module should have been " +
                     "uploaded to an ECR repository of this name in this account.")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_INGEST_TASKS = named("sleeper.ingest.max.concurrent.tasks")
             .description("The maximum number of concurrent ECS tasks to run.")
             .defaultValue("200")
@@ -148,7 +148,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "tasks to perform ingest jobs.")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = named("sleeper.ingest.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the ingest queue so that they are not processed by other processes.\n" +
@@ -166,11 +166,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty INGEST_TASK_CPU = named("sleeper.ingest.task.cpu")
             .description("The amount of CPU used by Fargate tasks that perform ingest jobs.")
             .defaultValue("2048")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_TASK_MEMORY = named("sleeper.ingest.task.memory")
             .description("The amount of memory used by Fargate tasks that perform ingest jobs.")
             .defaultValue("4096")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = named("sleeper.ingest.partition.refresh.period")
             .description("The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
                     "(NB Refreshes only happen once a batch of data has been written so this is a lower bound " +
@@ -181,7 +181,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The name of a bucket that contains files to be ingested via ingest jobs. This bucket should already " +
                     "exist, i.e. it will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
                     "and bulk import stacks will be given read access to this bucket so that they can consume data from it.")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = named("sleeper.ingest.record.batch.type")
             .description("The way in which records are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +
