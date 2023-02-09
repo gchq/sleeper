@@ -82,6 +82,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return InstancePropertyGroup.COMMON;
     }
 
+    @Override
+    public boolean isRunCDKDeployWhenChanged() {
+        return false;
+    }
+
     public String toString() {
         return propertyName;
     }
