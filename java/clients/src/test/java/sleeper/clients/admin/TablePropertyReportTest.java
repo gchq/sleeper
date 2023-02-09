@@ -197,7 +197,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldPrintPropertyGroupsAreInTheCorrectOrder() {
+    void shouldPrintPropertyGroupsInTheCorrectOrder() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
