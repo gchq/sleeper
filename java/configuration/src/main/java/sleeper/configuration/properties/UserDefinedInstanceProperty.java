@@ -16,7 +16,6 @@
 package sleeper.configuration.properties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import sleeper.configuration.Utils;
 
 import java.util.List;
@@ -721,7 +720,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = named("sleeper.compaction.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.job.status.ttl")
             .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
@@ -770,11 +770,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB = named("sleeper.query.processor.memory")
             .description("The amount of memory in MB for the lambda that executes queries.")
             .defaultValue("2048")
-            .propertyGroup(InstancePropertyGroup.QUERY).build();
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS = named("sleeper.query.processor.timeout.seconds")
             .description("The timeout for the lambda that executes queries in seconds.")
             .defaultValue("900")
-            .propertyGroup(InstancePropertyGroup.QUERY).build();
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS = named("sleeper.query.processor.state.refresh.period.seconds")
             .description("The frequency with which the query processing lambda refreshes its knowledge of the system state " +
                     "(i.e. the partitions and the mapping from partition to files), in seconds.")
@@ -799,7 +801,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The length of time the results of queries remain in the query results bucket before being deleted.")
             .defaultValue("7")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.QUERY).build();
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_RESULTS_ROW_GROUP_SIZE = named("sleeper.default.query.results.rowgroup.size")
             .description("The default value of the rowgroup size used when the results of queries are written to Parquet files. The " +
                     "value given below is 8MiB. This value can be overridden using the query config.")
@@ -816,44 +819,54 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The period in minutes used in the dashboard.")
             .defaultValue("5")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.DASHBOARD).build();
+            .propertyGroup(InstancePropertyGroup.DASHBOARD)
+            .runCDKDeployWhenChanged(true).build();
 
     // Logging levels
     UserDefinedInstanceProperty LOGGING_LEVEL = named("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
-            .propertyGroup(InstancePropertyGroup.LOGGING).build();
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = named("sleeper.logging.apache.level")
             .description("The logging level for Apache logs that are not Parquet.")
-            .propertyGroup(InstancePropertyGroup.LOGGING).build();
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = named("sleeper.logging.parquet.level")
             .description("The logging level for Parquet logs.")
-            .propertyGroup(InstancePropertyGroup.LOGGING).build();
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty AWS_LOGGING_LEVEL = named("sleeper.logging.aws.level")
             .description("The logging level for AWS logs.")
-            .propertyGroup(InstancePropertyGroup.LOGGING).build();
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = named("sleeper.logging.root.level")
             .description("The logging level for everything else.")
-            .propertyGroup(InstancePropertyGroup.LOGGING).build();
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCDKDeployWhenChanged(true).build();
 
     // Athena
     UserDefinedInstanceProperty SPILL_BUCKET_AGE_OFF_IN_DAYS = named("sleeper.athena.spill.bucket.ageoff.days")
             .description("The number of days before objects in the spill bucket are deleted.")
             .defaultValue("1")
-            .propertyGroup(InstancePropertyGroup.ATHENA).build();
+            .propertyGroup(InstancePropertyGroup.ATHENA)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_CLASSES = named("sleeper.athena.handler.classes")
             .description("The fully qualified composite classes to deploy. These are the classes that interact with Athena. " +
                     "You can choose to remove one if you don't need them. Both are deployed by default.")
             .defaultValue("sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler")
-            .propertyGroup(InstancePropertyGroup.ATHENA).build();
+            .propertyGroup(InstancePropertyGroup.ATHENA)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = named("sleeper.athena.handler.memory")
             .description("The amount of memory (GB) the athena composite handler has.")
             .defaultValue("4096")
-            .propertyGroup(InstancePropertyGroup.ATHENA).build();
+            .propertyGroup(InstancePropertyGroup.ATHENA)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS = named("sleeper.athena.handler.timeout.seconds")
             .description("The timeout in seconds for the athena composite handler.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.ATHENA).build();
+            .propertyGroup(InstancePropertyGroup.ATHENA)
+            .runCDKDeployWhenChanged(true).build();
 
     // Default values
     UserDefinedInstanceProperty DEFAULT_S3A_READAHEAD_RANGE = named("sleeper.default.fs.s3a.readahead.range")
@@ -879,7 +892,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "be overridden by a table property.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+            .propertyGroup(InstancePropertyGroup.DEFAULT)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = named("sleeper.default.table.dynamo.strongly.consistent.reads")
             .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
                     "are strongly consistent. This default can be overriden by a table property.")
