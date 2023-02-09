@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -62,8 +61,11 @@ public interface TableProperty extends SleeperProperty {
     TableProperty ENCRYPTED = named("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
-            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.")
-            .build();
+            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                    "When this is changed, existing files will retain their encryption status. Further compactions may " +
+                    "apply the new encryption status for that data.\n" +
+                    "See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html")
+            .runCDKDeployWhenChanged(true).build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
@@ -92,7 +94,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SPLIT_POINTS_FILE = named("sleeper.table.splits.file")
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the  " +
                     "table will be created with a single root partition.")
-            .build();
+            .runCDKDeployWhenChanged(true).build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = named("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
