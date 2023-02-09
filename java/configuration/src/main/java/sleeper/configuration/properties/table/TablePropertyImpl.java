@@ -37,7 +37,7 @@ class TablePropertyImpl implements TableProperty {
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
     private final String description;
-    private final boolean appliedByCDK;
+    private final boolean runCDKDeployWhenChanged;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -45,7 +45,7 @@ class TablePropertyImpl implements TableProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
-        appliedByCDK = builder.appliedByCDK;
+        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
     }
 
     static Builder builder() {
@@ -91,7 +91,7 @@ class TablePropertyImpl implements TableProperty {
 
     @Override
     public boolean isRunCDKDeployWhenChanged() {
-        return appliedByCDK;
+        return runCDKDeployWhenChanged;
     }
 
     public String toString() {
@@ -104,7 +104,7 @@ class TablePropertyImpl implements TableProperty {
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
         private String description = "No description available";
-        private boolean appliedByCDK;
+        private boolean runCDKDeployWhenChanged;
 
         private Builder() {
         }
@@ -134,8 +134,8 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
-        public Builder appliedByCDK(boolean appliedByCDK) {
-            this.appliedByCDK = appliedByCDK;
+        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
+            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
             return this;
         }
 
