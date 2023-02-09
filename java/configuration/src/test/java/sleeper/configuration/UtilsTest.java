@@ -13,20 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
+
+package sleeper.configuration;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.Utils.combineLists;
 
-public interface InstanceProperty extends SleeperProperty {
-    static List<InstanceProperty> getAllGrouped() {
-        return InstancePropertyGroup.sortPropertiesByGroup(getAll());
-    }
+public class UtilsTest {
 
-    static List<InstanceProperty> getAll() {
-        return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
-    }
+    @Test
+    void shouldCombineLists() {
+        // Given
+        List<String> list1 = List.of("test1", "test2");
+        List<String> list2 = List.of("test3", "test4");
 
-    PropertyGroup getPropertyGroup();
+        // When
+        List<String> combinedList = combineLists(list1, list2);
+
+        // Then
+        assertThat(combinedList)
+                .containsExactly("test1", "test2", "test3", "test4");
+    }
 }

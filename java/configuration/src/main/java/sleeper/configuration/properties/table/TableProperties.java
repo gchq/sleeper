@@ -31,7 +31,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -80,7 +79,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     protected void validate() {
-        Arrays.stream(TableProperty.values()).filter(prop -> !prop.validationPredicate().test(get(prop)))
+        TableProperty.getAll().stream().filter(prop -> !prop.validationPredicate().test(get(prop)))
                 .forEach(prop -> {
                     throw new IllegalArgumentException("Property " + prop.getPropertyName() +
                             " was invalid. It was \"" + get(prop) + "\"");

@@ -25,7 +25,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,10 +40,10 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_P
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TablePropertyReportTest extends AdminClientMockStoreBase {
+class TablePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintTablePropertyReportWhenChosen() {
+    void shouldPrintTablePropertyReportWhenChosen() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
@@ -60,7 +59,7 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
                 // Then check all table properties are present in the output
-                .contains(Stream.of(TableProperty.values())
+                .contains(TableProperty.getAll().stream()
                         .map(TableProperty::getPropertyName)
                         .collect(Collectors.toList()))
                 // Then check some set table property values are present in the output
@@ -74,14 +73,14 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "\"sortKeyFields\":[]," +
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
                 // Then check properties in sequence to check spacing between them
-                .contains("# A unique name identifying this table.\n" +
-                        "sleeper.table.name: test-table\n" +
+                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                        "sleeper.table.encrypted: false\n" +
+                        "\n" +
+                        "# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.rowgroup.size: 8388608\n" +
                         "\n" +
                         "# The size of the page in the Parquet files - defaults to the value in the instance properties.\n" +
-                        "sleeper.table.page.size: 131072\n" +
-                        "\n" +
-                        "# Partitions in this table with more than the following number of records in will be split\n" +
-                        "sleeper.table.partition.splitting.threshold: 1000000000")
+                        "sleeper.table.page.size: 131072\n")
                 // Then check property with multi-line description
                 .contains("# The minimum number of files to read in a compaction job. Note that the state store must support\n" +
                         "# atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
@@ -95,11 +94,11 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "sleeper.table.gc.delay.seconds: 600");
 
         // Then check the ordering of some property names are correct
-        assertThat(output.indexOf("sleeper.table.encrypted"))
-                .isLessThan(output.indexOf("sleeper.table.name"))
-                .isLessThan(output.indexOf("sleeper.table.schema"));
         assertThat(output.indexOf("sleeper.table.name"))
-                .isLessThan(output.indexOf("sleeper.table.schema"));
+                .isLessThan(output.indexOf("sleeper.table.schema"))
+                .isLessThan(output.indexOf("sleeper.table.encrypted"));
+        assertThat(output.indexOf("sleeper.table.schema.file"))
+                .isLessThan(output.indexOf("sleeper.table.rowgroup.size"));
 
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock, times(2)).promptLine(any());
@@ -109,7 +108,7 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldExitWhenChosenOnTablePropertyReportScreen() {
+    void shouldExitWhenChosenOnTablePropertyReportScreen() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
@@ -128,7 +127,7 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() {
+    void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);

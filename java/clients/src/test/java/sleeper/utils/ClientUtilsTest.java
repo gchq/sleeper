@@ -19,16 +19,16 @@ package sleeper.utils;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.util.ClientUtils.formatString;
+import static sleeper.util.ClientUtils.formatPropertyDescription;
 
-public class ClientUtilsTest {
+class ClientUtilsTest {
     @Test
     void shouldFormatSingleLineString() {
         // Given
         String singleLineString = "Test string that can fit on one line";
 
         // When
-        String formattedString = formatString(singleLineString);
+        String formattedString = formatPropertyDescription(singleLineString);
 
         // Then
         assertThat(formattedString)
@@ -41,7 +41,7 @@ public class ClientUtilsTest {
         String multiLineString = "Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the screen";
 
         // When
-        String formattedDescription = formatString(multiLineString);
+        String formattedDescription = formatPropertyDescription(multiLineString);
 
         // Then
         assertThat(formattedDescription)
@@ -57,7 +57,7 @@ public class ClientUtilsTest {
                 "This is to verify if the line still wraps even after after a custom line break";
 
         // When
-        String formattedDescription = formatString(multiLineString);
+        String formattedDescription = formatPropertyDescription(multiLineString);
 
         // Then
         assertThat(formattedDescription)

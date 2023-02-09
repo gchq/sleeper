@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
@@ -53,12 +54,12 @@ class TablePropertyImpl implements TableProperty {
         return builder().propertyName(name);
     }
 
-    public static List<TableProperty> all() {
+    public static List<TableProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static TableProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
+    public static Optional<TableProperty> getByName(String propertyName) {
+        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override

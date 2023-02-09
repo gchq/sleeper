@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
@@ -32,12 +34,14 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final String description;
+    private final PropertyGroup propertyGroup;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
     }
 
     public static Builder builder() {
@@ -48,12 +52,12 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return builder().propertyName(name);
     }
 
-    public static List<UserDefinedInstanceProperty> all() {
+    public static List<UserDefinedInstanceProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static UserDefinedInstanceProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
+    public static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
+        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override
@@ -71,6 +75,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return defaultValue;
     }
 
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return propertyGroup;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -85,6 +94,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description = "No description available";
+        private PropertyGroup propertyGroup;
+        private Consumer<UserDefinedInstanceProperty> addToAllList = Builder::addToAll;
 
         private Builder() {
         }
@@ -109,14 +120,25 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public UserDefinedInstanceProperty build() {
-            return addToAllList(new UserDefinedInstancePropertyImpl(this));
+        public Builder propertyGroup(PropertyGroup propertyGroup) {
+            this.propertyGroup = propertyGroup;
+            return this;
         }
 
-        private static UserDefinedInstanceProperty addToAllList(UserDefinedInstanceProperty property) {
+        public Builder addToAllList(Consumer<UserDefinedInstanceProperty> addToAllList) {
+            this.addToAllList = addToAllList;
+            return this;
+        }
+
+        public UserDefinedInstanceProperty build() {
+            UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
+            addToAllList.accept(property);
+            return property;
+        }
+
+        private static void addToAll(UserDefinedInstanceProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
-            return property;
         }
     }
 }

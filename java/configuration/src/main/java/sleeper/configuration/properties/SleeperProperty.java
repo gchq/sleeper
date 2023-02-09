@@ -36,4 +36,5 @@ public interface SleeperProperty {
     default String toEnvironmentVariable() {
         return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
+
 }

@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
 
@@ -30,10 +32,12 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     private final String propertyName;
     private final String description;
+    private final PropertyGroup group;
 
     private SystemDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        group = Objects.requireNonNull(builder.group, "group must not be null");
     }
 
     public static Builder builder() {
@@ -44,12 +48,12 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return builder().propertyName(propertyName);
     }
 
-    public static List<SystemDefinedInstanceProperty> all() {
+    public static List<SystemDefinedInstanceProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
-    public static SystemDefinedInstanceProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
+    public static Optional<SystemDefinedInstanceProperty> getByName(String propertyName) {
+        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override
@@ -71,9 +75,16 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return description;
     }
 
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return group;
+    }
+
     public static final class Builder {
         private String propertyName;
         private String description = "No description available";
+        private PropertyGroup group;
+        private Consumer<SystemDefinedInstanceProperty> addToAllList = Builder::addToAllList;
 
         private Builder() {
         }
@@ -88,14 +99,25 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
             return this;
         }
 
-        public SystemDefinedInstanceProperty build() {
-            return addToAllList(new SystemDefinedInstancePropertyImpl(this));
+        public Builder propertyGroup(PropertyGroup group) {
+            this.group = group;
+            return this;
         }
 
-        private static SystemDefinedInstanceProperty addToAllList(SystemDefinedInstanceProperty property) {
+        public Builder addToAllList(Consumer<SystemDefinedInstanceProperty> addToAllList) {
+            this.addToAllList = addToAllList;
+            return this;
+        }
+
+        public SystemDefinedInstanceProperty build() {
+            SystemDefinedInstanceProperty property = new SystemDefinedInstancePropertyImpl(this);
+            addToAllList.accept(property);
+            return property;
+        }
+
+        private static void addToAllList(SystemDefinedInstanceProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
-            return property;
         }
     }
 }

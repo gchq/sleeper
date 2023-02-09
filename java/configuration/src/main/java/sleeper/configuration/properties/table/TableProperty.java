@@ -20,7 +20,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -191,16 +193,16 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .build();
 
-    static TableProperty[] values() {
-        return TablePropertyImpl.all().toArray(new TableProperty[0]);
+    static List<TableProperty> getAll() {
+        return TablePropertyImpl.getAll();
     }
 
-    static TableProperty from(String propertyName) {
-        return TablePropertyImpl.get(propertyName);
+    static Optional<TableProperty> getByName(String propertyName) {
+        return TablePropertyImpl.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return TablePropertyImpl.get(propertyName) != null;
+        return TablePropertyImpl.getByName(propertyName).isPresent();
     }
 
     SleeperProperty getDefaultProperty();
