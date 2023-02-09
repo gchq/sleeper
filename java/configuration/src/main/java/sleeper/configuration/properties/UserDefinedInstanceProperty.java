@@ -98,17 +98,17 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = named("sleeper.errors.email")
             .description("An email address used by the TopicStack to publish SNS notifications of errors.")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = named("sleeper.queue.visibility.timeout.seconds")
             .description("The visibility timeout on the queues used in compactions, partition splitting, etc.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = named("sleeper.log.retention.days")
             .description("The length of time in days that CloudWatch logs are retained.")
             .defaultValue("30")
             .validationPredicate(Utils::isValidLogRetention)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = named("sleeper.s3.max-connections")
             .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.")
             .defaultValue("25")
@@ -121,18 +121,18 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_MEMORY_IN_MB = named("sleeper.task.runner.memory")
             .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
             .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS = named("sleeper.task.runner.timeout.seconds")
             .description("The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest jobs.\n" +
                     "This must be >0 and <= 900.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty METRICS_NAMESPACE = named("sleeper.metrics.namespace")
             .description("The namespaces for the metrics used in the metrics stack.")
             .defaultValue("Sleeper")
             .validationPredicate(Utils::isNonNullNonEmptyString)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).runCDKDeployWhenChanged(true).build();
 
     // Ingest
     UserDefinedInstanceProperty ECR_INGEST_REPO = named("sleeper.ingest.repo")
