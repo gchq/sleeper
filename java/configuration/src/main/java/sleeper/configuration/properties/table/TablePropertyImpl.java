@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties.table;
 
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ class TablePropertyImpl implements TableProperty {
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
     private final String description;
+    private final PropertyGroup propertyGroup;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -44,7 +46,9 @@ class TablePropertyImpl implements TableProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
     }
+
 
     static Builder builder() {
         return new Builder();
@@ -87,6 +91,11 @@ class TablePropertyImpl implements TableProperty {
         return description;
     }
 
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return propertyGroup;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -97,6 +106,7 @@ class TablePropertyImpl implements TableProperty {
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
         private String description = "No description available";
+        private PropertyGroup propertyGroup;
 
         private Builder() {
         }
@@ -123,6 +133,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder propertyGroup(PropertyGroup propertyGroup) {
+            this.propertyGroup = propertyGroup;
             return this;
         }
 

@@ -62,7 +62,7 @@ public class PropertyGroup {
         return description;
     }
 
-    static final class Builder {
+    public static final class Builder {
         private String name;
         private String description;
         private Consumer<PropertyGroup> afterBuild = group -> {

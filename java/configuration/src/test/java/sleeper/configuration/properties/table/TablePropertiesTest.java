@@ -18,6 +18,7 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Properties;
@@ -81,6 +82,11 @@ class TablePropertiesTest {
             }
 
             @Override
+            public PropertyGroup getPropertyGroup() {
+                return null;
+            }
+
+            @Override
             public String getPropertyName() {
                 return "made.up";
             }
@@ -133,6 +139,11 @@ class TablePropertiesTest {
             @Override
             public String getPropertyName() {
                 return "made.up";
+            }
+
+            @Override
+            public PropertyGroup getPropertyGroup() {
+                return null;
             }
 
             @Override
