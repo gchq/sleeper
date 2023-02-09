@@ -274,15 +274,18 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = named("sleeper.ingest.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
             .defaultValue("true")
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.ingest.job.status.ttl")
-            .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.")
+            .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.\n" +
+                    "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.ingest.task.status.ttl")
-            .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.")
+            .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.\n" +
+                    "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
@@ -661,12 +664,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.job.status.ttl")
-            .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.")
+            .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.\n" +
+                    "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_STATUS_TTL_IN_SECONDS = named("sleeper.compaction.task.status.ttl")
-            .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week.")
+            .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week.\n" +
+                    "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
