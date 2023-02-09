@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -99,7 +100,7 @@ public interface TableProperty extends SleeperProperty {
             .defaultValue("false")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
-            .build();
+            .runCDKDeployWhenChanged(true).build();
     TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = named("sleeper.table.gc.delay.seconds")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
             .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
