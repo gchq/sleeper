@@ -21,6 +21,8 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -226,6 +228,12 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
+
+    static List<TableProperty> getAllGrouped() {
+        List<TableProperty> properties = new ArrayList<>(getAll());
+        properties.sort(Comparator.comparing(p -> TablePropertyGroup.getAll().indexOf(p.getPropertyGroup())));
+        return properties;
+    }
 
     static List<TableProperty> getAll() {
         return TablePropertyImpl.getAll();

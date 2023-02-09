@@ -43,8 +43,7 @@ public class TablePropertyReport {
     private void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
         PropertyGroup currentGroup = null;
-        out.println("\n\n Instance Property Report \n -------------------------");
-        for (TableProperty property : TableProperty.getAll()) {
+        for (TableProperty property : TableProperty.getAllGrouped()) {
             if (currentGroup == null || !currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
                 out.println();

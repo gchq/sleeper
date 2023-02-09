@@ -180,11 +180,45 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report");
 
+        // Check ordering in the same group
         assertThat(output.indexOf("sleeper.table.name"))
                 .isLessThan(output.indexOf("sleeper.table.schema"))
                 .isLessThan(output.indexOf("sleeper.table.encrypted"));
         assertThat(output.indexOf("sleeper.table.schema.file"))
                 .isLessThan(output.indexOf("sleeper.table.rowgroup.size"));
+
+        // Check ordering in different groups
+        assertThat(output.indexOf("sleeper.table.compaction.strategy.sizeratio.ratio"))
+                .isLessThan(output.indexOf("sleeper.table.bulk.import.emr.master.instance.type"));
+        assertThat(output.indexOf("sleeper.table.data.bucket"))
+                .isLessThan(output.indexOf("sleeper.table.splits.key"));
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
+    void shouldPrintPropertyGroupsAreInTheCorrectOrder() {
+        // Given
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        setInstanceProperties(instanceProperties, tableProperties);
+        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output)
+                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("Table Property Report");
+
+        assertThat(output.indexOf("The following properties relate to configuring tables."))
+                .isLessThan(output.indexOf("The following table properties relate to the iterator used when reading from the table."));
+        assertThat(output.indexOf("The following table properties relate to the iterator used when reading from the table."))
+                .isLessThan(output.indexOf("The following table properties relate to the split points in the table."));
+        assertThat(output.indexOf("The following table properties relate to compactions."))
+                .isLessThan(output.indexOf("The following table properties relate to partition splitting."));
 
         confirmAndVerifyNoMoreInteractions();
     }
