@@ -93,7 +93,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FILE_SYSTEM = named("sleeper.filesystem")
-            .description("The subnet to deploy ECS tasks to")
+            .description("The Hadoop filesystem used to connect to S3.")
             .defaultValue("s3a://")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = named("sleeper.errors.email")
