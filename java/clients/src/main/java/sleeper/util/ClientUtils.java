@@ -101,7 +101,7 @@ public class ClientUtils {
         return String.join(",", parts);
     }
 
-    public static String formatPropertyDescription(String str) {
+    public static String formatDescription(String str) {
         return Arrays.stream(str.split("\n")).
                 map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
                 .collect(Collectors.joining("\n"));

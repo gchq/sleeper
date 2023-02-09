@@ -15,13 +15,14 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-import static sleeper.util.ClientUtils.formatPropertyDescription;
+import static sleeper.util.ClientUtils.formatDescription;
 
 public class TablePropertyReport {
 
@@ -41,9 +42,16 @@ public class TablePropertyReport {
 
     private void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
+        PropertyGroup currentGroup = null;
+        out.println("\n\n Instance Property Report \n -------------------------");
         for (TableProperty property : TableProperty.getAll()) {
+            if (currentGroup == null || !currentGroup.equals(property.getPropertyGroup())) {
+                currentGroup = property.getPropertyGroup();
+                out.println();
+                out.println(formatDescription(currentGroup.getDescription()));
+            }
             out.println();
-            out.println(formatPropertyDescription(property.getDescription()));
+            out.println(formatDescription(property.getDescription()));
             out.println(property.getPropertyName() + ": " + tableProperties.get(property));
         }
         confirmReturnToMainScreen(out, in);

@@ -24,7 +24,7 @@ import sleeper.console.ConsoleOutput;
 import java.util.List;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-import static sleeper.util.ClientUtils.formatPropertyDescription;
+import static sleeper.util.ClientUtils.formatDescription;
 
 public class InstancePropertyReport {
 
@@ -50,10 +50,10 @@ public class InstancePropertyReport {
             if (currentGroup == null || !currentGroup.equals(instanceProperty.getPropertyGroup())) {
                 currentGroup = instanceProperty.getPropertyGroup();
                 out.println();
-                out.println(formatPropertyDescription(currentGroup.getDescription()));
+                out.println(formatDescription(currentGroup.getDescription()));
             }
             out.println();
-            out.println(formatPropertyDescription(instanceProperty.getDescription()));
+            out.println(formatDescription(instanceProperty.getDescription()));
             out.println(instanceProperty.getPropertyName() + ": " + instanceProperties.get(instanceProperty));
         }
         confirmReturnToMainScreen(out, in);

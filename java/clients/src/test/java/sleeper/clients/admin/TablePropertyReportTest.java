@@ -134,6 +134,36 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
+    void shouldPrintPropertyGroupDescriptions() {
+        // Given
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        setInstanceProperties(instanceProperties, tableProperties);
+        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output)
+                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("Table Property Report");
+
+        assertThat(output)
+                .contains("# The following properties relate to configuring tables.\n\n")
+                .contains("# The following table properties relate to the iterator used when reading from the table.\n\n")
+                .contains("# The following table properties relate to the split points in the table.\n\n")
+                .contains("# The following table properties relate to compactions.\n\n")
+                .contains("# The following table properties relate to partition splitting.\n\n")
+                .contains("# The following table properties relate to bulk import, i.e. ingesting data using Spark jobs running\n" +
+                        "# on EMR or EKS.\n\n")
+                .contains("# The following table properties relate to storing and retrieving metadata for tables.\n\n");
+
+        confirmAndVerifyNoMoreInteractions();
+    }
+
+    @Test
     void shouldPrintPropertiesInTheCorrectOrder() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
