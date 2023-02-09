@@ -587,7 +587,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty PARTITION_SPLITTING_PERIOD_IN_MINUTES = named("sleeper.partition.splitting.period.minutes")
             .description("The frequency in minutes with which the lambda that finds partitions that need splitting runs.")
             .defaultValue("2")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB = named("sleeper.partition.splitting.files.maximum")
             .description("When a partition needs splitting, a partition splitting job is created. This reads in the sketch files " +
                     "associated to the files in the partition in order to identify the median. This parameter controls the " +
@@ -597,19 +598,23 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB = named("sleeper.partition.splitting.finder.memory")
             .description("The amount of memory in MB for the lambda function used to identify partitions that need to be split.")
             .defaultValue("2048")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS = named("sleeper.partition.splitting.finder.timeout.seconds")
             .description("The timeout in seconds for the lambda function used to identify partitions that need to be split.")
             .defaultValue("900")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB = named("sleeper.partition.splitting.memory")
             .description("The memory for the lambda function used to split partitions.")
             .defaultValue("2048")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS = named("sleeper.partition.splitting.timeout.seconds")
             .description("The timeout in seconds for the lambda function used to split partitions.")
             .defaultValue("900")
-            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_THRESHOLD = named("sleeper.default.partition.splitting.threshold")
             .description("This is the default value of the partition splitting threshold. Partitions with more than the following " +
                     "number of records in will be split. This value can be overridden on a per-table basis.")
@@ -620,11 +625,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_PERIOD_IN_MINUTES = named("sleeper.gc.period.minutes")
             .description("The frequency in minutes with which the garbage collector lambda is run.")
             .defaultValue("15")
-            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = named("sleeper.gc.memory")
             .description("The memory in MB for the lambda function used to perform garbage collection.")
             .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = named("sleeper.gc.batch.size")
             .description("The size of the batch of files ready for garbage collection requested from the State Store.")
             .defaultValue("2000")
@@ -641,11 +648,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty ECR_COMPACTION_REPO = named("sleeper.compaction.repo")
             .description("The name of the repository for the compaction container. The Docker image from the compaction-job-execution module " +
                     "should have been uploaded to an ECR repository of this name in this account.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = named("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS = named("sleeper.compaction.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
@@ -656,16 +665,19 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = named("sleeper.compaction.job.creation.memory")
             .description("The amount of memory for the lambda that creates compaction jobs.")
             .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = named("sleeper.compaction.job.creation.timeout.seconds")
             .description("The timeout for the lambda that creates compaction jobs in seconds.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = named("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -674,27 +686,38 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes, must be >= 1).")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = named("sleeper.compaction.task.cpu.architecture")
-            .description("The CPU architecture to run compaction tasks on.")
+            .description("The CPU architecture to run compaction tasks on.\n" +
+                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html.")
             .defaultValue("X86_64")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_CPU = named("sleeper.compaction.task.arm.cpu")
-            .description("The CPU for a compaction task using a 64 bit architecture.")
+            .description("The CPU for a compaction task using an ARM architecture.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = named("sleeper.compaction.task.arm.memory")
-            .description("The memory for a compaction task using a 64 bit architecture.")
+            .description("The memory for a compaction task using an ARM architecture.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_CPU = named("sleeper.compaction.task.x86.cpu")
-            .description("The CPU for a compaction task using a 32 bit architecture.")
+            .description("The CPU for a compaction task using an x86 architecture.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = named("sleeper.compaction.task.x86.memory")
-            .description("The memory for a compaction task using a 32 bit architecture.")
+            .description("The memory for a compaction task using an x86 architecture.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = named("sleeper.compaction.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
