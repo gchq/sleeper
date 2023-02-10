@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
+
 import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
@@ -138,13 +139,13 @@ class TablePropertiesTest {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-        tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 12);
+        tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 49);
 
         // When/Then
         assertThatThrownBy(tableProperties::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
-                        "It was \"12\"");
+                        "It was \"49\"");
     }
 
     @Test
@@ -153,7 +154,7 @@ class TablePropertiesTest {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
-        tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 12);
+        tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 49);
 
         // When/Then
         assertThatCode(tableProperties::validate).doesNotThrowAnyException();
