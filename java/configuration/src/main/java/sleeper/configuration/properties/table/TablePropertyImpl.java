@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
@@ -107,6 +108,7 @@ class TablePropertyImpl implements TableProperty {
         private SleeperProperty defaultProperty;
         private String description = "No description available";
         private PropertyGroup propertyGroup;
+        private Consumer<TableProperty> addToList = Builder::addToAllList;
 
         private Builder() {
         }
@@ -141,14 +143,20 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
-        public TableProperty build() {
-            return addToAllList(new TablePropertyImpl(this));
+        public Builder addToList(Consumer<TableProperty> addToList) {
+            this.addToList = addToList;
+            return this;
         }
 
-        private static TableProperty addToAllList(TableProperty property) {
+        public TableProperty build() {
+            TableProperty property = new TablePropertyImpl(this);
+            addToList.accept(property);
+            return property;
+        }
+
+        private static void addToAllList(TableProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
-            return property;
         }
     }
 }

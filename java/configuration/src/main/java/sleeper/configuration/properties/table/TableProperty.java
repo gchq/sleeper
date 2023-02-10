@@ -230,7 +230,11 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     static List<TableProperty> getAllGrouped() {
-        List<TableProperty> properties = new ArrayList<>(getAll());
+        return sortProperties(getAll());
+    }
+
+    static List<TableProperty> sortProperties(List<TableProperty> unsorted) {
+        List<TableProperty> properties = new ArrayList<>(unsorted);
         properties.sort(Comparator.comparing(p -> TablePropertyGroup.getAll().indexOf(p.getPropertyGroup())));
         return properties;
     }
