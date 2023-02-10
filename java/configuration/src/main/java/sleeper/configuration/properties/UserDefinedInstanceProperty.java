@@ -536,6 +536,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("m5.xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = named("sleeper.default.bulk.import.emr.executor.market.type")
+            .description("(Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of the EMR cluster.\n" +
+                    "Valid values are ON_DEMAND or SPOT.")
             .defaultValue("SPOT").validationPredicate(s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s)))
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = named("sleeper.default.bulk.import.emr.executor.instance.type")
@@ -928,6 +930,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
                     "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).")
             .defaultValue("64K")
+            .validationPredicate(Utils::isValidNumberOfBytes)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = named("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
