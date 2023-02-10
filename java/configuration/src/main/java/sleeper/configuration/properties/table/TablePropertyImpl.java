@@ -103,7 +103,7 @@ class TablePropertyImpl implements TableProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
-        private String description = "No description available";
+        private String description;
         private boolean runCDKDeployWhenChanged;
 
         private Builder() {

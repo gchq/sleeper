@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -132,7 +133,22 @@ public interface TableProperty extends SleeperProperty {
             .description("The name of the class used for the metadata store. The default is DynamoDBStateStore. " +
                     "An alternative option is the S3StateStore.")
             .build();
-
+    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
+                    "the DynamoDBStateStore is used.")
+            .build();
+    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = named("sleeper.table.metadata.dynamo.consistent.reads")
+            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
+            .validationPredicate(s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false"))
+            .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
+                    "are strongly consistent.")
+            .build();
+    TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for the revision table if " +
+                    "the S3StateStore is used.")
+            .build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = named("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
             .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. This value " +
@@ -147,6 +163,8 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = named("sleeper.table.bulk.import.emr.executor.market.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE)
+            .description("(EMR mode only) The purchasing option to be used for the executor nodes of the EMR cluster.\n" +
+                    "Valid values are ON_DEMAND or SPOT.")
             .build();
     TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = named("sleeper.table.bulk.import.emr.executor.initial.instances")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
@@ -180,23 +198,25 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     // System defined
-    TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key").build();
-    TableProperty DATA_BUCKET = named("sleeper.table.data.bucket").build();
-    // DynamoDBStateStore properties
-    TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table").build();
-    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.gc.table").build();
-    TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table").build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+    TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key")
+            .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = named("sleeper.table.metadata.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .validationPredicate(s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false"))
+    TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
+            .description("The S3 bucket name where table data is stored.").build();
+    // DynamoDBStateStore properties
+    TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")
+            .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
+            .build();
+    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.gc.table")
+            .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
+                    "in the Sleeper table.")
+            .build();
+    TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table")
+            .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
             .build();
     // S3StateStore properties
-    TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table").build();
-    TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+    TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table")
+            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
             .build();
 
     static List<TableProperty> getAll() {
