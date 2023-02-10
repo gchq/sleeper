@@ -17,10 +17,10 @@ package sleeper.systemtest;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
-
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.ingest.IngestMode;
 
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.systemtest.SystemTestPropertyImpl.named;
@@ -80,7 +80,7 @@ public interface SystemTestProperty extends InstanceProperty {
                     "(the number of entries in the list will range randomly from 0 to this number)")
             .defaultValue("10").build();
 
-    static SystemTestProperty[] values() {
-        return SystemTestPropertyImpl.all().toArray(new SystemTestProperty[0]);
+    static List<SystemTestProperty> getAll() {
+        return SystemTestPropertyImpl.getAll();
     }
 }
