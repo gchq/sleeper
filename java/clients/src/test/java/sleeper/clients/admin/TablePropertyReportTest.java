@@ -65,27 +65,23 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
                 // Then check some set table property values are present in the output
                 .contains("# A unique name identifying this table.\n" +
                         "sleeper.table.name: test-table\n")
-                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
-                        "sleeper.table.encrypted: false\n")
+                .contains("# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.rowgroup.size: 8388608\n")
                 .contains("# The schema representing the structure of this table.\n" +
                         "sleeper.table.schema: " +
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
                         "\"sortKeyFields\":[]," +
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
                 // Then check properties in sequence to check spacing between them
-                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
-                        "sleeper.table.encrypted: false\n" +
-                        "\n" +
-                        "# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                .contains("# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
                         "sleeper.table.rowgroup.size: 8388608\n" +
                         "\n" +
                         "# The size of the page in the Parquet files - defaults to the value in the instance properties.\n" +
                         "sleeper.table.page.size: 131072\n")
                 // Then check property with multi-line description
-                .contains("# The minimum number of files to read in a compaction job. Note that the state store must support\n" +
-                        "# atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
-                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                        "sleeper.table.compaction.files.batch.size: 11")
+                .contains("# This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store\n" +
+                        "# are strongly consistent.\n" +
+                        "sleeper.table.metadata.dynamo.consistent.reads: false")
                 // Then check property with multi-line description  and custom line breaks
                 .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
                         "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +

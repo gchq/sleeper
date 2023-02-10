@@ -91,7 +91,7 @@ public interface TableProperty extends SleeperProperty {
             .description("Iterator configuration. An iterator will be initialised with the following configuration.")
             .build();
     TableProperty SPLIT_POINTS_FILE = named("sleeper.table.splits.file")
-            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the  " +
+            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
                     "table will be created with a single root partition.")
             .runCDKDeployWhenChanged(true).build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = named("sleeper.table.splits.base64.encoded")
