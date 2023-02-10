@@ -26,9 +26,27 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.sortProperties;
+import static sleeper.configuration.properties.table.TablePropertyGroup.COMPACTION;
 import static sleeper.configuration.properties.table.TablePropertyGroup.CONFIGURATION;
+import static sleeper.configuration.properties.table.TablePropertyGroup.METADATA;
 
 public class TablePropertyGroupingTest {
+    @Test
+    void shouldOrderByGroup() {
+        // Given
+        List<TableProperty> properties = new ArrayList<>();
+        TableProperty property1 = tableProperty("table.property.1", METADATA, properties::add);
+        TableProperty property2 = tableProperty("table.property.2", COMPACTION, properties::add);
+        TableProperty property3 = tableProperty("table.property.3", CONFIGURATION, properties::add);
+
+        // When
+        List<TableProperty> sortedProperties = sortProperties(properties);
+
+        // Then
+        assertThat(sortedProperties)
+                .containsExactly(property3, property2, property1);
+    }
+
     @Test
     void shouldPreserveOrderingWithinAGroup() {
         // Given
