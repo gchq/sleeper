@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.deploy;
 
 import java.nio.file.Path;
 

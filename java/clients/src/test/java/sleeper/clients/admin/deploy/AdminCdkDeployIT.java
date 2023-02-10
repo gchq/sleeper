@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -23,31 +23,40 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstancePropertiesTestHelper;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.UUID;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class AdminCdkDeployTest {
+@Disabled
+class AdminCdkDeployIT {
+    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+
+    private final Path scriptsDir = Path.of(".").toAbsolutePath()
+            .getParent().getParent().getParent().resolve("scripts");
+    private final Path jarsDir = scriptsDir.resolve("jars");
     @TempDir
     private Path tempDir;
 
     @Test
-    @Disabled("TODO")
-    void shouldDeployFreshInstanceUsingCdk() {
+    void shouldDeployFreshInstanceUsingCdk() throws IOException {
         // Given
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
-        TableProperties tableProperties = TablePropertiesTestHelper.createTestTableProperties(
-                instanceProperties, schemaWithKey("key"));
+        InstanceProperties instanceProperties = PreDeployNewInstance.builder()
+                .s3(s3Client)
+                .instanceId(UUID.randomUUID().toString())
+                .jarsDirectory(jarsDir)
+                .sleeperVersion("0.15.0-SNAPSHOT")
+                .vpcId(System.getenv("VPC_ID"))
+                .subnetId(System.getenv("SUBNET_ID"))
+                .build().preDeploy();
+        TablePropertiesTestHelper.createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client);
+        AdminCdkDeploy.withLocalConfigDir(tempDir);
 
         // When we deploy cdk
-        AdminCdkDeploy adminCdkDeploy = AdminCdkDeploy.withLocalConfigDir(tempDir);
 
         // Then the statestore has only one partition in it
-
     }
 }
