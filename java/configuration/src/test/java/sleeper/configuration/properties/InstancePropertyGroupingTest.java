@@ -96,6 +96,7 @@ class InstancePropertyGroupingTest {
             String name, PropertyGroup group, Consumer<UserDefinedInstanceProperty> addToList) {
         return UserDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
+                .description("Test user property")
                 .addToAllList(addToList).build();
     }
 
@@ -103,6 +104,7 @@ class InstancePropertyGroupingTest {
             String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToList) {
         return SystemDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
+                .description("Test system property")
                 .addToAllList(addToList).build();
     }
 }
