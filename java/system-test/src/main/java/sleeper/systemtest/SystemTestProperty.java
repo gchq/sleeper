@@ -17,6 +17,7 @@ package sleeper.systemtest;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
+
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.ingest.IngestMode;
 
