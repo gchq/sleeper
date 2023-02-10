@@ -76,12 +76,10 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty S3A_READAHEAD_RANGE = named("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
-            .validationPredicate(Utils::isValidNumberOfBytes)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
             .build();
     TableProperty COMPRESSION_CODEC = named("sleeper.table.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
-            .validationPredicate(Utils::isValidCompressionCodec)
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.")
             .build();
     TableProperty ITERATOR_CLASS_NAME = named("sleeper.table.iterator.class.name")
@@ -97,7 +95,7 @@ public interface TableProperty extends SleeperProperty {
             .runCDKDeployWhenChanged(true).build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = named("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
-            .validationPredicate(s -> s.equals("true") || s.equals("false"))
+            .validationPredicate(Utils::isTrueOrFalse)
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
             .runCDKDeployWhenChanged(true).build();
     TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = named("sleeper.table.gc.delay.seconds")
@@ -139,7 +137,6 @@ public interface TableProperty extends SleeperProperty {
             .runCDKDeployWhenChanged(true).build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = named("sleeper.table.metadata.dynamo.consistent.reads")
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .validationPredicate(s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false"))
             .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
                     "are strongly consistent.")
             .build();

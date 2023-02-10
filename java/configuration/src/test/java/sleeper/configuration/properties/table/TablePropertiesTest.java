@@ -160,6 +160,15 @@ class TablePropertiesTest {
     }
 
     @Test
+    void shouldKeepValidationPredicateSameAsOnDefaultProperty() {
+        assertThat(TableProperty.getAll().stream()
+                .filter(property -> property.getDefaultProperty() != null)
+                .filter(property -> property.getDefaultProperty()
+                        .validationPredicate() != property.validationPredicate()))
+                .isEmpty();
+    }
+
+    @Test
     void shouldKeepCDKDeploymentTriggerSameAsOnDefaultProperty() {
         assertThat(TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultProperty() != null)
