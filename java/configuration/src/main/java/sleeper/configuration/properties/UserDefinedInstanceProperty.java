@@ -202,9 +202,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = named("sleeper.ingest.record.batch.type")
             .description("The way in which records are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +
-                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.\n" +
-                    "Note that the arrow approach does not currently support schemas containing lists or maps.")
-            .defaultValue("arraylist")
+                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
+            .defaultValue("arrow")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_PARTITION_FILE_WRITER_TYPE = named("sleeper.ingest.partition.file.writer.type")
             .description("The way in which partition files are written to the main Sleeper store.\n" +
