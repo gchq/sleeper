@@ -24,6 +24,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
@@ -84,14 +86,21 @@ public class PreDeployNewInstance {
     private void uploadJars(InstanceProperties instanceProperties) throws IOException {
         LOGGER.info("Creating jars bucket");
         s3.createBucket(instanceProperties.get(JARS_BUCKET));
+        List<Path> jars = listJarsToUpload();
+        LOGGER.info("Found {} jars to upload", jars.size());
+        jars.stream().parallel().forEach(jar -> {
+            LOGGER.info("Uploading jar: {}", jar.getFileName());
+            s3.putObject(
+                    instanceProperties.get(JARS_BUCKET),
+                    jar.getFileName().toString(),
+                    jar.toFile());
+            LOGGER.info("Finished uploading jar: {}", jar.getFileName());
+        });
+    }
+
+    private List<Path> listJarsToUpload() throws IOException {
         try (Stream<Path> jars = Files.list(jarsDirectory)) {
-            jars.forEach(jar -> {
-                LOGGER.info("Uploading jar: {}", jar.getFileName());
-                s3.putObject(
-                        instanceProperties.get(JARS_BUCKET),
-                        jar.getFileName().toString(),
-                        jar.toFile());
-            });
+            return jars.collect(Collectors.toList());
         }
     }
 
