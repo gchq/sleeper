@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
