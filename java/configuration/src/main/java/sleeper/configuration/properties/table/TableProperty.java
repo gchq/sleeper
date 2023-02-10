@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.table;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -137,7 +136,7 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
                     "the DynamoDBStateStore is used.")
-            .build();
+            .runCDKDeployWhenChanged(true).build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = named("sleeper.table.metadata.dynamo.consistent.reads")
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
             .validationPredicate(s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false"))
@@ -148,7 +147,7 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for the revision table if " +
                     "the S3StateStore is used.")
-            .build();
+            .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = named("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
             .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. This value " +

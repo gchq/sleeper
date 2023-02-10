@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
-
 import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
@@ -158,5 +157,14 @@ class TablePropertiesTest {
 
         // When/Then
         assertThatCode(tableProperties::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldKeepCDKDeploymentTriggerSameAsOnDefaultProperty() {
+        assertThat(TableProperty.getAll().stream()
+                .filter(property -> property.getDefaultProperty() != null)
+                .filter(property -> property.getDefaultProperty()
+                        .isRunCDKDeployWhenChanged() != property.isRunCDKDeployWhenChanged()))
+                .isEmpty();
     }
 }

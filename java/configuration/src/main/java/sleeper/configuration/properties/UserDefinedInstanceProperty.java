@@ -16,7 +16,6 @@
 package sleeper.configuration.properties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import sleeper.configuration.Utils;
 
 import java.util.Arrays;
@@ -952,7 +951,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = named("sleeper.default.table.dynamo.strongly.consistent.reads")
             .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
-                    "are strongly consistent. This default can be overriden by a table property.")
+                    "are strongly consistent. This default can be overridden by a table property.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
