@@ -499,6 +499,7 @@
                             <configuration>
                                 <shadedArtifactAttached>true</shadedArtifactAttached>
                                 <shadedClassifierName>utility</shadedClassifierName>
+                                <createDependencyReducedPom>false</createDependencyReducedPom>
                                 <artifactSet>
                                     <excludes>
                                     </excludes>
