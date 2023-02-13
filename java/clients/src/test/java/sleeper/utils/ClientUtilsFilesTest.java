@@ -52,4 +52,21 @@ public class ClientUtilsFilesTest {
         // Then
         assertThat(tempDir).exists();
     }
+
+    @Test
+    void shouldRemoveMultipleDirectoriesAndFiles() throws IOException {
+        // Given
+        Files.createDirectory(tempDir.resolve("dir1"));
+        Files.createDirectory(tempDir.resolve("dir1/nested1"));
+        Files.createFile(tempDir.resolve("dir1/nested1/file1"));
+        Files.createDirectory(tempDir.resolve("dir2"));
+        Files.createDirectory(tempDir.resolve("dir2/nested2"));
+        Files.createFile(tempDir.resolve("dir2/nested2/file2"));
+
+        // When
+        ClientUtils.clearDirectory(tempDir);
+
+        // Then
+        assertThat(tempDir).isEmptyDirectory();
+    }
 }
