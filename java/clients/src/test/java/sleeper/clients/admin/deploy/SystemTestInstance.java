@@ -26,6 +26,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -58,6 +59,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .build().preDeploy();
         TableProperties tableProperties = TablePropertiesTestHelper.createTestTableProperties(
                 instanceProperties, schemaWithKey("key"), "single-key", s3Client);
+        ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(tableProperties));
     }
 
