@@ -49,18 +49,21 @@ public class SystemTestInstance implements BeforeAllCallback {
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        InstanceProperties instanceProperties = PreDeployInstance.builder()
+        InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .s3(s3Client).sts(sts)
                 .instanceId(instanceId)
-                .jarsDirectory(jarsDir)
                 .sleeperVersion(sleeperVersion)
-                .vpcId(vpcId)
-                .subnetId(subnetId)
-                .build().preDeploy();
+                .vpcId(vpcId).subnetId(subnetId)
+                .build().generate();
         TableProperties tableProperties = TablePropertiesTestHelper.createTestTableProperties(
-                instanceProperties, schemaWithKey("key"), "single-key", s3Client);
+                instanceProperties, schemaWithKey("key"), "single-key");
         ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(tableProperties));
+        PreDeployInstance.builder()
+                .s3(s3Client)
+                .jarsDirectory(jarsDir)
+                .instanceProperties(instanceProperties)
+                .build().preDeploy();
     }
 
     public InstanceProperties loadInstanceProperties() {

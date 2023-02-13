@@ -16,8 +16,6 @@
 package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,64 +28,33 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class PreDeployInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
     private final AmazonS3 s3;
-    private final AWSSecurityTokenService sts;
-    private final String instanceId;
     private final Path jarsDirectory;
-    private final String sleeperVersion;
-    private final String vpcId;
-    private final String subnetId;
+    private final InstanceProperties instanceProperties;
 
     private PreDeployInstance(Builder builder) {
         s3 = builder.s3;
-        sts = builder.sts;
-        instanceId = builder.instanceId;
         jarsDirectory = builder.jarsDirectory;
-        sleeperVersion = builder.sleeperVersion;
-        vpcId = builder.vpcId;
-        subnetId = builder.subnetId;
+        instanceProperties = builder.instanceProperties;
     }
 
-    public InstanceProperties preDeploy() throws IOException {
-        InstanceProperties instanceProperties = generateInstanceProperties();
-        saveConfig(instanceProperties);
-        uploadJars(instanceProperties);
-        return instanceProperties;
+    public void preDeploy() throws IOException {
+        createConfigBucket();
+        uploadJars();
     }
 
-    private InstanceProperties generateInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
-        instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        instanceProperties.set(ACCOUNT, getAccount());
-        instanceProperties.set(REGION, s3.getRegionName());
-        instanceProperties.set(VERSION, sleeperVersion);
-        instanceProperties.set(VPC_ID, vpcId);
-        instanceProperties.set(SUBNET, subnetId);
-        return instanceProperties;
-    }
-
-    private void saveConfig(InstanceProperties instanceProperties) throws IOException {
+    private void createConfigBucket() {
         LOGGER.info("Creating config bucket");
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        instanceProperties.saveToS3(s3);
     }
 
-    private void uploadJars(InstanceProperties instanceProperties) throws IOException {
+    private void uploadJars() throws IOException {
         LOGGER.info("Creating jars bucket");
         s3.createBucket(instanceProperties.get(JARS_BUCKET));
         List<Path> jars = listJarsToUpload();
@@ -108,38 +75,24 @@ public class PreDeployInstance {
         }
     }
 
-    private String getAccount() {
-        return sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount();
-    }
-
     public static Builder builder() {
         return new Builder();
     }
 
     public static final class Builder {
         private AmazonS3 s3;
-        private AWSSecurityTokenService sts;
-        private String instanceId;
         private Path jarsDirectory;
-        private String sleeperVersion;
-        private String vpcId;
-        private String subnetId;
+        private InstanceProperties instanceProperties;
 
         private Builder() {
         }
 
+        public static Builder builder() {
+            return new Builder();
+        }
+
         public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
-            return this;
-        }
-
-        public Builder sts(AWSSecurityTokenService sts) {
-            this.sts = sts;
-            return this;
-        }
-
-        public Builder instanceId(String instanceId) {
-            this.instanceId = instanceId;
             return this;
         }
 
@@ -148,18 +101,8 @@ public class PreDeployInstance {
             return this;
         }
 
-        public Builder sleeperVersion(String sleeperVersion) {
-            this.sleeperVersion = sleeperVersion;
-            return this;
-        }
-
-        public Builder vpcId(String vpcId) {
-            this.vpcId = vpcId;
-            return this;
-        }
-
-        public Builder subnetId(String subnetId) {
-            this.subnetId = subnetId;
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
             return this;
         }
 
