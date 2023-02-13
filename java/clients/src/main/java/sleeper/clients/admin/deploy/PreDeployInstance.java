@@ -57,7 +57,7 @@ public class PreDeployInstance {
         return new Builder();
     }
 
-    public void preDeploy() throws IOException {
+    public void preDeploy() throws IOException, InterruptedException {
         createConfigBucket();
         uploadJars();
         uploadDockerImages();
@@ -89,8 +89,8 @@ public class PreDeployInstance {
         }
     }
 
-    private void uploadDockerImages() throws IOException {
-        Runtime.getRuntime().exec(new String[]{
+    private void uploadDockerImages() throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(new String[]{
                 uploadDockerImagesScript.toString(),
                 instanceProperties.get(ID),
                 String.format("%s.dkr.ecr.%s.amazonaws.com",
@@ -99,6 +99,12 @@ public class PreDeployInstance {
                 instanceProperties.get(OPTIONAL_STACKS),
                 baseDockerDirectory.toString()
         });
+
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new IOException("Failed to upload Docker images");
+        }
     }
 
     public static final class Builder {
