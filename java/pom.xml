@@ -99,6 +99,9 @@
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.36.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
+        <sleeper.system.test.instance.id>junit-${user.name}</sleeper.system.test.instance.id>
+        <sleeper.system.test.vpc.id/>
+        <sleeper.system.test.subnet.id/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -331,78 +334,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${checkstyle.plugin.version}</version>
-                <configuration>
-                    <configLocation>../code-style/checkstyle.xml</configLocation>
-                    <suppressionsLocation>
-                        ../code-style/checkstyle-suppressions.xml
-                    </suppressionsLocation>
-                    <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                    <headerLocation>../code-style/licenseHeader.txt</headerLocation>
-                    <excludes>**/generated/**/*</excludes>
-                    <sourceDirectories>
-                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                        <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
-                    </sourceDirectories>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>validate</id>
-                        <phase>test</phase>
-                        <configuration>
-                            <configLocation>../code-style/checkstyle.xml</configLocation>
-                            <consoleOutput>true</consoleOutput>
-                            <failsOnError>true</failsOnError>
-                            <headerLocation>../code-style/licenseHeader.txt</headerLocation>
-                        </configuration>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${spotbugs.plugin.version}</version>
-                <configuration>
-                    <effort>Max</effort>
-                    <threshold>Low</threshold>
-                    <xmlOutput>true</xmlOutput>
-                    <spotbugsXmlOutputDirectory>
-                        ${project.build.directory}/spotbugs
-                    </spotbugsXmlOutputDirectory>
-                    <onlyAnalyze>sleeper.-</onlyAnalyze>
-                    <excludeFilterFile>
-                        ../code-style/spotbugs-exclude.xml
-                    </excludeFilterFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>validate</id>
-                        <phase>test</phase>
-                        <configuration>
-                            <effort>Max</effort>
-                            <threshold>Low</threshold>
-                            <xmlOutput>true</xmlOutput>
-                            <spotbugsXmlOutputDirectory>
-                                ${project.build.directory}/spotbugs
-                            </spotbugsXmlOutputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -428,27 +363,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${surefire.plugin.version}</version>
-                <configuration>
-                    <argLine>@{argLine} ${module.access.args}</argLine>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${failsafe.plugin.version}</version>
-                <configuration>
-                    <argLine>@{argLine} ${module.access.args}</argLine>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -516,6 +434,126 @@
                         <release>${java.version}</release>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${checkstyle.plugin.version}</version>
+                    <configuration>
+                        <configLocation>../code-style/checkstyle.xml</configLocation>
+                        <suppressionsLocation>
+                            ../code-style/checkstyle-suppressions.xml
+                        </suppressionsLocation>
+                        <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                        <excludes>**/generated/**/*</excludes>
+                        <sourceDirectories>
+                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                            <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+                        </sourceDirectories>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>test</phase>
+                            <configuration>
+                                <configLocation>../code-style/checkstyle.xml</configLocation>
+                                <consoleOutput>true</consoleOutput>
+                                <failsOnError>true</failsOnError>
+                                <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs.plugin.version}</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <spotbugsXmlOutputDirectory>
+                            ${project.build.directory}/spotbugs
+                        </spotbugsXmlOutputDirectory>
+                        <onlyAnalyze>sleeper.-</onlyAnalyze>
+                        <excludeFilterFile>
+                            ../code-style/spotbugs-exclude.xml
+                        </excludeFilterFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>test</phase>
+                            <configuration>
+                                <effort>Max</effort>
+                                <threshold>Low</threshold>
+                                <xmlOutput>true</xmlOutput>
+                                <spotbugsXmlOutputDirectory>
+                                    ${project.build.directory}/spotbugs
+                                </spotbugsXmlOutputDirectory>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.plugin.version}</version>
+                    <configuration>
+                        <argLine>@{argLine} ${module.access.args}</argLine>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${failsafe.plugin.version}</version>
+                    <configuration>
+                        <argLine>@{argLine} ${module.access.args}</argLine>
+                        <systemProperties>
+                            <property>
+                                <name>sleeper.system.test.version</name>
+                                <value>${project.version}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.instance.id</name>
+                                <value>${sleeper.system.test.instance.id}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.vpc.id</name>
+                                <value>${sleeper.system.test.vpc.id}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.subnet.id</name>
+                                <value>${sleeper.system.test.subnet.id}</value>
+                            </property>
+                        </systemProperties>
+                        <excludedGroups>system-test</excludedGroups>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>integration-test</phase>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -567,7 +605,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-shade-plugin</artifactId>
-                            <version>${shade.plugin.version}</version>
                             <executions>
                                 <execution>
                                     <phase>none</phase>
@@ -579,6 +616,59 @@
                         </plugin>
                     </plugins>
                 </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>systemTest</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <groups>SystemTest</groups>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>none</phase>
+                                <goals>
+                                    <goal>shade</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>

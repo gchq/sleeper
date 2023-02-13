@@ -38,8 +38,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
-public class PreDeployNewInstance {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployNewInstance.class);
+public class PreDeployInstance {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
     private final AmazonS3 s3;
     private final String instanceId;
@@ -48,7 +48,7 @@ public class PreDeployNewInstance {
     private final String vpcId;
     private final String subnetId;
 
-    private PreDeployNewInstance(Builder builder) {
+    private PreDeployInstance(Builder builder) {
         s3 = builder.s3;
         instanceId = builder.instanceId;
         jarsDirectory = builder.jarsDirectory;
@@ -149,8 +149,8 @@ public class PreDeployNewInstance {
             return this;
         }
 
-        public PreDeployNewInstance build() {
-            return new PreDeployNewInstance(this);
+        public PreDeployInstance build() {
+            return new PreDeployInstance(this);
         }
     }
 }
