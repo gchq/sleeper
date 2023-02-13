@@ -89,7 +89,7 @@ public class PartitionsBuilder {
     }
 
     public PartitionsBuilder splitToNewChildrenOnDimension(
-            String parentId, String leftId, String rightId, int dimension, String splitPoint) {
+            String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition parent = partitionById(parentId);
         List<Partition> children = factory.split(parent, leftId, rightId, dimension, splitPoint);
         children.forEach(this::add);

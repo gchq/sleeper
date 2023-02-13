@@ -23,6 +23,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
@@ -118,5 +120,26 @@ class PartitionsStatusReportTest {
         // When
         assertThat(getStandardReport(tableProperties, store)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenSplitOnLongString.txt"));
+    }
+
+    @Test
+    void shouldReportRootIsSplitOnFirstFieldAndLeavesAreSplitOnSecondField() throws Exception {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(
+                        new Field("first-key", new LongType()),
+                        new Field("another-key", new StringType()))
+                .build();
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(schema, 10);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                        .rootFirst("parent")
+                        .splitToNewChildrenOnDimension("parent", "A", "B", 0, 123L)
+                        .splitToNewChildrenOnDimension("B", "C", "D", 1, "aaa"))
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
+
+        // When
+        assertThat(getStandardReport(tableProperties, store)).hasToString(
+                example("reports/partitions/rootWithNestedChildrenSplitOnDifferentFields.txt"));
     }
 }
