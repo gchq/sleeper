@@ -62,8 +62,11 @@ public interface TableProperty extends SleeperProperty {
     TableProperty ENCRYPTED = named("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
-            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.")
-            .build();
+            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                    "When this is changed, existing files will retain their encryption status. Further compactions may " +
+                    "apply the new encryption status for that data.\n" +
+                    "See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html")
+            .runCDKDeployWhenChanged(true).build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
@@ -74,12 +77,10 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty S3A_READAHEAD_RANGE = named("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
-            .validationPredicate(Utils::isValidNumberOfBytes)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
             .build();
     TableProperty COMPRESSION_CODEC = named("sleeper.table.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
-            .validationPredicate(Utils::isValidCompressionCodec)
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.")
             .build();
     TableProperty ITERATOR_CLASS_NAME = named("sleeper.table.iterator.class.name")
@@ -90,14 +91,14 @@ public interface TableProperty extends SleeperProperty {
             .description("Iterator configuration. An iterator will be initialised with the following configuration.")
             .build();
     TableProperty SPLIT_POINTS_FILE = named("sleeper.table.splits.file")
-            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the  " +
+            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
                     "table will be created with a single root partition.")
-            .build();
+            .runCDKDeployWhenChanged(true).build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = named("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
-            .validationPredicate(s -> s.equals("true") || s.equals("false"))
+            .validationPredicate(Utils::isTrueOrFalse)
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
-            .build();
+            .runCDKDeployWhenChanged(true).build();
     TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = named("sleeper.table.gc.delay.seconds")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
             .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
@@ -113,20 +114,38 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COMPACTION_FILES_BATCH_SIZE = named("sleeper.table.compaction.files.batch.size")
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
-            .description("The minimum number of files to read in a compaction job. Note that the state store " +
-                    "must support atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
+            .description("The number of files to read in a compaction job. Note that the state store " +
+                    "must support atomic updates for this many files.\n" +
+                    "The DynamoDBStateStore must be able to atomically apply 2 updates to create the output files for a " +
+                    "splitting compaction, and 2 updates for each input file to mark them as ready for garbage " +
+                    "collection. There's a limit of 100 atomic updates, which equates to 48 files in a compaction.\n" +
+                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html\n" +
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = named("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
-            .description("Partitions in this table with more than the following number of records in will be split")
+            .description("Partitions in this table with more than the following number of records in will be split.")
             .build();
     TableProperty STATESTORE_CLASSNAME = named("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
             .description("The name of the class used for the metadata store. The default is DynamoDBStateStore. " +
                     "An alternative option is the S3StateStore.")
             .build();
-
+    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
+                    "the DynamoDBStateStore is used.")
+            .runCDKDeployWhenChanged(true).build();
+    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = named("sleeper.table.metadata.dynamo.consistent.reads")
+            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
+            .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
+                    "are strongly consistent.")
+            .build();
+    TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for the revision table if " +
+                    "the S3StateStore is used.")
+            .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = named("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
             .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. This value " +
@@ -141,6 +160,8 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = named("sleeper.table.bulk.import.emr.executor.market.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE)
+            .description("(EMR mode only) The purchasing option to be used for the executor nodes of the EMR cluster.\n" +
+                    "Valid values are ON_DEMAND or SPOT.")
             .build();
     TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = named("sleeper.table.bulk.import.emr.executor.initial.instances")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
@@ -165,7 +186,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = named("sleeper.table.compaction.strategy.sizeratio.ratio")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
-                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n")
+                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = named("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
             .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
@@ -174,23 +195,25 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     // System defined
-    TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key").build();
-    TableProperty DATA_BUCKET = named("sleeper.table.data.bucket").build();
-    // DynamoDBStateStore properties
-    TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table").build();
-    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.gc.table").build();
-    TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table").build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+    TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key")
+            .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = named("sleeper.table.metadata.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .validationPredicate(s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false"))
+    TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
+            .description("The S3 bucket name where table data is stored.").build();
+    // DynamoDBStateStore properties
+    TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")
+            .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
+            .build();
+    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.gc.table")
+            .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
+                    "in the Sleeper table.")
+            .build();
+    TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table")
+            .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
             .build();
     // S3StateStore properties
-    TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table").build();
-    TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+    TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table")
+            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
             .build();
 
     static List<TableProperty> getAll() {

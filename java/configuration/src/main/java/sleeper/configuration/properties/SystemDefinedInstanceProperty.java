@@ -218,7 +218,7 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
 
     // Bulk import using EMR
     SystemDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_URL = named("sleeper.bulk.import.emr.job.queue.url")
-            .description("The URL of the queue for bulk import jobs using EMR")
+            .description("The URL of the queue for bulk import jobs using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 

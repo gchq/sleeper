@@ -72,13 +72,13 @@ class InstancePropertyReportTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 // Check some set property values and their descriptions are present in the output
-                .contains("# The AWS account number. This is the AWS account that the instance will be deployed to\n" +
+                .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
                         "sleeper.account: 1234567890\n")
-                .contains("# The length of time in days that CloudWatch logs are retained\n" +
+                .contains("# The length of time in days that CloudWatch logs are retained.\n" +
                         "sleeper.log.retention.days: 1\n")
-                .contains("# A list of tags for the project\n" +
+                .contains("# A list of tags for the project.\n" +
                         "sleeper.tags: name,abc,project,test\n")
-                .contains("# The id of the VPC to deploy to\n" +
+                .contains("# The id of the VPC to deploy to.\n" +
                         "sleeper.vpc: aVPC\n")
                 .contains("# The S3 bucket name used to store configuration files.\n" +
                         "sleeper.config.bucket: sleeper-test-instance-config\n")
