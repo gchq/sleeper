@@ -64,8 +64,12 @@ public class PartitionStatusReportTestHelper {
     }
 
     public static TableProperties createTablePropertiesWithSplitThreshold(long splitThreshold) {
+        return createTablePropertiesWithSplitThreshold(DEFAULT_SCHEMA, splitThreshold);
+    }
+
+    public static TableProperties createTablePropertiesWithSplitThreshold(Schema schema, long splitThreshold) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, splitThreshold);
         return tableProperties;
     }

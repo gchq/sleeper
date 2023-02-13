@@ -28,6 +28,7 @@ import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
@@ -92,9 +93,9 @@ class PartitionsStatusReportTest {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
                 .build();
-        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(schema, 10);
         StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
-                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(new byte[42]))
+                        .leavesWithSplits(Arrays.asList("A", "B"), List.of(new byte[42]))
                         .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
@@ -109,7 +110,7 @@ class PartitionsStatusReportTest {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(
+                        .leavesWithSplits(Arrays.asList("A", "B"), List.of(
                                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
                         .parentJoining("parent", "A", "B"))
                 .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
