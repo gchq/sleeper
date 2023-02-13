@@ -37,7 +37,7 @@ class PartitionFactoryTest {
         Schema schema = Schema.builder().rowKeyFields(key).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition parent = partitionFactory.partition("parent", "", null);
+        Partition parent = partitionFactory.rootFirst("parent");
         List<Partition> children = partitionFactory.split(parent, "left", "right", 0, "aaa");
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
@@ -67,6 +67,78 @@ class PartitionFactoryTest {
                         .id("right")
                         .leafPartition(true)
                         .parentPartitionId("parent")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build());
+    }
+
+    @Test
+    void shouldSpecifyParentThenChildPartitionsWithTwoDimensions() {
+        Field key1 = new Field("key1", new StringType());
+        Field key2 = new Field("key2", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(key1, key2).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        PartitionFactory partitionFactory = new PartitionFactory(schema);
+        Partition parent = partitionFactory.rootFirst("parent");
+        List<Partition> children = partitionFactory.split(parent, "left", "right", 0, "aaa");
+        List<Partition> nested = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
+
+        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
+        assertThat(parent).isEqualTo(
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(List.of(
+                                rangeFactory.createRange(key1, "", null),
+                                rangeFactory.createRange(key2, "", null))))
+                        .id("parent")
+                        .leafPartition(false)
+                        .parentPartitionId(null)
+                        .childPartitionIds(List.of("left", "right"))
+                        .dimension(0)
+                        .build());
+        assertThat(children).containsExactly(
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(List.of(
+                                rangeFactory.createRange(key1, "", "aaa"),
+                                rangeFactory.createRange(key2, "", null))))
+                        .id("left")
+                        .leafPartition(true)
+                        .parentPartitionId("parent")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(List.of(
+                                rangeFactory.createRange(key1, "aaa", null),
+                                rangeFactory.createRange(key2, "", null))))
+                        .id("right")
+                        .leafPartition(false)
+                        .parentPartitionId("parent")
+                        .childPartitionIds(List.of("nestedLeft", "nestedRight"))
+                        .dimension(1)
+                        .build());
+        assertThat(nested).containsExactly(
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(List.of(
+                                rangeFactory.createRange(key1, "aaa", null),
+                                rangeFactory.createRange(key2, "", "bbb"))))
+                        .id("nestedLeft")
+                        .leafPartition(true)
+                        .parentPartitionId("right")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(List.of(
+                                rangeFactory.createRange(key1, "aaa", null),
+                                rangeFactory.createRange(key2, "bbb", null))))
+                        .id("nestedRight")
+                        .leafPartition(true)
+                        .parentPartitionId("right")
                         .childPartitionIds(Collections.emptyList())
                         .dimension(-1)
                         .build());

@@ -62,11 +62,12 @@ public class PartitionFactory {
 
     public List<Partition> split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
         Field splitField = schema.getRowKeyFields().get(dimension);
-        Range parentRange = parent.getRegion().getRange(splitField.getName());
+        Region parentRegion = parent.getRegion();
+        Range parentRange = parentRegion.getRange(splitField.getName());
         Range leftRange = rangeFactory.createRange(splitField, parentRange.getMin(), splitPoint);
         Range rightRange = rangeFactory.createRange(splitField, splitPoint, parentRange.getMax());
-        Partition left = partition(leftId, new Region(leftRange));
-        Partition right = partition(rightId, new Region(rightRange));
+        Partition left = partition(leftId, parentRegion.childWithRange(leftRange));
+        Partition right = partition(rightId, parentRegion.childWithRange(rightRange));
         left.setParentPartitionId(parent.getId());
         right.setParentPartitionId(parent.getId());
         parent.setChildPartitionIds(List.of(leftId, rightId));
@@ -79,7 +80,7 @@ public class PartitionFactory {
         return parent(Arrays.asList(left, right), parentId, parentRegion(left.getRegion(), right.getRegion()));
     }
 
-    public Partition rootThatIsLeaf(String id) {
+    public Partition rootFirst(String id) {
         Partition partition = PartitionsFromSplitPoints.createRootPartitionThatIsLeaf(schema, rangeFactory);
         partition.setId(id);
         return partition;

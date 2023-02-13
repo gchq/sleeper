@@ -48,6 +48,10 @@ public class Region {
         this(Collections.singletonList(range));
     }
 
+    private Region(Map<String, Range> rowKeyFieldNameToRange) {
+        this.rowKeyFieldNameToRange = rowKeyFieldNameToRange;
+    }
+
     public Range getRange(String fieldName) {
         return rowKeyFieldNameToRange.get(fieldName);
     }
@@ -94,6 +98,12 @@ public class Region {
             }
         }
         return true;
+    }
+
+    public Region childWithRange(Range range) {
+        Map<String, Range> newRanges = new HashMap<>(rowKeyFieldNameToRange);
+        newRanges.put(range.getFieldName(), range);
+        return new Region(newRanges);
     }
 
     @Override
