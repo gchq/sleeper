@@ -30,6 +30,7 @@ import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.Math.min;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class WaitForGenerateData {
@@ -78,13 +80,22 @@ public class WaitForGenerateData {
     }
 
     private List<Task> describeTasks(String cluster, List<Task> tasks) {
-        DescribeTasksResult result = ecsClient.describeTasks(new DescribeTasksRequest().withCluster(cluster)
-                .withTasks(tasks.stream().map(Task::getTaskArn).collect(Collectors.toList())));
-        List<Failure> failures = result.getFailures();
-        if (!failures.isEmpty()) {
-            LOGGER.warn("Failures describing tasks for cluster {}: {}", cluster, failures);
+        List<DescribeTasksRequest> tasksRequests = new ArrayList<>();
+        for (int i = 0; i < tasks.size(); i += 100) {
+            tasksRequests.add(new DescribeTasksRequest().withCluster(cluster).withTasks(
+                    tasks.subList(i, min(i + 100, tasks.size() - 1))
+                            .stream().map(Task::getTaskArn).collect(Collectors.toList())));
         }
-        return result.getTasks();
+        return tasksRequests.stream()
+                .map(ecsClient::describeTasks)
+                .peek(result -> {
+                    List<Failure> failures = result.getFailures();
+                    if (!failures.isEmpty()) {
+                        LOGGER.warn("Failures describing tasks for cluster {}: {}", cluster, failures);
+                    }
+                })
+                .map(DescribeTasksResult::getTasks).flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
