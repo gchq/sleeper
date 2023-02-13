@@ -542,7 +542,7 @@
                                 <value>${sleeper.system.test.subnet.id}</value>
                             </property>
                         </systemProperties>
-                        <excludedGroups>system-test</excludedGroups>
+                        <excludedGroups>SystemTest</excludedGroups>
                     </configuration>
                     <executions>
                         <execution>
