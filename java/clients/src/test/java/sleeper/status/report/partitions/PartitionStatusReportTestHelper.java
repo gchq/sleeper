@@ -22,7 +22,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -31,11 +30,11 @@ import sleeper.statestore.inmemory.StateStoreTestBuilder;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class PartitionStatusReportTestHelper {
-    private static final Long TEST_THRESHOLD = 10L;
     private static final Schema DEFAULT_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .build();
@@ -44,18 +43,7 @@ public class PartitionStatusReportTestHelper {
     }
 
     public static StateStoreTestBuilder createRootPartitionWithNoChildren() {
-        return StateStoreTestBuilder.from(createPartitionsBuilder().singlePartition("root"))
-                .singleFileInEachLeafPartitionWithRecords(5);
-    }
-
-    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenBelowSplitThreshold() {
-        return createRootPartitionWithTwoChildren()
-                .singleFileInEachLeafPartitionWithRecords(5);
-    }
-
-    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenAboveSplitThreshold() {
-        return createRootPartitionWithTwoChildren()
-                .singleFileInEachLeafPartitionWithRecords(100);
+        return StateStoreTestBuilder.from(createPartitionsBuilder().singlePartition("root"));
     }
 
     public static StateStoreTestBuilder createRootPartitionWithTwoChildren() {
@@ -64,44 +52,26 @@ public class PartitionStatusReportTestHelper {
                 .parentJoining("parent", "A", "B"));
     }
 
-    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenSplitOnByteArray() {
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new ByteArrayType()))
-                .build();
-        return StateStoreTestBuilder.from(new PartitionsBuilder(schema)
-                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(new byte[42]))
-                        .parentJoining("parent", "A", "B"))
-                .singleFileInEachLeafPartitionWithRecords(5);
-    }
-
-    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenSplitOnLongString() {
-        return StateStoreTestBuilder.from(createPartitionsBuilder()
-                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-                        .parentJoining("parent", "A", "B"))
-                .singleFileInEachLeafPartitionWithRecords(5);
-    }
-
     public static PartitionsBuilder createPartitionsBuilder() {
         return new PartitionsBuilder(DEFAULT_SCHEMA);
     }
 
-    public static String getStandardReport(StateStore stateStore) throws StateStoreException {
+    public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
         ToStringPrintStream output = new ToStringPrintStream();
         PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
-        reporter.report(PartitionsStatus.from(createTableProperties(), stateStore));
+        reporter.report(PartitionsStatus.from(tableProperties, stateStore));
         return output.toString();
     }
 
-    public static TableProperties createTableProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "test-table");
-        setTestSplitThreshold(tableProperties);
+    public static TableProperties createTablePropertiesWithSplitThreshold(long splitThreshold) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, splitThreshold);
         return tableProperties;
     }
 
-    public static void setTestSplitThreshold(TableProperties tableProperties) {
-        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, TEST_THRESHOLD);
+    public static TableProperties createTableProperties() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        return createTestTableProperties(instanceProperties, DEFAULT_SCHEMA);
     }
 }

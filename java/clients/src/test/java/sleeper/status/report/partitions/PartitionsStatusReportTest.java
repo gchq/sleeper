@@ -18,78 +18,104 @@ package sleeper.status.report.partitions;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenBelowSplitThreshold;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenSplitOnByteArray;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenSplitOnLongString;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
 
-public class PartitionsStatusReportTest {
+class PartitionsStatusReportTest {
     @Test
-    public void shouldReportNoPartitions() throws Exception {
+    void shouldReportNoPartitions() throws Exception {
         // Given
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
         StateStore store = inMemoryStateStoreWithFixedPartitions(Collections.emptyList());
 
         // When
-        assertThat(getStandardReport(store)).hasToString(
+        assertThat(getStandardReport(properties, store)).hasToString(
                 example("reports/partitions/noPartitions.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithNoChildren() throws Exception {
+    void shouldReportRootPartitionWithNoChildrenAndNoSplitNeeded() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithNoChildren().buildStateStore();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithNoChildren()
+                .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
 
         // When
-        assertThat(getStandardReport(store)).isEqualTo(
+        assertThat(getStandardReport(properties, store)).isEqualTo(
                 example("reports/partitions/rootWithNoChildren.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithTwoChildren() throws Exception {
+    void shouldReportRootPartitionWithTwoChildrenAndNoSplitsNeeded() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold().buildStateStore();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithTwoChildren()
+                .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
 
         // When
-        assertThat(getStandardReport(store)).hasToString(
+        assertThat(getStandardReport(properties, store)).hasToString(
                 example("reports/partitions/rootWithTwoChildren.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws Exception {
+    void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold().buildStateStore();
+        TableProperties properties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithTwoChildren()
+                .singleFileInEachLeafPartitionWithRecords(100).buildStateStore();
 
         // When
-        assertThat(getStandardReport(store)).hasToString(
+        assertThat(getStandardReport(properties, store)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenBothNeedSplitting.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionSplitOnByteArray() throws Exception {
+    void shouldReportRootPartitionSplitOnByteArray() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenSplitOnByteArray().buildStateStore();
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .build();
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(new byte[42]))
+                        .parentJoining("parent", "A", "B"))
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
 
         // When
-        assertThat(getStandardReport(store)).hasToString(
+        assertThat(getStandardReport(tableProperties, store)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenSplitOnByteArray.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionSplitOnLongStringHidingMiddle() throws Exception {
+    void shouldReportRootPartitionSplitOnLongStringHidingMiddle() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenSplitOnLongString().buildStateStore();
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
+                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(
+                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                        .parentJoining("parent", "A", "B"))
+                .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
 
         // When
-        assertThat(getStandardReport(store)).hasToString(
+        assertThat(getStandardReport(tableProperties, store)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenSplitOnLongString.txt"));
     }
 }
