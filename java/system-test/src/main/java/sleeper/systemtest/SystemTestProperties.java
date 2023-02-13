@@ -26,7 +26,7 @@ public class SystemTestProperties extends InstanceProperties {
     @Override
     protected void validate() {
         super.validate();
-        for (SystemTestProperty systemTestProperty : SystemTestProperty.values()) {
+        for (SystemTestProperty systemTestProperty : SystemTestProperty.getAll()) {
             if (!systemTestProperty.validationPredicate().test(get(systemTestProperty))) {
                 throw new IllegalArgumentException("sleeper property: " + systemTestProperty.getPropertyName() + " is invalid");
             }

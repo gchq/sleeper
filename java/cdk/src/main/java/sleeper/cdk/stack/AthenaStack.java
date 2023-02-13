@@ -55,7 +55,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -68,7 +67,6 @@ public class AthenaStack extends NestedStack {
         String version = instanceProperties.get(VERSION);
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
-        List<String> userJars = instanceProperties.getList(USER_JARS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
         S3Code s3Code = Code.fromBucket(jarsBucket, "athena-" + version + ".jar");
 
@@ -129,11 +127,7 @@ public class AthenaStack extends NestedStack {
         for (String className : handlerClasses) {
             Function handler = createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout);
 
-            if (userJars != null) {
-                for (String jar : userJars) {
-                    jarsBucket.grantRead(handler, jar);
-                }
-            }
+            jarsBucket.grantRead(handler);
 
             stateStoreStacks.forEach(sss -> {
                 sss.grantReadActiveFileMetadata(handler);

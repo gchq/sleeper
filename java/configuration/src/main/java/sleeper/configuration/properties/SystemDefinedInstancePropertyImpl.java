@@ -80,9 +80,14 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         return group;
     }
 
+    @Override
+    public boolean isRunCDKDeployWhenChanged() {
+        return true;
+    }
+
     public static final class Builder {
         private String propertyName;
-        private String description = "No description available";
+        private String description;
         private PropertyGroup group;
         private Consumer<SystemDefinedInstanceProperty> addToAllList = Builder::addToAllList;
 

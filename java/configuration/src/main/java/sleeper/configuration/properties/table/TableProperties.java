@@ -35,7 +35,9 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
@@ -81,9 +83,18 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     protected void validate() {
         TableProperty.getAll().stream().filter(prop -> !prop.validationPredicate().test(get(prop)))
                 .forEach(prop -> {
-                    throw new IllegalArgumentException("Property " + prop.getPropertyName() +
-                            " was invalid. It was \"" + get(prop) + "\"");
+                    throw new TablePropertyInvalidException(prop, get(prop));
                 });
+
+        // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
+        // Also see the DynamoDB documentation:
+        // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html
+        if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equals(get(STATESTORE_CLASSNAME))
+                && getInt(COMPACTION_FILES_BATCH_SIZE) > 48) {
+            LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
+                    "chosen statestore. Maximum value is 48.");
+            throw new TablePropertyInvalidException(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
+        }
     }
 
     @Override
