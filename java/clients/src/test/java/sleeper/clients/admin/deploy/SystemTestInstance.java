@@ -23,11 +23,14 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -37,6 +40,7 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
     private final Path scriptsDir = findScriptsDir();
+    private final Path generatedDir = scriptsDir.resolve("generated");
     private final Path jarsDir = scriptsDir.resolve("jars");
     private final String sleeperVersion = System.getProperty("sleeper.system.test.version");
     private final String vpcId = System.getProperty("sleeper.system.test.vpc.id");
@@ -52,7 +56,9 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .vpcId(vpcId)
                 .subnetId(subnetId)
                 .build().preDeploy();
-        TablePropertiesTestHelper.createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client);
+        TableProperties tableProperties = TablePropertiesTestHelper.createTestTableProperties(
+                instanceProperties, schemaWithKey("key"), "single-key", s3Client);
+        SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(tableProperties));
     }
 
     public InstanceProperties loadInstanceProperties() {

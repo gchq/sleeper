@@ -41,19 +41,36 @@ public class TablePropertiesTestHelper {
     }
 
     public static TableProperties createTestTableProperties(
+            InstanceProperties instanceProperties, Schema schema, String tableName, AmazonS3 s3) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, tableName);
+        save(tableProperties, s3);
+        return tableProperties;
+    }
+
+    public static TableProperties createTestTableProperties(
             InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, Consumer<TableProperties> tableConfig) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableConfig.accept(tableProperties);
+        save(tableProperties, s3);
+        return tableProperties;
+    }
+
+    private static void save(TableProperties tableProperties, AmazonS3 s3) {
         try {
             tableProperties.saveToS3(s3);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save table properties", e);
         }
-        return tableProperties;
     }
 
     public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema, String tableName) {
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, tableName);
         tableProperties.setSchema(schema);
         return tableProperties;
     }
