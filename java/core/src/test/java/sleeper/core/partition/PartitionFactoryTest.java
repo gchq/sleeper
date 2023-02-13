@@ -29,16 +29,16 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PartitionFactoryTest {
+class PartitionFactoryTest {
 
     @Test
-    public void canSpecifyParentThenChildPartition() {
+    void shouldSpecifyParentThenChildPartition() {
         Field key = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(key).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.partition("parent", "", null);
-        Partition child = partitionFactory.child(parent, "child", "", "aaa");
+        List<Partition> children = partitionFactory.split(parent, "left", "right", 0, "aaa");
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(
@@ -48,14 +48,23 @@ public class PartitionFactoryTest {
                         .id("parent")
                         .leafPartition(false)
                         .parentPartitionId(null)
-                        .childPartitionIds(Collections.singletonList("child"))
+                        .childPartitionIds(List.of("left", "right"))
                         .dimension(0)
                         .build());
-        assertThat(child).isEqualTo(
+        assertThat(children).containsExactly(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(key, "", "aaa")))
-                        .id("child")
+                        .id("left")
+                        .leafPartition(true)
+                        .parentPartitionId("parent")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(key, "aaa", null)))
+                        .id("right")
                         .leafPartition(true)
                         .parentPartitionId("parent")
                         .childPartitionIds(Collections.emptyList())
@@ -64,7 +73,7 @@ public class PartitionFactoryTest {
     }
 
     @Test
-    public void canSpecifyChildrenThenParentPartition() {
+    void shouldSpecifyChildrenThenParentPartition() {
         Field key = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(key).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
