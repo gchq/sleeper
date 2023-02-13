@@ -627,6 +627,7 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <groups>SystemTest</groups>
+                            <excludedGroups>none</excludedGroups>
                         </configuration>
                     </plugin>
                     <plugin>

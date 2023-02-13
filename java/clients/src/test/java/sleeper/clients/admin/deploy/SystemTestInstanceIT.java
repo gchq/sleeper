@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin.deploy;
 
+import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 @Tag("SystemTest")
@@ -33,7 +35,18 @@ class SystemTestInstanceIT {
     private static final SystemTestInstance INSTANCE = new SystemTestInstance();
 
     @Test
-    void shouldFindJars() {
+    void shouldCreateConfigBucket() {
+        // Given
+        InstanceProperties instanceProperties = INSTANCE.loadInstanceProperties();
+
+        // When / Then
+        assertThat(INSTANCE.getS3Client().listBuckets())
+                .extracting(Bucket::getName)
+                .contains(instanceProperties.get(CONFIG_BUCKET));
+    }
+
+    @Test
+    void shouldUploadJars() {
         // Given
         InstanceProperties instanceProperties = INSTANCE.loadInstanceProperties();
 
