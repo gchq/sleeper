@@ -161,6 +161,39 @@ class PartitionsBuilderTest {
     }
 
     @Test
+    void shouldBuildPartitionsSpecifyingSplitOnTwoDifferentDimensions() {
+        // Given
+        Field field1 = new Field("key1", new StringType());
+        Field field2 = new Field("key2", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+
+        // When
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("parent")
+                .splitToNewChildrenOnDimension("parent", "A", "B", 0, "aaa")
+                .splitToNewChildrenOnDimension("B", "C", "D", 1, "bbb")
+                .buildTree();
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        assertThat(tree.getPartition("parent").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "", null))));
+        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "", "aaa"),
+                rangeFactory.createRange(field2, "", null))));
+        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "", null))));
+        assertThat(tree.getPartition("C").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "", "bbb"))));
+        assertThat(tree.getPartition("D").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "bbb", null))));
+    }
+
+    @Test
     void shouldBuildSinglePartitionTree() {
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
