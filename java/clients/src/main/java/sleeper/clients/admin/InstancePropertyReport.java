@@ -50,10 +50,10 @@ public class InstancePropertyReport {
             if (currentGroup == null || !currentGroup.equals(instanceProperty.getPropertyGroup())) {
                 currentGroup = instanceProperty.getPropertyGroup();
                 out.println();
-                out.println(formatDescription(currentGroup.getDescription()));
+                out.println(formatDescription(currentGroup));
             }
             out.println();
-            out.println(formatDescription(instanceProperty.getDescription()));
+            out.println(formatDescription(instanceProperty));
             out.println(instanceProperty.getPropertyName() + ": " + instanceProperties.get(instanceProperty));
         }
         confirmReturnToMainScreen(out, in);

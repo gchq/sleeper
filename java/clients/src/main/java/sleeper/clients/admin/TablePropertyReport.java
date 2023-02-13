@@ -47,10 +47,10 @@ public class TablePropertyReport {
             if (currentGroup == null || !currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
                 out.println();
-                out.println(formatDescription(currentGroup.getDescription()));
+                out.println(formatDescription(currentGroup));
             }
             out.println();
-            out.println(formatDescription(property.getDescription()));
+            out.println(formatDescription(property));
             out.println(property.getPropertyName() + ": " + tableProperties.get(property));
         }
         confirmReturnToMainScreen(out, in);
