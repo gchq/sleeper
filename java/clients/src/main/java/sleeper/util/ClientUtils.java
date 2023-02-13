@@ -114,13 +114,14 @@ public class ClientUtils {
 
     public static void clearDirectory(Path tempDir) {
         try (Stream<Path> paths = Files.walk(tempDir)) {
-            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
-                try {
-                    Files.delete(path);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+            paths.skip(1).sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

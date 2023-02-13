@@ -43,4 +43,13 @@ public class ClientUtilsFilesTest {
         // Then
         assertThat(newFile).doesNotExist();
     }
+
+    @Test
+    void shouldNotRemoveRootDirectory() {
+        // Given/When
+        ClientUtils.clearDirectory(tempDir);
+
+        // Then
+        assertThat(tempDir).exists();
+    }
 }
