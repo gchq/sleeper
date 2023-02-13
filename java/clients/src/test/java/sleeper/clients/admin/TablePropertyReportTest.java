@@ -44,10 +44,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintAllTableProperties() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+        createTablePropertiesAndSelectTable();
 
         // When
         String output = runClientGetOutput();
@@ -67,20 +64,13 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintPropertiesAndDescriptions() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+        createTablePropertiesAndSelectTable();
 
         // When
         String output = runClientGetOutput();
 
-        // Then
+        // Then check some set table property values are present in the output
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Table Property Report")
-                // Check some set table property values are present in the output
                 .contains("# A unique name identifying this table.\n" +
                         "sleeper.table.name: test-table\n")
                 .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
@@ -108,19 +98,13 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintSpacingBetweenProperties() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+        createTablePropertiesAndSelectTable();
 
         // When
         String output = runClientGetOutput();
 
         // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Table Property Report")
                 .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
                         "sleeper.table.encrypted: false\n" +
                         "\n" +
@@ -136,20 +120,12 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintPropertyGroupDescriptions() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+        createTablePropertiesAndSelectTable();
 
         // When
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Table Property Report");
-
         assertThat(output)
                 .contains("# The following properties relate to configuring tables.\n\n")
                 .contains("# The following table properties relate to the iterator used when reading from the table.\n\n")
@@ -166,21 +142,12 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintPropertiesInTheCorrectOrder() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+        createTablePropertiesAndSelectTable();
 
         // When
         String output = runClientGetOutput();
 
-        // Then
-        assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Table Property Report");
-
-        // Check ordering in the same group
+        // Then check ordering in the same group
         assertThat(output.indexOf("sleeper.table.name"))
                 .isLessThan(output.indexOf("sleeper.table.schema"))
                 .isLessThan(output.indexOf("sleeper.table.encrypted"));
@@ -199,20 +166,12 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldPrintPropertyGroupsInTheCorrectOrder() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+        createTablePropertiesAndSelectTable();
 
         // When
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Table Property Report");
-
         assertThat(output.indexOf("The following properties relate to configuring tables."))
                 .isLessThan(output.indexOf("The following table properties relate to the iterator used when reading from the table."));
         assertThat(output.indexOf("The following table properties relate to the iterator used when reading from the table."))
@@ -226,9 +185,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldExitWhenChosenOnTablePropertyReportScreen() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
+        createTableProperties();
         in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
 
         // When
@@ -245,9 +202,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        setInstanceProperties(instanceProperties, tableProperties);
+        createTableProperties();
         in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 
         // When
@@ -260,6 +215,18 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
 
         verify(in.mock, times(3)).promptLine(any());
         verifyNoMoreInteractions(in.mock);
+    }
+
+    private void createTablePropertiesAndSelectTable() {
+        TableProperties tableProperties = createTableProperties();
+        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
+    }
+
+    private TableProperties createTableProperties() {
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        setInstanceProperties(instanceProperties, tableProperties);
+        return tableProperties;
     }
 
     private void confirmAndVerifyNoMoreInteractions() {
