@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin.deploy;
 
+import com.amazonaws.services.ecr.model.ListImagesRequest;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import org.junit.jupiter.api.Tag;
@@ -26,6 +27,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 @Tag("SystemTest")
@@ -55,5 +57,17 @@ class SystemTestInstanceIT {
 
         // When / Then
         assertThat(result.getObjectSummaries()).isNotEmpty();
+    }
+
+    @Test
+    void shouldUploadDockerImages() {
+        // Given
+        InstanceProperties instanceProperties = INSTANCE.loadInstanceProperties();
+
+        // When / Then
+        assertThat(INSTANCE.getEcrClient().listImages(new ListImagesRequest()
+                        .withRepositoryName(instanceProperties.get(ECR_INGEST_REPO)))
+                .getImageIds())
+                .isNotEmpty();
     }
 }

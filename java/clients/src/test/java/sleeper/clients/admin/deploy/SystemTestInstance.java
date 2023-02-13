@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin.deploy;
 
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
@@ -23,13 +25,12 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 import sleeper.util.ClientUtils;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -38,8 +39,9 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class SystemTestInstance implements BeforeAllCallback {
 
     private final String instanceId = System.getProperty("sleeper.system.test.instance.id");
-    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+    private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
     private final Path scriptsDir = findScriptsDir();
     private final Path generatedDir = scriptsDir.resolve("generated");
     private final Path jarsDir = scriptsDir.resolve("jars");
@@ -67,17 +69,15 @@ public class SystemTestInstance implements BeforeAllCallback {
     }
 
     public InstanceProperties loadInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return instanceProperties;
+        return LoadLocalProperties.loadInstancePropertiesFromDirectory(generatedDir);
     }
 
     public AmazonS3 getS3Client() {
         return s3Client;
+    }
+
+    public AmazonECR getEcrClient() {
+        return ecr;
     }
 
     private static Path findScriptsDir() {
