@@ -16,6 +16,8 @@
 package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +44,7 @@ public class PreDeployInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
     private final AmazonS3 s3;
+    private final AWSSecurityTokenService sts;
     private final String instanceId;
     private final Path jarsDirectory;
     private final String sleeperVersion;
@@ -50,6 +53,7 @@ public class PreDeployInstance {
 
     private PreDeployInstance(Builder builder) {
         s3 = builder.s3;
+        sts = builder.sts;
         instanceId = builder.instanceId;
         jarsDirectory = builder.jarsDirectory;
         sleeperVersion = builder.sleeperVersion;
@@ -69,7 +73,7 @@ public class PreDeployInstance {
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        instanceProperties.set(ACCOUNT, s3.getS3AccountOwner().getId());
+        instanceProperties.set(ACCOUNT, getAccount());
         instanceProperties.set(REGION, s3.getRegionName());
         instanceProperties.set(VERSION, sleeperVersion);
         instanceProperties.set(VPC_ID, vpcId);
@@ -104,12 +108,17 @@ public class PreDeployInstance {
         }
     }
 
+    private String getAccount() {
+        return sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount();
+    }
+
     public static Builder builder() {
         return new Builder();
     }
 
     public static final class Builder {
         private AmazonS3 s3;
+        private AWSSecurityTokenService sts;
         private String instanceId;
         private Path jarsDirectory;
         private String sleeperVersion;
@@ -121,6 +130,11 @@ public class PreDeployInstance {
 
         public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
+            return this;
+        }
+
+        public Builder sts(AWSSecurityTokenService sts) {
+            this.sts = sts;
             return this;
         }
 

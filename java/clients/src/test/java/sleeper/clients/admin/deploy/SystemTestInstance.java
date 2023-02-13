@@ -17,6 +17,8 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -33,6 +35,7 @@ public class SystemTestInstance implements BeforeAllCallback {
 
     private final String instanceId = System.getProperty("sleeper.system.test.instance.id");
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+    private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
     private final Path scriptsDir = findScriptsDir();
     private final Path jarsDir = scriptsDir.resolve("jars");
     private final String sleeperVersion = System.getProperty("sleeper.system.test.version");
@@ -42,7 +45,7 @@ public class SystemTestInstance implements BeforeAllCallback {
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         InstanceProperties instanceProperties = PreDeployInstance.builder()
-                .s3(s3Client)
+                .s3(s3Client).sts(sts)
                 .instanceId(instanceId)
                 .jarsDirectory(jarsDir)
                 .sleeperVersion(sleeperVersion)
