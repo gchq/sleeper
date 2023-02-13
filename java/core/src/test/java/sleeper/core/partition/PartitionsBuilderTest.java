@@ -31,10 +31,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class PartitionsBuilderTest {
+class PartitionsBuilderTest {
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirst() {
+    void shouldBuildPartitionsSpecifyingSplitPointsLeavesFirst() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -101,7 +101,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
+    void shouldBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -122,7 +122,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void failJoiningAllLeavesIfNonLeafSpecified() {
+    void failJoiningAllLeavesIfNonLeafSpecified() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -138,7 +138,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitOnSecondDimension() {
+    void shouldBuildPartitionsSpecifyingSplitOnSecondDimension() {
         // Given
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
@@ -161,7 +161,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildSinglePartitionTree() {
+    void shouldBuildSinglePartitionTree() {
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         PartitionTree tree = new PartitionsBuilder(schema)
