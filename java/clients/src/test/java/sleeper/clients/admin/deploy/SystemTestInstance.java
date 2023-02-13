@@ -44,7 +44,6 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
     private final Path scriptsDir = findScriptsDir();
     private final Path generatedDir = scriptsDir.resolve("generated");
-    private final Path jarsDir = scriptsDir.resolve("jars");
     private final String sleeperVersion = System.getProperty("sleeper.system.test.version");
     private final String vpcId = System.getProperty("sleeper.system.test.vpc.id");
     private final String subnetId = System.getProperty("sleeper.system.test.subnet.id");
@@ -63,7 +62,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(tableProperties));
         PreDeployInstance.builder()
                 .s3(s3Client)
-                .jarsDirectory(jarsDir)
+                .scriptsDirectory(scriptsDir)
                 .instanceProperties(instanceProperties)
                 .build().preDeploy();
     }

@@ -29,24 +29,38 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 public class PreDeployInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
     private final AmazonS3 s3;
     private final Path jarsDirectory;
+    private final Path baseDockerDirectory;
+    private final Path uploadDockerImagesScript;
     private final InstanceProperties instanceProperties;
 
     private PreDeployInstance(Builder builder) {
         s3 = builder.s3;
         jarsDirectory = builder.jarsDirectory;
+        baseDockerDirectory = builder.baseDockerDirectory;
+        uploadDockerImagesScript = builder.uploadDockerImagesScript;
         instanceProperties = builder.instanceProperties;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public void preDeploy() throws IOException {
         createConfigBucket();
         uploadJars();
+        uploadDockerImages();
     }
 
     private void createConfigBucket() {
@@ -75,20 +89,26 @@ public class PreDeployInstance {
         }
     }
 
-    public static Builder builder() {
-        return new Builder();
+    private void uploadDockerImages() throws IOException {
+        Runtime.getRuntime().exec(new String[]{
+                uploadDockerImagesScript.toString(),
+                instanceProperties.get(ID),
+                String.format("%s.dkr.ecr.%s.amazonaws.com",
+                        instanceProperties.get(ACCOUNT), instanceProperties.get(REGION)),
+                instanceProperties.get(VERSION),
+                instanceProperties.get(OPTIONAL_STACKS),
+                baseDockerDirectory.toString()
+        });
     }
 
     public static final class Builder {
         private AmazonS3 s3;
         private Path jarsDirectory;
+        private Path baseDockerDirectory;
+        private Path uploadDockerImagesScript;
         private InstanceProperties instanceProperties;
 
         private Builder() {
-        }
-
-        public static Builder builder() {
-            return new Builder();
         }
 
         public Builder s3(AmazonS3 s3) {
@@ -96,8 +116,24 @@ public class PreDeployInstance {
             return this;
         }
 
+        public Builder scriptsDirectory(Path scriptsDirectory) {
+            return jarsDirectory(scriptsDirectory.resolve("jars"))
+                    .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
+                    .baseDockerDirectory(scriptsDirectory.resolve("docker"));
+        }
+
         public Builder jarsDirectory(Path jarsDirectory) {
             this.jarsDirectory = jarsDirectory;
+            return this;
+        }
+
+        public Builder baseDockerDirectory(Path baseDockerDirectory) {
+            this.baseDockerDirectory = baseDockerDirectory;
+            return this;
+        }
+
+        public Builder uploadDockerImagesScript(Path uploadDockerImagesScript) {
+            this.uploadDockerImagesScript = uploadDockerImagesScript;
             return this;
         }
 
