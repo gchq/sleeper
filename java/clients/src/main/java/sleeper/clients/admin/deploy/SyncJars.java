@@ -39,12 +39,12 @@ public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
     private final AmazonS3 s3;
     private final Path jarsDirectory;
-    private final InstanceProperties instanceProperties;
+    private final String bucketName;
 
     private SyncJars(Builder builder) {
         s3 = builder.s3;
         jarsDirectory = builder.jarsDirectory;
-        instanceProperties = builder.instanceProperties;
+        bucketName = builder.instanceProperties.get(JARS_BUCKET);
     }
 
     public static Builder builder() {
@@ -53,12 +53,31 @@ public class SyncJars {
 
     public void sync() throws IOException {
         LOGGER.info("Creating jars bucket");
-        String bucketName = instanceProperties.get(JARS_BUCKET);
         s3.createBucket(bucketName);
+
         List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
 
         Set<Path> uploadJars = new LinkedHashSet<>(jars);
+        List<String> deleteKeys = removeUnmodifiedJarsAndReturnS3KeysToDelete(uploadJars);
+
+        LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
+        if (!deleteKeys.isEmpty()) {
+            s3.deleteObjects(new DeleteObjectsRequest(bucketName)
+                    .withKeys(deleteKeys.toArray(new String[0])));
+        }
+
+        LOGGER.info("Uploading {} jars", uploadJars.size());
+        uploadJars.stream().parallel().forEach(jar -> {
+            LOGGER.info("Uploading jar: {}", jar.getFileName());
+            s3.putObject(bucketName,
+                    "" + jar.getFileName(),
+                    jar.toFile());
+            LOGGER.info("Finished uploading jar: {}", jar.getFileName());
+        });
+    }
+
+    private List<String> removeUnmodifiedJarsAndReturnS3KeysToDelete(Set<Path> uploadJars) throws IOException {
         List<String> deleteKeys = new ArrayList<>();
         for (S3ObjectSummary object : S3Objects.inBucket(s3, bucketName)) {
             Path path = jarsDirectory.resolve(object.getKey());
@@ -72,20 +91,7 @@ public class SyncJars {
                 deleteKeys.add(object.getKey());
             }
         }
-        LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
-        if (!deleteKeys.isEmpty()) {
-            s3.deleteObjects(new DeleteObjectsRequest(bucketName)
-                    .withKeys(deleteKeys.toArray(new String[0])));
-        }
-        LOGGER.info("Uploading {} jars", uploadJars.size());
-
-        uploadJars.stream().parallel().forEach(jar -> {
-            LOGGER.info("Uploading jar: {}", jar.getFileName());
-            s3.putObject(bucketName,
-                    "" + jar.getFileName(),
-                    jar.toFile());
-            LOGGER.info("Finished uploading jar: {}", jar.getFileName());
-        });
+        return deleteKeys;
     }
 
     public static final class Builder {
