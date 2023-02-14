@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -106,8 +105,7 @@ public class PreDeployInstance {
                 .map(Repository::getRepositoryName).collect(Collectors.toSet());
         return dockerRepositoryNames.containsAll(List.of(
                 instanceProperties.get(ECR_INGEST_REPO),
-                instanceProperties.get(ECR_COMPACTION_REPO),
-                instanceProperties.get(BULK_IMPORT_REPO)));
+                instanceProperties.get(ECR_COMPACTION_REPO)));
     }
 
     private Stream<Repository> streamDockerRepositories() {

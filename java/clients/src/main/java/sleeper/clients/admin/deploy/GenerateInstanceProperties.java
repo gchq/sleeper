@@ -25,7 +25,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -64,7 +63,6 @@ public class GenerateInstanceProperties {
         instanceProperties.set(SUBNET, subnetId);
         instanceProperties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
         instanceProperties.set(ECR_INGEST_REPO, instanceId + "/ingest");
-        instanceProperties.set(BULK_IMPORT_REPO, instanceId + "/bulk-import-runner");
         return instanceProperties;
     }
 
