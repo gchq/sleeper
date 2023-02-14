@@ -16,25 +16,20 @@
 package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 public class PreDeployInstance {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
     private final AmazonS3 s3;
     private final Path jarsDirectory;
@@ -60,18 +55,11 @@ public class PreDeployInstance {
     }
 
     private void uploadJars() throws IOException {
-        LOGGER.info("Creating jars bucket");
-        s3.createBucket(instanceProperties.get(JARS_BUCKET));
-        List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
-        LOGGER.info("Found {} jars to upload", jars.size());
-        jars.stream().parallel().forEach(jar -> {
-            LOGGER.info("Uploading jar: {}", jar.getFileName());
-            s3.putObject(
-                    instanceProperties.get(JARS_BUCKET),
-                    "" + jar.getFileName(),
-                    jar.toFile());
-            LOGGER.info("Finished uploading jar: {}", jar.getFileName());
-        });
+        SyncJars.builder()
+                .s3(s3)
+                .jarsDirectory(jarsDirectory)
+                .instanceProperties(instanceProperties)
+                .build().sync();
     }
 
     private void uploadDockerImages() throws IOException, InterruptedException {
