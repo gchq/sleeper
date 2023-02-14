@@ -20,13 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -71,7 +69,7 @@ public class PreDeployInstance {
     private void uploadJars() throws IOException {
         LOGGER.info("Creating jars bucket");
         s3.createBucket(instanceProperties.get(JARS_BUCKET));
-        List<Path> jars = listJarsToUpload();
+        List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars to upload", jars.size());
         jars.stream().parallel().forEach(jar -> {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
@@ -81,12 +79,6 @@ public class PreDeployInstance {
                     jar.toFile());
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });
-    }
-
-    private List<Path> listJarsToUpload() throws IOException {
-        try (Stream<Path> jars = Files.list(jarsDirectory)) {
-            return jars.filter(path -> path.endsWith(".jar")).collect(Collectors.toList());
-        }
     }
 
     private void uploadDockerImages() throws IOException, InterruptedException {

@@ -24,6 +24,7 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,5 +69,20 @@ public class ClientUtilsFilesTest {
 
         // Then
         assertThat(tempDir).isEmptyDirectory();
+    }
+
+    @Test
+    void shouldFindJarFiles() throws IOException {
+        // Given
+        Files.createFile(tempDir.resolve("test1.jar"));
+        Files.createFile(tempDir.resolve("test2.jar"));
+        Files.createFile(tempDir.resolve("test3.dat"));
+
+        // When
+        List<Path> jars = ClientUtils.listJarsInDirectory(tempDir);
+
+        // Then
+        assertThat(jars)
+                .containsExactly(tempDir.resolve("test1.jar"), tempDir.resolve("test2.jar"));
     }
 }
