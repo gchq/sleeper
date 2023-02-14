@@ -17,7 +17,7 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,9 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -82,28 +80,22 @@ class SyncJarsIT {
     @Test
     void shouldLeaveJarsIfAlreadyPresent() throws IOException, InterruptedException {
         // Given
-        Files.createFile(tempDir.resolve("test1.jar"));
-        Files.createFile(tempDir.resolve("test2.jar"));
+        Files.createFile(tempDir.resolve("unmodified.jar"));
+        Files.writeString(tempDir.resolve("modified.jar"), "data1");
         syncJarsToBucket(bucketName);
-        ListObjectsV2Result objectsBefore = s3.listObjectsV2(bucketName);
+        Date lastModifiedBefore = s3.getObjectMetadata(bucketName, "unmodified.jar").getLastModified();
 
         // When
         Thread.sleep(1000);
+        Files.writeString(tempDir.resolve("modified.jar"), "data2");
         syncJarsToBucket(bucketName);
 
         // Then
-        ListObjectsV2Result objectsAfter = s3.listObjectsV2(bucketName);
-        assertThat(objectsAfter.getObjectSummaries())
-                .extracting(S3ObjectSummary::getKey)
-                .containsExactly("test1.jar", "test2.jar");
-        assertThat(getLastModifiedTimes(objectsAfter))
-                .isEqualTo(getLastModifiedTimes(objectsBefore));
-    }
-
-    private List<Date> getLastModifiedTimes(ListObjectsV2Result result) {
-        return result.getObjectSummaries().stream()
-                .map(S3ObjectSummary::getLastModified)
-                .collect(Collectors.toList());
+        assertThat(s3.getObjectMetadata(bucketName, "unmodified.jar"))
+                .extracting(ObjectMetadata::getLastModified)
+                .isEqualTo(lastModifiedBefore);
+        assertThat(s3.getObjectAsString(bucketName, "modified.jar"))
+                .isEqualTo("data2");
     }
 
     private void syncJarsToBucket(String bucketName) throws IOException {

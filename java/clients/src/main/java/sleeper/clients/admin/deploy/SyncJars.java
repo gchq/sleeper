@@ -25,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,7 +59,11 @@ public class SyncJars {
         Set<Path> unuploadedJars = new LinkedHashSet<>(jars);
         for (S3ObjectSummary object : S3Objects.inBucket(s3, bucketName)) {
             Path path = jarsDirectory.resolve(object.getKey());
-            unuploadedJars.remove(path);
+            long fileLastModified = Files.getLastModifiedTime(path).toInstant().getEpochSecond();
+            long bucketLastModified = object.getLastModified().toInstant().getEpochSecond();
+            if (fileLastModified <= bucketLastModified) {
+                unuploadedJars.remove(path);
+            }
         }
         LOGGER.info("Found {} jars to upload", unuploadedJars.size());
 
