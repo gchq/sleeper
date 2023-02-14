@@ -17,7 +17,6 @@ package sleeper.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -125,12 +124,9 @@ public class ClientUtils {
         }
     }
 
-    // Path.getFileName returns null when path has no elements
-    // but throwing a null pointer exception in this method is fine
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public static List<Path> listJarsInDirectory(Path directory) throws IOException {
         try (Stream<Path> jars = Files.list(directory)) {
-            return jars.filter(path -> path.getFileName().toString().endsWith(".jar")).collect(Collectors.toList());
+            return jars.filter(path -> path.toFile().getName().endsWith(".jar")).collect(Collectors.toList());
         }
     }
 
