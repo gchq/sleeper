@@ -17,6 +17,7 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.jupiter.api.Test;
@@ -74,7 +75,7 @@ class SyncJarsIT {
         // Then
         assertThat(s3.listObjectsV2(bucketName).getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
-                .containsExactly("test1.jar", "test2.jar");
+                .containsExactlyInAnyOrder("test1.jar", "test2.jar");
     }
 
     @Test
@@ -82,15 +83,21 @@ class SyncJarsIT {
         // Given
         Files.createFile(tempDir.resolve("unmodified.jar"));
         Files.writeString(tempDir.resolve("modified.jar"), "data1");
+        Files.createFile(tempDir.resolve("deleted.jar"));
         syncJarsToBucket(bucketName);
         Date lastModifiedBefore = s3.getObjectMetadata(bucketName, "unmodified.jar").getLastModified();
 
         // When
         Thread.sleep(1000);
+        Files.delete(tempDir.resolve("deleted.jar"));
+        Files.createFile(tempDir.resolve("added.jar"));
         Files.writeString(tempDir.resolve("modified.jar"), "data2");
         syncJarsToBucket(bucketName);
 
         // Then
+        assertThat(S3Objects.inBucket(s3, bucketName))
+                .extracting(S3ObjectSummary::getKey)
+                .containsExactlyInAnyOrder("added.jar", "modified.jar", "unmodified.jar");
         assertThat(s3.getObjectMetadata(bucketName, "unmodified.jar"))
                 .extracting(ObjectMetadata::getLastModified)
                 .isEqualTo(lastModifiedBefore);

@@ -59,10 +59,14 @@ public class SyncJars {
         Set<Path> unuploadedJars = new LinkedHashSet<>(jars);
         for (S3ObjectSummary object : S3Objects.inBucket(s3, bucketName)) {
             Path path = jarsDirectory.resolve(object.getKey());
-            long fileLastModified = Files.getLastModifiedTime(path).toInstant().getEpochSecond();
-            long bucketLastModified = object.getLastModified().toInstant().getEpochSecond();
-            if (fileLastModified <= bucketLastModified) {
-                unuploadedJars.remove(path);
+            if (unuploadedJars.contains(path)) {
+                long fileLastModified = Files.getLastModifiedTime(path).toInstant().getEpochSecond();
+                long bucketLastModified = object.getLastModified().toInstant().getEpochSecond();
+                if (fileLastModified <= bucketLastModified) {
+                    unuploadedJars.remove(path);
+                }
+            } else {
+                s3.deleteObject(bucketName, object.getKey());
             }
         }
         LOGGER.info("Found {} jars to upload", unuploadedJars.size());
