@@ -68,6 +68,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
                 .instanceProperties(instanceProperties)
+                .reuploadDockerImages(false)
                 .build().preDeploy();
         ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
@@ -75,6 +76,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", instanceProperties.get(VERSION))))
                 .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .newInstance(false)
                 .build().deploy();
     }
 
