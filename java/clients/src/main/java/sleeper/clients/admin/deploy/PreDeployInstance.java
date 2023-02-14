@@ -77,7 +77,7 @@ public class PreDeployInstance {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
             s3.putObject(
                     instanceProperties.get(JARS_BUCKET),
-                    jar.getFileName().toString(),
+                    "" + jar.getFileName(),
                     jar.toFile());
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });
