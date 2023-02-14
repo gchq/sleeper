@@ -23,6 +23,7 @@ import sleeper.configuration.properties.table.CompressionCodec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Utility methods for interacting with SQS queues.
@@ -40,19 +41,19 @@ public class Utils {
     private static final Set<String> VALID_EBS_VOLUME_TYPES = Sets.newHashSet("gp2", "gp3", "io1", "io2");
 
     public static boolean isPositiveInteger(String integer) {
-        return Integer.parseInt(integer) > 0;
+        return parseAndCheckInteger(integer, num -> num > 0);
     }
 
     public static boolean isNonNegativeInteger(String integer) {
-        return Integer.parseInt(integer) >= 0;
+        return parseAndCheckInteger(integer, num -> num >= 0);
     }
 
     public static boolean isPositiveLong(String value) {
-        return Long.parseLong(value) > 0;
+        return parseAndCheckLong(value, num -> num > 0);
     }
 
     public static boolean isPositiveDouble(String value) {
-        return Double.parseDouble(value) > 0;
+        return parseAndCheckDouble(value, num -> num > 0);
     }
 
     public static boolean isNonNullNonEmptyString(String string) {
@@ -64,8 +65,7 @@ public class Utils {
     }
 
     public static boolean isValidLambdaTimeout(String timeout) {
-        int i = Integer.parseInt(timeout);
-        return i <= 900 && i > 0;
+        return parseAndCheckInteger(timeout, num -> num <= 900 && num > 0);
     }
 
     public static boolean isValidFadvise(String fadvise) {
@@ -91,10 +91,9 @@ public class Utils {
         if (!isNonNullNonEmptyString(ebsSizeInGb)) {
             return false;
         }
-        int ebsSizeInGbInt = Integer.parseInt(ebsSizeInGb);
         // From source code to software.amazon.awscdk.services.emr.CfnCluster.VolumeSpecificationProperty.Builder:
         // "This can be a number from 1 - 1024. If the volume type is EBS-optimized, the minimum value is 10."
-        return ebsSizeInGbInt >= 10 && ebsSizeInGbInt <= 1024;
+        return parseAndCheckInteger(ebsSizeInGb, num -> num >= 10 && num <= 1024);
     }
 
     public static boolean isValidEbsVolumeType(String ebsVolumeType) {
@@ -105,13 +104,36 @@ public class Utils {
         if (!isNonNullNonEmptyString(string)) {
             return false;
         }
-        int stringAsInt = Integer.parseInt(string);
-        return stringAsInt >= 1 && stringAsInt <= maxValue;
+        return parseAndCheckInteger(string, num -> num >= 1 && num <= maxValue);
     }
 
     public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
         List<T> combinedList = new ArrayList<>(list1);
         combinedList.addAll(list2);
         return combinedList;
+    }
+
+    static boolean parseAndCheckInteger(String string, Predicate<Integer> check) {
+        try {
+            return check.test(Integer.parseInt(string));
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    static boolean parseAndCheckLong(String string, Predicate<Long> check) {
+        try {
+            return check.test(Long.parseLong(string));
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    static boolean parseAndCheckDouble(String string, Predicate<Double> check) {
+        try {
+            return check.test(Double.parseDouble(string));
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

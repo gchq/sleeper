@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.configuration.Utils.combineLists;
 
 public class UtilsTest {
@@ -37,5 +38,16 @@ public class UtilsTest {
         // Then
         assertThat(combinedList)
                 .containsExactly("test1", "test2", "test3", "test4");
+    }
+
+    @Test
+    void shouldNotThrowExceptionsDuringNumericPredicateChecks() {
+        // Given/When/Then
+        assertThatCode(() -> Utils.parseAndCheckInteger("ABC", num -> num > 0))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> Utils.parseAndCheckLong("ABC", num -> num > 0L))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> Utils.parseAndCheckDouble("ABC", num -> num > 0D))
+                .doesNotThrowAnyException();
     }
 }
