@@ -29,6 +29,8 @@ public interface SleeperProperty {
 
     String getDescription();
 
+    PropertyGroup getPropertyGroup();
+
     default Predicate<String> validationPredicate() {
         return (s) -> true;
     }

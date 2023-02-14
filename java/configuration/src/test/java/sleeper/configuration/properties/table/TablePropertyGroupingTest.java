@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.sortProperties;
 import static sleeper.configuration.properties.table.TablePropertyGroup.COMPACTION;
 import static sleeper.configuration.properties.table.TablePropertyGroup.DATA_DEFINITION;
 import static sleeper.configuration.properties.table.TablePropertyGroup.METADATA;
+import static sleeper.configuration.properties.table.TablePropertyGroup.sortProperties;
 
 public class TablePropertyGroupingTest {
     @Test

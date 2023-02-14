@@ -21,8 +21,6 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -230,13 +228,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
 
     static List<TableProperty> getAllGrouped() {
-        return sortProperties(getAll());
-    }
-
-    static List<TableProperty> sortProperties(List<TableProperty> unsorted) {
-        List<TableProperty> properties = new ArrayList<>(unsorted);
-        properties.sort(Comparator.comparing(p -> TablePropertyGroup.getAll().indexOf(p.getPropertyGroup())));
-        return properties;
+        return TablePropertyGroup.sortProperties(getAll());
     }
 
     static List<TableProperty> getAll() {

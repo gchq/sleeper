@@ -128,6 +128,11 @@ class TablePropertiesTest {
             public String getDescription() {
                 return null;
             }
+
+            @Override
+            public PropertyGroup getPropertyGroup() {
+                return null;
+            }
         };
 
         TableProperty defaultingProperty = new TableProperty() {

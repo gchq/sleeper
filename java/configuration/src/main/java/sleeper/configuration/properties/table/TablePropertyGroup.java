@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static sleeper.configuration.properties.PropertyGroup.group;
+import static sleeper.configuration.properties.PropertyGroup.sortPropertiesByGroup;
 
 public class TablePropertyGroup {
     private TablePropertyGroup() {
@@ -47,5 +48,9 @@ public class TablePropertyGroup {
 
     public static List<PropertyGroup> getAll() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static List<TableProperty> sortProperties(List<TableProperty> unsorted) {
+        return sortPropertiesByGroup(unsorted, TablePropertyGroup.getAll());
     }
 }

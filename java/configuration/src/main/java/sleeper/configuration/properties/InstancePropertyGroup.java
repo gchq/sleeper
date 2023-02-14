@@ -18,7 +18,6 @@ package sleeper.configuration.properties;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import static sleeper.configuration.properties.PropertyGroup.group;
@@ -71,8 +70,7 @@ public class InstancePropertyGroup {
         return Collections.unmodifiableList(ALL);
     }
 
-    static <T extends InstanceProperty> List<T> sortPropertiesByGroup(List<T> properties) {
-        properties.sort(Comparator.comparingInt(p -> getAll().indexOf(p.getPropertyGroup())));
-        return properties;
+    public static List<InstanceProperty> sortPropertiesByGroup(List<InstanceProperty> properties) {
+        return PropertyGroup.sortPropertiesByGroup(properties, getAll());
     }
 }
