@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -56,14 +55,8 @@ public class PreDeployInstance {
     }
 
     public void preDeploy() throws IOException, InterruptedException {
-        createConfigBucket();
         uploadJars();
         uploadDockerImages();
-    }
-
-    private void createConfigBucket() {
-        LOGGER.info("Creating config bucket");
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
     }
 
     private void uploadJars() throws IOException {
