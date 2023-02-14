@@ -27,7 +27,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
@@ -37,8 +36,6 @@ import java.util.Date;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 @Testcontainers
 class SyncJarsIT {
@@ -108,14 +105,7 @@ class SyncJarsIT {
     private void syncJarsToBucket(String bucketName) throws IOException {
         SyncJars.builder()
                 .s3(s3).jarsDirectory(tempDir)
-                .instanceProperties(instancePropertiesWithJarsBucket(bucketName))
+                .bucketName(bucketName)
                 .build().sync();
     }
-
-    private InstanceProperties instancePropertiesWithJarsBucket(String bucketName) {
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(JARS_BUCKET, bucketName);
-        return properties;
-    }
-
 }

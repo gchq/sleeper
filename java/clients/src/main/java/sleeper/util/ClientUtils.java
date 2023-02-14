@@ -34,9 +34,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- *
- */
 public class ClientUtils {
 
     private ClientUtils() {

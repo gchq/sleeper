@@ -21,15 +21,12 @@ import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
@@ -41,7 +38,7 @@ public class SyncJars {
     private SyncJars(Builder builder) {
         s3 = builder.s3;
         jarsDirectory = builder.jarsDirectory;
-        bucketName = builder.instanceProperties.get(JARS_BUCKET);
+        bucketName = builder.bucketName;
         newInstance = builder.newInstance;
     }
 
@@ -81,7 +78,7 @@ public class SyncJars {
     public static final class Builder {
         private AmazonS3 s3;
         private Path jarsDirectory;
-        private InstanceProperties instanceProperties;
+        private String bucketName;
         private boolean newInstance;
 
         private Builder() {
@@ -97,8 +94,8 @@ public class SyncJars {
             return this;
         }
 
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
+        public Builder bucketName(String bucketName) {
+            this.bucketName = bucketName;
             return this;
         }
 

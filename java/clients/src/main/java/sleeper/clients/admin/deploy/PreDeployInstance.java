@@ -37,6 +37,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
@@ -77,7 +78,7 @@ public class PreDeployInstance {
         SyncJars.builder()
                 .s3(s3)
                 .jarsDirectory(jarsDirectory)
-                .instanceProperties(instanceProperties)
+                .bucketName(instanceProperties.get(JARS_BUCKET))
                 .newInstance(newInstance)
                 .build().sync();
     }
