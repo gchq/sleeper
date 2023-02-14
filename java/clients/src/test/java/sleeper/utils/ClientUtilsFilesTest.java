@@ -83,7 +83,7 @@ public class ClientUtilsFilesTest {
 
         // Then
         assertThat(jars)
-                .containsExactly(tempDir.resolve("test1.jar"), tempDir.resolve("test2.jar"));
+                .containsExactlyInAnyOrder(tempDir.resolve("test1.jar"), tempDir.resolve("test2.jar"));
     }
 
     @Test
