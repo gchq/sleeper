@@ -99,7 +99,7 @@
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.36.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
-        <sleeper.system.test.instance.id>junit-${user.name}</sleeper.system.test.instance.id>
+        <sleeper.system.test.instance.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.id/>
         <!-- Maven plugins -->
