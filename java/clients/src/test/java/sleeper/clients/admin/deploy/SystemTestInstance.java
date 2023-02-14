@@ -63,7 +63,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         singleKeyTableProperties = TablePropertiesTestHelper.createTestTableProperties(
                 instanceProperties, schemaWithKey("key"), "single-key");
         PreDeployInstance.builder()
-                .s3(s3Client)
+                .s3(s3Client).ecr(ecr)
                 .jarsDirectory(jarsDir)
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
