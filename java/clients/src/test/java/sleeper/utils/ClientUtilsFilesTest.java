@@ -85,4 +85,24 @@ public class ClientUtilsFilesTest {
         assertThat(jars)
                 .containsExactly(tempDir.resolve("test1.jar"), tempDir.resolve("test2.jar"));
     }
+
+    @Test
+    void shouldFormatStringFromPathCorrectly() throws IOException, InterruptedException {
+        // Given
+        Path path = Files.createFile(tempDir.resolve("test1.jar"));
+
+        // When/Then
+        assertThat(ClientUtils.runCommand("cat", String.format("%s", path)))
+                .isZero();
+    }
+
+    @Test
+    void shouldFailToFindFileWhenCommandHasExtraQuotes() throws IOException, InterruptedException {
+        // Given
+        Path path = Files.createFile(tempDir.resolve("test1.jar"));
+
+        // When/Then
+        assertThat(ClientUtils.runCommand("cat", String.format("\"%s\"", path)))
+                .isNotZero();
+    }
 }

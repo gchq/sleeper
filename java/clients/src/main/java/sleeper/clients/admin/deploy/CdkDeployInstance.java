@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin.deploy;
 
+import sleeper.util.ClientUtils;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -35,17 +37,13 @@ public class CdkDeployInstance {
     }
 
     public void deploy() throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(
-                "cdk",
+        int exitCode = ClientUtils.runCommand("cdk",
                 "-a", String.format("java -cp \"%s\" %s", cdkJarFile, cdkAppClassName),
                 "deploy",
                 "--require-approval", "never",
-                "-c", String.format("propertiesfile=\"%s\"", instancePropertiesFile),
+                "-c", String.format("propertiesfile=%s", instancePropertiesFile),
                 "-c", "newinstance=true",
-                "*"
-        ).inheritIO().start();
-
-        int exitCode = process.waitFor();
+                "*");
 
         if (exitCode != 0) {
             throw new IOException("Failed in cdk deploy");

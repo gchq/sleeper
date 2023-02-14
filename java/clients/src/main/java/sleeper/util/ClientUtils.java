@@ -136,4 +136,10 @@ public class ClientUtils {
             return jars.filter(path -> path.getFileName().toString().endsWith(".jar")).collect(Collectors.toList());
         }
     }
+
+    public static int runCommand(String... commands) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(commands).inheritIO().start();
+
+        return process.waitFor();
+    }
 }

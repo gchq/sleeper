@@ -82,17 +82,13 @@ public class PreDeployInstance {
     }
 
     private void uploadDockerImages() throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(
-                uploadDockerImagesScript.toString(),
+        int exitCode = ClientUtils.runCommand(uploadDockerImagesScript.toString(),
                 instanceProperties.get(ID),
                 String.format("%s.dkr.ecr.%s.amazonaws.com",
                         instanceProperties.get(ACCOUNT), instanceProperties.get(REGION)),
                 instanceProperties.get(VERSION),
                 instanceProperties.get(OPTIONAL_STACKS),
-                baseDockerDirectory.toString()
-        ).inheritIO().start();
-
-        int exitCode = process.waitFor();
+                baseDockerDirectory.toString());
 
         if (exitCode != 0) {
             throw new IOException("Failed to upload Docker images");
