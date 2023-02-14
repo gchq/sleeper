@@ -18,7 +18,6 @@ package sleeper.clients.admin.deploy;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +25,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
@@ -58,8 +54,9 @@ public class SyncJars {
         List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
 
-        Set<Path> uploadJars = new LinkedHashSet<>(jars);
-        List<String> deleteKeys = removeUnmodifiedJarsAndReturnS3KeysToDelete(uploadJars);
+        JarsDiff diff = JarsDiff.from(jarsDirectory, jars, S3Objects.inBucket(s3, bucketName));
+        Collection<Path> uploadJars = diff.getModifiedAndNew();
+        Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
         LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
         if (!deleteKeys.isEmpty()) {
@@ -75,23 +72,6 @@ public class SyncJars {
                     jar.toFile());
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });
-    }
-
-    private List<String> removeUnmodifiedJarsAndReturnS3KeysToDelete(Set<Path> uploadJars) throws IOException {
-        List<String> deleteKeys = new ArrayList<>();
-        for (S3ObjectSummary object : S3Objects.inBucket(s3, bucketName)) {
-            Path path = jarsDirectory.resolve(object.getKey());
-            if (uploadJars.contains(path)) {
-                long fileLastModified = Files.getLastModifiedTime(path).toInstant().getEpochSecond();
-                long bucketLastModified = object.getLastModified().toInstant().getEpochSecond();
-                if (fileLastModified <= bucketLastModified) {
-                    uploadJars.remove(path);
-                }
-            } else {
-                deleteKeys.add(object.getKey());
-            }
-        }
-        return deleteKeys;
     }
 
     public static final class Builder {
