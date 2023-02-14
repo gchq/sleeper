@@ -90,7 +90,7 @@ public class PreDeployInstance {
     }
 
     private void uploadDockerImages() throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(new String[]{
+        Process process = new ProcessBuilder(
                 uploadDockerImagesScript.toString(),
                 instanceProperties.get(ID),
                 String.format("%s.dkr.ecr.%s.amazonaws.com",
@@ -98,7 +98,7 @@ public class PreDeployInstance {
                 instanceProperties.get(VERSION),
                 instanceProperties.get(OPTIONAL_STACKS),
                 baseDockerDirectory.toString()
-        });
+        ).inheritIO().start();
 
         int exitCode = process.waitFor();
 
