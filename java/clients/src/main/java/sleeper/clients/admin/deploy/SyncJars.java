@@ -17,6 +17,7 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -56,22 +58,28 @@ public class SyncJars {
         List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
 
-        Set<Path> unuploadedJars = new LinkedHashSet<>(jars);
+        Set<Path> uploadJars = new LinkedHashSet<>(jars);
+        List<String> deleteKeys = new ArrayList<>();
         for (S3ObjectSummary object : S3Objects.inBucket(s3, bucketName)) {
             Path path = jarsDirectory.resolve(object.getKey());
-            if (unuploadedJars.contains(path)) {
+            if (uploadJars.contains(path)) {
                 long fileLastModified = Files.getLastModifiedTime(path).toInstant().getEpochSecond();
                 long bucketLastModified = object.getLastModified().toInstant().getEpochSecond();
                 if (fileLastModified <= bucketLastModified) {
-                    unuploadedJars.remove(path);
+                    uploadJars.remove(path);
                 }
             } else {
-                s3.deleteObject(bucketName, object.getKey());
+                deleteKeys.add(object.getKey());
             }
         }
-        LOGGER.info("Found {} jars to upload", unuploadedJars.size());
+        LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
+        if (!deleteKeys.isEmpty()) {
+            s3.deleteObjects(new DeleteObjectsRequest(bucketName)
+                    .withKeys(deleteKeys.toArray(new String[0])));
+        }
+        LOGGER.info("Uploading {} jars", uploadJars.size());
 
-        unuploadedJars.stream().parallel().forEach(jar -> {
+        uploadJars.stream().parallel().forEach(jar -> {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
             s3.putObject(bucketName,
                     "" + jar.getFileName(),
