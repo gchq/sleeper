@@ -40,6 +40,7 @@ class TablePropertyImpl implements TableProperty {
     private final SleeperProperty defaultProperty;
     private final String description;
     private final PropertyGroup propertyGroup;
+    private final boolean runCDKDeployWhenChanged;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -48,6 +49,7 @@ class TablePropertyImpl implements TableProperty {
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
+        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
     }
 
 
@@ -97,6 +99,11 @@ class TablePropertyImpl implements TableProperty {
         return propertyGroup;
     }
 
+    @Override
+    public boolean isRunCDKDeployWhenChanged() {
+        return runCDKDeployWhenChanged;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -106,7 +113,8 @@ class TablePropertyImpl implements TableProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
-        private String description = "No description available";
+        private String description;
+        private boolean runCDKDeployWhenChanged;
         private PropertyGroup propertyGroup;
         private Consumer<TableProperty> addToList = Builder::addToAllList;
 
@@ -130,11 +138,16 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder defaultProperty(SleeperProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
-            return this;
+            return validationPredicate(defaultProperty.validationPredicate());
         }
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
+            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
             return this;
         }
 

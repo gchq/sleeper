@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 public class SystemTestPropertyImpl implements SystemTestProperty {
@@ -35,10 +36,10 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final String description;
 
     private SystemTestPropertyImpl(Builder builder) {
-        propertyName = builder.propertyName;
+        propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
-        validationPredicate = builder.validationPredicate;
-        description = builder.description;
+        validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
+        description = Objects.requireNonNull(builder.description, "description must not be null");
     }
 
     public static Builder builder() {
@@ -49,7 +50,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return builder().propertyName(name);
     }
 
-    public static List<SystemTestProperty> all() {
+    public static List<SystemTestProperty> getAll() {
         return Collections.unmodifiableList(ALL);
     }
 
@@ -80,6 +81,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     @Override
     public PropertyGroup getPropertyGroup() {
         return InstancePropertyGroup.COMMON;
+    }
+
+    @Override
+    public boolean isRunCDKDeployWhenChanged() {
+        return false;
     }
 
     public String toString() {

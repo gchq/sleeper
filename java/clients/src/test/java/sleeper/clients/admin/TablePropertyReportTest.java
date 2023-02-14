@@ -73,8 +73,8 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
         assertThat(output)
                 .contains("# A unique name identifying this table.\n" +
                         "sleeper.table.name: test-table\n")
-                .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
-                        "sleeper.table.encrypted: false\n")
+                .contains("# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                        "sleeper.table.rowgroup.size: 8388608\n")
                 .contains("# The schema representing the structure of this table.\n" +
                         "sleeper.table.schema: " +
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
@@ -90,7 +90,16 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                         "# marked as ready for garbage collection is that they may still be in use by queries. Defaults to the\n" +
                         "# value set in the instance properties.\n" +
-                        "sleeper.table.gc.delay.seconds: 600");
+                        "sleeper.table.gc.delay.seconds: 600")
+                // Then check a property with multi-line description and custom line breaks
+                .contains("# The number of files to read in a compaction job. Note that the state store must support atomic\n" +
+                        "# updates for this many files.\n" +
+                        "# The DynamoDBStateStore must be able to atomically apply 2 updates to create the output files for a\n" +
+                        "# splitting compaction, and 2 updates for each input file to mark them as ready for garbage\n" +
+                        "# collection. There's a limit of 100 atomic updates, which equates to 48 files in a compaction.\n" +
+                        "# See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html\n" +
+                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
+                        "sleeper.table.compaction.files.batch.size: 11");
 
         confirmAndVerifyNoMoreInteractions();
     }
