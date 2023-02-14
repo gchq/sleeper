@@ -127,9 +127,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output)
-                .contains("# The following properties relate to configuring tables.\n\n")
-                .contains("# The following table properties relate to the iterator used when reading from the table.\n\n")
-                .contains("# The following table properties relate to the split points in the table.\n\n")
+                .contains("# The following table properties relate to the definition of data inside a table.\n\n")
                 .contains("# The following table properties relate to compactions.\n\n")
                 .contains("# The following table properties relate to partition splitting.\n\n")
                 .contains("# The following table properties relate to bulk import, i.e. ingesting data using Spark jobs running\n" +
@@ -172,10 +170,8 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output.indexOf("The following properties relate to configuring tables."))
-                .isLessThan(output.indexOf("The following table properties relate to the iterator used when reading from the table."));
-        assertThat(output.indexOf("The following table properties relate to the iterator used when reading from the table."))
-                .isLessThan(output.indexOf("The following table properties relate to the split points in the table."));
+        assertThat(output.indexOf("The following table properties relate to the definition of data inside a table."))
+                .isLessThan(output.indexOf("The following table properties relate to compactions."));
         assertThat(output.indexOf("The following table properties relate to compactions."))
                 .isLessThan(output.indexOf("The following table properties relate to partition splitting."));
 

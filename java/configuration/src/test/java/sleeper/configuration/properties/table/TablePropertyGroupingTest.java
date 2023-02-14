@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.sortProperties;
 import static sleeper.configuration.properties.table.TablePropertyGroup.COMPACTION;
-import static sleeper.configuration.properties.table.TablePropertyGroup.CONFIGURATION;
+import static sleeper.configuration.properties.table.TablePropertyGroup.DATA_DEFINITION;
 import static sleeper.configuration.properties.table.TablePropertyGroup.METADATA;
 
 public class TablePropertyGroupingTest {
@@ -37,7 +37,7 @@ public class TablePropertyGroupingTest {
         List<TableProperty> properties = new ArrayList<>();
         TableProperty property1 = tableProperty("table.property.1", METADATA, properties::add);
         TableProperty property2 = tableProperty("table.property.2", COMPACTION, properties::add);
-        TableProperty property3 = tableProperty("table.property.3", CONFIGURATION, properties::add);
+        TableProperty property3 = tableProperty("table.property.3", DATA_DEFINITION, properties::add);
 
         // When
         List<TableProperty> sortedProperties = sortProperties(properties);
@@ -51,9 +51,9 @@ public class TablePropertyGroupingTest {
     void shouldPreserveOrderingWithinAGroup() {
         // Given
         List<TableProperty> properties = new ArrayList<>();
-        TableProperty property1 = tableProperty("table.property.1", CONFIGURATION, properties::add);
-        TableProperty property2 = tableProperty("table.property.second", CONFIGURATION, properties::add);
-        TableProperty property3 = tableProperty("table.property.c", CONFIGURATION, properties::add);
+        TableProperty property1 = tableProperty("table.property.1", DATA_DEFINITION, properties::add);
+        TableProperty property2 = tableProperty("table.property.second", DATA_DEFINITION, properties::add);
+        TableProperty property3 = tableProperty("table.property.c", DATA_DEFINITION, properties::add);
 
         // When
         List<TableProperty> sortedProperties = sortProperties(properties);

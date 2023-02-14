@@ -57,60 +57,60 @@ public interface TableProperty extends SleeperProperty {
     TableProperty TABLE_NAME = named("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
             .description("A unique name identifying this table.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SCHEMA = named("sleeper.table.schema")
             .validationPredicate(Objects::nonNull)
             .description("The schema representing the structure of this table.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ENCRYPTED = named("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
             .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty PAGE_SIZE = named("sleeper.table.page.size")
             .defaultProperty(DEFAULT_PAGE_SIZE)
             .description("The size of the page in the Parquet files - defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty S3A_READAHEAD_RANGE = named("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
             .validationPredicate(Utils::isValidNumberOfBytes)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty COMPRESSION_CODEC = named("sleeper.table.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
             .validationPredicate(Utils::isValidCompressionCodec)
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CLASS_NAME = named("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
                     "Defaults to nothing.")
-            .propertyGroup(TablePropertyGroup.ITERATOR)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CONFIG = named("sleeper.table.iterator.config")
             .description("Iterator configuration. An iterator will be initialised with the following configuration.")
-            .propertyGroup(TablePropertyGroup.ITERATOR)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = named("sleeper.table.splits.file")
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the  " +
                     "table will be created with a single root partition.")
-            .propertyGroup(TablePropertyGroup.SPLIT_POINTS)
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = named("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
-            .propertyGroup(TablePropertyGroup.SPLIT_POINTS)
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = named("sleeper.table.gc.delay.seconds")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
@@ -118,7 +118,7 @@ public interface TableProperty extends SleeperProperty {
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = named("sleeper.table.compaction.strategy.class")
             .defaultProperty(DEFAULT_COMPACTION_STRATEGY_CLASS)
@@ -202,9 +202,9 @@ public interface TableProperty extends SleeperProperty {
 
     // System defined
     TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key")
-            .propertyGroup(TablePropertyGroup.SPLIT_POINTS).build();
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING).build();
     TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
-            .propertyGroup(TablePropertyGroup.CONFIGURATION).build();
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION).build();
     // DynamoDBStateStore properties
     TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")
             .propertyGroup(TablePropertyGroup.METADATA).build();

@@ -29,12 +29,8 @@ public class TablePropertyGroup {
     }
 
     private static final List<PropertyGroup> ALL = new ArrayList<>();
-    public static final PropertyGroup CONFIGURATION = tableGroup("Configuration")
-            .description("The following properties relate to configuring tables.").build();
-    public static final PropertyGroup ITERATOR = tableGroup("Iterator")
-            .description("The following table properties relate to the iterator used when reading from the table.").build();
-    public static final PropertyGroup SPLIT_POINTS = tableGroup("Split Points")
-            .description("The following table properties relate to the split points in the table.").build();
+    public static final PropertyGroup DATA_DEFINITION = tableGroup("Data Definition")
+            .description("The following table properties relate to the definition of data inside a table.").build();
     public static final PropertyGroup COMPACTION = tableGroup("Compaction")
             .description("The following table properties relate to compactions.").build();
     public static final PropertyGroup PARTITION_SPLITTING = tableGroup("Partition Splitting")
