@@ -85,7 +85,7 @@ public class PreDeployInstance {
 
     private List<Path> listJarsToUpload() throws IOException {
         try (Stream<Path> jars = Files.list(jarsDirectory)) {
-            return jars.collect(Collectors.toList());
+            return jars.filter(path -> path.endsWith(".jar")).collect(Collectors.toList());
         }
     }
 
