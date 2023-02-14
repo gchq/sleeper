@@ -114,12 +114,6 @@ public class PreDeployInstance {
             return this;
         }
 
-        public Builder scriptsDirectory(Path scriptsDirectory) {
-            return jarsDirectory(scriptsDirectory.resolve("jars"))
-                    .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
-                    .baseDockerDirectory(scriptsDirectory.resolve("docker"));
-        }
-
         public Builder jarsDirectory(Path jarsDirectory) {
             this.jarsDirectory = jarsDirectory;
             return this;

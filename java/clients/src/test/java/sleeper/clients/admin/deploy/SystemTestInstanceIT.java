@@ -24,11 +24,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 @Tag("SystemTest")
 class SystemTestInstanceIT {
@@ -39,7 +41,7 @@ class SystemTestInstanceIT {
     @Test
     void shouldCreateConfigBucket() {
         // Given
-        InstanceProperties instanceProperties = INSTANCE.loadInstanceProperties();
+        InstanceProperties instanceProperties = INSTANCE.getInstanceProperties();
 
         // When / Then
         assertThat(INSTANCE.getS3Client().listBuckets())
@@ -50,7 +52,7 @@ class SystemTestInstanceIT {
     @Test
     void shouldUploadJars() {
         // Given
-        InstanceProperties instanceProperties = INSTANCE.loadInstanceProperties();
+        InstanceProperties instanceProperties = INSTANCE.getInstanceProperties();
 
         // When
         ListObjectsV2Result result = INSTANCE.getS3Client().listObjectsV2(instanceProperties.get(JARS_BUCKET));
@@ -62,12 +64,23 @@ class SystemTestInstanceIT {
     @Test
     void shouldUploadDockerImages() {
         // Given
-        InstanceProperties instanceProperties = INSTANCE.loadInstanceProperties();
+        InstanceProperties instanceProperties = INSTANCE.getInstanceProperties();
 
         // When / Then
         assertThat(INSTANCE.getEcrClient().listImages(new ListImagesRequest()
                         .withRepositoryName(instanceProperties.get(ECR_INGEST_REPO)))
                 .getImageIds())
                 .isNotEmpty();
+    }
+
+    @Test
+    void shouldCreateDataBucket() {
+        // Given
+        TableProperties tableProperties = INSTANCE.getSingleKeyTableProperties();
+
+        // When / Then
+        assertThat(INSTANCE.getS3Client().listBuckets())
+                .extracting(Bucket::getName)
+                .contains(tableProperties.get(DATA_BUCKET));
     }
 }

@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesTestHelper;
@@ -34,6 +33,7 @@ import sleeper.util.ClientUtils;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SystemTestInstance implements BeforeAllCallback {
@@ -43,32 +43,47 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
     private final Path scriptsDir = findScriptsDir();
+    private final Path jarsDir = scriptsDir.resolve("jars");
+    private final Path dockerDir = scriptsDir.resolve("docker");
     private final Path generatedDir = scriptsDir.resolve("generated");
     private final String sleeperVersion = System.getProperty("sleeper.system.test.version");
     private final String vpcId = System.getProperty("sleeper.system.test.vpc.id");
     private final String subnetId = System.getProperty("sleeper.system.test.subnet.id");
+    private InstanceProperties instanceProperties;
+    private TableProperties singleKeyTableProperties;
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
+        instanceProperties = GenerateInstanceProperties.builder()
                 .s3(s3Client).sts(sts)
                 .instanceId(instanceId)
                 .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
-        TableProperties tableProperties = TablePropertiesTestHelper.createTestTableProperties(
+        singleKeyTableProperties = TablePropertiesTestHelper.createTestTableProperties(
                 instanceProperties, schemaWithKey("key"), "single-key");
-        ClientUtils.clearDirectory(generatedDir);
-        SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(tableProperties));
         PreDeployInstance.builder()
                 .s3(s3Client)
-                .scriptsDirectory(scriptsDir)
+                .jarsDirectory(jarsDir)
+                .baseDockerDirectory(dockerDir)
+                .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
                 .instanceProperties(instanceProperties)
                 .build().preDeploy();
+        ClientUtils.clearDirectory(generatedDir);
+        SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
+        CdkDeployInstance.builder()
+                .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", instanceProperties.get(VERSION))))
+                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .build().deploy();
     }
 
-    public InstanceProperties loadInstanceProperties() {
-        return LoadLocalProperties.loadInstancePropertiesFromDirectory(generatedDir);
+    public InstanceProperties getInstanceProperties() {
+        return instanceProperties;
+    }
+
+    public TableProperties getSingleKeyTableProperties() {
+        return singleKeyTableProperties;
     }
 
     public AmazonS3 getS3Client() {
