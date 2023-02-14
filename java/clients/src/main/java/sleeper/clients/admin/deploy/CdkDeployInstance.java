@@ -48,7 +48,7 @@ public class CdkDeployInstance {
         int exitCode = process.waitFor();
 
         if (exitCode != 0) {
-            throw new IOException("Failed to upload Docker images");
+            throw new IOException("Failed in cdk deploy");
         }
     }
 
