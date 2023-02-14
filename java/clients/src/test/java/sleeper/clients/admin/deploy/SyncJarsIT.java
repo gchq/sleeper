@@ -78,7 +78,7 @@ class SyncJarsIT {
     }
 
     @Test
-    void shouldLeaveJarsIfAlreadyPresent() throws IOException, InterruptedException {
+    void shouldApplyChangesToJars() throws IOException, InterruptedException {
         // Given
         Files.createFile(tempDir.resolve("unmodified.jar"));
         Files.writeString(tempDir.resolve("modified.jar"), "data1");
