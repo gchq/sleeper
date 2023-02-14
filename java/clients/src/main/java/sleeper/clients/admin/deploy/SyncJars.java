@@ -36,11 +36,13 @@ public class SyncJars {
     private final AmazonS3 s3;
     private final Path jarsDirectory;
     private final String bucketName;
+    private final boolean newInstance;
 
     private SyncJars(Builder builder) {
         s3 = builder.s3;
         jarsDirectory = builder.jarsDirectory;
         bucketName = builder.instanceProperties.get(JARS_BUCKET);
+        newInstance = builder.newInstance;
     }
 
     public static Builder builder() {
@@ -48,8 +50,10 @@ public class SyncJars {
     }
 
     public void sync() throws IOException {
-        LOGGER.info("Creating jars bucket");
-        s3.createBucket(bucketName);
+        if (newInstance) {
+            LOGGER.info("Creating jars bucket");
+            s3.createBucket(bucketName);
+        }
 
         List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
@@ -78,6 +82,7 @@ public class SyncJars {
         private AmazonS3 s3;
         private Path jarsDirectory;
         private InstanceProperties instanceProperties;
+        private boolean newInstance;
 
         private Builder() {
         }
@@ -94,6 +99,11 @@ public class SyncJars {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder newInstance(boolean newInstance) {
+            this.newInstance = newInstance;
             return this;
         }
 
