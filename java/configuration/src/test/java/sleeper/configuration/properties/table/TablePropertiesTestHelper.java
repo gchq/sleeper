@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
@@ -75,10 +76,14 @@ public class TablePropertiesTestHelper {
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties, String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(DATA_BUCKET, tableName + "-data");
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
+        tableProperties.set(DATA_BUCKET, String.join("-",
+                "sleeper", instanceProperties.get(ID), "table", tableName));
+        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-",
+                "sleeper", instanceProperties.get(ID), "table", tableName, "active-files"));
+        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-",
+                "sleeper", instanceProperties.get(ID), "table", tableName, "gc-files"));
+        tableProperties.set(PARTITION_TABLENAME, String.join("-",
+                "sleeper", instanceProperties.get(ID), "table", tableName, "partitions"));
         return tableProperties;
     }
 }
