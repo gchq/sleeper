@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.table;
 
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 public class DummyTableProperty implements TableProperty {
@@ -42,6 +43,11 @@ public class DummyTableProperty implements TableProperty {
     @Override
     public String getDescription() {
         return null;
+    }
+
+    @Override
+    public PropertyGroup getPropertyGroup() {
+        return TablePropertyGroup.COMPACTION;
     }
 
     @Override

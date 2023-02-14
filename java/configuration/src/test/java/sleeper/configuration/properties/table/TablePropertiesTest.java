@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Properties;

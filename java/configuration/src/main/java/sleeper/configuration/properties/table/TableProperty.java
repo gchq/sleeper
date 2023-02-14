@@ -69,7 +69,8 @@ public interface TableProperty extends SleeperProperty {
                     "When this is changed, existing files will retain their encryption status. Further compactions may " +
                     "apply the new encryption status for that data.\n" +
                     "See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html")
-            .runCDKDeployWhenChanged(true).propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .runCDKDeployWhenChanged(true)
             .build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
@@ -152,6 +153,7 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
             .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
                     "are strongly consistent.")
+            .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
@@ -223,7 +225,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
             .description("The S3 bucket name where table data is stored.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();            
+            .build();
     // DynamoDBStateStore properties
     TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
@@ -237,7 +239,10 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.METADATA).build();
     TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
+                    "the DynamoDBStateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
+            .runCDKDeployWhenChanged(true)
             .build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table")

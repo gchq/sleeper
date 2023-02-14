@@ -64,6 +64,6 @@ public class TablePropertyGroupingTest {
     }
 
     private static TableProperty tableProperty(String name, PropertyGroup group, Consumer<TableProperty> addToList) {
-        return TablePropertyImpl.named(name).propertyGroup(group).addToList(addToList).build();
+        return TablePropertyImpl.named(name).description("test-description").propertyGroup(group).addToList(addToList).build();
     }
 }
