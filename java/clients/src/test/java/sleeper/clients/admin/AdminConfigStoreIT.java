@@ -27,7 +27,10 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
@@ -96,6 +99,28 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
                     .extracting(table -> table.get(TABLE_NAME))
                     .containsExactly("new-test-table");
+        }
+    }
+
+    @DisplayName("Deploy with CDK")
+    @Nested
+    class DeployWithCdk {
+        @Test
+        void shouldRunCdkDeployWhenCdkFlaggedInstancePropertyUpdated() throws IOException, InterruptedException {
+            // When
+            store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+
+            // Then
+            verify(cdk).deploy();
+        }
+
+        @Test
+        void shouldNotRunCdkDeployWhenUnflaggedInstancePropertyUpdated() {
+            // When
+            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            verifyNoInteractions(cdk);
         }
     }
 

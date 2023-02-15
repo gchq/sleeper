@@ -81,7 +81,10 @@ public class AdminConfigStore {
         properties.set(property, propertyValue);
         try {
             properties.saveToS3(s3);
-        } catch (IOException | AmazonS3Exception e) {
+            if (property.isRunCDKDeployWhenChanged()) {
+                cdk.deploy();
+            }
+        } catch (IOException | InterruptedException | AmazonS3Exception e) {
             throw new CouldNotSaveInstanceProperties(instanceId, e);
         }
         ClientUtils.clearDirectory(generatedDirectory);
