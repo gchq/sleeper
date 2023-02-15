@@ -61,9 +61,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
-        singleKeyTableProperties = new TableProperties(instanceProperties);
-        singleKeyTableProperties.setSchema(schemaWithKey("key"));
-        singleKeyTableProperties.set(TABLE_NAME, "single-key");
+        singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
         PreDeployInstance.builder()
                 .s3(s3Client).ecr(ecr)
                 .jarsDirectory(jarsDir)
