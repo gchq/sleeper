@@ -62,17 +62,8 @@ public class TablePropertiesTestHelper {
         return tableProperties;
     }
 
-    public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema, String tableName) {
-        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties, tableName);
-        tableProperties.setSchema(schema);
-        return tableProperties;
-    }
-
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
-        return createTestTablePropertiesWithNoSchema(instanceProperties, UUID.randomUUID().toString());
-    }
-
-    public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties, String tableName) {
+        String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(DATA_BUCKET, tableName + "-data");
