@@ -16,12 +16,20 @@
 package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -48,6 +56,38 @@ public class PreDeployInstance {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        if (5 != args.length) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name>");
+        }
+        Path scriptsDirectory = Path.of(args[0]);
+        String instanceId = args[1];
+        String vpcId = args[2];
+        String subnetId = args[3];
+        String tableName = args[4];
+
+        Path templatesDirectory = scriptsDirectory.resolve("templates");
+        Path generatedDirectory = scriptsDirectory.resolve("generated");
+
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
+
+        InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
+                .s3(s3).sts(sts).templatesDirectory(templatesDirectory)
+                .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
+                .build().generate();
+        TableProperties tableProperties = GenerateTableProperties.fromTemplatesDir(instanceProperties, templatesDirectory, tableName);
+        builder().s3(s3).ecr(ecr)
+                .jarsDirectory(scriptsDirectory.resolve("jars"))
+                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
+                .instanceProperties(instanceProperties)
+                .build().preDeploy();
+        ClientUtils.clearDirectory(generatedDirectory);
+        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, Stream.of(tableProperties));
     }
 
     public void preDeploy() throws IOException, InterruptedException {

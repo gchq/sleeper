@@ -19,9 +19,12 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
 
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -29,6 +32,13 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class GenerateTableProperties {
 
     private GenerateTableProperties() {
+    }
+
+    public static TableProperties fromTemplatesDir(InstanceProperties instanceProperties, Path templatesDir, String tableName) throws IOException {
+        return from(instanceProperties,
+                Schema.load(templatesDir.resolve("schema.template")),
+                loadProperties(templatesDir.resolve("tableproperties.template")),
+                tableName);
     }
 
     public static TableProperties from(InstanceProperties instanceProperties, Schema schema, String tableName) {

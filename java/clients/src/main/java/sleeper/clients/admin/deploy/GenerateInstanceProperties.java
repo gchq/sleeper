@@ -22,9 +22,16 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.Properties;
+
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
@@ -44,6 +51,8 @@ public class GenerateInstanceProperties {
     private final String sleeperVersion;
     private final String vpcId;
     private final String subnetId;
+    private final Properties properties;
+    private final Properties tagsProperties;
 
     private GenerateInstanceProperties(Builder builder) {
         s3 = requireNonNull(builder.s3, "s3 must not be null");
@@ -52,6 +61,8 @@ public class GenerateInstanceProperties {
         sleeperVersion = requireNonEmpty(builder.sleeperVersion, "sleeperVersion must not be empty");
         vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
         subnetId = requireNonEmpty(builder.subnetId, "subnetId must not be empty");
+        properties = Optional.ofNullable(builder.properties).orElseGet(Properties::new);
+        tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(Properties::new);
     }
 
     public static Builder builder() {
@@ -59,7 +70,8 @@ public class GenerateInstanceProperties {
     }
 
     public InstanceProperties generate() {
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = new InstanceProperties(properties);
+        instanceProperties.loadTags(tagsProperties);
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
@@ -85,6 +97,8 @@ public class GenerateInstanceProperties {
         private String sleeperVersion;
         private String vpcId;
         private String subnetId;
+        private Properties properties;
+        private Properties tagsProperties;
 
         private Builder() {
         }
@@ -117,6 +131,22 @@ public class GenerateInstanceProperties {
         public Builder subnetId(String subnetId) {
             this.subnetId = subnetId;
             return this;
+        }
+
+        public Builder properties(Properties properties) {
+            this.properties = properties;
+            return this;
+        }
+
+        public Builder tagsProperties(Properties tagsProperties) {
+            this.tagsProperties = tagsProperties;
+            return this;
+        }
+
+        public Builder templatesDirectory(Path templatesDirectory) throws IOException {
+            return sleeperVersion(Files.readString(templatesDirectory.resolve("version.txt")))
+                    .properties(loadProperties(templatesDirectory.resolve("instanceproperties.template")))
+                    .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")));
         }
 
         public GenerateInstanceProperties build() {
