@@ -45,8 +45,10 @@ public class SyncJars {
     }
 
     public void sync() throws IOException {
-        LOGGER.info("Creating jars bucket");
-        s3.createBucket(bucketName);
+        if (!s3.doesBucketExistV2(bucketName)) {
+            LOGGER.info("Creating jars bucket");
+            s3.createBucket(bucketName);
+        }
 
         List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
