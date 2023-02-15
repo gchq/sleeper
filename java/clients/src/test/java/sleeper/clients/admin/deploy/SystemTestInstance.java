@@ -27,13 +27,13 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 import sleeper.util.ClientUtils;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SystemTestInstance implements BeforeAllCallback {
@@ -60,8 +60,9 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
-        singleKeyTableProperties = TablePropertiesTestHelper.createTestTableProperties(
-                instanceProperties, schemaWithKey("key"), "single-key");
+        singleKeyTableProperties = new TableProperties(instanceProperties);
+        singleKeyTableProperties.setSchema(schemaWithKey("key"));
+        singleKeyTableProperties.set(TABLE_NAME, "single-key");
         PreDeployInstance.builder()
                 .s3(s3Client).ecr(ecr)
                 .jarsDirectory(jarsDir)
