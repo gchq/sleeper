@@ -78,7 +78,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", instanceProperties.get(VERSION))))
                 .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
-                .newInstance(false)
+                .ensureNewInstance(false)
                 .build().deploy();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceProperties.get(ID));
         singleKeyTableProperties.loadFromS3(s3Client, singleKeyTableProperties.get(TABLE_NAME));

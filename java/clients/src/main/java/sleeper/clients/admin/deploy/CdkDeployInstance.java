@@ -25,13 +25,13 @@ public class CdkDeployInstance {
     private final Path instancePropertiesFile;
     private final Path cdkJarFile;
     private final String cdkAppClassName;
-    private final boolean newInstance;
+    private final boolean ensureNewInstance;
 
     private CdkDeployInstance(Builder builder) {
         instancePropertiesFile = builder.instancePropertiesFile;
         cdkJarFile = builder.cdkJarFile;
         cdkAppClassName = builder.cdkAppClassName;
-        newInstance = builder.newInstance;
+        ensureNewInstance = builder.ensureNewInstance;
     }
 
     public static Builder builder() {
@@ -44,7 +44,7 @@ public class CdkDeployInstance {
                 "deploy",
                 "--require-approval", "never",
                 "-c", String.format("propertiesfile=%s", instancePropertiesFile),
-                "-c", String.format("newinstance=%s", newInstance),
+                "-c", String.format("newinstance=%s", ensureNewInstance),
                 "*");
 
         if (exitCode != 0) {
@@ -56,7 +56,7 @@ public class CdkDeployInstance {
         private Path instancePropertiesFile;
         private Path cdkJarFile;
         private String cdkAppClassName;
-        private boolean newInstance;
+        private boolean ensureNewInstance;
 
         private Builder() {
         }
@@ -76,8 +76,8 @@ public class CdkDeployInstance {
             return this;
         }
 
-        public Builder newInstance(boolean newInstance) {
-            this.newInstance = newInstance;
+        public Builder ensureNewInstance(boolean ensureNewInstance) {
+            this.ensureNewInstance = ensureNewInstance;
             return this;
         }
 
