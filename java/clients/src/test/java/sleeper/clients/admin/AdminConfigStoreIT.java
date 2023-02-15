@@ -72,7 +72,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldIncludeTableInLocalDirectory() throws IOException {
             // Given
-            createValidTableProperties(instanceProperties, "test-table").saveToS3(s3);
+            createTableInS3("test-table");
 
             // When
             store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
