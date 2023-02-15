@@ -26,7 +26,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,7 +94,6 @@ public class PreDeployInstance {
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
                 .instanceProperties(instanceProperties)
                 .build().preDeploy();
-        ClientUtils.clearDirectory(generatedDirectory);
         SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, Stream.of(tableProperties));
     }
 
