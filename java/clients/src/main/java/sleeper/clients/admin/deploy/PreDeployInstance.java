@@ -68,20 +68,20 @@ public class PreDeployInstance {
     }
 
     public void preDeploy() throws IOException, InterruptedException {
-        uploadJars();
-        uploadDockerImages();
+        boolean jarsChanged = uploadJars();
+        uploadDockerImages(jarsChanged);
     }
 
-    private void uploadJars() throws IOException {
-        SyncJars.builder()
+    private boolean uploadJars() throws IOException {
+        return SyncJars.builder()
                 .s3(s3)
                 .jarsDirectory(jarsDirectory)
                 .bucketName(instanceProperties.get(JARS_BUCKET))
                 .build().sync();
     }
 
-    private void uploadDockerImages() throws IOException, InterruptedException {
-        if (!reuploadDockerImages && dockerRepositoriesPresent()) {
+    private void uploadDockerImages(boolean jarsChanged) throws IOException, InterruptedException {
+        if (!jarsChanged && !reuploadDockerImages && dockerRepositoriesPresent()) {
             LOGGER.info("Not reuploading Docker images");
             return;
         }
