@@ -45,6 +45,7 @@ public class SyncJars {
     }
 
     public void sync() throws IOException {
+        // Note that LocalStack doesn't fail bucket creation if it already exists, but the AWS API does.
         if (!s3.doesBucketExistV2(bucketName)) {
             LOGGER.info("Creating jars bucket");
             s3.createBucket(bucketName);
