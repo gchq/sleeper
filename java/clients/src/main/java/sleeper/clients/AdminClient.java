@@ -15,7 +15,6 @@
  */
 package sleeper.clients;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.admin.AdminConfigStore;
@@ -24,8 +23,13 @@ import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.clients.admin.UpdatePropertyScreen;
+import sleeper.clients.admin.deploy.CdkDeployInstance;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class AdminClient {
 
@@ -39,18 +43,26 @@ public class AdminClient {
         this.in = in;
     }
 
-    public static void main(String[] args) {
-        if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+    public static void main(String[] args) throws IOException {
+        if (2 != args.length) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id>");
         }
-        client(AmazonS3ClientBuilder.defaultClient()).start(args[0]);
-    }
 
-    public static AdminClient client(AmazonS3 s3Client) {
-        return new AdminClient(
-                new AdminConfigStore(s3Client),
+        Path scriptsDir = Path.of(args[0]);
+        String instanceId = args[1];
+        Path generatedDir = scriptsDir.resolve("generated");
+        Path jarsDir = scriptsDir.resolve("jars");
+        String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
+        CdkDeployInstance.builder()
+                .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", version)))
+                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .ensureNewInstance(false).build();
+
+        new AdminClient(
+                new AdminConfigStore(AmazonS3ClientBuilder.defaultClient()),
                 new ConsoleOutput(System.out),
-                new ConsoleInput(System.console()));
+                new ConsoleInput(System.console())).start(instanceId);
     }
 
     public void start(String instanceId) {
