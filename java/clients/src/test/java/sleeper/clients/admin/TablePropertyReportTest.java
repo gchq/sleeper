@@ -69,8 +69,9 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
         // When
         String output = runClientGetOutput();
 
-        // Then check some set table property values are present in the output
+
         assertThat(output)
+                // Check some set table property values are present in the output
                 .contains("# A unique name identifying this table.\n" +
                         "sleeper.table.name: test-table\n")
                 .contains("# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
@@ -81,17 +82,11 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "\"sortKeyFields\":[]," +
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
                 // Check property with multi-line description
-                .contains("# The minimum number of files to read in a compaction job. Note that the state store must support\n" +
-                        "# atomic updates for this many files. For the DynamoDBStateStore this is 11.\n" +
-                        "# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)\n" +
-                        "sleeper.table.compaction.files.batch.size: 11")
-                // Check property with multi-line description and custom line breaks
-                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
-                        "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
-                        "# marked as ready for garbage collection is that they may still be in use by queries. Defaults to the\n" +
-                        "# value set in the instance properties.\n" +
-                        "sleeper.table.gc.delay.seconds: 600")
-                // Then check a property with multi-line description and custom line breaks
+                .contains("# The name of the class that defines how compaction jobs should be created.\n" +
+                        "# This should implement sleeper.compaction.strategy.CompactionStrategy. Defaults to the strategy used\n" +
+                        "# by the whole instance (set in the instance properties).\n" +
+                        "sleeper.table.compaction.strategy.class: sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
+                // Check a property with multi-line description and custom line breaks
                 .contains("# The number of files to read in a compaction job. Note that the state store must support atomic\n" +
                         "# updates for this many files.\n" +
                         "# The DynamoDBStateStore must be able to atomically apply 2 updates to create the output files for a\n" +
@@ -115,6 +110,9 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 .contains("# Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
+                        "# When this is changed, existing files will retain their encryption status. Further compactions may\n" +
+                        "# apply the new encryption status for that data.\n" +
+                        "# See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html\n" +
                         "sleeper.table.encrypted: false\n" +
                         "\n" +
                         "# The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
