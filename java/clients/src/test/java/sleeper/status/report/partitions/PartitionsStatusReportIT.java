@@ -40,9 +40,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStoreTestHelper.createTestTable;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 
 @Testcontainers
 public class PartitionsStatusReportIT {
@@ -58,12 +59,14 @@ public class PartitionsStatusReportIT {
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
             instanceProperties, schema, s3, dynamoDB,
-            PartitionStatusReportTestHelper::setTestSplitThreshold);
+            tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
 
     @Test
-    public void shouldGetReport() throws Exception {
+    void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
         // Given
-        createRootPartitionWithTwoChildrenAboveSplitThreshold().setupStateStore(stateStore());
+        createRootPartitionWithTwoChildren()
+                .singleFileInEachLeafPartitionWithRecords(100)
+                .setupStateStore(stateStore());
 
         // When
         ToStringPrintStream out = new ToStringPrintStream();

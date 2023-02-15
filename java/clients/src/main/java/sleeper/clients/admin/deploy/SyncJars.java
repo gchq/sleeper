@@ -41,7 +41,7 @@ public class SyncJars {
     private SyncJars(Builder builder) {
         s3 = requireNonNull(builder.s3, "s3 must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
-        bucketName = requireNonEmpty(builder.bucketName, "");
+        bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
     }
 
     public static Builder builder() {

@@ -83,6 +83,19 @@ public class PartitionsBuilder {
         return this;
     }
 
+    public PartitionsBuilder rootFirst(String rootId) {
+        add(factory.rootFirst(rootId));
+        return this;
+    }
+
+    public PartitionsBuilder splitToNewChildrenOnDimension(
+            String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
+        Partition parent = partitionById(parentId);
+        List<Partition> children = factory.split(parent, leftId, rightId, dimension, splitPoint);
+        children.forEach(this::add);
+        return this;
+    }
+
     private Partition add(Partition partition) {
         partitions.add(partition);
         partitionById.put(partition.getId(), partition);
@@ -101,5 +114,4 @@ public class PartitionsBuilder {
     public PartitionTree buildTree() {
         return new PartitionTree(schema, partitions);
     }
-
 }

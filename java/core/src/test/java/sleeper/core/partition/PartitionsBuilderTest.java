@@ -31,10 +31,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class PartitionsBuilderTest {
+class PartitionsBuilderTest {
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirst() {
+    void shouldBuildPartitionsSpecifyingSplitPointsLeavesFirst() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -101,7 +101,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
+    void shouldBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -122,7 +122,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void failJoiningAllLeavesIfNonLeafSpecified() {
+    void failJoiningAllLeavesIfNonLeafSpecified() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -138,7 +138,7 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitOnSecondDimension() {
+    void shouldBuildPartitionsSpecifyingSplitOnSecondDimension() {
         // Given
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
@@ -161,7 +161,40 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildSinglePartitionTree() {
+    void shouldBuildPartitionsSpecifyingSplitOnTwoDifferentDimensions() {
+        // Given
+        Field field1 = new Field("key1", new StringType());
+        Field field2 = new Field("key2", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+
+        // When
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("parent")
+                .splitToNewChildrenOnDimension("parent", "A", "B", 0, "aaa")
+                .splitToNewChildrenOnDimension("B", "C", "D", 1, "bbb")
+                .buildTree();
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        assertThat(tree.getPartition("parent").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "", null))));
+        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "", "aaa"),
+                rangeFactory.createRange(field2, "", null))));
+        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "", null))));
+        assertThat(tree.getPartition("C").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "", "bbb"))));
+        assertThat(tree.getPartition("D").getRegion()).isEqualTo(new Region(List.of(
+                rangeFactory.createRange(field1, "aaa", null),
+                rangeFactory.createRange(field2, "bbb", null))));
+    }
+
+    @Test
+    void shouldBuildSinglePartitionTree() {
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         PartitionTree tree = new PartitionsBuilder(schema)

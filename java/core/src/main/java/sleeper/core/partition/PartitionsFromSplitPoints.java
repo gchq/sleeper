@@ -156,9 +156,13 @@ public class PartitionsFromSplitPoints {
     }
 
     private Partition createRootPartitionThatIsLeaf() {
+        return createRootPartitionThatIsLeaf(schema, rangeFactory);
+    }
+
+    public static Partition createRootPartitionThatIsLeaf(Schema schema, RangeFactory rangeFactory) {
         List<Range> ranges = new ArrayList<>();
-        for (Field field : rowKeyFields) {
-            ranges.add(getRangeCoveringWholeDimension(field));
+        for (Field field : schema.getRowKeyFields()) {
+            ranges.add(getRangeCoveringWholeDimension(rangeFactory, field));
         }
         Region region = new Region(ranges);
         return Partition.builder()
@@ -172,9 +176,8 @@ public class PartitionsFromSplitPoints {
                 .build();
     }
 
-    private Range getRangeCoveringWholeDimension(Field field) {
-        Range range = rangeFactory.createRange(field, getMinimum(field.getType()), true, null, false);
-        return range;
+    private static Range getRangeCoveringWholeDimension(RangeFactory rangeFactory, Field field) {
+        return rangeFactory.createRange(field, getMinimum(field.getType()), true, null, false);
     }
 
     private static Object getMinimum(Type type) {
