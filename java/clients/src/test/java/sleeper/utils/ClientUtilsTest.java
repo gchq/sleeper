@@ -81,7 +81,7 @@ class ClientUtilsTest {
         }
     }
 
-    @DisplayName("Clear directory")
+    @DisplayName("Clear directories")
     @Nested
     class ClearDirectory {
         @TempDir
@@ -127,7 +127,7 @@ class ClientUtilsTest {
         }
     }
 
-    @DisplayName("Run a shell command")
+    @DisplayName("Run shell commands")
     @Nested
     class RunCommand {
         @TempDir
