@@ -97,7 +97,7 @@ public class AdminConfigStore {
         } catch (IOException | AmazonS3Exception e) {
             throw new CouldNotSaveTableProperties(instanceId, tableName, e);
         }
-        //ClientUtils.clearDirectory(generatedDirectory);
+        ClientUtils.clearDirectory(generatedDirectory);
         SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, streamTableProperties(instanceProperties));
     }
 

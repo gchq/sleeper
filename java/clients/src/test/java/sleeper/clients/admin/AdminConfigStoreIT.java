@@ -144,6 +144,23 @@ public class AdminConfigStoreIT extends AdminClientITBase {
                     .extracting(table -> table.get(TABLE_NAME))
                     .containsExactly("test-table", "test-table-2");
         }
+
+        @Test
+        void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() throws IOException {
+            // Given
+            createTableInS3("old-test-table");
+            store().updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
+            deleteTableInS3("old-test-table");
+            createTableInS3("new-test-table");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("new-test-table");
+        }
     }
 
     private void createTableInS3(String tableName) throws IOException {
