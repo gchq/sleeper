@@ -17,30 +17,40 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
+import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
+import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminConfigStoreIT extends AdminClientITBase {
+
+    private final InstanceProperties instanceProperties = createValidInstanceProperties();
+
+    @BeforeEach
+    void setUp() throws IOException {
+        instanceProperties.saveToS3(s3);
+    }
+
     @DisplayName("Update instance properties")
     @Nested
     class UpdateInstanceProperties {
-        @BeforeEach
-        void setUp() throws IOException {
-            createValidInstanceProperties().saveToS3(s3);
-        }
 
         @Test
-        void shouldUpdateInstanceProperty() {
+        void shouldUpdateInstancePropertyInS3() {
             // When
             store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
@@ -48,16 +58,58 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             assertThat(store().loadInstanceProperties(INSTANCE_ID).get(FARGATE_VERSION))
                     .isEqualTo("1.2.3");
         }
+
+        @Test
+        void shouldUpdateInstancePropertyInLocalDirectory() {
+            // When
+            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            assertThat(loadInstancePropertiesFromDirectory(tempDir).get(FARGATE_VERSION))
+                    .isEqualTo("1.2.3");
+        }
+
+        @Test
+        void shouldIncludeTableInLocalDirectory() throws IOException {
+            // Given
+            createValidTableProperties(instanceProperties, "test-table").saveToS3(s3);
+
+            // When
+            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("test-table");
+        }
+
+        @Test
+        void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() throws IOException {
+            // Given
+            createValidTableProperties(instanceProperties, "old-test-table").saveToS3(s3);
+            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            s3.deleteObject(CONFIG_BUCKET_NAME, TABLES_PREFIX + "/old-test-table");
+            createValidTableProperties(instanceProperties, "new-test-table").saveToS3(s3);
+
+            // When
+            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("new-test-table");
+        }
     }
 
     @DisplayName("Update table properties")
     @Nested
     class UpdateTableProperties {
+
+        private final TableProperties tableProperties = createValidTableProperties(instanceProperties);
+
         @BeforeEach
         void setUp() throws IOException {
-            InstanceProperties instanceProperties = createValidInstanceProperties();
-            instanceProperties.saveToS3(s3);
-            createValidTableProperties(instanceProperties).saveToS3(s3);
+            tableProperties.saveToS3(s3);
         }
 
         @Test
@@ -68,6 +120,18 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // Then
             assertThat(store().loadTableProperties(INSTANCE_ID, TABLE_NAME_VALUE).getInt(ROW_GROUP_SIZE))
                     .isEqualTo(123);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldUpdateTablePropertyInLocalDirectory() {
+            // When
+            store().updateTableProperty(INSTANCE_ID, TABLE_NAME_VALUE, ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.getInt(ROW_GROUP_SIZE))
+                    .containsExactly(123);
         }
     }
 }

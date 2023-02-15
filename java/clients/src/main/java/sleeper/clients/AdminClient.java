@@ -53,14 +53,14 @@ public class AdminClient {
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        CdkDeployInstance.builder()
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", version)))
                 .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
                 .ensureNewInstance(false).build();
 
         new AdminClient(
-                new AdminConfigStore(AmazonS3ClientBuilder.defaultClient()),
+                new AdminConfigStore(AmazonS3ClientBuilder.defaultClient(), cdk, generatedDir),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console())).start(instanceId);
     }
