@@ -80,6 +80,16 @@ class SyncJarsIT {
                     .extracting(S3ObjectSummary::getKey)
                     .containsExactlyInAnyOrder("test1.jar", "test2.jar");
         }
+
+        @Test
+        void shouldIgnoreNonJarFile() throws IOException {
+            // When
+            Files.createFile(tempDir.resolve("test.txt"));
+            syncJarsToBucket(bucketName);
+
+            // Then
+            assertThat(s3.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+        }
     }
 
     @Nested

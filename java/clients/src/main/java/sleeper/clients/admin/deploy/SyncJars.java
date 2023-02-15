@@ -21,12 +21,13 @@ import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.util.ClientUtils;
-
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
@@ -56,7 +57,7 @@ public class SyncJars {
             changed = true;
         }
 
-        List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
+        List<Path> jars = listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
 
         JarsDiff diff = JarsDiff.from(jarsDirectory, jars, S3Objects.inBucket(s3, bucketName));
@@ -82,6 +83,12 @@ public class SyncJars {
             changed = true;
         }
         return changed;
+    }
+
+    private static List<Path> listJarsInDirectory(Path directory) throws IOException {
+        try (Stream<Path> jars = Files.list(directory)) {
+            return jars.filter(path -> path.toFile().getName().endsWith(".jar")).collect(Collectors.toList());
+        }
     }
 
     public static final class Builder {

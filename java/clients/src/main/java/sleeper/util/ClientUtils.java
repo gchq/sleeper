@@ -124,12 +124,6 @@ public class ClientUtils {
         }
     }
 
-    public static List<Path> listJarsInDirectory(Path directory) throws IOException {
-        try (Stream<Path> jars = Files.list(directory)) {
-            return jars.filter(path -> path.toFile().getName().endsWith(".jar")).collect(Collectors.toList());
-        }
-    }
-
     public static int runCommand(String... commands) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(commands).inheritIO().start();
 
