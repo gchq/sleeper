@@ -22,15 +22,17 @@ import org.apache.commons.lang.WordUtils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- *
- */
 public class ClientUtils {
 
     private ClientUtils() {
@@ -105,5 +107,26 @@ public class ClientUtils {
         return Arrays.stream(str.split("\n")).
                 map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
                 .collect(Collectors.joining("\n"));
+    }
+
+    public static void clearDirectory(Path tempDir) {
+        try (Stream<Path> paths = Files.walk(tempDir)) {
+            paths.skip(1).sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static int runCommand(String... commands) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(commands).inheritIO().start();
+
+        return process.waitFor();
     }
 }

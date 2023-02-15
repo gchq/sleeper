@@ -28,7 +28,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DynamoDBRecordBuilderTest extends DynamoDBTableTestBase {
+public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
     @Test
     public void shouldCreateRecordWithStringAttribute() {
         // Given we have a table in dynamodb that accepts strings

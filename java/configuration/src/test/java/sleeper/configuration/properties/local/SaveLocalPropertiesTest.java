@@ -150,6 +150,21 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
+    void shouldNotSaveTableBucketFileIfNotYetSetByCdk() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.unset(DATA_BUCKET);
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).doesNotExist();
+    }
+
+    @Test
     void shouldSaveSchemaFile() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();

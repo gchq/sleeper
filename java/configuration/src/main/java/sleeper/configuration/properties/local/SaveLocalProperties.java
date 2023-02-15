@@ -17,6 +17,7 @@
 package sleeper.configuration.properties.local;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -28,6 +29,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -70,7 +72,7 @@ public class SaveLocalProperties {
 
                 // Unpack properties for schema & table bucket
                 tableProperties.getSchema().save(tableDir.resolve("schema.json"));
-                Files.writeString(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
+                writeStringIfSet(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -84,9 +86,9 @@ public class SaveLocalProperties {
     }
 
     private static Stream<TableProperties> loadTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        return s3.listObjectsV2(configBucket, "tables/")
-                .getObjectSummaries().stream()
+        Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
+                s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
+        return StreamSupport.stream(objects.spliterator(), false)
                 .map(tableConfigObject -> loadTableFromS3(s3, instanceProperties, tableConfigObject));
     }
 
