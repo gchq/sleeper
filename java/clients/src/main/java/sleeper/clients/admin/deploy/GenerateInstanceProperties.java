@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
@@ -63,6 +64,7 @@ public class GenerateInstanceProperties {
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
+        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ACCOUNT, getAccount());
         instanceProperties.set(REGION, s3.getRegionName());
         instanceProperties.set(VERSION, sleeperVersion);

@@ -36,8 +36,8 @@ public class GenerateTableProperties {
     }
 
     public static TableProperties from(InstanceProperties instanceProperties, Schema schema, Properties properties, String tableName) {
+        properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
         TableProperties tableProperties = new TableProperties(instanceProperties, schema, properties);
-        tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(DATA_BUCKET, String.join("-", "sleeper", instanceProperties.get(ID), "table", tableName).toLowerCase(Locale.ROOT));
         return tableProperties;
     }
