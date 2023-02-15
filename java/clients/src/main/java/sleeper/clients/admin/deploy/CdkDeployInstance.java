@@ -56,7 +56,7 @@ public class CdkDeployInstance {
         private Path instancePropertiesFile;
         private Path cdkJarFile;
         private String cdkAppClassName;
-        public boolean newInstance;
+        private boolean newInstance;
 
         private Builder() {
         }
