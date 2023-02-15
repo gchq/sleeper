@@ -38,9 +38,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -102,12 +100,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         }
     }
 
-    protected Properties getProperties() {
-        return properties;
+    public void unset(T property) {
+        properties.remove(property.getPropertyName());
     }
 
-    public Iterator<Map.Entry<Object, Object>> getPropertyIterator() {
-        return properties.entrySet().iterator();
+    protected Properties getProperties() {
+        return properties;
     }
 
     public void load(InputStream inputStream) {

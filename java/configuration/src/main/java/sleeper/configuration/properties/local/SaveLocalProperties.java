@@ -72,7 +72,7 @@ public class SaveLocalProperties {
 
                 // Unpack properties for schema & table bucket
                 tableProperties.getSchema().save(tableDir.resolve("schema.json"));
-                Files.writeString(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
+                writeStringIfSet(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
