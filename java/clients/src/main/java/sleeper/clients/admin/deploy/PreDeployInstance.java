@@ -25,13 +25,16 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 public class PreDeployInstance {
@@ -76,10 +79,16 @@ public class PreDeployInstance {
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
 
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
-                .s3(s3).sts(sts).templatesDirectory(templatesDirectory)
+                .s3(s3).sts(sts)
+                .sleeperVersion(Files.readString(templatesDirectory.resolve("version.txt")))
+                .properties(loadProperties(generatedDirectory.resolve("instance.properties")))
+                .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")))
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
-        TableProperties tableProperties = GenerateTableProperties.fromTemplatesDir(instanceProperties, templatesDirectory, tableName);
+        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
+                Schema.load(templatesDirectory.resolve("schema.template")),
+                loadProperties(templatesDirectory.resolve("tableproperties.template")),
+                tableName);
         builder().s3(s3).ecr(ecr)
                 .jarsDirectory(scriptsDirectory.resolve("jars"))
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))

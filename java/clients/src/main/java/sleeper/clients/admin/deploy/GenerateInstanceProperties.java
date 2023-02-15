@@ -22,16 +22,12 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
-import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
@@ -141,12 +137,6 @@ public class GenerateInstanceProperties {
         public Builder tagsProperties(Properties tagsProperties) {
             this.tagsProperties = tagsProperties;
             return this;
-        }
-
-        public Builder templatesDirectory(Path templatesDirectory) throws IOException {
-            return sleeperVersion(Files.readString(templatesDirectory.resolve("version.txt")))
-                    .properties(loadProperties(templatesDirectory.resolve("instanceproperties.template")))
-                    .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")));
         }
 
         public GenerateInstanceProperties build() {
