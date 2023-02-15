@@ -86,10 +86,10 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() throws IOException {
             // Given
-            createValidTableProperties(instanceProperties, "old-test-table").saveToS3(s3);
+            createTableInS3("old-test-table");
             store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
-            s3.deleteObject(CONFIG_BUCKET_NAME, TABLES_PREFIX + "/old-test-table");
-            createValidTableProperties(instanceProperties, "new-test-table").saveToS3(s3);
+            deleteTableInS3("old-test-table");
+            createTableInS3("new-test-table");
 
             // When
             store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
@@ -134,4 +134,13 @@ public class AdminConfigStoreIT extends AdminClientITBase {
                     .containsExactly(123);
         }
     }
+
+    private void createTableInS3(String tableName) throws IOException {
+        createValidTableProperties(instanceProperties, tableName).saveToS3(s3);
+    }
+
+    private void deleteTableInS3(String tableName) {
+        s3.deleteObject(CONFIG_BUCKET_NAME, TABLES_PREFIX + "/" + tableName);
+    }
+
 }
