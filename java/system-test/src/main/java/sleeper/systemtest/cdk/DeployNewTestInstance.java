@@ -28,7 +28,7 @@ public class DeployNewTestInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (6 != args.length) {
+        if (5 != args.length) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
         }
         DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))

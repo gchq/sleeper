@@ -139,7 +139,7 @@ public class DeployNewInstance {
                 .cdkJarFile(jarsDirectory.resolve(String.format(cdkJarFormat, sleeperVersion)))
                 .cdkAppClassName(cdkAppClassName)
                 .ensureNewInstance(true)
-                .build();
+                .build().deploy();
     }
 
     private Properties loadInstancePropertiesTemplate() throws IOException {
