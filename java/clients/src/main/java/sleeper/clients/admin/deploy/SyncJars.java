@@ -44,11 +44,13 @@ public class SyncJars {
         return new Builder();
     }
 
-    public void sync() throws IOException {
+    public boolean sync() throws IOException {
         // Note that LocalStack doesn't fail bucket creation if it already exists, but the AWS API does.
+        boolean changed = false;
         if (!s3.doesBucketExistV2(bucketName)) {
             LOGGER.info("Creating jars bucket");
             s3.createBucket(bucketName);
+            changed = true;
         }
 
         List<Path> jars = ClientUtils.listJarsInDirectory(jarsDirectory);
@@ -62,6 +64,7 @@ public class SyncJars {
         if (!deleteKeys.isEmpty()) {
             s3.deleteObjects(new DeleteObjectsRequest(bucketName)
                     .withKeys(deleteKeys.toArray(new String[0])));
+            changed = true;
         }
 
         LOGGER.info("Uploading {} jars", uploadJars.size());
@@ -72,6 +75,10 @@ public class SyncJars {
                     jar.toFile());
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });
+        if (!uploadJars.isEmpty()) {
+            changed = true;
+        }
+        return changed;
     }
 
     public static final class Builder {

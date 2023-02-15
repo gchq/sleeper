@@ -102,8 +102,69 @@ class SyncJarsIT {
                 .isEqualTo("data2");
     }
 
-    private void syncJarsToBucket(String bucketName) throws IOException {
-        SyncJars.builder()
+    @Test
+    void shouldReportChangeIfBucketCreated() throws IOException {
+        // When
+        boolean changed = syncJarsToBucket(bucketName);
+
+        // Then
+        assertThat(changed).isTrue();
+    }
+
+    @Test
+    void shouldReportNoChangeIfBucketAlreadyExisted() throws IOException {
+        // Given
+        syncJarsToBucket(bucketName);
+
+        // When
+        boolean changed = syncJarsToBucket(bucketName);
+
+        // Then
+        assertThat(changed).isFalse();
+    }
+
+    @Test
+    void shouldReportChangeIfFileUploaded() throws IOException {
+        // Given
+        syncJarsToBucket(bucketName);
+
+        // When
+        Files.createFile(tempDir.resolve("test.jar"));
+        boolean changed = syncJarsToBucket(bucketName);
+
+        // Then
+        assertThat(changed).isTrue();
+    }
+
+    @Test
+    void shouldReportChangeIfFileDeleted() throws IOException {
+        // Given
+        Files.createFile(tempDir.resolve("test.jar"));
+        syncJarsToBucket(bucketName);
+
+        // When
+        Files.delete(tempDir.resolve("test.jar"));
+        boolean changed = syncJarsToBucket(bucketName);
+
+        // Then
+        assertThat(changed).isTrue();
+    }
+
+    @Test
+    void shouldReportNoChangeIfFileUnmodified() throws IOException {
+        // Given
+        Files.createFile(tempDir.resolve("test.jar"));
+        syncJarsToBucket(bucketName);
+
+        // When
+        boolean changed = syncJarsToBucket(bucketName);
+
+        // Then
+        assertThat(changed).isFalse();
+    }
+
+    private boolean syncJarsToBucket(String bucketName) throws IOException {
+        return SyncJars.builder()
                 .s3(s3).jarsDirectory(tempDir)
                 .bucketName(bucketName)
                 .build().sync();
