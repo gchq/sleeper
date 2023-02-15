@@ -16,7 +16,7 @@
 set -e
 
 if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <properties_template> <uniqueId> <vpc> <subnet>"
+  echo "Usage: $0 <properties-template> <instance-id> <vpc> <subnet>"
   exit 1
 fi
 
@@ -25,53 +25,7 @@ INSTANCE_ID=$2
 VPC=$3
 SUBNET=$4
 
-TABLE_NAME="system-test"
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(dirname "$THIS_DIR")
-JARS_DIR="$SCRIPTS_DIR/jars"
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-source "$SCRIPTS_DIR/functions/timeUtils.sh"
-START_TIME=$(record_time)
-
-echo "-------------------------------------------------------------------------------"
-echo "Configuring Deployment"
-echo "-------------------------------------------------------------------------------"
-TEMPLATE_DIR="$SCRIPTS_DIR/templates"
-GENERATED_DIR="$SCRIPTS_DIR/generated"
-INSTANCE_PROPERTIES="$GENERATED_DIR/instance.properties"
-VERSION=$(cat "$TEMPLATE_DIR/version.txt")
-SYSTEM_TEST_JAR="${JARS_DIR}/system-test-${VERSION}-utility.jar"
-
-mkdir -p "$GENERATED_DIR"
-
-echo "Creating System Test Specific Instance Properties Template"
-sed \
-  -e "s|^sleeper.systemtest.repo=.*|sleeper.systemtest.repo=${INSTANCE_ID}/system-test|" \
-  "$PROPERTIES_TEMPLATE" > "${INSTANCE_PROPERTIES}"
-
-echo "PROPERTIES_TEMPLATE: ${PROPERTIES_TEMPLATE}"
-echo "TEMPLATE_DIR: ${TEMPLATE_DIR}"
-echo "VERSION: ${VERSION}"
-echo "GENERATED_DIR: ${GENERATED_DIR}"
-echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
-
-echo "Starting Pre-deployment steps"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.admin.deploy.PreDeployInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}"
-
-END_CONFIGURE_DEPLOYMENT_TIME=$(record_time)
-echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
-
-echo "-------------------------------------------------------------------------------"
-echo "Deploying Stack"
-echo "-------------------------------------------------------------------------------"
-cdk -a "java -cp ${SYSTEM_TEST_JAR} sleeper.systemtest.cdk.SystemTestApp" deploy \
---require-approval never -c propertiesfile="${INSTANCE_PROPERTIES}" -c newinstance=true "*"
-
-FINISH_TIME=$(record_time)
-echo "-------------------------------------------------------------------------------"
-echo "Finished deploy"
-echo "-------------------------------------------------------------------------------"
-echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
-echo "Stack deployment finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CONFIGURE_DEPLOYMENT_TIME" "$FINISH_TIME")"
-echo "Overall, deploy took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "${PROPERTIES_TEMPLATE}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}"
