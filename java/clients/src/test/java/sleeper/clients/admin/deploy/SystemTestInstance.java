@@ -32,6 +32,7 @@ import sleeper.util.ClientUtils;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -79,6 +80,8 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
                 .newInstance(false)
                 .build().deploy();
+        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceProperties.get(ID));
+        singleKeyTableProperties.loadFromS3(s3Client, singleKeyTableProperties.get(TABLE_NAME));
     }
 
     public InstanceProperties getInstanceProperties() {
