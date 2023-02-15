@@ -89,13 +89,16 @@ public class AdminConfigStore {
     }
 
     public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
-        TableProperties properties = loadTableProperties(instanceId, tableName);
+        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
+        TableProperties properties = loadTableProperties(instanceProperties, tableName);
         properties.set(property, propertyValue);
         try {
             properties.saveToS3(s3);
         } catch (IOException | AmazonS3Exception e) {
             throw new CouldNotSaveTableProperties(instanceId, tableName, e);
         }
+        //ClientUtils.clearDirectory(generatedDirectory);
+        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, streamTableProperties(instanceProperties));
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {

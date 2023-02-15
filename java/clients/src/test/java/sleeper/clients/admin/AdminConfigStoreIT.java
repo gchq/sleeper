@@ -17,14 +17,12 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 
@@ -105,33 +103,46 @@ public class AdminConfigStoreIT extends AdminClientITBase {
     @Nested
     class UpdateTableProperties {
 
-        private final TableProperties tableProperties = createValidTableProperties(instanceProperties);
-
-        @BeforeEach
-        void setUp() throws IOException {
-            tableProperties.saveToS3(s3);
-        }
-
         @Test
-        void shouldUpdateTableProperty() {
+        void shouldUpdateTablePropertyInS3() throws IOException {
+            // Given
+            createTableInS3("test-table");
+
             // When
-            store().updateTableProperty(INSTANCE_ID, TABLE_NAME_VALUE, ROW_GROUP_SIZE, "123");
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
-            assertThat(store().loadTableProperties(INSTANCE_ID, TABLE_NAME_VALUE).getInt(ROW_GROUP_SIZE))
+            assertThat(store().loadTableProperties(INSTANCE_ID, "test-table").getInt(ROW_GROUP_SIZE))
                     .isEqualTo(123);
         }
 
         @Test
-        @Disabled("TODO")
-        void shouldUpdateTablePropertyInLocalDirectory() {
+        void shouldUpdateTablePropertyInLocalDirectory() throws IOException {
+            // Given
+            createTableInS3("test-table");
+
             // When
-            store().updateTableProperty(INSTANCE_ID, TABLE_NAME_VALUE, ROW_GROUP_SIZE, "123");
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
                     .extracting(table -> table.getInt(ROW_GROUP_SIZE))
                     .containsExactly(123);
+        }
+
+        @Test
+        void shouldIncludeNotUpdatedTableInLocalDirectory() throws IOException {
+            // Given
+            createTableInS3("test-table");
+            createTableInS3("test-table-2");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("test-table", "test-table-2");
         }
     }
 
