@@ -56,7 +56,7 @@ echo "Copying instance properties template into generated files for use in pre-d
 cp "${TEMPLATE_DIR}/instanceproperties.template" "${INSTANCE_PROPERTIES_PATH}"
 
 echo "Running Pre-deployment steps"
-"${SCRIPTS_DIR}/deploy/pre-deployment.sh" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}" "${TEMPLATE_DIR}" "${GENERATED_DIR}"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.admin.deploy.PreDeployInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}"
 
 echo "-------------------------------------------------------"
 echo "Deploying Stacks"
