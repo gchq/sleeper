@@ -28,6 +28,9 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
+
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
     private final AmazonS3 s3;
@@ -35,9 +38,9 @@ public class SyncJars {
     private final String bucketName;
 
     private SyncJars(Builder builder) {
-        s3 = builder.s3;
-        jarsDirectory = builder.jarsDirectory;
-        bucketName = builder.bucketName;
+        s3 = requireNonNull(builder.s3, "s3 must not be null");
+        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
+        bucketName = requireNonEmpty(builder.bucketName, "");
     }
 
     public static Builder builder() {

@@ -20,6 +20,8 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static java.util.Objects.requireNonNull;
+
 public class CdkDeployInstance {
 
     private final Path instancePropertiesFile;
@@ -28,9 +30,9 @@ public class CdkDeployInstance {
     private final boolean ensureNewInstance;
 
     private CdkDeployInstance(Builder builder) {
-        instancePropertiesFile = builder.instancePropertiesFile;
-        cdkJarFile = builder.cdkJarFile;
-        cdkAppClassName = builder.cdkAppClassName;
+        instancePropertiesFile = requireNonNull(builder.instancePropertiesFile, "instancePropertiesFile must not be null");
+        cdkJarFile = requireNonNull(builder.cdkJarFile, "cdkJarFile must not be null");
+        cdkAppClassName = requireNonNull(builder.cdkAppClassName, "cdkAppClassName must not be null");
         ensureNewInstance = builder.ensureNewInstance;
     }
 

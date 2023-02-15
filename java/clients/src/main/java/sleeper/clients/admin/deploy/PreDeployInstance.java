@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
@@ -54,13 +55,13 @@ public class PreDeployInstance {
     private final InstanceProperties instanceProperties;
 
     private PreDeployInstance(Builder builder) {
-        s3 = builder.s3;
-        ecr = builder.ecr;
-        jarsDirectory = builder.jarsDirectory;
-        baseDockerDirectory = builder.baseDockerDirectory;
-        uploadDockerImagesScript = builder.uploadDockerImagesScript;
+        s3 = requireNonNull(builder.s3, "s3 must not be null");
+        ecr = requireNonNull(builder.ecr, "ecr must not be null");
+        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
+        baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
+        uploadDockerImagesScript = requireNonNull(builder.uploadDockerImagesScript, "uploadDockerImagesScript must not be null");
         reuploadDockerImages = builder.reuploadDockerImages;
-        instanceProperties = builder.instanceProperties;
+        instanceProperties = requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
     }
 
     public static Builder builder() {

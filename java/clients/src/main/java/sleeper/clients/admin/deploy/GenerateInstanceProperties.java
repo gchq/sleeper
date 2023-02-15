@@ -22,6 +22,8 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -44,12 +46,16 @@ public class GenerateInstanceProperties {
     private final String subnetId;
 
     private GenerateInstanceProperties(Builder builder) {
-        s3 = builder.s3;
-        sts = builder.sts;
-        instanceId = builder.instanceId;
-        sleeperVersion = builder.sleeperVersion;
-        vpcId = builder.vpcId;
-        subnetId = builder.subnetId;
+        s3 = requireNonNull(builder.s3, "s3 must not be null");
+        sts = requireNonNull(builder.sts, "sts must not be null");
+        instanceId = requireNonEmpty(builder.instanceId, "instanceId must not be empty");
+        sleeperVersion = requireNonEmpty(builder.sleeperVersion, "sleeperVersion must not be empty");
+        vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
+        subnetId = requireNonEmpty(builder.subnetId, "subnetId must not be empty");
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public InstanceProperties generate() {
@@ -70,10 +76,6 @@ public class GenerateInstanceProperties {
 
     private String getAccount() {
         return sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount();
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     public static final class Builder {
