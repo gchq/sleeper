@@ -20,6 +20,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -53,114 +55,153 @@ class SyncJarsIT {
     private Path tempDir;
     private final String bucketName = UUID.randomUUID().toString();
 
-    @Test
-    void shouldCreateNewBucketIfNotPresent() throws IOException {
-        // When
-        syncJarsToBucket(bucketName);
+    @Nested
+    @DisplayName("Upload jars")
+    class UploadJars {
 
-        // Then
-        assertThat(s3.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+        @Test
+        void shouldCreateNewBucketIfNotPresent() throws IOException {
+            // When
+            syncJarsToBucket(bucketName);
+
+            // Then
+            assertThat(s3.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+        }
+
+        @Test
+        void shouldUploadJars() throws IOException {
+            // When
+            Files.createFile(tempDir.resolve("test1.jar"));
+            Files.createFile(tempDir.resolve("test2.jar"));
+            syncJarsToBucket(bucketName);
+
+            // Then
+            assertThat(s3.listObjectsV2(bucketName).getObjectSummaries())
+                    .extracting(S3ObjectSummary::getKey)
+                    .containsExactlyInAnyOrder("test1.jar", "test2.jar");
+        }
     }
 
-    @Test
-    void shouldUploadJars() throws IOException {
-        // When
-        Files.createFile(tempDir.resolve("test1.jar"));
-        Files.createFile(tempDir.resolve("test2.jar"));
-        syncJarsToBucket(bucketName);
+    @Nested
+    @DisplayName("Apply differences when bucket already has jars")
+    class ApplyDifferences {
 
-        // Then
-        assertThat(s3.listObjectsV2(bucketName).getObjectSummaries())
-                .extracting(S3ObjectSummary::getKey)
-                .containsExactlyInAnyOrder("test1.jar", "test2.jar");
+        @Test
+        void shouldUploadNewFile() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("old.jar"));
+            syncJarsToBucket(bucketName);
+
+            // When
+            Files.createFile(tempDir.resolve("new.jar"));
+            syncJarsToBucket(bucketName);
+
+            // Then
+            assertThat(S3Objects.inBucket(s3, bucketName))
+                    .extracting(S3ObjectSummary::getKey)
+                    .containsExactlyInAnyOrder("old.jar", "new.jar");
+        }
+
+        @Test
+        void shouldDeleteOldFile() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("old.jar"));
+            syncJarsToBucket(bucketName);
+
+            // When
+            Files.delete(tempDir.resolve("old.jar"));
+            syncJarsToBucket(bucketName);
+
+            // Then
+            assertThat(S3Objects.inBucket(s3, bucketName)).isEmpty();
+        }
+
+        @Test
+        void shouldOnlyUploadExistingFileIfItChanged() throws IOException, InterruptedException {
+            // Given
+            Files.createFile(tempDir.resolve("unmodified.jar"));
+            Files.writeString(tempDir.resolve("modified.jar"), "data1");
+            syncJarsToBucket(bucketName);
+            Date lastModifiedBefore = s3.getObjectMetadata(bucketName, "unmodified.jar").getLastModified();
+
+            // When
+            Thread.sleep(1000);
+            Files.writeString(tempDir.resolve("modified.jar"), "data2");
+            syncJarsToBucket(bucketName);
+
+            // Then
+            assertThat(s3.getObjectMetadata(bucketName, "unmodified.jar"))
+                    .extracting(ObjectMetadata::getLastModified)
+                    .isEqualTo(lastModifiedBefore);
+            assertThat(s3.getObjectAsString(bucketName, "modified.jar"))
+                    .isEqualTo("data2");
+        }
     }
 
-    @Test
-    void shouldApplyChangesToJars() throws IOException, InterruptedException {
-        // Given
-        Files.createFile(tempDir.resolve("unmodified.jar"));
-        Files.writeString(tempDir.resolve("modified.jar"), "data1");
-        Files.createFile(tempDir.resolve("deleted.jar"));
-        syncJarsToBucket(bucketName);
-        Date lastModifiedBefore = s3.getObjectMetadata(bucketName, "unmodified.jar").getLastModified();
+    @Nested
+    @DisplayName("Report when bucket changed")
+    class ReportChanges {
 
-        // When
-        Thread.sleep(1000);
-        Files.delete(tempDir.resolve("deleted.jar"));
-        Files.createFile(tempDir.resolve("added.jar"));
-        Files.writeString(tempDir.resolve("modified.jar"), "data2");
-        syncJarsToBucket(bucketName);
+        @Test
+        void shouldReportChangeIfBucketCreated() throws IOException {
+            // When
+            boolean changed = syncJarsToBucket(bucketName);
 
-        // Then
-        assertThat(S3Objects.inBucket(s3, bucketName))
-                .extracting(S3ObjectSummary::getKey)
-                .containsExactlyInAnyOrder("added.jar", "modified.jar", "unmodified.jar");
-        assertThat(s3.getObjectMetadata(bucketName, "unmodified.jar"))
-                .extracting(ObjectMetadata::getLastModified)
-                .isEqualTo(lastModifiedBefore);
-        assertThat(s3.getObjectAsString(bucketName, "modified.jar"))
-                .isEqualTo("data2");
-    }
+            // Then
+            assertThat(changed).isTrue();
+        }
 
-    @Test
-    void shouldReportChangeIfBucketCreated() throws IOException {
-        // When
-        boolean changed = syncJarsToBucket(bucketName);
+        @Test
+        void shouldReportNoChangeIfBucketAlreadyExisted() throws IOException {
+            // Given
+            syncJarsToBucket(bucketName);
 
-        // Then
-        assertThat(changed).isTrue();
-    }
+            // When
+            boolean changed = syncJarsToBucket(bucketName);
 
-    @Test
-    void shouldReportNoChangeIfBucketAlreadyExisted() throws IOException {
-        // Given
-        syncJarsToBucket(bucketName);
+            // Then
+            assertThat(changed).isFalse();
+        }
 
-        // When
-        boolean changed = syncJarsToBucket(bucketName);
+        @Test
+        void shouldReportChangeIfFileUploaded() throws IOException {
+            // Given
+            syncJarsToBucket(bucketName);
 
-        // Then
-        assertThat(changed).isFalse();
-    }
+            // When
+            Files.createFile(tempDir.resolve("test.jar"));
+            boolean changed = syncJarsToBucket(bucketName);
 
-    @Test
-    void shouldReportChangeIfFileUploaded() throws IOException {
-        // Given
-        syncJarsToBucket(bucketName);
+            // Then
+            assertThat(changed).isTrue();
+        }
 
-        // When
-        Files.createFile(tempDir.resolve("test.jar"));
-        boolean changed = syncJarsToBucket(bucketName);
+        @Test
+        void shouldReportChangeIfFileDeleted() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("test.jar"));
+            syncJarsToBucket(bucketName);
 
-        // Then
-        assertThat(changed).isTrue();
-    }
+            // When
+            Files.delete(tempDir.resolve("test.jar"));
+            boolean changed = syncJarsToBucket(bucketName);
 
-    @Test
-    void shouldReportChangeIfFileDeleted() throws IOException {
-        // Given
-        Files.createFile(tempDir.resolve("test.jar"));
-        syncJarsToBucket(bucketName);
+            // Then
+            assertThat(changed).isTrue();
+        }
 
-        // When
-        Files.delete(tempDir.resolve("test.jar"));
-        boolean changed = syncJarsToBucket(bucketName);
+        @Test
+        void shouldReportNoChangeIfFileUnmodified() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("test.jar"));
+            syncJarsToBucket(bucketName);
 
-        // Then
-        assertThat(changed).isTrue();
-    }
+            // When
+            boolean changed = syncJarsToBucket(bucketName);
 
-    @Test
-    void shouldReportNoChangeIfFileUnmodified() throws IOException {
-        // Given
-        Files.createFile(tempDir.resolve("test.jar"));
-        syncJarsToBucket(bucketName);
-
-        // When
-        boolean changed = syncJarsToBucket(bucketName);
-
-        // Then
-        assertThat(changed).isFalse();
+            // Then
+            assertThat(changed).isFalse();
+        }
     }
 
     private boolean syncJarsToBucket(String bucketName) throws IOException {
