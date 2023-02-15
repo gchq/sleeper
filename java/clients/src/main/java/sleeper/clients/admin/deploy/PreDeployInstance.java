@@ -51,7 +51,6 @@ public class PreDeployInstance {
     private final Path baseDockerDirectory;
     private final Path uploadDockerImagesScript;
     private final boolean reuploadDockerImages;
-    private final boolean newInstance;
     private final InstanceProperties instanceProperties;
 
     private PreDeployInstance(Builder builder) {
@@ -61,7 +60,6 @@ public class PreDeployInstance {
         baseDockerDirectory = builder.baseDockerDirectory;
         uploadDockerImagesScript = builder.uploadDockerImagesScript;
         reuploadDockerImages = builder.reuploadDockerImages;
-        newInstance = builder.newInstance;
         instanceProperties = builder.instanceProperties;
     }
 
@@ -79,7 +77,6 @@ public class PreDeployInstance {
                 .s3(s3)
                 .jarsDirectory(jarsDirectory)
                 .bucketName(instanceProperties.get(JARS_BUCKET))
-                .newInstance(newInstance)
                 .build().sync();
     }
 
@@ -126,7 +123,6 @@ public class PreDeployInstance {
         private Path baseDockerDirectory;
         private Path uploadDockerImagesScript;
         private boolean reuploadDockerImages;
-        public boolean newInstance;
         private InstanceProperties instanceProperties;
 
         private Builder() {
@@ -159,11 +155,6 @@ public class PreDeployInstance {
 
         public Builder reuploadDockerImages(boolean reuploadDockerImages) {
             this.reuploadDockerImages = reuploadDockerImages;
-            return this;
-        }
-
-        public Builder newInstance(boolean newInstance) {
-            this.newInstance = newInstance;
             return this;
         }
 

@@ -106,7 +106,6 @@ class SyncJarsIT {
         SyncJars.builder()
                 .s3(s3).jarsDirectory(tempDir)
                 .bucketName(bucketName)
-                .newInstance(true)
                 .build().sync();
     }
 }
