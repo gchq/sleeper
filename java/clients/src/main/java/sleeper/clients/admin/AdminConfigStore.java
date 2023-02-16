@@ -17,6 +17,8 @@ package sleeper.clients.admin;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.clients.admin.deploy.CdkDeployInstance;
 import sleeper.configuration.properties.InstanceProperties;
@@ -36,6 +38,7 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminConfigStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminConfigStore.class);
 
     private final AmazonS3 s3;
     private final CdkDeployInstance cdk;
@@ -82,11 +85,14 @@ public class AdminConfigStore {
         InstanceProperties properties = loadInstanceProperties(instanceId);
         properties.set(property, propertyValue);
         try {
+            LOGGER.info("Saving to local configuration");
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             if (property.isRunCDKDeployWhenChanged()) {
+                LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
                 cdk.deploy();
             } else {
+                LOGGER.info("Saving to AWS");
                 properties.saveToS3(s3);
             }
         } catch (IOException | AmazonS3Exception | InterruptedException e) {
@@ -108,14 +114,17 @@ public class AdminConfigStore {
         TableProperties properties = loadTableProperties(instanceProperties, tableName);
         properties.set(property, propertyValue);
         try {
+            LOGGER.info("Saving to local configuration");
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME))
                                     ? properties : table));
             if (property.isRunCDKDeployWhenChanged()) {
+                LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
                 cdk.deploy();
             } else {
+                LOGGER.info("Saving to AWS");
                 properties.saveToS3(s3);
             }
         } catch (IOException | AmazonS3Exception | InterruptedException e) {
