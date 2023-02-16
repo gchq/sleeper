@@ -23,10 +23,15 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
@@ -106,12 +111,28 @@ public class AdminConfigStoreIT extends AdminClientITBase {
     @Nested
     class DeployWithCdk {
         @Test
-        void shouldRunCdkDeployWhenCdkFlaggedInstancePropertyUpdated() throws IOException, InterruptedException {
+        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedInstancePropertyUpdated() throws IOException, InterruptedException {
+            // Given
+            createTableInS3("test-table");
+            AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
+            List<TableProperties> localTablesWhenCdkDeployed = new ArrayList<>();
+            doAnswer(invocation -> {
+                InstanceProperties properties = loadInstancePropertiesFromDirectory(tempDir);
+                localPropertiesWhenCdkDeployed.set(properties);
+                loadTablesFromDirectory(properties, tempDir).forEach(localTablesWhenCdkDeployed::add);
+                return null;
+            }).when(cdk).deploy();
+
             // When
             store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
 
             // Then
             verify(cdk).deploy();
+            assertThat(localPropertiesWhenCdkDeployed.get().get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                    .isEqualTo("123");
+            assertThat(localTablesWhenCdkDeployed)
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("test-table");
         }
 
         @Test
