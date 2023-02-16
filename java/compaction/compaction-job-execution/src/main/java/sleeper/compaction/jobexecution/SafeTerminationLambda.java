@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,13 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 public class SafeTerminationLambda implements RequestStreamHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SafeTerminationLambda.class);
-    /** gson JSON encoder/decoder. */
+    /**
+     * gson JSON encoder/decoder.
+     */
     private static final Gson GSON = new Gson();
-    /** The amount of safe time for an API call before terminating. */
+    /**
+     * The amount of safe time for an API call before terminating.
+     */
     private static final int SAFE_TIME_LIMIT = 200;
 
     private final AmazonECS ecsClient;
@@ -99,7 +103,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      *
      * @param reader the input source
      * @return total capacity to be terminated
-     * @throws JsonIOException for a JSON related I/O error
+     * @throws JsonIOException     for a JSON related I/O error
      * @throws JsonSyntaxException if JSON is invalid
      */
     public static int totalTerminations(Reader reader) throws JsonIOException, JsonSyntaxException {
@@ -122,14 +126,14 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      * Examine list of suggested instances from AWS. Generate our own suggestions based on empty
      * instances.
      *
-     * @param input input JSON
-     * @param output response JSON
+     * @param input     input JSON
+     * @param output    response JSON
      * @param detailsIt iterator of cluster instance details
-     * @param context the AWS Lambda context
+     * @param context   the AWS Lambda context
      * @throws IOException if anything goes wrong
      */
     public static void suggestIDsToTerminate(Reader input, Writer output, Iterable<InstanceDetails> detailsIt,
-                    Context context) throws IOException {
+                                             Context context) throws IOException {
         Objects.requireNonNull(input, "input");
         Objects.requireNonNull(output, "output");
         Objects.requireNonNull(detailsIt, "detailsIt");
@@ -156,15 +160,15 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     /**
      * Filter out a set of instances that are not running and RUNNING/PENDING tasks.
      *
-     * @param detailsIt iterator of instances in cluster
+     * @param detailsIt     iterator of instances in cluster
      * @param suggestedSize limit for number of instances to return
-     * @param context AWS Lambda context
+     * @param context       AWS Lambda context
      * @return set of empty instances
-     * @throws NullPointerException for clusterDetails
+     * @throws NullPointerException     for clusterDetails
      * @throws IllegalArgumentException if suggestedSize < 0
      */
     public static Set<String> findEmptyInstances(Iterable<InstanceDetails> detailsIt, int suggestedSize,
-                    Context context) {
+                                                 Context context) {
         Objects.requireNonNull(detailsIt, "detailsIt");
         Objects.requireNonNull(context, "context");
         if (suggestedSize < 0) {
@@ -189,14 +193,14 @@ public class SafeTerminationLambda implements RequestStreamHandler {
      * Process request from AWS Lambda. Sets up a {@link java.io.Reader} and a
      * {@link java.io.Writer} around the streams.
      *
-     * @param input the incoming Lambda event data
-     * @param output the response JSON
+     * @param input   the incoming Lambda event data
+     * @param output  the response JSON
      * @param context event context
      */
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
-                        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
+             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
 
             suggestIDsToTerminate(reader, out, InstanceDetails.iterateInstances(ecsClusterName, ecsClient), context);
 
