@@ -87,11 +87,17 @@ public class AdminConfigStore {
             } else {
                 properties.saveToS3(s3);
             }
-        } catch (IOException | AmazonS3Exception e) {
-            throw new CouldNotSaveInstanceProperties(instanceId, e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CouldNotSaveInstanceProperties(instanceId, e);
+        } catch (IOException | AmazonS3Exception | InterruptedException e) {
+            CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
+            try {
+                SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+            } catch (Exception e2) {
+                wrapped.addSuppressed(e2);
+            }
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw wrapped;
         }
     }
 

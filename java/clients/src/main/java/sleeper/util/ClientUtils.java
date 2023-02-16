@@ -119,7 +119,6 @@ public class ClientUtils {
 
     public static int runCommand(String... commands) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(commands).inheritIO().start();
-
         return process.waitFor();
     }
 }

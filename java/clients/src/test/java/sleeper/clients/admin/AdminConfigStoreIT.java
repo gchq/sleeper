@@ -17,7 +17,6 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -243,7 +242,6 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
             // Given
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
