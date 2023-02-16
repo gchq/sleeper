@@ -111,7 +111,7 @@ public class ClientUtils {
     public static void clearDirectory(Path tempDir) throws IOException {
         try (Stream<Path> paths = Files.walk(tempDir)) {
             Stream<Path> nestedPaths = paths.skip(1).sorted(Comparator.reverseOrder());
-            for (Path path : (Iterable<? extends Path>) nestedPaths::iterator) {
+            for (Path path : (Iterable<Path>) nestedPaths::iterator) {
                 Files.delete(path);
             }
         }
