@@ -29,7 +29,6 @@ import sleeper.table.job.TableLister;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
@@ -88,7 +87,7 @@ public class AdminConfigStore {
             } else {
                 properties.saveToS3(s3);
             }
-        } catch (IOException | UncheckedIOException | AmazonS3Exception e) {
+        } catch (IOException | AmazonS3Exception e) {
             throw new CouldNotSaveInstanceProperties(instanceId, e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

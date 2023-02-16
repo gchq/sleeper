@@ -29,6 +29,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +59,7 @@ class SaveLocalPropertiesIT {
     }
 
     @Test
-    void shouldLoadInstancePropertiesFromS3() {
+    void shouldLoadInstancePropertiesFromS3() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
@@ -71,7 +72,7 @@ class SaveLocalPropertiesIT {
     }
 
     @Test
-    void shouldLoadTablePropertiesFromS3() {
+    void shouldLoadTablePropertiesFromS3() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
         TableProperties table1 = createTestTableProperties(properties, schemaWithKey("key1"), s3Client);
@@ -86,7 +87,7 @@ class SaveLocalPropertiesIT {
     }
 
     @Test
-    void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() {
+    void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties(s3Client);
 
