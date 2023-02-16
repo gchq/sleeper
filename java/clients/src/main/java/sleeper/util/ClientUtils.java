@@ -22,7 +22,6 @@ import org.apache.commons.lang.WordUtils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -111,16 +110,10 @@ public class ClientUtils {
 
     public static void clearDirectory(Path tempDir) throws IOException {
         try (Stream<Path> paths = Files.walk(tempDir)) {
-            paths.skip(1).sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
+            Stream<Path> nestedPaths = paths.skip(1).sorted(Comparator.reverseOrder());
+            for (Path path : (Iterable<? extends Path>) nestedPaths::iterator) {
+                Files.delete(path);
+            }
         }
     }
 
