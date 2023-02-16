@@ -59,7 +59,7 @@ public class SaveLocalProperties {
 
     private static void saveTablesToDirectory(Path directory, Stream<TableProperties> tablePropertiesStream) throws IOException {
         try {
-            for (TableProperties tableProperties : (Iterable<? extends TableProperties>) tablePropertiesStream::iterator) {
+            for (TableProperties tableProperties : (Iterable<TableProperties>) tablePropertiesStream::iterator) {
                 saveTableToDirectory(directory, tableProperties);
             }
         } catch (UncheckedIOException e) {
