@@ -102,11 +102,11 @@ public class AdminConfigStore {
         properties.set(property, propertyValue);
         try {
             properties.saveToS3(s3);
+            ClientUtils.clearDirectory(generatedDirectory);
+            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, streamTableProperties(instanceProperties));
         } catch (IOException | AmazonS3Exception e) {
             throw new CouldNotSaveTableProperties(instanceId, tableName, e);
         }
-        ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, streamTableProperties(instanceProperties));
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {

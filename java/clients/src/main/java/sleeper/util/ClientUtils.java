@@ -109,7 +109,7 @@ public class ClientUtils {
                 .collect(Collectors.joining("\n"));
     }
 
-    public static void clearDirectory(Path tempDir) {
+    public static void clearDirectory(Path tempDir) throws IOException {
         try (Stream<Path> paths = Files.walk(tempDir)) {
             paths.skip(1).sorted(Comparator.reverseOrder())
                     .forEach(path -> {
@@ -119,8 +119,8 @@ public class ClientUtils {
                             throw new UncheckedIOException(e);
                         }
                     });
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 
