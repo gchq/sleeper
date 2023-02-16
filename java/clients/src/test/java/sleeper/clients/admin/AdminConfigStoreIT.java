@@ -17,6 +17,7 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
@@ -111,7 +115,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
     @Nested
     class DeployWithCdk {
         @Test
-        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedInstancePropertyUpdated() throws IOException, InterruptedException {
+        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedInstancePropertyUpdated() throws Exception {
             // Given
             createTableInS3("test-table");
             AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
@@ -142,6 +146,54 @@ public class AdminConfigStoreIT extends AdminClientITBase {
 
             // Then
             verifyNoInteractions(cdk);
+        }
+
+        @Test
+        void shouldLeaveCdkToUpdateS3WhenApplyingChangeWithCdk() throws Exception {
+            // Given
+            instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+            instanceProperties.saveToS3(s3);
+
+            // When
+            store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+
+            // Then
+            verify(cdk).deploy();
+            assertThat(store().loadInstanceProperties(INSTANCE_ID)
+                    .get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                    .isEqualTo("123");
+        }
+
+        @Test
+        void shouldFailWhenCdkDeployFails() throws Exception {
+            // Given
+            IOException thrown = new IOException("CDK failed");
+            doThrow(thrown).when(cdk).deploy();
+            AdminConfigStore store = store();
+
+            // When / Then
+            assertThatThrownBy(() -> store.updateInstanceProperty(
+                    INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
+                    .isInstanceOf(AdminConfigStore.CouldNotSaveInstanceProperties.class)
+                    .hasCauseReference(thrown);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
+            // Given
+            instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+            instanceProperties.saveToS3(s3);
+            doThrow(new IOException("CDK failed")).when(cdk).deploy();
+
+            // When / Then
+            try {
+                store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+                fail();
+            } catch (Exception e) {
+                assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
+                        .isEqualTo("123");
+            }
         }
     }
 

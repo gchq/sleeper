@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 
 import sleeper.clients.admin.deploy.CdkDeployInstance;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -82,13 +81,19 @@ public class AdminConfigStore {
         InstanceProperties properties = loadInstanceProperties(instanceId);
         properties.set(property, propertyValue);
         try {
-            properties.saveToS3(s3);
-        } catch (IOException | AmazonS3Exception e) {
+            ClientUtils.clearDirectory(generatedDirectory);
+            SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
+            if (property.isRunCDKDeployWhenChanged()) {
+                cdk.deploy();
+            } else {
+                properties.saveToS3(s3);
+            }
+        } catch (IOException | UncheckedIOException | AmazonS3Exception e) {
+            throw new CouldNotSaveInstanceProperties(instanceId, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new CouldNotSaveInstanceProperties(instanceId, e);
         }
-        ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
-        cdkDeployWhenChanged(property);
     }
 
     public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
@@ -102,20 +107,6 @@ public class AdminConfigStore {
         }
         ClientUtils.clearDirectory(generatedDirectory);
         SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, streamTableProperties(instanceProperties));
-    }
-
-    private void cdkDeployWhenChanged(SleeperProperty changedProperty) {
-        if (!changedProperty.isRunCDKDeployWhenChanged()) {
-            return;
-        }
-        try {
-            cdk.deploy();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {
