@@ -33,6 +33,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 public class AdminConfigStore {
 
     private final AmazonS3 s3;
@@ -106,11 +108,27 @@ public class AdminConfigStore {
         TableProperties properties = loadTableProperties(instanceProperties, tableName);
         properties.set(property, propertyValue);
         try {
-            properties.saveToS3(s3);
             ClientUtils.clearDirectory(generatedDirectory);
-            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties, streamTableProperties(instanceProperties));
-        } catch (IOException | AmazonS3Exception e) {
-            throw new CouldNotSaveTableProperties(instanceId, tableName, e);
+            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
+                    streamTableProperties(instanceProperties)
+                            .map(table -> tableName.equals(table.get(TABLE_NAME))
+                                    ? properties : table));
+            if (property.isRunCDKDeployWhenChanged()) {
+                cdk.deploy();
+            } else {
+                properties.saveToS3(s3);
+            }
+        } catch (IOException | AmazonS3Exception | InterruptedException e) {
+            CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
+            try {
+                SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+            } catch (Exception e2) {
+                wrapped.addSuppressed(e2);
+            }
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw wrapped;
         }
     }
 

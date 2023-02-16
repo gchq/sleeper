@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
+import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -174,7 +176,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         }
     }
 
-    @DisplayName("Deploy with CDK")
+    @DisplayName("Deploy instance property change with CDK")
     @Nested
     class DeployWithCdk {
         @Test
@@ -183,12 +185,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
             AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
             List<TableProperties> localTablesWhenCdkDeployed = new ArrayList<>();
-            doAnswer(invocation -> {
-                InstanceProperties properties = loadInstancePropertiesFromDirectory(tempDir);
-                localPropertiesWhenCdkDeployed.set(properties);
-                loadTablesFromDirectory(properties, tempDir).forEach(localTablesWhenCdkDeployed::add);
-                return null;
-            }).when(cdk).deploy();
+            rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
             store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
@@ -259,8 +256,110 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         }
     }
 
+    @DisplayName("Deploy table property change with CDK")
+    @Nested
+    class DeployTableWithCdk {
+
+        @Test
+        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedTablePropertyUpdated() throws Exception {
+            // Given
+            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
+
+            AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
+            List<TableProperties> localTablesWhenCdkDeployed = new ArrayList<>();
+            rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+
+            // Then
+            verify(cdk).deploy();
+            assertThat(localPropertiesWhenCdkDeployed).hasValue(instanceProperties);
+            assertThat(localTablesWhenCdkDeployed)
+                    .extracting(table -> table.getBoolean(ENCRYPTED))
+                    .containsExactly(false);
+        }
+
+        @Test
+        void shouldNotRunCdkDeployWhenUnflaggedTablePropertyUpdated() throws Exception {
+            // Given
+            createTableInS3("test-table");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            verifyNoInteractions(cdk);
+        }
+
+        @Test
+        void shouldLeaveCdkToUpdateS3WhenApplyingChangeWithCdk() throws Exception {
+            // Given
+            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+
+            // Then
+            verify(cdk).deploy();
+            assertThat(store().loadTableProperties(INSTANCE_ID, "test-table")
+                    .getBoolean(ENCRYPTED))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldFailWhenCdkDeployFails() throws Exception {
+            // Given
+            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
+            IOException thrown = new IOException("CDK failed");
+            doThrow(thrown).when(cdk).deploy();
+            AdminConfigStore store = store();
+
+            // When / Then
+            assertThatThrownBy(() -> store.updateTableProperty(
+                    INSTANCE_ID, "test-table", ENCRYPTED, "false"))
+                    .isInstanceOf(AdminConfigStore.CouldNotSaveTableProperties.class)
+                    .hasCauseReference(thrown);
+        }
+
+        @Test
+        void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
+            // Given
+            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
+            doThrow(new IOException("CDK failed")).when(cdk).deploy();
+
+            // When / Then
+            try {
+                store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+                fail();
+            } catch (Exception e) {
+                assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                        .extracting(table -> table.getBoolean(ENCRYPTED))
+                        .containsExactly(true);
+            }
+        }
+    }
+
+    private void rememberLocalPropertiesWhenCdkDeployed(
+            AtomicReference<InstanceProperties> instancePropertiesHolder,
+            List<TableProperties> tablePropertiesHolder) throws IOException, InterruptedException {
+        doAnswer(invocation -> {
+            InstanceProperties properties = loadInstancePropertiesFromDirectory(tempDir);
+            instancePropertiesHolder.set(properties);
+            tablePropertiesHolder.clear();
+            loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
+            return null;
+        }).when(cdk).deploy();
+    }
+
     private void createTableInS3(String tableName) throws IOException {
         createValidTableProperties(instanceProperties, tableName).saveToS3(s3);
+    }
+
+    private void createTableInS3(String tableName, Consumer<TableProperties> config) throws IOException {
+        TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
+        config.accept(tableProperties);
+        tableProperties.saveToS3(s3);
     }
 
     private void deleteTableInS3(String tableName) {
