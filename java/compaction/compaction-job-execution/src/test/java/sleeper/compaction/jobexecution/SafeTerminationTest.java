@@ -257,7 +257,7 @@ class SafeTerminationTest {
         List<InstanceDetails> instanceDetails = new ArrayList<>();
         Context context = new FakeContext();
         assertThatThrownBy(() -> SafeTerminationLambda.findEmptyInstances(instanceDetails, -1, context))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
