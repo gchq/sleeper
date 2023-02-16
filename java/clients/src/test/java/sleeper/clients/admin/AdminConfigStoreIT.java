@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -248,7 +248,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // When / Then
             try {
                 store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
-                fail();
+                fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                         .isEqualTo("123");
@@ -331,7 +331,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // When / Then
             try {
                 store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
-                fail();
+                fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
                         .extracting(table -> table.getBoolean(ENCRYPTED))
