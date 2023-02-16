@@ -111,6 +111,70 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         }
     }
 
+    @DisplayName("Update table properties")
+    @Nested
+    class UpdateTableProperties {
+
+        @Test
+        void shouldUpdateTablePropertyInS3() throws IOException {
+            // Given
+            createTableInS3("test-table");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(store().loadTableProperties(INSTANCE_ID, "test-table").getInt(ROW_GROUP_SIZE))
+                    .isEqualTo(123);
+        }
+
+        @Test
+        void shouldUpdateTablePropertyInLocalDirectory() throws IOException {
+            // Given
+            createTableInS3("test-table");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.getInt(ROW_GROUP_SIZE))
+                    .containsExactly(123);
+        }
+
+        @Test
+        void shouldIncludeNotUpdatedTableInLocalDirectory() throws IOException {
+            // Given
+            createTableInS3("test-table");
+            createTableInS3("test-table-2");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("test-table", "test-table-2");
+        }
+
+        @Test
+        void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() throws IOException {
+            // Given
+            createTableInS3("old-test-table");
+            store().updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
+            deleteTableInS3("old-test-table");
+            createTableInS3("new-test-table");
+
+            // When
+            store().updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
+                    .extracting(table -> table.get(TABLE_NAME))
+                    .containsExactly("new-test-table");
+        }
+    }
+
     @DisplayName("Deploy with CDK")
     @Nested
     class DeployWithCdk {
@@ -194,70 +258,6 @@ public class AdminConfigStoreIT extends AdminClientITBase {
                 assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                         .isEqualTo("123");
             }
-        }
-    }
-
-    @DisplayName("Update table properties")
-    @Nested
-    class UpdateTableProperties {
-
-        @Test
-        void shouldUpdateTablePropertyInS3() throws IOException {
-            // Given
-            createTableInS3("test-table");
-
-            // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
-
-            // Then
-            assertThat(store().loadTableProperties(INSTANCE_ID, "test-table").getInt(ROW_GROUP_SIZE))
-                    .isEqualTo(123);
-        }
-
-        @Test
-        void shouldUpdateTablePropertyInLocalDirectory() throws IOException {
-            // Given
-            createTableInS3("test-table");
-
-            // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
-
-            // Then
-            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
-                    .extracting(table -> table.getInt(ROW_GROUP_SIZE))
-                    .containsExactly(123);
-        }
-
-        @Test
-        void shouldIncludeNotUpdatedTableInLocalDirectory() throws IOException {
-            // Given
-            createTableInS3("test-table");
-            createTableInS3("test-table-2");
-
-            // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
-
-            // Then
-            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
-                    .extracting(table -> table.get(TABLE_NAME))
-                    .containsExactly("test-table", "test-table-2");
-        }
-
-        @Test
-        void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() throws IOException {
-            // Given
-            createTableInS3("old-test-table");
-            store().updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
-            deleteTableInS3("old-test-table");
-            createTableInS3("new-test-table");
-
-            // When
-            store().updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
-
-            // Then
-            assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
-                    .extracting(table -> table.get(TABLE_NAME))
-                    .containsExactly("new-test-table");
         }
     }
 
