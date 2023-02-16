@@ -52,6 +52,9 @@ RUN echo \
 RUN apt-get update
 RUN apt-get -y install docker-ce docker-ce-cli containerd.io
 
+# Set command line prompt to show you're in the deployment Docker container
+RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-deployment\e[0m: \w # "' >> ~/.bashrc
+
 WORKDIR /sleeper
 COPY . .
 
