@@ -89,19 +89,23 @@ public class SaveLocalProperties {
         Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
                 s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
         return StreamSupport.stream(objects.spliterator(), false)
-                .map(tableConfigObject -> loadTableFromS3(s3, instanceProperties, tableConfigObject));
+                .map(tableConfigObject -> {
+                    try {
+                        return loadTableFromS3(s3, instanceProperties, tableConfigObject);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
     }
 
     private static TableProperties loadTableFromS3(
-            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) {
+            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) throws IOException {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         try (InputStream in = s3.getObject(
                         tableConfigObject.getBucketName(),
                         tableConfigObject.getKey())
                 .getObjectContent()) {
             tableProperties.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
         return tableProperties;
     }
