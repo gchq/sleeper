@@ -16,10 +16,13 @@
 
 # The image should be built using commands like this:
 # ./build/buildForTest.sh
-# docker build -t sleeper .
+# docker build -t sleeper-deployment:current .
 
 # You can then run that image like this:
-# ./runInDocker.sh sleeper
+# ./runInDocker.sh
+
+# You can also run individual commands like this:
+# ./runInDocker.sh utility/fullStatusReport.sh my-instance my-table
 
 HOME_IN_IMAGE=/root
 
@@ -33,4 +36,4 @@ docker run -it --rm \
   -e AWS_PROFILE \
   -e AWS_REGION \
   -e AWS_DEFAULT_REGION \
-  "$@"
+  sleeper-deployment:current "$@"
