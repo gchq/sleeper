@@ -113,7 +113,7 @@ public class Utils {
         return combinedList;
     }
 
-    static boolean parseAndCheckInteger(String string, Predicate<Integer> check) {
+    private static boolean parseAndCheckInteger(String string, Predicate<Integer> check) {
         try {
             return check.test(Integer.parseInt(string));
         } catch (NumberFormatException e) {
@@ -121,7 +121,7 @@ public class Utils {
         }
     }
 
-    static boolean parseAndCheckLong(String string, Predicate<Long> check) {
+    private static boolean parseAndCheckLong(String string, Predicate<Long> check) {
         try {
             return check.test(Long.parseLong(string));
         } catch (NumberFormatException e) {
@@ -129,7 +129,7 @@ public class Utils {
         }
     }
 
-    static boolean parseAndCheckDouble(String string, Predicate<Double> check) {
+    private static boolean parseAndCheckDouble(String string, Predicate<Double> check) {
         try {
             return check.test(Double.parseDouble(string));
         } catch (NumberFormatException e) {

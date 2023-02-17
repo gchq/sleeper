@@ -41,13 +41,23 @@ public class UtilsTest {
     }
 
     @Test
-    void shouldNotThrowExceptionsDuringNumericPredicateChecks() {
-        // Given/When/Then
-        assertThatCode(() -> Utils.parseAndCheckInteger("ABC", num -> num > 0))
+    void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
+        // When/Then
+        assertThatCode(() -> Utils.isPositiveInteger("ABC"))
                 .doesNotThrowAnyException();
-        assertThatCode(() -> Utils.parseAndCheckLong("ABC", num -> num > 0L))
+    }
+
+    @Test
+    void shouldNotThrowExceptionDuringPositiveLongCheck() {
+        // When/Then
+        assertThatCode(() -> Utils.isPositiveLong("ABC"))
                 .doesNotThrowAnyException();
-        assertThatCode(() -> Utils.parseAndCheckDouble("ABC", num -> num > 0D))
+    }
+
+    @Test
+    void shouldNotThrowExceptionDuringPositiveDoubleCheck() {
+        // When/Then
+        assertThatCode(() -> Utils.isPositiveDouble("ABC"))
                 .doesNotThrowAnyException();
     }
 }
