@@ -20,6 +20,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.splitter.PartitionSplitCheck;
 import sleeper.statestore.FileInfo;
@@ -46,13 +47,14 @@ public class PartitionStatus {
 
     static PartitionStatus from(
             TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileInfo> activeFiles) {
+        Schema schema = tableProperties.getSchema();
         List<FileInfo> filesInPartition = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
         boolean needsSplitting = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartition).isNeedsSplitting();
         return builder().partition(partition)
                 .filesInPartition(filesInPartition)
                 .needsSplitting(needsSplitting)
-                .splitField(splitField(partition))
-                .splitValue(splitValue(partition, tree))
+                .splitField(splitField(partition, schema))
+                .splitValue(splitValue(partition, tree, schema))
                 .indexInParent(indexInParent(partition, tree))
                 .build();
     }
@@ -93,23 +95,24 @@ public class PartitionStatus {
         return new Builder();
     }
 
-    private static Field splitField(Partition partition) {
+    private static Field splitField(Partition partition, Schema schema) {
         if (partition.isLeafPartition()) {
             return null;
         }
-        return dimensionRange(partition, partition.getDimension()).getField();
+        return dimensionRange(partition, schema, partition.getDimension()).getField();
     }
 
-    private static Object splitValue(Partition partition, PartitionTree tree) {
+    private static Object splitValue(Partition partition, PartitionTree tree, Schema schema) {
         if (partition.isLeafPartition()) {
             return null;
         }
         Partition left = tree.getPartition(partition.getChildPartitionIds().get(0));
-        return dimensionRange(left, partition.getDimension()).getMax();
+        return dimensionRange(left, schema, partition.getDimension()).getMax();
     }
 
-    private static Range dimensionRange(Partition partition, int dimension) {
-        return partition.getRegion().getRanges().get(dimension);
+    private static Range dimensionRange(Partition partition, Schema schema, int dimension) {
+        Field splitField = schema.getRowKeyFields().get(dimension);
+        return partition.getRegion().getRange(splitField.getName());
     }
 
     private static Integer indexInParent(Partition partition, PartitionTree tree) {

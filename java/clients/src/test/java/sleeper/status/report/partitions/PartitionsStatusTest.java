@@ -32,16 +32,13 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenBelowSplitThreshold;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createTableProperties;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
 
-public class PartitionsStatusTest {
-
-    private final TableProperties tableProperties = createTableProperties();
+class PartitionsStatusTest {
 
     @Test
-    public void shouldCountRecordsInPartitions() throws StateStoreException {
+    void shouldCountRecordsInPartitions() throws StateStoreException {
         // Given
         StateStore store = createRootPartitionWithTwoChildren()
                 .partitionFileWithRecords("A", "file-a1.parquet", 5)
@@ -50,7 +47,7 @@ public class PartitionsStatusTest {
                 .buildStateStore();
 
         // When
-        PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+        PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
 
         // Then
         assertThat(status.getPartitions())
@@ -59,21 +56,23 @@ public class PartitionsStatusTest {
     }
 
     @Test
-    public void shouldCountLeafPartitions() throws StateStoreException {
+    void shouldCountLeafPartitions() throws StateStoreException {
         // Given
         StateStore store = createRootPartitionWithTwoChildren().buildStateStore();
 
         // When
-        PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+        PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
 
         // Then
         assertThat(status.getNumLeafPartitions()).isEqualTo(2);
     }
 
     @Test
-    public void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() throws StateStoreException {
+    void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() throws StateStoreException {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold().buildStateStore();
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithTwoChildren()
+                .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
 
         // When
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
@@ -83,9 +82,11 @@ public class PartitionsStatusTest {
     }
 
     @Test
-    public void shouldFindSplittingPartitionsWhenThresholdExceeded() throws StateStoreException {
+    void shouldFindSplittingPartitionsWhenThresholdExceeded() throws StateStoreException {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold().buildStateStore();
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
+        StateStore store = createRootPartitionWithTwoChildren()
+                .singleFileInEachLeafPartitionWithRecords(100).buildStateStore();
 
         // When
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
@@ -95,7 +96,7 @@ public class PartitionsStatusTest {
     }
 
     @Test
-    public void shouldOrderPartitionsByTreeLeavesFirst() throws StateStoreException {
+    void shouldOrderPartitionsByTreeLeavesFirst() throws StateStoreException {
         // Given
         PartitionTree partitions = createPartitionsBuilder()
                 .leavesWithSplits(
@@ -110,7 +111,7 @@ public class PartitionsStatusTest {
                         .map(partitions::getPartition).collect(Collectors.toList()));
 
         // When
-        PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+        PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
 
         // Then
         assertThat(status.getPartitions()).extracting("partition.id").containsExactly(
