@@ -70,28 +70,28 @@ public interface TableProperty extends SleeperProperty {
                     "When this is changed, existing files will retain their encryption status. Further compactions may " +
                     "apply the new encryption status for that data.\n" +
                     "See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .runCDKDeployWhenChanged(true)
             .build();
     TableProperty ROW_GROUP_SIZE = named("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty PAGE_SIZE = named("sleeper.table.page.size")
             .defaultProperty(DEFAULT_PAGE_SIZE)
             .description("The size of the page in the Parquet files - defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty S3A_READAHEAD_RANGE = named("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPRESSION_CODEC = named("sleeper.table.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty ITERATOR_CLASS_NAME = named("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
@@ -119,7 +119,7 @@ public interface TableProperty extends SleeperProperty {
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = named("sleeper.table.compaction.strategy.class")
             .defaultProperty(DEFAULT_COMPACTION_STRATEGY_CLASS)
@@ -225,7 +225,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
             .description("The S3 bucket name where table data is stored.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     // DynamoDBStateStore properties
     TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")

@@ -130,6 +130,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 .contains("# The following table properties relate to the definition of data inside a table.\n\n")
+                .contains("# The following table properties relate to the storage of data inside a table.\n\n")
                 .contains("# The following table properties relate to compactions.\n\n")
                 .contains("# The following table properties relate to partition splitting.\n\n")
                 .contains("# The following table properties relate to bulk import, i.e. ingesting data using Spark jobs running\n" +
