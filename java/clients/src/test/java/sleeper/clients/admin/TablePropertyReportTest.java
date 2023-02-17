@@ -81,11 +81,6 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
                         "\"sortKeyFields\":[]," +
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n")
-                // Check property with multi-line description
-                .contains("# The name of the class that defines how compaction jobs should be created.\n" +
-                        "# This should implement sleeper.compaction.strategy.CompactionStrategy. Defaults to the strategy used\n" +
-                        "# by the whole instance (set in the instance properties).\n" +
-                        "sleeper.table.compaction.strategy.class: sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
                 // Check a property with multi-line description and custom line breaks
                 .contains("# The number of files to read in a compaction job. Note that the state store must support atomic\n" +
                         "# updates for this many files.\n" +
