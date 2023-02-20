@@ -13,14 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DEPLOYMENT_IMAGE=$(cat /sleeper/deploymentImage.txt)
+LOCAL_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+DEPLOYMENT_IMAGE=$(cat "$LOCAL_DIR/deploymentImage.txt")
 
 HOME_IN_IMAGE=/root
+MOUNT_FROM_HOME="/tmp/sleeper-local"
+
+# Use a whitelisted path for mounting data from
+# (iOS version of Docker doesn't allow mounting from /root or /home, which will be the home inside the local image)
+mkdir -p "$MOUNT_FROM_HOME"
+ln -s "$HOME/.sleeper" "$MOUNT_FROM_HOME"
+ln -s "$HOME/.aws" "$MOUNT_FROM_HOME"
 
 docker run -it --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$HOME/.sleeper/generated:/sleeper/generated" \
-  -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
+  -v "$MOUNT_FROM_HOME/.sleeper/generated:/sleeper/generated" \
+  -v "$MOUNT_FROM_HOME/.aws:$HOME_IN_IMAGE/.aws" \
   -e AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY \
   -e AWS_SESSION_TOKEN \
@@ -28,3 +36,7 @@ docker run -it --rm \
   -e AWS_REGION \
   -e AWS_DEFAULT_REGION \
   "$DEPLOYMENT_IMAGE" "$@"
+
+# Remove symlinks afterwards
+rm "$MOUNT_FROM_HOME/.sleeper"
+rm "$MOUNT_FROM_HOME/.aws"

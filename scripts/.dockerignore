@@ -3,5 +3,6 @@ build/
 dev/
 generated/
 local/
+dependencies/
 deploy/buildAndDeploy.sh
 test/**/buildDeployTest.sh

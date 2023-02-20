@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +16,9 @@
 HOME_IN_IMAGE=/root
 
 docker run -it --rm \
-  -v "$HOME/.sleeper/environments:/root/.sleeper/environments" \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$HOME/.sleeper/generated:$HOME_IN_IMAGE/.sleeper/generated" \
+  -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
   -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
   -e AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY \
