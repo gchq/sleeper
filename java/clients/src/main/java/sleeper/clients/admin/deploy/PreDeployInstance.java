@@ -17,6 +17,8 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -27,6 +29,7 @@ import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 public class PreDeployInstance {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
     private final AmazonS3 s3;
     private final AmazonECR ecr;
@@ -51,6 +54,7 @@ public class PreDeployInstance {
     }
 
     public void preDeploy() throws IOException, InterruptedException {
+        LOGGER.info("Running pre-deployment steps");
         boolean jarsChanged = uploadJars();
         uploadDockerImages(jarsChanged);
     }
