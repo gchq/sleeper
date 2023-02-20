@@ -58,7 +58,6 @@ jobs:
         run: ./scripts/dependencies/build.sh
       - name: Docker build
         run: |
-          echo "$DEPLOYMENT_IMAGE_ID:$VERSION" > ./scripts/local/deploymentImage.txt \
           ./scripts/local/buildDocker.sh --tag $IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

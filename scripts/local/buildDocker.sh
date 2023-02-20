@@ -24,11 +24,6 @@ else
   DOCKER_PARAMS=("$@")
 fi
 
-DEPLOYMENT_IMAGE_FILE="$THIS_DIR/deploymentImage.txt"
-if [ ! -f "$DEPLOYMENT_IMAGE_FILE" ]; then
-  echo "sleeper-deployment:current" > "$DEPLOYMENT_IMAGE_FILE"
-fi
-
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
