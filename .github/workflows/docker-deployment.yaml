@@ -31,6 +31,8 @@ jobs:
         working-directory: ./java
       - name: Maven build
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
+      - name: Dependencies Docker build
+        run: ./scripts/dependencies/build.sh
       - name: Docker build
         working-directory: ./scripts
         run: |

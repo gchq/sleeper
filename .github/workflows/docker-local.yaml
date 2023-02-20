@@ -54,6 +54,8 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Maven build
         run: ./scripts/local/buildMaven.sh -Dmaven.repo.local=../.m2/repository
+      - name: Dependencies Docker build
+        run: ./scripts/dependencies/build.sh
       - name: Docker build
         run: |
           echo "$DEPLOYMENT_IMAGE_ID:$VERSION" > ./scripts/local/deploymentImage.txt \
