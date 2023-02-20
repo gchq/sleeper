@@ -17,12 +17,12 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,14 +60,14 @@ public class SyncJars {
         boolean changed = false;
         if (!doesBucketExist()) {
             LOGGER.info("Creating jars bucket");
-            s3v2.createBucket(bucket -> bucket
+            s3v2.createBucket(builder -> builder
                     .bucket(bucketName)
                     .acl(BucketCannedACL.PRIVATE)
-                    .createBucketConfiguration(config -> config
+                    .createBucketConfiguration(configBuilder -> configBuilder
                             .locationConstraint(region)));
             s3v2.putPublicAccessBlock(builder -> builder
                     .bucket(bucketName)
-                    .publicAccessBlockConfiguration(config -> config
+                    .publicAccessBlockConfiguration(configBuilder -> configBuilder
                             .blockPublicAcls(true)
                             .ignorePublicAcls(true)
                             .blockPublicPolicy(true)
@@ -84,8 +84,12 @@ public class SyncJars {
 
         LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
         if (!deleteKeys.isEmpty()) {
-            s3.deleteObjects(new DeleteObjectsRequest(bucketName)
-                    .withKeys(deleteKeys.toArray(new String[0])));
+            s3v2.deleteObjects(builder -> builder
+                    .bucket(bucketName)
+                    .delete(deleteBuilder -> deleteBuilder
+                            .objects(deleteKeys.stream()
+                                    .map(deleteKey -> ObjectIdentifier.builder().key(deleteKey).build())
+                                    .collect(Collectors.toList()))));
             changed = true;
         }
 
