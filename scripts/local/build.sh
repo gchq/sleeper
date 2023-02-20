@@ -27,10 +27,6 @@ START_TIME=$(record_time)
 END_MAVEN_BUILD_TIME=$(record_time)
 echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_BUILD_TIME")"
 
-DEPLOYMENT_IMAGE_ID_FILE="$THIS_DIR/deploymentImageId.txt"
-DEPLOYMENT_IMAGE_ID="sleeper-deployment:current"
-echo "$DEPLOYMENT_IMAGE_ID" > "$DEPLOYMENT_IMAGE_ID_FILE"
-
 "$THIS_DIR/buildDocker.sh"
 
 END_TIME=$(record_time)
