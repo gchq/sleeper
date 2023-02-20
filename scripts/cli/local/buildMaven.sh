@@ -17,6 +17,7 @@ set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+BASE_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 MAVEN_DIR="$BASE_DIR/java"
 ENVIRONMENT_MAVEN_DIR="$MAVEN_DIR/cdk-environment"
 SCRIPTS_DIR="$BASE_DIR/scripts"
