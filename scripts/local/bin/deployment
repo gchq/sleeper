@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DEPLOYMENT_IMAGE_ID=$(cat /sleeper/deploymentImageId.txt)
+DEPLOYMENT_IMAGE=$(cat /sleeper/deploymentImage.txt)
 
 HOME_IN_IMAGE=/root
 
@@ -27,4 +27,4 @@ docker run -it --rm \
   -e AWS_PROFILE \
   -e AWS_REGION \
   -e AWS_DEFAULT_REGION \
-  "$DEPLOYMENT_IMAGE_ID" "$@"
+  "$DEPLOYMENT_IMAGE" "$@"

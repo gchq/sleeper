@@ -24,9 +24,9 @@ else
   DOCKER_PARAMS=("$@")
 fi
 
-DEPLOYMENT_IMAGE_ID_FILE="$THIS_DIR/deploymentImageId.txt"
-if [ ! -f "$DEPLOYMENT_IMAGE_ID_FILE" ]; then
-  echo "sleeper-deployment:current" > "$DEPLOYMENT_IMAGE_ID_FILE"
+DEPLOYMENT_IMAGE_FILE="$THIS_DIR/deploymentImage.txt"
+if [ ! -f "$DEPLOYMENT_IMAGE_FILE" ]; then
+  echo "sleeper-deployment:current" > "$DEPLOYMENT_IMAGE_FILE"
 fi
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
