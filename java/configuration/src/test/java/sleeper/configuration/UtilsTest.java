@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.configuration.Utils.combineLists;
 
 public class UtilsTest {
@@ -43,21 +42,27 @@ public class UtilsTest {
     @Test
     void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
         // When/Then
-        assertThatCode(() -> Utils.isPositiveInteger("ABC"))
-                .doesNotThrowAnyException();
+        assertThat(Utils.isPositiveInteger("123"))
+                .isTrue();
+        assertThat(Utils.isPositiveInteger("ABC"))
+                .isFalse();
     }
 
     @Test
     void shouldNotThrowExceptionDuringPositiveLongCheck() {
         // When/Then
-        assertThatCode(() -> Utils.isPositiveLong("ABC"))
-                .doesNotThrowAnyException();
+        assertThat(Utils.isPositiveLong("123"))
+                .isTrue();
+        assertThat(Utils.isPositiveLong("ABC"))
+                .isFalse();
     }
 
     @Test
     void shouldNotThrowExceptionDuringPositiveDoubleCheck() {
         // When/Then
-        assertThatCode(() -> Utils.isPositiveDouble("ABC"))
-                .doesNotThrowAnyException();
+        assertThat(Utils.isPositiveDouble("123"))
+                .isTrue();
+        assertThat(Utils.isPositiveDouble("ABC"))
+                .isFalse();
     }
 }
