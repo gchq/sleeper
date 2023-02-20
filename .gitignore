@@ -14,5 +14,6 @@ generated/
 scripts/jars/
 scripts/docker/
 scripts/**/version.txt
+scripts/local/deploymentImage.txt
 __pycache__
 *.pem
