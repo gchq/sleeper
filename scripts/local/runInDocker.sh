@@ -13,17 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-HOME_IN_IMAGE=/root
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
-docker run -it --rm \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$HOME/.sleeper/generated:$HOME_IN_IMAGE/.sleeper/generated" \
-  -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
-  -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-  -e AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY \
-  -e AWS_SESSION_TOKEN \
-  -e AWS_PROFILE \
-  -e AWS_REGION \
-  -e AWS_DEFAULT_REGION \
-  sleeper-local:current /sleeper/scripts/util/runCommand.sh "$@"
+"$SCRIPTS_DIR"/runCommand.sh "$@"
