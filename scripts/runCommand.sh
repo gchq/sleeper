@@ -37,6 +37,22 @@ runInLocalDocker() {
     sleeper-local:current "$@"
 }
 
+runInDeploymentDocker() {
+  HOME_IN_IMAGE=/root
+
+  docker run -it --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$HOME/.sleeper/generated:/sleeper/generated" \
+    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
+    -e AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY \
+    -e AWS_SESSION_TOKEN \
+    -e AWS_PROFILE \
+    -e AWS_REGION \
+    -e AWS_DEFAULT_REGION \
+    sleeper-deployment:current "$@"
+}
+
 COMMAND=$1
 shift
 
@@ -47,9 +63,13 @@ elif [ "$COMMAND" == "cdk" ]; then
 elif [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
   runInLocalDocker cat /sleeper/version.txt
 elif [ "$COMMAND" == "deployment" ]; then
-  runInLocalDocker deployment "$@"
+  runInDeploymentDocker "$@"
 elif [ "$COMMAND" == "environment" ]; then
-  runInLocalDocker environment "$@"
+  if [ "$#" -eq 0 ]; then
+    runInLocalDocker bash
+  else
+    runInLocalDocker environment "$@"
+  fi
 else
   echo "Command not found: $COMMAND"
   exit 1
