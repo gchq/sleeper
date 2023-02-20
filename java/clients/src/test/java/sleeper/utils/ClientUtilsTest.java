@@ -101,7 +101,7 @@ class ClientUtilsTest {
         }
 
         @Test
-        void shouldNotRemoveRootDirectory() {
+        void shouldNotRemoveRootDirectory() throws IOException {
             // Given/When
             ClientUtils.clearDirectory(tempDir);
 

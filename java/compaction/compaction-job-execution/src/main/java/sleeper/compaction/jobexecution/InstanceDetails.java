@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,33 +39,53 @@ import java.util.Queue;
  * Details about EC2 instances in an ECS cluster.
  */
 public class InstanceDetails {
-    /** EC2 Instance ID. */
+    /**
+     * EC2 Instance ID.
+     */
     public final String instanceId;
-    /** The container instance ARN. */
+    /**
+     * The container instance ARN.
+     */
     public final String instanceArn;
-    /** When was the instance registered with the cluster. */
+    /**
+     * When was the instance registered with the cluster.
+     */
     public final Instant registered;
-    /** Amount of RAM available for container use. */
+    /**
+     * Amount of RAM available for container use.
+     */
     public final int availableCPU;
-    /** Amount of CPU available for container use. */
+    /**
+     * Amount of CPU available for container use.
+     */
     public final int availableRAM;
-    /** Amount of CPU in total. */
+    /**
+     * Amount of CPU in total.
+     */
     public final int totalCPU;
-    /** Amount of RAM in total. */
+    /**
+     * Amount of RAM in total.
+     */
     public final int totalRAM;
-    /** Number of running tasks. */
+    /**
+     * Number of running tasks.
+     */
     public final int numRunningTasks;
-    /** Number of pending tasks. */
+    /**
+     * Number of pending tasks.
+     */
     public final int numPendingTasks;
 
-    /** The number of ECS container instances to retrieve in one API call. */
+    /**
+     * The number of ECS container instances to retrieve in one API call.
+     */
     public static final int INSTANCE_PAGE_SIZE = 75;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InstanceDetails.class);
 
     public InstanceDetails(String instanceId, String instanceArn, Instant registered, int availableCPU,
-                    int availableRAM, int totalCPU,
-                    int totalRAM, int numRunningTasks, int numPendingTasks) {
+                           int availableRAM, int totalCPU,
+                           int totalRAM, int numRunningTasks, int numPendingTasks) {
         super();
         this.instanceId = instanceId;
         this.instanceArn = instanceArn;
@@ -81,7 +101,7 @@ public class InstanceDetails {
     @Override
     public String toString() {
         return "InstanceDetails [instanceId=" + instanceId + ", instanceArn=" + instanceArn + ", registered=" + registered + ", availableCPU=" + availableCPU + ", availableRAM=" + availableRAM
-                        + ", totalCPU=" + totalCPU + ", totalRAM=" + totalRAM + ", numRunningTasks=" + numRunningTasks + ", numPendingTasks=" + numPendingTasks + "]";
+                + ", totalCPU=" + totalCPU + ", totalRAM=" + totalRAM + ", numRunningTasks=" + numRunningTasks + ", numPendingTasks=" + numPendingTasks + "]";
     }
 
     @Override
@@ -102,8 +122,8 @@ public class InstanceDetails {
         }
         InstanceDetails other = (InstanceDetails) obj;
         return availableCPU == other.availableCPU && availableRAM == other.availableRAM && Objects.equals(instanceArn, other.instanceArn) && Objects.equals(instanceId, other.instanceId)
-                        && numPendingTasks == other.numPendingTasks && numRunningTasks == other.numRunningTasks && Objects.equals(registered, other.registered) && totalCPU == other.totalCPU
-                        && totalRAM == other.totalRAM;
+                && numPendingTasks == other.numPendingTasks && numRunningTasks == other.numRunningTasks && Objects.equals(registered, other.registered) && totalCPU == other.totalCPU
+                && totalRAM == other.totalRAM;
     }
 
     /**
@@ -111,7 +131,7 @@ public class InstanceDetails {
      * all the instances.
      *
      * @param ecsClusterName the cluster name
-     * @param ecsClient the client connection
+     * @param ecsClient      the client connection
      * @return map of instance IDs to details
      */
     public static Map<String, InstanceDetails> fetchInstanceDetails(String ecsClusterName, AmazonECS ecsClient) {
@@ -127,7 +147,7 @@ public class InstanceDetails {
      * in a cluster.
      *
      * @param ecsClusterName ECS cluster name to inspect
-     * @param ecsClient Amazon ECS client
+     * @param ecsClient      Amazon ECS client
      * @return iterable object for instances in a cluster
      */
     public static Iterable<InstanceDetails> iterateInstances(String ecsClusterName, AmazonECS ecsClient) {
@@ -138,9 +158,13 @@ public class InstanceDetails {
      * Class that iterates over EC2 machines in a cluster.
      */
     private static class InstanceDetailsIterable implements Iterable<InstanceDetails> {
-        /** The ECS cluster name. */
+        /**
+         * The ECS cluster name.
+         */
         public final String ecsClusterName;
-        /** Amazon client for HTTP requests to AWS. */
+        /**
+         * Amazon client for HTTP requests to AWS.
+         */
         public final AmazonECS ecsClient;
 
         InstanceDetailsIterable(String ecsClusterName, AmazonECS ecsClient) {
@@ -154,13 +178,21 @@ public class InstanceDetails {
         }
 
         private class InstanceDetailsIterator implements Iterator<InstanceDetails> {
-            /** How many EC2 instances to get data for in one API call. */
+            /**
+             * How many EC2 instances to get data for in one API call.
+             */
             private final int pageSize;
-            /** Request that gets modified as we fetch more pages. */
+            /**
+             * Request that gets modified as we fetch more pages.
+             */
             private ListContainerInstancesRequest req;
-            /** Has AWS indicated another page of results is waiting? */
+            /**
+             * Has AWS indicated another page of results is waiting?
+             */
             private boolean anotherPageWaiting = true;
-            /** Queue to serve instances from. */
+            /**
+             * Queue to serve instances from.
+             */
             private Queue<InstanceDetails> instanceQueue = new ArrayDeque<>();
 
             InstanceDetailsIterator(int pageSize) {
@@ -169,9 +201,9 @@ public class InstanceDetails {
                 }
                 this.pageSize = pageSize;
                 this.req = new ListContainerInstancesRequest()
-                                .withCluster(ecsClusterName)
-                                .withMaxResults(pageSize)
-                                .withStatus("ACTIVE");
+                        .withCluster(ecsClusterName)
+                        .withMaxResults(pageSize)
+                        .withStatus("ACTIVE");
             }
 
             /**
@@ -199,8 +231,8 @@ public class InstanceDetails {
 
                     // Now get a description of these instances
                     DescribeContainerInstancesRequest conReq = new DescribeContainerInstancesRequest()
-                                    .withCluster(ecsClusterName)
-                                    .withContainerInstances(result.getContainerInstanceArns());
+                            .withCluster(ecsClusterName)
+                            .withContainerInstances(result.getContainerInstanceArns());
                     DescribeContainerInstancesResult containersResult = ecsClient.describeContainerInstances(conReq);
                     LOGGER.debug("Received details on {} instances", containersResult.getContainerInstances().size());
 
@@ -209,15 +241,15 @@ public class InstanceDetails {
                         List<Resource> totalResources = c.getRegisteredResources();
                         List<Resource> remainingResources = c.getRemainingResources();
                         instanceQueue.add(new InstanceDetails(
-                                        c.getEc2InstanceId(),
-                                        c.getContainerInstanceArn(),
-                                        c.getRegisteredAt().toInstant(),
-                                        findResourceAmount("CPU", remainingResources),
-                                        findResourceAmount("MEMORY", remainingResources),
-                                        findResourceAmount("CPU", totalResources),
-                                        findResourceAmount("MEMORY", totalResources),
-                                        c.getRunningTasksCount(),
-                                        c.getPendingTasksCount()));
+                                c.getEc2InstanceId(),
+                                c.getContainerInstanceArn(),
+                                c.getRegisteredAt().toInstant(),
+                                findResourceAmount("CPU", remainingResources),
+                                findResourceAmount("MEMORY", remainingResources),
+                                findResourceAmount("CPU", totalResources),
+                                findResourceAmount("MEMORY", totalResources),
+                                c.getRunningTasksCount(),
+                                c.getPendingTasksCount()));
                     }
                     return true;
                 } else { // No more data pages
@@ -250,7 +282,7 @@ public class InstanceDetails {
      * Find the amount of the given resource in the list of resources. The list is inspected for the
      * named resource and returned as an integer.
      *
-     * @param name the resource name to find
+     * @param name      the resource name to find
      * @param resources the list of resources
      * @return the amount, or 0 if not known
      * @throws IllegalStateException if the resource type is not INTEGER
@@ -260,7 +292,7 @@ public class InstanceDetails {
             if (r.getName().equals(name)) {
                 if (!r.getType().equals("INTEGER")) {
                     throw new java.lang.IllegalStateException(
-                                    "resource " + name + " has type " + r.getType() + " instead of INTEGER");
+                            "resource " + name + " has type " + r.getType() + " instead of INTEGER");
                 }
                 return r.getIntegerValue();
             }

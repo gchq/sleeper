@@ -16,5 +16,6 @@
 set -e
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.clients.AdminClient "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.AdminClient "${SCRIPTS_DIR}" "$@"
