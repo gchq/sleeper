@@ -25,7 +25,6 @@ runInLocalDocker() {
   
   docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$HOME/.sleeper/generated:$HOME_IN_IMAGE/.sleeper/generated" \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
     -e AWS_ACCESS_KEY_ID \
