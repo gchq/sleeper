@@ -30,7 +30,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -47,7 +46,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This class is a JUnit {@link ExternalResource} which starts a local S3 and DynamoDB within a Docker
+ * This class is a JUnit extension which starts a local S3 and DynamoDB within a Docker
  * LocalStackContainer.
  * <p>
  * Only use one instance of this class at once if your code uses the Hadoop filing system, for example if you write

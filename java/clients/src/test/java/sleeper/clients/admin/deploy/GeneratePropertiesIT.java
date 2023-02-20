@@ -31,6 +31,7 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -57,7 +58,7 @@ public class GeneratePropertiesIT {
     private Path tempDir;
 
     @Test
-    void generatedPropertiesIncludeBucketNamesForLocalDirectory() {
+    void generatedPropertiesIncludeBucketNamesForLocalDirectory() throws IOException {
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .s3(s3).sts(sts)
                 .instanceId("test-instance")
