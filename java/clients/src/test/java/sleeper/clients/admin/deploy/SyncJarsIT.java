@@ -15,11 +15,7 @@
  */
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,14 +28,17 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,11 +49,7 @@ class SyncJarsIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-            .build();
-    protected final S3Client s3v2 = S3Client.builder()
+    protected final S3Client s3 = S3Client.builder()
             .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
             .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
                     localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
@@ -76,7 +71,7 @@ class SyncJarsIT {
             syncJarsToBucket(bucketName);
 
             // Then
-            assertThat(s3.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+            assertThat(listObjectKeys()).isEmpty();
         }
 
         @Test
@@ -87,8 +82,7 @@ class SyncJarsIT {
             syncJarsToBucket(bucketName);
 
             // Then
-            assertThat(s3.listObjectsV2(bucketName).getObjectSummaries())
-                    .extracting(S3ObjectSummary::getKey)
+            assertThat(listObjectKeys())
                     .containsExactlyInAnyOrder("test1.jar", "test2.jar");
         }
 
@@ -99,7 +93,7 @@ class SyncJarsIT {
             syncJarsToBucket(bucketName);
 
             // Then
-            assertThat(s3.listObjectsV2(bucketName).getObjectSummaries()).isEmpty();
+            assertThat(listObjectKeys()).isEmpty();
         }
     }
 
@@ -118,8 +112,7 @@ class SyncJarsIT {
             syncJarsToBucket(bucketName);
 
             // Then
-            assertThat(S3Objects.inBucket(s3, bucketName))
-                    .extracting(S3ObjectSummary::getKey)
+            assertThat(listObjectKeys())
                     .containsExactlyInAnyOrder("old.jar", "new.jar");
         }
 
@@ -134,7 +127,7 @@ class SyncJarsIT {
             syncJarsToBucket(bucketName);
 
             // Then
-            assertThat(S3Objects.inBucket(s3, bucketName)).isEmpty();
+            assertThat(listObjectKeys()).isEmpty();
         }
 
         @Test
@@ -143,7 +136,7 @@ class SyncJarsIT {
             Files.createFile(tempDir.resolve("unmodified.jar"));
             Files.writeString(tempDir.resolve("modified.jar"), "data1");
             syncJarsToBucket(bucketName);
-            Date lastModifiedBefore = s3.getObjectMetadata(bucketName, "unmodified.jar").getLastModified();
+            Instant lastModifiedBefore = getObjectLastModified("unmodified.jar");
 
             // When
             Thread.sleep(1000);
@@ -151,10 +144,9 @@ class SyncJarsIT {
             syncJarsToBucket(bucketName);
 
             // Then
-            assertThat(s3.getObjectMetadata(bucketName, "unmodified.jar"))
-                    .extracting(ObjectMetadata::getLastModified)
+            assertThat(getObjectLastModified("unmodified.jar"))
                     .isEqualTo(lastModifiedBefore);
-            assertThat(s3.getObjectAsString(bucketName, "modified.jar"))
+            assertThat(getObjectContents("modified.jar"))
                     .isEqualTo("data2");
         }
     }
@@ -227,10 +219,25 @@ class SyncJarsIT {
 
     private boolean syncJarsToBucket(String bucketName) throws IOException {
         return SyncJars.builder()
-                .s3(s3).s3v2(s3v2)
+                .s3(s3)
                 .jarsDirectory(tempDir)
                 .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
                 .build().sync();
+    }
+
+    private Stream<String> listObjectKeys() {
+        return s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
+                .flatMap(response -> response.contents().stream())
+                .map(S3Object::key);
+    }
+
+    private Instant getObjectLastModified(String key) {
+        return s3.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
+    }
+
+    private String getObjectContents(String key) {
+        return s3.getObject(builder -> builder.bucket(bucketName).key(key),
+                (metadata, inputStream) -> IOUtils.toString(inputStream, Charset.defaultCharset()));
     }
 }

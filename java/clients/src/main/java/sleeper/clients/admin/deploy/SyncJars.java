@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -36,7 +35,7 @@ import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
-    private final S3Client s3v2;
+    private final S3Client s3;
     private final Path jarsDirectory;
     private final String bucketName;
     private final String region;
@@ -45,7 +44,7 @@ public class SyncJars {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
         region = requireNonEmpty(builder.region, "region must not be null");
-        s3v2 = requireNonNull(builder.s3v2, "s3v2 must not be null");
+        s3 = requireNonNull(builder.s3, "s3 must not be null");
     }
 
     public static Builder builder() {
@@ -57,12 +56,12 @@ public class SyncJars {
         boolean changed = false;
         if (!doesBucketExist()) {
             LOGGER.info("Creating jars bucket");
-            s3v2.createBucket(builder -> builder
+            s3.createBucket(builder -> builder
                     .bucket(bucketName)
                     .acl(BucketCannedACL.PRIVATE)
                     .createBucketConfiguration(configBuilder -> configBuilder
                             .locationConstraint(region)));
-            s3v2.putPublicAccessBlock(builder -> builder
+            s3.putPublicAccessBlock(builder -> builder
                     .bucket(bucketName)
                     .publicAccessBlockConfiguration(configBuilder -> configBuilder
                             .blockPublicAcls(true)
@@ -76,13 +75,13 @@ public class SyncJars {
         LOGGER.info("Found {} jars in local directory", jars.size());
 
         JarsDiff diff = JarsDiff.from(jarsDirectory, jars,
-                s3v2.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
+                s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
         Collection<Path> uploadJars = diff.getModifiedAndNew();
         Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
         LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
         if (!deleteKeys.isEmpty()) {
-            s3v2.deleteObjects(builder -> builder
+            s3.deleteObjects(builder -> builder
                     .bucket(bucketName)
                     .delete(deleteBuilder -> deleteBuilder
                             .objects(deleteKeys.stream()
@@ -94,7 +93,7 @@ public class SyncJars {
         LOGGER.info("Uploading {} jars", uploadJars.size());
         uploadJars.stream().parallel().forEach(jar -> {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
-            s3v2.putObject(builder -> builder
+            s3.putObject(builder -> builder
                             .bucket(bucketName)
                             .key("" + jar.getFileName()),
                     jar);
@@ -108,7 +107,7 @@ public class SyncJars {
 
     private boolean doesBucketExist() {
         try {
-            s3v2.headBucket(builder -> builder
+            s3.headBucket(builder -> builder
                     .bucket(bucketName)
                     .build());
             return true;
@@ -124,7 +123,7 @@ public class SyncJars {
     }
 
     public static final class Builder {
-        private S3Client s3v2;
+        private S3Client s3;
         private Path jarsDirectory;
         private String bucketName;
         private String region;
@@ -132,12 +131,8 @@ public class SyncJars {
         private Builder() {
         }
 
-        public Builder s3(AmazonS3 s3) {
-            return this;
-        }
-
-        public Builder s3v2(S3Client s3v2) {
-            this.s3v2 = s3v2;
+        public Builder s3(S3Client s3) {
+            this.s3 = s3;
             return this;
         }
 

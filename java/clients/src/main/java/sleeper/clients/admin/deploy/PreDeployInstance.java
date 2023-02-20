@@ -16,7 +16,6 @@
 package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -32,7 +31,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 public class PreDeployInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
 
-    private final AmazonS3 s3;
+    private final S3Client s3;
     private final AmazonECR ecr;
     private final Path jarsDirectory;
     private final Path baseDockerDirectory;
@@ -63,7 +62,6 @@ public class PreDeployInstance {
     private boolean uploadJars() throws IOException {
         return SyncJars.builder()
                 .s3(s3)
-                .s3v2(S3Client.create())
                 .jarsDirectory(jarsDirectory)
                 .bucketName(instanceProperties.get(JARS_BUCKET))
                 .build().sync();
@@ -79,7 +77,7 @@ public class PreDeployInstance {
     }
 
     public static final class Builder {
-        private AmazonS3 s3;
+        private S3Client s3;
         private AmazonECR ecr;
         private Path jarsDirectory;
         private Path baseDockerDirectory;
@@ -90,7 +88,7 @@ public class PreDeployInstance {
         private Builder() {
         }
 
-        public Builder s3(AmazonS3 s3) {
+        public Builder s3(S3Client s3) {
             this.s3 = s3;
             return this;
         }

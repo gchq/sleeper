@@ -23,6 +23,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -106,6 +107,7 @@ public class DeployNewInstance {
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        S3Client s3v2 = S3Client.create();
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
 
@@ -120,7 +122,7 @@ public class DeployNewInstance {
                 Schema.load(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
-        PreDeployInstance.builder().s3(s3).ecr(ecr)
+        PreDeployInstance.builder().s3(s3v2).ecr(ecr)
                 .jarsDirectory(jarsDirectory)
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
