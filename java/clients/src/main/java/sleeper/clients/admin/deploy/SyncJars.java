@@ -16,7 +16,6 @@
 package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -37,14 +36,12 @@ import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
-    private final AmazonS3 s3;
     private final S3Client s3v2;
     private final Path jarsDirectory;
     private final String bucketName;
     private final String region;
 
     private SyncJars(Builder builder) {
-        s3 = requireNonNull(builder.s3, "s3 must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
         region = requireNonEmpty(builder.region, "region must not be null");
@@ -78,7 +75,8 @@ public class SyncJars {
         List<Path> jars = listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
 
-        JarsDiff diff = JarsDiff.from(jarsDirectory, jars, S3Objects.inBucket(s3, bucketName));
+        JarsDiff diff = JarsDiff.from(jarsDirectory, jars,
+                s3v2.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
         Collection<Path> uploadJars = diff.getModifiedAndNew();
         Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
@@ -126,7 +124,6 @@ public class SyncJars {
     }
 
     public static final class Builder {
-        private AmazonS3 s3;
         private S3Client s3v2;
         private Path jarsDirectory;
         private String bucketName;
@@ -136,7 +133,6 @@ public class SyncJars {
         }
 
         public Builder s3(AmazonS3 s3) {
-            this.s3 = s3;
             return this;
         }
 
