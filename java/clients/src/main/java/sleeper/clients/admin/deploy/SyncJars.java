@@ -20,6 +20,9 @@ import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.BucketCannedACL;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,13 +38,17 @@ import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
     private final AmazonS3 s3;
+    private final S3Client s3v2;
     private final Path jarsDirectory;
     private final String bucketName;
+    private final String region;
 
     private SyncJars(Builder builder) {
         s3 = requireNonNull(builder.s3, "s3 must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
+        region = requireNonEmpty(builder.region, "region must not be null");
+        s3v2 = requireNonNull(builder.s3v2, "s3v2 must not be null");
     }
 
     public static Builder builder() {
@@ -51,9 +58,20 @@ public class SyncJars {
     public boolean sync() throws IOException {
         // Note that LocalStack doesn't fail bucket creation if it already exists, but the AWS API does.
         boolean changed = false;
-        if (!s3.doesBucketExistV2(bucketName)) {
+        if (!doesBucketExist()) {
             LOGGER.info("Creating jars bucket");
-            s3.createBucket(bucketName);
+            s3v2.createBucket(bucket -> bucket
+                    .bucket(bucketName)
+                    .acl(BucketCannedACL.PRIVATE)
+                    .createBucketConfiguration(config -> config
+                            .locationConstraint(region)));
+            s3v2.putPublicAccessBlock(builder -> builder
+                    .bucket(bucketName)
+                    .publicAccessBlockConfiguration(config -> config
+                            .blockPublicAcls(true)
+                            .ignorePublicAcls(true)
+                            .blockPublicPolicy(true)
+                            .restrictPublicBuckets(true)));
             changed = true;
         }
 
@@ -85,6 +103,17 @@ public class SyncJars {
         return changed;
     }
 
+    private boolean doesBucketExist() {
+        try {
+            s3v2.headBucket(builder -> builder
+                    .bucket(bucketName)
+                    .build());
+            return true;
+        } catch (NoSuchBucketException e) {
+            return false;
+        }
+    }
+
     private static List<Path> listJarsInDirectory(Path directory) throws IOException {
         try (Stream<Path> jars = Files.list(directory)) {
             return jars.filter(path -> path.toFile().getName().endsWith(".jar")).collect(Collectors.toList());
@@ -93,14 +122,21 @@ public class SyncJars {
 
     public static final class Builder {
         private AmazonS3 s3;
+        private S3Client s3v2;
         private Path jarsDirectory;
         private String bucketName;
+        private String region;
 
         private Builder() {
         }
 
         public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
+            return this;
+        }
+
+        public Builder s3v2(S3Client s3v2) {
+            this.s3v2 = s3v2;
             return this;
         }
 
@@ -111,6 +147,11 @@ public class SyncJars {
 
         public Builder bucketName(String bucketName) {
             this.bucketName = bucketName;
+            return this;
+        }
+
+        public Builder region(String region) {
+            this.region = region;
             return this;
         }
 

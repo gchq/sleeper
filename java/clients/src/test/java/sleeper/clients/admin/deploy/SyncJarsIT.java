@@ -28,6 +28,10 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.CommonTestConstants;
 
@@ -49,6 +53,13 @@ class SyncJarsIT {
     protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+            .build();
+    protected final S3Client s3v2 = S3Client.builder()
+            .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
+            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
+            )))
+            .region(Region.of(localStackContainer.getRegion()))
             .build();
 
     @TempDir
@@ -216,7 +227,9 @@ class SyncJarsIT {
 
     private boolean syncJarsToBucket(String bucketName) throws IOException {
         return SyncJars.builder()
-                .s3(s3).jarsDirectory(tempDir)
+                .s3(s3).s3v2(s3v2)
+                .jarsDirectory(tempDir)
+                .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
                 .build().sync();
     }

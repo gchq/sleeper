@@ -19,6 +19,7 @@ import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -62,6 +63,7 @@ public class PreDeployInstance {
     private boolean uploadJars() throws IOException {
         return SyncJars.builder()
                 .s3(s3)
+                .s3v2(S3Client.create())
                 .jarsDirectory(jarsDirectory)
                 .bucketName(instanceProperties.get(JARS_BUCKET))
                 .build().sync();
