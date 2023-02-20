@@ -96,9 +96,10 @@ public class SyncJars {
         LOGGER.info("Uploading {} jars", uploadJars.size());
         uploadJars.stream().parallel().forEach(jar -> {
             LOGGER.info("Uploading jar: {}", jar.getFileName());
-            s3.putObject(bucketName,
-                    "" + jar.getFileName(),
-                    jar.toFile());
+            s3v2.putObject(builder -> builder
+                            .bucket(bucketName)
+                            .key("" + jar.getFileName()),
+                    jar);
             LOGGER.info("Finished uploading jar: {}", jar.getFileName());
         });
         if (!uploadJars.isEmpty()) {
