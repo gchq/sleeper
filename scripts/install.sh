@@ -49,7 +49,7 @@ mkdir -p "$EXECUTABLE_DIR"
 
 echo "Installing Sleeper CLI"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/runCommand.sh" --output "$EXECUTABLE_PATH"
+curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/runInDocker.sh" --output "$EXECUTABLE_PATH"
 chmod a+x "$EXECUTABLE_PATH"
 echo "Installed"
 
