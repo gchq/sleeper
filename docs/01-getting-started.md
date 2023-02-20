@@ -21,7 +21,7 @@ contains the necessary dependencies and scripts to do this. Run the following co
 the local Docker image. The \[version\] can be `main` or a version like `v0.13.0`.
 
 ```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/local/install.sh" -o ./sleeper-install.sh
+curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/install.sh" -o ./sleeper-install.sh
 chmod +x ./sleeper-install.sh
 ./sleeper-install.sh [version]
 ```

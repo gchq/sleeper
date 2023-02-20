@@ -6,3 +6,5 @@ local/
 dependencies/
 deploy/buildAndDeploy.sh
 test/**/buildDeployTest.sh
+install.sh
+runCommand.sh

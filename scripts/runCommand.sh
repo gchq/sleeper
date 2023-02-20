@@ -66,7 +66,7 @@ elif [ "$COMMAND" == "deployment" ]; then
   runInDeploymentDocker "$@"
 elif [ "$COMMAND" == "environment" ]; then
   if [ "$#" -eq 0 ]; then
-    runInLocalDocker bash
+    runInLocalDocker
   else
     runInLocalDocker environment "$@"
   fi
