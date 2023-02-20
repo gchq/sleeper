@@ -16,8 +16,7 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-BASE_DIR=$(cd "$(dirname "$THIS_DIR")" && cd "../" && pwd)
-SCRIPTS_DIR="$BASE_DIR/scripts"
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)

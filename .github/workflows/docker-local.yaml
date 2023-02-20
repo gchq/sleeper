@@ -53,12 +53,12 @@ jobs:
           echo "DEPLOYMENT_IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Maven build
-        run: ./scripts/local/buildMaven.sh -Dmaven.repo.local=../.m2/repository
+        run: ./scripts/cli/local/buildMaven.sh -Dmaven.repo.local=../.m2/repository
       - name: Dependencies Docker build
-        run: ./scripts/dependencies/build.sh
+        run: ./scripts/cli/dependencies/build.sh
       - name: Docker build
         run: |
-          ./scripts/local/buildDocker.sh --tag $IMAGE_NAME \
+          ./scripts/cli/local/buildDocker.sh --tag $IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Log in to registry

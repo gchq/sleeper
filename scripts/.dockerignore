@@ -2,9 +2,6 @@
 build/
 dev/
 generated/
-local/
-dependencies/
+cli/
 deploy/buildAndDeploy.sh
 test/**/buildDeployTest.sh
-install.sh
-runInDocker.sh
