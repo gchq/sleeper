@@ -29,6 +29,8 @@ public interface SleeperProperty {
 
     String getDescription();
 
+    PropertyGroup getPropertyGroup();
+
     default boolean isSystemDefined() {
         return false;
     }

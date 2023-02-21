@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.util.ClientUtils.formatPropertyDescription;
 
 class ClientUtilsTest {
 
@@ -41,7 +40,7 @@ class ClientUtilsTest {
             String singleLineString = "Test string that can fit on one line";
 
             // When
-            String formattedString = formatPropertyDescription(singleLineString);
+            String formattedString = ClientUtils.formatString(singleLineString);
 
             // Then
             assertThat(formattedString)
@@ -54,10 +53,10 @@ class ClientUtilsTest {
             String multiLineString = "Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the screen";
 
             // When
-            String formattedDescription = formatPropertyDescription(multiLineString);
+            String formattedString = ClientUtils.formatString(multiLineString);
 
             // Then
-            assertThat(formattedDescription)
+            assertThat(formattedString)
                     .isEqualTo("" +
                             "# Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the\n" +
                             "# screen");
@@ -70,10 +69,10 @@ class ClientUtilsTest {
                     "This is to verify if the line still wraps even after after a custom line break";
 
             // When
-            String formattedDescription = formatPropertyDescription(multiLineString);
+            String formattedString = ClientUtils.formatString(multiLineString);
 
             // Then
-            assertThat(formattedDescription)
+            assertThat(formattedString)
                     .isEqualTo("" +
                             "# Test string that cannot fit on one line\n" +
                             "# but with a custom line break. This is to verify if the line still wraps even after after a custom\n" +

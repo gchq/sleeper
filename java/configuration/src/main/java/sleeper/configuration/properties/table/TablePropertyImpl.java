@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties.table;
 
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
@@ -38,6 +40,7 @@ class TablePropertyImpl implements TableProperty {
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
     private final String description;
+    private final PropertyGroup propertyGroup;
     private final boolean runCDKDeployWhenChanged;
     private final boolean systemDefined;
 
@@ -47,9 +50,11 @@ class TablePropertyImpl implements TableProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
         systemDefined = builder.systemDefined;
     }
+
 
 
     static Builder builder() {
@@ -98,6 +103,11 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
+    public PropertyGroup getPropertyGroup() {
+        return propertyGroup;
+    }
+
+    @Override
     public boolean isRunCDKDeployWhenChanged() {
         return runCDKDeployWhenChanged;
     }
@@ -118,6 +128,8 @@ class TablePropertyImpl implements TableProperty {
         private SleeperProperty defaultProperty;
         private String description;
         private boolean runCDKDeployWhenChanged;
+        private PropertyGroup propertyGroup;
+        private Consumer<TableProperty> addToList = Builder::addToAllList;
         private boolean systemDefined;
 
         private Builder() {
@@ -153,22 +165,33 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        public Builder propertyGroup(PropertyGroup propertyGroup) {
+            this.propertyGroup = propertyGroup;
+            return this;
+        }
+
+        public Builder addToList(Consumer<TableProperty> addToList) {
+            this.addToList = addToList;
+            return this;
+        }
+
         public Builder systemDefined(boolean systemDefined) {
             this.systemDefined = systemDefined;
             return this;
         }
 
         public TableProperty build() {
-            return addToAllList(new TablePropertyImpl(this));
+            TableProperty property = new TablePropertyImpl(this);
+            addToList.accept(property);
+            return property;
         }
 
-        private static TableProperty addToAllList(TableProperty property) {
+        private static void addToAllList(TableProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
             if (property.isSystemDefined()) {
                 SYSTEM_DEFINED.add(property);
             }
-            return property;
         }
     }
 }
