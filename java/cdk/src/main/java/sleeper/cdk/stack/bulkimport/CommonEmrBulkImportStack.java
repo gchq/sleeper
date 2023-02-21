@@ -67,14 +67,13 @@ public class CommonEmrBulkImportStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         this.ec2Role = createEc2Role(ingestBucket, importBucket, dataBuckets, stateStoreStacks);
+        createEmrRole();
     }
 
     protected IRole createEc2Role(IBucket ingestBucket, IBucket importBucket, List<IBucket> dataBuckets, List<StateStoreStack> stateStoreStacks) {
         String instanceId = instanceProperties.get(ID);
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
-        String vpc = instanceProperties.get(VPC_ID);
-        String subnet = instanceProperties.get(SUBNET);
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
         IRole ec2Role = new Role(this, "Ec2Role", RoleProps.builder()
@@ -123,6 +122,20 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .roles(Lists.newArrayList(ec2Role.getRoleName()))
                 .build());
 
+        importBucket.grantReadWrite(ec2Role);
+
+        if (ingestBucket != null) {
+            ingestBucket.grantRead(ec2Role);
+        }
+        return ec2Role;
+    }
+
+    private void createEmrRole() {
+        String instanceId = instanceProperties.get(ID);
+        String region = instanceProperties.get(REGION);
+        String account = instanceProperties.get(ACCOUNT);
+        String vpc = instanceProperties.get(VPC_ID);
+        String subnet = instanceProperties.get(SUBNET);
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
                         new InputStreamReader(EmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
@@ -174,13 +187,6 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .build());
 
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, emrRole.getRoleName());
-
-        importBucket.grantReadWrite(ec2Role);
-
-        if (ingestBucket != null) {
-            ingestBucket.grantRead(ec2Role);
-        }
-        return ec2Role;
     }
 
     public IRole getEc2Role() {
