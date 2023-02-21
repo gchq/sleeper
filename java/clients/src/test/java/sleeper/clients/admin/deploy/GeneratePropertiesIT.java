@@ -15,8 +15,6 @@
  */
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.junit.jupiter.api.Test;
@@ -25,12 +23,14 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
@@ -43,11 +43,6 @@ public class GeneratePropertiesIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.STS);
-
-    protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-            .build();
     private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.STS))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
@@ -57,9 +52,9 @@ public class GeneratePropertiesIT {
     private Path tempDir;
 
     @Test
-    void generatedPropertiesIncludeBucketNamesForLocalDirectory() {
+    void generatedPropertiesIncludeBucketNamesForLocalDirectory() throws IOException {
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
-                .s3(s3).sts(sts)
+                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance")
                 .sleeperVersion("1.0.0")
                 .vpcId("some-vpc").subnetId("some-subnet")

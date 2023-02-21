@@ -23,6 +23,8 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -42,6 +44,7 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final String instanceId = System.getProperty("sleeper.system.test.instance.id");
     private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+    private final S3Client s3v2 = S3Client.create();
     private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
     private final Path scriptsDir = findScriptsDir();
     private final Path jarsDir = scriptsDir.resolve("jars");
@@ -56,14 +59,14 @@ public class SystemTestInstance implements BeforeAllCallback {
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         instanceProperties = GenerateInstanceProperties.builder()
-                .s3(s3Client).sts(sts)
+                .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
                 .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
         PreDeployInstance.builder()
-                .s3(s3Client).ecr(ecr)
+                .s3(s3v2).ecr(ecr)
                 .jarsDirectory(jarsDir)
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))

@@ -15,16 +15,18 @@
  */
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class JarsDiff {
 
@@ -36,24 +38,30 @@ public class JarsDiff {
         this.s3KeysToDelete = s3KeysToDelete;
     }
 
-    public static JarsDiff from(Path directory, List<Path> localFiles, Iterable<S3ObjectSummary> s3Objects) throws IOException {
+    public static JarsDiff from(Path directory, List<Path> localFiles, ListObjectsV2Iterable listObjects) throws IOException {
+        return from(directory, localFiles, listObjects.stream()
+                .flatMap(response -> response.contents().stream())
+                .map(object -> new S3KeyAndModifiedTime(object.key(), object.lastModified())));
+    }
+
+    private static JarsDiff from(Path directory, List<Path> localFiles, Stream<S3KeyAndModifiedTime> s3Objects) throws IOException {
         List<String> deleteKeys = new ArrayList<>();
         Set<Path> uploadJars = new LinkedHashSet<>(localFiles);
-        for (S3ObjectSummary object : s3Objects) {
-            Path path = directory.resolve(object.getKey());
+        for (S3KeyAndModifiedTime object : (Iterable<? extends S3KeyAndModifiedTime>) s3Objects::iterator) {
+            Path path = directory.resolve(object.key);
             if (isUnmodified(uploadJars, path, object)) {
                 uploadJars.remove(path);
             } else {
-                deleteKeys.add(object.getKey());
+                deleteKeys.add(object.key);
             }
         }
         return new JarsDiff(uploadJars, deleteKeys);
     }
 
-    private static boolean isUnmodified(Set<Path> set, Path jar, S3ObjectSummary object) throws IOException {
+    private static boolean isUnmodified(Set<Path> set, Path jar, S3KeyAndModifiedTime object) throws IOException {
         if (set.contains(jar)) {
             long fileLastModified = Files.getLastModifiedTime(jar).toInstant().getEpochSecond();
-            long bucketLastModified = object.getLastModified().toInstant().getEpochSecond();
+            long bucketLastModified = object.lastModifiedTime.getEpochSecond();
             return fileLastModified <= bucketLastModified;
         }
         return false;
@@ -65,5 +73,15 @@ public class JarsDiff {
 
     public Collection<String> getS3KeysToDelete() {
         return s3KeysToDelete;
+    }
+
+    private static class S3KeyAndModifiedTime {
+        private final String key;
+        private final Instant lastModifiedTime;
+
+        private S3KeyAndModifiedTime(String key, Instant lastModifiedTime) {
+            this.key = key;
+            this.lastModifiedTime = lastModifiedTime;
+        }
     }
 }

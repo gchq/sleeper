@@ -17,23 +17,37 @@ package sleeper.clients.admin;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import sleeper.clients.admin.deploy.CdkDeployInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.table.job.TableLister;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminConfigStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminConfigStore.class);
 
     private final AmazonS3 s3;
+    private final CdkDeployInstance cdk;
+    private final Path generatedDirectory;
 
-    public AdminConfigStore(AmazonS3 defaultS3Client) {
-        this.s3 = defaultS3Client;
+    public AdminConfigStore(AmazonS3 s3, CdkDeployInstance cdk, Path generatedDirectory) {
+        this.s3 = s3;
+        this.cdk = cdk;
+        this.generatedDirectory = generatedDirectory;
     }
 
     public InstanceProperties loadInstanceProperties(String instanceId) {
@@ -47,30 +61,83 @@ public class AdminConfigStore {
     }
 
     public TableProperties loadTableProperties(String instanceId, String tableName) {
-        return new TablePropertiesProvider(s3, loadInstanceProperties(instanceId)).getTableProperties(tableName);
+        return loadTableProperties(loadInstanceProperties(instanceId), tableName);
+    }
+
+    private TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
+        return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
     }
 
     public List<String> listTables(String instanceId) {
-        return new TableLister(s3, loadInstanceProperties(instanceId)).listTables();
+        return listTables(loadInstanceProperties(instanceId));
+    }
+
+    private List<String> listTables(InstanceProperties instanceProperties) {
+        return new TableLister(s3, instanceProperties).listTables();
+    }
+
+    private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
+        return listTables(instanceProperties).stream()
+                .map(tableName -> loadTableProperties(instanceProperties, tableName));
     }
 
     public void updateInstanceProperty(String instanceId, UserDefinedInstanceProperty property, String propertyValue) {
         InstanceProperties properties = loadInstanceProperties(instanceId);
         properties.set(property, propertyValue);
         try {
-            properties.saveToS3(s3);
-        } catch (IOException | AmazonS3Exception e) {
-            throw new CouldNotSaveInstanceProperties(instanceId, e);
+            LOGGER.info("Saving to local configuration");
+            ClientUtils.clearDirectory(generatedDirectory);
+            SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
+            if (property.isRunCDKDeployWhenChanged()) {
+                LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
+                cdk.deploy();
+            } else {
+                LOGGER.info("Saving to AWS");
+                properties.saveToS3(s3);
+            }
+        } catch (IOException | AmazonS3Exception | InterruptedException e) {
+            CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
+            try {
+                SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+            } catch (Exception e2) {
+                wrapped.addSuppressed(e2);
+            }
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw wrapped;
         }
     }
 
     public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
-        TableProperties properties = loadTableProperties(instanceId, tableName);
+        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
+        TableProperties properties = loadTableProperties(instanceProperties, tableName);
         properties.set(property, propertyValue);
         try {
-            properties.saveToS3(s3);
-        } catch (IOException | AmazonS3Exception e) {
-            throw new CouldNotSaveTableProperties(instanceId, tableName, e);
+            LOGGER.info("Saving to local configuration");
+            ClientUtils.clearDirectory(generatedDirectory);
+            SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
+                    streamTableProperties(instanceProperties)
+                            .map(table -> tableName.equals(table.get(TABLE_NAME))
+                                    ? properties : table));
+            if (property.isRunCDKDeployWhenChanged()) {
+                LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
+                cdk.deploy();
+            } else {
+                LOGGER.info("Saving to AWS");
+                properties.saveToS3(s3);
+            }
+        } catch (IOException | AmazonS3Exception | InterruptedException e) {
+            CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
+            try {
+                SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+            } catch (Exception e2) {
+                wrapped.addSuppressed(e2);
+            }
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw wrapped;
         }
     }
 

@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.local.SaveLocalProperties;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 public class DownloadConfig {
@@ -27,7 +28,7 @@ public class DownloadConfig {
     private DownloadConfig() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length != 2) {
             throw new IllegalArgumentException("Usage: <instance id> <directory to write to>");
         }

@@ -28,7 +28,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,11 +48,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
     private final Properties properties;
 
-    public SleeperProperties() {
+    protected SleeperProperties() {
         this(new Properties());
     }
 
-    public SleeperProperties(Properties properties) {
+    protected SleeperProperties(Properties properties) {
         this.properties = properties;
     }
 
@@ -108,22 +107,14 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties;
     }
 
-    public void load(InputStream inputStream) {
-        try {
+    public void load(InputStream inputStream) throws IOException {
+        try (inputStream) {
             properties.load(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load store properties file : " + e.getMessage(), e);
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to close store properties stream: " + e.getMessage(), e);
-            }
         }
         this.init();
     }
 
-    public void load(File file) throws FileNotFoundException {
+    public void load(File file) throws IOException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
         load(inputStream);
     }
@@ -194,7 +185,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
             return false;
         }
 
-        SleeperProperties that = (SleeperProperties) o;
+        SleeperProperties<?> that = (SleeperProperties<?>) o;
 
         return new EqualsBuilder().append(properties, that.properties).isEquals();
     }

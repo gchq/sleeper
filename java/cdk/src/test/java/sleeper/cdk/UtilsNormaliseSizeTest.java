@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,40 +15,41 @@
  */
 package sleeper.cdk;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.cdk.Utils.normaliseSize;
 
-public class UtilsNormaliseSizeTest {
+class UtilsNormaliseSizeTest {
 
     @Test
-    public void shouldReturnNull() {
+    void shouldReturnNull() {
         assertThat(normaliseSize(null)).isNull();
     }
 
     @Test
-    public void shouldReturnEmpty() {
+    void shouldReturnEmpty() {
         assertThat(normaliseSize("")).isEmpty();
     }
 
     @Test
-    public void shouldNotAlterLettersOnly() {
+    void shouldNotAlterLettersOnly() {
         assertThat(normaliseSize("test")).isEqualTo("test");
     }
 
     @Test
-    public void shouldReturnNumbersOnly() {
+    void shouldReturnNumbersOnly() {
         assertThat(normaliseSize("1234567")).isEqualTo("1234567");
     }
 
     @Test
-    public void shouldSwapSingleDigitToEnd() {
+    void shouldSwapSingleDigitToEnd() {
         assertThat(normaliseSize("2xlarge")).isEqualTo("xlarge2");
     }
 
     @Test
-    public void shouldSwapMultipleDigitsToEnd() {
+    void shouldSwapMultipleDigitsToEnd() {
         assertThat(normaliseSize("56xlarge")).isEqualTo("xlarge56");
     }
 }

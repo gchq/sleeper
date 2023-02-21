@@ -49,7 +49,7 @@ class SaveLocalPropertiesTest {
     private Path tempDir;
 
     @Test
-    void shouldSaveInstanceProperties() {
+    void shouldSaveInstanceProperties() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
 
@@ -62,7 +62,7 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
-    void shouldSaveTableProperties() {
+    void shouldSaveTableProperties() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
@@ -76,7 +76,7 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
-    void shouldLoadNoTablePropertiesWhenNoneSaved() {
+    void shouldLoadNoTablePropertiesWhenNoneSaved() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
 
@@ -150,7 +150,7 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
-    void shouldNotSaveTableBucketFileIfNotYetSetByCdk() {
+    void shouldNotSaveTableBucketFileIfNotYetSetByCdk() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));

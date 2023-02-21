@@ -257,4 +257,9 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     static boolean has(String propertyName) {
         return SystemDefinedInstancePropertyImpl.getByName(propertyName).isPresent();
     }
+
+    @Override
+    default boolean isSystemDefined() {
+        return true;
+    }
 }

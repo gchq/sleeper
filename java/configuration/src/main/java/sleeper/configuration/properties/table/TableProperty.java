@@ -222,19 +222,21 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .build();
+            .systemDefined(true).build();
     TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
             .description("The S3 bucket name where table data is stored.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
-            .build();
+            .systemDefined(true).build();
     // DynamoDBStateStore properties
     TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA).build();
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .systemDefined(true).build();
     TableProperty READY_FOR_GC_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.gc.table")
             .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
                     "in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA).build();
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .systemDefined(true).build();
     TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA).build();
@@ -244,12 +246,12 @@ public interface TableProperty extends SleeperProperty {
                     "the DynamoDBStateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .runCDKDeployWhenChanged(true)
-            .build();
+            .systemDefined(true).build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table")
             .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
             .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
+            .systemDefined(true).build();
 
     static List<TableProperty> getAllGrouped() {
         return TablePropertyGroup.sortProperties(new ArrayList<>(getAll()));
@@ -257,6 +259,10 @@ public interface TableProperty extends SleeperProperty {
 
     static List<TableProperty> getAll() {
         return TablePropertyImpl.getAll();
+    }
+
+    static List<TableProperty> getSystemDefined() {
+        return TablePropertyImpl.getSystemDefined();
     }
 
     static Optional<TableProperty> getByName(String propertyName) {

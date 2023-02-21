@@ -31,6 +31,10 @@ public interface SleeperProperty {
 
     PropertyGroup getPropertyGroup();
 
+    default boolean isSystemDefined() {
+        return false;
+    }
+
     default Predicate<String> validationPredicate() {
         return s -> true;
     }
