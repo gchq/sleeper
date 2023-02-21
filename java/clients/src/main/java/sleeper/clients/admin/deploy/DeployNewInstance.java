@@ -21,6 +21,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -42,6 +43,10 @@ import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
 
+    private final AWSSecurityTokenService sts;
+    private final AwsRegionProvider regionProvider;
+    private final S3Client s3;
+    private final AmazonECR ecr;
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
@@ -53,6 +58,10 @@ public class DeployNewInstance {
     private final String cdkAppClassName;
 
     private DeployNewInstance(Builder builder) {
+        sts = builder.sts;
+        regionProvider = builder.regionProvider;
+        s3 = builder.s3;
+        ecr = builder.ecr;
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
@@ -73,15 +82,24 @@ public class DeployNewInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name>");
         }
         Path scriptsDirectory = Path.of(args[0]);
-        builder().scriptsDirectory(scriptsDirectory)
-                .instanceId(args[1])
-                .vpcId(args[2])
-                .subnetId(args[3])
-                .tableName(args[4])
-                .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
-                .cdkJarFormat("cdk-%s.jar")
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
-                .build().deploy();
+
+        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+        AwsRegionProvider awsRegionProvider = DefaultAwsRegionProviderChain.builder().build();
+        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
+
+        try (S3Client s3 = S3Client.create()) {
+            builder().s3(s3).regionProvider(awsRegionProvider)
+                    .sts(sts).ecr(ecr)
+                    .scriptsDirectory(scriptsDirectory)
+                    .instanceId(args[1])
+                    .vpcId(args[2])
+                    .subnetId(args[3])
+                    .tableName(args[4])
+                    .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
+                    .cdkJarFormat("cdk-%s.jar")
+                    .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                    .build().deploy();
+        }
     }
 
     public void deploy() throws IOException, InterruptedException {
@@ -105,12 +123,9 @@ public class DeployNewInstance {
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
 
-        S3Client s3v2 = S3Client.create();
-        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
 
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
-                .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
+                .sts(sts).regionProvider(regionProvider)
                 .sleeperVersion(sleeperVersion)
                 .properties(loadInstancePropertiesTemplate())
                 .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")))
@@ -120,7 +135,7 @@ public class DeployNewInstance {
                 Schema.load(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
-        PreDeployInstance.builder().s3(s3v2).ecr(ecr)
+        PreDeployInstance.builder().s3(s3).ecr(ecr)
                 .jarsDirectory(jarsDirectory)
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
@@ -149,6 +164,10 @@ public class DeployNewInstance {
     }
 
     public static final class Builder {
+        private AWSSecurityTokenService sts;
+        private AwsRegionProvider regionProvider;
+        private S3Client s3;
+        private AmazonECR ecr;
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
@@ -163,8 +182,24 @@ public class DeployNewInstance {
         private Builder() {
         }
 
-        public static Builder builder() {
-            return new Builder();
+        public Builder sts(AWSSecurityTokenService sts) {
+            this.sts = sts;
+            return this;
+        }
+
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
+            return this;
+        }
+
+        public Builder s3(S3Client s3) {
+            this.s3 = s3;
+            return this;
+        }
+
+        public Builder ecr(AmazonECR ecr) {
+            this.ecr = ecr;
+            return this;
         }
 
         public Builder scriptsDirectory(Path scriptsDirectory) {
