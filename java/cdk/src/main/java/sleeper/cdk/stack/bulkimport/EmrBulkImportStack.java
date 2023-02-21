@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -44,12 +43,13 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
     public EmrBulkImportStack(
             Construct scope,
             String id,
+            IBucket bulkImportBucket,
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
             ITopic errorsTopic) {
-        super(scope, id, "NonPersistentEMR", "NonPersistentEMR",
-                BULK_IMPORT_EMR_JOB_QUEUE_URL, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
+        super(scope, id, "NonPersistentEMR", "NonPersistentEMR", BULK_IMPORT_EMR_JOB_QUEUE_URL,
+                bulkImportBucket, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
     }
 
     @Override
@@ -58,10 +58,7 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
 
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
-
-        instanceProperties.getTags().entrySet().stream().forEach(entry -> {
-            tagKeyCondition.put("elasticmapreduce:RequestTag/" + entry.getKey(), entry.getValue());
-        });
+        instanceProperties.getTags().forEach((key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
 
         conditions.put("StringEquals", tagKeyCondition);
 
@@ -87,7 +84,7 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .sid("CreateCleanupRole")
                 .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
                 .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(ImmutableMap.of("StringLike", ImmutableMap.of("iam:AWSServiceName",
+                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
                         Lists.newArrayList("elasticmapreduce.amazonaws.com",
                                 "elasticmapreduce.amazonaws.com.cn"))))
                 .build());

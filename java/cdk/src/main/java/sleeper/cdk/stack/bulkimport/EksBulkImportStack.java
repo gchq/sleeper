@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -67,6 +68,7 @@ import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -80,18 +82,19 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * resources needed to run Spark on Kubernetes. In addition to this, it creates
  * a statemachine which can run jobs on the cluster.
  */
-public final class EksBulkImportStack extends AbstractBulkImportStack {
+public final class EksBulkImportStack extends NestedStack {
     private final StateMachine stateMachine;
     private final ServiceAccount sparkServiceAccount;
 
     public EksBulkImportStack(
             Construct scope,
             String id,
+            IBucket importBucket,
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
             ITopic errorsTopic) {
-        super(scope, id, instanceProperties);
+        super(scope, id);
 
         IBucket ingestBucket = null;
         String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
@@ -157,9 +160,6 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
-        if (null == importBucket) {
-            throw new RuntimeException("Import bucket should not be null; call create() first");
-        }
         importBucket.grantReadWrite(bulkImportJobStarter);
         if (null != ingestBucket) {
             ingestBucket.grantRead(bulkImportJobStarter);
@@ -204,7 +204,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        grantAccesses(dataBuckets, stateStoreStacks, configBucket, instanceProperties);
+        grantAccesses(dataBuckets, stateStoreStacks, configBucket);
 
         this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopic);
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
@@ -278,7 +278,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
     }
 
     private void grantAccesses(List<IBucket> dataBuckets,
-                               List<StateStoreStack> stateStoreStacks, IBucket configBucket, InstanceProperties instanceProperties) {
+                               List<StateStoreStack> stateStoreStacks, IBucket configBucket) {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(sparkServiceAccount));
         stateStoreStacks.forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(sparkServiceAccount);
@@ -322,7 +322,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
         try {
             json = IOUtils.toString(getClass().getResourceAsStream(resource), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
 
         return json.replace("namespace-placeholder", namespace);

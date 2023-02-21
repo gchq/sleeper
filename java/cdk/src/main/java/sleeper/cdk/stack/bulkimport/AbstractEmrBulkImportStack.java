@@ -15,13 +15,13 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.CfnJsonProps;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -70,7 +70,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
-public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack {
+public abstract class AbstractEmrBulkImportStack extends NestedStack {
+    protected final String id;
     protected final String shortId;
     protected final String bulkImportPlatform;
     protected final SystemDefinedInstanceProperty jobQueueUrl;
@@ -78,6 +79,8 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
     protected final List<StateStoreStack> stateStoreStacks;
     private final ITopic errorsTopic;
     protected final IBucket ingestBucket;
+    protected final IBucket importBucket;
+    protected final InstanceProperties instanceProperties;
     protected final String instanceId;
     protected final String account;
     protected final String region;
@@ -87,24 +90,28 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
     protected Function bulkImportJobStarter;
     protected IRole ec2Role;
 
-    public AbstractEmrBulkImportStack(
+    protected AbstractEmrBulkImportStack(
             Construct scope,
             String id,
             String shortId,
             String bulkImportPlatform,
             SystemDefinedInstanceProperty jobQueueUrl,
+            IBucket importBucket,
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
             ITopic errorsTopic) {
-        super(scope, id, instanceProperties);
+        super(scope, id);
+        this.id = id;
         this.shortId = shortId;
         this.bulkImportPlatform = bulkImportPlatform;
         this.jobQueueUrl = jobQueueUrl;
+        this.importBucket = importBucket;
         this.dataBuckets = dataBuckets;
         this.stateStoreStacks = stateStoreStacks;
         this.errorsTopic = errorsTopic;
-        this.instanceId = this.instanceProperties.get(ID);
+        this.instanceProperties = instanceProperties;
+        this.instanceId = instanceProperties.get(ID);
         this.account = instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT);
         this.region = instanceProperties.get(UserDefinedInstanceProperty.REGION);
         this.subnet = instanceProperties.get(UserDefinedInstanceProperty.SUBNET);
@@ -119,10 +126,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
         }
     }
 
-    @Override
     public void create() {
-        super.create();
-
         // Queue for messages to trigger jobs - note that each concrete substack
         // will have its own queue. The shortId is used to ensure the names of
         // the queues are different.
@@ -265,7 +269,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
                                         .effect(Effect.ALLOW)
                                         .actions(Lists.newArrayList("iam:PassRole"))
                                         .resources(Lists.newArrayList(ec2Role.getRoleArn()))
-                                        .conditions(ImmutableMap.of("StringLike", ImmutableMap.of("iam:PassedToService", "ec2.amazonaws.com*")))
+                                        .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
                                         .build()
                                 )))
                         .build())
@@ -286,9 +290,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
 
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, emrRole.getRoleName());
 
-        if (importBucket != null) {
-            importBucket.grantReadWrite(ec2Role);
-        }
+        importBucket.grantReadWrite(ec2Role);
 
         if (ingestBucket != null) {
             ingestBucket.grantRead(ec2Role);
@@ -344,9 +346,6 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
-        if (null == importBucket) {
-            throw new RuntimeException("Import bucket should not be null; call create() first");
-        }
         importBucket.grantReadWrite(bulkImportJobStarter);
         if (ingestBucket != null) {
             ingestBucket.grantRead(bulkImportJobStarter);
