@@ -59,7 +59,7 @@ public class InstancePropertyGroup {
             .description("The following properties relate to the integration with Athena.")
             .build();
     public static final PropertyGroup DEFAULT = instanceGroup("Default")
-            .description("The following properties relate to default values.")
+            .description("The following properties relate to default values used by table properties.")
             .build();
 
     private static PropertyGroup.Builder instanceGroup(String name) {
