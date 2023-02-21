@@ -17,12 +17,11 @@ package sleeper.clients.admin.deploy;
 
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -106,13 +105,12 @@ public class DeployNewInstance {
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
 
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         S3Client s3v2 = S3Client.create();
         AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
 
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
-                .s3(s3).sts(sts)
+                .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .sleeperVersion(sleeperVersion)
                 .properties(loadInstancePropertiesTemplate())
                 .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")))

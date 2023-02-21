@@ -27,6 +27,7 @@ import java.nio.file.Path;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 public class PreDeployInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreDeployInstance.class);
@@ -64,6 +65,7 @@ public class PreDeployInstance {
                 .s3(s3)
                 .jarsDirectory(jarsDirectory)
                 .bucketName(instanceProperties.get(JARS_BUCKET))
+                .region(instanceProperties.get(REGION))
                 .build().sync();
     }
 

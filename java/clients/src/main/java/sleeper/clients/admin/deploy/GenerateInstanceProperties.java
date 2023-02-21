@@ -16,9 +16,9 @@
 
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -42,8 +42,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class GenerateInstanceProperties {
-    private final AmazonS3 s3;
     private final AWSSecurityTokenService sts;
+    private final AwsRegionProvider regionProvider;
     private final String instanceId;
     private final String sleeperVersion;
     private final String vpcId;
@@ -52,14 +52,15 @@ public class GenerateInstanceProperties {
     private final Properties tagsProperties;
 
     private GenerateInstanceProperties(Builder builder) {
-        s3 = requireNonNull(builder.s3, "s3 must not be null");
         sts = requireNonNull(builder.sts, "sts must not be null");
+        regionProvider = requireNonNull(builder.regionProvider, "regionProvider must not be null");
         instanceId = requireNonEmpty(builder.instanceId, "instanceId must not be empty");
         sleeperVersion = requireNonEmpty(builder.sleeperVersion, "sleeperVersion must not be empty");
         vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
         subnetId = requireNonEmpty(builder.subnetId, "subnetId must not be empty");
         properties = Optional.ofNullable(builder.properties).orElseGet(Properties::new);
         tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(Properties::new);
+
     }
 
     public static Builder builder() {
@@ -74,7 +75,7 @@ public class GenerateInstanceProperties {
         instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ACCOUNT, getAccount());
-        instanceProperties.set(REGION, s3.getRegionName());
+        instanceProperties.set(REGION, regionProvider.getRegion().id());
         instanceProperties.set(VERSION, sleeperVersion);
         instanceProperties.set(VPC_ID, vpcId);
         instanceProperties.set(SUBNET, subnetId);
@@ -89,8 +90,8 @@ public class GenerateInstanceProperties {
     }
 
     public static final class Builder {
-        private AmazonS3 s3;
         private AWSSecurityTokenService sts;
+        private AwsRegionProvider regionProvider;
         private String instanceId;
         private String sleeperVersion;
         private String vpcId;
@@ -101,13 +102,13 @@ public class GenerateInstanceProperties {
         private Builder() {
         }
 
-        public Builder s3(AmazonS3 s3) {
-            this.s3 = s3;
+        public Builder sts(AWSSecurityTokenService sts) {
+            this.sts = sts;
             return this;
         }
 
-        public Builder sts(AWSSecurityTokenService sts) {
-            this.sts = sts;
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
             return this;
         }
 

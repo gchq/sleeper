@@ -23,6 +23,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -58,7 +59,7 @@ public class SystemTestInstance implements BeforeAllCallback {
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         instanceProperties = GenerateInstanceProperties.builder()
-                .s3(s3Client).sts(sts)
+                .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
                 .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
