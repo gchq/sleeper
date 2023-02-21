@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -54,33 +55,76 @@ class UtilsPropertiesTest {
 
         @Test
         void shouldLoadValidInstancePropertiesFromFile() throws IOException {
+            // Given
             InstanceProperties properties = createUserDefinedInstanceProperties();
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
-
-            assertThat(loaded).isEqualTo(properties);
+            // When / Then
+            assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile()))
+                    .isEqualTo(properties);
         }
 
         @Test
         void shouldLoadValidTablePropertiesFromFile() throws IOException {
+            // Given
             InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
             TableProperties properties = createUserDefinedTableProperties(instanceProperties);
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
+            // When / Then
             assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile()))
                     .containsExactly(properties);
         }
 
         @Test
         void shouldClearSystemDefinedPropertiesWhenInstancePropertiesAreLoaded() throws IOException {
+            // Given
             InstanceProperties properties = createUserDefinedInstanceProperties();
             properties.set(BULK_IMPORT_BUCKET, "test-bulk-import-bucket");
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
+            // When
             InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
 
+            // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("Ensure configuration will result in valid AWS resource names")
+    class ValidateResourceNames {
+
+        @Test
+        void shouldFailWhenInstanceIdIsNotAValidBucketName() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
+            instanceProperties.set(ID, "aa$$aa");
+            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+
+            // When / Then
+            InstanceProperties load = new InstanceProperties();
+            Function<String, String> context = cdkContextWithPropertiesFile();
+            assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Sleeper instance id is illegal: aa$$aa");
+        }
+
+        @Test
+        void shouldFailWhenTableNameCannotBePartOfAValidBucketName() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
+            TableProperties properties = createUserDefinedTableProperties(instanceProperties);
+            instanceProperties.set(ID, "valid-id");
+            properties.set(TABLE_NAME, "example--invalid-name-tab$$-le");
+            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
+
+            // When / Then
+            InstanceProperties load = new InstanceProperties();
+            Function<String, String> context = cdkContextWithPropertiesFile();
+            assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
         }
     }
 
