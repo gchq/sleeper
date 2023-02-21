@@ -197,27 +197,32 @@ public interface TableProperty extends SleeperProperty {
     // System defined
     TableProperty SPLIT_POINTS_KEY = named("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
-            .build();
+            .systemDefined(true).build();
     TableProperty DATA_BUCKET = named("sleeper.table.data.bucket")
-            .description("The S3 bucket name where table data is stored.").build();
+            .description("The S3 bucket name where table data is stored.")
+            .systemDefined(true).build();
     // DynamoDBStateStore properties
     TableProperty ACTIVE_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
-            .build();
+            .systemDefined(true).build();
     TableProperty READY_FOR_GC_FILEINFO_TABLENAME = named("sleeper.table.metadata.dynamo.gc.table")
             .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
                     "in the Sleeper table.")
-            .build();
+            .systemDefined(true).build();
     TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
-            .build();
+            .systemDefined(true).build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = named("sleeper.table.metadata.s3.dynamo.revision.table")
             .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
-            .build();
+            .systemDefined(true).build();
 
     static List<TableProperty> getAll() {
         return TablePropertyImpl.getAll();
+    }
+
+    static List<TableProperty> getSystemDefined() {
+        return TablePropertyImpl.getSystemDefined();
     }
 
     static Optional<TableProperty> getByName(String propertyName) {
