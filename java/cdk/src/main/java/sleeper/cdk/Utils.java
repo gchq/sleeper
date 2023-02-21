@@ -28,6 +28,7 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -166,11 +168,16 @@ public class Utils {
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) {
-        Path propertiesFile = getInstancePropertiesPath(scope);
+        return loadInstanceProperties(properties, key -> (String) scope.getNode().tryGetContext(key));
+    }
+
+    public static <T extends InstanceProperties> T loadInstanceProperties(
+            T properties, Function<String, String> tryGetContext) {
+        Path propertiesFile = Paths.get(tryGetContext.apply("propertiesfile"));
         LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
 
-        String validate = (String) scope.getNode().tryGetContext("validate");
-        String newinstance = (String) scope.getNode().tryGetContext("newinstance");
+        String validate = tryGetContext.apply("validate");
+        String newinstance = tryGetContext.apply("newinstance");
         if (!"false".equalsIgnoreCase(validate)) {
             new ConfigValidator().validate(properties, propertiesFile);
         }
@@ -178,17 +185,15 @@ public class Utils {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
+
+        SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
         return properties;
     }
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
         return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, getInstancePropertiesPath(scope));
-    }
-
-    private static Path getInstancePropertiesPath(Construct scope) {
-        return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
+                instanceProperties, Paths.get((String) scope.getNode().tryGetContext("propertiesfile")));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
