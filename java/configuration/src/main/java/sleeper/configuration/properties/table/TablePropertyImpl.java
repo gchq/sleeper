@@ -38,6 +38,7 @@ class TablePropertyImpl implements TableProperty {
     private final SleeperProperty defaultProperty;
     private final String description;
     private final boolean runCDKDeployWhenChanged;
+    private final boolean systemDefined;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -46,7 +47,9 @@ class TablePropertyImpl implements TableProperty {
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
+        systemDefined = builder.systemDefined;
     }
+
 
     static Builder builder() {
         return new Builder();
@@ -94,6 +97,11 @@ class TablePropertyImpl implements TableProperty {
         return runCDKDeployWhenChanged;
     }
 
+    @Override
+    public boolean isSystemDefined() {
+        return systemDefined;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -105,6 +113,7 @@ class TablePropertyImpl implements TableProperty {
         private SleeperProperty defaultProperty;
         private String description;
         private boolean runCDKDeployWhenChanged;
+        private boolean systemDefined;
 
         private Builder() {
         }
@@ -136,6 +145,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
             this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+            return this;
+        }
+
+        public Builder systemDefined(boolean systemDefined) {
+            this.systemDefined = systemDefined;
             return this;
         }
 

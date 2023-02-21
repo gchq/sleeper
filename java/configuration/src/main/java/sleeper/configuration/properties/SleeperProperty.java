@@ -29,6 +29,10 @@ public interface SleeperProperty {
 
     String getDescription();
 
+    default boolean isSystemDefined() {
+        return false;
+    }
+
     default Predicate<String> validationPredicate() {
         return s -> true;
     }
