@@ -15,11 +15,14 @@
  */
 package sleeper.cdk;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,31 +40,48 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class UtilsPropertiesTest {
 
     @TempDir
     private Path tempDir;
 
-    @Test
-    void shouldLoadValidInstancePropertiesFromFile() throws IOException {
-        InstanceProperties properties = createUserDefinedInstanceProperties();
-        SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+    @Nested
+    @DisplayName("Load user defined properties from local configuration")
+    class LoadUserDefinedProperties {
 
-        InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+        @Test
+        void shouldLoadValidInstancePropertiesFromFile() throws IOException {
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
-        assertThat(loaded).isEqualTo(properties);
-    }
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
 
-    @Test
-    void shouldClearSystemDefinedPropertiesWhenInstancePropertiesAreLoaded() throws IOException {
-        InstanceProperties properties = createUserDefinedInstanceProperties();
-        properties.set(BULK_IMPORT_BUCKET, "test-bulk-import-bucket");
-        SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+            assertThat(loaded).isEqualTo(properties);
+        }
 
-        InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+        @Test
+        void shouldLoadValidTablePropertiesFromFile() throws IOException {
+            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
+            TableProperties properties = createUserDefinedTableProperties(instanceProperties);
+            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
-        assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
+            assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile()))
+                    .containsExactly(properties);
+        }
+
+        @Test
+        void shouldClearSystemDefinedPropertiesWhenInstancePropertiesAreLoaded() throws IOException {
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            properties.set(BULK_IMPORT_BUCKET, "test-bulk-import-bucket");
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+
+            assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
+        }
     }
 
     private Function<String, String> cdkContextWithPropertiesFile() {
@@ -79,5 +99,13 @@ class UtilsPropertiesTest {
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
         return instanceProperties;
+    }
+
+    private TableProperties createUserDefinedTableProperties(InstanceProperties instanceProperties) {
+        String id = UUID.randomUUID().toString();
+        TableProperties properties = new TableProperties(instanceProperties);
+        properties.set(TABLE_NAME, id);
+        properties.setSchema(schemaWithKey("key"));
+        return properties;
     }
 }

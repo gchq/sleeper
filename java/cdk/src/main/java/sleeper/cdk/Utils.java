@@ -33,7 +33,6 @@ import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -168,12 +167,12 @@ public class Utils {
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) {
-        return loadInstanceProperties(properties, key -> (String) scope.getNode().tryGetContext(key));
+        return loadInstanceProperties(properties, tryGetContext(scope));
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(
             T properties, Function<String, String> tryGetContext) {
-        Path propertiesFile = Paths.get(tryGetContext.apply("propertiesfile"));
+        Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
         LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
 
         String validate = tryGetContext.apply("validate");
@@ -192,8 +191,17 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
+        return getAllTableProperties(instanceProperties, tryGetContext(scope));
+    }
+
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Function<String, String> tryGetContext) {
         return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, Paths.get((String) scope.getNode().tryGetContext("propertiesfile")));
+                instanceProperties, Path.of(tryGetContext.apply("propertiesfile")));
+    }
+
+    private static Function<String, String> tryGetContext(Construct scope) {
+        return key -> (String) scope.getNode().tryGetContext(key);
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
