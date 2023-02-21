@@ -41,6 +41,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -88,6 +89,23 @@ class UtilsPropertiesTest {
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
+        }
+
+        @Test
+        void shouldClearSystemDefinedPropertiesWhenTablePropertiesAreLoaded() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
+            TableProperties properties = createUserDefinedTableProperties(instanceProperties);
+            properties.set(DATA_BUCKET, "test-data-bucket");
+            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
+
+            // When
+            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile());
+
+            // Then
+            assertThat(loaded)
+                    .extracting(tableProperties -> tableProperties.get(DATA_BUCKET))
+                    .containsExactly((String) null);
         }
     }
 

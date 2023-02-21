@@ -31,6 +31,7 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -197,7 +198,11 @@ public class Utils {
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Function<String, String> tryGetContext) {
         return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, Path.of(tryGetContext.apply("propertiesfile")));
+                        instanceProperties, Path.of(tryGetContext.apply("propertiesfile")))
+                .map(tableProperties -> {
+                    TableProperty.getSystemDefined().forEach(tableProperties::unset);
+                    return tableProperties;
+                });
     }
 
     private static Function<String, String> tryGetContext(Construct scope) {
