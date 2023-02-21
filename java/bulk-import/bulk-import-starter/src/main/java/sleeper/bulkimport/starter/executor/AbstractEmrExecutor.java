@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
@@ -48,6 +49,6 @@ public abstract class AbstractEmrExecutor extends Executor {
         return "s3a://"
                 + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
                 + "/bulk-import-runner-"
-                + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar";
+                + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar";
     }
 }

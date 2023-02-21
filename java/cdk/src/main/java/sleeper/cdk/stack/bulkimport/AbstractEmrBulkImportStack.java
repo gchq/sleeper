@@ -323,7 +323,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+                "bulk-import-starter-" + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar");
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 

@@ -28,6 +28,11 @@ import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemDefinedInstanceProperty extends InstanceProperty {
+    SystemDefinedInstanceProperty VERSION = SystemDefinedInstancePropertyImpl.named("sleeper.version")
+            .description("The version of Sleeper to use. This property is used to identify the correct jars in the S3JarsBucket and to " +
+                    "select the correct tag in the ECR repositories.")
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+
     // Configuration
     SystemDefinedInstanceProperty CONFIG_BUCKET = named("sleeper.config.bucket")
             .description("The S3 bucket name used to store configuration files.")
