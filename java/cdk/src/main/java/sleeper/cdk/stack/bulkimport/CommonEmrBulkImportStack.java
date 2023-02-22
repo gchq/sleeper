@@ -139,7 +139,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
-                        new InputStreamReader(EmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
+                        new InputStreamReader(CommonEmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
                 Map.class));
 
         ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(scope, "CustomEMRManagedPolicy", ManagedPolicyProps.builder()
