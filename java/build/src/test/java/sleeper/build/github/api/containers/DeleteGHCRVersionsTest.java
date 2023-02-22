@@ -76,6 +76,22 @@ class DeleteGHCRVersionsTest {
     }
 
     @Test
+    void shouldDeleteMultiplePackages(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        packageVersionListReturns("package-1", versionWithId(1));
+        packageVersionListReturns("package-2", versionWithId(2));
+        packageVersionDeleteSucceeds("package-1", 1);
+        packageVersionDeleteSucceeds("package-2", 2);
+
+        // When
+        deleteVersions(runtimeInfo, "packageNames=package-1,package-2");
+
+        // Then
+        verify(packageVersionDeleted("package-1", 1));
+        verify(packageVersionDeleted("package-2", 2));
+    }
+
+    @Test
     void shouldNotDeleteSpecifiedTag(WireMockRuntimeInfo runtimeInfo) {
         // Given
         packageVersionListReturns("test-image", versionWithIdAndTags(123, "test-tag"));

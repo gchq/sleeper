@@ -1,13 +1,11 @@
-name: Deployment Docker
+name: Docker CLI
 on:
   push:
     paths:
-      - '.github/workflows/docker-deployment.yaml'
+      - '.github/workflows/docker-cli.yaml'
       - 'scripts/Dockerfile'
       - 'scripts/.dockerignore'
-
-env:
-  IMAGE_NAME: sleeper-deployment
+      - 'scripts/cli/**'
 
 jobs:
   build:
@@ -29,49 +27,45 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Plan build
+        run: |
+          ${{ github.workspace }}/.github/scripts/planCiBuild.sh \
+            "${{ github.repository_owner }}" \
+            "${{ github.ref }}"
       - name: Maven build
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
       - name: Dependencies Docker build
         run: ./scripts/cli/dependencies/build.sh
-      - name: Docker build
+      - name: Environment Docker build
+        working-directory: ./scripts
+        run: |
+          ./scripts/cli/local/buildDocker.sh --tag $ENV_IMAGE_NAME \
+            --label "git-commit=$GITHUB_SHA" \
+            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Deployment Docker build
         working-directory: ./scripts
         run: |
           docker build . \
-            --tag $IMAGE_NAME \
+            --tag $DEPLOY_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
       - name: Log in to registry
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-      - name: Push image
+      - name: Push images
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: |
-
-          # This code came from GitHub Docs, to publish a 'latest' tag built from the main branch,
-          # and a tag for each Git tagged version starting with 'v'. See here:
-          # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions#upgrading-a-workflow-that-accesses-a-registry-using-a-personal-access-token
-
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-
-          # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+          docker tag $ENV_IMAGE_NAME $ENV_IMAGE_ID:$VERSION
+          docker push $ENV_IMAGE_ID:$VERSION
+          docker tag $DEPLOY_IMAGE_NAME $DEPLOY_IMAGE_ID:$VERSION
+          docker push $DEPLOY_IMAGE_ID:$VERSION
       - name: Delete old images
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         working-directory: ./java/build
         run: |
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> delete.properties
           echo "organization=${{ github.repository_owner }}" >> delete.properties
-          echo "packageName=$IMAGE_NAME" >> delete.properties
+          echo "packageNames=$GHCR_PACKAGE_NAMES" >> delete.properties
           echo "ignoreTagsPattern=^(latest|[0-9.]+)$" >> delete.properties
           echo "keepMostRecent=4" >> delete.properties
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
