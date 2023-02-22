@@ -1,0 +1,20 @@
+name: Docker CLI Build
+on:
+  push:
+    branches-ignore:
+      - main
+    tags-ignore:
+      - v*
+    paths:
+      - '.github/workflows/docker-cli-branch.yaml'
+      - '.github/workflows/docker-cli.yaml'
+      - '.github/scripts/planCliBuild.sh'
+      - 'scripts/Dockerfile'
+      - 'scripts/.dockerignore'
+      - 'scripts/cli/**'
+
+jobs:
+  build-cli:
+    uses: ./.github/workflows/docker-cli.yaml
+    with:
+      pushImages: false

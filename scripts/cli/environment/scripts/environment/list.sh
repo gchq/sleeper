@@ -17,33 +17,15 @@ set -e
 
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
-list_environments() {
-  echo "Available environments:"
-  pushd "$ENVIRONMENTS_DIR" > /dev/null
-  dirs=(*/)
-  for dir in "${dirs[@]}"; do
-    name="${dir%/}"
-    if [ "$name" == "*" ]; then
-      echo "None found"
-    else
-      echo "$name"
-    fi
-  done
-  popd > /dev/null
-}
-
-if [ "$#" -lt 1 ]; then
-	echo "Usage: environment set <uniqueId>"
-  list_environments
-	exit 1
-fi
-
-INSTANCE_ID=$1
-
-if [ -d "$ENVIRONMENTS_DIR/$INSTANCE_ID" ]; then
-  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
-else
-  echo "Environment not found: $INSTANCE_ID"
-  list_environments
-	exit 1
-fi
+echo "Available environments:"
+pushd "$ENVIRONMENTS_DIR" > /dev/null
+dirs=(*/)
+for dir in "${dirs[@]}"; do
+  name="${dir%/}"
+  if [ "$name" == "*" ]; then
+    echo "None found"
+  else
+    echo "$name"
+  fi
+done
+popd > /dev/null
