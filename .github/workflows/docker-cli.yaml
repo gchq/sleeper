@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '.github/workflows/docker-cli.yaml'
+      - '.github/scripts/planCliBuild.sh'
       - 'scripts/Dockerfile'
       - 'scripts/.dockerignore'
       - 'scripts/cli/**'
