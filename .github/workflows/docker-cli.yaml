@@ -38,7 +38,6 @@ jobs:
       - name: Dependencies Docker build
         run: ./scripts/cli/dependencies/build.sh
       - name: Environment Docker build
-        working-directory: ./scripts
         run: |
           ./scripts/cli/local/buildDocker.sh --tag $ENV_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
