@@ -52,14 +52,13 @@ public class EmrBulkImportStack extends NestedStack {
                 scope, "NonPersistentEMR", instanceProperties);
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         Function jobStarter = commonHelper.createJobStarterFunction(
-                "NonPersistentEMR", bulkImportJobQueue, importBucketStack.getImportBucket());
-        configureJobStarterFunction(instanceProperties, commonEmrStack, jobStarter);
+                "NonPersistentEMR", bulkImportJobQueue, importBucketStack.getImportBucket(), commonEmrStack);
+        configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private static void configureJobStarterFunction(
-            InstanceProperties instanceProperties, CommonEmrBulkImportStack commonStack,
-            Function bulkImportJobStarter) {
+            InstanceProperties instanceProperties, Function bulkImportJobStarter) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
         instanceProperties.getTags().forEach((key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
@@ -71,24 +70,6 @@ public class EmrBulkImportStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .resources(Lists.newArrayList("*"))
                 .conditions(conditions)
-                .build());
-
-        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(Lists.newArrayList("iam:PassRole"))
-                .resources(Lists.newArrayList(
-                        commonStack.getEmrRole().getRoleArn(),
-                        commonStack.getEc2Role().getRoleArn()
-                ))
-                .build());
-
-        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CreateCleanupRole")
-                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
-                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
-                                "elasticmapreduce.amazonaws.com.cn"))))
                 .build());
     }
 

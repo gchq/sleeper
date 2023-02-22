@@ -22,6 +22,8 @@ import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.S3Code;
@@ -99,7 +101,8 @@ public class CommonEmrBulkImportHelper {
         return emrBulkImportJobQueue;
     }
 
-    protected Function createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, IBucket importBucket) {
+    protected Function createJobStarterFunction(String bulkImportPlatform, Queue jobQueue,
+                                                IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -128,6 +131,24 @@ public class CommonEmrBulkImportHelper {
         importBucket.grantReadWrite(function);
         addIngestSourceBucketReference(scope, "IngestBucket", instanceProperties)
                 .ifPresent(ingestBucket -> ingestBucket.grantRead(function));
+
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(Lists.newArrayList("iam:PassRole"))
+                .resources(Lists.newArrayList(
+                        commonEmrStack.getEmrRole().getRoleArn(),
+                        commonEmrStack.getEc2Role().getRoleArn()
+                ))
+                .build());
+
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("CreateCleanupRole")
+                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
+                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
+                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
+                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
+                                "elasticmapreduce.amazonaws.com.cn"))))
+                .build());
         return function;
     }
 }
