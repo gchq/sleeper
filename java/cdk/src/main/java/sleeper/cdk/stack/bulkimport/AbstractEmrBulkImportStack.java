@@ -16,8 +16,6 @@
 package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
-import software.amazon.awscdk.CfnJson;
-import software.amazon.awscdk.CfnJsonProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
@@ -25,8 +23,6 @@ import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
-import software.amazon.awscdk.services.emr.CfnSecurityConfiguration;
-import software.amazon.awscdk.services.emr.CfnSecurityConfigurationProps;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.S3Code;
@@ -114,9 +110,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         // the queues are different.
         bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
 
-        // Create security configuration
-        createSecurityConfiguration();
-
         // Create bulk import job starter function
         createBulkImportJobStarterFunction();
 
@@ -157,26 +150,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
 
         return emrBulkImportJobQueue;
-    }
-
-    protected void createSecurityConfiguration() {
-        if (null == instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME)) {
-            // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
-            String jsonSecurityConf = "{\n" +
-                    "  \"InstanceMetadataServiceConfiguration\" : {\n" +
-                    "      \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
-                    "      \"HttpPutResponseHopLimit\": 1\n" +
-                    "   }\n" +
-                    "}";
-            CfnJsonProps jsonProps = CfnJsonProps.builder().value(jsonSecurityConf).build();
-            CfnJson jsonObject = new CfnJson(this, "EMRSecurityConfigurationJSONObject", jsonProps);
-            CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps.builder()
-                    .name(String.join("-", "sleeper", instanceId, "EMRSecurityConfigurationProps"))
-                    .securityConfiguration(jsonObject)
-                    .build();
-            new CfnSecurityConfiguration(this, "EMRSecurityConfiguration", securityConfigurationProps);
-            instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
-        }
     }
 
     public Queue getEmrBulkImportJobQueue() {
