@@ -28,5 +28,4 @@ public interface InstanceProperty extends SleeperProperty {
         return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
     }
 
-    PropertyGroup getPropertyGroup();
 }

@@ -43,6 +43,8 @@ public class ChangeMessageVisibilityTimeoutActionIT {
             LocalStackContainer.Service.SQS
     );
 
+    private final AmazonSQS sqs = createSQSClient();
+
     private AmazonSQS createSQSClient() {
         return AmazonSQSClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
@@ -50,59 +52,85 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .build();
     }
 
-    private String createQueue(AmazonSQS sqs) {
+    private String createQueueWithVisibilityTimeoutInSeconds(int timeout) {
         Map<String, String> attributes = new HashMap<>();
-        attributes.put("VisibilityTimeout", "2");
+        attributes.put("VisibilityTimeout", "" + timeout);
         CreateQueueRequest createQueueRequest = new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString())
                 .withAttributes(attributes);
         return sqs.createQueue(createQueueRequest).getQueueUrl();
     }
 
-    @Test
-    public void shouldChangeMessageVisibilityTimeout() throws InterruptedException, ActionException {
-        // Given
-        //  - Create queue with visibility timeout of 2 seconds
-        AmazonSQS sqs = createSQSClient();
-        String queueUrl = createQueue(sqs);
-        //  - Put message on to queue
-        String message = "A message";
+    private void sendMessage(String queueUrl, String message) {
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMessageBody(message);
         sqs.sendMessage(sendMessageRequest);
-        //  - Retrieve message from queue
+    }
+
+    private ReceiveMessageResult receiveMessage(String queueUrl) {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
-        ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages()).hasSize(1);
-        //  - Sleep for 2.5 seconds, then check that message has reappeared
-        Thread.sleep(2500L);
-        result = sqs.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages()).hasSize(1);
-        String receiptHandle = result.getMessages().get(0).getReceiptHandle();
+        return sqs.receiveMessage(receiveMessageRequest);
+    }
+
+    @Test
+    void shouldSeeMessageHiddenWithinCreatedTimeout() {
+        // Given
+        String queueUrl = createQueueWithVisibilityTimeoutInSeconds(1);
+        sendMessage(queueUrl, "A message");
 
         // When
-        //  - Extend the message visibility timeout to 10 seconds
-        ChangeMessageVisibilityTimeoutAction action = new MessageReference(sqs, queueUrl, "test", receiptHandle)
-                .changeVisibilityTimeoutAction(10);
-        action.call();
+        receiveMessage(queueUrl);
 
         // Then
-        // - Sleep for 5 seconds, then check that message has not reappeared
-        Thread.sleep(5000L);
-        receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMaxNumberOfMessages(1)
-                .withWaitTimeSeconds(0);
-        result = sqs.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages()).isEmpty();
-        // - Sleep for a further 6 seconds, then check that message has reappeared
-        Thread.sleep(6000L);
-        result = sqs.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages()).hasSize(1);
+        assertThat(receiveMessage(queueUrl).getMessages()).isEmpty();
+    }
 
-        sqs.shutdown();
+    @Test
+    void shouldSeeMessageReappearsAfterCreatedTimeout() throws InterruptedException {
+        // Given
+        String queueUrl = createQueueWithVisibilityTimeoutInSeconds(1);
+        sendMessage(queueUrl, "A message");
+
+        // When
+        receiveMessage(queueUrl);
+        Thread.sleep(2000);
+
+        // Then
+        assertThat(receiveMessage(queueUrl).getMessages()).hasSize(1);
+    }
+
+    @Test
+    void shouldSeeMessageHiddenWithinUpdatedTimeout() throws ActionException, InterruptedException {
+        // Given
+        String queueUrl = createQueueWithVisibilityTimeoutInSeconds(1);
+        sendMessage(queueUrl, "A message");
+
+        // When
+        String receiptHandle = receiveMessage(queueUrl).getMessages().get(0).getReceiptHandle();
+        new MessageReference(sqs, queueUrl, "test", receiptHandle)
+                .changeVisibilityTimeoutAction(10).call();
+        Thread.sleep(2000);
+
+        // Then
+        assertThat(receiveMessage(queueUrl).getMessages()).isEmpty();
+    }
+
+    @Test
+    void shouldSeeMessageReappearsAfterUpdatedTimeout() throws ActionException, InterruptedException {
+        // Given
+        String queueUrl = createQueueWithVisibilityTimeoutInSeconds(1);
+        sendMessage(queueUrl, "A message");
+
+        // When
+        String receiptHandle = receiveMessage(queueUrl).getMessages().get(0).getReceiptHandle();
+        new MessageReference(sqs, queueUrl, "test", receiptHandle)
+                .changeVisibilityTimeoutAction(2).call();
+        Thread.sleep(3000);
+
+        // Then
+        assertThat(receiveMessage(queueUrl).getMessages()).hasSize(1);
     }
 }

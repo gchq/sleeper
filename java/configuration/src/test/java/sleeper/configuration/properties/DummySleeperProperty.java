@@ -32,6 +32,11 @@ public class DummySleeperProperty implements SleeperProperty {
     }
 
     @Override
+    public PropertyGroup getPropertyGroup() {
+        return InstancePropertyGroup.COMMON;
+    }
+
+    @Override
     public boolean isRunCDKDeployWhenChanged() {
         return false;
     }

@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties.table;
 
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.ArrayList;
@@ -25,19 +26,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
 
     private static final Map<String, TableProperty> ALL_MAP = new HashMap<>();
     private static final List<TableProperty> ALL = new ArrayList<>();
+    private static final List<TableProperty> SYSTEM_DEFINED = new ArrayList<>();
 
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final SleeperProperty defaultProperty;
     private final String description;
+    private final PropertyGroup propertyGroup;
     private final boolean runCDKDeployWhenChanged;
+    private final boolean systemDefined;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -45,8 +50,12 @@ class TablePropertyImpl implements TableProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
+        systemDefined = builder.systemDefined;
     }
+
+
 
     static Builder builder() {
         return new Builder();
@@ -58,6 +67,10 @@ class TablePropertyImpl implements TableProperty {
 
     public static List<TableProperty> getAll() {
         return Collections.unmodifiableList(ALL);
+    }
+
+    public static List<TableProperty> getSystemDefined() {
+        return Collections.unmodifiableList(SYSTEM_DEFINED);
     }
 
     public static Optional<TableProperty> getByName(String propertyName) {
@@ -90,8 +103,18 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
+    public PropertyGroup getPropertyGroup() {
+        return propertyGroup;
+    }
+
+    @Override
     public boolean isRunCDKDeployWhenChanged() {
         return runCDKDeployWhenChanged;
+    }
+
+    @Override
+    public boolean isSystemDefined() {
+        return systemDefined;
     }
 
     public String toString() {
@@ -105,6 +128,9 @@ class TablePropertyImpl implements TableProperty {
         private SleeperProperty defaultProperty;
         private String description;
         private boolean runCDKDeployWhenChanged;
+        private PropertyGroup propertyGroup;
+        private Consumer<TableProperty> addToList = Builder::addToAllList;
+        private boolean systemDefined;
 
         private Builder() {
         }
@@ -139,14 +165,33 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
-        public TableProperty build() {
-            return addToAllList(new TablePropertyImpl(this));
+        public Builder propertyGroup(PropertyGroup propertyGroup) {
+            this.propertyGroup = propertyGroup;
+            return this;
         }
 
-        private static TableProperty addToAllList(TableProperty property) {
+        public Builder addToList(Consumer<TableProperty> addToList) {
+            this.addToList = addToList;
+            return this;
+        }
+
+        public Builder systemDefined(boolean systemDefined) {
+            this.systemDefined = systemDefined;
+            return this;
+        }
+
+        public TableProperty build() {
+            TableProperty property = new TablePropertyImpl(this);
+            addToList.accept(property);
+            return property;
+        }
+
+        private static void addToAllList(TableProperty property) {
             ALL_MAP.put(property.getPropertyName(), property);
             ALL.add(property);
-            return property;
+            if (property.isSystemDefined()) {
+                SYSTEM_DEFINED.add(property);
+            }
         }
     }
 }

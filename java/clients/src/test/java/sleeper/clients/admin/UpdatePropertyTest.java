@@ -114,6 +114,29 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
+    public void shouldRefuseUpdatingInstancePropertyWithInvalidNumericValue() {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.s3.max-connections", "ABC", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + "Sleeper property sleeper.s3.max-connections is invalid\n"
+                + PROMPT_RETURN_TO_PROPERTY
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(3)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
     public void shouldRefuseUpdatingUneditableInstanceProperty() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.config.bucket", "some-bucket", EXIT_OPTION);
@@ -208,7 +231,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldExitWhenChosenOnUpdatePropertyScreen() throws Exception {
+    public void shouldExitWhenChosenOnUpdatePropertyScreen() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, EXIT_OPTION);
 
