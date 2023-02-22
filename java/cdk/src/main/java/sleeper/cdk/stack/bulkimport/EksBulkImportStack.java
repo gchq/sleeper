@@ -63,6 +63,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.stack.TableStack;
+import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -90,11 +92,10 @@ public final class EksBulkImportStack extends NestedStack {
     public EksBulkImportStack(
             Construct scope,
             String id,
-            IBucket importBucket,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
+            BulkImportBucketStack importBucketStack,
+            TableStack tableStack,
+            TopicStack errorsTopicStack) {
         super(scope, id);
 
         IBucket ingestBucket = addIngestSourceBucketReference(this, "IngestBucket", instanceProperties)
@@ -124,7 +125,7 @@ public final class EksBulkImportStack extends NestedStack {
                         .datapointsToAlarm(1)
                         .treatMissingData(TreatMissingData.IGNORE)
                         .build())
-                .addAlarmAction(new SnsAction(errorsTopic));
+                .addAlarmAction(new SnsAction(errorsTopicStack.getTopic()));
 
         Queue bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -158,7 +159,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
-        importBucket.grantReadWrite(bulkImportJobStarter);
+        importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         if (null != ingestBucket) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }
@@ -202,9 +203,9 @@ public final class EksBulkImportStack extends NestedStack {
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        grantAccesses(dataBuckets, stateStoreStacks, configBucket);
+        grantAccesses(tableStack.getDataBuckets(), tableStack.getStateStoreStacks(), configBucket);
 
-        this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopic);
+        this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()

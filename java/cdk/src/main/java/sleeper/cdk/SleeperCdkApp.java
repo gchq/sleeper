@@ -131,11 +131,10 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk import jobs via EKS
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
             new EksBulkImportStack(this, "BulkImportEKS",
-                    bulkImportBucketStack.getImportBucket(),
-                    tableStack.getDataBuckets(),
-                    tableStack.getStateStoreStacks(),
                     instanceProperties,
-                    topicStack.getTopic());
+                    bulkImportBucketStack,
+                    tableStack,
+                    topicStack);
         }
 
         // Stack to garbage collect old files
