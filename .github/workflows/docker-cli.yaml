@@ -51,17 +51,17 @@ jobs:
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
       - name: Log in to registry
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/500-deploy-from-ec2-in-docker' || startsWith(github.ref, 'refs/tags/v')
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
       - name: Push images
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/500-deploy-from-ec2-in-docker' || startsWith(github.ref, 'refs/tags/v')
         run: |
           docker tag $ENV_IMAGE_NAME $ENV_IMAGE_ID:$VERSION
           docker push $ENV_IMAGE_ID:$VERSION
           docker tag $DEPLOY_IMAGE_NAME $DEPLOY_IMAGE_ID:$VERSION
           docker push $DEPLOY_IMAGE_ID:$VERSION
       - name: Delete old images
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/500-deploy-from-ec2-in-docker' || startsWith(github.ref, 'refs/tags/v')
         working-directory: ./java/build
         run: |
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> delete.properties
