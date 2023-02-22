@@ -116,20 +116,15 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
                     bulkImportBucketStack.getImportBucket(),
-                    tableStack.getDataBuckets(),
-                    tableStack.getStateStoreStacks(),
                     instanceProperties,
                     topicStack.getTopic(),
                     emrBulkImportCommonStack);
-            emrBulkImportStack.create();
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
                     bulkImportBucketStack.getImportBucket(),
-                    tableStack.getDataBuckets(),
-                    tableStack.getStateStoreStacks(),
                     instanceProperties,
                     topicStack.getTopic(),
                     emrBulkImportCommonStack);

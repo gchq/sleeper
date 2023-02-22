@@ -16,17 +16,19 @@
 package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
@@ -36,27 +38,29 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * be sent to. A message arriving on this queue triggers a lambda. That lambda
  * creates an EMR cluster that executes the bulk import job and then terminates.
  */
-public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
-    private final CommonEmrBulkImportStack commonStack;
+public class EmrBulkImportStack extends NestedStack {
+    private final Queue bulkImportJobQueue;
 
     public EmrBulkImportStack(
             Construct scope,
             String id,
             IBucket bulkImportBucket,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
             ITopic errorsTopic,
             CommonEmrBulkImportStack commonStack) {
-        super(scope, id, "NonPersistentEMR", "NonPersistentEMR", BULK_IMPORT_EMR_JOB_QUEUE_URL,
-                bulkImportBucket, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
-        this.commonStack = commonStack;
+        super(scope, id);
+        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
+                scope, "NonPersistentEMR", instanceProperties);
+        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopic);
+        Function jobStarter = commonHelper.createJobStarterFunction(
+                "NonPersistentEMR", bulkImportJobQueue, bulkImportBucket);
+        configureJobStarterFunction(instanceProperties, commonStack, jobStarter);
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    @Override
-    protected void createBulkImportJobStarterFunction() {
-        super.createBulkImportJobStarterFunction();
-
+    private static void configureJobStarterFunction(
+            InstanceProperties instanceProperties, CommonEmrBulkImportStack commonStack,
+            Function bulkImportJobStarter) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
         instanceProperties.getTags().forEach((key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
@@ -87,5 +91,9 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
                         Lists.newArrayList("elasticmapreduce.amazonaws.com",
                                 "elasticmapreduce.amazonaws.com.cn"))))
                 .build());
+    }
+
+    public Queue getEmrBulkImportJobQueue() {
+        return bulkImportJobQueue;
     }
 }

@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.CfnTag;
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsConfigurationProperty;
@@ -27,12 +28,14 @@ import software.amazon.awscdk.services.emr.CfnCluster.VolumeSpecificationPropert
 import software.amazon.awscdk.services.emr.CfnClusterProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.configuration.ConfigurationUtils;
-import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.ArrayList;
@@ -56,6 +59,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 
 
 /**
@@ -64,26 +69,30 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
  * the lambda which then adds a step to the EMR cluster to run the bulk import
  * job.
  */
-public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
+public class PersistentEmrBulkImportStack extends NestedStack {
+    private final InstanceProperties instanceProperties;
     private final CommonEmrBulkImportStack commonStack;
 
     public PersistentEmrBulkImportStack(
             Construct scope,
             String id,
             IBucket importBucket,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
             ITopic errorsTopic,
             CommonEmrBulkImportStack commonStack) {
-        super(scope, id, "PersistentEMR", "PersistentEMR", BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL,
-                importBucket, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
+        super(scope, id);
+        this.instanceProperties = instanceProperties;
         this.commonStack = commonStack;
+        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
+                scope, "PersistentEMR", instanceProperties);
+        Queue jobQueue = commonHelper.createJobQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, errorsTopic);
+        Function jobStarter = commonHelper.createJobStarterFunction(
+                "PersistentEMR", jobQueue, importBucket);
+        configureJobStarterFunction(commonStack, jobStarter);
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    @Override
     public void create() {
-        super.create();
 
         // EMR cluster
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
@@ -115,7 +124,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetId(subnet)
+                .ec2SubnetId(instanceProperties.get(SUBNET))
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
                 .coreInstanceGroup(coreInstanceGroupConfigProperty);
 
@@ -131,7 +140,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = jobFlowInstancesConfigPropertyBuilder.build();
 
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
-                .name(String.join("-", "sleeper", instanceId, "persistentEMR"))
+                .name(String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR"))
                 .visibleToAllUsers(true)
                 .securityConfiguration(commonStack.getSecurityConfiguration().getName())
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL))
@@ -161,13 +170,12 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         }
 
         CfnClusterProps emrClusterProps = propsBuilder.build();
-        CfnCluster emrCluster = new CfnCluster(this, id + "-PersistentEMRCluster", emrClusterProps);
+        CfnCluster emrCluster = new CfnCluster(this, "PersistentEMRCluster", emrClusterProps);
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
 
-    @Override
-    protected void createBulkImportJobStarterFunction() {
-        super.createBulkImportJobStarterFunction();
+    private static void configureJobStarterFunction(
+            CommonEmrBulkImportStack commonStack, Function bulkImportJobStarter) {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .actions(Lists.newArrayList("elasticmapreduce:*", "elasticmapreduce:ListClusters"))

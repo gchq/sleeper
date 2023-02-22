@@ -17,7 +17,6 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -35,12 +34,10 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -50,67 +47,25 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
-public abstract class AbstractEmrBulkImportStack extends NestedStack {
-    protected final String id;
-    protected final String shortId;
-    protected final String bulkImportPlatform;
-    protected final SystemDefinedInstanceProperty jobQueueUrl;
-    protected final List<IBucket> dataBuckets;
-    protected final List<StateStoreStack> stateStoreStacks;
-    private final ITopic errorsTopic;
-    protected final IBucket importBucket;
-    protected final InstanceProperties instanceProperties;
-    protected final String instanceId;
-    protected final String account;
-    protected final String region;
-    protected final String vpc;
-    protected final String subnet;
-    protected Queue bulkImportJobQueue;
-    protected Function bulkImportJobStarter;
+public class CommonEmrBulkImportHelper {
 
-    protected AbstractEmrBulkImportStack(
-            Construct scope,
-            String id,
-            String shortId,
-            String bulkImportPlatform,
-            SystemDefinedInstanceProperty jobQueueUrl,
-            IBucket importBucket,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
-            InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
-        super(scope, id);
-        this.id = id;
+    private final Construct scope;
+    private final String shortId;
+    private final InstanceProperties instanceProperties;
+
+    public CommonEmrBulkImportHelper(Construct scope, String shortId, InstanceProperties instanceProperties) {
+        this.scope = scope;
         this.shortId = shortId;
-        this.bulkImportPlatform = bulkImportPlatform;
-        this.jobQueueUrl = jobQueueUrl;
-        this.importBucket = importBucket;
-        this.dataBuckets = dataBuckets;
-        this.stateStoreStacks = stateStoreStacks;
-        this.errorsTopic = errorsTopic;
         this.instanceProperties = instanceProperties;
-        this.instanceId = instanceProperties.get(ID);
-        this.account = instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT);
-        this.region = instanceProperties.get(UserDefinedInstanceProperty.REGION);
-        this.subnet = instanceProperties.get(UserDefinedInstanceProperty.SUBNET);
-        this.vpc = instanceProperties.get(UserDefinedInstanceProperty.VPC_ID);
     }
 
-    public void create() {
-        // Queue for messages to trigger jobs - note that each concrete substack
-        // will have its own queue. The shortId is used to ensure the names of
-        // the queues are different.
-        bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
-
-        // Create bulk import job starter function
-        createBulkImportJobStarterFunction();
-
-        Utils.addStackTagIfSet(this, instanceProperties);
-    }
-
-    private Queue createQueues(String shortId, SystemDefinedInstanceProperty jobQueueUrl) {
+    // Queue for messages to trigger jobs - note that each concrete substack
+    // will have its own queue. The shortId is used to ensure the names of
+    // the queues are different.
+    public Queue createJobQueue(SystemDefinedInstanceProperty jobQueueUrl, ITopic errorsTopic) {
+        String instanceId = instanceProperties.get(ID);
         Queue queueForDLs = Queue.Builder
-                .create(this, "BulkImport" + shortId + "JobDeadLetterQueue")
+                .create(scope, "BulkImport" + shortId + "JobDeadLetterQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "BulkImport" + shortId + "DLQ"))
                 .build();
 
@@ -123,7 +78,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
                         .period(Duration.seconds(60))
                         .statistic("Sum")
                         .build())
-                .createAlarm(this, "BulkImport" + shortId + "UndeliveredJobsAlarm", CreateAlarmOptions.builder()
+                .createAlarm(scope, "BulkImport" + shortId + "UndeliveredJobsAlarm", CreateAlarmOptions.builder()
                         .alarmDescription("Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job")
                         .evaluationPeriods(1)
                         .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
@@ -134,7 +89,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
                 .addAlarmAction(new SnsAction(errorsTopic));
 
         Queue emrBulkImportJobQueue = Queue.Builder
-                .create(this, "BulkImport" + shortId + "JobQueue")
+                .create(scope, "BulkImport" + shortId + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .queueName(instanceId + "-BulkImport" + shortId + "Q")
                 .build();
@@ -144,22 +99,19 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         return emrBulkImportJobQueue;
     }
 
-    public Queue getEmrBulkImportJobQueue() {
-        return bulkImportJobQueue;
-    }
-
-    protected void createBulkImportJobStarterFunction() {
+    protected Function createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, IBucket importBucket) {
+        String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
-        S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
+        S3Code code = Code.fromBucket(Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
                 "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
 
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
-        bulkImportJobStarter = Function.Builder.create(this, "BulkImport" + shortId + "JobStarter")
+        Function function = Function.Builder.create(scope, "BulkImport" + shortId + "JobStarter")
                 .code(code)
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
@@ -169,12 +121,13 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))
+                .events(Lists.newArrayList(new SqsEventSource(jobQueue)))
                 .build();
 
-        configBucket.grantRead(bulkImportJobStarter);
-        importBucket.grantReadWrite(bulkImportJobStarter);
-        addIngestSourceBucketReference(this, "IngestBucket", instanceProperties)
-                .ifPresent(ingestBucket -> ingestBucket.grantRead(bulkImportJobStarter));
+        configBucket.grantRead(function);
+        importBucket.grantReadWrite(function);
+        addIngestSourceBucketReference(scope, "IngestBucket", instanceProperties)
+                .ifPresent(ingestBucket -> ingestBucket.grantRead(function));
+        return function;
     }
 }
