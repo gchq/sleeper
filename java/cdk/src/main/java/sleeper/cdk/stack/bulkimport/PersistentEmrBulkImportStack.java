@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
@@ -70,8 +69,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  * job.
  */
 public class PersistentEmrBulkImportStack extends NestedStack {
-    private final InstanceProperties instanceProperties;
-    private final CommonEmrBulkImportStack commonStack;
 
     public PersistentEmrBulkImportStack(
             Construct scope,
@@ -81,22 +78,23 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             ITopic errorsTopic,
             CommonEmrBulkImportStack commonStack) {
         super(scope, id);
-        this.instanceProperties = instanceProperties;
-        this.commonStack = commonStack;
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 scope, "PersistentEMR", instanceProperties);
         Queue jobQueue = commonHelper.createJobQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, errorsTopic);
         Function jobStarter = commonHelper.createJobStarterFunction(
                 "PersistentEMR", jobQueue, importBucket);
         configureJobStarterFunction(commonStack, jobStarter);
+        createCluster(this, instanceProperties, importBucket, commonStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    public void create() {
+    private static void createCluster(Construct scope,
+                                      InstanceProperties instanceProperties,
+                                      IBucket importBucket,
+                                      CommonEmrBulkImportStack commonStack) {
 
         // EMR cluster
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
+        String logUri = "s3://" + importBucket.getBucketName() + "/logs";
 
         VolumeSpecificationProperty volumeSpecificationProperty = VolumeSpecificationProperty.builder()
 //                .iops() // TODO Add property to control this
@@ -152,7 +150,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .logUri(logUri)
                 .serviceRole(commonStack.getEmrRole().getRoleName())
                 .jobFlowRole(commonStack.getEc2Role().getRoleName())
-                .configurations(getConfigurations())
+                .configurations(getConfigurations(instanceProperties))
                 .tags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> CfnTag.builder().key(entry.getKey()).value(entry.getValue()).build())
                         .collect(Collectors.toList()));
@@ -170,7 +168,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         }
 
         CfnClusterProps emrClusterProps = propsBuilder.build();
-        CfnCluster emrCluster = new CfnCluster(this, "PersistentEMRCluster", emrClusterProps);
+        CfnCluster emrCluster = new CfnCluster(scope, "PersistentEMRCluster", emrClusterProps);
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
 
@@ -202,7 +200,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private List<CfnCluster.ConfigurationProperty> getConfigurations() {
+    private static List<CfnCluster.ConfigurationProperty> getConfigurations(InstanceProperties instanceProperties) {
         List<CfnCluster.ConfigurationProperty> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();

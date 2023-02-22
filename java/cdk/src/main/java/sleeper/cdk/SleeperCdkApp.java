@@ -128,7 +128,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties,
                     topicStack.getTopic(),
                     emrBulkImportCommonStack);
-            persistentEmrBulkImportStack.create();
         }
 
         // Stack to run bulk import jobs via EKS
