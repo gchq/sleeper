@@ -31,10 +31,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.Utils.getVersion;
 import static sleeper.cdk.UtilsTestHelper.cdkUpgradeContextWithPropertiesFile;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
-import static sleeper.cdk.Utils.getVersion;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
