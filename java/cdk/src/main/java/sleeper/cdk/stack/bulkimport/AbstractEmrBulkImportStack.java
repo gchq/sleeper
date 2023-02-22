@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -57,7 +58,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
     protected final List<IBucket> dataBuckets;
     protected final List<StateStoreStack> stateStoreStacks;
     private final ITopic errorsTopic;
-    protected final IBucket ingestBucket;
     protected final IBucket importBucket;
     protected final InstanceProperties instanceProperties;
     protected final String instanceId;
@@ -94,14 +94,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         this.region = instanceProperties.get(UserDefinedInstanceProperty.REGION);
         this.subnet = instanceProperties.get(UserDefinedInstanceProperty.SUBNET);
         this.vpc = instanceProperties.get(UserDefinedInstanceProperty.VPC_ID);
-
-        // Ingest bucket
-        String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
-        if (null != ingestBucketName && !ingestBucketName.isEmpty()) {
-            this.ingestBucket = Bucket.fromBucketName(this, "IngestBucket", ingestBucketName);
-        } else {
-            this.ingestBucket = null;
-        }
     }
 
     public void create() {
@@ -182,8 +174,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
 
         configBucket.grantRead(bulkImportJobStarter);
         importBucket.grantReadWrite(bulkImportJobStarter);
-        if (ingestBucket != null) {
-            ingestBucket.grantRead(bulkImportJobStarter);
-        }
+        addIngestSourceBucketReference(this, "IngestBucket", instanceProperties)
+                .ifPresent(ingestBucket -> ingestBucket.grantRead(bulkImportJobStarter));
     }
 }
