@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -33,6 +34,9 @@ import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -240,5 +244,14 @@ public class Utils {
         } else {
             return size;
         }
+    }
+
+    public static String getVersion() throws IOException {
+        try (InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream("version.txt")) {
+            if (inputStream != null) {
+                return IOUtils.toString(inputStream, Charset.defaultCharset());
+            }
+        }
+        return "";
     }
 }
