@@ -15,7 +15,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y curl ssh jq
+RUN apt-get install -y curl
 
 # Install NodeJS (for AWS CDK)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash
@@ -41,12 +41,3 @@ WORKDIR /
 
 # Install Java
 RUN apt-get install -y openjdk-17-jre
-
-# Set command line prompt to show you're in the local Docker container
-RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-local\e[0m: \w # "' >> ~/.bashrc
-
-WORKDIR /sleeper
-COPY . .
-
-ENV PATH /sleeper/bin:$PATH
-CMD bash

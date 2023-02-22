@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,24 +16,24 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$(dirname "$THIS_DIR")" && pwd)
+ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
+
+list_environments() {
+  "$THIS_DIR/list.sh"
+}
 
 if [ "$#" -lt 1 ]; then
-  DOCKER_PARAMS=(-t sleeper-local:current)
-else
-  DOCKER_PARAMS=("$@")
+	echo "Usage: environment set <uniqueId>"
+  list_environments
+	exit 1
 fi
 
-source "$SCRIPTS_DIR/functions/timeUtils.sh"
-START_TIME=$(record_time)
+INSTANCE_ID=$1
 
-echo "-------------------------------------------------------------------------------"
-echo "Building local Docker image"
-echo "-------------------------------------------------------------------------------"
-
-pushd "$THIS_DIR"
-docker build . "${DOCKER_PARAMS[@]}"
-popd
-
-END_TIME=$(record_time)
-echo "Finished Docker build at $(recorded_time_str "$END_TIME"), took $(elapsed_time_str "$START_TIME" "$END_TIME")"
+if [ -d "$ENVIRONMENTS_DIR/$INSTANCE_ID" ]; then
+  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+else
+  echo "Environment not found: $INSTANCE_ID"
+  list_environments
+	exit 1
+fi

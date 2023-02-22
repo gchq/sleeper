@@ -15,6 +15,11 @@
 
 set -e
 
+if [[ -z $1 ]]; then
+  echo "Usage: $0 <instance-id>"
+  exit 1
+fi
+
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 

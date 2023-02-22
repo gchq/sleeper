@@ -20,8 +20,8 @@ set -e
 #####################
 
 if [[ -z $1 || -z $2 ]]; then
-	echo "Usage: $0 <instance-id> <table-name>"
-	exit 1
+  echo "Usage: $0 <instance-id> <table-name>"
+  exit 1
 fi
 
 INSTANCE_ID=$1
@@ -29,8 +29,7 @@ TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-if [[ -z $3 ]];
-then
+if [[ -z $3 ]]; then
   java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.report.StatusReport ${INSTANCE_ID} ${TABLE_NAME}
 else
   VERBOSE=$3
