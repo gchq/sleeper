@@ -1,0 +1,13 @@
+name: Docker CLI Deployment
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/docker-cli.yaml
+    with:
+      pushImages: true
