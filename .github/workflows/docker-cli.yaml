@@ -29,7 +29,7 @@ jobs:
         working-directory: ./java
       - name: Plan build
         run: |
-          ${{ github.workspace }}/.github/scripts/planCiBuild.sh \
+          ./.github/scripts/planCiBuild.sh \
             "${{ github.repository_owner }}" \
             "${{ github.ref }}"
       - name: Maven build
