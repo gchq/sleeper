@@ -7,7 +7,7 @@ on:
       - v*
 
 jobs:
-  chunk-workflow:
+  build-cli:
     uses: ./.github/workflows/docker-cli.yaml
     with:
       pushImages: true
