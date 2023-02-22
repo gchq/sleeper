@@ -17,17 +17,51 @@
 package sleeper.cdk;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.UtilsTestHelper.cdkUpdateContextWithPropertiesFile;
+import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
 
 public class UtilsVersionTest {
+    @TempDir
+    private Path tempDir;
 
     @Test
-    void shouldGetVersionAsResource() throws IOException {
+    void shouldGetVersionAsResource() {
         assertThat(Utils.getVersion())
                 .matches(Pattern.compile("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?"));
+    }
+
+    @Test
+    void shouldUpdateSuccessfullyWhenProjectVersionMatchesDeployedVersion() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createInstancePropertiesWithVersion(Utils.getVersion());
+        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+
+        // When
+        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpdateContextWithPropertiesFile(tempDir)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldFailToUpdateWhenProjectVersionDoesNotMatchDeployedVersion() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
+        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+
+        // When
+        assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpdateContextWithPropertiesFile(tempDir)))
+                .isInstanceOf(MismatchedVersionException.class);
     }
 }

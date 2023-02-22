@@ -191,9 +191,17 @@ public class Utils {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
-
+        String previousVersion = properties.get(VERSION);
+        String builtVersion = getVersion();
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
-        properties.set(VERSION, getVersion());
+
+        String update = tryGetContext.apply("update");
+        if ("true".equalsIgnoreCase(update)) {
+            if (!previousVersion.equals(builtVersion)) {
+                throw new MismatchedVersionException("Versions do not match, cannot perform a cdk update");
+            }
+        }
+        properties.set(VERSION, builtVersion);
         return properties;
     }
 

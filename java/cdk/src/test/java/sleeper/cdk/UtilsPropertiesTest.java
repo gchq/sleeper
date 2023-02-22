@@ -26,25 +26,20 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.UtilsTestHelper.cdkUpgradeContextWithPropertiesFile;
+import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
+import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.cdk.Utils.getVersion;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class UtilsPropertiesTest {
 
@@ -63,7 +58,7 @@ class UtilsPropertiesTest {
 
             // When / Then
             properties.set(VERSION, getVersion());
-            assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile()))
+            assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkUpgradeContextWithPropertiesFile(tempDir)))
                     .isEqualTo(properties);
         }
 
@@ -75,7 +70,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When / Then
-            assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile()))
+            assertThat(Utils.getAllTableProperties(instanceProperties, cdkUpgradeContextWithPropertiesFile(tempDir)))
                     .containsExactly(properties);
         }
 
@@ -87,7 +82,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkUpgradeContextWithPropertiesFile(tempDir));
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
@@ -102,7 +97,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When
-            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile());
+            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties, cdkUpgradeContextWithPropertiesFile(tempDir));
 
             // Then
             assertThat(loaded)
@@ -117,7 +112,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkUpgradeContextWithPropertiesFile(tempDir));
 
             // Then
             assertThat(loaded.get(VERSION))
@@ -138,7 +133,7 @@ class UtilsPropertiesTest {
 
             // When / Then
             InstanceProperties load = new InstanceProperties();
-            Function<String, String> context = cdkContextWithPropertiesFile();
+            Function<String, String> context = cdkUpgradeContextWithPropertiesFile(tempDir);
             assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper instance id is illegal: aa$$aa");
@@ -155,34 +150,10 @@ class UtilsPropertiesTest {
 
             // When / Then
             InstanceProperties load = new InstanceProperties();
-            Function<String, String> context = cdkContextWithPropertiesFile();
+            Function<String, String> context = cdkUpgradeContextWithPropertiesFile(tempDir);
             assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
         }
-    }
-
-    private Function<String, String> cdkContextWithPropertiesFile() {
-        return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString())::get;
-    }
-
-    private InstanceProperties createUserDefinedInstanceProperties() {
-        String id = UUID.randomUUID().toString();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, id);
-        instanceProperties.set(JARS_BUCKET, "");
-        instanceProperties.set(ACCOUNT, "");
-        instanceProperties.set(REGION, "");
-        instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
-        return instanceProperties;
-    }
-
-    private TableProperties createUserDefinedTableProperties(InstanceProperties instanceProperties) {
-        String id = UUID.randomUUID().toString();
-        TableProperties properties = new TableProperties(instanceProperties);
-        properties.set(TABLE_NAME, id);
-        properties.setSchema(schemaWithKey("key"));
-        return properties;
     }
 }
