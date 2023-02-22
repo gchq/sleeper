@@ -29,7 +29,7 @@ import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty VERSION = SystemDefinedInstancePropertyImpl.named("sleeper.version")
-            .description("The version of Sleeper to use. This property is used to identify the correct jars in the S3JarsBucket and to " +
+            .description("The version of Sleeper that is being used. This property is used to identify the correct jars in the S3JarsBucket and to " +
                     "select the correct tag in the ECR repositories.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
