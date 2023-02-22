@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
@@ -134,7 +133,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
                 .name(String.join("-", "sleeper", instanceId, "persistentEMR"))
                 .visibleToAllUsers(true)
-                .securityConfiguration(instanceProperties.get(BULK_IMPORT_EMR_SECURITY_CONF_NAME))
+                .securityConfiguration(commonStack.getSecurityConfiguration().getName())
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL))
                 .applications(List.of(CfnCluster.ApplicationProperty.builder()
                         .name("Spark")
