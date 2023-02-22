@@ -78,7 +78,7 @@ public class DeleteGHCRVersions {
 
     public void deleteVersions() {
         LOGGER.info("Deleting versions for {} in org {}, ignoring {} and keeping {}",
-                organization, packageNames, ignoreTags, keepMostRecent);
+                packageNames, organization, ignoreTags, keepMostRecent);
         packageNames.forEach(packageName -> {
             List<GitHubPackageVersionResponse> all = getAllVersions(packageName);
             List<GitHubPackageVersionResponse> toDelete = getVersionsToDelete(all).collect(Collectors.toList());
