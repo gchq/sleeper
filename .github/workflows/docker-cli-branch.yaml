@@ -6,6 +6,7 @@ on:
     tags-ignore:
       - v*
     paths:
+      - '.github/workflows/docker-cli-branch.yaml'
       - '.github/workflows/docker-cli.yaml'
       - '.github/scripts/planCliBuild.sh'
       - 'scripts/Dockerfile'
