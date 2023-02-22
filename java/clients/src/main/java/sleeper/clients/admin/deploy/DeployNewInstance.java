@@ -126,7 +126,6 @@ public class DeployNewInstance {
 
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .sleeperVersion(sleeperVersion)
                 .properties(loadInstancePropertiesTemplate())
                 .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")))
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)

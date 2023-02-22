@@ -56,7 +56,6 @@ public class GeneratePropertiesIT {
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance")
-                .sleeperVersion("1.0.0")
                 .vpcId("some-vpc").subnetId("some-subnet")
                 .build().generate();
         TableProperties tableProperties = GenerateTableProperties.from(

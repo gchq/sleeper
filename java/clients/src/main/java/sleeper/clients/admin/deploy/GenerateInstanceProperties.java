@@ -30,7 +30,6 @@ import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
@@ -45,7 +44,6 @@ public class GenerateInstanceProperties {
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
     private final String instanceId;
-    private final String sleeperVersion;
     private final String vpcId;
     private final String subnetId;
     private final Properties properties;
@@ -55,7 +53,6 @@ public class GenerateInstanceProperties {
         sts = requireNonNull(builder.sts, "sts must not be null");
         regionProvider = requireNonNull(builder.regionProvider, "regionProvider must not be null");
         instanceId = requireNonEmpty(builder.instanceId, "instanceId must not be empty");
-        sleeperVersion = requireNonEmpty(builder.sleeperVersion, "sleeperVersion must not be empty");
         vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
         subnetId = requireNonEmpty(builder.subnetId, "subnetId must not be empty");
         properties = Optional.ofNullable(builder.properties).orElseGet(Properties::new);
@@ -76,7 +73,6 @@ public class GenerateInstanceProperties {
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ACCOUNT, getAccount());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
-        instanceProperties.set(VERSION, sleeperVersion);
         instanceProperties.set(VPC_ID, vpcId);
         instanceProperties.set(SUBNET, subnetId);
         instanceProperties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
@@ -93,7 +89,6 @@ public class GenerateInstanceProperties {
         private AWSSecurityTokenService sts;
         private AwsRegionProvider regionProvider;
         private String instanceId;
-        private String sleeperVersion;
         private String vpcId;
         private String subnetId;
         private Properties properties;
@@ -114,11 +109,6 @@ public class GenerateInstanceProperties {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
-            return this;
-        }
-
-        public Builder sleeperVersion(String sleeperVersion) {
-            this.sleeperVersion = sleeperVersion;
             return this;
         }
 
