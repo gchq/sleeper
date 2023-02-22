@@ -15,7 +15,7 @@
 
 set -e
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
 if [ "$#" -lt 1 ]; then
   DOCKER_PARAMS=(-t sleeper-deployment:current)

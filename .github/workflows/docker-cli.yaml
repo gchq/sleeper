@@ -43,7 +43,7 @@ jobs:
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Deployment Docker build
         run: |
-          ./scripts/cli/buildDeploymentDocker.sh \
+          ./scripts/cli/deployment/buildDocker.sh \
             --tag $DEPLOY_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
