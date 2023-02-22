@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
@@ -96,11 +97,8 @@ public final class EksBulkImportStack extends NestedStack {
             ITopic errorsTopic) {
         super(scope, id);
 
-        IBucket ingestBucket = null;
-        String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
-        if (null != ingestBucketName && !ingestBucketName.isEmpty()) {
-            ingestBucket = Bucket.fromBucketName(this, "IngestBucket", ingestBucketName);
-        }
+        IBucket ingestBucket = addIngestSourceBucketReference(this, "IngestBucket", instanceProperties)
+                .orElse(null);
 
         String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
 

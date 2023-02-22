@@ -35,6 +35,7 @@ import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.VpcStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
+import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
@@ -60,6 +61,7 @@ public class SleeperCdkApp extends Stack {
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
+    private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
 
@@ -73,6 +75,11 @@ public class SleeperCdkApp extends Stack {
                     EmrBulkImportStack.class,
                     PersistentEmrBulkImportStack.class,
                     EksBulkImportStack.class)
+            .map(Class::getSimpleName).collect(Collectors.toList());
+
+    private static final List<String> EMR_BULK_IMPORT_STACK_NAMES = Stream.of(
+                    EmrBulkImportStack.class,
+                    PersistentEmrBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public void create() {
@@ -98,6 +105,11 @@ public class SleeperCdkApp extends Stack {
 
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties);
+        }
+        if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+            emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
+                    instanceProperties, bulkImportBucketStack.getImportBucket(),
+                    tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
         }
 
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)

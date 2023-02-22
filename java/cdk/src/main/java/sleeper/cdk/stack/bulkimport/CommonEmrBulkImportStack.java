@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -55,21 +56,21 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 
 public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole ec2Role;
+    private final IRole emrRole;
 
-    protected CommonEmrBulkImportStack(Construct scope,
-                                       String id,
-                                       InstanceProperties instanceProperties,
-                                       IBucket ingestBucket,
-                                       IBucket importBucket,
-                                       List<IBucket> dataBuckets,
-                                       List<StateStoreStack> stateStoreStacks) {
+    public CommonEmrBulkImportStack(Construct scope,
+                                    String id,
+                                    InstanceProperties instanceProperties,
+                                    IBucket importBucket,
+                                    List<IBucket> dataBuckets,
+                                    List<StateStoreStack> stateStoreStacks) {
         super(scope, id);
-        this.ec2Role = createEc2Role(this, instanceProperties, ingestBucket, importBucket, dataBuckets, stateStoreStacks);
-        createEmrRole(this, instanceProperties, ec2Role);
+        ec2Role = createEc2Role(this, instanceProperties, importBucket, dataBuckets, stateStoreStacks);
+        emrRole = createEmrRole(this, instanceProperties, ec2Role);
     }
 
     private static IRole createEc2Role(
-            Construct scope, InstanceProperties instanceProperties, IBucket ingestBucket, IBucket importBucket,
+            Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
             List<IBucket> dataBuckets, List<StateStoreStack> stateStoreStacks) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
@@ -124,13 +125,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         importBucket.grantReadWrite(role);
 
-        if (ingestBucket != null) {
-            ingestBucket.grantRead(role);
-        }
+        addIngestSourceBucketReference(scope, "IngestBucket", instanceProperties)
+                .ifPresent(ingestBucket -> ingestBucket.grantRead(role));
         return role;
     }
 
-    private static void createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role) {
+    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role) {
         String instanceId = instanceProperties.get(ID);
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
@@ -180,17 +180,22 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .document(policyDoc)
                 .build());
 
-        Role emrRole = new Role(scope, "EmrRole", RoleProps.builder()
+        Role role = new Role(scope, "EmrRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
                 .description("The role assumed by the Bulk import clusters")
                 .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
 
-        instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, emrRole.getRoleName());
+        instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
+        return role;
     }
 
     public IRole getEc2Role() {
         return ec2Role;
+    }
+
+    public IRole getEmrRole() {
+        return emrRole;
     }
 }
