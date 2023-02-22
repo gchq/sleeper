@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.Utils.getVersion;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -61,6 +62,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When / Then
+            properties.set(VERSION, getVersion());
             assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile()))
                     .isEqualTo(properties);
         }
