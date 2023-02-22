@@ -22,7 +22,7 @@ fi
 
 runInLocalDocker() {
   HOME_IN_IMAGE=/root
-  
+
   docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
