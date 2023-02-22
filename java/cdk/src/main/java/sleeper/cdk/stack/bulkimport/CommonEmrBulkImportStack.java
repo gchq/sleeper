@@ -38,7 +38,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.InputStreamReader;
@@ -47,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -187,7 +187,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
 
-        instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
+        instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
     }
 

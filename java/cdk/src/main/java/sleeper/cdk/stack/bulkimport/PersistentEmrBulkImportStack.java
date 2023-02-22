@@ -42,12 +42,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
@@ -69,6 +66,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
  * job.
  */
 public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
+    private final CommonEmrBulkImportStack commonStack;
 
     public PersistentEmrBulkImportStack(
             Construct scope,
@@ -77,9 +75,11 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
+            ITopic errorsTopic,
+            CommonEmrBulkImportStack commonStack) {
         super(scope, id, "PersistentEMR", "PersistentEMR", BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL,
                 importBucket, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
+        this.commonStack = commonStack;
     }
 
     @Override
@@ -142,8 +142,8 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .stepConcurrencyLevel(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL))
                 .instances(jobFlowInstancesConfigProperty)
                 .logUri(logUri)
-                .serviceRole(instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
-                .jobFlowRole(instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME))
+                .serviceRole(commonStack.getEmrRole().getRoleName())
+                .jobFlowRole(commonStack.getEc2Role().getRoleName())
                 .configurations(getConfigurations())
                 .tags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> CfnTag.builder().key(entry.getKey()).value(entry.getValue()).build())
@@ -176,14 +176,12 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .resources(Lists.newArrayList("*"))
                 .build());
 
-        String arnPrefix = "arn:aws:iam::" + instanceProperties.get(ACCOUNT) + ":role/";
-
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
                 .resources(Lists.newArrayList(
-                        arnPrefix + instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME),
-                        arnPrefix + instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME)
+                        commonStack.getEmrRole().getRoleArn(),
+                        commonStack.getEc2Role().getRoleArn()
                 ))
                 .build());
 

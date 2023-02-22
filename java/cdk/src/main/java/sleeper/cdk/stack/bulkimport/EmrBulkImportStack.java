@@ -24,8 +24,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +37,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * creates an EMR cluster that executes the bulk import job and then terminates.
  */
 public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
+    private final CommonEmrBulkImportStack commonStack;
 
     public EmrBulkImportStack(
             Construct scope,
@@ -47,9 +46,11 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
+            ITopic errorsTopic,
+            CommonEmrBulkImportStack commonStack) {
         super(scope, id, "NonPersistentEMR", "NonPersistentEMR", BULK_IMPORT_EMR_JOB_QUEUE_URL,
                 bulkImportBucket, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
+        this.commonStack = commonStack;
     }
 
     @Override
@@ -69,14 +70,12 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .conditions(conditions)
                 .build());
 
-        String arnPrefix = "arn:aws:iam::" + instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT) + ":role/";
-
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
                 .resources(Lists.newArrayList(
-                        arnPrefix + instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME),
-                        arnPrefix + instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME)
+                        commonStack.getEmrRole().getRoleArn(),
+                        commonStack.getEc2Role().getRoleArn()
                 ))
                 .build());
 

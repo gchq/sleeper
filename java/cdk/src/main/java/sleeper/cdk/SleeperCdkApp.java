@@ -119,7 +119,8 @@ public class SleeperCdkApp extends Stack {
                     tableStack.getDataBuckets(),
                     tableStack.getStateStoreStacks(),
                     instanceProperties,
-                    topicStack.getTopic());
+                    topicStack.getTopic(),
+                    emrBulkImportCommonStack);
             emrBulkImportStack.create();
         }
 
@@ -130,7 +131,8 @@ public class SleeperCdkApp extends Stack {
                     tableStack.getDataBuckets(),
                     tableStack.getStateStoreStacks(),
                     instanceProperties,
-                    topicStack.getTopic());
+                    topicStack.getTopic(),
+                    emrBulkImportCommonStack);
             persistentEmrBulkImportStack.create();
         }
 
