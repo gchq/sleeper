@@ -193,11 +193,7 @@ public class Utils {
         }
 
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
-        try {
-            properties.set(VERSION, getVersion());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        properties.set(VERSION, getVersion());
         return properties;
     }
 
@@ -253,7 +249,7 @@ public class Utils {
         }
     }
 
-    public static String getVersion() throws IOException {
+    public static String getVersion() {
         try (InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream("version.txt")) {
             return IOUtils.toString(Objects.requireNonNull(inputStream), Charset.defaultCharset());
         } catch (IOException e) {
