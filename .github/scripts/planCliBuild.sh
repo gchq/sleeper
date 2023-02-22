@@ -41,7 +41,7 @@ export_common_github_env() {
   # Strip git ref prefix from version
   VERSION=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
   # Strip "v" prefix from tag name
-  [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo "$VERSION" | sed -e 's/^v//')
+  [[ "$GIT_REF" == "refs/tags/"* ]] && VERSION=$(echo "$VERSION" | sed -e 's/^v//')
   # Use Docker `latest` tag convention
   [ "$VERSION" == "main" ] && VERSION=latest
 
