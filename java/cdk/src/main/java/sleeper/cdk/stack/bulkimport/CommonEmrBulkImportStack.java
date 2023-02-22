@@ -62,6 +62,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole ec2Role;
     private final IRole emrRole;
+    private final CfnSecurityConfiguration securityConfiguration;
 
     public CommonEmrBulkImportStack(Construct scope,
                                     String id,
@@ -72,7 +73,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties, importBucket, dataBuckets, stateStoreStacks);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
-        createSecurityConfiguration(this, instanceProperties);
+        securityConfiguration = createSecurityConfiguration(this, instanceProperties);
     }
 
     private static IRole createEc2Role(
@@ -197,7 +198,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return role;
     }
 
-    private static void createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
+    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
         String jsonSecurityConf = "{\n" +
                 "  \"InstanceMetadataServiceConfiguration\" : {\n" +
@@ -211,8 +212,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .name(String.join("-", "sleeper", instanceProperties.get(ID), "EMRSecurityConfigurationProps"))
                 .securityConfiguration(jsonObject)
                 .build();
-        new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration", securityConfigurationProps);
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
+        return new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration", securityConfigurationProps);
     }
 
     public IRole getEc2Role() {
@@ -221,5 +222,9 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     public IRole getEmrRole() {
         return emrRole;
+    }
+
+    public CfnSecurityConfiguration getSecurityConfiguration() {
+        return securityConfiguration;
     }
 }
