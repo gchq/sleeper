@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.UtilsTestHelper.cdkUpdateContextWithPropertiesFile;
+import static sleeper.cdk.UtilsTestHelper.cdkUpgradeContextWithPropertiesFile;
 import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
 
 public class UtilsVersionTest {
@@ -63,5 +64,16 @@ public class UtilsVersionTest {
         // When
         assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpdateContextWithPropertiesFile(tempDir)))
                 .isInstanceOf(MismatchedVersionException.class);
+    }
+
+    @Test
+    void shouldUpgradeSuccessfullyWhenProjectVersionDoesNotMatchDeployedVersion() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
+        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+
+        // When
+        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpgradeContextWithPropertiesFile(tempDir)))
+                .doesNotThrowAnyException();
     }
 }
