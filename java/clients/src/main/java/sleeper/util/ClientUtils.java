@@ -20,6 +20,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperProperty;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -102,7 +104,15 @@ public class ClientUtils {
         return String.join(",", parts);
     }
 
-    public static String formatPropertyDescription(String str) {
+    public static String formatDescription(SleeperProperty property) {
+        return formatString(property.getDescription());
+    }
+
+    public static String formatDescription(PropertyGroup group) {
+        return formatString(group.getDescription());
+    }
+
+    public static String formatString(String str) {
         return Arrays.stream(str.split("\n")).
                 map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
                 .collect(Collectors.joining("\n"));
