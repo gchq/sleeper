@@ -74,17 +74,17 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BulkImportBucketStack bucketStack,
-            CommonEmrBulkImportStack commonStack,
+            BulkImportBucketStack importBucketStack,
+            CommonEmrBulkImportStack commonEmrStack,
             TopicStack errorsTopicStack) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 scope, "PersistentEMR", instanceProperties);
         Queue jobQueue = commonHelper.createJobQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         Function jobStarter = commonHelper.createJobStarterFunction(
-                "PersistentEMR", jobQueue, bucketStack.getImportBucket());
-        configureJobStarterFunction(commonStack, jobStarter);
-        createCluster(this, instanceProperties, bucketStack.getImportBucket(), commonStack);
+                "PersistentEMR", jobQueue, importBucketStack.getImportBucket());
+        configureJobStarterFunction(commonEmrStack, jobStarter);
+        createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 

@@ -68,11 +68,11 @@ public class CommonEmrBulkImportStack extends NestedStack {
     public CommonEmrBulkImportStack(Construct scope,
                                     String id,
                                     InstanceProperties instanceProperties,
-                                    BulkImportBucketStack bucketStack,
+                                    BulkImportBucketStack importBucketStack,
                                     TableStack tableStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
-                bucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
+                importBucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
     }
