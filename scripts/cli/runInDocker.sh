@@ -20,7 +20,7 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-runInLocalDocker() {
+runInEnvironmentDocker() {
   HOME_IN_IMAGE=/root
 
   docker run -it --rm \
@@ -56,18 +56,18 @@ COMMAND=$1
 shift
 
 if [ "$COMMAND" == "aws" ]; then
-  runInLocalDocker aws "$@"
+  runInEnvironmentDocker aws "$@"
 elif [ "$COMMAND" == "cdk" ]; then
-  runInLocalDocker cdk "$@"
+  runInEnvironmentDocker cdk "$@"
 elif [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
-  runInLocalDocker cat /sleeper/version.txt
+  runInEnvironmentDocker cat /sleeper/version.txt
 elif [ "$COMMAND" == "deployment" ]; then
   runInDeploymentDocker "$@"
 elif [ "$COMMAND" == "environment" ]; then
   if [ "$#" -eq 0 ]; then
-    runInLocalDocker
+    runInEnvironmentDocker
   else
-    runInLocalDocker environment "$@"
+    runInEnvironmentDocker environment "$@"
   fi
 else
   echo "Command not found: $COMMAND"

@@ -37,7 +37,7 @@ jobs:
         run: ./scripts/cli/dependencies/build.sh
       - name: Environment Docker build
         run: |
-          ./scripts/cli/local/buildDocker.sh \
+          ./scripts/cli/environment/buildDocker.sh \
             --tag $ENV_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

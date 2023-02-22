@@ -17,8 +17,8 @@ FROM sleeper-dependencies:current
 RUN apt-get update
 RUN apt-get install -y ssh jq
 
-# Set command line prompt to show you're in the local Docker container
-RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-local\e[0m: \w # "' >> ~/.bashrc
+# Set command line prompt to show you're in the environment Docker container
+RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-environment\e[0m: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper
 COPY . .

@@ -28,7 +28,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Building local Docker image"
+echo "Building environment Docker image"
 echo "-------------------------------------------------------------------------------"
 
 pushd "$THIS_DIR"
