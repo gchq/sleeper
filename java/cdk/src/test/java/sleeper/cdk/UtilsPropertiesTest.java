@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -105,6 +106,20 @@ class UtilsPropertiesTest {
             assertThat(loaded)
                     .extracting(tableProperties -> tableProperties.get(DATA_BUCKET))
                     .containsExactly((String) null);
+        }
+
+        @Test
+        void shouldSetVersionWhenInstancePropertiesAreLoaded() throws IOException {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+
+            // When
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+
+            // Then
+            assertThat(loaded.get(VERSION))
+                    .matches("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?");
         }
     }
 

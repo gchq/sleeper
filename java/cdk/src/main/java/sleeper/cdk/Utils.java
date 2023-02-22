@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -191,6 +192,11 @@ public class Utils {
         }
 
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
+        try {
+            properties.set(VERSION, getVersion());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return properties;
     }
 
