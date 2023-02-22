@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -157,7 +156,6 @@ class UtilsPropertiesTest {
         instanceProperties.set(JARS_BUCKET, "");
         instanceProperties.set(ACCOUNT, "");
         instanceProperties.set(REGION, "");
-        instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
         return instanceProperties;
