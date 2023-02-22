@@ -20,12 +20,11 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.ITopic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.HashMap;
@@ -44,16 +43,16 @@ public class EmrBulkImportStack extends NestedStack {
     public EmrBulkImportStack(
             Construct scope,
             String id,
-            IBucket bulkImportBucket,
             InstanceProperties instanceProperties,
-            ITopic errorsTopic,
-            CommonEmrBulkImportStack commonStack) {
+            BulkImportBucketStack bucketStack,
+            CommonEmrBulkImportStack commonStack,
+            TopicStack errorsTopicStack) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 scope, "NonPersistentEMR", instanceProperties);
-        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopic);
+        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         Function jobStarter = commonHelper.createJobStarterFunction(
-                "NonPersistentEMR", bulkImportJobQueue, bulkImportBucket);
+                "NonPersistentEMR", bulkImportJobQueue, bucketStack.getImportBucket());
         configureJobStarterFunction(instanceProperties, commonStack, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
     }

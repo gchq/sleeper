@@ -108,26 +108,24 @@ public class SleeperCdkApp extends Stack {
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, bulkImportBucketStack.getImportBucket(),
-                    tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
+                    instanceProperties, bulkImportBucketStack, tableStack);
         }
 
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
-                    bulkImportBucketStack.getImportBucket(),
                     instanceProperties,
-                    topicStack.getTopic(),
-                    emrBulkImportCommonStack);
+                    bulkImportBucketStack,
+                    emrBulkImportCommonStack,
+                    topicStack);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
-                    bulkImportBucketStack.getImportBucket(),
-                    instanceProperties,
-                    topicStack.getTopic(),
-                    emrBulkImportCommonStack);
+                    instanceProperties, bulkImportBucketStack,
+                    emrBulkImportCommonStack, topicStack
+            );
         }
 
         // Stack to run bulk import jobs via EKS

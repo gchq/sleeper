@@ -41,6 +41,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.stack.TableStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -67,11 +68,11 @@ public class CommonEmrBulkImportStack extends NestedStack {
     public CommonEmrBulkImportStack(Construct scope,
                                     String id,
                                     InstanceProperties instanceProperties,
-                                    IBucket importBucket,
-                                    List<IBucket> dataBuckets,
-                                    List<StateStoreStack> stateStoreStacks) {
+                                    BulkImportBucketStack bucketStack,
+                                    TableStack tableStack) {
         super(scope, id);
-        ec2Role = createEc2Role(this, instanceProperties, importBucket, dataBuckets, stateStoreStacks);
+        ec2Role = createEc2Role(this, instanceProperties,
+                bucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
     }
