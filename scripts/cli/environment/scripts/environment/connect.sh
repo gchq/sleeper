@@ -18,18 +18,19 @@ set -e
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
 if [ "$#" -gt 0 ]; then
-	INSTANCE_ID=$1
-	echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+  SSH_PARAMS=("$@")
 else
-  INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+  SSH_PARAMS=(screen -d -RR)
 fi
 
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
+ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+
+ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
 PRIVATE_KEY_FILE="$ENVIRONMENT_DIR/BuildEC2.pem"
 
-USER=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
-EC2_IP=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
+USER=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+EC2_IP=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
 
-ssh -i "$PRIVATE_KEY_FILE" -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -t "$USER@$EC2_IP" screen -d -RR
+ssh -i "$PRIVATE_KEY_FILE" -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -t "$USER@$EC2_IP" "${SSH_PARAMS[@]}"
