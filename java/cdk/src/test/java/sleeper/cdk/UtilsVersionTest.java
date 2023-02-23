@@ -30,8 +30,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.UtilsTestHelper.cdkUpdateContextWithPropertiesFile;
-import static sleeper.cdk.UtilsTestHelper.cdkUpgradeContextWithPropertiesFile;
+import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
 import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
 
 public class UtilsVersionTest {
@@ -45,35 +44,38 @@ public class UtilsVersionTest {
     }
 
     @Test
-    void shouldUpdateSuccessfullyWhenProjectVersionMatchesDeployedVersion() throws IOException {
+    void shouldPassVersionCheckWhenLocalVersionMatchesDeployedVersion() throws IOException {
         // Given
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion(Utils.getVersion());
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When
-        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpdateContextWithPropertiesFile(tempDir)))
+        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir, false)))
                 .doesNotThrowAnyException();
     }
 
     @Test
-    void shouldFailToUpdateWhenProjectVersionDoesNotMatchDeployedVersion() throws IOException {
+    void shouldFailVersionCheckWhenLocalVersionDoesNotMatchDeployedVersion() throws IOException {
         // Given
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When
-        assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpdateContextWithPropertiesFile(tempDir)))
+        assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir, false)))
                 .isInstanceOf(MismatchedVersionException.class);
     }
 
     @Test
-    void shouldUpgradeSuccessfullyWhenProjectVersionDoesNotMatchDeployedVersion() throws IOException {
+    void shouldSkipVersionCheckWhenLocalVersionDoesNotMatchDeployedVersion() throws IOException {
         // Given
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When
-        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(), cdkUpgradeContextWithPropertiesFile(tempDir)))
+        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir, true)))
                 .doesNotThrowAnyException();
     }
 }

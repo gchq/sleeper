@@ -38,17 +38,9 @@ public class UtilsTestHelper {
     private UtilsTestHelper() {
     }
 
-    public static Function<String, String> cdkUpgradeContextWithPropertiesFile(Path tempDir) {
-        return cdkContextWithPropertiesFile(tempDir, false);
-    }
-
-    public static Function<String, String> cdkUpdateContextWithPropertiesFile(Path tempDir) {
-        return cdkContextWithPropertiesFile(tempDir, true);
-    }
-
-    private static Function<String, String> cdkContextWithPropertiesFile(Path tempDir, boolean update) {
+    public static Function<String, String> cdkContextWithPropertiesFileAndSkipVersionCheck(Path tempDir, boolean skipVersionCheck) {
         return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString(),
-                "update", "" + update)::get;
+                "skipVersionCheck", "" + skipVersionCheck)::get;
     }
 
     public static InstanceProperties createInstancePropertiesWithVersion(String version) {

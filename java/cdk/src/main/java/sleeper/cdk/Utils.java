@@ -191,17 +191,17 @@ public class Utils {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
-        String previousVersion = properties.get(VERSION);
-        String builtVersion = getVersion();
+        String deployedVersion = properties.get(VERSION);
+        String localVersion = getVersion();
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
 
-        String update = tryGetContext.apply("update");
-        if ("true".equalsIgnoreCase(update)) {
-            if (!previousVersion.equals(builtVersion)) {
+        String skipVersion = tryGetContext.apply("skipVersionCheck");
+        if (!"true".equalsIgnoreCase(skipVersion)) {
+            if (!deployedVersion.equals(localVersion)) {
                 throw new MismatchedVersionException("Versions do not match, cannot perform a cdk update");
             }
         }
-        properties.set(VERSION, builtVersion);
+        properties.set(VERSION, localVersion);
         return properties;
     }
 
