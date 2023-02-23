@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.Utils.getVersion;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFile;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
 import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
@@ -40,14 +41,14 @@ public class UtilsVersionTest {
 
     @Test
     void shouldGetVersionAsResource() {
-        assertThat(Utils.getVersion())
+        assertThat(getVersion())
                 .matches(Pattern.compile("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?"));
     }
 
     @Test
     void shouldSucceedVersionCheckWhenLocalVersionMatchesDeployedVersion() throws IOException {
         // Given
-        InstanceProperties instanceProperties = createInstancePropertiesWithVersion(Utils.getVersion());
+        InstanceProperties instanceProperties = createInstancePropertiesWithVersion(getVersion());
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When
@@ -65,7 +66,9 @@ public class UtilsVersionTest {
         // When
         assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(),
                 cdkContextWithPropertiesFile(tempDir)))
-                .isInstanceOf(MismatchedVersionException.class);
+                .isInstanceOf(MismatchedVersionException.class)
+                .hasMessageContaining("Local version " + getVersion() +
+                        " does not match deployed version 0.14.0-SNAPSHOT");
     }
 
     @Test

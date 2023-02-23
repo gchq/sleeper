@@ -48,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
@@ -197,8 +198,10 @@ public class Utils {
 
         String skipVersion = tryGetContext.apply("skipVersionCheck");
         if (!"true".equalsIgnoreCase(skipVersion)) {
-            if (!deployedVersion.equals(localVersion)) {
-                throw new MismatchedVersionException("Versions do not match, cannot perform a cdk update");
+            if (!localVersion.equals(deployedVersion)) {
+                throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
+                                "Please upgrade/downgrade your local sleeper version to match the deployed version",
+                        localVersion, deployedVersion));
             }
         }
         properties.set(VERSION, localVersion);
