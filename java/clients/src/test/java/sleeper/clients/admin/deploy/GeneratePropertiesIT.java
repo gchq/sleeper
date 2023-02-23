@@ -97,13 +97,20 @@ public class GeneratePropertiesIT {
     }
 
     @Test
-    void generatedPropertiesIncludeBucketNamesForLocalDirectory() throws IOException {
+    void shouldSaveBucketNamesToLocalDirectoryWhenInstancePropertiesGenerated() throws IOException {
+        InstanceProperties instanceProperties = generateTestInstanceProperties();
+
+        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+        assertThat(tempDir.resolve("configBucket.txt")).exists();
+        assertThat(tempDir.resolve("queryResultsBucket.txt")).exists();
+    }
+
+    @Test
+    void shouldSaveBucketNamesToLocalDirectoryWhenTablePropertiesGenerated() throws IOException {
         InstanceProperties instanceProperties = generateTestInstanceProperties();
         TableProperties tableProperties = generateTestTableProperties(instanceProperties);
 
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(tableProperties));
-        assertThat(tempDir.resolve("configBucket.txt")).exists();
-        assertThat(tempDir.resolve("queryResultsBucket.txt")).exists();
         assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).exists();
     }
 
