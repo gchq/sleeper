@@ -16,6 +16,7 @@
 package sleeper.clients.admin.deploy;
 
 import sleeper.util.ClientUtils;
+import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -41,7 +42,11 @@ public class CdkDeployInstance {
     }
 
     public void deploy() throws IOException, InterruptedException {
-        int exitCode = ClientUtils.runCommand("cdk",
+        deploy(ClientUtils::runCommand);
+    }
+
+    public void deploy(RunCommand runCommand) throws IOException, InterruptedException {
+        int exitCode = runCommand.run("cdk",
                 "-a", String.format("java -cp \"%s\" %s", cdkJarFile, cdkAppClassName),
                 "deploy",
                 "--require-approval", "never",
