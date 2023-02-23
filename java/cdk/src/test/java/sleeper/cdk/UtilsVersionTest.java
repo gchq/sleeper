@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFile;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
 import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
 
@@ -44,14 +45,14 @@ public class UtilsVersionTest {
     }
 
     @Test
-    void shouldPassVersionCheckWhenLocalVersionMatchesDeployedVersion() throws IOException {
+    void shouldSucceedVersionCheckWhenLocalVersionMatchesDeployedVersion() throws IOException {
         // Given
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion(Utils.getVersion());
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When
         assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
-                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir, false)))
+                cdkContextWithPropertiesFile(tempDir)))
                 .doesNotThrowAnyException();
     }
 
@@ -63,7 +64,7 @@ public class UtilsVersionTest {
 
         // When
         assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(),
-                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir, false)))
+                cdkContextWithPropertiesFile(tempDir)))
                 .isInstanceOf(MismatchedVersionException.class);
     }
 
@@ -75,7 +76,7 @@ public class UtilsVersionTest {
 
         // When
         assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
-                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir, true)))
+                cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
                 .doesNotThrowAnyException();
     }
 }
