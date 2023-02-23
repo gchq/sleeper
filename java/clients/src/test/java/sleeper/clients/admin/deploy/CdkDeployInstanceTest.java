@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CdkDeployInstanceTest {
+class CdkDeployInstanceTest {
     @Test
     void shouldRunCdkSuccessfully() throws IOException, InterruptedException {
         // Given
@@ -39,15 +39,11 @@ public class CdkDeployInstanceTest {
         // Then
         assertThat(commandRunOnDeployOf(cdk))
                 .containsExactly("cdk",
-                        "-a",
-                        "java -cp \"cdk.jar\" sleeper.cdk.SleeperCdkApp",
+                        "-a", "java -cp \"cdk.jar\" sleeper.cdk.SleeperCdkApp",
                         "deploy",
-                        "--require-approval",
-                        "never",
-                        "-c",
-                        "propertiesfile=instance.properties",
-                        "-c",
-                        "newinstance=false",
+                        "--require-approval", "never",
+                        "-c", "propertiesfile=instance.properties",
+                        "-c", "newinstance=false",
                         "*");
     }
 
