@@ -171,7 +171,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Cluster bulkImportCluster = new FargateCluster(this, "EksBulkImportCluster", FargateClusterProps.builder()
                 .clusterName(String.join("-", "sleeper", instanceId.toLowerCase(Locale.ROOT), "eksBulkImportCluster"))
-                .version(KubernetesVersion.of("1.20"))
+                .version(KubernetesVersion.of("1.25"))
                 .vpc(vpc)
                 .vpcSubnets(Lists.newArrayList(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
                 .build());

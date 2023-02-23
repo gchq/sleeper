@@ -75,7 +75,7 @@
         <commons-io.version>2.11.0</commons-io.version>
         <jackson.version>2.14.1</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
-        <cdk.version>2.59.0</cdk.version>
+        <cdk.version>2.66.0</cdk.version>
         <apigatewayv2.version>2.59.0-alpha.0</apigatewayv2.version>
         <awskeypair.version>1.0.0-alpha.5</awskeypair.version>
         <constructs.version>10.1.213</constructs.version>
