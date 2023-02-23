@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.Utils.getVersion;
-import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFile;
+import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -58,7 +58,8 @@ class UtilsPropertiesTest {
 
             // When / Then
             properties.set(VERSION, getVersion());
-            assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile(tempDir)))
+            assertThat(Utils.loadInstanceProperties(new InstanceProperties(),
+                    cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
                     .isEqualTo(properties);
         }
 
@@ -70,7 +71,8 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When / Then
-            assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile(tempDir)))
+            assertThat(Utils.getAllTableProperties(instanceProperties,
+                    cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
                     .containsExactly(properties);
         }
 
@@ -82,7 +84,8 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile(tempDir));
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(),
+                    cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir));
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
@@ -97,7 +100,8 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When
-            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile(tempDir));
+            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties,
+                    cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir));
 
             // Then
             assertThat(loaded)
@@ -112,7 +116,8 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile(tempDir));
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(),
+                    cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir));
 
             // Then
             assertThat(loaded.get(VERSION))
@@ -133,7 +138,7 @@ class UtilsPropertiesTest {
 
             // When / Then
             InstanceProperties load = new InstanceProperties();
-            Function<String, String> context = cdkContextWithPropertiesFile(tempDir);
+            Function<String, String> context = cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir);
             assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper instance id is illegal: aa$$aa");
@@ -150,7 +155,7 @@ class UtilsPropertiesTest {
 
             // When / Then
             InstanceProperties load = new InstanceProperties();
-            Function<String, String> context = cdkContextWithPropertiesFile(tempDir);
+            Function<String, String> context = cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir);
             assertThatThrownBy(() -> Utils.loadInstanceProperties(load, context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
