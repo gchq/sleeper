@@ -78,8 +78,8 @@ public class BuiltJar {
 
     public String codeSha256() throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        try (InputStream is = Files.newInputStream(context.jarsDirectory.resolve(fileName()))) {
-            DigestInputStream digestStream = new DigestInputStream(is, digest);
+        try (InputStream is = Files.newInputStream(context.jarsDirectory.resolve(fileName()));
+             DigestInputStream digestStream = new DigestInputStream(is, digest)) {
             while (digestStream.read() != -1) {
                 // Consume stream
             }
@@ -89,25 +89,21 @@ public class BuiltJar {
 
     public static final class LambdaCode {
         private final S3Code code;
-        private final String codeSha256;
+        private final VersionOptions versionOptions;
 
         public LambdaCode(IBucket jarsBucket, String filename, String codeSha256) {
             this.code = Code.fromBucket(jarsBucket, filename);
-            this.codeSha256 = codeSha256;
+            this.versionOptions = VersionOptions.builder()
+                    .codeSha256(codeSha256)
+                    .build();
         }
 
         public S3Code code() {
             return code;
         }
 
-        public String codeSha256() {
-            return codeSha256;
-        }
-
         public VersionOptions versionOptions() {
-            return VersionOptions.builder()
-                    .codeSha256(codeSha256())
-                    .build();
+            return versionOptions;
         }
     }
 
