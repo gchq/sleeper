@@ -20,7 +20,7 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-INSTANCE_ID=$1
+ENVIRONMENT_ID=$1
 
 if [ "$#" -lt 2 ]; then
 	CDK_PARAMS=("--all")
@@ -34,12 +34,12 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
+ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 
 "$SCRIPTS_DIR/util/configure-aws.sh"
 
 pushd "$CDK_DIR" > /dev/null
-cdk destroy -c instanceId="$INSTANCE_ID" "${CDK_PARAMS[@]}"
+cdk destroy -c instanceId="$ENVIRONMENT_ID" "${CDK_PARAMS[@]}"
 popd > /dev/null
 
 if [ "$DELETE_ENVIRONMENT_DIR" = true ]; then

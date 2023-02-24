@@ -15,21 +15,11 @@
 
 set -e
 
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
 list_environments() {
-  echo "Available environments:"
-  pushd "$ENVIRONMENTS_DIR" > /dev/null
-  dirs=(*/)
-  for dir in "${dirs[@]}"; do
-    name="${dir%/}"
-    if [ "$name" == "*" ]; then
-      echo "None found"
-    else
-      echo "$name"
-    fi
-  done
-  popd > /dev/null
+  "$THIS_DIR/list.sh"
 }
 
 if [ "$#" -lt 1 ]; then
@@ -38,12 +28,12 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-INSTANCE_ID=$1
+ENVIRONMENT_ID=$1
 
-if [ -d "$ENVIRONMENTS_DIR/$INSTANCE_ID" ]; then
-  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+if [ -d "$ENVIRONMENTS_DIR/$ENVIRONMENT_ID" ]; then
+  echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 else
-  echo "Environment not found: $INSTANCE_ID"
+  echo "Environment not found: $ENVIRONMENT_ID"
   list_environments
 	exit 1
 fi

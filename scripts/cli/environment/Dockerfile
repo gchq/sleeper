@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The image should be built using commands like this:
-# ./build/buildForTest.sh
-# docker build -t sleeper .
+FROM sleeper-dependencies:current
 
-# You can then run that image like this:
-# ./runInDocker.sh sleeper
+RUN apt-get update
+RUN apt-get install -y ssh jq
 
-HOME_IN_IMAGE=/root
+# Set command line prompt to show you're in the environment Docker container
+RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-environment\e[0m: \w # "' >> ~/.bashrc
 
-docker run -it --rm \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$HOME/.sleeper/generated:/sleeper/generated" \
-  -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-  -e AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY \
-  -e AWS_SESSION_TOKEN \
-  -e AWS_PROFILE \
-  -e AWS_REGION \
-  -e AWS_DEFAULT_REGION \
-  "$@"
+WORKDIR /sleeper
+COPY . .
+
+ENV PATH /sleeper/bin:$PATH
+CMD bash

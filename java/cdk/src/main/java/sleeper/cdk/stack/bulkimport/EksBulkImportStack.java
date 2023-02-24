@@ -20,6 +20,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.cdk.lambdalayer.kubectl.v24.KubectlV24Layer;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -62,17 +64,21 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.stack.TableStack;
+import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
@@ -80,24 +86,21 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * resources needed to run Spark on Kubernetes. In addition to this, it creates
  * a statemachine which can run jobs on the cluster.
  */
-public final class EksBulkImportStack extends AbstractBulkImportStack {
+public final class EksBulkImportStack extends NestedStack {
     private final StateMachine stateMachine;
     private final ServiceAccount sparkServiceAccount;
 
     public EksBulkImportStack(
             Construct scope,
             String id,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
-        super(scope, id, instanceProperties);
+            BulkImportBucketStack importBucketStack,
+            TableStack tableStack,
+            TopicStack errorsTopicStack) {
+        super(scope, id);
 
-        IBucket ingestBucket = null;
-        String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
-        if (null != ingestBucketName && !ingestBucketName.isEmpty()) {
-            ingestBucket = Bucket.fromBucketName(this, "IngestBucket", ingestBucketName);
-        }
+        IBucket ingestBucket = addIngestSourceBucketReference(this, "IngestBucket", instanceProperties)
+                .orElse(null);
 
         String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
 
@@ -123,7 +126,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
                         .datapointsToAlarm(1)
                         .treatMissingData(TreatMissingData.IGNORE)
                         .build())
-                .addAlarmAction(new SnsAction(errorsTopic));
+                .addAlarmAction(new SnsAction(errorsTopicStack.getTopic()));
 
         Queue bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -157,10 +160,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
-        if (null == importBucket) {
-            throw new RuntimeException("Import bucket should not be null; call create() first");
-        }
-        importBucket.grantReadWrite(bulkImportJobStarter);
+        importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         if (null != ingestBucket) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }
@@ -172,7 +172,8 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
 
         Cluster bulkImportCluster = new FargateCluster(this, "EksBulkImportCluster", FargateClusterProps.builder()
                 .clusterName(String.join("-", "sleeper", instanceId.toLowerCase(Locale.ROOT), "eksBulkImportCluster"))
-                .version(KubernetesVersion.of("1.20"))
+                .version(KubernetesVersion.of("1.24"))
+                .kubectlLayer(new KubectlV24Layer(this, "KubectlLayer"))
                 .vpc(vpc)
                 .vpcSubnets(Lists.newArrayList(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
                 .build());
@@ -204,9 +205,9 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        grantAccesses(dataBuckets, stateStoreStacks, configBucket, instanceProperties);
+        grantAccesses(tableStack.getDataBuckets(), tableStack.getStateStoreStacks(), configBucket);
 
-        this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopic);
+        this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -278,7 +279,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
     }
 
     private void grantAccesses(List<IBucket> dataBuckets,
-                               List<StateStoreStack> stateStoreStacks, IBucket configBucket, InstanceProperties instanceProperties) {
+                               List<StateStoreStack> stateStoreStacks, IBucket configBucket) {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(sparkServiceAccount));
         stateStoreStacks.forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(sparkServiceAccount);
@@ -322,7 +323,7 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
         try {
             json = IOUtils.toString(getClass().getResourceAsStream(resource), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
 
         return json.replace("namespace-placeholder", namespace);

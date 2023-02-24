@@ -21,15 +21,15 @@ contains the necessary dependencies and scripts to do this. Run the following co
 the local Docker image. The \[version\] can be `main` or a version like `v0.13.0`.
 
 ```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/local/install.sh" -o ./sleeper-install.sh
+curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
 chmod +x ./sleeper-install.sh
 ./sleeper-install.sh [version]
 ```
 
-This installs a `sleeper` command to run other commands inside a local Docker image. If you run it on its own you'll
-get a shell inside the container. You can use `aws` commands under that to configure alternative authentication rather
-than using `aws configure`. You can also set AWS environment variables or configuration on the host machine which will
-be propagated to the Docker container when you use `sleeper`.
+This installs a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
+`sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
+AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
+you use `sleeper`.
 
 Run these commands to deploy an EC2 instance in AWS (note that cdk bootstrap only needs to be done once in a given AWS
 account):

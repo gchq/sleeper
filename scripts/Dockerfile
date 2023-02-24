@@ -12,35 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:22.04
-
-RUN apt-get update
-RUN apt-get install -y curl
-
-# Install NodeJS (for AWS CDK)
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash
-RUN apt-get install -y nodejs
-
-# Install AWS CDK CLI
-RUN npm install -g aws-cdk
-
-# Install AWS CLI
-WORKDIR /aws
-RUN apt-get install -y unzip less
-RUN set -eux; \
-    dpkgArch="$(dpkg --print-architecture)"; \
-    case "$dpkgArch" in \
-        arm64) awsArch='aarch64' ;; \
-        *) awsArch='x86_64' ;; \
-    esac; \
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-$awsArch.zip" -o "awscliv2.zip"
-RUN unzip awscliv2.zip
-RUN ./aws/install
-RUN rm -rf /aws
-WORKDIR /
-
-# Install Java
-RUN apt-get install -y openjdk-17-jre
+FROM sleeper-dependencies:current
 
 # Install Docker
 RUN apt-get -y install ca-certificates curl gnupg lsb-release
@@ -51,6 +23,9 @@ RUN echo \
     $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 RUN apt-get update
 RUN apt-get -y install docker-ce docker-ce-cli containerd.io
+
+# Set command line prompt to show you're in the deployment Docker container
+RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-deployment\e[0m: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper
 COPY . .

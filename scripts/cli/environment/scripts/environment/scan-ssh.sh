@@ -18,17 +18,17 @@ set -e
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
 if [ "$#" -gt 0 ]; then
-  INSTANCE_ID=$1
-  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+  ENVIRONMENT_ID=$1
+  echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 else
-  INSTANCE_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+  ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
 fi
 
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
+ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
 
-EC2_IP=$(jq ".[\"$INSTANCE_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
+EC2_IP=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
 
 echo "Scanning $EC2_IP"
 
