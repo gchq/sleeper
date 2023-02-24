@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
@@ -126,6 +127,12 @@ public class IngestStack extends NestedStack {
         lambdaToCreateIngestTasks(configBucket, ingestJobQueue);
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    public static Optional<IBucket> addIngestSourceBucketReference(Construct scope, String id, InstanceProperties instanceProperties) {
+        return Optional.ofNullable(instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
+                .filter(bucketName -> !bucketName.isEmpty())
+                .map(bucketName -> Bucket.fromBucketName(scope, id, bucketName));
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -241,11 +248,8 @@ public class IngestStack extends NestedStack {
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.
-        String sourceBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
-        if (null != sourceBucketName && !sourceBucketName.isEmpty()) {
-            IBucket sourceBucket = Bucket.fromBucketName(this, "SourceBucket", sourceBucketName);
-            sourceBucket.grantRead(taskDefinition.getTaskRole());
-        }
+        addIngestSourceBucketReference(this, "SourceBucket", instanceProperties)
+                .ifPresent(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())

@@ -41,6 +41,6 @@ public class DeployNewTestInstance {
                 .tableName("system-test")
                 .cdkJarFormat("system-test-%s-utility.jar")
                 .cdkAppClassName("sleeper.systemtest.cdk.SystemTestApp")
-                .build().deploy();
+                .deployWithDefaultClients();
     }
 }
