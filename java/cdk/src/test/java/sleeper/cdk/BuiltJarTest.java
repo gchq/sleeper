@@ -35,17 +35,24 @@ class BuiltJarTest {
 
     @Test
     void shouldPopulateFilenameWithVersion() throws IOException {
-        BuiltJar.Context jars = withProperties("sleeper.version=1.0");
-        assertThat(jars.jar(new BuiltJar.Jar("test-%s.jar")).fileName())
+        // Given
+        BuiltJar jar = withProperties("sleeper.version=1.0")
+                .jar(new BuiltJar.Jar("test-%s.jar"));
+
+        // When / Then
+        assertThat(jar.fileName())
                 .isEqualTo("test-1.0.jar");
     }
 
     @Test
     void shouldComputeShaForAFile() throws IOException, NoSuchAlgorithmException {
-        BuiltJar.Context jars = withProperties("sleeper.version=1.0");
+        // Given
+        BuiltJar jar = withProperties("sleeper.version=1.0")
+                .jar(new BuiltJar.Jar("test-%s.jar"));
         Files.writeString(tempDir.resolve("test-1.0.jar"), "foobar");
 
-        assertThat(jars.jar(new BuiltJar.Jar("test-%s.jar")).codeSha256())
+        // When / Then
+        assertThat(jar.codeSha256())
                 .isEqualTo("w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI=");
     }
 
