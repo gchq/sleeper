@@ -36,8 +36,17 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
@@ -62,8 +71,20 @@ public class GeneratePropertiesIT {
                 .build().generate();
 
         // Then
-        assertThat(properties.get(ACCOUNT)).isEqualTo(sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
-        assertThat(properties.get(REGION)).isEqualTo(localStackContainer.getRegion());
+        InstanceProperties expected = new InstanceProperties();
+        expected.set(ID, "test-instance");
+        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
+        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
+        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expected.set(VPC_ID, "some-vpc");
+        expected.set(SUBNET, "some-subnet");
+        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
+        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
+        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
+        expected.set(ACCOUNT, sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
+        expected.set(REGION, localStackContainer.getRegion());
+
+        assertThat(properties).isEqualTo(expected);
     }
 
     @Test

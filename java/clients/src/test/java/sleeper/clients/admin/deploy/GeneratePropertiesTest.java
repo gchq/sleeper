@@ -25,12 +25,13 @@ import sleeper.configuration.properties.table.TableProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -46,17 +47,20 @@ public class GeneratePropertiesTest {
                 .build().generate();
 
         // Then
-        assertThat(properties.get(ID)).isEqualTo("test-instance");
-        assertThat(properties.get(CONFIG_BUCKET)).isEqualTo("sleeper-test-instance-config");
-        assertThat(properties.get(JARS_BUCKET)).isEqualTo("sleeper-test-instance-jars");
-        assertThat(properties.get(QUERY_RESULTS_BUCKET)).isEqualTo("sleeper-test-instance-query-results");
-        assertThat(properties.get(VPC_ID)).isEqualTo("some-vpc");
-        assertThat(properties.get(SUBNET)).isEqualTo("some-subnet");
-        assertThat(properties.get(ECR_COMPACTION_REPO)).isEqualTo("test-instance/compaction-job-execution");
-        assertThat(properties.get(ECR_INGEST_REPO)).isEqualTo("test-instance/ingest");
-        assertThat(properties.get(BULK_IMPORT_REPO)).isEqualTo("test-instance/bulk-import-runner");
-        // Should not set sleeper version (system defined)
-        assertThat(properties.get(VERSION)).isNull();
+        InstanceProperties expected = new InstanceProperties();
+        expected.set(ID, "test-instance");
+        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
+        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
+        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expected.set(VPC_ID, "some-vpc");
+        expected.set(SUBNET, "some-subnet");
+        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
+        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
+        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
+        expected.set(ACCOUNT, "test-account-id");
+        expected.set(REGION, "aws-global");
+
+        assertThat(properties).isEqualTo(expected);
     }
 
     @Test
@@ -68,8 +72,25 @@ public class GeneratePropertiesTest {
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "test-table");
 
         // Then
-        assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("test-table");
-        assertThat(tableProperties.get(DATA_BUCKET)).isEqualTo("sleeper-test-instance-table-test-table");
+        InstanceProperties expectedInstanceProperties = new InstanceProperties();
+        expectedInstanceProperties.set(ID, "test-instance");
+        expectedInstanceProperties.set(CONFIG_BUCKET, "sleeper-test-instance-config");
+        expectedInstanceProperties.set(JARS_BUCKET, "sleeper-test-instance-jars");
+        expectedInstanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expectedInstanceProperties.set(VPC_ID, "some-vpc");
+        expectedInstanceProperties.set(SUBNET, "some-subnet");
+        expectedInstanceProperties.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
+        expectedInstanceProperties.set(ECR_INGEST_REPO, "test-instance/ingest");
+        expectedInstanceProperties.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
+        expectedInstanceProperties.set(ACCOUNT, "test-account-id");
+        expectedInstanceProperties.set(REGION, "aws-global");
+
+        TableProperties expected = new TableProperties(expectedInstanceProperties);
+        expected.setSchema(schemaWithKey("key"));
+        expected.set(TABLE_NAME, "test-table");
+        expected.set(DATA_BUCKET, "sleeper-test-instance-table-test-table");
+
+        assertThat(tableProperties).isEqualTo(expected);
     }
 
     private GenerateInstanceProperties.Builder generateInstancePropertiesBuilder() {
