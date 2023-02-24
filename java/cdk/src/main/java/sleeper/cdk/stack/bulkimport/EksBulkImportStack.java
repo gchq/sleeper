@@ -138,8 +138,8 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
-        BuiltJar.LambdaCode bulkImportStarterJar = BuiltJar.withContext(scope, instanceProperties)
+        IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
+        BuiltJar.LambdaCode bulkImportStarterJar = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.BULK_IMPORT_STARTER).lambdaCodeFrom(jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));

@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.FunctionProps;
 import software.amazon.awscdk.services.lambda.Runtime;
@@ -60,7 +59,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TAB
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
@@ -197,11 +195,13 @@ public class TableStack extends NestedStack {
         if (splitPoints != null) {
             tableInitialisation.getNode().addDependency(splitPoints);
         }
+        BuiltJar.LambdaCode metricsJar = BuiltJar.withContext(this, instanceProperties)
+                .jar(BuiltJar.METRICS).lambdaCodeFrom(jarsBucket);
 
         // Metrics generation and publishing
         Function tableMetricsPublisher = Function.Builder.create(this, tableName + "MetricsPublisher")
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
-                .code(Code.fromBucket(jarsBucket, "metrics-" + instanceProperties.get(VERSION) + ".jar"))
+                .code(metricsJar.code()).currentVersionOptions(metricsJar.versionOptions())
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
                 .memorySize(256)

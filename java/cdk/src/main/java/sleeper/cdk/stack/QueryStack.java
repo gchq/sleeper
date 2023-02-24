@@ -45,7 +45,6 @@ import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
@@ -59,6 +58,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -80,7 +80,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
  * A {@link Stack} to handle queries. This consists of a {@link Queue} that
@@ -207,7 +206,8 @@ public class QueryStack extends NestedStack {
         new CfnOutput(this, QUERY_RESULTS_QUEUE_URL, queryResultsQueueOutputProps);
 
         // Query execution lambda code
-        Code code = Code.fromBucket(jarsBucket, "query-" + instanceProperties.get(VERSION) + ".jar");
+        BuiltJar.LambdaCode queryJar = BuiltJar.withContext(scope, instanceProperties)
+                .jar(BuiltJar.QUERY).lambdaCodeFrom(jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
@@ -220,7 +220,7 @@ public class QueryStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
+                .code(queryJar.code()).currentVersionOptions(queryJar.versionOptions())
                 .handler("sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
@@ -268,16 +268,16 @@ public class QueryStack extends NestedStack {
         IRole role = Objects.requireNonNull(queryExecutorLambda.getRole());
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
 
-        this.setupWebSocketApi(code, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
+        this.setupWebSocketApi(queryJar, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    protected void setupWebSocketApi(Code queryCode, InstanceProperties instanceProperties, Queue queriesQueue, Function queryExecutorLambda, IBucket configBucket) {
+    protected void setupWebSocketApi(BuiltJar.LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, Function queryExecutorLambda, IBucket configBucket) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         Function handler = Function.Builder.create(this, "apiHandler")
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
-                .code(queryCode)
+                .code(queryJar.code()).currentVersionOptions(queryJar.versionOptions())
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
                 .memorySize(256)

@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
@@ -38,6 +37,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -59,7 +59,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_R
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
  * A {@link Stack} to look for partitions that need splitting and to split them.
@@ -128,7 +127,8 @@ public class PartitionSplittingStack extends NestedStack {
         new CfnOutput(this, PARTITION_SPLITTING_DL_QUEUE_URL, partitionSplittingDLQueueOutputProps);
 
         // Partition splitting code
-        Code code = Code.fromBucket(jarsBucket, "lambda-splitter-" + instanceProperties.get(VERSION) + ".jar");
+        BuiltJar.LambdaCode splitterJar = BuiltJar.withContext(scope, instanceProperties)
+                .jar(BuiltJar.PARTITION_SPLITTER).lambdaCodeFrom(jarsBucket);
 
         // Lambda to look for partitions that need splitting (for each partition that
         // needs splitting it puts a definition of the splitting job onto a queue)
@@ -144,7 +144,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
-                .code(code)
+                .code(splitterJar.code()).currentVersionOptions(splitterJar.versionOptions())
                 .handler("sleeper.splitter.FindPartitionsToSplitLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
@@ -181,7 +181,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
-                .code(code)
+                .code(splitterJar.code()).currentVersionOptions(splitterJar.versionOptions())
                 .handler("sleeper.splitter.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))

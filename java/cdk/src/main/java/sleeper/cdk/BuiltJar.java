@@ -45,6 +45,7 @@ public class BuiltJar {
     public static final Jar PARTITION_SPLITTER = new Jar("lambda-splitter-%s.jar");
     public static final Jar QUERY = new Jar("query-%s.jar");
     public static final Jar CUSTOM_RESOURCES = new Jar("cdk-custom-resources-%s.jar");
+    public static final Jar METRICS = new Jar("metrics-%s.jar");
 
     private final Context context;
     private final Jar jar;
