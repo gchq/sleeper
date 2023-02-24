@@ -25,24 +25,24 @@ import java.security.NoSuchAlgorithmException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BuiltJarsTest {
+class BuiltJarTest {
 
     @TempDir
     private Path tempDir;
 
     @Test
     void shouldPopulateFilenameWithVersion() {
-        BuiltJars jars = BuiltJars.withVersionAndPath("1.0", tempDir);
-        assertThat(jars.jar(new BuiltJars.Jar("test-%s.jar")).fileName())
+        BuiltJar.Context jars = BuiltJar.withVersionAndPath("1.0", tempDir);
+        assertThat(jars.jar(new BuiltJar.Jar("test-%s.jar")).fileName())
                 .isEqualTo("test-1.0.jar");
     }
 
     @Test
     void shouldComputeShaForAFile() throws IOException, NoSuchAlgorithmException {
-        BuiltJars jars = BuiltJars.withVersionAndPath("1.0", tempDir);
+        BuiltJar.Context jars = BuiltJar.withVersionAndPath("1.0", tempDir);
         Files.writeString(tempDir.resolve("test-1.0.jar"), "foobar");
 
-        assertThat(jars.jar(new BuiltJars.Jar("test-%s.jar")).codeSha256())
+        assertThat(jars.jar(new BuiltJar.Jar("test-%s.jar")).codeSha256())
                 .isEqualTo("w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI=");
     }
 }

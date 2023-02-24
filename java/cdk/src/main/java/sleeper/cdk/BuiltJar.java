@@ -15,6 +15,8 @@
  */
 package sleeper.cdk;
 
+import software.constructs.Construct;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -24,7 +26,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-public class BuiltJars {
+public class BuiltJar {
 
     public static final Jar ATHENA = new Jar("athena-%s.jar");
     public static final Jar BULK_IMPORT_STARTER = new Jar("bulk-import-starter-%s.jar");
@@ -35,42 +37,48 @@ public class BuiltJars {
     public static final Jar PARTITION_SPLITTER = new Jar("lambda-splitter-%s.jar");
     public static final Jar QUERY = new Jar("query-%s.jar");
 
-    private final String version;
-    private final Path jarsDirectory;
+    private final Context context;
+    private final Jar jar;
 
-    private BuiltJars(String version, Path jarsDirectory) {
-        this.version = version;
-        this.jarsDirectory = jarsDirectory;
+    public BuiltJar(Context context, Jar jar) {
+        this.context = context;
+        this.jar = jar;
     }
 
-    public static BuiltJars withVersionAndPath(String version, Path jarsDirectory) {
-        return new BuiltJars(version, jarsDirectory);
+    public static Context withContextAndVersion(Construct scope, String version) {
+        return withVersionAndPath(version, Path.of((String) scope.getNode().tryGetContext("jarsdir")));
     }
 
-    public BuiltJar jar(Jar jar) {
-        return new BuiltJar(jar);
+    public static Context withVersionAndPath(String version, Path jarsDirectory) {
+        return new Context(version, jarsDirectory);
     }
 
-    public final class BuiltJar {
-        private final Jar jar;
+    public String fileName() {
+        return String.format(jar.jarFormat, context.version);
+    }
 
-        public BuiltJar(Jar jar) {
-            this.jar = jar;
-        }
-
-        public String fileName() {
-            return String.format(jar.jarFormat, version);
-        }
-
-        public String codeSha256() throws NoSuchAlgorithmException, IOException {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (InputStream is = Files.newInputStream(jarsDirectory.resolve(fileName()))) {
-                DigestInputStream digestStream = new DigestInputStream(is, digest);
-                while (digestStream.read() != -1) {
-                    // Consume stream
-                }
+    public String codeSha256() throws NoSuchAlgorithmException, IOException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (InputStream is = Files.newInputStream(context.jarsDirectory.resolve(fileName()))) {
+            DigestInputStream digestStream = new DigestInputStream(is, digest);
+            while (digestStream.read() != -1) {
+                // Consume stream
             }
-            return Base64.getEncoder().encodeToString(digest.digest());
+        }
+        return Base64.getEncoder().encodeToString(digest.digest());
+    }
+
+    public static final class Context {
+        private final String version;
+        private final Path jarsDirectory;
+
+        private Context(String version, Path jarsDirectory) {
+            this.version = version;
+            this.jarsDirectory = jarsDirectory;
+        }
+
+        public BuiltJar jar(Jar jar) {
+            return new BuiltJar(this, jar);
         }
     }
 
