@@ -68,8 +68,8 @@ public class UtilsVersionTest {
         assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(),
                 cdkContextWithPropertiesFile(tempDir)))
                 .isInstanceOf(MismatchedVersionException.class)
-                .hasMessageContaining("Local version " + getVersion() +
-                        " does not match deployed version 0.14.0-SNAPSHOT");
+                .hasMessage("Local version " + getVersion() + " does not match deployed version 0.14.0-SNAPSHOT. " +
+                        "Please upgrade/downgrade to make these match");
     }
 
     @Test

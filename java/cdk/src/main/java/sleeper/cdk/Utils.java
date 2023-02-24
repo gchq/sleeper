@@ -200,7 +200,7 @@ public class Utils {
         if (!"true".equalsIgnoreCase(skipVersion)) {
             if (deployedVersion != null && !localVersion.equals(deployedVersion)) {
                 throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
-                                "Please upgrade/downgrade your local sleeper version to match the deployed version",
+                                "Please upgrade/downgrade to make these match",
                         localVersion, deployedVersion));
             }
         }
