@@ -41,7 +41,6 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -50,6 +49,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -266,7 +266,8 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketArn(this,
                 "jarsBucket-ingest",
                 "arn:aws:s3:::" + instanceProperties.get(JARS_BUCKET));
-        Code code = Code.fromBucket(jarsBucket, "ingest-starter-" + instanceProperties.get(VERSION) + ".jar");
+        BuiltJar.LambdaCode taskCreatorJar = BuiltJar.withContext(this, instanceProperties)
+                .jar(BuiltJar.INGEST_STARTER).lambdaCodeFrom(jarsBucket);
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -279,7 +280,7 @@ public class IngestStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
+                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)

@@ -64,7 +64,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -218,10 +217,10 @@ public class CompactionStack extends NestedStack {
                 splittingCompactionJobsQueue);
 
         // Lambda to create compaction tasks
-        lambdaToCreateCompactionTasks(configBucket, jarsBucket, compactionJobsQueue);
+        lambdaToCreateCompactionTasks(configBucket, taskCreatorJar, compactionJobsQueue);
 
         // Lambda to create splitting compaction tasks
-        lambdaToCreateSplittingCompactionTasks(configBucket, jarsBucket, splittingCompactionJobsQueue);
+        lambdaToCreateSplittingCompactionTasks(configBucket, taskCreatorJar, splittingCompactionJobsQueue);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -726,11 +725,8 @@ public class CompactionStack extends NestedStack {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(IBucket configBucket,
-                                               IBucket jarsBucket,
+                                               BuiltJar.LambdaCode taskCreatorJar,
                                                Queue compactionMergeJobsQueue) {
-        // CompactionJob creation code
-        Code code = Code.fromBucket(jarsBucket, "runningjobs-" + instanceProperties.get(VERSION) + ".jar");
-
         // Run tasks function
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put("type", "compaction");
@@ -745,7 +741,7 @@ public class CompactionStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
+                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
@@ -787,11 +783,8 @@ public class CompactionStack extends NestedStack {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateSplittingCompactionTasks(IBucket configBucket,
-                                                        IBucket jarsBucket,
+                                                        BuiltJar.LambdaCode taskCreatorJar,
                                                         Queue compactionSplittingMergeJobsQueue) {
-        // CompactionJob creation code
-        Code code = Code.fromBucket(jarsBucket, "runningjobs-" + instanceProperties.get(VERSION) + ".jar");
-
         // Run tasks function
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put("type", "splittingcompaction");
@@ -806,7 +799,7 @@ public class CompactionStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
+                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
