@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.cdk.lambdalayer.kubectl.v24.KubectlV24Layer;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -171,7 +172,8 @@ public final class EksBulkImportStack extends NestedStack {
 
         Cluster bulkImportCluster = new FargateCluster(this, "EksBulkImportCluster", FargateClusterProps.builder()
                 .clusterName(String.join("-", "sleeper", instanceId.toLowerCase(Locale.ROOT), "eksBulkImportCluster"))
-                .version(KubernetesVersion.of("1.25"))
+                .version(KubernetesVersion.of("1.24"))
+                .kubectlLayer(new KubectlV24Layer(this, "KubectlLayer"))
                 .vpc(vpc)
                 .vpcSubnets(Lists.newArrayList(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
                 .build());
