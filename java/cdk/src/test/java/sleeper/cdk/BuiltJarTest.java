@@ -18,12 +18,15 @@ package sleeper.cdk;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.InstanceProperties;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 class BuiltJarTest {
 
@@ -31,18 +34,24 @@ class BuiltJarTest {
     private Path tempDir;
 
     @Test
-    void shouldPopulateFilenameWithVersion() {
-        BuiltJar.Context jars = BuiltJar.withVersionAndPath("1.0", tempDir);
+    void shouldPopulateFilenameWithVersion() throws IOException {
+        BuiltJar.Context jars = withProperties("sleeper.version=1.0");
         assertThat(jars.jar(new BuiltJar.Jar("test-%s.jar")).fileName())
                 .isEqualTo("test-1.0.jar");
     }
 
     @Test
     void shouldComputeShaForAFile() throws IOException, NoSuchAlgorithmException {
-        BuiltJar.Context jars = BuiltJar.withVersionAndPath("1.0", tempDir);
+        BuiltJar.Context jars = withProperties("sleeper.version=1.0");
         Files.writeString(tempDir.resolve("test-1.0.jar"), "foobar");
 
         assertThat(jars.jar(new BuiltJar.Jar("test-%s.jar")).codeSha256())
                 .isEqualTo("w6uP8Tcg6K2QR905Rms8iXTlksL6OD1KOWBxTK7wxPI=");
+    }
+
+    private BuiltJar.Context withProperties(String propertiesString) throws IOException {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.loadFromString(propertiesString);
+        return BuiltJar.withPropertiesAndDirectory(properties, tempDir);
     }
 }

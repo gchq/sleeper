@@ -26,10 +26,8 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.lambda.S3Code;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -37,6 +35,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -55,7 +54,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
@@ -64,11 +62,11 @@ public class AthenaStack extends NestedStack {
         super(scope, id);
 
         String jarsBucketName = instanceProperties.get(JARS_BUCKET);
-        String version = instanceProperties.get(VERSION);
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        S3Code s3Code = Code.fromBucket(jarsBucket, "athena-" + version + ".jar");
+        BuiltJar.LambdaCode jarCode = BuiltJar.withContext(this, instanceProperties)
+                .jar(BuiltJar.ATHENA).lambdaCodeFrom(jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
@@ -125,7 +123,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            Function handler = createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout);
+            Function handler = createConnector(className, instanceId, logRetentionDays, jarCode, env, memory, timeout);
 
             jarsBucket.grantRead(handler);
 
@@ -154,7 +152,7 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Function createConnector(String className, String instanceId, int logRetentionDays, S3Code s3Code, Map<String, String> env, Integer memory, Integer timeout) {
+    private Function createConnector(String className, String instanceId, int logRetentionDays, BuiltJar.LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
         if (simpleClassName.endsWith("CompositeHandler")) {
             simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
@@ -167,7 +165,7 @@ public class AthenaStack extends NestedStack {
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
-                .code(s3Code)
+                .code(jar.code()).currentVersionOptions(jar.versionOptions())
                 .runtime(Runtime.JAVA_11)
                 .logRetention(Utils.getRetentionDays(logRetentionDays))
                 .handler(className)

@@ -15,7 +15,13 @@
  */
 package sleeper.cdk;
 
+import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.S3Code;
+import software.amazon.awscdk.services.lambda.VersionOptions;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
+
+import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +31,8 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 public class BuiltJar {
 
@@ -45,16 +53,25 @@ public class BuiltJar {
         this.jar = jar;
     }
 
-    public static Context withContextAndVersion(Construct scope, String version) {
-        return withVersionAndPath(version, Path.of((String) scope.getNode().tryGetContext("jarsdir")));
+    public static Context withContext(Construct scope, InstanceProperties properties) {
+        return withPropertiesAndDirectory(properties,
+                Path.of((String) scope.getNode().tryGetContext("jarsdir")));
     }
 
-    public static Context withVersionAndPath(String version, Path jarsDirectory) {
-        return new Context(version, jarsDirectory);
+    public static Context withPropertiesAndDirectory(InstanceProperties properties, Path jarsDirectory) {
+        return new Context(properties, jarsDirectory);
+    }
+
+    public LambdaCode lambdaCodeFrom(IBucket jarsBucket) {
+        try {
+            return new LambdaCode(jarsBucket, fileName(), codeSha256());
+        } catch (NoSuchAlgorithmException | IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public String fileName() {
-        return String.format(jar.jarFormat, context.version);
+        return String.format(jar.jarFormat, context.version());
     }
 
     public String codeSha256() throws NoSuchAlgorithmException, IOException {
@@ -68,13 +85,41 @@ public class BuiltJar {
         return Base64.getEncoder().encodeToString(digest.digest());
     }
 
+    public static final class LambdaCode {
+        private final S3Code code;
+        private final String codeSha256;
+
+        public LambdaCode(IBucket jarsBucket, String filename, String codeSha256) {
+            this.code = Code.fromBucket(jarsBucket, filename);
+            this.codeSha256 = codeSha256;
+        }
+
+        public S3Code code() {
+            return code;
+        }
+
+        public String codeSha256() {
+            return codeSha256;
+        }
+
+        public VersionOptions versionOptions() {
+            return VersionOptions.builder()
+                    .codeSha256(codeSha256())
+                    .build();
+        }
+    }
+
     public static final class Context {
-        private final String version;
+        private final InstanceProperties properties;
         private final Path jarsDirectory;
 
-        private Context(String version, Path jarsDirectory) {
-            this.version = version;
+        private Context(InstanceProperties properties, Path jarsDirectory) {
+            this.properties = properties;
             this.jarsDirectory = jarsDirectory;
+        }
+
+        public String version() {
+            return properties.get(VERSION);
         }
 
         public BuiltJar jar(Jar jar) {
