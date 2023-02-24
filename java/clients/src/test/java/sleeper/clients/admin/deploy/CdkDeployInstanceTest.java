@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CdkDeployInstanceTest {
     @Test
-    void shouldRunCdkSuccessfully() throws IOException, InterruptedException {
+    void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
         // Given
         CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(Path.of("instance.properties"))
@@ -40,6 +40,26 @@ class CdkDeployInstanceTest {
         assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
                 .containsExactly("cdk",
                         "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
+                        "deploy",
+                        "--require-approval", "never",
+                        "-c", "propertiesfile=instance.properties",
+                        "-c", "newinstance=false",
+                        "*");
+    }
+
+    @Test
+    void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
+        // Given
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
+                .instancePropertiesFile(Path.of("instance.properties"))
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
+                .ensureNewInstance(false).build();
+
+        // Then
+        assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.SYSTEM_TEST))
+                .containsExactly("cdk",
+                        "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
