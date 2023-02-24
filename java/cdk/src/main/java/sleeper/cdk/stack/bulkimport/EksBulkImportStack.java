@@ -42,9 +42,7 @@ import software.amazon.awscdk.services.eks.Selector;
 import software.amazon.awscdk.services.eks.ServiceAccount;
 import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -62,6 +60,7 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableStack;
@@ -80,6 +79,7 @@ import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 /**
  * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
@@ -138,8 +138,9 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
-        S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
+        BuiltJar.LambdaCode bulkImportStarterJar = BuiltJar.withContext(scope, instanceProperties)
+                .jar(BuiltJar.BULK_IMPORT_STARTER).lambdaCodeFrom(jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));
 
@@ -147,7 +148,7 @@ public final class EksBulkImportStack extends NestedStack {
                 instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
 
         Function bulkImportJobStarter = Function.Builder.create(this, "BulkImportEKSJobStarter")
-                .code(code)
+                .code(bulkImportStarterJar.code()).currentVersionOptions(bulkImportStarterJar.versionOptions())
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
                 .memorySize(1024)

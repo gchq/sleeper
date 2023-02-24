@@ -24,9 +24,7 @@ import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -35,10 +33,10 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.Locale;
 import java.util.Map;
@@ -106,8 +104,9 @@ public class CommonEmrBulkImportHelper {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
-        S3Code code = Code.fromBucket(Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
+        BuiltJar.LambdaCode bulkImportStarterJar = BuiltJar.withContext(scope, instanceProperties)
+                .jar(BuiltJar.BULK_IMPORT_STARTER).lambdaCodeFrom(jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
@@ -115,7 +114,7 @@ public class CommonEmrBulkImportHelper {
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
         Function function = Function.Builder.create(scope, "BulkImport" + shortId + "JobStarter")
-                .code(code)
+                .code(bulkImportStarterJar.code()).currentVersionOptions(bulkImportStarterJar.versionOptions())
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
                 .memorySize(1024)
