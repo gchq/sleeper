@@ -25,12 +25,14 @@ import static java.util.Objects.requireNonNull;
 public class CdkDeployInstance {
 
     private final Path instancePropertiesFile;
+    private final Path jarsDirectory;
     private final Path cdkJarFile;
     private final String cdkAppClassName;
     private final boolean ensureNewInstance;
 
     private CdkDeployInstance(Builder builder) {
         instancePropertiesFile = requireNonNull(builder.instancePropertiesFile, "instancePropertiesFile must not be null");
+        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         cdkJarFile = requireNonNull(builder.cdkJarFile, "cdkJarFile must not be null");
         cdkAppClassName = requireNonNull(builder.cdkAppClassName, "cdkAppClassName must not be null");
         ensureNewInstance = builder.ensureNewInstance;
@@ -46,6 +48,7 @@ public class CdkDeployInstance {
                 "deploy",
                 "--require-approval", "never",
                 "-c", String.format("propertiesfile=%s", instancePropertiesFile),
+                "-c", String.format("jarsdir=%s", jarsDirectory),
                 "-c", String.format("newinstance=%s", ensureNewInstance),
                 "*");
 
@@ -56,6 +59,7 @@ public class CdkDeployInstance {
 
     public static final class Builder {
         private Path instancePropertiesFile;
+        private Path jarsDirectory;
         private Path cdkJarFile;
         private String cdkAppClassName;
         private boolean ensureNewInstance;
@@ -65,6 +69,11 @@ public class CdkDeployInstance {
 
         public Builder instancePropertiesFile(Path instancePropertiesFile) {
             this.instancePropertiesFile = instancePropertiesFile;
+            return this;
+        }
+
+        public Builder jarsDirectory(Path jarsDirectory) {
+            this.jarsDirectory = jarsDirectory;
             return this;
         }
 

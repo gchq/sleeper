@@ -69,4 +69,4 @@ echo "-------------------------------------------------------"
 echo "Deploying Stacks"
 echo "-------------------------------------------------------"
 cdk -a "java -cp ${JAR_DIR}/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy \
---require-approval never -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
+--require-approval never -c propertiesfile="${INSTANCE_PROPERTIES}" -c jarsdir="${JAR_DIR}" -c validate=false "*"

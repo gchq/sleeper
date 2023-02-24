@@ -143,6 +143,7 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
+                .jarsDirectory(jarsDirectory)
                 .cdkJarFile(jarsDirectory.resolve(String.format(cdkJarFormat, sleeperVersion)))
                 .cdkAppClassName(cdkAppClassName)
                 .ensureNewInstance(true)

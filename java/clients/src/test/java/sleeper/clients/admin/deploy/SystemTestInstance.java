@@ -77,6 +77,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                .jarsDirectory(jarsDir)
                 .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", instanceProperties.get(VERSION))))
                 .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
                 .ensureNewInstance(false)

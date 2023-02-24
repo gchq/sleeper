@@ -19,6 +19,7 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 GENERATED_DIR=${SCRIPTS_DIR}/generated
+JARS_DIR=${SCRIPTS_DIR}/jars
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 CONFIG_BUCKET=$(cat "${GENERATED_DIR}/configBucket.txt")
@@ -41,11 +42,11 @@ echo "QUERY_BUCKET: ${QUERY_BUCKET}"
 
 VERSION=$(grep sleeper.version "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.status.update.CleanUpBeforeDestroy "$GENERATED_DIR"
+java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.status.update.CleanUpBeforeDestroy "$GENERATED_DIR"
 
 echo "Running cdk destroy to remove the system"
-cdk -a "java -cp ${SCRIPTS_DIR}/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
-destroy -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
+cdk -a "java -cp ${JARS_DIR}/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
+destroy -c propertiesfile="${INSTANCE_PROPERTIES}" -c jarsdir="${JARS_DIR}" -c validate=false "*"
 
 echo "Removing the Jars bucket and docker containers"
 "${THIS_DIR}/removeUploads.sh" "${INSTANCE_PROPERTIES}"
