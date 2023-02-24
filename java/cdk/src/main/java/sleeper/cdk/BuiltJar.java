@@ -44,6 +44,7 @@ public class BuiltJar {
     public static final Jar COMPACTION_TASK_CREATOR = new Jar("runningjobs-%s.jar");
     public static final Jar PARTITION_SPLITTER = new Jar("lambda-splitter-%s.jar");
     public static final Jar QUERY = new Jar("query-%s.jar");
+    public static final Jar CUSTOM_RESOURCES = new Jar("cdk-custom-resources-%s.jar");
 
     private final Context context;
     private final Jar jar;

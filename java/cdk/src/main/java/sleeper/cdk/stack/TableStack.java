@@ -38,6 +38,7 @@ import software.amazon.awscdk.services.s3.deployment.BucketDeployment;
 import software.amazon.awscdk.services.s3.deployment.Source;
 import software.constructs.Construct;
 
+import sleeper.cdk.BuiltJar;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -80,12 +81,14 @@ public class TableStack extends NestedStack {
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+        BuiltJar.LambdaCode jar = BuiltJar.withContext(this, instanceProperties)
+                .jar(BuiltJar.CUSTOM_RESOURCES).lambdaCodeFrom(jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "sleeper-table"));
 
         Function sleeperTableLambda = new Function(this, "SleeperTableLambda", FunctionProps.builder()
-                .code(Code.fromBucket(jarsBucket, "cdk-custom-resources-" + instanceProperties.get(VERSION) + ".jar"))
+                .code(jar.code()).currentVersionOptions(jar.versionOptions())
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.SleeperTableLambda::handleEvent")
                 .memorySize(2048)
