@@ -198,7 +198,7 @@ public class Utils {
 
         String skipVersion = tryGetContext.apply("skipVersionCheck");
         if (!"true".equalsIgnoreCase(skipVersion)) {
-            if (!localVersion.equals(deployedVersion)) {
+            if (deployedVersion != null && !localVersion.equals(deployedVersion)) {
                 throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
                                 "Please upgrade/downgrade your local sleeper version to match the deployed version",
                         localVersion, deployedVersion));

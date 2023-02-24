@@ -34,6 +34,7 @@ import static sleeper.cdk.Utils.getVersion;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFile;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
 import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
+import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
 
 public class UtilsVersionTest {
     @TempDir
@@ -51,7 +52,7 @@ public class UtilsVersionTest {
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion(getVersion());
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
-        // When
+        // When/Then
         assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
                 cdkContextWithPropertiesFile(tempDir)))
                 .doesNotThrowAnyException();
@@ -63,7 +64,7 @@ public class UtilsVersionTest {
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
-        // When
+        // When/Then
         assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(),
                 cdkContextWithPropertiesFile(tempDir)))
                 .isInstanceOf(MismatchedVersionException.class)
@@ -77,9 +78,21 @@ public class UtilsVersionTest {
         InstanceProperties instanceProperties = createInstancePropertiesWithVersion("0.14.0-SNAPSHOT");
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
-        // When
+        // When/Then
         assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
                 cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldSkipVersionCheckWhenDeployingNewInstance() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
+        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
+
+        // When/Then
+        assertThatCode(() -> Utils.loadInstanceProperties(new InstanceProperties(),
+                cdkContextWithPropertiesFile(tempDir)))
                 .doesNotThrowAnyException();
     }
 }
