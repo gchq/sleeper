@@ -32,14 +32,14 @@ class CdkDeployInstanceTest {
         // Given
         CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(Path.of("instance.properties"))
-                .cdkJarFile(Path.of("cdk.jar"))
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
                 .ensureNewInstance(false).build();
 
         // Then
-        assertThat(commandRunOnDeployOf(cdk))
+        assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
                 .containsExactly("cdk",
-                        "-a", "java -cp \"cdk.jar\" sleeper.cdk.SleeperCdkApp",
+                        "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
@@ -47,13 +47,13 @@ class CdkDeployInstanceTest {
                         "*");
     }
 
-    private String[] commandRunOnDeployOf(CdkDeployInstance cdk) throws IOException, InterruptedException {
+    private String[] commandRunOnDeployOf(CdkDeployInstance cdk, CdkDeployInstance.Type instanceType) throws IOException, InterruptedException {
         AtomicReference<String[]> reference = new AtomicReference<>();
         RunCommand runCommand = (args) -> {
             reference.set(args);
             return 0;
         };
-        cdk.deploy(runCommand);
+        cdk.deploy(instanceType, runCommand);
         return reference.get();
     }
 }
