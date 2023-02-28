@@ -149,6 +149,21 @@ class SyncJarsIT {
             assertThat(getObjectContents("modified.jar"))
                     .isEqualTo("data2");
         }
+
+        @Test
+        void shouldNotDeleteFileIfDeleteFlagNotSet() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("old.jar"));
+            uploadJarsToBucket(bucketName);
+
+            // When
+            Files.delete(tempDir.resolve("old.jar"));
+            uploadJarsToBucket(bucketName);
+
+            // Then
+            assertThat(listObjectKeys())
+                    .containsExactly("old.jar");
+        }
     }
 
     @Nested
@@ -217,12 +232,21 @@ class SyncJarsIT {
         }
     }
 
+    private boolean uploadJarsToBucket(String bucketName) throws IOException {
+        return syncJarsToBucket(bucketName, false);
+    }
+
     private boolean syncJarsToBucket(String bucketName) throws IOException {
+        return syncJarsToBucket(bucketName, true);
+    }
+
+    private boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
         return SyncJars.builder()
                 .s3(s3)
                 .jarsDirectory(tempDir)
                 .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
+                .deleteOldJars(deleteOld)
                 .build().sync();
     }
 

@@ -69,6 +69,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .jarsDirectory(jarsDir)
                 .bucketName(instanceProperties.get(JARS_BUCKET))
                 .region(instanceProperties.get(REGION))
+                .deleteOldJars(true)
                 .build().sync();
         UploadDockerImages.builder().ecr(ecr)
                 .baseDockerDirectory(dockerDir)

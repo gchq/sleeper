@@ -126,7 +126,7 @@ public class DeployNewInstance {
                 tableName);
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
-                .build().sync();
+                .deleteOldJars(false).build().sync();
         UploadDockerImages.builder().ecr(ecr)
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))

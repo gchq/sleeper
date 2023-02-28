@@ -43,12 +43,14 @@ public class SyncJars {
     private final Path jarsDirectory;
     private final String bucketName;
     private final String region;
+    private final boolean deleteOldJars;
 
     private SyncJars(Builder builder) {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
         region = requireNonEmpty(builder.region, "region must not be null");
         s3 = requireNonNull(builder.s3, "s3 must not be null");
+        deleteOldJars = builder.deleteOldJars;
     }
 
     public static Builder builder() {
@@ -83,8 +85,8 @@ public class SyncJars {
         Collection<Path> uploadJars = diff.getModifiedAndNew();
         Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
-        LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
-        if (!deleteKeys.isEmpty()) {
+        if (deleteOldJars && !deleteKeys.isEmpty()) {
+            LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
             s3.deleteObjects(builder -> builder
                     .bucket(bucketName)
                     .delete(deleteBuilder -> deleteBuilder
@@ -131,6 +133,7 @@ public class SyncJars {
         private Path jarsDirectory;
         private String bucketName;
         private String region;
+        private boolean deleteOldJars = false;
 
         private Builder() {
         }
@@ -152,6 +155,11 @@ public class SyncJars {
 
         public Builder region(String region) {
             this.region = region;
+            return this;
+        }
+
+        public Builder deleteOldJars(boolean deleteOldJars) {
+            this.deleteOldJars = deleteOldJars;
             return this;
         }
 

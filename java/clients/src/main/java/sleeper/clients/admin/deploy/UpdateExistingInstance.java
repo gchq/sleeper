@@ -28,9 +28,6 @@ import sleeper.core.SleeperVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-
 public class UpdateExistingInstance {
     private final Path scriptsDirectory;
     private final String instanceId;
@@ -75,8 +72,8 @@ public class UpdateExistingInstance {
         SyncJars syncJars = SyncJars.builder()
                 .s3(s3v2)
                 .jarsDirectory(jarsDirectory)
-                .region(properties.get(REGION))
-                .bucketName(properties.get(JARS_BUCKET))
+                .instanceProperties(properties)
+                .deleteOldJars(false)
                 .build();
         syncJars.sync();
 
