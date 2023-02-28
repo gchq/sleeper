@@ -20,14 +20,14 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-PROJECT_ROOT=$(dirname $(dirname ${THIS_DIR}))
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 NEW_VERSION=$1
 echo "Setting new version to ${NEW_VERSION}"
 
 # Update the version number in the pom.xml files in the java code
-pushd ${PROJECT_ROOT}/java
+pushd "${PROJECT_ROOT}/java"
 mvn versions:set -DnewVersion=${NEW_VERSION} -DgenerateBackupPoms=false
 popd
 
@@ -37,11 +37,3 @@ source "${PROJECT_ROOT}/scripts/functions/sedInPlace.sh"
 sed_in_place \
   -e "s|^    version=.*|    version='${NEW_VERSION}',|" \
   python/setup.py
-
-# Update the version numbers in the example property files
-sed_in_place \
-  -e "s|^sleeper.version=.*|sleeper.version=${NEW_VERSION}|"\
-  example/basic/instance.properties
-sed_in_place \
-  -e "s|^sleeper.version=.*|sleeper.version=${NEW_VERSION}|"\
-  example/full/instance.properties
