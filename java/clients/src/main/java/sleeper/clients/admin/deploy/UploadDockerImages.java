@@ -15,9 +15,6 @@
  */
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
-import com.amazonaws.services.ecr.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +25,9 @@ import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
@@ -45,14 +35,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
 
-    private final EcrOperations ecr;
     private final Path baseDockerDirectory;
     private final Path uploadDockerImagesScript;
     private final boolean reupload;
     private final InstanceProperties instanceProperties;
 
     private UploadDockerImages(Builder builder) {
-        ecr = requireNonNull(builder.ecr, "ecr must not be null");
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         uploadDockerImagesScript = requireNonNull(builder.uploadDockerImagesScript, "uploadDockerImagesScript must not be null");
         reupload = builder.reupload;
@@ -68,7 +56,7 @@ public class UploadDockerImages {
     }
 
     public void upload(RunCommand runCommand) throws IOException, InterruptedException {
-        if (!reupload && dockerRepositoriesPresent()) {
+        if (!reupload) {
             LOGGER.info("Not reuploading Docker images");
             return;
         }
@@ -85,52 +73,13 @@ public class UploadDockerImages {
         }
     }
 
-    private boolean dockerRepositoriesPresent() {
-        Set<String> dockerRepositoryNames = ecr.streamRepositoryNames().collect(Collectors.toSet());
-        return dockerRepositoryNames.containsAll(List.of(
-                instanceProperties.get(ECR_INGEST_REPO),
-                instanceProperties.get(ECR_COMPACTION_REPO)));
-    }
-
-    public interface EcrOperations {
-        Stream<String> streamRepositoryNames();
-
-        static EcrOperations from(AmazonECR ecr) {
-            return () -> UploadDockerImages.streamRepositoryNames(ecr);
-        }
-    }
-
-    private static Stream<String> streamRepositoryNames(AmazonECR ecr) {
-        return streamRepositories(ecr).map(Repository::getRepositoryName);
-    }
-
-    private static Stream<Repository> streamRepositories(AmazonECR ecr) {
-        return Stream.iterate(ecr.describeRepositories(new DescribeRepositoriesRequest()),
-                        Objects::nonNull,
-                        result -> null != result.getNextToken()
-                                ? ecr.describeRepositories(new DescribeRepositoriesRequest()
-                                .withNextToken(result.getNextToken()))
-                                : null)
-                .flatMap(result -> result.getRepositories().stream());
-    }
-
     public static final class Builder {
-        private EcrOperations ecr;
         private Path baseDockerDirectory;
         private Path uploadDockerImagesScript;
         private boolean reupload;
         private InstanceProperties instanceProperties;
 
         private Builder() {
-        }
-
-        public Builder ecr(AmazonECR ecr) {
-            return ecr(EcrOperations.from(ecr));
-        }
-
-        public Builder ecr(EcrOperations ecr) {
-            this.ecr = ecr;
-            return this;
         }
 
         public Builder baseDockerDirectory(Path baseDockerDirectory) {

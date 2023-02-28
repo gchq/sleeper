@@ -71,7 +71,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .region(instanceProperties.get(REGION))
                 .deleteOldJars(true)
                 .build().sync();
-        UploadDockerImages.builder().ecr(ecr)
+        UploadDockerImages.builder()
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
                 .reupload(jarsChanged)

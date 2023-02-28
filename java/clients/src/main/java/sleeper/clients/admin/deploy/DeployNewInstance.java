@@ -15,8 +15,6 @@
  */
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
@@ -47,7 +45,6 @@ public class DeployNewInstance {
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
     private final S3Client s3;
-    private final AmazonECR ecr;
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
@@ -61,7 +58,6 @@ public class DeployNewInstance {
         sts = builder.sts;
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
-        ecr = builder.ecr;
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
@@ -127,7 +123,7 @@ public class DeployNewInstance {
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
-        UploadDockerImages.builder().ecr(ecr)
+        UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
                 .reupload(jarsChanged)
@@ -158,7 +154,6 @@ public class DeployNewInstance {
         private AWSSecurityTokenService sts;
         private AwsRegionProvider regionProvider;
         private S3Client s3;
-        private AmazonECR ecr;
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
@@ -184,11 +179,6 @@ public class DeployNewInstance {
 
         public Builder s3(S3Client s3) {
             this.s3 = s3;
-            return this;
-        }
-
-        public Builder ecr(AmazonECR ecr) {
-            this.ecr = ecr;
             return this;
         }
 
@@ -242,7 +232,6 @@ public class DeployNewInstance {
                 sts(AWSSecurityTokenServiceClientBuilder.defaultClient());
                 regionProvider(DefaultAwsRegionProviderChain.builder().build());
                 s3(s3Client);
-                ecr(AmazonECRClientBuilder.defaultClient());
                 build().deploy();
             }
         }

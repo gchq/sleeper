@@ -21,7 +21,6 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -48,7 +47,6 @@ class UploadDockerImagesTest {
         properties.set(ECR_COMPACTION_REPO, "compaction-repo");
 
         UploadDockerImages upload = UploadDockerImages.builder()
-                .ecr(ecrWithNoRepositories())
                 .uploadDockerImagesScript(Path.of("./uploadDockerImages.sh"))
                 .baseDockerDirectory(Path.of("./docker"))
                 .instanceProperties(properties)
@@ -62,10 +60,6 @@ class UploadDockerImagesTest {
                         getVersion(),
                         "CompactionStack,GarbageCollectorStack",
                         "./docker");
-    }
-
-    private UploadDockerImages.EcrOperations ecrWithNoRepositories() {
-        return Stream::empty;
     }
 
     private String[] commandRunOnUpload(UploadDockerImages upload) throws IOException, InterruptedException {
