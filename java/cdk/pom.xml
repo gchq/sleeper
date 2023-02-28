@@ -69,6 +69,10 @@
             <artifactId>aws-cdk-lib</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>cdk-lambda-layer-kubectl-v24</artifactId>
+        </dependency>
+        <dependency>
             <groupId>software.constructs</groupId>
             <artifactId>constructs</artifactId>
         </dependency>
@@ -107,5 +111,21 @@
                 <artifactId>maven-shade-plugin</artifactId>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>version.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>version.txt</exclude>
+                </excludes>
+            </resource>
+        </resources>
     </build>
 </project>

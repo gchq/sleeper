@@ -41,6 +41,6 @@ public class DeployNewTestInstance {
                 .subnetId(args[4])
                 .tableName("system-test")
                 .instanceType(CdkDeployInstance.Type.SYSTEM_TEST)
-                .build().deploy();
+                .deployWithDefaultClients();
     }
 }

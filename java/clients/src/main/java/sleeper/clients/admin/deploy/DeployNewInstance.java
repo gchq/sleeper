@@ -82,22 +82,14 @@ public class DeployNewInstance {
         }
         Path scriptsDirectory = Path.of(args[0]);
 
-        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
-        AwsRegionProvider awsRegionProvider = DefaultAwsRegionProviderChain.builder().build();
-        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-
-        try (S3Client s3 = S3Client.create()) {
-            builder().s3(s3).regionProvider(awsRegionProvider)
-                    .sts(sts).ecr(ecr)
-                    .scriptsDirectory(scriptsDirectory)
-                    .instanceId(args[1])
-                    .vpcId(args[2])
-                    .subnetId(args[3])
-                    .tableName(args[4])
-                    .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
-                    .instanceType(STANDARD)
-                    .build().deploy();
-        }
+        builder().scriptsDirectory(scriptsDirectory)
+                .instanceId(args[1])
+                .vpcId(args[2])
+                .subnetId(args[3])
+                .tableName(args[4])
+                .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
+                .instanceType(STANDARD)
+                .deployWithDefaultClients();
     }
 
     public void deploy() throws IOException, InterruptedException {
@@ -124,7 +116,6 @@ public class DeployNewInstance {
 
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .sleeperVersion(sleeperVersion)
                 .properties(loadInstancePropertiesTemplate())
                 .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")))
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
@@ -240,6 +231,17 @@ public class DeployNewInstance {
 
         public DeployNewInstance build() {
             return new DeployNewInstance(this);
+        }
+
+        public void deployWithDefaultClients() throws IOException, InterruptedException {
+
+            try (S3Client s3Client = S3Client.create()) {
+                sts(AWSSecurityTokenServiceClientBuilder.defaultClient());
+                regionProvider(DefaultAwsRegionProviderChain.builder().build());
+                s3(s3Client);
+                ecr(AmazonECRClientBuilder.defaultClient());
+                build().deploy();
+            }
         }
     }
 }

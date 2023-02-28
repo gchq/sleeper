@@ -20,7 +20,7 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-INSTANCE_ID=$1
+ENVIRONMENT_ID=$1
 
 if [ "$#" -lt 2 ]; then
 	CDK_PARAMS=("--all")
@@ -32,19 +32,19 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$INSTANCE_ID"
+ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
 "$SCRIPTS_DIR/util/configure-aws.sh"
 
 pushd "$CDK_DIR" > /dev/null
-cdk deploy -c instanceId="$INSTANCE_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
+cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
 popd > /dev/null
 
-echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 
 # If an EC2 was created, save SSH details
-SSH_KEY_FILE="$INSTANCE_ID-BuildEC2.pem"
+SSH_KEY_FILE="$ENVIRONMENT_ID-BuildEC2.pem"
 if [ -f "$SSH_KEY_FILE" ]; then
 
   mv "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"

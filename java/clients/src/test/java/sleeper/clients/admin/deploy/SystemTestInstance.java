@@ -34,8 +34,8 @@ import sleeper.util.ClientUtils;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -50,7 +50,6 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final Path jarsDir = scriptsDir.resolve("jars");
     private final Path dockerDir = scriptsDir.resolve("docker");
     private final Path generatedDir = scriptsDir.resolve("generated");
-    private final String sleeperVersion = System.getProperty("sleeper.system.test.version");
     private final String vpcId = System.getProperty("sleeper.system.test.vpc.id");
     private final String subnetId = System.getProperty("sleeper.system.test.subnet.id");
     private InstanceProperties instanceProperties;
@@ -61,7 +60,6 @@ public class SystemTestInstance implements BeforeAllCallback {
         instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
-                .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");

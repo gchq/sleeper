@@ -17,6 +17,7 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -33,17 +34,23 @@ import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -185,8 +192,19 @@ public class Utils {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
-
+        String deployedVersion = properties.get(VERSION);
+        String localVersion = getVersion();
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
+
+        String skipVersion = tryGetContext.apply("skipVersionCheck");
+        if (!"true".equalsIgnoreCase(skipVersion)) {
+            if (deployedVersion != null && !localVersion.equals(deployedVersion)) {
+                throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
+                                "Please upgrade/downgrade to make these match",
+                        localVersion, deployedVersion));
+            }
+        }
+        properties.set(VERSION, localVersion);
         return properties;
     }
 
@@ -239,6 +257,14 @@ public class Utils {
             return sizeMatch.group(2) + sizeMatch.group(1);
         } else {
             return size;
+        }
+    }
+
+    public static String getVersion() {
+        try (InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream("version.txt")) {
+            return IOUtils.toString(Objects.requireNonNull(inputStream), Charset.defaultCharset());
+        } catch (IOException e) {
+            return "";
         }
     }
 }
