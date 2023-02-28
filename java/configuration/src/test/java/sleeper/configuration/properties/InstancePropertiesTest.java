@@ -28,6 +28,8 @@ import java.util.Properties;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -231,6 +233,32 @@ class InstancePropertiesTest {
         properties.loadTags(tags);
 
         assertThat(properties.getTags()).isEmpty();
+    }
+
+    @Test
+    void shouldDetectNoSystemTestPropertySetWhenNoPropertiesSet() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+
+        assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isFalse();
+    }
+
+    @Test
+    void shouldDetectNoSystemTestPropertySetWhenValidPropertiesSet() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+
+        assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isFalse();
+    }
+
+    @Test
+    void shouldDetectSystemTestPropertySetWhenValidPropertiesAlsoSet() throws IOException {
+        // Given
+        InstanceProperties properties = new InstanceProperties(loadProperties(
+                createTestInstanceProperties().saveAsString() + "\n" +
+                        "sleeper.systemtest.writers=123"));
+
+        assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isTrue();
     }
 
     private static InstanceProperties getSleeperProperties() {

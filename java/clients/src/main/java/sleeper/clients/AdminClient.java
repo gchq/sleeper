@@ -55,9 +55,7 @@ public class AdminClient {
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
         CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
-                .jarsDirectory(jarsDir)
-                .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", version)))
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .jarsDirectory(jarsDir).version(version)
                 .ensureNewInstance(false).build();
 
         new AdminClient(

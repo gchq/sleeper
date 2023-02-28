@@ -103,6 +103,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         properties.remove(property.getPropertyName());
     }
 
+    public boolean isAnyPropertySetStartingWith(String propertyNameStart) {
+        return properties.stringPropertyNames().stream().anyMatch(name -> name.startsWith(propertyNameStart));
+    }
+
     protected Properties getProperties() {
         return properties;
     }

@@ -75,11 +75,9 @@ public class SystemTestInstance implements BeforeAllCallback {
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
-                .jarsDirectory(jarsDir)
-                .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", instanceProperties.get(VERSION))))
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .jarsDirectory(jarsDir).version(instanceProperties.get(VERSION))
                 .ensureNewInstance(false)
-                .build().deploy();
+                .build().deploy(CdkDeployInstance.Type.STANDARD);
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceProperties.get(ID));
         singleKeyTableProperties.loadFromS3(s3Client, singleKeyTableProperties.get(TABLE_NAME));
     }
