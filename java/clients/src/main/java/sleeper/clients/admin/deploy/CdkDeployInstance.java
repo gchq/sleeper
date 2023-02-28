@@ -21,6 +21,8 @@ import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -76,14 +78,20 @@ public class CdkDeployInstance {
     }
 
     public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
-        int exitCode = runCommand.run("cdk",
+        List<String> command = new ArrayList<>(List.of(
+                "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName),
                 "deploy",
                 "--require-approval", "never",
-                "-c", String.format("propertiesfile=%s", instancePropertiesFile),
-                "-c", String.format("newinstance=%s", ensureNewInstance),
-                "*");
+                "-c", String.format("propertiesfile=%s", instancePropertiesFile)
+        ));
+        if (ensureNewInstance) {
+            command.addAll(List.of("-c", "newinstance=true"));
+        }
+        command.add("*");
+
+        int exitCode = runCommand.run(command.toArray(new String[0]));
 
         if (exitCode != 0) {
             throw new IOException("Failed in cdk deploy");

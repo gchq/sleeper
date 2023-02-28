@@ -36,8 +36,7 @@ class CdkDeployInstanceTest {
         CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(Path.of("instance.properties"))
                 .jarsDirectory(Path.of("."))
-                .version("1.0")
-                .ensureNewInstance(false).build();
+                .version("1.0").build();
 
         // Then
         assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
@@ -46,7 +45,6 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
-                        "-c", "newinstance=false",
                         "*");
     }
 
@@ -66,7 +64,26 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
-                        "-c", "newinstance=false",
+                        "*");
+    }
+
+    @Test
+    void shouldSetEnsureNewInstanceFlagWhenSpecified() throws IOException, InterruptedException {
+        // Given
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
+                .instancePropertiesFile(Path.of("instance.properties"))
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
+                .ensureNewInstance(true).build();
+
+        // Then
+        assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
+                .containsExactly("cdk",
+                        "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
+                        "deploy",
+                        "--require-approval", "never",
+                        "-c", "propertiesfile=instance.properties",
+                        "-c", "newinstance=true",
                         "*");
     }
 
