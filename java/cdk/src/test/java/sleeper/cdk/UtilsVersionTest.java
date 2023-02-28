@@ -24,27 +24,19 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.Utils.getVersion;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFile;
 import static sleeper.cdk.UtilsTestHelper.cdkContextWithPropertiesFileAndSkipVersionCheck;
 import static sleeper.cdk.UtilsTestHelper.createInstancePropertiesWithVersion;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
+import static sleeper.core.SleeperVersion.getVersion;
 
-public class UtilsVersionTest {
+class UtilsVersionTest {
     @TempDir
     private Path tempDir;
-
-    @Test
-    void shouldGetVersionAsResource() {
-        assertThat(getVersion())
-                .matches(Pattern.compile("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?"));
-    }
 
     @Test
     void shouldSucceedVersionCheckWhenLocalVersionMatchesDeployedVersion() throws IOException {
@@ -65,8 +57,9 @@ public class UtilsVersionTest {
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
         // When/Then
-        assertThatThrownBy(() -> Utils.loadInstanceProperties(new InstanceProperties(),
-                cdkContextWithPropertiesFile(tempDir)))
+        InstanceProperties readProperties = new InstanceProperties();
+        var readContext = cdkContextWithPropertiesFile(tempDir);
+        assertThatThrownBy(() -> Utils.loadInstanceProperties(readProperties, readContext))
                 .isInstanceOf(MismatchedVersionException.class)
                 .hasMessage("Local version " + getVersion() + " does not match deployed version 0.14.0-SNAPSHOT. " +
                         "Please upgrade/downgrade to make these match");

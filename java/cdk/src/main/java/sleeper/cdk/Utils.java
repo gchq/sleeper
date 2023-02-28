@@ -17,7 +17,6 @@ package sleeper.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
@@ -33,15 +32,12 @@ import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.SleeperVersion;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -193,16 +189,16 @@ public class Utils {
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
         String deployedVersion = properties.get(VERSION);
-        String localVersion = getVersion();
+        String localVersion = SleeperVersion.getVersion();
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
 
         String skipVersion = tryGetContext.apply("skipVersionCheck");
-        if (!"true".equalsIgnoreCase(skipVersion)) {
-            if (deployedVersion != null && !localVersion.equals(deployedVersion)) {
-                throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
-                                "Please upgrade/downgrade to make these match",
-                        localVersion, deployedVersion));
-            }
+        if (!"true".equalsIgnoreCase(skipVersion)
+                && deployedVersion != null
+                && !localVersion.equals(deployedVersion)) {
+            throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
+                            "Please upgrade/downgrade to make these match",
+                    localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
         return properties;
@@ -241,8 +237,9 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings so they can be looked up in the {@link InstanceSize}
-     * enum. Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     * Normalises EC2 instance size strings so they can be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
+     * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
      *
      * @param size the human readable size
      * @return the internal enum name
@@ -260,11 +257,4 @@ public class Utils {
         }
     }
 
-    public static String getVersion() {
-        try (InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream("version.txt")) {
-            return IOUtils.toString(Objects.requireNonNull(inputStream), Charset.defaultCharset());
-        } catch (IOException e) {
-            return "";
-        }
-    }
 }
