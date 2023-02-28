@@ -69,18 +69,18 @@ public class UpdateExistingInstance {
         InstanceProperties properties = LoadLocalProperties.loadInstanceProperties(new InstanceProperties(), generatedDirectory);
 
         // Upload JARs to bucket
-        SyncJars syncJars = SyncJars.builder().s3(s3v2)
+        SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
-                .deleteOldJars(false).build();
-        syncJars.sync();
+                .deleteOldJars(false)
+                .build().sync();
 
         // Run CDK deploy
-        CdkDeployInstance cdkDeployInstance = CdkDeployInstance.builder()
+        CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)
-                .ensureNewInstance(false).skipVersionCheck(true).build();
-        cdkDeployInstance.deployInferringType(properties);
+                .ensureNewInstance(false).skipVersionCheck(true)
+                .build().deployInferringType(properties);
     }
 
     public static final class Builder {
