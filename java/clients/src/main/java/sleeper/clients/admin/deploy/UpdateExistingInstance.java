@@ -16,6 +16,8 @@
 
 package sleeper.clients.admin.deploy;
 
+import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -33,12 +35,14 @@ public class UpdateExistingInstance {
     private final String instanceId;
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonECS ecs;
 
     private UpdateExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         s3 = builder.s3;
         s3v2 = builder.s3v2;
+        ecs = builder.ecs;
     }
 
     public static Builder builder() {
@@ -52,8 +56,9 @@ public class UpdateExistingInstance {
         Path scriptsDirectory = Path.of(args[0]);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
         try (S3Client s3v2 = S3Client.create()) {
-            builder().s3(s3).s3v2(s3v2)
+            builder().s3(s3).s3v2(s3v2).ecs(ecs)
                     .instanceId(args[1])
                     .scriptsDirectory(scriptsDirectory)
                     .build().update();
@@ -85,6 +90,10 @@ public class UpdateExistingInstance {
                 .jarsDirectory(jarsDirectory)
                 .ensureNewInstance(false).skipVersionCheck(true)
                 .build().deployInferringType(properties);
+
+        RestartTasks.builder().ecs(ecs)
+                .properties(properties)
+                .build().run();
     }
 
     public static final class Builder {
@@ -92,6 +101,7 @@ public class UpdateExistingInstance {
         private String instanceId;
         private AmazonS3 s3;
         private S3Client s3v2;
+        private AmazonECS ecs;
 
         private Builder() {
         }
@@ -113,6 +123,11 @@ public class UpdateExistingInstance {
 
         public Builder s3v2(S3Client s3v2) {
             this.s3v2 = s3v2;
+            return this;
+        }
+
+        public Builder ecs(AmazonECS ecs) {
+            this.ecs = ecs;
             return this;
         }
 
