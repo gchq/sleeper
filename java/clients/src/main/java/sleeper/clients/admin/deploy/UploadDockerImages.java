@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.util.ClientUtils;
+import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -44,7 +45,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
 
-    private final AmazonECR ecr;
+    private final EcrOperations ecr;
     private final Path baseDockerDirectory;
     private final Path uploadDockerImagesScript;
     private final boolean reupload;
@@ -63,11 +64,15 @@ public class UploadDockerImages {
     }
 
     public void upload() throws IOException, InterruptedException {
+        upload(ClientUtils::runCommand);
+    }
+
+    public void upload(RunCommand runCommand) throws IOException, InterruptedException {
         if (!reupload && dockerRepositoriesPresent()) {
             LOGGER.info("Not reuploading Docker images");
             return;
         }
-        int exitCode = ClientUtils.runCommand(uploadDockerImagesScript.toString(),
+        int exitCode = runCommand.run(uploadDockerImagesScript.toString(),
                 instanceProperties.get(ID),
                 String.format("%s.dkr.ecr.%s.amazonaws.com",
                         instanceProperties.get(ACCOUNT), instanceProperties.get(REGION)),
@@ -81,14 +86,25 @@ public class UploadDockerImages {
     }
 
     private boolean dockerRepositoriesPresent() {
-        Set<String> dockerRepositoryNames = streamDockerRepositories()
-                .map(Repository::getRepositoryName).collect(Collectors.toSet());
+        Set<String> dockerRepositoryNames = ecr.streamRepositoryNames().collect(Collectors.toSet());
         return dockerRepositoryNames.containsAll(List.of(
                 instanceProperties.get(ECR_INGEST_REPO),
                 instanceProperties.get(ECR_COMPACTION_REPO)));
     }
 
-    private Stream<Repository> streamDockerRepositories() {
+    public interface EcrOperations {
+        Stream<String> streamRepositoryNames();
+
+        static EcrOperations from(AmazonECR ecr) {
+            return () -> UploadDockerImages.streamRepositoryNames(ecr);
+        }
+    }
+
+    private static Stream<String> streamRepositoryNames(AmazonECR ecr) {
+        return streamRepositories(ecr).map(Repository::getRepositoryName);
+    }
+
+    private static Stream<Repository> streamRepositories(AmazonECR ecr) {
         return Stream.iterate(ecr.describeRepositories(new DescribeRepositoriesRequest()),
                         Objects::nonNull,
                         result -> null != result.getNextToken()
@@ -99,7 +115,7 @@ public class UploadDockerImages {
     }
 
     public static final class Builder {
-        private AmazonECR ecr;
+        private EcrOperations ecr;
         private Path baseDockerDirectory;
         private Path uploadDockerImagesScript;
         private boolean reupload;
@@ -109,6 +125,10 @@ public class UploadDockerImages {
         }
 
         public Builder ecr(AmazonECR ecr) {
+            return ecr(EcrOperations.from(ecr));
+        }
+
+        public Builder ecr(EcrOperations ecr) {
             this.ecr = ecr;
             return this;
         }
