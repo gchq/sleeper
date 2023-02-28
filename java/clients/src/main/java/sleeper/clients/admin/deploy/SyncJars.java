@@ -22,6 +22,8 @@ import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
+import sleeper.configuration.properties.InstanceProperties;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +34,8 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
@@ -149,6 +153,11 @@ public class SyncJars {
         public Builder region(String region) {
             this.region = region;
             return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            return bucketName(instanceProperties.get(JARS_BUCKET))
+                    .region(instanceProperties.get(REGION));
         }
 
         public SyncJars build() {

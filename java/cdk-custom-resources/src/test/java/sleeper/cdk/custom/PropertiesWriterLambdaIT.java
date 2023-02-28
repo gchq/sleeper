@@ -33,12 +33,12 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 @Testcontainers

@@ -36,12 +36,12 @@ import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
  * A {@link Stack} to garbage collect files which have been marked as being ready

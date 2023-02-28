@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
@@ -55,7 +56,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {

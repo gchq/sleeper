@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
@@ -67,6 +68,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CPU;
@@ -77,7 +79,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_R
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -126,6 +127,12 @@ public class IngestStack extends NestedStack {
         lambdaToCreateIngestTasks(configBucket, ingestJobQueue);
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    public static Optional<IBucket> addIngestSourceBucketReference(Construct scope, String id, InstanceProperties instanceProperties) {
+        return Optional.ofNullable(instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
+                .filter(bucketName -> !bucketName.isEmpty())
+                .map(bucketName -> Bucket.fromBucketName(scope, id, bucketName));
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -241,11 +248,8 @@ public class IngestStack extends NestedStack {
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.
-        String sourceBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
-        if (null != sourceBucketName && !sourceBucketName.isEmpty()) {
-            IBucket sourceBucket = Bucket.fromBucketName(this, "SourceBucket", sourceBucketName);
-            sourceBucket.grantRead(taskDefinition.getTaskRole());
-        }
+        addIngestSourceBucketReference(this, "SourceBucket", instanceProperties)
+                .ifPresent(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())

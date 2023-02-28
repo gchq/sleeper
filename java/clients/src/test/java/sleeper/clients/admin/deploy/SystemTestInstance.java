@@ -34,8 +34,10 @@ import sleeper.util.ClientUtils;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -50,7 +52,6 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final Path jarsDir = scriptsDir.resolve("jars");
     private final Path dockerDir = scriptsDir.resolve("docker");
     private final Path generatedDir = scriptsDir.resolve("generated");
-    private final String sleeperVersion = System.getProperty("sleeper.system.test.version");
     private final String vpcId = System.getProperty("sleeper.system.test.vpc.id");
     private final String subnetId = System.getProperty("sleeper.system.test.subnet.id");
     private InstanceProperties instanceProperties;
@@ -61,26 +62,27 @@ public class SystemTestInstance implements BeforeAllCallback {
         instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
-                .sleeperVersion(sleeperVersion)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
-        PreDeployInstance.builder()
-                .s3(s3v2).ecr(ecr)
+        boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDir)
+                .bucketName(instanceProperties.get(JARS_BUCKET))
+                .region(instanceProperties.get(REGION))
+                .build().sync();
+        UploadDockerImages.builder().ecr(ecr)
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
+                .reupload(jarsChanged)
                 .instanceProperties(instanceProperties)
-                .reuploadDockerImages(false)
-                .build().preDeploy();
+                .build().upload();
         ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
-                .cdkJarFile(jarsDir.resolve(String.format("cdk-%s.jar", instanceProperties.get(VERSION))))
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .jarsDirectory(jarsDir).version(instanceProperties.get(VERSION))
                 .ensureNewInstance(false)
-                .build().deploy();
+                .build().deploy(CdkDeployInstance.Type.STANDARD);
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceProperties.get(ID));
         singleKeyTableProperties.loadFromS3(s3Client, singleKeyTableProperties.get(TABLE_NAME));
     }
