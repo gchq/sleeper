@@ -299,7 +299,6 @@ properties:
   `sleeper-${INSTANCE_ID}-jars`
 * `sleeper.account`
 * `sleeper.region`
-* `sleeper.version` - set this to the value of ${VERSION}
 * `sleeper.vpc`
 * `sleeper.subnet`
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
