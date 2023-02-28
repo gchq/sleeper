@@ -192,8 +192,7 @@ public class Utils {
         String localVersion = SleeperVersion.getVersion();
         SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
 
-        String skipVersion = tryGetContext.apply("skipVersionCheck");
-        if (!"true".equalsIgnoreCase(skipVersion)
+        if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
             throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +

@@ -33,6 +33,7 @@ public class CdkDeployInstance {
     private final Path jarsDirectory;
     private final String version;
     private final boolean ensureNewInstance;
+    private final boolean skipVersionCheck;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", CdkDeployInstance::cdkJarFile),
@@ -51,6 +52,7 @@ public class CdkDeployInstance {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         ensureNewInstance = builder.ensureNewInstance;
+        skipVersionCheck = builder.skipVersionCheck;
     }
 
     public static Builder builder() {
@@ -89,6 +91,9 @@ public class CdkDeployInstance {
         if (ensureNewInstance) {
             command.addAll(List.of("-c", "newinstance=true"));
         }
+        if (skipVersionCheck) {
+            command.addAll(List.of("-c", "skipVersionCheck=true"));
+        }
         command.add("*");
 
         int exitCode = runCommand.run(command.toArray(new String[0]));
@@ -111,6 +116,7 @@ public class CdkDeployInstance {
         private Path jarsDirectory;
         private String version;
         private boolean ensureNewInstance;
+        private boolean skipVersionCheck;
 
         private Builder() {
         }
@@ -132,6 +138,11 @@ public class CdkDeployInstance {
 
         public Builder ensureNewInstance(boolean ensureNewInstance) {
             this.ensureNewInstance = ensureNewInstance;
+            return this;
+        }
+
+        public Builder skipVersionCheck(boolean skipVersionCheck) {
+            this.skipVersionCheck = skipVersionCheck;
             return this;
         }
 
