@@ -16,8 +16,10 @@
 
 package sleeper.clients.admin.deploy;
 
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -33,12 +35,14 @@ public class UpdateExistingInstance {
     private final String instanceId;
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonECR ecr;
 
     private UpdateExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         s3 = builder.s3;
         s3v2 = builder.s3v2;
+        ecr = builder.ecr;
     }
 
     public static Builder builder() {
@@ -51,10 +55,10 @@ public class UpdateExistingInstance {
         }
         Path scriptsDirectory = Path.of(args[0]);
 
-        AmazonS3 s3 = AmazonS3Client.builder().build();
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
         try (S3Client s3v2 = S3Client.create()) {
-            builder().s3(s3)
-                    .s3v2(s3v2)
+            builder().s3(s3).s3v2(s3v2).ecr(ecr)
                     .instanceId(args[1])
                     .scriptsDirectory(scriptsDirectory)
                     .build().update();
@@ -68,13 +72,18 @@ public class UpdateExistingInstance {
         SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
         InstanceProperties properties = LoadLocalProperties.loadInstanceProperties(new InstanceProperties(), generatedDirectory);
 
-        // Upload JARs to bucket
-        SyncJars.builder().s3(s3v2)
+        boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
                 .deleteOldJars(false)
                 .build().sync();
 
-        // Run CDK deploy
+        UploadDockerImages.builder().ecr(ecr)
+                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
+                .reupload(jarsChanged)
+                .instanceProperties(properties)
+                .build().upload();
+
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
@@ -88,6 +97,7 @@ public class UpdateExistingInstance {
         private String instanceId;
         private AmazonS3 s3;
         private S3Client s3v2;
+        private AmazonECR ecr;
 
         private Builder() {
         }
@@ -109,6 +119,11 @@ public class UpdateExistingInstance {
 
         public Builder s3v2(S3Client s3v2) {
             this.s3v2 = s3v2;
+            return this;
+        }
+
+        public Builder ecr(AmazonECR ecr) {
+            this.ecr = ecr;
             return this;
         }
 
