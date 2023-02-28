@@ -38,6 +38,7 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static sleeper.clients.admin.deploy.CdkDeployInstance.Type.STANDARD;
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 
 public class DeployNewInstance {
@@ -54,8 +55,7 @@ public class DeployNewInstance {
     private final String tableName;
     private final Path instancePropertiesTemplate;
     private final Consumer<Properties> extraInstanceProperties;
-    private final String cdkJarFormat;
-    private final String cdkAppClassName;
+    private final CdkDeployInstance.Type instanceType;
 
     private DeployNewInstance(Builder builder) {
         sts = builder.sts;
@@ -69,8 +69,7 @@ public class DeployNewInstance {
         tableName = builder.tableName;
         instancePropertiesTemplate = builder.instancePropertiesTemplate;
         extraInstanceProperties = builder.extraInstanceProperties;
-        cdkJarFormat = builder.cdkJarFormat;
-        cdkAppClassName = builder.cdkAppClassName;
+        instanceType = builder.instanceType;
     }
 
     public static Builder builder() {
@@ -89,8 +88,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
-                .cdkJarFormat("cdk-%s.jar")
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .instanceType(STANDARD)
                 .deployWithDefaultClients();
     }
 
@@ -142,10 +140,9 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
-                .cdkJarFile(jarsDirectory.resolve(String.format(cdkJarFormat, sleeperVersion)))
-                .cdkAppClassName(cdkAppClassName)
+                .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .ensureNewInstance(true)
-                .build().deploy();
+                .build().deploy(instanceType);
     }
 
     private Properties loadInstancePropertiesTemplate() throws IOException {
@@ -167,8 +164,7 @@ public class DeployNewInstance {
         private Path instancePropertiesTemplate;
         private Consumer<Properties> extraInstanceProperties = properties -> {
         };
-        private String cdkJarFormat;
-        private String cdkAppClassName;
+        private CdkDeployInstance.Type instanceType;
 
         private Builder() {
         }
@@ -228,13 +224,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder cdkJarFormat(String cdkJarFormat) {
-            this.cdkJarFormat = cdkJarFormat;
-            return this;
-        }
-
-        public Builder cdkAppClassName(String cdkAppClassName) {
-            this.cdkAppClassName = cdkAppClassName;
+        public Builder instanceType(CdkDeployInstance.Type instanceType) {
+            this.instanceType = instanceType;
             return this;
         }
 
