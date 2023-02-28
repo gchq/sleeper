@@ -15,21 +15,19 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.Utils;
+import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
@@ -39,29 +37,31 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * be sent to. A message arriving on this queue triggers a lambda. That lambda
  * creates an EMR cluster that executes the bulk import job and then terminates.
  */
-public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
+public class EmrBulkImportStack extends NestedStack {
+    private final Queue bulkImportJobQueue;
 
     public EmrBulkImportStack(
             Construct scope,
             String id,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
-            ITopic errorsTopic) {
-        super(scope, id, "NonPersistentEMR", "NonPersistentEMR",
-                BULK_IMPORT_EMR_JOB_QUEUE_URL, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
+            BulkImportBucketStack importBucketStack,
+            CommonEmrBulkImportStack commonEmrStack,
+            TopicStack errorsTopicStack) {
+        super(scope, id);
+        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
+                this, "NonPersistentEMR", instanceProperties);
+        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
+        Function jobStarter = commonHelper.createJobStarterFunction(
+                "NonPersistentEMR", bulkImportJobQueue, importBucketStack.getImportBucket(), commonEmrStack);
+        configureJobStarterFunction(instanceProperties, jobStarter);
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    @Override
-    protected void createBulkImportJobStarterFunction() {
-        super.createBulkImportJobStarterFunction();
-
+    private static void configureJobStarterFunction(
+            InstanceProperties instanceProperties, Function bulkImportJobStarter) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
-
-        instanceProperties.getTags().entrySet().stream().forEach(entry -> {
-            tagKeyCondition.put("elasticmapreduce:RequestTag/" + entry.getKey(), entry.getValue());
-        });
+        instanceProperties.getTags().forEach((key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
 
         conditions.put("StringEquals", tagKeyCondition);
 
@@ -71,25 +71,9 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .resources(Lists.newArrayList("*"))
                 .conditions(conditions)
                 .build());
+    }
 
-        String arnPrefix = "arn:aws:iam::" + instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT) + ":role/";
-
-        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(Lists.newArrayList("iam:PassRole"))
-                .resources(Lists.newArrayList(
-                        arnPrefix + instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME),
-                        arnPrefix + instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME)
-                ))
-                .build());
-
-        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CreateCleanupRole")
-                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(ImmutableMap.of("StringLike", ImmutableMap.of("iam:AWSServiceName",
-                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
-                                "elasticmapreduce.amazonaws.com.cn"))))
-                .build());
+    public Queue getEmrBulkImportJobQueue() {
+        return bulkImportJobQueue;
     }
 }

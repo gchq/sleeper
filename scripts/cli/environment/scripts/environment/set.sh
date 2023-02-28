@@ -28,12 +28,12 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-INSTANCE_ID=$1
+ENVIRONMENT_ID=$1
 
-if [ -d "$ENVIRONMENTS_DIR/$INSTANCE_ID" ]; then
-  echo "$INSTANCE_ID" > "$ENVIRONMENTS_DIR/current.txt"
+if [ -d "$ENVIRONMENTS_DIR/$ENVIRONMENT_ID" ]; then
+  echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 else
-  echo "Environment not found: $INSTANCE_ID"
+  echo "Environment not found: $ENVIRONMENT_ID"
   list_environments
 	exit 1
 fi
