@@ -23,13 +23,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.core.SleeperVersion;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 public class UpdateExistingInstance {
     private final Path scriptsDirectory;
@@ -83,10 +83,10 @@ public class UpdateExistingInstance {
         // Run CDK deploy
         CdkDeployInstance cdkDeployInstance = CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
-                .cdkJarFile(jarsDirectory.resolve(String.format("cdk-%s.jar", properties.get(VERSION))))
-                .cdkAppClassName("sleeper.cdk.SleeperCdkApp")
+                .version(SleeperVersion.getVersion())
+                .jarsDirectory(jarsDirectory)
                 .ensureNewInstance(false).build();
-        cdkDeployInstance.deploy();
+        cdkDeployInstance.deployInferringType(properties);
     }
 
     public static final class Builder {
