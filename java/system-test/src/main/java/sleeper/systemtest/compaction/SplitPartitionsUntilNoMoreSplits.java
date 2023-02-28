@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.InvokeLambda;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
@@ -61,7 +61,7 @@ public class SplitPartitionsUntilNoMoreSplits {
 
         do {
             LOGGER.info("Splitting partitions");
-            InvokeLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
+            InvokeSystemTestLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
         } while (applySplit.checkIfSplittingNeededAndWait()); // Repeat until no more splitting is needed
     }
 }

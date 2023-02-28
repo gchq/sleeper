@@ -13,33 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.util;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+package sleeper.clients.admin.deploy;
+
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.configuration.properties.InstanceProperty;
-import sleeper.systemtest.SystemTestProperties;
-
-import java.io.IOException;
-
 public class InvokeLambda {
-
     private InvokeLambda() {
     }
 
-    public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        s3Client.shutdown();
-
+    public static void invoke(String lambdaFunction) {
         try (LambdaClient lambda = LambdaClient.create()) {
             lambda.invoke(builder -> builder
-                    .functionName(systemTestProperties.get(lambdaFunctionProperty))
+                    .functionName(lambdaFunction)
                     .payload(SdkBytes.fromUtf8String("{}")));
         }
     }

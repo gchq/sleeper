@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.compaction;
 
-import sleeper.systemtest.util.InvokeLambda;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
@@ -32,6 +32,6 @@ public class InvokeCompactionTaskCreation {
             return;
         }
 
-        InvokeLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        InvokeSystemTestLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 }
