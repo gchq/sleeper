@@ -46,6 +46,7 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
+                        "-c", "jarsdir=.",
                         "-c", "newinstance=false",
                         "*");
     }
@@ -66,6 +67,7 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
+                        "-c", "jarsdir=.",
                         "-c", "newinstance=false",
                         "*");
     }
