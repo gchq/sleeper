@@ -51,7 +51,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -62,7 +61,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 
 /**
- * A {@link Stack} to look for partitions that need splitting and to split them.
+ * A {@link NestedStack} to look for partitions that need splitting and to split them.
  */
 public class PartitionSplittingStack extends NestedStack {
     public static final String PARTITION_SPLITTING_QUEUE_URL = "PartitionSplittingQueueUrl";

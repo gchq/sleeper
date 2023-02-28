@@ -73,7 +73,6 @@ import java.util.Objects;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
@@ -83,7 +82,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 /**
- * A {@link Stack} to handle queries. This consists of a {@link Queue} that
+ * A {@link NestedStack} to handle queries. This consists of a {@link Queue} that
  * queries are put on, a lambda {@link Function} to process them and another
  * {@link Queue} for the results to be posted to.
  */

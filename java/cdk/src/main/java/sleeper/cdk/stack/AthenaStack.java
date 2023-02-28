@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
@@ -45,7 +44,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
@@ -177,7 +175,7 @@ public class AthenaStack extends NestedStack {
                 .name(instanceId + simpleClassName + "SleeperConnector")
                 .description("Athena Connector for " + instanceId)
                 .type("LAMBDA")
-                .parameters(ImmutableMap.of("function", athenaCompositeHandler.getFunctionArn()))
+                .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
                 .build();
 
         return athenaCompositeHandler;
