@@ -69,6 +69,10 @@
             <artifactId>aws-cdk-lib</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awscdk</groupId>
+            <artifactId>cdk-lambda-layer-kubectl-v24</artifactId>
+        </dependency>
+        <dependency>
             <groupId>software.constructs</groupId>
             <artifactId>constructs</artifactId>
         </dependency>

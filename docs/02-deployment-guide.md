@@ -81,16 +81,15 @@ You're now ready to build and deploy Sleeper.
 See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
 to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
 
-When you use the local Docker image described in [getting started](01-getting-started.md#deployment-environment), you
-can manage multiple environments. This is built in the directory `scripts/local` with `./build.sh`. Once that's built,
-you can use `./runInDocker.sh` in that directory to run commands inside the local Docker image.
+When you use the Sleeper CLI described in [getting started](01-getting-started.md#deployment-environment), you can
+manage multiple environments.
 
-If you run `./runInDocker.sh` on its own you'll get a shell inside the local Docker container, where you can run
-`aws`, `cdk` and Sleeper `environment` commands directly.
+If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
+Sleeper `environment` commands directly, without prefixing with `sleeper`.
 
 You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
 variables or configuration on the host machine, which will be propagated to the Docker container when you use
-`./runInDocker.sh`.
+`sleeper` commands.
 
 #### Managing environments
 
@@ -99,29 +98,29 @@ You must specify an environment ID when deploying an environment, and you can sp
 Parameters after the environment ID will be passed to a `cdk deploy` command.
 
 ```bash
-./runInDocker.sh environment deploy MyEnvironment
-./runInDocker.sh environment deploy EmptyEnvironment "*-Networking"
-./runInDocker.sh environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
-./runInDocker.sh environment connect OtherEnvironment
+sleeper environment deploy MyEnvironment
+sleeper environment deploy EmptyEnvironment "*-Networking"
+sleeper environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+sleeper environment connect OtherEnvironment
 ```
 
 You can switch environments like this:
 
 ```bash
-./runInDocker.sh environment set OtherEnvironment
-./runInDocker.sh environment connect
+sleeper environment set OtherEnvironment
+sleeper environment connect
 ```
 
 You can tear down the deployed environment like this:
 
 ```bash
-./runInDocker.sh environment destroy MyEnvironment
+sleeper environment destroy MyEnvironment
 ```
 
 You can also tear down individual parts of the environment like this:
 
 ```bash
-./runInDocker.sh environment destroy MyEnvironment "*-BuildEC2"
+sleeper environment destroy MyEnvironment "*-BuildEC2"
 ```
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
@@ -174,26 +173,11 @@ this folder somewhere safe.
 
 #### Scripts in Docker
 
-The automated scripts can also be run from inside a Docker container. You can build a Docker container with all
-the dependencies needed for deployment, using the Dockerfile in the scripts directory.
+The automated scripts can also be run from inside a Docker container. This way you can avoid needing to install any of
+the dependencies or build Sleeper yourself.
 
-This can let you avoid needing to install AWS CDK, CLI or NodeJS/NPM.
-
-Starting in the scripts directory, run these commands:
-
-```shell
-./build/buildForTest.sh
-docker build -t sleeper .
-```
-
-You can then run that image like this:
-
-```shell
-./runInDocker.sh sleeper
-```
-
-That will get you a shell inside the Docker image, as though you were in the scripts directory of the repository. The
-rest of the repository will not be present.
+The Sleeper CLI can invoke this with `sleeper deployment`. That will get you a shell inside the Docker image, as though
+you were in the scripts directory of the repository. The rest of the repository will not be present.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated

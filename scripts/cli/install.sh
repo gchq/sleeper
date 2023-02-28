@@ -32,18 +32,24 @@ elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for D
   REMOTE_TAG=${VERSION:1}
 fi
 
-REMOTE_IMAGE="ghcr.io/gchq/sleeper-local:$REMOTE_TAG"
-LOCAL_IMAGE="sleeper-local:current"
+pull_and_tag() {
+  IMAGE_NAME=$1
+  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:$REMOTE_TAG"
+  LOCAL_IMAGE="$IMAGE_NAME:current"
 
-docker pull "$REMOTE_IMAGE"
-docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+  docker pull "$REMOTE_IMAGE"
+  docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+}
+
+pull_and_tag sleeper-local
+pull_and_tag sleeper-deployment
 
 EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
 
 echo "Installing Sleeper CLI"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/local/runInDocker.sh" --output "$EXECUTABLE_PATH"
+curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$EXECUTABLE_PATH"
 chmod a+x "$EXECUTABLE_PATH"
 echo "Installed"
 

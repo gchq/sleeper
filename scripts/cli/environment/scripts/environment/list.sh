@@ -15,29 +15,17 @@
 
 set -e
 
-if [ "$#" -lt 1 ]; then
-  bash -l
-  exit
-fi
+ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
-SUBCOMMAND=$1
-shift
-
-if [ "$SUBCOMMAND" == "aws" ]; then
-  aws "$@"
-elif [ "$SUBCOMMAND" == "cdk" ]; then
-  cdk "$@"
-elif [ "$SUBCOMMAND" == "--version" ] || [ "$SUBCOMMAND" == "-v" ]; then
-  cat /sleeper/version.txt
-else
-  THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-  SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../../bin && pwd)
-
-  SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND"
-  if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
-    echo "Subcommand not found: $SUBCOMMAND"
-    exit 1
+echo "Available environments:"
+pushd "$ENVIRONMENTS_DIR" > /dev/null
+dirs=(*/)
+for dir in "${dirs[@]}"; do
+  name="${dir%/}"
+  if [ "$name" == "*" ]; then
+    echo "None found"
+  else
+    echo "$name"
   fi
-
-  "$SUBCOMMAND_SCRIPT" "$@"
-fi
+done
+popd > /dev/null
