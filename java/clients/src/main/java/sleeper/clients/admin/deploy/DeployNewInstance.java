@@ -124,12 +124,15 @@ public class DeployNewInstance {
                 Schema.load(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
-        PreDeployInstance.builder().s3(s3).ecr(ecr)
-                .jarsDirectory(jarsDirectory)
+        boolean jarsChanged = SyncJars.builder().s3(s3)
+                .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
+                .build().sync();
+        UploadDockerImages.builder().ecr(ecr)
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
+                .reupload(jarsChanged)
                 .instanceProperties(instanceProperties)
-                .build().preDeploy();
+                .build().upload();
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);

@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.SleeperVersion;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
@@ -71,7 +71,7 @@ public class UploadDockerImages {
                 instanceProperties.get(ID),
                 String.format("%s.dkr.ecr.%s.amazonaws.com",
                         instanceProperties.get(ACCOUNT), instanceProperties.get(REGION)),
-                instanceProperties.get(VERSION),
+                SleeperVersion.getVersion(),
                 instanceProperties.get(OPTIONAL_STACKS),
                 baseDockerDirectory.toString());
 
