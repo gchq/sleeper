@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin.deploy;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
 import sleeper.util.RunCommand;
 
@@ -60,6 +61,22 @@ public class CdkDeployInstance {
 
     public void deploy(Type type) throws IOException, InterruptedException {
         deploy(type, ClientUtils::runCommand);
+    }
+
+    public void deployInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
+        deployInferringType(instanceProperties, ClientUtils::runCommand);
+    }
+
+    public void deployInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
+        deploy(inferType(instanceProperties), runCommand);
+    }
+
+    private static Type inferType(InstanceProperties instanceProperties) {
+        if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
+            return Type.SYSTEM_TEST;
+        } else {
+            return Type.STANDARD;
+        }
     }
 
     public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {

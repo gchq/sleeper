@@ -18,6 +18,7 @@ package sleeper.clients.admin.deploy;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
@@ -25,6 +26,8 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 
 class CdkDeployInstanceTest {
     @Test
@@ -67,13 +70,57 @@ class CdkDeployInstanceTest {
                         "*");
     }
 
+    @Test
+    void shouldInferStandardDeploymentWhenNoSystemTestPropertiesAreSet() throws IOException, InterruptedException {
+        // Given
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
+                .instancePropertiesFile(Path.of("instance.properties"))
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
+                .ensureNewInstance(false).build();
+
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+
+        // Then
+        assertThat(commandRunOn(runner -> cdk.deployInferringType(instanceProperties, runner)))
+                .startsWith("cdk",
+                        "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp");
+    }
+
+    @Test
+    void shouldInferSystemTestDeploymentWhenSystemTestPropertyIsSet() throws IOException, InterruptedException {
+        // Given
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
+                .instancePropertiesFile(Path.of("instance.properties"))
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
+                .ensureNewInstance(false).build();
+
+        InstanceProperties instanceProperties = new InstanceProperties(loadProperties(
+                createTestInstanceProperties().saveAsString() + "\n" +
+                        "sleeper.systemtest.writers=123"));
+
+        // Then
+        assertThat(commandRunOn(runner -> cdk.deployInferringType(instanceProperties, runner)))
+                .startsWith("cdk",
+                        "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp");
+    }
+
     private String[] commandRunOnDeployOf(CdkDeployInstance cdk, CdkDeployInstance.Type instanceType) throws IOException, InterruptedException {
+        return commandRunOn(runner -> cdk.deploy(instanceType, runner));
+    }
+
+    private String[] commandRunOn(Deploy deploy) throws IOException, InterruptedException {
         AtomicReference<String[]> reference = new AtomicReference<>();
         RunCommand runCommand = (args) -> {
             reference.set(args);
             return 0;
         };
-        cdk.deploy(instanceType, runCommand);
+        deploy.run(runCommand);
         return reference.get();
+    }
+
+    interface Deploy {
+        void run(RunCommand runCommand) throws IOException, InterruptedException;
     }
 }
