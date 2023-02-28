@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -63,14 +65,17 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
-        PreDeployInstance.builder()
-                .s3(s3v2).ecr(ecr)
+        boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDir)
+                .bucketName(instanceProperties.get(JARS_BUCKET))
+                .region(instanceProperties.get(REGION))
+                .build().sync();
+        UploadDockerImages.builder().ecr(ecr)
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
+                .reupload(jarsChanged)
                 .instanceProperties(instanceProperties)
-                .reuploadDockerImages(false)
-                .build().preDeploy();
+                .build().upload();
         ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
         CdkDeployInstance.builder()
