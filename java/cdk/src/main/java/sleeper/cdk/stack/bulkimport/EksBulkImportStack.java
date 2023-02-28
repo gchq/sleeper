@@ -139,7 +139,7 @@ public final class EksBulkImportStack extends NestedStack {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
         S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+                "bulk-import-starter-" + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar");
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));
 
@@ -230,7 +230,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .append(".amazonaws.com/")
                 .append(instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_REPO))
                 .append(":")
-                .append(instanceProperties.get(UserDefinedInstanceProperty.VERSION))
+                .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
                 .toString();
 
         String sparkJobJson = parseJsonFile("/step-functions/run-job.json",

@@ -38,7 +38,6 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.Locale;
 import java.util.Map;
@@ -107,7 +106,7 @@ public class CommonEmrBulkImportHelper {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         S3Code code = Code.fromBucket(Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+                "bulk-import-starter-" + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar");
 
         IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
