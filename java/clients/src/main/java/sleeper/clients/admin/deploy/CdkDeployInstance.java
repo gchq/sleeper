@@ -55,10 +55,6 @@ public class CdkDeployInstance {
         return new Builder();
     }
 
-    public void deploy() throws IOException, InterruptedException {
-        deploy(Type.STANDARD);
-    }
-
     public void deploy(Type type) throws IOException, InterruptedException {
         deploy(type, ClientUtils::runCommand);
     }
