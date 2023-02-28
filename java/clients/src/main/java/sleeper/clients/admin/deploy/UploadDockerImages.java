@@ -37,13 +37,13 @@ public class UploadDockerImages {
 
     private final Path baseDockerDirectory;
     private final Path uploadDockerImagesScript;
-    private final boolean reupload;
+    private final boolean skip;
     private final InstanceProperties instanceProperties;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         uploadDockerImagesScript = requireNonNull(builder.uploadDockerImagesScript, "uploadDockerImagesScript must not be null");
-        reupload = builder.reupload;
+        skip = builder.skip;
         instanceProperties = requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
     }
 
@@ -56,8 +56,8 @@ public class UploadDockerImages {
     }
 
     public void upload(RunCommand runCommand) throws IOException, InterruptedException {
-        if (!reupload) {
-            LOGGER.info("Not reuploading Docker images");
+        if (skip) {
+            LOGGER.info("Not uploading Docker images");
             return;
         }
         int exitCode = runCommand.run(uploadDockerImagesScript.toString(),
@@ -76,7 +76,7 @@ public class UploadDockerImages {
     public static final class Builder {
         private Path baseDockerDirectory;
         private Path uploadDockerImagesScript;
-        private boolean reupload;
+        private boolean skip;
         private InstanceProperties instanceProperties;
 
         private Builder() {
@@ -92,8 +92,8 @@ public class UploadDockerImages {
             return this;
         }
 
-        public Builder reupload(boolean reupload) {
-            this.reupload = reupload;
+        public Builder skipIf(boolean skip) {
+            this.skip = skip;
             return this;
         }
 

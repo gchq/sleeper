@@ -126,7 +126,7 @@ public class DeployNewInstance {
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
-                .reupload(jarsChanged)
+                .skipIf(!jarsChanged)
                 .instanceProperties(instanceProperties)
                 .build().upload();
 

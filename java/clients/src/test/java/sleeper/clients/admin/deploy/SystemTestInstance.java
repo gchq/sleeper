@@ -74,7 +74,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         UploadDockerImages.builder()
                 .baseDockerDirectory(dockerDir)
                 .uploadDockerImagesScript(scriptsDir.resolve("deploy/uploadDockerImages.sh"))
-                .reupload(jarsChanged)
+                .skipIf(!jarsChanged)
                 .instanceProperties(instanceProperties)
                 .build().upload();
         ClientUtils.clearDirectory(generatedDir);

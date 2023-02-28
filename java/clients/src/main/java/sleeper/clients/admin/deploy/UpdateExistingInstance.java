@@ -75,7 +75,7 @@ public class UpdateExistingInstance {
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
-                .reupload(jarsChanged)
+                .skipIf(!jarsChanged)
                 .instanceProperties(properties)
                 .build().upload();
 
