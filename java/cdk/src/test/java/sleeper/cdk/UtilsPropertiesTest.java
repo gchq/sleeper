@@ -27,23 +27,19 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.Utils.getVersion;
+import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
+import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class UtilsPropertiesTest {
 
@@ -61,6 +57,7 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When / Then
+            properties.set(VERSION, getVersion());
             assertThat(Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile()))
                     .isEqualTo(properties);
         }
@@ -100,12 +97,27 @@ class UtilsPropertiesTest {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When
-            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile());
+            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties,
+                    cdkContextWithPropertiesFile());
 
             // Then
             assertThat(loaded)
                     .extracting(tableProperties -> tableProperties.get(DATA_BUCKET))
                     .containsExactly((String) null);
+        }
+
+        @Test
+        void shouldSetVersionWhenInstancePropertiesAreLoaded() throws IOException {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+
+            // When
+            InstanceProperties loaded = Utils.loadInstanceProperties(new InstanceProperties(), cdkContextWithPropertiesFile());
+
+            // Then
+            assertThat(loaded.get(VERSION))
+                    .matches("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?");
         }
     }
 
@@ -148,26 +160,5 @@ class UtilsPropertiesTest {
 
     private Function<String, String> cdkContextWithPropertiesFile() {
         return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString())::get;
-    }
-
-    private InstanceProperties createUserDefinedInstanceProperties() {
-        String id = UUID.randomUUID().toString();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, id);
-        instanceProperties.set(JARS_BUCKET, "");
-        instanceProperties.set(ACCOUNT, "");
-        instanceProperties.set(REGION, "");
-        instanceProperties.set(VERSION, "");
-        instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
-        return instanceProperties;
-    }
-
-    private TableProperties createUserDefinedTableProperties(InstanceProperties instanceProperties) {
-        String id = UUID.randomUUID().toString();
-        TableProperties properties = new TableProperties(instanceProperties);
-        properties.set(TABLE_NAME, id);
-        properties.setSchema(schemaWithKey("key"));
-        return properties;
     }
 }

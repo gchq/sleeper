@@ -231,7 +231,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .append(".amazonaws.com/")
                 .append(instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_REPO))
                 .append(":")
-                .append(instanceProperties.get(UserDefinedInstanceProperty.VERSION))
+                .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
                 .toString();
 
         String sparkJobJson = parseJsonFile("/step-functions/run-job.json",

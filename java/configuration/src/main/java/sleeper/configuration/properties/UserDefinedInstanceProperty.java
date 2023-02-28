@@ -81,11 +81,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The AWS region to deploy to.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
-    UserDefinedInstanceProperty VERSION = named("sleeper.version")
-            .description("The version of Sleeper to use. This property is used to identify the correct jars in the S3JarsBucket and to " +
-                    "select the correct tag in the ECR repositories.")
-            .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty VPC_ID = named("sleeper.vpc")
             .description("The id of the VPC to deploy to.")
             .validationPredicate(Objects::nonNull)

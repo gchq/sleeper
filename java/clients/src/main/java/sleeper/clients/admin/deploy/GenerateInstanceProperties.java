@@ -24,6 +24,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
@@ -38,29 +39,25 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class GenerateInstanceProperties {
-    private final AWSSecurityTokenService sts;
+    private final Supplier<String> accountSupplier;
     private final AwsRegionProvider regionProvider;
     private final String instanceId;
-    private final String sleeperVersion;
     private final String vpcId;
     private final String subnetId;
     private final Properties properties;
     private final Properties tagsProperties;
 
     private GenerateInstanceProperties(Builder builder) {
-        sts = requireNonNull(builder.sts, "sts must not be null");
+        accountSupplier = requireNonNull(builder.accountSupplier, "accountSupplier must not be null");
         regionProvider = requireNonNull(builder.regionProvider, "regionProvider must not be null");
         instanceId = requireNonEmpty(builder.instanceId, "instanceId must not be empty");
-        sleeperVersion = requireNonEmpty(builder.sleeperVersion, "sleeperVersion must not be empty");
         vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
         subnetId = requireNonEmpty(builder.subnetId, "subnetId must not be empty");
         properties = Optional.ofNullable(builder.properties).orElseGet(Properties::new);
         tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(Properties::new);
-
     }
 
     public static Builder builder() {
@@ -74,9 +71,8 @@ public class GenerateInstanceProperties {
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
-        instanceProperties.set(ACCOUNT, getAccount());
+        instanceProperties.set(ACCOUNT, accountSupplier.get());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
-        instanceProperties.set(VERSION, sleeperVersion);
         instanceProperties.set(VPC_ID, vpcId);
         instanceProperties.set(SUBNET, subnetId);
         instanceProperties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
@@ -85,15 +81,10 @@ public class GenerateInstanceProperties {
         return instanceProperties;
     }
 
-    private String getAccount() {
-        return sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount();
-    }
-
     public static final class Builder {
-        private AWSSecurityTokenService sts;
+        private Supplier<String> accountSupplier;
         private AwsRegionProvider regionProvider;
         private String instanceId;
-        private String sleeperVersion;
         private String vpcId;
         private String subnetId;
         private Properties properties;
@@ -103,7 +94,11 @@ public class GenerateInstanceProperties {
         }
 
         public Builder sts(AWSSecurityTokenService sts) {
-            this.sts = sts;
+            return accountSupplier(sts.getCallerIdentity(new GetCallerIdentityRequest())::getAccount);
+        }
+
+        public Builder accountSupplier(Supplier<String> accountSupplier) {
+            this.accountSupplier = accountSupplier;
             return this;
         }
 
@@ -114,11 +109,6 @@ public class GenerateInstanceProperties {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
-            return this;
-        }
-
-        public Builder sleeperVersion(String sleeperVersion) {
-            this.sleeperVersion = sleeperVersion;
             return this;
         }
 
