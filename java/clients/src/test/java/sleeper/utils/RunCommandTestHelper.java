@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RunCommandTestHelper {
+    private RunCommandTestHelper() {
+    }
 
     public static String[] commandRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
         AtomicReference<String[]> reference = new AtomicReference<>();
