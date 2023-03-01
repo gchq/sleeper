@@ -37,7 +37,7 @@ public class DeployExistingInstance {
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonECS ecs;
-    private final LambdaClient lambdaClient;
+    private final LambdaClient lambda;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -45,7 +45,7 @@ public class DeployExistingInstance {
         s3 = builder.s3;
         s3v2 = builder.s3v2;
         ecs = builder.ecs;
-        lambdaClient = builder.lambdaClient;
+        lambda = builder.lambda;
     }
 
     public static Builder builder() {
@@ -63,7 +63,7 @@ public class DeployExistingInstance {
         try (S3Client s3v2 = S3Client.create();
              LambdaClient lambda = LambdaClient.create()) {
             builder().s3(s3).s3v2(s3v2).ecs(ecs)
-                    .lambdaClient(lambda)
+                    .lambda(lambda)
                     .instanceId(args[1])
                     .scriptsDirectory(scriptsDirectory)
                     .build().update();
@@ -99,7 +99,7 @@ public class DeployExistingInstance {
         properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
 
         RestartTasks.builder().ecs(ecs)
-                .lambdaClient(lambdaClient)
+                .lambda(lambda)
                 .properties(properties)
                 .skipIf(!jarsChanged)
                 .build().run();
@@ -111,7 +111,7 @@ public class DeployExistingInstance {
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonECS ecs;
-        private LambdaClient lambdaClient;
+        private LambdaClient lambda;
 
         private Builder() {
         }
@@ -141,8 +141,8 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder lambdaClient(LambdaClient lambdaClient) {
-            this.lambdaClient = lambdaClient;
+        public Builder lambda(LambdaClient lambda) {
+            this.lambda = lambda;
             return this;
         }
 

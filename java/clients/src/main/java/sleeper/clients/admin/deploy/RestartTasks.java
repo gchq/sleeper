@@ -35,13 +35,13 @@ public class RestartTasks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestartTasks.class);
     private final AmazonECS ecs;
-    private final LambdaClient lambdaClient;
+    private final LambdaClient lambda;
     private final InstanceProperties properties;
     private final boolean skip;
 
     private RestartTasks(Builder builder) {
         ecs = builder.ecs;
-        lambdaClient = builder.lambdaClient;
+        lambda = builder.lambda;
         properties = builder.properties;
         skip = builder.skip;
     }
@@ -65,7 +65,7 @@ public class RestartTasks {
             LOGGER.info("Stopping tasks in cluster {}", clusterName);
             stopTasksInCluster(clusterName);
             LOGGER.info("Invoking lambda {}", properties.get(lambdaFunctionProperty));
-            InvokeLambda.invokeWith(lambdaClient, properties.get(lambdaFunctionProperty));
+            InvokeLambda.invokeWith(lambda, properties.get(lambdaFunctionProperty));
         }
     }
 
@@ -77,7 +77,7 @@ public class RestartTasks {
 
     public static final class Builder {
         private AmazonECS ecs;
-        private LambdaClient lambdaClient;
+        private LambdaClient lambda;
         private InstanceProperties properties;
         private boolean skip;
 
@@ -89,8 +89,8 @@ public class RestartTasks {
             return this;
         }
 
-        public Builder lambdaClient(LambdaClient lambdaClient) {
-            this.lambdaClient = lambdaClient;
+        public Builder lambda(LambdaClient lambda) {
+            this.lambda = lambda;
             return this;
         }
 
