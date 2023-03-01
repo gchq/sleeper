@@ -59,11 +59,10 @@ change the instance and table properties that are used to deploy the system test
 by editing the files in `./scripts/templates`. However, note that properties in
 these files with the value `changeme` will be overwritten by the script.
 
-You can also change any system test specific properties in the files
-`scripts/test/system-test-instance.properties` and `scripts/test/buildDeployTest.sh`.
-
-In the `deploy.sh` script the optional stacks property is set - you may want to
-customise this to experiment with different stacks.
+You can also change any system test specific properties in the file
+`scripts/test/deployAll/system-test-instance.properties`. This includes the 
+optional stacks property - you may want to customise this to experiment with 
+different stacks.
 
 All resources are tagged with the tags defined in the file `deploy/templates/tags.properties.template`
 file.
@@ -84,7 +83,7 @@ It is advisable to manually stop any tasks running in the compaction and system 
 clusters.
 
 Note you will still need the files in the `/generated` folder that are created
-by the `deploy.sh` script for this tear down script to work correctly.
+during deployment for this tear down script to work correctly.
 This will remove your deployment and then any ECR repos, S3 buckets and local
 files that have been generated.
 

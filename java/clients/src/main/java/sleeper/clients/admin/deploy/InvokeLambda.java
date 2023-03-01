@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.compaction;
 
-import sleeper.systemtest.util.InvokeSystemTestLambda;
+package sleeper.clients.admin.deploy;
 
-import java.io.IOException;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
-
-public class InvokeCompactionJobCreation {
-
-    private InvokeCompactionJobCreation() {
+public class InvokeLambda {
+    private InvokeLambda() {
     }
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            System.out.println("Usage: <instance id>");
-            return;
+    public static void invoke(String lambdaFunction) {
+        try (LambdaClient lambda = LambdaClient.create()) {
+            invokeWith(lambda, lambdaFunction);
         }
+    }
 
-        InvokeSystemTestLambda.forInstance(args[0], COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+    public static void invokeWith(LambdaClient lambdaClient, String lambdaFunction) {
+        lambdaClient.invoke(builder -> builder
+                .functionName(lambdaFunction)
+                .payload(SdkBytes.fromUtf8String("{}")));
     }
 }

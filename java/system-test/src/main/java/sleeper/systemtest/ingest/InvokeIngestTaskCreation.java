@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.ingest;
 
-import sleeper.systemtest.util.InvokeLambda;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
@@ -32,6 +32,6 @@ public class InvokeIngestTaskCreation {
             return;
         }
 
-        InvokeLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
+        InvokeSystemTestLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
     }
 }
