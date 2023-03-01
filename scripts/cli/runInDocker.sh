@@ -56,7 +56,7 @@ get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
 
-update_cli() {
+upgrade_cli() {
   VERSION=$(get_version)
   case $VERSION in
   *-SNAPSHOT) # Handle main branch
@@ -104,8 +104,15 @@ elif [ "$COMMAND" == "environment" ]; then
   else
     run_in_environment_docker environment "$@"
   fi
-elif [ "$COMMAND" == "update" ]; then
-  update_cli
+elif [ "$COMMAND" == "cli" ]; then
+  SUBCOMMAND=$1
+  shift
+  if [ "$SUBCOMMAND" == "upgrade" ]; then
+    upgrade_cli
+  else
+    echo "Command not found: cli $SUBCOMMAND"
+    exit 1
+  fi
 else
   echo "Command not found: $COMMAND"
   exit 1
