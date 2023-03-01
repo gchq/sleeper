@@ -52,6 +52,23 @@ run_in_deployment_docker() {
     sleeper-deployment:current "$@"
 }
 
+run_in_builder_docker() {
+  HOME_IN_IMAGE=/root
+
+  docker run -it --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$HOME/.sleeper/builder:/sleeper" \
+    -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
+    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
+    -e AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY \
+    -e AWS_SESSION_TOKEN \
+    -e AWS_PROFILE \
+    -e AWS_REGION \
+    -e AWS_DEFAULT_REGION \
+    sleeper-builder:current "$@"
+}
+
 get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
@@ -98,6 +115,8 @@ elif [ "$COMMAND" == "version" ] || [ "$COMMAND" == "--version" ] || [ "$COMMAND
   get_version
 elif [ "$COMMAND" == "deployment" ]; then
   run_in_deployment_docker "$@"
+elif [ "$COMMAND" == "builder" ]; then
+  run_in_builder_docker "$@"
 elif [ "$COMMAND" == "environment" ]; then
   if [ "$#" -eq 0 ]; then
     run_in_environment_docker
