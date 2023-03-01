@@ -35,6 +35,8 @@ jobs:
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
       - name: Dependencies Docker build
         run: ./scripts/cli/dependencies/build.sh
+      - name: Environment Maven build
+        run: ./scripts/cli/environment/buildMaven.sh -Dmaven.repo.local=../.m2/repository
       - name: Environment Docker build
         run: |
           ./scripts/cli/environment/buildDocker.sh \
