@@ -94,7 +94,7 @@ if [ "$COMMAND" == "aws" ]; then
   run_in_environment_docker aws "$@"
 elif [ "$COMMAND" == "cdk" ]; then
   run_in_environment_docker cdk "$@"
-elif [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
+elif [ "$COMMAND" == "version" ] || [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
   get_version
 elif [ "$COMMAND" == "deployment" ]; then
   run_in_deployment_docker "$@"
