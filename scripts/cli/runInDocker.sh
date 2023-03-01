@@ -71,11 +71,11 @@ upgrade_cli() {
   pull_and_tag sleeper-local
   pull_and_tag sleeper-deployment
 
-  echo "Updating Sleeper CLI"
+  echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$EXECUTABLE_PATH"
   chmod a+x "$EXECUTABLE_PATH"
-  echo "Installed"
+  echo "Updated"
 }
 
 pull_and_tag() {
