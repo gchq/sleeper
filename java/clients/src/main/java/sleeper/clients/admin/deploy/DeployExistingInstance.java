@@ -62,16 +62,15 @@ public class DeployExistingInstance {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id>");
         }
-        Path scriptsDirectory = Path.of(args[0]);
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
         try (S3Client s3v2 = S3Client.create();
              LambdaClient lambda = LambdaClient.create()) {
-            builder().s3(s3).s3v2(s3v2).ecs(ecs)
-                    .lambda(lambda)
+            builder().s3(s3).s3v2(s3v2)
+                    .ecs(ecs).lambda(lambda)
+                    .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
-                    .scriptsDirectory(scriptsDirectory)
                     .build().update();
         }
     }
