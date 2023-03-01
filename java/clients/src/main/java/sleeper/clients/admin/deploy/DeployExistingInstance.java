@@ -91,6 +91,9 @@ public class DeployExistingInstance {
                 .jarsDirectory(jarsDirectory)
                 .ensureNewInstance(false).skipVersionCheck(true)
                 .build().deployInferringType(properties);
+
+        properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+
         try (LambdaClient lambda = LambdaClient.create()) {
             RestartTasks.builder().ecs(ecs)
                     .lambdaClient(lambda)

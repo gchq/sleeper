@@ -41,10 +41,11 @@ public class SaveLocalProperties {
     private SaveLocalProperties() {
     }
 
-    public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
+    public static InstanceProperties saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         saveToDirectory(directory, instanceProperties, loadTablesFromS3(s3, instanceProperties));
+        return instanceProperties;
     }
 
     public static void saveToDirectory(Path directory,
