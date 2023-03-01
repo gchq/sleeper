@@ -35,4 +35,4 @@ echo "TABLE_NAME: ${TABLE_NAME}"
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ".." && pwd)
 "$SCRIPTS_DIR/build/build.sh"
-"$SCRIPTS_DIR/deploy/deploy.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" "$TABLE_NAME"
+"$SCRIPTS_DIR/deploy/deployNew.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" "$TABLE_NAME"
