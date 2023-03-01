@@ -37,6 +37,7 @@ public class DeployExistingInstance {
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonECS ecs;
+    private final LambdaClient lambdaClient;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -44,6 +45,7 @@ public class DeployExistingInstance {
         s3 = builder.s3;
         s3v2 = builder.s3v2;
         ecs = builder.ecs;
+        lambdaClient = builder.lambdaClient;
     }
 
     public static Builder builder() {
@@ -58,8 +60,10 @@ public class DeployExistingInstance {
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
-        try (S3Client s3v2 = S3Client.create()) {
+        try (S3Client s3v2 = S3Client.create();
+             LambdaClient lambda = LambdaClient.create()) {
             builder().s3(s3).s3v2(s3v2).ecs(ecs)
+                    .lambdaClient(lambda)
                     .instanceId(args[1])
                     .scriptsDirectory(scriptsDirectory)
                     .build().update();
@@ -94,13 +98,11 @@ public class DeployExistingInstance {
 
         properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
 
-        try (LambdaClient lambda = LambdaClient.create()) {
-            RestartTasks.builder().ecs(ecs)
-                    .lambdaClient(lambda)
-                    .properties(properties)
-                    .skipIf(!jarsChanged)
-                    .build().run();
-        }
+        RestartTasks.builder().ecs(ecs)
+                .lambdaClient(lambdaClient)
+                .properties(properties)
+                .skipIf(!jarsChanged)
+                .build().run();
     }
 
     public static final class Builder {
@@ -109,6 +111,7 @@ public class DeployExistingInstance {
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonECS ecs;
+        private LambdaClient lambdaClient;
 
         private Builder() {
         }
@@ -135,6 +138,11 @@ public class DeployExistingInstance {
 
         public Builder ecs(AmazonECS ecs) {
             this.ecs = ecs;
+            return this;
+        }
+
+        public Builder lambdaClient(LambdaClient lambdaClient) {
+            this.lambdaClient = lambdaClient;
             return this;
         }
 
