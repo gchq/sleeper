@@ -15,11 +15,11 @@
 FROM sleeper-dependencies:current
 
 RUN apt-get install -y maven
+RUN apt-get install -y git
 
 # Set command line prompt to show you're in the build Docker container
 RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-build\e[0m: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper
-COPY . .
 
 CMD bash
