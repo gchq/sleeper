@@ -97,4 +97,16 @@ class SaveLocalPropertiesIT {
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties"))).isEmpty();
     }
+
+    @Test
+    void shouldLoadAndReturnInstancePropertiesFromS3() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties(s3Client);
+
+        // When
+        InstanceProperties saved = saveFromS3(s3Client, properties.get(ID), tempDir);
+
+        // Then
+        assertThat(properties).isEqualTo(saved);
+    }
 }

@@ -28,7 +28,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.InvokeLambda;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimateNotEmpty;
 
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         LOGGER.info("Waiting for partition splits");
         waitForSplitting.pollUntilFinished();
         LOGGER.info("Creating compaction jobs");
-        InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+        InvokeSystemTestLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
         if (store.getUnfinishedJobs(tableName).isEmpty()) {
             LOGGER.info("Lambda created no more jobs, splitting complete");
             return false;
@@ -76,7 +76,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
         waitForJobQueueEstimate.pollUntilFinished();
         LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-        InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        InvokeSystemTestLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
         waitForCompaction.pollUntilFinished();
         return true;
     }

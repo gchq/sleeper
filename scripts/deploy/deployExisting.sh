@@ -15,24 +15,14 @@
 
 set -e
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet> <table-name>"
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 <instance-id>"
   exit 1
 fi
 
 INSTANCE_ID=$1
-VPC=$2
-SUBNET=$3
-TABLE_NAME=$4
 
-echo "-------------------------------------------------------------------------------"
-echo "Running Build & Deploy"
-echo "-------------------------------------------------------------------------------"
-echo "INSTANCE_ID: ${INSTANCE_ID}"
-echo "VPC: ${VPC}"
-echo "SUBNET:${SUBNET}"
-echo "TABLE_NAME: ${TABLE_NAME}"
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ".." && pwd)
-"$SCRIPTS_DIR/build/build.sh"
-"$SCRIPTS_DIR/deploy/deployNew.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" "$TABLE_NAME"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar"  sleeper.clients.admin.deploy.DeployExistingInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}"
