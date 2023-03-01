@@ -57,7 +57,7 @@ get_version() {
 }
 
 upgrade_cli() {
-  VERSION=$(get_version)
+  VERSION=$(get_version | tr -d '\r\n')
   case $VERSION in
   *-SNAPSHOT) # Handle main branch
     REMOTE_TAG=latest
