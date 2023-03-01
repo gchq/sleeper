@@ -18,7 +18,12 @@ set -u # Treat unset variable as error
 set -x # Trace commands
 set -o pipefail
 
+# These variables are set from Java, treating this script as a template
 LOGIN_USER=${loginUser}
+REPOSITORY=${repository}
+BRANCH=${branch}
+FORK=${fork}
+
 LOGIN_HOME=/home/$LOGIN_USER
 
 # Get Updates
@@ -45,7 +50,7 @@ curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/aws
 unzip -qq "/tmp/awscliv2.zip" -d "/tmp" && sh /tmp/aws/install --update && rm -rf "/tmp/awscliv2.zip" "/tmp/aws"
 
 # Allow user to access docker socket
-usermod -aG docker $LOGIN_USER
+usermod -aG docker "$LOGIN_USER"
 
 # Install JDK & Maven
 sudo apt install -y maven
@@ -57,8 +62,9 @@ sudo npm install -g npm
 sudo npm install -g aws-cdk
 
 # Check out code
-if [ ! -d $LOGIN_HOME/${repository} ]; then
-  runuser -u $LOGIN_USER -- git clone -b ${branch} https://github.com/${fork}/${repository}.git $LOGIN_HOME/${repository}
+REPOSITORY_DIR="$LOGIN_HOME/$REPOSITORY"
+if [ ! -d "$REPOSITORY_DIR" ]; then
+  runuser -u "$LOGIN_USER" -- git clone -b "$BRANCH" "https://github.com/$FORK/$REPOSITORY.git" "$REPOSITORY_DIR"
 fi
 
 if [ -f /var/run/reboot-required ]; then
