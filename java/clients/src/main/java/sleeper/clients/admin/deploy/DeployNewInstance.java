@@ -142,6 +142,7 @@ public class DeployNewInstance {
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .ensureNewInstance(true)
                 .build().deploy(instanceType);
+        LOGGER.info("Finished deployment of new instance");
     }
 
     private Properties loadInstancePropertiesTemplate() throws IOException {

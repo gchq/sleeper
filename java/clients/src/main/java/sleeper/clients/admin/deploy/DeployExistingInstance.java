@@ -20,6 +20,8 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -34,6 +36,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DeployExistingInstance {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeployExistingInstance.class);
     private final Path scriptsDirectory;
     private final String instanceId;
     private final AmazonS3 s3;
@@ -73,6 +77,9 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
+        LOGGER.info("-------------------------------------------------------");
+        LOGGER.info("Running Deployment");
+        LOGGER.info("-------------------------------------------------------");
         // Get instance properties from s3
         InstanceProperties properties = new InstanceProperties();
         properties.loadFromS3GivenInstanceId(s3, instanceId);
@@ -94,6 +101,9 @@ public class DeployExistingInstance {
                 .instanceProperties(properties)
                 .build().upload();
 
+        LOGGER.info("-------------------------------------------------------");
+        LOGGER.info("Deploying Stacks");
+        LOGGER.info("-------------------------------------------------------");
         CdkDeployInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
@@ -109,6 +119,7 @@ public class DeployExistingInstance {
                 .properties(properties)
                 .skipIf(!jarsChanged)
                 .build().run();
+        LOGGER.info("Finished deployment of existing instance");
     }
 
     public static final class Builder {
