@@ -19,15 +19,14 @@ package sleeper.clients.admin.deploy;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
+import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 class CdkDeployInstanceTest {
     @Test
@@ -36,8 +35,7 @@ class CdkDeployInstanceTest {
         CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(Path.of("instance.properties"))
                 .jarsDirectory(Path.of("."))
-                .version("1.0")
-                .ensureNewInstance(false).build();
+                .version("1.0").build();
 
         // Then
         assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
@@ -47,7 +45,6 @@ class CdkDeployInstanceTest {
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
                         "-c", "jarsdir=.",
-                        "-c", "newinstance=false",
                         "*");
     }
 
@@ -69,6 +66,48 @@ class CdkDeployInstanceTest {
                         "-c", "propertiesfile=instance.properties",
                         "-c", "jarsdir=.",
                         "-c", "newinstance=false",
+                        "*");
+    }
+
+    @Test
+    void shouldSetEnsureNewInstanceFlagWhenSpecified() throws IOException, InterruptedException {
+        // Given
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
+                .instancePropertiesFile(Path.of("instance.properties"))
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
+                .ensureNewInstance(true).build();
+
+        // Then
+        assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
+                .containsExactly("cdk",
+                        "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
+                        "deploy",
+                        "--require-approval", "never",
+                        "-c", "propertiesfile=instance.properties",
+                        "-c", "jarsdir=.",
+                        "-c", "newinstance=true",
+                        "*");
+    }
+
+    @Test
+    void shouldSetSkipVersionCheckFlagWhenSpecified() throws IOException, InterruptedException {
+        // Given
+        CdkDeployInstance cdk = CdkDeployInstance.builder()
+                .instancePropertiesFile(Path.of("instance.properties"))
+                .jarsDirectory(Path.of("."))
+                .version("1.0")
+                .skipVersionCheck(true).build();
+
+        // Then
+        assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.STANDARD))
+                .containsExactly("cdk",
+                        "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
+                        "deploy",
+                        "--require-approval", "never",
+                        "-c", "propertiesfile=instance.properties",
+                        "-c", "jarsdir=.",
+                        "-c", "skipVersionCheck=true",
                         "*");
     }
 
@@ -110,19 +149,5 @@ class CdkDeployInstanceTest {
 
     private String[] commandRunOnDeployOf(CdkDeployInstance cdk, CdkDeployInstance.Type instanceType) throws IOException, InterruptedException {
         return commandRunOn(runner -> cdk.deploy(instanceType, runner));
-    }
-
-    private String[] commandRunOn(Deploy deploy) throws IOException, InterruptedException {
-        AtomicReference<String[]> reference = new AtomicReference<>();
-        RunCommand runCommand = (args) -> {
-            reference.set(args);
-            return 0;
-        };
-        deploy.run(runCommand);
-        return reference.get();
-    }
-
-    interface Deploy {
-        void run(RunCommand runCommand) throws IOException, InterruptedException;
     }
 }

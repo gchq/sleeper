@@ -17,19 +17,15 @@
 package sleeper.configuration.properties.local;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -41,10 +37,11 @@ public class SaveLocalProperties {
     private SaveLocalProperties() {
     }
 
-    public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
+    public static InstanceProperties saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        saveToDirectory(directory, instanceProperties, loadTablesFromS3(s3, instanceProperties));
+        saveToDirectory(directory, instanceProperties, TableProperties.streamTablesFromS3(s3, instanceProperties));
+        return instanceProperties;
     }
 
     public static void saveToDirectory(Path directory,
@@ -83,30 +80,5 @@ public class SaveLocalProperties {
         if (value != null) {
             Files.writeString(file, value);
         }
-    }
-
-    private static Stream<TableProperties> loadTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
-                s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
-        return StreamSupport.stream(objects.spliterator(), false)
-                .map(tableConfigObject -> {
-                    try {
-                        return loadTableFromS3(s3, instanceProperties, tableConfigObject);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
-    }
-
-    private static TableProperties loadTableFromS3(
-            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) throws IOException {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        try (InputStream in = s3.getObject(
-                        tableConfigObject.getBucketName(),
-                        tableConfigObject.getKey())
-                .getObjectContent()) {
-            tableProperties.load(in);
-        }
-        return tableProperties;
     }
 }

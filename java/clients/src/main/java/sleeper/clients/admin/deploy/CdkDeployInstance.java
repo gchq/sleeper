@@ -21,6 +21,8 @@ import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -31,6 +33,7 @@ public class CdkDeployInstance {
     private final Path jarsDirectory;
     private final String version;
     private final boolean ensureNewInstance;
+    private final boolean skipVersionCheck;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", CdkDeployInstance::cdkJarFile),
@@ -49,6 +52,7 @@ public class CdkDeployInstance {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         ensureNewInstance = builder.ensureNewInstance;
+        skipVersionCheck = builder.skipVersionCheck;
     }
 
     public static Builder builder() {
@@ -76,15 +80,24 @@ public class CdkDeployInstance {
     }
 
     public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
-        int exitCode = runCommand.run("cdk",
+        List<String> command = new ArrayList<>(List.of(
+                "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName),
                 "deploy",
                 "--require-approval", "never",
                 "-c", String.format("propertiesfile=%s", instancePropertiesFile),
-                "-c", String.format("jarsdir=%s", jarsDirectory),
-                "-c", String.format("newinstance=%s", ensureNewInstance),
-                "*");
+                "-c", String.format("jarsdir=%s", jarsDirectory)
+        ));
+        if (ensureNewInstance) {
+            command.addAll(List.of("-c", "newinstance=true"));
+        }
+        if (skipVersionCheck) {
+            command.addAll(List.of("-c", "skipVersionCheck=true"));
+        }
+        command.add("*");
+
+        int exitCode = runCommand.run(command.toArray(new String[0]));
 
         if (exitCode != 0) {
             throw new IOException("Failed in cdk deploy");
@@ -104,6 +117,7 @@ public class CdkDeployInstance {
         private Path jarsDirectory;
         private String version;
         private boolean ensureNewInstance;
+        private boolean skipVersionCheck;
 
         private Builder() {
         }
@@ -125,6 +139,11 @@ public class CdkDeployInstance {
 
         public Builder ensureNewInstance(boolean ensureNewInstance) {
             this.ensureNewInstance = ensureNewInstance;
+            return this;
+        }
+
+        public Builder skipVersionCheck(boolean skipVersionCheck) {
+            this.skipVersionCheck = skipVersionCheck;
             return this;
         }
 

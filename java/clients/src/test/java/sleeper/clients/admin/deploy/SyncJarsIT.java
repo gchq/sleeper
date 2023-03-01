@@ -68,7 +68,7 @@ class SyncJarsIT {
         @Test
         void shouldCreateNewBucketIfNotPresent() throws IOException {
             // When
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(listObjectKeys()).isEmpty();
@@ -79,7 +79,7 @@ class SyncJarsIT {
             // When
             Files.createFile(tempDir.resolve("test1.jar"));
             Files.createFile(tempDir.resolve("test2.jar"));
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(listObjectKeys())
@@ -90,7 +90,7 @@ class SyncJarsIT {
         void shouldIgnoreNonJarFile() throws IOException {
             // When
             Files.createFile(tempDir.resolve("test.txt"));
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(listObjectKeys()).isEmpty();
@@ -105,11 +105,11 @@ class SyncJarsIT {
         void shouldUploadNewFile() throws IOException {
             // Given
             Files.createFile(tempDir.resolve("old.jar"));
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // When
             Files.createFile(tempDir.resolve("new.jar"));
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(listObjectKeys())
@@ -117,37 +117,52 @@ class SyncJarsIT {
         }
 
         @Test
-        void shouldDeleteOldFile() throws IOException {
-            // Given
-            Files.createFile(tempDir.resolve("old.jar"));
-            syncJarsToBucket(bucketName);
-
-            // When
-            Files.delete(tempDir.resolve("old.jar"));
-            syncJarsToBucket(bucketName);
-
-            // Then
-            assertThat(listObjectKeys()).isEmpty();
-        }
-
-        @Test
         void shouldOnlyUploadExistingFileIfItChanged() throws IOException, InterruptedException {
             // Given
             Files.createFile(tempDir.resolve("unmodified.jar"));
             Files.writeString(tempDir.resolve("modified.jar"), "data1");
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
             Instant lastModifiedBefore = getObjectLastModified("unmodified.jar");
 
             // When
             Thread.sleep(1000);
             Files.writeString(tempDir.resolve("modified.jar"), "data2");
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucketDeletingOldJars(bucketName);
 
             // Then
             assertThat(getObjectLastModified("unmodified.jar"))
                     .isEqualTo(lastModifiedBefore);
             assertThat(getObjectContents("modified.jar"))
                     .isEqualTo("data2");
+        }
+
+        @Test
+        void shouldDeleteOldFileWhenDeleteFlagIsSet() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("old.jar"));
+            uploadJarsToBucket(bucketName);
+
+            // When
+            Files.delete(tempDir.resolve("old.jar"));
+            uploadJarsToBucketDeletingOldJars(bucketName);
+
+            // Then
+            assertThat(listObjectKeys()).isEmpty();
+        }
+
+        @Test
+        void shouldNotDeleteFileIfDeleteFlagNotSet() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("old.jar"));
+            uploadJarsToBucket(bucketName);
+
+            // When
+            Files.delete(tempDir.resolve("old.jar"));
+            uploadJarsToBucket(bucketName);
+
+            // Then
+            assertThat(listObjectKeys())
+                    .containsExactly("old.jar");
         }
     }
 
@@ -158,7 +173,7 @@ class SyncJarsIT {
         @Test
         void shouldReportChangeIfBucketCreated() throws IOException {
             // When
-            boolean changed = syncJarsToBucket(bucketName);
+            boolean changed = uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(changed).isTrue();
@@ -167,10 +182,10 @@ class SyncJarsIT {
         @Test
         void shouldReportNoChangeIfBucketAlreadyExisted() throws IOException {
             // Given
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // When
-            boolean changed = syncJarsToBucket(bucketName);
+            boolean changed = uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(changed).isFalse();
@@ -179,11 +194,11 @@ class SyncJarsIT {
         @Test
         void shouldReportChangeIfFileUploaded() throws IOException {
             // Given
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // When
             Files.createFile(tempDir.resolve("test.jar"));
-            boolean changed = syncJarsToBucket(bucketName);
+            boolean changed = uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(changed).isTrue();
@@ -193,11 +208,11 @@ class SyncJarsIT {
         void shouldReportChangeIfFileDeleted() throws IOException {
             // Given
             Files.createFile(tempDir.resolve("test.jar"));
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // When
             Files.delete(tempDir.resolve("test.jar"));
-            boolean changed = syncJarsToBucket(bucketName);
+            boolean changed = uploadJarsToBucketDeletingOldJars(bucketName);
 
             // Then
             assertThat(changed).isTrue();
@@ -207,22 +222,31 @@ class SyncJarsIT {
         void shouldReportNoChangeIfFileUnmodified() throws IOException {
             // Given
             Files.createFile(tempDir.resolve("test.jar"));
-            syncJarsToBucket(bucketName);
+            uploadJarsToBucket(bucketName);
 
             // When
-            boolean changed = syncJarsToBucket(bucketName);
+            boolean changed = uploadJarsToBucket(bucketName);
 
             // Then
             assertThat(changed).isFalse();
         }
     }
 
-    private boolean syncJarsToBucket(String bucketName) throws IOException {
+    private boolean uploadJarsToBucket(String bucketName) throws IOException {
+        return syncJarsToBucket(bucketName, false);
+    }
+
+    private boolean uploadJarsToBucketDeletingOldJars(String bucketName) throws IOException {
+        return syncJarsToBucket(bucketName, true);
+    }
+
+    private boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
         return SyncJars.builder()
                 .s3(s3)
                 .jarsDirectory(tempDir)
                 .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
+                .deleteOldJars(deleteOld)
                 .build().sync();
     }
 

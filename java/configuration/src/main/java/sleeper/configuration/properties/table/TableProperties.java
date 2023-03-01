@@ -16,6 +16,8 @@
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.iterable.S3Objects;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -31,8 +33,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
@@ -129,6 +135,31 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
         LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
+    }
+
+    public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
+        Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
+                s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
+        return StreamSupport.stream(objects.spliterator(), false)
+                .map(tableConfigObject -> {
+                    try {
+                        return loadTableFromS3(s3, instanceProperties, tableConfigObject);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+    }
+
+    private static TableProperties loadTableFromS3(
+            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) throws IOException {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        try (InputStream in = s3.getObject(
+                        tableConfigObject.getBucketName(),
+                        tableConfigObject.getKey())
+                .getObjectContent()) {
+            tableProperties.load(in);
+        }
+        return tableProperties;
     }
 
     @Override
