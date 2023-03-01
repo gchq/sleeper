@@ -397,6 +397,7 @@ There are scripts in the `scripts/deploy` directory that can be used to manage a
 #### Update Existing Instance
 The `deployExisting.sh` script can be used to bring an existing instance up to date with the environment.
 This will upload any jars that have changed, update all the docker images, and perform a `cdk deploy`.
+
 ```bash
 sleeper deployment deploy/deployExisting.sh <instance-id>
 ```
