@@ -20,7 +20,7 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-runInEnvironmentDocker() {
+run_in_environment_docker() {
   HOME_IN_IMAGE=/root
 
   docker run -it --rm \
@@ -36,7 +36,7 @@ runInEnvironmentDocker() {
     sleeper-local:current "$@"
 }
 
-runInDeploymentDocker() {
+run_in_deployment_docker() {
   HOME_IN_IMAGE=/root
 
   docker run -it --rm \
@@ -52,23 +52,60 @@ runInDeploymentDocker() {
     sleeper-deployment:current "$@"
 }
 
+get_version() {
+  run_in_environment_docker cat /sleeper/version.txt
+}
+
+update_cli() {
+  VERSION=$(get_version)
+  case $VERSION in
+  *-SNAPSHOT)
+    REMOTE_TAG=latest
+    GIT_REF=main
+    ;;
+  *)
+    REMOTE_TAG=$VERSION
+    GIT_REF="v$VERSION"
+    ;;
+  esac
+  pull_and_tag sleeper-local
+  pull_and_tag sleeper-deployment
+
+  echo "Updating Sleeper CLI"
+  EXECUTABLE_PATH="${BASH_SOURCE[0]}"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$EXECUTABLE_PATH"
+  chmod a+x "$EXECUTABLE_PATH"
+  echo "Installed"
+}
+
+pull_and_tag() {
+  IMAGE_NAME=$1
+  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:$REMOTE_TAG"
+  LOCAL_IMAGE="$IMAGE_NAME:current"
+
+  docker pull "$REMOTE_IMAGE"
+  docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+}
+
 COMMAND=$1
 shift
 
 if [ "$COMMAND" == "aws" ]; then
-  runInEnvironmentDocker aws "$@"
+  run_in_environment_docker aws "$@"
 elif [ "$COMMAND" == "cdk" ]; then
-  runInEnvironmentDocker cdk "$@"
+  run_in_environment_docker cdk "$@"
 elif [ "$COMMAND" == "--version" ] || [ "$COMMAND" == "-v" ]; then
-  runInEnvironmentDocker cat /sleeper/version.txt
+  get_version
 elif [ "$COMMAND" == "deployment" ]; then
-  runInDeploymentDocker "$@"
+  run_in_deployment_docker "$@"
 elif [ "$COMMAND" == "environment" ]; then
   if [ "$#" -eq 0 ]; then
-    runInEnvironmentDocker
+    run_in_environment_docker
   else
-    runInEnvironmentDocker environment "$@"
+    run_in_environment_docker environment "$@"
   fi
+elif [ "$COMMAND" == "update" ]; then
+  update_cli
 else
   echo "Command not found: $COMMAND"
   exit 1
