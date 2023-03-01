@@ -20,6 +20,7 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -90,11 +91,13 @@ public class UpdateExistingInstance {
                 .jarsDirectory(jarsDirectory)
                 .ensureNewInstance(false).skipVersionCheck(true)
                 .build().deployInferringType(properties);
-
-        RestartTasks.builder().ecs(ecs)
-                .properties(properties)
-                .skipIf(!jarsChanged)
-                .build().run();
+        try (LambdaClient lambda = LambdaClient.create()) {
+            RestartTasks.builder().ecs(ecs)
+                    .lambdaClient(lambda)
+                    .properties(properties)
+                    .skipIf(!jarsChanged)
+                    .build().run();
+        }
     }
 
     public static final class Builder {

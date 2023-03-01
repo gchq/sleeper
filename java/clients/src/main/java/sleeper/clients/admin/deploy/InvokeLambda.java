@@ -25,9 +25,13 @@ public class InvokeLambda {
 
     public static void invoke(String lambdaFunction) {
         try (LambdaClient lambda = LambdaClient.create()) {
-            lambda.invoke(builder -> builder
-                    .functionName(lambdaFunction)
-                    .payload(SdkBytes.fromUtf8String("{}")));
+            invokeWith(lambda, lambdaFunction);
         }
+    }
+
+    public static void invokeWith(LambdaClient lambdaClient, String lambdaFunction) {
+        lambdaClient.invoke(builder -> builder
+                .functionName(lambdaFunction)
+                .payload(SdkBytes.fromUtf8String("{}")));
     }
 }

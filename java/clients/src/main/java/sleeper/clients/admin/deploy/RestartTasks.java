@@ -21,6 +21,7 @@ import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.StopTaskRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
@@ -34,13 +35,15 @@ public class RestartTasks {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestartTasks.class);
     private final AmazonECS ecs;
+    private final LambdaClient lambdaClient;
     private final InstanceProperties properties;
     private final boolean skip;
 
     private RestartTasks(Builder builder) {
         ecs = builder.ecs;
+        lambdaClient = builder.lambdaClient;
         properties = builder.properties;
-        skip = builder.skipIf;
+        skip = builder.skip;
     }
 
     public static Builder builder() {
@@ -59,7 +62,7 @@ public class RestartTasks {
     private void restartTasks(InstanceProperty clusterProperty, InstanceProperty lambdaFunctionProperty) {
         if (properties.get(clusterProperty) != null) {
             stopTasksInCluster(properties.get(clusterProperty));
-            InvokeLambda.invoke(properties.get(lambdaFunctionProperty));
+            InvokeLambda.invokeWith(lambdaClient, properties.get(lambdaFunctionProperty));
         }
     }
 
@@ -71,8 +74,9 @@ public class RestartTasks {
 
     public static final class Builder {
         private AmazonECS ecs;
+        private LambdaClient lambdaClient;
         private InstanceProperties properties;
-        private boolean skipIf;
+        private boolean skip;
 
         private Builder() {
         }
@@ -82,13 +86,18 @@ public class RestartTasks {
             return this;
         }
 
+        public Builder lambdaClient(LambdaClient lambdaClient) {
+            this.lambdaClient = lambdaClient;
+            return this;
+        }
+
         public Builder properties(InstanceProperties properties) {
             this.properties = properties;
             return this;
         }
 
-        public Builder skipIf(boolean skipIf) {
-            this.skipIf = skipIf;
+        public Builder skipIf(boolean skip) {
+            this.skip = skip;
             return this;
         }
 
