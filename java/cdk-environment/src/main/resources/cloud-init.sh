@@ -42,29 +42,20 @@ echo \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 export DEBIAN_FRONTEND=noninteractive
 sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin binfmt-support qemu-user-static
-
-# Install AWS tools
-sudo apt install -y unzip htop
-curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-unzip -qq "/tmp/awscliv2.zip" -d "/tmp" && sh /tmp/aws/install --update && rm -rf "/tmp/awscliv2.zip" "/tmp/aws"
+sudo apt install -y docker-ce docker-ce-cli containerd.io binfmt-support qemu-user-static
 
 # Allow user to access docker socket
 usermod -aG docker "$LOGIN_USER"
 
-# Install JDK & Maven
-sudo apt install -y maven
-
-# Install CDK
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-sudo npm install -g npm
-sudo npm install -g aws-cdk
+# Install Sleeper CLI
+curl "https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
+chmod +x "$LOGIN_HOME/sleeper-install.sh"
+"$LOGIN_HOME/sleeper-install.sh" "$BRANCH"
 
 # Check out code
-REPOSITORY_DIR="$LOGIN_HOME/$REPOSITORY"
+REPOSITORY_DIR="$LOGIN_HOME/.sleeper/builder/$REPOSITORY"
 if [ ! -d "$REPOSITORY_DIR" ]; then
-  runuser -u "$LOGIN_USER" -- git clone -b "$BRANCH" "https://github.com/$FORK/$REPOSITORY.git" "$REPOSITORY_DIR"
+  runuser -u "$LOGIN_USER" -- sleeper builder git clone -b "$BRANCH" "https://github.com/$FORK/$REPOSITORY.git"
 fi
 
 if [ -f /var/run/reboot-required ]; then
