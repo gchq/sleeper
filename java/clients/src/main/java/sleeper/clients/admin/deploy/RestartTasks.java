@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
@@ -51,28 +52,21 @@ public class RestartTasks {
             LOGGER.info("Not restarting ECS tasks");
             return;
         }
-        stopTasks();
-        startTasks();
+        restartTasks(INGEST_CLUSTER, INGEST_LAMBDA_FUNCTION);
+        restartTasks(COMPACTION_CLUSTER, COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
-    public void stopTasks() {
-        LOGGER.info("Stopping tasks in ingest cluster");
-        stopTasksInCluster(properties.get(INGEST_CLUSTER));
-        LOGGER.info("Stopping tasks in compaction cluster");
-        stopTasksInCluster(properties.get(COMPACTION_CLUSTER));
+    private void restartTasks(InstanceProperty clusterProperty, InstanceProperty lambdaFunctionProperty) {
+        if (properties.get(clusterProperty) != null) {
+            stopTasksInCluster(properties.get(clusterProperty));
+            InvokeLambda.invoke(properties.get(lambdaFunctionProperty));
+        }
     }
 
-    public void stopTasksInCluster(String cluster) {
+    private void stopTasksInCluster(String cluster) {
         ecs.listTasks(new ListTasksRequest().withCluster(cluster)).getTaskArns().forEach(task ->
                 ecs.stopTask(new StopTaskRequest().withTask(task).withCluster(cluster))
         );
-    }
-
-    public void startTasks() {
-        LOGGER.info("Invoking ingest task lambda");
-        InvokeLambda.invoke(properties.get(INGEST_LAMBDA_FUNCTION));
-        LOGGER.info("Invoking compaction task lambda");
-        InvokeLambda.invoke(properties.get(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION));
     }
 
     public static final class Builder {
