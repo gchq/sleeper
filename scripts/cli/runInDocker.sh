@@ -86,6 +86,7 @@ upgrade_cli() {
     ;;
   esac
   pull_and_tag sleeper-local
+  pull_and_tag sleeper-builder
   pull_and_tag sleeper-deployment
 
   echo "Updating CLI command"
