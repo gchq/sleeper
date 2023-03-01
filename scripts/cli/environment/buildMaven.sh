@@ -34,7 +34,7 @@ echo "Started at $(recorded_time_str "$START_TIME")"
 
 pushd "$ENVIRONMENT_MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn clean install -Pquick "$@"
+mvn package -Pquick "$@"
 popd
 
 echo "$VERSION" > "$VERSION_FILE"
