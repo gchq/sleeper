@@ -52,7 +52,7 @@ public class BuildEC2Stack extends Stack {
         AppContext context = AppContext.of(this);
         BuildEC2Parameters params = BuildEC2Parameters.from(context);
         vpc = context.get(VPC_ID)
-                .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
+                .map(vpcId -> Vpc.fromLookup(this, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
