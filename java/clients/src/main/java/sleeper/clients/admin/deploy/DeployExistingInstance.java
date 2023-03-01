@@ -16,13 +16,10 @@
 
 package sleeper.clients.admin.deploy;
 
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -42,16 +39,12 @@ public class DeployExistingInstance {
     private final String instanceId;
     private final AmazonS3 s3;
     private final S3Client s3v2;
-    private final AmazonECS ecs;
-    private final LambdaClient lambda;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         s3 = builder.s3;
         s3v2 = builder.s3v2;
-        ecs = builder.ecs;
-        lambda = builder.lambda;
     }
 
     public static Builder builder() {
@@ -64,11 +57,8 @@ public class DeployExistingInstance {
         }
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
-        try (S3Client s3v2 = S3Client.create();
-             LambdaClient lambda = LambdaClient.create()) {
+        try (S3Client s3v2 = S3Client.create()) {
             builder().s3(s3).s3v2(s3v2)
-                    .ecs(ecs).lambda(lambda)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
                     .build().update();
@@ -122,8 +112,6 @@ public class DeployExistingInstance {
         private String instanceId;
         private AmazonS3 s3;
         private S3Client s3v2;
-        private AmazonECS ecs;
-        private LambdaClient lambda;
 
         private Builder() {
         }
@@ -145,16 +133,6 @@ public class DeployExistingInstance {
 
         public Builder s3v2(S3Client s3v2) {
             this.s3v2 = s3v2;
-            return this;
-        }
-
-        public Builder ecs(AmazonECS ecs) {
-            this.ecs = ecs;
-            return this;
-        }
-
-        public Builder lambda(LambdaClient lambda) {
-            this.lambda = lambda;
             return this;
         }
 
