@@ -391,6 +391,18 @@ comma separated list of stack names, for example:
 sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ```
 
+### Utility Scripts
+There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance 
+
+#### Add Table
+The `addTable.sh` script can be used to add a new table to sleeper without having to tear down the whole instance and 
+deploy it again. This will create a new table with default properties (defined in `templates/tableproperties.template`), 
+and a default schema (defined in `templates/schema.template`)
+
+```bash
+sleeper deployment deploy/addTable.sh <instance-id> <new-table-id>
+```
+
 ## Tear Down
 
 Once your finished with your Sleeper instance, you can delete it, i.e. remove all the resources
