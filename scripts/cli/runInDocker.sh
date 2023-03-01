@@ -59,17 +59,13 @@ get_version() {
 update_cli() {
   VERSION=$(get_version)
   case $VERSION in
-  *-SNAPSHOT)
+  *-SNAPSHOT) # Handle main branch
     REMOTE_TAG=latest
     GIT_REF=main
     ;;
-  *.*.*)
+  *) # Handle release version
     REMOTE_TAG=$VERSION
     GIT_REF="v$VERSION"
-    ;;
-  *)
-    REMOTE_TAG=$VERSION
-    GIT_REF=$VERSION
     ;;
   esac
   pull_and_tag sleeper-local
