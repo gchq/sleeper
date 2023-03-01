@@ -24,6 +24,12 @@ SCRIPTS_DIR="$BASE_DIR/scripts"
 VERSION_FILE="$THIS_DIR/version.txt"
 JARS_DIR="$THIS_DIR/jars"
 
+if [ "$#" -lt 1 ]; then
+  MAVEN_PARAMS=(clean install -q -Pquick)
+else
+  MAVEN_PARAMS=("$@")
+fi
+
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
@@ -34,7 +40,7 @@ echo "Started at $(recorded_time_str "$START_TIME")"
 
 pushd "$ENVIRONMENT_MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn clean install -Pquick "$@"
+mvn "${MAVEN_PARAMS[@]}"
 popd
 
 echo "$VERSION" > "$VERSION_FILE"
