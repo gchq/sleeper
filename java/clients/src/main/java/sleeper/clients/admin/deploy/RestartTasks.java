@@ -60,8 +60,11 @@ public class RestartTasks {
     }
 
     private void restartTasks(InstanceProperty clusterProperty, InstanceProperty lambdaFunctionProperty) {
-        if (properties.get(clusterProperty) != null) {
-            stopTasksInCluster(properties.get(clusterProperty));
+        String clusterName = properties.get(clusterProperty);
+        if (clusterName != null) {
+            LOGGER.info("Stopping tasks in cluster {}", clusterName);
+            stopTasksInCluster(clusterName);
+            LOGGER.info("Invoking lambda {}", properties.get(lambdaFunctionProperty));
             InvokeLambda.invokeWith(lambdaClient, properties.get(lambdaFunctionProperty));
         }
     }
