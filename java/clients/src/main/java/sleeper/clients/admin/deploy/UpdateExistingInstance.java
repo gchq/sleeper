@@ -93,6 +93,7 @@ public class UpdateExistingInstance {
 
         RestartTasks.builder().ecs(ecs)
                 .properties(properties)
+                .skipIf(!jarsChanged)
                 .build().run();
     }
 

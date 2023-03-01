@@ -34,10 +34,12 @@ public class RestartTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestartTasks.class);
     private final AmazonECS ecs;
     private final InstanceProperties properties;
+    private final boolean skip;
 
     private RestartTasks(Builder builder) {
         ecs = builder.ecs;
         properties = builder.properties;
+        skip = builder.skipIf;
     }
 
     public static Builder builder() {
@@ -45,6 +47,10 @@ public class RestartTasks {
     }
 
     public void run() {
+        if (skip) {
+            LOGGER.info("Not restarting ECS tasks");
+            return;
+        }
         stopTasks();
         startTasks();
     }
@@ -72,6 +78,7 @@ public class RestartTasks {
     public static final class Builder {
         private AmazonECS ecs;
         private InstanceProperties properties;
+        private boolean skipIf;
 
         private Builder() {
         }
@@ -83,6 +90,11 @@ public class RestartTasks {
 
         public Builder properties(InstanceProperties properties) {
             this.properties = properties;
+            return this;
+        }
+
+        public Builder skipIf(boolean skipIf) {
+            this.skipIf = skipIf;
             return this;
         }
 
