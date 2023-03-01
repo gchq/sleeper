@@ -31,14 +31,14 @@ import sleeper.core.SleeperVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public class UpdateExistingInstance {
+public class DeployExistingInstance {
     private final Path scriptsDirectory;
     private final String instanceId;
     private final AmazonS3 s3;
     private final S3Client s3v2;
     private final AmazonECS ecs;
 
-    private UpdateExistingInstance(Builder builder) {
+    private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         s3 = builder.s3;
@@ -135,8 +135,8 @@ public class UpdateExistingInstance {
             return this;
         }
 
-        public UpdateExistingInstance build() {
-            return new UpdateExistingInstance(this);
+        public DeployExistingInstance build() {
+            return new DeployExistingInstance(this);
         }
     }
 }
