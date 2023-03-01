@@ -63,9 +63,13 @@ update_cli() {
     REMOTE_TAG=latest
     GIT_REF=main
     ;;
-  *)
+  *.*.*)
     REMOTE_TAG=$VERSION
     GIT_REF="v$VERSION"
+    ;;
+  *)
+    REMOTE_TAG=$VERSION
+    GIT_REF=$VERSION
     ;;
   esac
   pull_and_tag sleeper-local
