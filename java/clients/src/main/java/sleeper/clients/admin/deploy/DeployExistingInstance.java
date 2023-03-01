@@ -25,9 +25,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DeployExistingInstance {
@@ -71,9 +74,13 @@ public class DeployExistingInstance {
 
     public void update() throws IOException, InterruptedException {
         // Get instance properties from s3
+        InstanceProperties properties = new InstanceProperties();
+        properties.loadFromS3GivenInstanceId(s3, instanceId);
         Path generatedDirectory = scriptsDirectory.resolve("generated");
         Path jarsDirectory = scriptsDirectory.resolve("jars");
-        InstanceProperties properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+        Files.createDirectories(generatedDirectory);
+        ClientUtils.clearDirectory(generatedDirectory);
+        SaveLocalProperties.saveToDirectory(generatedDirectory, properties, TableProperties.streamTablesFromS3(s3, properties));
 
         boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
