@@ -110,14 +110,10 @@ public class DeployExistingInstance {
                 .ensureNewInstance(false).skipVersionCheck(true)
                 .build().deployInferringType(properties);
 
-        // Update system-defined properties set by CDK
-        properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+        // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
+        // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.
+        // Note we'll need to reload instance properties as the cluster/lambda names may have been updated by the CDK.
 
-        RestartTasks.builder().ecs(ecs)
-                .lambda(lambda)
-                .properties(properties)
-                .skipIf(!jarsChanged)
-                .build().run();
         LOGGER.info("Finished deployment of existing instance");
     }
 
