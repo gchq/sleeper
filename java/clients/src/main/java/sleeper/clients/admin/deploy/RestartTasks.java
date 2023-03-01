@@ -30,6 +30,8 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class RestartTasks {
 
@@ -57,6 +59,7 @@ public class RestartTasks {
         }
         restartTasks(INGEST_CLUSTER, INGEST_LAMBDA_FUNCTION);
         restartTasks(COMPACTION_CLUSTER, COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        restartTasks(SPLITTING_COMPACTION_CLUSTER, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
     private void restartTasks(InstanceProperty clusterProperty, InstanceProperty lambdaFunctionProperty) {
