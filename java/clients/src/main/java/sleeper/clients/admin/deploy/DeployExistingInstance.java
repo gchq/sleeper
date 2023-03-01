@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.core.SleeperVersion;
 
@@ -74,8 +73,7 @@ public class DeployExistingInstance {
         // Get instance properties from s3
         Path generatedDirectory = scriptsDirectory.resolve("generated");
         Path jarsDirectory = scriptsDirectory.resolve("jars");
-        SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
-        InstanceProperties properties = LoadLocalProperties.loadInstanceProperties(new InstanceProperties(), generatedDirectory);
+        InstanceProperties properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
 
         boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
@@ -96,6 +94,7 @@ public class DeployExistingInstance {
                 .ensureNewInstance(false).skipVersionCheck(true)
                 .build().deployInferringType(properties);
 
+        // Update system-defined properties set by CDK
         properties = SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
 
         RestartTasks.builder().ecs(ecs)
