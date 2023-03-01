@@ -20,18 +20,25 @@ import org.junit.jupiter.api.Test;
 import sleeper.environment.cdk.config.AppContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.environment.cdk.buildec2.BuildEC2Image.LOGIN_USER;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.BRANCH;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.FORK;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.REPOSITORY;
 
-public class LoadUserDataUtilTest {
+class LoadUserDataUtilTest {
 
     @Test
-    public void canLoadUserData() {
+    void canLoadUserData() {
         assertThat(LoadUserDataUtil.userData(BuildEC2Parameters.from(AppContext.of(
-                BRANCH.value("feature/something"), FORK.value("a-fork"), REPOSITORY.value("a-repo")))))
+                LOGIN_USER.value("test-user"),
+                REPOSITORY.value("a-repo"),
+                FORK.value("a-fork"),
+                BRANCH.value("feature/something")))))
                 .startsWith("Content-Type: multipart/mixed;")
-                .contains("git clone -b feature/something https://github.com/a-fork/a-repo.git");
+                .contains("LOGIN_USER=test-user" + System.lineSeparator() +
+                        "REPOSITORY=a-repo" + System.lineSeparator() +
+                        "FORK=a-fork" + System.lineSeparator() +
+                        "BRANCH=feature/something" + System.lineSeparator());
     }
 
 }

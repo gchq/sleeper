@@ -21,8 +21,8 @@ set -o pipefail
 # These variables are set from Java, treating this script as a template
 LOGIN_USER=${loginUser}
 REPOSITORY=${repository}
-BRANCH=${branch}
 FORK=${fork}
+BRANCH=${branch}
 
 LOGIN_HOME=/home/$LOGIN_USER
 
