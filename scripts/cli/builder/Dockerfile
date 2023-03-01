@@ -20,6 +20,6 @@ RUN apt-get install -y git
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-builder\e[0m: \w # "' >> ~/.bashrc
 
-WORKDIR /sleeper
+WORKDIR /sleeper-builder
 
 CMD bash

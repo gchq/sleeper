@@ -57,7 +57,7 @@ run_in_builder_docker() {
 
   docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$HOME/.sleeper/builder:/sleeper" \
+    -v "$HOME/.sleeper/builder:/sleeper-builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
     -e AWS_ACCESS_KEY_ID \
