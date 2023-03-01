@@ -50,12 +50,12 @@ usermod -aG docker "$LOGIN_USER"
 # Install Sleeper CLI
 curl "https://raw.githubusercontent.com/$FORK/$REPOSITORY/$BRANCH/scripts/cli/install.sh" -o "$LOGIN_HOME/sleeper-install.sh"
 chmod +x "$LOGIN_HOME/sleeper-install.sh"
-runuser --login -u "$LOGIN_USER" -- "$LOGIN_HOME/sleeper-install.sh" "$BRANCH"
+runuser --login "$LOGIN_USER" -c "$LOGIN_HOME/sleeper-install.sh $BRANCH"
 
 # Check out code
 REPOSITORY_DIR="$LOGIN_HOME/.sleeper/builder/$REPOSITORY"
 if [ ! -d "$REPOSITORY_DIR" ]; then
-  runuser --login -u "$LOGIN_USER" -- sleeper builder git clone -b "$BRANCH" "https://github.com/$FORK/$REPOSITORY.git"
+  runuser --login "$LOGIN_USER" -c "sleeper builder git clone -b $BRANCH https://github.com/$FORK/$REPOSITORY.git"
 fi
 
 if [ -f /var/run/reboot-required ]; then
