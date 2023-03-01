@@ -394,6 +394,13 @@ sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ### Utility Scripts
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance 
 
+#### Update Existing Instance
+The `deployExisting.sh` script can be used to bring an existing instance up to date with the environment.
+This will upload any jars that have changed, update all the docker images, and perform a `cdk deploy`.
+```bash
+sleeper deployment deploy/deployExisting.sh <instance-id>
+```
+
 #### Add Table
 The `addTable.sh` script can be used to add a new table to sleeper without having to tear down the whole instance and 
 deploy it again. This will create a new table with default properties (defined in `templates/tableproperties.template`), 
