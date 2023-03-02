@@ -181,6 +181,9 @@ For Sleeper to be deployed manually, some resources have to be uploaded to AWS f
 the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
+These instructions will assume you're using a development environment, so see [dev guide](09-dev-guide.md) for how to
+set that up.
+
 #### Upload the Docker images to ECR
 
 There are potentially three ECR images that need to be created and pushed
