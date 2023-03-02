@@ -69,7 +69,7 @@ inside a Docker container inside the EC2. You can run all the deployment scripts
 outside of the EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the
 deployment being slow uploading jars and Docker images.
 
-The Sleeper Git repository will also be checked out, and you can access it by running `sleeper builder` in the EC2.
+The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
 

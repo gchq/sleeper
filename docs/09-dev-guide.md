@@ -22,18 +22,23 @@ You will need the following software:
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
-If you're working with the Sleeper CLI, you can use `sleeper builder` to run a Docker container with these
-pre-installed.
+If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
+these pre-installed. You'll need to clone the Git repository, and this will be persisted between executions of
+`sleeper builder`. Use the commands below:
+
+```bash
+sleeper builder
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+```
 
 ## Building
-
-To build Sleeper from source you'll need Docker and maven installed.
 
 Provided script (recommended) - this builds the code and copies the jars
 into the scripts directory so that the scripts work.
 
 ```bash
-./scripts/build/build.sh
+./scripts/build/buildForTest.sh
 ```
 
 maven (removing the '-Pquick' option will cause the unit and integration tests
