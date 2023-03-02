@@ -31,7 +31,7 @@ public final class LambdaCode {
     private LambdaCode(IBucket jarsBucket, String filename, String codeSha256) {
         this.code = Code.fromBucket(jarsBucket, filename);
         this.versionOptions = VersionOptions.builder()
-                .codeSha256(codeSha256)
+                .description(codeSha256)
                 .build();
     }
 
