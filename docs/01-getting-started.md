@@ -60,8 +60,16 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-Once it has finished the instance might restart. The Sleeper Git repository will be checked out, and you can access
-it by running `sleeper builder` in the EC2.
+Once it has finished the instance might restart.
+
+You can access a built copy of the Sleeper scripts by running `sleeper deployment` in the EC2. That will get you a shell
+inside a Docker container inside the EC2. You can run all the deployment scripts there as explained below. If you run it
+outside of the EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the
+deployment being slow uploading jars and Docker images.
+
+The Sleeper Git repository will also be checked out, and you can access it by running `sleeper builder` in the EC2.
+That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
+for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
 
 To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
 See
