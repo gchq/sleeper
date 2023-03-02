@@ -21,6 +21,7 @@ if [ "$#" -lt 1 ]; then
 fi
 
 ENVIRONMENT_ID=$1
+shift
 
 if [ "$#" -lt 2 ]; then
 	CDK_PARAMS=("--all")
