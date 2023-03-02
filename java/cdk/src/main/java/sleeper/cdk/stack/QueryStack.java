@@ -59,6 +59,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -206,7 +207,7 @@ public class QueryStack extends NestedStack {
         new CfnOutput(this, QUERY_RESULTS_QUEUE_URL, queryResultsQueueOutputProps);
 
         // Query execution lambda code
-        BuiltJar.LambdaCode queryJar = BuiltJar.withContext(scope, instanceProperties)
+        LambdaCode queryJar = BuiltJar.withContext(scope, instanceProperties)
                 .jar(BuiltJar.QUERY).lambdaCodeFrom(jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -276,7 +277,7 @@ public class QueryStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    protected void setupWebSocketApi(BuiltJar.LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, Function queryExecutorLambda, IBucket configBucket) {
+    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, Function queryExecutorLambda, IBucket configBucket) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         Function handler = Function.Builder.create(this, "apiHandler")
                 .description("Prepares queries received via the WebSocket API and queues them for processing")

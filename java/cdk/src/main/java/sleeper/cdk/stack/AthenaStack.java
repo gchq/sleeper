@@ -35,6 +35,7 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -64,7 +65,7 @@ public class AthenaStack extends NestedStack {
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        BuiltJar.LambdaCode jarCode = BuiltJar.withContext(this, instanceProperties)
+        LambdaCode jarCode = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.ATHENA).lambdaCodeFrom(jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
@@ -151,7 +152,7 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Function createConnector(String className, String instanceId, int logRetentionDays, BuiltJar.LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+    private Function createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
         if (simpleClassName.endsWith("CompositeHandler")) {
             simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));

@@ -74,6 +74,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.InstanceProperties;
@@ -194,9 +195,9 @@ public class CompactionStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        BuiltJar.LambdaCode jobCreatorJar = BuiltJar.withContext(this, instanceProperties)
+        LambdaCode jobCreatorJar = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.COMPACTION_JOB_CREATOR).lambdaCodeFrom(jarsBucket);
-        BuiltJar.LambdaCode taskCreatorJar = BuiltJar.withContext(this, instanceProperties)
+        LambdaCode taskCreatorJar = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.COMPACTION_TASK_CREATOR).lambdaCodeFrom(jarsBucket);
 
         // SQS queue for the compaction jobs
@@ -332,7 +333,7 @@ public class CompactionStack extends NestedStack {
 
     private void lambdaToFindCompactionJobsThatShouldBeCreated(IBucket configBucket,
                                                                IBucket jarsBucket,
-                                                               BuiltJar.LambdaCode jobCreatorJar,
+                                                               LambdaCode jobCreatorJar,
                                                                List<StateStoreStack> stateStoreStacks,
                                                                Queue compactionMergeJobsQueue,
                                                                Queue compactionSplittingMergeJobsQueue) {
@@ -388,7 +389,7 @@ public class CompactionStack extends NestedStack {
 
     private Cluster ecsClusterForCompactionTasks(IBucket configBucket,
                                                  IBucket jarsBucket,
-                                                 BuiltJar.LambdaCode taskCreatorJar,
+                                                 LambdaCode taskCreatorJar,
                                                  List<StateStoreStack> stateStoreStacks,
                                                  List<IBucket> dataBuckets,
                                                  Queue compactionMergeJobsQueue) {
@@ -464,7 +465,7 @@ public class CompactionStack extends NestedStack {
 
     private Cluster ecsClusterForSplittingCompactionTasks(IBucket configBucket,
                                                           IBucket jarsBucket,
-                                                          BuiltJar.LambdaCode taskCreatorJar,
+                                                          LambdaCode taskCreatorJar,
                                                           List<StateStoreStack> stateStoreStacks,
                                                           List<IBucket> dataBuckets,
                                                           Queue compactionSplittingMergeJobsQueue) {
@@ -542,7 +543,7 @@ public class CompactionStack extends NestedStack {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc,
-                                        SystemDefinedInstanceProperty scalingProperty, IBucket configBucket, BuiltJar.LambdaCode taskCreatorJar, String type) {
+                                        SystemDefinedInstanceProperty scalingProperty, IBucket configBucket, LambdaCode taskCreatorJar, String type) {
 
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
@@ -687,7 +688,7 @@ public class CompactionStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private Function lambdaForCustomTerminationPolicy(IBucket configBucket, BuiltJar.LambdaCode taskCreatorJar, String type) {
+    private Function lambdaForCustomTerminationPolicy(IBucket configBucket, LambdaCode taskCreatorJar, String type) {
         if (!Arrays.asList("splittingcompaction", "compaction").contains(type)) {
             throw new IllegalArgumentException("type must be splittingcompaction or compaction");
         }
@@ -731,7 +732,7 @@ public class CompactionStack extends NestedStack {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(IBucket configBucket,
-                                               BuiltJar.LambdaCode taskCreatorJar,
+                                               LambdaCode taskCreatorJar,
                                                Queue compactionMergeJobsQueue) {
         // Run tasks function
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
@@ -792,7 +793,7 @@ public class CompactionStack extends NestedStack {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateSplittingCompactionTasks(IBucket configBucket,
-                                                        BuiltJar.LambdaCode taskCreatorJar,
+                                                        LambdaCode taskCreatorJar,
                                                         Queue compactionSplittingMergeJobsQueue) {
         // Run tasks function
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);

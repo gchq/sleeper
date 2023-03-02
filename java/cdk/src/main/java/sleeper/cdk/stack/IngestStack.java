@@ -50,6 +50,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -270,7 +271,7 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketArn(this,
                 "jarsBucket-ingest",
                 "arn:aws:s3:::" + instanceProperties.get(JARS_BUCKET));
-        BuiltJar.LambdaCode taskCreatorJar = BuiltJar.withContext(this, instanceProperties)
+        LambdaCode taskCreatorJar = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.INGEST_STARTER).lambdaCodeFrom(jarsBucket);
 
         // Run tasks function

@@ -61,6 +61,7 @@ import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableStack;
@@ -139,7 +140,7 @@ public final class EksBulkImportStack extends NestedStack {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
-        BuiltJar.LambdaCode bulkImportStarterJar = BuiltJar.withContext(this, instanceProperties)
+        LambdaCode bulkImportStarterJar = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.BULK_IMPORT_STARTER).lambdaCodeFrom(jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));

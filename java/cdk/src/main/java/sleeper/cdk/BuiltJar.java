@@ -15,9 +15,6 @@
  */
 package sleeper.cdk;
 
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.S3Code;
-import software.amazon.awscdk.services.lambda.VersionOptions;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -65,11 +62,7 @@ public class BuiltJar {
     }
 
     public LambdaCode lambdaCodeFrom(IBucket jarsBucket) {
-        try {
-            return new LambdaCode(jarsBucket, fileName(), codeSha256());
-        } catch (NoSuchAlgorithmException | IOException e) {
-            throw new IllegalStateException(e);
-        }
+        return LambdaCode.from(this, jarsBucket);
     }
 
     public String fileName() {
@@ -85,26 +78,6 @@ public class BuiltJar {
             }
         }
         return Base64.getEncoder().encodeToString(digest.digest());
-    }
-
-    public static final class LambdaCode {
-        private final S3Code code;
-        private final VersionOptions versionOptions;
-
-        public LambdaCode(IBucket jarsBucket, String filename, String codeSha256) {
-            this.code = Code.fromBucket(jarsBucket, filename);
-            this.versionOptions = VersionOptions.builder()
-                    .codeSha256(codeSha256)
-                    .build();
-        }
-
-        public S3Code code() {
-            return code;
-        }
-
-        public VersionOptions versionOptions() {
-            return versionOptions;
-        }
     }
 
     public static final class Context {

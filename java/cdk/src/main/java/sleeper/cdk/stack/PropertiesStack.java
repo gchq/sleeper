@@ -26,6 +26,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -53,7 +54,7 @@ public class PropertiesStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        BuiltJar.LambdaCode jar = BuiltJar.withContext(this, instanceProperties)
+        LambdaCode jar = BuiltJar.withContext(this, instanceProperties)
                 .jar(BuiltJar.CUSTOM_RESOURCES).lambdaCodeFrom(jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();

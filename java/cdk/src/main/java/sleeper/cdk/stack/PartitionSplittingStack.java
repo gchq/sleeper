@@ -38,6 +38,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.BuiltJar;
+import sleeper.cdk.LambdaCode;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -127,7 +128,7 @@ public class PartitionSplittingStack extends NestedStack {
         new CfnOutput(this, PARTITION_SPLITTING_DL_QUEUE_URL, partitionSplittingDLQueueOutputProps);
 
         // Partition splitting code
-        BuiltJar.LambdaCode splitterJar = BuiltJar.withContext(scope, instanceProperties)
+        LambdaCode splitterJar = BuiltJar.withContext(scope, instanceProperties)
                 .jar(BuiltJar.PARTITION_SPLITTER).lambdaCodeFrom(jarsBucket);
 
         // Lambda to look for partitions that need splitting (for each partition that
