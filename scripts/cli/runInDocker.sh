@@ -23,16 +23,24 @@ fi
 HOME_IN_IMAGE=/root
 
 run_in_docker() {
-  docker run -it --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
-    -e AWS_SESSION_TOKEN \
-    -e AWS_PROFILE \
-    -e AWS_REGION \
-    -e AWS_DEFAULT_REGION \
+  local RUN_PARAMS
+  RUN_PARAMS=()
+  if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
+    RUN_PARAMS+=(-it)
+  fi
+  RUN_PARAMS+=(
+    --rm
+    -v /var/run/docker.sock:/var/run/docker.sock
+    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -e AWS_ACCESS_KEY_ID
+    -e AWS_SECRET_ACCESS_KEY
+    -e AWS_SESSION_TOKEN
+    -e AWS_PROFILE
+    -e AWS_REGION
+    -e AWS_DEFAULT_REGION
     "$@"
+  )
+  docker run "${RUN_PARAMS[@]}"
 }
 
 run_in_environment_docker() {
