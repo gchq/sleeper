@@ -81,19 +81,24 @@ variables or configuration on the host machine, which will be propagated to the 
 #### Managing environments
 
 You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify an environment ID when deploying an environment, and you can specify an environment to connect to.
-Parameters after the environment ID will be passed to a `cdk deploy` command.
+You must specify an environment ID when deploying an environment. Parameters after the environment ID will be passed to
+a `cdk deploy` command.
 
 ```bash
+# Deploy EC2 in a new VPC
 sleeper environment deploy MyEnvironment
-sleeper environment deploy EmptyEnvironment "*-Networking"
-sleeper environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
-sleeper environment connect OtherEnvironment
+
+# Only deploy VPC
+sleeper environment deploy VPCEnvironment "*-Networking"
+
+# Deploy EC2 in an existing VPC
+sleeper environment deploy EC2Environment -c vpcId=[vpc-id] "*-BuildEC2"
 ```
 
 You can switch environments like this:
 
 ```bash
+sleeper environment list
 sleeper environment set OtherEnvironment
 sleeper environment connect
 ```
