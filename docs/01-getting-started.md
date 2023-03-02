@@ -91,10 +91,10 @@ zones).
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
-While connected to your EC2 instance, from the sleeper repository directory run:
+While connected to your EC2 instance run:
 
 ```bash
-./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+sleeper deployment test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
 This will use Maven to build Sleeper (this will take around 3 minutes, and the script will be silent during this time).
@@ -111,7 +111,7 @@ sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
 Run the following command to see how many records are currently in the system:
 
 ```bash
-./scripts/utility/filesStatusReport.sh ${ID} system-test
+sleeper deployment utility/filesStatusReport.sh ${ID} system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -119,7 +119,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-./scripts/utility/query.sh ${ID}
+sleeper deployment utility/query.sh ${ID}
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
@@ -145,19 +145,25 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-java -cp java/system-test/target/system-test-*-utility.jar sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+sleeper deployment java -cp jars/system-test-*-utility.jar sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run
 
 ```bash
-./scripts/test/tearDown.sh
+sleeper deployment test/tearDown.sh
 ```
 
 Note that this will sometimes fail if there are ECS tasks running. Ensure that there are no compaction tasks running
 before doing this.
 
-It is possible to run variations on this system-test by editing the following file:
-`scripts/test/deployAll/system-test-instance.properties`.
+It is possible to run variations on this system-test by editing the system test properties, like this:
+
+```bash
+sleeper deployment
+cd test/deployAll
+editor system-test-instance.properties
+./buildDeployTest.sh  ${ID} ${VPC} ${SUBNET}
+```
 
 To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide.md).
