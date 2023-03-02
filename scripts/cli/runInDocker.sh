@@ -38,6 +38,9 @@ run_in_docker() {
     -e AWS_PROFILE
     -e AWS_REGION
     -e AWS_DEFAULT_REGION
+    -e ID
+    -e VPC
+    -e SUBNET
     "$@"
   )
   docker run "${RUN_PARAMS[@]}"
