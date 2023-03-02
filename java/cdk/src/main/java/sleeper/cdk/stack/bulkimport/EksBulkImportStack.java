@@ -159,6 +159,9 @@ public final class EksBulkImportStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        bulkImportJobStarter.getCurrentVersion();
 
         configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);

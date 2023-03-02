@@ -356,6 +356,9 @@ public class CompactionStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        handler.getCurrentVersion();
 
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
@@ -708,6 +711,9 @@ public class CompactionStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .timeout(Duration.seconds(10))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        handler.getCurrentVersion();
 
         // Grant read to the config bucket
         configBucket.grantRead(handler);
@@ -747,6 +753,9 @@ public class CompactionStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        handler.getCurrentVersion();
 
         // Grant this function permission to read from the S3 bucket
         configBucket.grantRead(handler);
@@ -805,6 +814,9 @@ public class CompactionStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        handler.getCurrentVersion();
 
         // Grant this function permission to read from the config S3 bucket
         configBucket.grantRead(handler);

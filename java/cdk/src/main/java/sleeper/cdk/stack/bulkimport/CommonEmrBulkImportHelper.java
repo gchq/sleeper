@@ -125,6 +125,9 @@ public class CommonEmrBulkImportHelper {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(jobQueue)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        function.getCurrentVersion();
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);

@@ -225,6 +225,9 @@ public class QueryStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        queryExecutorLambda.getCurrentVersion();
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -285,6 +288,10 @@ public class QueryStack extends NestedStack {
                 .timeout(Duration.seconds(29))
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        handler.getCurrentVersion();
+
         queriesQueue.grantSendMessages(handler);
         configBucket.grantRead(handler);
 

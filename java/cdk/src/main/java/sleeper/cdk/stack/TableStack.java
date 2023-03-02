@@ -208,6 +208,9 @@ public class TableStack extends NestedStack {
                 .timeout(Duration.seconds(60))
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        tableMetricsPublisher.getCurrentVersion();
 
         configBucket.grantRead(tableMetricsPublisher);
         stateStoreStack.grantReadActiveFileMetadata(tableMetricsPublisher);

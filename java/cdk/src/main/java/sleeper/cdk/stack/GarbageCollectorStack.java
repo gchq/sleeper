@@ -86,6 +86,9 @@ public class GarbageCollectorStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        handler.getCurrentVersion();
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table

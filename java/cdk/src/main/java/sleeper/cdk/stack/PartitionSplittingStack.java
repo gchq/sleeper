@@ -150,6 +150,10 @@ public class PartitionSplittingStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        findPartitionsToSplitLambda.getCurrentVersion();
+
         configBucket.grantRead(findPartitionsToSplitLambda);
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(findPartitionsToSplitLambda));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(findPartitionsToSplitLambda));
@@ -186,6 +190,9 @@ public class PartitionSplittingStack extends NestedStack {
                 .environment(environmentVariables)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        splitPartitionLambda.getCurrentVersion();
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()

@@ -170,6 +170,9 @@ public class AthenaStack extends NestedStack {
                 .handler(className)
                 .environment(env)
                 .build();
+        // This ensures that the latest version is output to the CloudFormation template
+        // see https://www.define.run/posts/cdk-not-updating-lambda/
+        athenaCompositeHandler.getCurrentVersion();
 
         CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
                 .name(instanceId + simpleClassName + "SleeperConnector")
