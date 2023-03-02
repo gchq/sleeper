@@ -47,7 +47,7 @@ You can then SSH to it with this command:
 sleeper environment connect
 ```
 
-Immediately after it's deployed, commands will run on this instance to install development tools. Once you're connected,
+Immediately after it's deployed, commands will run on this instance to install the Sleeper CLI. Once you're connected,
 you can check the progress of those commands like this:
 
 ```bash
@@ -60,7 +60,8 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-Once it has finished the instance might restart. The Sleeper Git repository will be checked out at `~/sleeper`.
+Once it has finished the instance might restart. The Sleeper Git repository will be checked out, and you can access
+it by running `sleeper builder` in the EC2.
 
 To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
 See
