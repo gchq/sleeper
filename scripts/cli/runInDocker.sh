@@ -67,17 +67,34 @@ get_version() {
 }
 
 upgrade_cli() {
-  VERSION=$(get_version | tr -d '\r\n')
-  case $VERSION in
-  *-SNAPSHOT) # Handle main branch
-    REMOTE_TAG=latest
-    GIT_REF=main
-    ;;
-  *) # Handle release version
-    REMOTE_TAG=$VERSION
-    GIT_REF="v$VERSION"
-    ;;
-  esac
+  if [ "$#" -lt 1 ]; then
+    CURRENT_VERSION=$(get_version | tr -d '\r\n')
+    case $CURRENT_VERSION in
+    *-SNAPSHOT)
+      VERSION="latest"
+      ;;
+    *)
+      # We could get the latest version from GitHub by querying this URL:
+      # https://github.com/gchq/sleeper/releases/latest
+      # At time of writing, this shows no releases. Once we have full releases on GitHub, we could use that.
+      echo "Please specify version to upgrade to"
+      return 1
+      ;;
+    esac
+  else
+    VERSION=$1
+  fi
+
+  GIT_REF="$VERSION"
+  REMOTE_TAG="$VERSION"
+  if [ "$VERSION" == "main" ]; then
+    REMOTE_TAG="latest"
+  elif [ "$VERSION" == "latest" ]; then
+    GIT_REF="main"
+  elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
+    REMOTE_TAG=${VERSION:1}
+  fi
+
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
   pull_and_tag sleeper-deployment
@@ -121,7 +138,7 @@ elif [ "$COMMAND" == "cli" ]; then
   SUBCOMMAND=$1
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
-    upgrade_cli
+    upgrade_cli "$@"
   else
     echo "Command not found: cli $SUBCOMMAND"
     exit 1
