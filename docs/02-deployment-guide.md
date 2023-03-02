@@ -131,7 +131,7 @@ It is recommended that you change these templates to configure Sleeper in the wa
 automated script. At the very least you will want to change the schema.template and tags.template files. See the
 Configuration section below for further details.
 
-Note that anything property in the templates with "changeme" as its value will be overwritten automatically.
+Note that any property in the templates with "changeme" will be overwritten automatically.
 
 You can use the automated script like this:
 
