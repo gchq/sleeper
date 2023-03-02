@@ -38,7 +38,7 @@ jobs:
       - name: Builder Docker build
         run: |
           ./scripts/cli/builder/build.sh \
-            --tag $BUILD_IMAGE_NAME \
+            --tag $BUILDER_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Environment Maven build
@@ -65,8 +65,8 @@ jobs:
           docker push $ENV_IMAGE_ID:$VERSION
           docker tag $DEPLOY_IMAGE_NAME $DEPLOY_IMAGE_ID:$VERSION
           docker push $DEPLOY_IMAGE_ID:$VERSION
-          docker tag $BUILD_IMAGE_NAME $BUILD_IMAGE_ID:$VERSION
-          docker push $BUILD_IMAGE_ID:$VERSION
+          docker tag $BUILDER_IMAGE_NAME $BUILDER_IMAGE_ID:$VERSION
+          docker push $BUILDER_IMAGE_ID:$VERSION
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
