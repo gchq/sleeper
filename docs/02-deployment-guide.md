@@ -117,59 +117,48 @@ sleeper environment destroy MyEnvironment "*-BuildEC2"
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
 
-## Building
-
-The first step is to build Sleeper. We have a section in our
-[developer guide](./09-dev-guide.md#Building) for how to do that but the easiest way is:
-
-```bash
-./scripts/build/build.sh
-```
-
 ## Deployment
 
 There are two ways to deploy Sleeper: you can use the automated scripts or a more manual approach.
 
 ### Automated Deployment
 
-The automated script uses template files to provide a default
-configuration for Sleeper. It also deploys only one table
-into Sleeper with the schema provided in these template files.
-You can find the template files [here](../scripts/templates).
+The automated deployment uses template files to provide a default configuration for Sleeper. It also deploys only one
+table into Sleeper with the schema provided in these template files. You can find the template
+files [here](../scripts/templates).
 
-It is recommended that you change these templates to configure Sleeper
-in the way that you want before you run the automated script. At
-the very least you will want to change the schema.template and
-tags.template files. See the Configuration section below
-for further details.
+It is recommended that you change these templates to configure Sleeper in the way that you want before you run the
+automated script. At the very least you will want to change the schema.template and tags.template files. See the
+Configuration section below for further details.
 
-Note that anything property in the templates with "changeme"
-as its value will be overwritten automatically by the scripts.
+Note that anything property in the templates with "changeme" as its value will be overwritten automatically.
 
-You can then use the automated script by running the following command
-from the root directory:
+You can use the automated script like this:
 
 ```bash
-./scripts/deploy/buildAndDeploy.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
+sleeper deployment
+editor templates/instanceproperties.template
+editor templates/schema.template
+editor templates/tableproperties.template
+editor templates/tags.template
+deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
 ```
 
-Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper
-will be deployed into.
+Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper will be deployed into.
 
-This script will build Sleeper and upload the necessary jars to a bucket in S3
-and push the Docker container images to respositories in ECR.
+This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
+ECR.
 
-The deployment scripts will create all of the required configuration files in a
-folder called `generated` under the root directory. It is recommended you keep
-this folder somewhere safe.
+The deployment scripts will create all of the required configuration files in a folder called `generated` in the scripts
+directory.
 
-#### Scripts in Docker
+#### Sleeper CLI Docker environment
 
-The automated scripts can also be run from inside a Docker container. This way you can avoid needing to install any of
-the dependencies or build Sleeper yourself.
+The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
+dependencies or build Sleeper yourself.
 
-The Sleeper CLI can invoke this with `sleeper deployment`. That will get you a shell inside the Docker image, as though
-you were in the scripts directory of the repository. The rest of the repository will not be present.
+The `sleeper deployment` command gets you a shell inside a Docker container as though you were in the scripts directory
+of the Sleeper Git repository. The rest of the repository will not be present.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
@@ -177,13 +166,13 @@ to the container as well.
 
 The host Docker environment will be propagated to the container via the Docker socket.
 
-The files generated for the Sleeper instance will be persisted in the host home directory, so that if you run the
-Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
+if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
 
 If you add a command on the end, you can run a specific script like this:
 
 ```shell
-./runInDocker.sh sleeper ./test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+sleeper deployment test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
 ### Manual Deployment
