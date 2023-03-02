@@ -43,6 +43,7 @@ import software.amazon.awscdk.services.eks.ServiceAccount;
 import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -148,8 +149,8 @@ public final class EksBulkImportStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
 
-        Function bulkImportJobStarter = Function.Builder.create(this, "BulkImportEKSJobStarter")
-                .code(bulkImportStarterJar.code()).currentVersionOptions(bulkImportStarterJar.versionOptions())
+        IFunction bulkImportJobStarter = bulkImportStarterJar.buildFunction(Function.Builder
+                .create(this, "BulkImportEKSJobStarter")
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
                 .memorySize(1024)
@@ -158,11 +159,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        bulkImportJobStarter.getCurrentVersion();
+                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
 
         configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
@@ -334,7 +331,7 @@ public final class EksBulkImportStack extends NestedStack {
         return json.replace("namespace-placeholder", namespace);
     }
 
-    public void grantAccessToResources(Function starterFunction, IBucket ingestBucket) {
+    public void grantAccessToResources(IFunction starterFunction, IBucket ingestBucket) {
         stateMachine.grantStartExecution(starterFunction);
         if (ingestBucket != null) {
             ingestBucket.grantRead(sparkServiceAccount);

@@ -46,6 +46,7 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
@@ -214,21 +215,16 @@ public class QueryStack extends NestedStack {
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
 
         // Lambda to process queries and post results to results queue
-        Function queryExecutorLambda = Function.Builder
+        IFunction queryExecutorLambda = queryJar.buildFunction(Function.Builder
                 .create(this, "QueryExecutorLambda")
                 .functionName(functionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to perform the query")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(queryJar.code()).currentVersionOptions(queryJar.versionOptions())
                 .handler("sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        queryExecutorLambda.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
@@ -277,21 +273,16 @@ public class QueryStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, Function queryExecutorLambda, IBucket configBucket) {
+    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, IBucket configBucket) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        Function handler = Function.Builder.create(this, "apiHandler")
+        IFunction handler = queryJar.buildFunction(Function.Builder.create(this, "apiHandler")
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
-                .code(queryJar.code()).currentVersionOptions(queryJar.versionOptions())
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
                 .memorySize(256)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .timeout(Duration.seconds(29))
-                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 
         queriesQueue.grantSendMessages(handler);
         configBucket.grantRead(handler);

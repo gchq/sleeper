@@ -21,6 +21,7 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -71,7 +72,7 @@ public class GarbageCollectorStack extends NestedStack {
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
-        Function handler = Function.Builder
+        IFunction handler = gcJar.buildFunction(Function.Builder
                 .create(this, "GarbageCollectorLambda")
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need deleting and delete them")
@@ -81,15 +82,10 @@ public class GarbageCollectorStack extends NestedStack {
                 // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
                 // of a lambda.
                 .timeout(Duration.seconds(Math.max(1, Math.min((int) (0.9 * 60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES)), 900))))
-                .code(gcJar.code()).currentVersionOptions(gcJar.versionOptions())
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table

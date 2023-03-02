@@ -65,6 +65,7 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -344,22 +345,17 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
-        Function handler = Function.Builder
+        IFunction handler = jobCreatorJar.buildFunction(Function.Builder
                 .create(this, "JobCreationLambda")
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(jobCreatorJar.code()).currentVersionOptions(jobCreatorJar.versionOptions())
                 .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
@@ -573,7 +569,7 @@ public class CompactionStack extends NestedStack {
                                 .build()))
                 .build();
 
-        Function customTermination = lambdaForCustomTerminationPolicy(configBucket, taskCreatorJar, type);
+        IFunction customTermination = lambdaForCustomTerminationPolicy(configBucket, taskCreatorJar, type);
         // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
         ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
@@ -688,7 +684,7 @@ public class CompactionStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private Function lambdaForCustomTerminationPolicy(IBucket configBucket, LambdaCode taskCreatorJar, String type) {
+    private IFunction lambdaForCustomTerminationPolicy(IBucket configBucket, LambdaCode taskCreatorJar, String type) {
         if (!Arrays.asList("splittingcompaction", "compaction").contains(type)) {
             throw new IllegalArgumentException("type must be splittingcompaction or compaction");
         }
@@ -700,21 +696,16 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), type, "custom-termination"));
 
-        Function handler = Function.Builder
+        IFunction handler = taskCreatorJar.buildFunction(Function.Builder
                 .create(this, type + "-custom-termination")
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
-                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .environment(environmentVariables)
                 .handler("sleeper.compaction.jobexecution.SafeTerminationLambda::handleRequest")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .memorySize(512)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .timeout(Duration.seconds(10))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .timeout(Duration.seconds(10)));
 
         // Grant read to the config bucket
         configBucket.grantRead(handler);
@@ -741,22 +732,17 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
-        Function handler = Function.Builder
+        IFunction handler = taskCreatorJar.buildFunction(Function.Builder
                 .create(this, "CompactionTasksCreator")
                 .functionName(functionName)
                 .description("If there are compaction jobs on queue create tasks to run them")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission to read from the S3 bucket
         configBucket.grantRead(handler);
@@ -802,22 +788,17 @@ public class CompactionStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
 
-        Function handler = Function.Builder
+        IFunction handler = taskCreatorJar.buildFunction(Function.Builder
                 .create(this, "SplittingCompactionTasksCreator")
                 .functionName(functionName)
                 .description("If there are splitting compaction jobs on queue create tasks to run them")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .handler("sleeper.compaction.jobexecution.RunTasksLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission to read from the config S3 bucket
         configBucket.grantRead(handler);

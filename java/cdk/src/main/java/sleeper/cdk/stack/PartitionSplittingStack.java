@@ -28,6 +28,7 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -138,22 +139,17 @@ public class PartitionSplittingStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "find-partitions-to-split"));
 
-        Function findPartitionsToSplitLambda = Function.Builder
+        IFunction findPartitionsToSplitLambda = splitterJar.buildFunction(Function.Builder
                 .create(this, "FindPartitionsToSplitLambda")
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for partitions that need splitting")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
-                .code(splitterJar.code()).currentVersionOptions(splitterJar.versionOptions())
                 .handler("sleeper.splitter.FindPartitionsToSplitLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        findPartitionsToSplitLambda.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(findPartitionsToSplitLambda);
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(findPartitionsToSplitLambda));
@@ -179,21 +175,16 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
-        Function splitPartitionLambda = Function.Builder
+        IFunction splitPartitionLambda = splitterJar.buildFunction(Function.Builder
                 .create(this, "SplitPartitionLambda")
                 .functionName(functionName)
                 .description("Triggered by an SQS event that contains a partition to split")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
-                .code(splitterJar.code()).currentVersionOptions(splitterJar.versionOptions())
                 .handler("sleeper.splitter.SplitPartitionLambda::handleRequest")
                 .environment(environmentVariables)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        splitPartitionLambda.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Add the queue as a source of events for this lambda
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()

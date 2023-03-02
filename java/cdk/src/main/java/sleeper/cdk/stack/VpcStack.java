@@ -27,7 +27,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.FunctionProps;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -67,15 +67,14 @@ public class VpcStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check"));
 
-        Function vpcCheckLambda = new Function(this, "VpcCheckLambda", FunctionProps.builder()
-                .code(jar.code()).currentVersionOptions(jar.versionOptions())
+        IFunction vpcCheckLambda = jar.buildFunction(Function.Builder
+                .create(this, "VpcCheckLambda")
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_11)
-                .build());
+                .runtime(Runtime.JAVA_11));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
                 .actions(Lists.newArrayList("ec2:DescribeVpcEndpoints"))

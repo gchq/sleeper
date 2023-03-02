@@ -26,6 +26,7 @@ import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -123,7 +124,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            Function handler = createConnector(className, instanceId, logRetentionDays, jarCode, env, memory, timeout);
+            IFunction handler = createConnector(className, instanceId, logRetentionDays, jarCode, env, memory, timeout);
 
             jarsBucket.grantRead(handler);
 
@@ -152,7 +153,7 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Function createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
         if (simpleClassName.endsWith("CompositeHandler")) {
             simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
@@ -161,19 +162,15 @@ public class AthenaStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
 
-        Function athenaCompositeHandler = Function.Builder.create(this, simpleClassName + "AthenaCompositeHandler")
+        IFunction athenaCompositeHandler = jar.buildFunction(Function.Builder
+                .create(this, simpleClassName + "AthenaCompositeHandler")
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
-                .code(jar.code()).currentVersionOptions(jar.versionOptions())
                 .runtime(Runtime.JAVA_11)
                 .logRetention(Utils.getRetentionDays(logRetentionDays))
                 .handler(className)
-                .environment(env)
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        athenaCompositeHandler.getCurrentVersion();
+                .environment(env));
 
         CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
                 .name(instanceId + simpleClassName + "SleeperConnector")

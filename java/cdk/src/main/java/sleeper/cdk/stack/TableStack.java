@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.FunctionProps;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -86,8 +86,8 @@ public class TableStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "sleeper-table"));
 
-        Function sleeperTableLambda = new Function(this, "SleeperTableLambda", FunctionProps.builder()
-                .code(jar.code()).currentVersionOptions(jar.versionOptions())
+        IFunction sleeperTableLambda = jar.buildFunction(Function.Builder
+                .create(this, "SleeperTableLambda")
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.SleeperTableLambda::handleEvent")
                 .memorySize(2048)
@@ -95,8 +95,7 @@ public class TableStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for handling initialisation and teardown of Sleeper Tables")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_11)
-                .build());
+                .runtime(Runtime.JAVA_11));
 
         configBucket.grantReadWrite(sleeperTableLambda);
 
@@ -113,7 +112,7 @@ public class TableStack extends NestedStack {
     private void createTables(Construct scope,
                               InstanceProperties instanceProperties,
                               Provider tablesProvider,
-                              Function sleeperTableLambda,
+                              IFunction sleeperTableLambda,
                               IBucket configBucket,
                               IBucket jarsBucket) {
         Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
@@ -123,7 +122,7 @@ public class TableStack extends NestedStack {
     private void createTable(InstanceProperties instanceProperties,
                              TableProperties tableProperties,
                              Provider sleeperTablesProvider,
-                             Function sleeperTableLambda,
+                             IFunction sleeperTableLambda,
                              IBucket configBucket,
                              IBucket jarsBucket) {
         String instanceId = instanceProperties.get(ID);
@@ -200,18 +199,14 @@ public class TableStack extends NestedStack {
                 .jar(BuiltJar.METRICS).lambdaCodeFrom(jarsBucket);
 
         // Metrics generation and publishing
-        Function tableMetricsPublisher = Function.Builder.create(this, tableName + "MetricsPublisher")
+        IFunction tableMetricsPublisher = metricsJar.buildFunction(Function.Builder
+                .create(this, tableName + "MetricsPublisher")
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
-                .code(metricsJar.code()).currentVersionOptions(metricsJar.versionOptions())
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
                 .memorySize(256)
                 .timeout(Duration.seconds(60))
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        tableMetricsPublisher.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(tableMetricsPublisher);
         stateStoreStack.grantReadActiveFileMetadata(tableMetricsPublisher);

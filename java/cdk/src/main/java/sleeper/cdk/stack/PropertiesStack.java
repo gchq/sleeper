@@ -19,7 +19,7 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.FunctionProps;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -67,16 +67,15 @@ public class PropertiesStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
 
-        Function propertiesWriterLambda = new Function(this, "PropertiesWriterLambda", FunctionProps.builder()
-                .code(jar.code()).currentVersionOptions(jar.versionOptions())
+        IFunction propertiesWriterLambda = jar.buildFunction(Function.Builder
+                .create(this, "PropertiesWriterLambda")
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_11)
-                .build());
+                .runtime(Runtime.JAVA_11));
 
         configBucket.grantWrite(propertiesWriterLambda);
 

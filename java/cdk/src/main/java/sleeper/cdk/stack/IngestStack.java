@@ -42,6 +42,7 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -278,22 +279,17 @@ public class IngestStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-tasks-creator"));
 
-        Function handler = Function.Builder
+        IFunction handler = taskCreatorJar.buildFunction(Function.Builder
                 .create(this, "IngestTasksCreator")
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(taskCreatorJar.code()).currentVersionOptions(taskCreatorJar.versionOptions())
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        handler.getCurrentVersion();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission to read from the S3 bucket
         configBucket.grantRead(handler);

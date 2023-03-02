@@ -16,6 +16,8 @@
 package sleeper.cdk;
 
 import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.VersionOptions;
 import software.amazon.awscdk.services.s3.IBucket;
 
@@ -41,11 +43,16 @@ public final class LambdaCode {
         }
     }
 
-    public Code code() {
-        return code;
-    }
-
-    public VersionOptions versionOptions() {
-        return versionOptions;
+    public IFunction buildFunction(Function.Builder builder) {
+        return builder
+                .code(code)
+                .currentVersionOptions(versionOptions)
+                .build()
+                // This ensures that the latest version is output to the CloudFormation template.
+                // See the following:
+                // https://www.define.run/posts/cdk-not-updating-lambda/
+                // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
+                // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
+                .getCurrentVersion();
     }
 }

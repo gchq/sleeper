@@ -25,6 +25,7 @@ import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -100,8 +101,8 @@ public class CommonEmrBulkImportHelper {
         return emrBulkImportJobQueue;
     }
 
-    protected Function createJobStarterFunction(String bulkImportPlatform, Queue jobQueue,
-                                                IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue,
+                                              IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -114,8 +115,8 @@ public class CommonEmrBulkImportHelper {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
-        Function function = Function.Builder.create(scope, "BulkImport" + shortId + "JobStarter")
-                .code(bulkImportStarterJar.code()).currentVersionOptions(bulkImportStarterJar.versionOptions())
+        IFunction function = bulkImportStarterJar.buildFunction(Function.Builder
+                .create(scope, "BulkImport" + shortId + "JobStarter")
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
                 .memorySize(1024)
@@ -124,11 +125,7 @@ public class CommonEmrBulkImportHelper {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(new SqsEventSource(jobQueue)))
-                .build();
-        // This ensures that the latest version is output to the CloudFormation template
-        // see https://www.define.run/posts/cdk-not-updating-lambda/
-        function.getCurrentVersion();
+                .events(Lists.newArrayList(new SqsEventSource(jobQueue))));
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);

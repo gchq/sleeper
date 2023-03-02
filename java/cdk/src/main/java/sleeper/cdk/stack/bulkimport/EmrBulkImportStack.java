@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -51,14 +51,14 @@ public class EmrBulkImportStack extends NestedStack {
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 this, "NonPersistentEMR", instanceProperties);
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
-        Function jobStarter = commonHelper.createJobStarterFunction(
+        IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "NonPersistentEMR", bulkImportJobQueue, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private static void configureJobStarterFunction(
-            InstanceProperties instanceProperties, Function bulkImportJobStarter) {
+            InstanceProperties instanceProperties, IFunction bulkImportJobStarter) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
         instanceProperties.getTags().forEach((key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
