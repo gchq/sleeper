@@ -1,26 +1,13 @@
 Building and deploying Sleeper
 ==============================
 
-This contains instructions on how to build and deploy Sleeper.
+This contains instructions on how to deploy Sleeper.
 
 ## Get your environment set up
 
-You will need to get your environment set up correctly so that you can deploy a Sleeper instance
-to AWS and then interact with it.
-
-### Install Prerequisite Software
-
-You will need the following software:
-
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 11/17](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
-* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
-
-If you deployed an environment with the local Docker image, the EC2 instance will have these pre-installed.
+You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
+interact with it. Follow the [getting started guide](01-getting-started.md) to install the Sleeper CLI. The information
+below provides more detail.
 
 ### Configure AWS
 
