@@ -20,12 +20,11 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-run_in_environment_docker() {
-  HOME_IN_IMAGE=/root
+HOME_IN_IMAGE=/root
 
+run_in_docker() {
   docker run -it --rm \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
     -e AWS_ACCESS_KEY_ID \
     -e AWS_SECRET_ACCESS_KEY \
@@ -33,39 +32,25 @@ run_in_environment_docker() {
     -e AWS_PROFILE \
     -e AWS_REGION \
     -e AWS_DEFAULT_REGION \
+    "$@"
+}
+
+run_in_environment_docker() {
+  run_in_docker \
+    -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
     sleeper-local:current "$@"
 }
 
 run_in_deployment_docker() {
-  HOME_IN_IMAGE=/root
-
-  docker run -it --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+  run_in_docker \
     -v "$HOME/.sleeper/generated:/sleeper/generated" \
-    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
-    -e AWS_SESSION_TOKEN \
-    -e AWS_PROFILE \
-    -e AWS_REGION \
-    -e AWS_DEFAULT_REGION \
     sleeper-deployment:current "$@"
 }
 
 run_in_builder_docker() {
-  HOME_IN_IMAGE=/root
-
-  docker run -it --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+  run_in_docker \
     -v "$HOME/.sleeper/builder:/sleeper-builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
-    -e AWS_SESSION_TOKEN \
-    -e AWS_PROFILE \
-    -e AWS_REGION \
-    -e AWS_DEFAULT_REGION \
     sleeper-builder:current "$@"
 }
 
