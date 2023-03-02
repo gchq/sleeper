@@ -39,6 +39,7 @@ run_in_docker() {
     -e AWS_REGION
     -e AWS_DEFAULT_REGION
     -e ID
+    -e INSTANCE_ID
     -e VPC
     -e SUBNET
     "$@"
