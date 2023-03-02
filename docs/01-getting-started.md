@@ -13,12 +13,12 @@ Before running this demo functionality, you will need the following installed:
 
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
+* Sleeper CLI
 
-### Deployment environment
+#### Sleeper CLI installation
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. A local Docker image
-contains the necessary dependencies and scripts to do this. Run the following commands to install a CLI to work with
-the local Docker image. The \[version\] can be `main` or a version like `v0.13.0`.
+The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
+following commands to install the CLI. The version can be `main` or a release in the format `v0.14.0`.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
@@ -31,8 +31,10 @@ This installs a `sleeper` command to run other commands inside a Docker containe
 AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
 you use `sleeper`.
 
-Run these commands to deploy an EC2 instance in AWS (note that cdk bootstrap only needs to be done once in a given AWS
-account):
+### Deployment environment
+
+You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Run these commands to
+do this with the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
 
 ```bash
 sleeper aws configure
