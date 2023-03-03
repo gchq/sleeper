@@ -35,9 +35,9 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJarNew;
-import sleeper.cdk.jars.JarsBucket;
-import sleeper.cdk.jars.LambdaCodeNew;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.List;
@@ -57,14 +57,14 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
-    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, JarsBucket jars,
+    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
                        List<StateStoreStack> stateStoreStacks, List<IBucket> dataBuckets) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCodeNew jarCode = jars.lambdaCode(BuiltJarNew.ATHENA, jarsBucket);
+        LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
@@ -150,7 +150,7 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCodeNew jar, Map<String, String> env, Integer memory, Integer timeout) {
+    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
         if (simpleClassName.endsWith("CompositeHandler")) {
             simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));

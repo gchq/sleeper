@@ -27,9 +27,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJarNew;
-import sleeper.cdk.jars.JarsBucket;
-import sleeper.cdk.jars.LambdaCodeNew;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Collections;
@@ -54,7 +54,7 @@ public class GarbageCollectorStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            JarsBucket jars,
+            BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets) {
         super(scope, id);
@@ -66,7 +66,7 @@ public class GarbageCollectorStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         // Garbage collector code
-        LambdaCodeNew gcJar = jars.lambdaCode(BuiltJarNew.GARBAGE_COLLECTOR, jarsBucket);
+        LambdaCode gcJar = jars.lambdaCode(BuiltJar.GARBAGE_COLLECTOR, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));

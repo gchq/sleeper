@@ -18,12 +18,12 @@ package sleeper.cdk.jars;
 import com.amazonaws.services.s3.AmazonS3;
 import software.amazon.awscdk.services.s3.IBucket;
 
-public class JarsBucket {
+public class BuiltJars {
 
     private final AmazonS3 s3;
     private final String bucketName;
 
-    public JarsBucket(AmazonS3 s3, String bucketName) {
+    public BuiltJars(AmazonS3 s3, String bucketName) {
         this.s3 = s3;
         this.bucketName = bucketName;
     }
@@ -32,11 +32,11 @@ public class JarsBucket {
         return bucketName;
     }
 
-    public LambdaCodeNew lambdaCode(BuiltJarNew jar, IBucket bucketConstruct) {
-        return new LambdaCodeNew(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
+    public LambdaCode lambdaCode(BuiltJar jar, IBucket bucketConstruct) {
+        return new LambdaCode(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
     }
 
-    public String getLatestVersionId(BuiltJarNew jar) {
+    public String getLatestVersionId(BuiltJar jar) {
         return s3.getObjectMetadata(bucketName, jar.getFileName()).getVersionId();
     }
 }

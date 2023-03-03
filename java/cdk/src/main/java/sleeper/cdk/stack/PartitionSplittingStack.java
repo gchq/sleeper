@@ -38,9 +38,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJarNew;
-import sleeper.cdk.jars.JarsBucket;
-import sleeper.cdk.jars.LambdaCodeNew;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -73,7 +73,7 @@ public class PartitionSplittingStack extends NestedStack {
     public PartitionSplittingStack(Construct scope,
                                    String id,
                                    InstanceProperties instanceProperties,
-                                   JarsBucket jars,
+                                   BuiltJars jars,
                                    List<IBucket> dataBuckets,
                                    List<StateStoreStack> stateStoreStacks,
                                    Topic topic) {
@@ -129,7 +129,7 @@ public class PartitionSplittingStack extends NestedStack {
         new CfnOutput(this, PARTITION_SPLITTING_DL_QUEUE_URL, partitionSplittingDLQueueOutputProps);
 
         // Partition splitting code
-        LambdaCodeNew splitterJar = jars.lambdaCode(BuiltJarNew.PARTITION_SPLITTER, jarsBucket);
+        LambdaCode splitterJar = jars.lambdaCode(BuiltJar.PARTITION_SPLITTER, jarsBucket);
 
         // Lambda to look for partitions that need splitting (for each partition that
         // needs splitting it puts a definition of the splitting job onto a queue)

@@ -60,9 +60,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJarNew;
-import sleeper.cdk.jars.JarsBucket;
-import sleeper.cdk.jars.LambdaCodeNew;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -102,7 +102,7 @@ public class QueryStack extends NestedStack {
     public QueryStack(Construct scope,
                       String id,
                       InstanceProperties instanceProperties,
-                      JarsBucket jars,
+                      BuiltJars jars,
                       List<IBucket> dataBuckets,
                       List<StateStoreStack> stateStoreStacks) {
         super(scope, id);
@@ -209,7 +209,7 @@ public class QueryStack extends NestedStack {
         new CfnOutput(this, QUERY_RESULTS_QUEUE_URL, queryResultsQueueOutputProps);
 
         // Query execution lambda code
-        LambdaCodeNew queryJar = jars.lambdaCode(BuiltJarNew.QUERY, jarsBucket);
+        LambdaCode queryJar = jars.lambdaCode(BuiltJar.QUERY, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
@@ -272,7 +272,7 @@ public class QueryStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    protected void setupWebSocketApi(LambdaCodeNew queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, IBucket configBucket) {
+    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, IBucket configBucket) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         IFunction handler = queryJar.buildFunction(this, "apiHandler", builder -> builder
                 .description("Prepares queries received via the WebSocket API and queues them for processing")

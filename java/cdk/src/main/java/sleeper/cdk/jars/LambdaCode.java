@@ -24,13 +24,13 @@ import software.constructs.Construct;
 
 import java.util.function.Consumer;
 
-public class LambdaCodeNew {
+public class LambdaCode {
 
     private final IBucket bucket;
     private final String filename;
     private final String versionId;
 
-    public LambdaCodeNew(IBucket bucket, String filename, String versionId) {
+    public LambdaCode(IBucket bucket, String filename, String versionId) {
         this.bucket = bucket;
         this.filename = filename;
         this.versionId = versionId;

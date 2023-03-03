@@ -34,7 +34,7 @@ import static com.amazonaws.services.s3.model.BucketVersioningConfiguration.ENAB
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-public class JarsBucketIT {
+public class BuiltJarsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -46,7 +46,7 @@ public class JarsBucketIT {
             .build();
 
     private final String bucketName = UUID.randomUUID().toString();
-    private final JarsBucket jarsBucket = new JarsBucket(s3, bucketName);
+    private final BuiltJars builtJars = new BuiltJars(s3, bucketName);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
@@ -55,7 +55,7 @@ public class JarsBucketIT {
                 new BucketVersioningConfiguration(ENABLED)));
         String versionId = s3.putObject(bucketName, "test.jar", "data").getVersionId();
 
-        assertThat(jarsBucket.getLatestVersionId(BuiltJarNew.fromFormat("test.jar")))
+        assertThat(builtJars.getLatestVersionId(BuiltJar.fromFormat("test.jar")))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
     }

@@ -33,9 +33,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJarNew;
-import sleeper.cdk.jars.JarsBucket;
-import sleeper.cdk.jars.LambdaCodeNew;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
@@ -49,7 +49,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_R
 public class VpcStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
 
-    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, JarsBucket jars) {
+    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
 
         if (!instanceProperties.getBoolean(UserDefinedInstanceProperty.VPC_ENDPOINT_CHECK)) {
@@ -60,7 +60,7 @@ public class VpcStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCodeNew jar = jars.lambdaCode(BuiltJarNew.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check"));

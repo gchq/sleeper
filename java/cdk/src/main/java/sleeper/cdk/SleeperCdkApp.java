@@ -23,7 +23,7 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.CompactionStack;
 import sleeper.cdk.stack.ConfigurationStack;
@@ -58,7 +58,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
  */
 public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;
-    private final JarsBucket jars;
+    private final BuiltJars jars;
     private final App app;
     private IngestStack ingestStack;
     private TableStack tableStack;
@@ -69,7 +69,7 @@ public class SleeperCdkApp extends Stack {
     private EmrBulkImportStack emrBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
 
-    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, JarsBucket jars) {
+    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
         this.app = app;
         this.instanceProperties = instanceProperties;
@@ -244,13 +244,13 @@ public class SleeperCdkApp extends Stack {
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .build();
-        JarsBucket jarsBucket = new JarsBucket(AmazonS3ClientBuilder.defaultClient(), instanceProperties.get(JARS_BUCKET));
+        BuiltJars builtJars = new BuiltJars(AmazonS3ClientBuilder.defaultClient(), instanceProperties.get(JARS_BUCKET));
 
         new SleeperCdkApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
                 .build(),
-                instanceProperties, jarsBucket).create();
+                instanceProperties, builtJars).create();
 
         app.synth();
     }

@@ -50,9 +50,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJarNew;
-import sleeper.cdk.jars.JarsBucket;
-import sleeper.cdk.jars.LambdaCodeNew;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
@@ -99,7 +99,7 @@ public class IngestStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            JarsBucket jars,
+            BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets,
             Topic topic) {
@@ -120,7 +120,7 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Job creation code
-        LambdaCodeNew taskCreatorJar = jars.lambdaCode(BuiltJarNew.INGEST_STARTER, jarsBucket);
+        LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(topic);
@@ -270,7 +270,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(IBucket configBucket, Queue ingestJobQueue, LambdaCodeNew taskCreatorJar) {
+    private void lambdaToCreateIngestTasks(IBucket configBucket, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
