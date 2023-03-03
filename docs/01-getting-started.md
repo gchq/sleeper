@@ -31,6 +31,8 @@ This installs a `sleeper` command to run other commands inside a Docker containe
 AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
 you use `sleeper`.
 
+You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
+
 ### Deployment environment
 
 You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Run these commands to
