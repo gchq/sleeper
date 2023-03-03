@@ -114,7 +114,9 @@ upgrade_cli() {
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
   $TEMP_PATH cli pull-images
-  mv "$TEMP_PATH" "$EXECUTABLE_PATH" && echo "Updated"
+  mv "$TEMP_PATH" "$EXECUTABLE_PATH"
+  echo "Updated"
+  exit
 }
 
 pull_and_tag() {
