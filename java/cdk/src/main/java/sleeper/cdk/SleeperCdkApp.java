@@ -92,7 +92,7 @@ public class SleeperCdkApp extends Stack {
         List<String> optionalStacks = instanceProperties.getList(OPTIONAL_STACKS);
 
         // Stack for Checking VPC configuration
-        new VpcStack(this, "Vpc", instanceProperties);
+        new VpcStack(this, "Vpc", instanceProperties, jarsBucket);
 
         // Stack for instance configuration
         new ConfigurationStack(this, "Configuration", instanceProperties);
@@ -101,7 +101,7 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stack for tables
-        tableStack = new TableStack(this, "Table", instanceProperties);
+        tableStack = new TableStack(this, "Table", instanceProperties, jarsBucket);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {

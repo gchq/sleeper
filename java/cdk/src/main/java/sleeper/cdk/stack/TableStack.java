@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
@@ -38,8 +37,9 @@ import software.amazon.awscdk.services.s3.deployment.Source;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -75,19 +75,19 @@ public class TableStack extends NestedStack {
     public TableStack(
             Construct scope,
             String id,
-            InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties,
+            JarsBucket jars) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
-        LambdaCode jar = BuiltJar.withContext(this, instanceProperties)
-                .jar(BuiltJar.CUSTOM_RESOURCES).lambdaCodeFrom(jarsBucket);
+        LambdaCodeNew jar = jars.lambdaCode(BuiltJarNew.CUSTOM_RESOURCES, jarsBucket);
+        LambdaCodeNew metricsJar = jars.lambdaCode(BuiltJarNew.METRICS, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "sleeper-table"));
 
-        IFunction sleeperTableLambda = jar.buildFunction(Function.Builder
-                .create(this, "SleeperTableLambda")
+        IFunction sleeperTableLambda = jar.buildFunction(this, "SleeperTableLambda", builder -> builder
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.SleeperTableLambda::handleEvent")
                 .memorySize(2048)
@@ -104,7 +104,7 @@ public class TableStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
 
-        createTables(scope, instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, jarsBucket);
+        createTables(scope, instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, metricsJar);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -114,9 +114,9 @@ public class TableStack extends NestedStack {
                               Provider tablesProvider,
                               IFunction sleeperTableLambda,
                               IBucket configBucket,
-                              IBucket jarsBucket) {
+                              LambdaCodeNew metricsJar) {
         Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
-                createTable(instanceProperties, tableProperties, tablesProvider, sleeperTableLambda, configBucket, jarsBucket));
+                createTable(instanceProperties, tableProperties, tablesProvider, sleeperTableLambda, configBucket, metricsJar));
     }
 
     private void createTable(InstanceProperties instanceProperties,
@@ -124,7 +124,7 @@ public class TableStack extends NestedStack {
                              Provider sleeperTablesProvider,
                              IFunction sleeperTableLambda,
                              IBucket configBucket,
-                             IBucket jarsBucket) {
+                             LambdaCodeNew metricsJar) {
         String instanceId = instanceProperties.get(ID);
         String tableName = tableProperties.get(TABLE_NAME);
 
@@ -195,12 +195,9 @@ public class TableStack extends NestedStack {
         if (splitPoints != null) {
             tableInitialisation.getNode().addDependency(splitPoints);
         }
-        LambdaCode metricsJar = BuiltJar.withContext(this, instanceProperties)
-                .jar(BuiltJar.METRICS).lambdaCodeFrom(jarsBucket);
 
         // Metrics generation and publishing
-        IFunction tableMetricsPublisher = metricsJar.buildFunction(Function.Builder
-                .create(this, tableName + "MetricsPublisher")
+        IFunction tableMetricsPublisher = metricsJar.buildFunction(this, tableName + "MetricsPublisher", builder -> builder
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .runtime(Runtime.JAVA_11)
                 .handler("sleeper.metrics.TableMetricsLambda::handleRequest")

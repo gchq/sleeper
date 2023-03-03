@@ -26,7 +26,6 @@ import software.amazon.awscdk.customresources.ProviderProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -34,8 +33,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
@@ -44,13 +44,12 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
 public class VpcStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
 
-    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, JarsBucket jars) {
         super(scope, id);
 
         if (!instanceProperties.getBoolean(UserDefinedInstanceProperty.VPC_ENDPOINT_CHECK)) {
@@ -60,15 +59,13 @@ public class VpcStack extends NestedStack {
         }
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode jar = BuiltJar.withContext(this, instanceProperties)
-                .jar(BuiltJar.CUSTOM_RESOURCES).lambdaCodeFrom(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCodeNew jar = jars.lambdaCode(BuiltJarNew.CUSTOM_RESOURCES, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check"));
 
-        IFunction vpcCheckLambda = jar.buildFunction(Function.Builder
-                .create(this, "VpcCheckLambda")
+        IFunction vpcCheckLambda = jar.buildFunction(this, "VpcCheckLambda", builder -> builder
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
                 .memorySize(2048)
