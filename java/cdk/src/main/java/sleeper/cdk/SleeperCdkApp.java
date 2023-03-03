@@ -15,6 +15,7 @@
  */
 package sleeper.cdk;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
@@ -22,6 +23,7 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.constructs.Construct;
 
+import sleeper.cdk.jars.JarsBucket;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.CompactionStack;
 import sleeper.cdk.stack.ConfigurationStack;
@@ -47,6 +49,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
@@ -54,7 +57,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
  * The {@link App} that deploys all the Sleeper stacks.
  */
 public class SleeperCdkApp extends Stack {
-    public final InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties;
+    private final JarsBucket jarsBucket;
     private final App app;
     private IngestStack ingestStack;
     private TableStack tableStack;
@@ -65,10 +69,11 @@ public class SleeperCdkApp extends Stack {
     private EmrBulkImportStack emrBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
 
-    public SleeperCdkApp(App app, String id, InstanceProperties instanceProperties, StackProps props) {
+    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, JarsBucket jarsBucket) {
         super(app, id, props);
         this.app = app;
         this.instanceProperties = instanceProperties;
+        this.jarsBucket = jarsBucket;
     }
 
     private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
@@ -100,7 +105,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
+            new AthenaStack(this, "Athena", instanceProperties, jarsBucket, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
         }
 
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
@@ -239,11 +244,13 @@ public class SleeperCdkApp extends Stack {
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .build();
+        JarsBucket jarsBucket = new JarsBucket(AmazonS3ClientBuilder.defaultClient(), instanceProperties.get(JARS_BUCKET));
 
-        new SleeperCdkApp(app, id, instanceProperties, StackProps.builder()
+        new SleeperCdkApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
-                .build()).create();
+                .build(),
+                instanceProperties, jarsBucket).create();
 
         app.synth();
     }

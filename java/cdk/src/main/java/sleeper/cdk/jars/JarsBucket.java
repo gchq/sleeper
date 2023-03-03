@@ -28,6 +28,10 @@ public class JarsBucket {
         this.bucketName = bucketName;
     }
 
+    public String bucketName() {
+        return bucketName;
+    }
+
     public LambdaCodeNew lambdaCode(BuiltJarNew jar, IBucket bucketConstruct) {
         return new LambdaCodeNew(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
     }

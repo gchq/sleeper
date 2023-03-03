@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
@@ -36,8 +35,9 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.List;
@@ -51,23 +51,20 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHEN
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
-    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties,
+    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, JarsBucket jars,
                        List<StateStoreStack> stateStoreStacks, List<IBucket> dataBuckets) {
         super(scope, id);
 
-        String jarsBucketName = instanceProperties.get(JARS_BUCKET);
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        LambdaCode jarCode = BuiltJar.withContext(this, instanceProperties)
-                .jar(BuiltJar.ATHENA).lambdaCodeFrom(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCodeNew jarCode = jars.lambdaCode(BuiltJarNew.ATHENA, jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
@@ -153,7 +150,7 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
+    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCodeNew jar, Map<String, String> env, Integer memory, Integer timeout) {
         String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
         if (simpleClassName.endsWith("CompositeHandler")) {
             simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
@@ -162,8 +159,7 @@ public class AthenaStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
 
-        IFunction athenaCompositeHandler = jar.buildFunction(Function.Builder
-                .create(this, simpleClassName + "AthenaCompositeHandler")
+        IFunction athenaCompositeHandler = jar.buildFunction(this, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))

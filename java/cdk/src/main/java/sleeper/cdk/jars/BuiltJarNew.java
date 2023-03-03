@@ -18,6 +18,18 @@ package sleeper.cdk.jars;
 import sleeper.core.SleeperVersion;
 
 public class BuiltJarNew {
+
+    public static final BuiltJarNew ATHENA = fromFormat("athena-%s.jar");
+    public static final BuiltJarNew BULK_IMPORT_STARTER = fromFormat("bulk-import-starter-%s.jar");
+    public static final BuiltJarNew INGEST_STARTER = fromFormat("ingest-starter-%s.jar");
+    public static final BuiltJarNew GARBAGE_COLLECTOR = fromFormat("lambda-garbagecollector-%s.jar");
+    public static final BuiltJarNew COMPACTION_JOB_CREATOR = fromFormat("lambda-jobSpecCreationLambda-%s.jar");
+    public static final BuiltJarNew COMPACTION_TASK_CREATOR = fromFormat("runningjobs-%s.jar");
+    public static final BuiltJarNew PARTITION_SPLITTER = fromFormat("lambda-splitter-%s.jar");
+    public static final BuiltJarNew QUERY = fromFormat("query-%s.jar");
+    public static final BuiltJarNew CUSTOM_RESOURCES = fromFormat("cdk-custom-resources-%s.jar");
+    public static final BuiltJarNew METRICS = fromFormat("metrics-%s.jar");
+
     private final String fileName;
 
     private BuiltJarNew(String fileName) {
