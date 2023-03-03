@@ -17,15 +17,15 @@ package sleeper.cdk.jars;
 
 import sleeper.core.SleeperVersion;
 
-public class Jar {
+public class BuiltJarNew {
     private final String fileName;
 
-    private Jar(String fileName) {
+    private BuiltJarNew(String fileName) {
         this.fileName = fileName;
     }
 
-    public static Jar fromFormat(String format) {
-        return new Jar(String.format(format, SleeperVersion.getVersion()));
+    public static BuiltJarNew fromFormat(String format) {
+        return new BuiltJarNew(String.format(format, SleeperVersion.getVersion()));
     }
 
     public String getFileName() {

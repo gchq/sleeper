@@ -27,7 +27,7 @@ public class JarsBucket {
         this.bucketName = bucketName;
     }
 
-    public String getLatestVersionId(Jar jar) {
+    public String getLatestVersionId(BuiltJarNew jar) {
         return s3.getObjectMetadata(bucketName, jar.getFileName()).getVersionId();
     }
 }

@@ -55,7 +55,7 @@ public class JarsBucketIT {
                 new BucketVersioningConfiguration(ENABLED)));
         String versionId = s3.putObject(bucketName, "test.jar", "data").getVersionId();
 
-        assertThat(jarsBucket.getLatestVersionId(Jar.fromFormat("test.jar")))
+        assertThat(jarsBucket.getLatestVersionId(BuiltJarNew.fromFormat("test.jar")))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
     }
