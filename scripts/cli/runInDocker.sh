@@ -117,6 +117,11 @@ upgrade_cli() {
   $TEMP_PATH cli pull-images "$VERSION"
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   echo "Updated"
+
+  # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.
+  # We want to avoid that because we can't predict what may have changed.
+  # Since we're in a function, Bash will have read all of the function code from the old version, although the new
+  # version may have changed.
   exit
 }
 
