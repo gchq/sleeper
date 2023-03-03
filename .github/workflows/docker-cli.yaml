@@ -35,6 +35,12 @@ jobs:
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
       - name: Dependencies Docker build
         run: ./scripts/cli/dependencies/build.sh
+      - name: Builder Docker build
+        run: |
+          ./scripts/cli/builder/build.sh \
+            --tag $BUILDER_IMAGE_NAME \
+            --label "git-commit=$GITHUB_SHA" \
+            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Environment Maven build
         run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
       - name: Environment Docker build
@@ -59,6 +65,8 @@ jobs:
           docker push $ENV_IMAGE_ID:$VERSION
           docker tag $DEPLOY_IMAGE_NAME $DEPLOY_IMAGE_ID:$VERSION
           docker push $DEPLOY_IMAGE_ID:$VERSION
+          docker tag $BUILDER_IMAGE_NAME $BUILDER_IMAGE_ID:$VERSION
+          docker push $BUILDER_IMAGE_ID:$VERSION
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build

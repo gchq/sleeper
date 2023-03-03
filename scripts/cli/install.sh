@@ -42,6 +42,7 @@ pull_and_tag() {
 }
 
 pull_and_tag sleeper-local
+pull_and_tag sleeper-builder
 pull_and_tag sleeper-deployment
 
 EXECUTABLE_DIR="$HOME/.local/bin"
