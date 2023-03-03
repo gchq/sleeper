@@ -138,6 +138,7 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
             new EksBulkImportStack(this, "BulkImportEKS",
                     instanceProperties,
+                    jars,
                     bulkImportBucketStack,
                     tableStack,
                     topicStack);
