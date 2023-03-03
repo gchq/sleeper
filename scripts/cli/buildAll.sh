@@ -24,7 +24,6 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/build/buildForTest.sh"
 
 END_MAVEN_TIME=$(record_time)
-echo "Finished Maven build at $(recorded_time_str "$END_MAVEN_TIME"), took $(elapsed_time_str "$START_TIME" "$END_MAVEN_TIME")"
 
 "$THIS_DIR/dependencies/build.sh"
 
