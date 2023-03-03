@@ -244,13 +244,13 @@ public class SleeperCdkApp extends Stack {
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))
                 .build();
-        BuiltJars builtJars = new BuiltJars(AmazonS3ClientBuilder.defaultClient(), instanceProperties.get(JARS_BUCKET));
+        BuiltJars jars = new BuiltJars(AmazonS3ClientBuilder.defaultClient(), instanceProperties.get(JARS_BUCKET));
 
         new SleeperCdkApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
                 .build(),
-                instanceProperties, builtJars).create();
+                instanceProperties, jars).create();
 
         app.synth();
     }
