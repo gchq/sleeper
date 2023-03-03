@@ -69,6 +69,7 @@ run_in_builder_docker() {
 get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
+
 parse_version(){
   if [ "$#" -lt 1 ]; then
     CURRENT_VERSION=$(get_version | tr -d '\r\n')
