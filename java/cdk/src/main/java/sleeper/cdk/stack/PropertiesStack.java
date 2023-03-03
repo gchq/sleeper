@@ -18,7 +18,6 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -26,8 +25,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
@@ -46,7 +46,8 @@ public class PropertiesStack extends NestedStack {
 
     public PropertiesStack(Construct scope,
                            String id,
-                           InstanceProperties instanceProperties) {
+                           InstanceProperties instanceProperties,
+                           JarsBucket jars) {
         super(scope, id);
 
         // Config bucket
@@ -54,8 +55,7 @@ public class PropertiesStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode jar = BuiltJar.withContext(this, instanceProperties)
-                .jar(BuiltJar.CUSTOM_RESOURCES).lambdaCodeFrom(jarsBucket);
+        LambdaCodeNew jar = jars.lambdaCode(BuiltJarNew.CUSTOM_RESOURCES, jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
         try {
@@ -67,8 +67,7 @@ public class PropertiesStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
 
-        IFunction propertiesWriterLambda = jar.buildFunction(Function.Builder
-                .create(this, "PropertiesWriterLambda")
+        IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
                 .memorySize(2048)

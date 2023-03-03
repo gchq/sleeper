@@ -175,19 +175,19 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(QueryStack.class.getSimpleName())) {
             new QueryStack(this,
                     "Query",
+                    instanceProperties, jars,
                     tableStack.getDataBuckets(),
-                    tableStack.getStateStoreStacks(),
-                    instanceProperties);
+                    tableStack.getStateStoreStacks());
         }
 
         // Stack for ingest jobs
         if (optionalStacks.contains(IngestStack.class.getSimpleName())) {
             ingestStack = new IngestStack(this,
                     "Ingest",
+                    instanceProperties, jars,
                     tableStack.getStateStoreStacks(),
                     tableStack.getDataBuckets(),
-                    topicStack.getTopic(),
-                    instanceProperties);
+                    topicStack.getTopic());
         }
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
@@ -231,7 +231,7 @@ public class SleeperCdkApp extends Stack {
 
     protected void generateProperties() {
         // Stack for writing properties
-        new PropertiesStack(this, "Properties", instanceProperties);
+        new PropertiesStack(this, "Properties", instanceProperties, jars);
     }
 
     public static void main(String[] args) {

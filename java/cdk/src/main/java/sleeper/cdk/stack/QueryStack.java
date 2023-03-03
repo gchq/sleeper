@@ -60,8 +60,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -76,7 +77,6 @@ import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -101,16 +101,17 @@ public class QueryStack extends NestedStack {
 
     public QueryStack(Construct scope,
                       String id,
+                      InstanceProperties instanceProperties,
+                      JarsBucket jars,
                       List<IBucket> dataBuckets,
-                      List<StateStoreStack> stateStoreStacks,
-                      InstanceProperties instanceProperties) {
+                      List<StateStoreStack> stateStoreStacks) {
         super(scope, id);
 
         // Config bucket
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         String tableName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-tracking-table"));
@@ -208,15 +209,13 @@ public class QueryStack extends NestedStack {
         new CfnOutput(this, QUERY_RESULTS_QUEUE_URL, queryResultsQueueOutputProps);
 
         // Query execution lambda code
-        LambdaCode queryJar = BuiltJar.withContext(scope, instanceProperties)
-                .jar(BuiltJar.QUERY).lambdaCodeFrom(jarsBucket);
+        LambdaCodeNew queryJar = jars.lambdaCode(BuiltJarNew.QUERY, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
 
         // Lambda to process queries and post results to results queue
-        IFunction queryExecutorLambda = queryJar.buildFunction(Function.Builder
-                .create(this, "QueryExecutorLambda")
+        IFunction queryExecutorLambda = queryJar.buildFunction(this, "QueryExecutorLambda", builder -> builder
                 .functionName(functionName)
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to perform the query")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
@@ -273,9 +272,9 @@ public class QueryStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, IBucket configBucket) {
+    protected void setupWebSocketApi(LambdaCodeNew queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, IBucket configBucket) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
-        IFunction handler = queryJar.buildFunction(Function.Builder.create(this, "apiHandler")
+        IFunction handler = queryJar.buildFunction(this, "apiHandler", builder -> builder
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
                 .environment(env)
