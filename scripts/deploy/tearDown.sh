@@ -46,7 +46,7 @@ java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.status.update.Clea
 
 echo "Running cdk destroy to remove the system"
 cdk -a "java -cp ${JARS_DIR}/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
-destroy -c propertiesfile="${INSTANCE_PROPERTIES}" -c jarsdir="${JARS_DIR}" -c validate=false "*"
+destroy -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
 
 echo "Removing the Jars bucket and docker containers"
 "${THIS_DIR}/removeUploads.sh" "${INSTANCE_PROPERTIES}"

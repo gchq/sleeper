@@ -53,7 +53,7 @@ echo "Clean up finished at $(recorded_time_str "$END_CLEANUP_TIME"), took $(elap
 
 echo "Running cdk destroy to remove the system"
 cdk -a "java -cp ${JARS_DIR}/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
-destroy --force -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false -c jarsdir="${JARS_DIR}" "*"
+destroy --force -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
 
 END_CDK_DESTROY_TIME=$(record_time)
 echo "CDK destroy finished at $(recorded_time_str "$END_CDK_DESTROY_TIME"), took $(elapsed_time_str "$END_CLEANUP_TIME" "$END_CDK_DESTROY_TIME")"
