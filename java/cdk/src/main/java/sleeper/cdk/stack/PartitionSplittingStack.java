@@ -27,7 +27,6 @@ import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
@@ -39,8 +38,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -56,7 +56,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
@@ -73,17 +72,18 @@ public class PartitionSplittingStack extends NestedStack {
 
     public PartitionSplittingStack(Construct scope,
                                    String id,
+                                   InstanceProperties instanceProperties,
+                                   JarsBucket jars,
                                    List<IBucket> dataBuckets,
                                    List<StateStoreStack> stateStoreStacks,
-                                   Topic topic,
-                                   InstanceProperties instanceProperties) {
+                                   Topic topic) {
         super(scope, id);
 
         // Config bucket
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Create queue for partition splitting job definitions
         this.dlQueue = Queue.Builder
@@ -129,8 +129,7 @@ public class PartitionSplittingStack extends NestedStack {
         new CfnOutput(this, PARTITION_SPLITTING_DL_QUEUE_URL, partitionSplittingDLQueueOutputProps);
 
         // Partition splitting code
-        LambdaCode splitterJar = BuiltJar.withContext(scope, instanceProperties)
-                .jar(BuiltJar.PARTITION_SPLITTER).lambdaCodeFrom(jarsBucket);
+        LambdaCodeNew splitterJar = jars.lambdaCode(BuiltJarNew.PARTITION_SPLITTER, jarsBucket);
 
         // Lambda to look for partitions that need splitting (for each partition that
         // needs splitting it puts a definition of the splitting job onto a queue)
@@ -139,8 +138,7 @@ public class PartitionSplittingStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "find-partitions-to-split"));
 
-        IFunction findPartitionsToSplitLambda = splitterJar.buildFunction(Function.Builder
-                .create(this, "FindPartitionsToSplitLambda")
+        IFunction findPartitionsToSplitLambda = splitterJar.buildFunction(this, "FindPartitionsToSplitLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for partitions that need splitting")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
@@ -170,14 +168,13 @@ public class PartitionSplittingStack extends NestedStack {
         instanceProperties.set(PARTITION_SPLITTING_LAMBDA_FUNCTION, findPartitionsToSplitLambda.getFunctionName());
         instanceProperties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, rule.getRuleName());
 
-        functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+        String splitFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "split-partition"));
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
-        IFunction splitPartitionLambda = splitterJar.buildFunction(Function.Builder
-                .create(this, "SplitPartitionLambda")
-                .functionName(functionName)
+        IFunction splitPartitionLambda = splitterJar.buildFunction(this, "SplitPartitionLambda", builder -> builder
+                .functionName(splitFunctionName)
                 .description("Triggered by an SQS event that contains a partition to split")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB))

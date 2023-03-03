@@ -119,8 +119,7 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
-                    instanceProperties,
-                    jars,
+                    instanceProperties, jars,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack);
@@ -137,8 +136,7 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk import jobs via EKS
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
             new EksBulkImportStack(this, "BulkImportEKS",
-                    instanceProperties,
-                    jars,
+                    instanceProperties, jars,
                     bulkImportBucketStack,
                     tableStack,
                     topicStack);
@@ -148,7 +146,7 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(GarbageCollectorStack.class.getSimpleName())) {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
-                    instanceProperties,
+                    instanceProperties, jars,
                     tableStack.getStateStoreStacks(),
                     tableStack.getDataBuckets());
         }
@@ -157,20 +155,20 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(CompactionStack.class.getSimpleName())) {
             compactionStack = new CompactionStack(this,
                     "Compaction",
+                    instanceProperties, jars,
                     topicStack.getTopic(),
                     tableStack.getStateStoreStacks(),
-                    tableStack.getDataBuckets(),
-                    instanceProperties);
+                    tableStack.getDataBuckets());
         }
 
         // Stack to split partitions
         if (optionalStacks.contains(PartitionSplittingStack.class.getSimpleName())) {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
+                    instanceProperties, jars,
                     tableStack.getDataBuckets(),
                     tableStack.getStateStoreStacks(),
-                    topicStack.getTopic(),
-                    instanceProperties);
+                    topicStack.getTopic());
         }
 
         // Stack to execute queries

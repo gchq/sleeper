@@ -20,7 +20,6 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -28,8 +27,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Collections;
@@ -54,6 +54,7 @@ public class GarbageCollectorStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
+            JarsBucket jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets) {
         super(scope, id);
@@ -65,15 +66,13 @@ public class GarbageCollectorStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         // Garbage collector code
-        LambdaCode gcJar = BuiltJar.withContext(this, instanceProperties)
-                .jar(BuiltJar.GARBAGE_COLLECTOR).lambdaCodeFrom(jarsBucket);
+        LambdaCodeNew gcJar = jars.lambdaCode(BuiltJarNew.GARBAGE_COLLECTOR, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
-        IFunction handler = gcJar.buildFunction(Function.Builder
-                .create(this, "GarbageCollectorLambda")
+        IFunction handler = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need deleting and delete them")
                 .runtime(Runtime.JAVA_11)
