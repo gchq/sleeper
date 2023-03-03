@@ -16,6 +16,7 @@
 package sleeper.cdk.jars;
 
 import com.amazonaws.services.s3.AmazonS3;
+import software.amazon.awscdk.services.s3.IBucket;
 
 public class JarsBucket {
 
@@ -25,6 +26,10 @@ public class JarsBucket {
     public JarsBucket(AmazonS3 s3, String bucketName) {
         this.s3 = s3;
         this.bucketName = bucketName;
+    }
+
+    public LambdaCodeNew lambdaCode(BuiltJarNew jar, IBucket bucketConstruct) {
+        return new LambdaCodeNew(bucketConstruct, jar.getFileName(), getLatestVersionId(jar));
     }
 
     public String getLatestVersionId(BuiltJarNew jar) {
