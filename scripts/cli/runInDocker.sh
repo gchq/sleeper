@@ -111,7 +111,7 @@ upgrade_cli() {
   parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  TEMP_PATH="/tmp/sleeper";
+  TEMP_PATH="/tmp/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
   $TEMP_PATH cli pull-images "$VERSION"

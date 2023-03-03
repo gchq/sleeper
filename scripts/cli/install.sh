@@ -16,42 +16,25 @@
 
 set -e
 
-if [ "$#" -lt 1 ]; then
-  VERSION="latest"
+if [ "$#" -lt 1 ] || [ "$1" == "latest" ]; then
+  VERSION="main"
 else
   VERSION="$1"
 fi
 
-GIT_REF="$VERSION"
-REMOTE_TAG="$VERSION"
-if [ "$VERSION" == "main" ]; then
-  REMOTE_TAG="latest"
-elif [ "$VERSION" == "latest" ]; then
-  GIT_REF="main"
-elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
-  REMOTE_TAG=${VERSION:1}
-fi
+echo "Downloading Sleeper CLI"
+TEMP_PATH="/tmp/sleeper"
+curl "https://raw.githubusercontent.com/gchq/sleeper/$VERSION/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+chmod a+x "$TEMP_PATH"
+echo "Downloaded command"
 
-pull_and_tag() {
-  IMAGE_NAME=$1
-  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:$REMOTE_TAG"
-  LOCAL_IMAGE="$IMAGE_NAME:current"
-
-  docker pull "$REMOTE_IMAGE"
-  docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
-}
-
-pull_and_tag sleeper-local
-pull_and_tag sleeper-builder
-pull_and_tag sleeper-deployment
+"$TEMP_PATH" cli pull-images "$VERSION"
+echo "Downloaded Docker images"
 
 EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
-
-echo "Installing Sleeper CLI"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$EXECUTABLE_PATH"
-chmod a+x "$EXECUTABLE_PATH"
+mv "$TEMP_PATH" "$EXECUTABLE_PATH"
 echo "Installed"
 
 # Ensure executable directory is on path
