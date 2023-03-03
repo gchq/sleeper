@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.Test;
 

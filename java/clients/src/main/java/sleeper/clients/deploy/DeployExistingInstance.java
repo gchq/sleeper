@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;

@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.cdk;
 
-import sleeper.clients.admin.deploy.CdkDeployInstance;
-import sleeper.clients.admin.deploy.DeployNewInstance;
+import sleeper.clients.deploy.CdkDeployInstance;
+import sleeper.clients.deploy.DeployNewInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.ListTasksRequest;

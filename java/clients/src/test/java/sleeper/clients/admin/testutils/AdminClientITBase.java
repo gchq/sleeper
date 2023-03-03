@@ -28,7 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
-import sleeper.clients.admin.deploy.CdkDeployInstance;
+import sleeper.clients.deploy.CdkDeployInstance;
 import sleeper.core.CommonTestConstants;
 
 import java.nio.file.Path;

@@ -18,7 +18,7 @@ package sleeper.systemtest.util;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.clients.admin.deploy.InvokeLambda;
+import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 

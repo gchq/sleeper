@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.LambdaClient;

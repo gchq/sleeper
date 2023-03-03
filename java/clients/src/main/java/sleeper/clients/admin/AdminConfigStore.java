@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.admin.deploy.CdkDeployInstance;
+import sleeper.clients.deploy.CdkDeployInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
