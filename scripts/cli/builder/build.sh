@@ -19,7 +19,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 if [ "$#" -lt 1 ]; then
-  DOCKER_PARAMS=(-t sleeper-dependencies:current --no-cache)
+  DOCKER_PARAMS=(-t sleeper-builder:current)
 else
   DOCKER_PARAMS=("$@")
 fi
@@ -28,7 +28,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Building dependencies Docker image"
+echo "Building builder Docker image"
 echo "-------------------------------------------------------------------------------"
 
 pushd "$THIS_DIR"

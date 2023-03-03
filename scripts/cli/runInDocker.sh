@@ -20,36 +20,50 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-run_in_environment_docker() {
-  HOME_IN_IMAGE=/root
+HOME_IN_IMAGE=/root
 
-  docker run -it --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+run_in_docker() {
+  local RUN_PARAMS
+  RUN_PARAMS=()
+  if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
+    RUN_PARAMS+=(-it)
+  fi
+  RUN_PARAMS+=(
+    --rm
+    -v /var/run/docker.sock:/var/run/docker.sock
+    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -e AWS_ACCESS_KEY_ID
+    -e AWS_SECRET_ACCESS_KEY
+    -e AWS_SESSION_TOKEN
+    -e AWS_PROFILE
+    -e AWS_REGION
+    -e AWS_DEFAULT_REGION
+    -e ID
+    -e INSTANCE_ID
+    -e VPC
+    -e SUBNET
+    "$@"
+  )
+  docker run "${RUN_PARAMS[@]}"
+}
+
+run_in_environment_docker() {
+  run_in_docker \
     -v "$HOME/.sleeper/environments:$HOME_IN_IMAGE/.sleeper/environments" \
-    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
-    -e AWS_SESSION_TOKEN \
-    -e AWS_PROFILE \
-    -e AWS_REGION \
-    -e AWS_DEFAULT_REGION \
     sleeper-local:current "$@"
 }
 
 run_in_deployment_docker() {
-  HOME_IN_IMAGE=/root
-
-  docker run -it --rm \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+  run_in_docker \
     -v "$HOME/.sleeper/generated:/sleeper/generated" \
-    -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
-    -e AWS_SESSION_TOKEN \
-    -e AWS_PROFILE \
-    -e AWS_REGION \
-    -e AWS_DEFAULT_REGION \
     sleeper-deployment:current "$@"
+}
+
+run_in_builder_docker() {
+  run_in_docker \
+    -v "$HOME/.sleeper/builder:/sleeper-builder" \
+    -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
+    sleeper-builder:current "$@"
 }
 
 get_version() {
@@ -57,18 +71,36 @@ get_version() {
 }
 
 upgrade_cli() {
-  VERSION=$(get_version | tr -d '\r\n')
-  case $VERSION in
-  *-SNAPSHOT) # Handle main branch
-    REMOTE_TAG=latest
-    GIT_REF=main
-    ;;
-  *) # Handle release version
-    REMOTE_TAG=$VERSION
-    GIT_REF="v$VERSION"
-    ;;
-  esac
+  if [ "$#" -lt 1 ]; then
+    CURRENT_VERSION=$(get_version | tr -d '\r\n')
+    case $CURRENT_VERSION in
+    *-SNAPSHOT)
+      VERSION="latest"
+      ;;
+    *)
+      # We could get the latest version from GitHub by querying this URL:
+      # https://github.com/gchq/sleeper/releases/latest
+      # At time of writing, this shows no releases. Once we have full releases on GitHub, we could use that.
+      echo "Please specify version to upgrade to"
+      return 1
+      ;;
+    esac
+  else
+    VERSION=$1
+  fi
+
+  GIT_REF="$VERSION"
+  REMOTE_TAG="$VERSION"
+  if [ "$VERSION" == "main" ]; then
+    REMOTE_TAG="latest"
+  elif [ "$VERSION" == "latest" ]; then
+    GIT_REF="main"
+  elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
+    REMOTE_TAG=${VERSION:1}
+  fi
+
   pull_and_tag sleeper-local
+  pull_and_tag sleeper-builder
   pull_and_tag sleeper-deployment
 
   echo "Updating CLI command"
@@ -98,6 +130,8 @@ elif [ "$COMMAND" == "version" ] || [ "$COMMAND" == "--version" ] || [ "$COMMAND
   get_version
 elif [ "$COMMAND" == "deployment" ]; then
   run_in_deployment_docker "$@"
+elif [ "$COMMAND" == "builder" ]; then
+  run_in_builder_docker "$@"
 elif [ "$COMMAND" == "environment" ]; then
   if [ "$#" -eq 0 ]; then
     run_in_environment_docker
@@ -108,7 +142,7 @@ elif [ "$COMMAND" == "cli" ]; then
   SUBCOMMAND=$1
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
-    upgrade_cli
+    upgrade_cli "$@"
   else
     echo "Command not found: cli $SUBCOMMAND"
     exit 1

@@ -14,10 +14,13 @@
 
 FROM sleeper-dependencies:current
 
-# Set command line prompt to show you're in the deployment Docker container
-RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-deployment\e[0m: \w # "' >> ~/.bashrc
+RUN apt-get install -y maven
+RUN apt-get install -y git
+RUN apt-get install -y python3
 
-WORKDIR /sleeper
-COPY . .
+# Set command line prompt to show you're in the builder Docker container
+RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-builder\e[0m: \w # "' >> ~/.bashrc
+
+WORKDIR /sleeper-builder
 
 CMD bash
