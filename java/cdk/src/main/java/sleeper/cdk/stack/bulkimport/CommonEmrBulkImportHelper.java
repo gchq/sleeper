@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -35,8 +34,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.cdk.jars.BuiltJar;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.BuiltJarNew;
+import sleeper.cdk.jars.JarsBucket;
+import sleeper.cdk.jars.LambdaCodeNew;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -101,22 +101,20 @@ public class CommonEmrBulkImportHelper {
         return emrBulkImportJobQueue;
     }
 
-    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue,
+    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, JarsBucket jars,
                                               IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
-        LambdaCode bulkImportStarterJar = BuiltJar.withContext(scope, instanceProperties)
-                .jar(BuiltJar.BULK_IMPORT_STARTER).lambdaCodeFrom(jarsBucket);
+        LambdaCodeNew bulkImportStarterJar = jars.lambdaCode(BuiltJarNew.BULK_IMPORT_STARTER, jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
-        IFunction function = bulkImportStarterJar.buildFunction(Function.Builder
-                .create(scope, "BulkImport" + shortId + "JobStarter")
+        IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + shortId + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
                 .memorySize(1024)

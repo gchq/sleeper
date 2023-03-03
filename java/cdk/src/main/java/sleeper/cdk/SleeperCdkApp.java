@@ -58,7 +58,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
  */
 public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;
-    private final JarsBucket jarsBucket;
+    private final JarsBucket jars;
     private final App app;
     private IngestStack ingestStack;
     private TableStack tableStack;
@@ -69,11 +69,11 @@ public class SleeperCdkApp extends Stack {
     private EmrBulkImportStack emrBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
 
-    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, JarsBucket jarsBucket) {
+    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, JarsBucket jars) {
         super(app, id, props);
         this.app = app;
         this.instanceProperties = instanceProperties;
-        this.jarsBucket = jarsBucket;
+        this.jars = jars;
     }
 
     private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
@@ -92,7 +92,7 @@ public class SleeperCdkApp extends Stack {
         List<String> optionalStacks = instanceProperties.getList(OPTIONAL_STACKS);
 
         // Stack for Checking VPC configuration
-        new VpcStack(this, "Vpc", instanceProperties, jarsBucket);
+        new VpcStack(this, "Vpc", instanceProperties, jars);
 
         // Stack for instance configuration
         new ConfigurationStack(this, "Configuration", instanceProperties);
@@ -101,11 +101,11 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stack for tables
-        tableStack = new TableStack(this, "Table", instanceProperties, jarsBucket);
+        tableStack = new TableStack(this, "Table", instanceProperties, jars);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, jarsBucket, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
+            new AthenaStack(this, "Athena", instanceProperties, jars, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
         }
 
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
@@ -120,6 +120,7 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
                     instanceProperties,
+                    jars,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack);
@@ -128,7 +129,7 @@ public class SleeperCdkApp extends Stack {
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
-                    instanceProperties, bulkImportBucketStack,
+                    instanceProperties, jars, bulkImportBucketStack,
                     emrBulkImportCommonStack, topicStack
             );
         }

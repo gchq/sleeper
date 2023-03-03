@@ -24,6 +24,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.JarsBucket;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -44,6 +45,7 @@ public class EmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
+            JarsBucket jars,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             TopicStack errorsTopicStack) {
@@ -52,7 +54,7 @@ public class EmrBulkImportStack extends NestedStack {
                 this, "NonPersistentEMR", instanceProperties);
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "NonPersistentEMR", bulkImportJobQueue, importBucketStack.getImportBucket(), commonEmrStack);
+                "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
