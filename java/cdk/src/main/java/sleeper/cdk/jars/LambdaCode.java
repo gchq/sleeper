@@ -43,7 +43,7 @@ public class LambdaCode {
         config.accept(builder);
         Function function = builder.build();
 
-        return Version.Builder.create(scope, id)
+        return Version.Builder.create(scope, id + "Version")
                 .lambda(function)
                 .build();
     }
