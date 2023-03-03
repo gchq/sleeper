@@ -44,7 +44,6 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
-                        "-c", "jarsdir=.",
                         "*");
     }
 
@@ -63,7 +62,6 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
-                        "-c", "jarsdir=.",
                         "*");
     }
 
@@ -83,7 +81,6 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
-                        "-c", "jarsdir=.",
                         "-c", "newinstance=true",
                         "*");
     }
@@ -104,7 +101,6 @@ class CdkDeployInstanceTest {
                         "deploy",
                         "--require-approval", "never",
                         "-c", "propertiesfile=instance.properties",
-                        "-c", "jarsdir=.",
                         "-c", "skipVersionCheck=true",
                         "*");
     }

@@ -86,8 +86,7 @@ public class CdkDeployInstance {
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName),
                 "deploy",
                 "--require-approval", "never",
-                "-c", String.format("propertiesfile=%s", instancePropertiesFile),
-                "-c", String.format("jarsdir=%s", jarsDirectory)
+                "-c", String.format("propertiesfile=%s", instancePropertiesFile)
         ));
         if (ensureNewInstance) {
             command.addAll(List.of("-c", "newinstance=true"));
