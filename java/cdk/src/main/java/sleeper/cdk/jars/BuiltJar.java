@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk;
+package sleeper.cdk.jars;
 
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
