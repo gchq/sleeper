@@ -139,6 +139,30 @@ class SingleFileWritingIteratorTest {
                         4));
     }
 
+    @Test
+    void shouldInferPartitionIdFromFirstRecordWhenSomeRecordsAreInDifferentPartitions() {
+        // Given
+        Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2),
+                RowFactory.create("b", 1, 2),
+                RowFactory.create("d", 1, 2),
+                RowFactory.create("e", 1, 2)
+        ).iterator();
+        PartitionTree partitionTree = createPartitionsBuilder()
+                .leavesWithSplits(List.of("left", "right"), List.of("c"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+
+        // When
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
+                input, partitionTree, "test-file");
+
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(this::readPartitionIdFromOutputFileMetadata)
+                .containsExactly("left");
+    }
+
     private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
         return createIteratorOverRecordsWithPartitions(records,
                 PartitionsFromSplitPoints.treeFrom(schema, List.of("T")));
@@ -208,6 +232,10 @@ class SingleFileWritingIteratorTest {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private String readPartitionIdFromOutputFileMetadata(Row metadataRow) {
+        return metadataRow.getString(0);
     }
 
     private String readPathFromOutputFileMetadata(Row metadataRow) {
