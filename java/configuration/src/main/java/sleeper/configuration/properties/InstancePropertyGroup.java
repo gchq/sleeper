@@ -69,8 +69,4 @@ public class InstancePropertyGroup {
     public static List<PropertyGroup> getAll() {
         return Collections.unmodifiableList(ALL);
     }
-
-    public static List<InstanceProperty> sortPropertiesByGroup(List<InstanceProperty> properties) {
-        return PropertyGroup.sortPropertiesByGroup(properties, getAll());
-    }
 }
