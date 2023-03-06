@@ -63,18 +63,6 @@ class SingleFileWritingIteratorTest {
         tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
     }
 
-    @Test
-    void shouldReturnFalseForHasNextWithEmptyIterator() {
-        // Given
-        Iterator<Row> empty = Collections.emptyIterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(empty);
-
-        // Then
-        assertThat(fileWritingIterator).isExhausted();
-    }
-
     @Nested
     @DisplayName("Output a single file")
     class OutputSingleFile {
@@ -120,15 +108,6 @@ class SingleFileWritingIteratorTest {
                             "file://" + tempFolder + "/partition_test-partition/test-file.parquet",
                             4));
         }
-
-        @Test
-        void shouldReturnTrueForHasNextWithPopulatedIterator() {
-            // When
-            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
-
-            // Then
-            assertThat(fileWritingIterator).hasNext();
-        }
     }
 
     @Nested
@@ -173,6 +152,33 @@ class SingleFileWritingIteratorTest {
                                     createRecord("b", 1, 2),
                                     createRecord("d", 1, 2),
                                     createRecord("e", 1, 2)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Behaves as an iterator")
+    class BehavesAsAnIterator {
+
+        @Test
+        void shouldReturnTrueForHasNextWithPopulatedIterator() {
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(
+                    List.of(RowFactory.create("a", 1, 2)).iterator());
+
+            // Then
+            assertThat(fileWritingIterator).hasNext();
+        }
+
+        @Test
+        void shouldReturnFalseForHasNextWithEmptyIterator() {
+            // Given
+            Iterator<Row> empty = Collections.emptyIterator();
+
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(empty);
+
+            // Then
+            assertThat(fileWritingIterator).isExhausted();
         }
     }
 
