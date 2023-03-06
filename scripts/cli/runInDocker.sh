@@ -70,7 +70,7 @@ get_version() {
   run_in_environment_docker cat /sleeper/version.txt
 }
 
-upgrade_cli() {
+parse_version(){
   if [ "$#" -lt 1 ]; then
     CURRENT_VERSION=$(get_version | tr -d '\r\n')
     case $CURRENT_VERSION in
@@ -98,16 +98,31 @@ upgrade_cli() {
   elif [[ "$VERSION" == "v"* ]]; then # Strip v from start of version number for Docker
     REMOTE_TAG=${VERSION:1}
   fi
+}
 
+pull_docker_images(){
+  parse_version "$@"
   pull_and_tag sleeper-local
   pull_and_tag sleeper-builder
   pull_and_tag sleeper-deployment
+}
 
+upgrade_cli() {
+  parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$EXECUTABLE_PATH"
-  chmod a+x "$EXECUTABLE_PATH"
+  TEMP_PATH="/tmp/sleeper"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  chmod a+x "$TEMP_PATH"
+  $TEMP_PATH cli pull-images "$VERSION"
+  mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   echo "Updated"
+
+  # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.
+  # We want to avoid that because we can't predict what may have changed.
+  # Since we're in a function, Bash will have read all of the function code from the old version, although the new
+  # version may have changed.
+  exit
 }
 
 pull_and_tag() {
@@ -143,6 +158,8 @@ elif [ "$COMMAND" == "cli" ]; then
   shift
   if [ "$SUBCOMMAND" == "upgrade" ]; then
     upgrade_cli "$@"
+  elif [ "$SUBCOMMAND" == "pull-images" ]; then
+    pull_docker_images "$@"
   else
     echo "Command not found: cli $SUBCOMMAND"
     exit 1
