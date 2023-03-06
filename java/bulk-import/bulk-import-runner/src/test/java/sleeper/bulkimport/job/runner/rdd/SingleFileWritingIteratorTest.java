@@ -75,70 +75,60 @@ class SingleFileWritingIteratorTest {
         assertThat(fileWritingIterator).isExhausted();
     }
 
-    @Test
-    void shouldReturnTrueForHasNextWithPopulatedIterator() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
+    @Nested
+    @DisplayName("Output a single file")
+    class OutputSingleFile {
+
+        private final Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2),
                 RowFactory.create("b", 1, 2),
                 RowFactory.create("c", 1, 2),
                 RowFactory.create("d", 1, 2)
         ).iterator();
 
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
+        @Test
+        void shouldWriteAllRecordsToAParquetFile() {
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
 
-        // Then
-        assertThat(fileWritingIterator).hasNext();
-    }
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                    .containsExactly(
+                            Arrays.asList(
+                                    createRecord("a", 1, 2),
+                                    createRecord("b", 1, 2),
+                                    createRecord("c", 1, 2),
+                                    createRecord("d", 1, 2)));
+        }
 
-    @Test
-    void shouldWriteAllRecordsToAParquetFile() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
+        @Test
+        void shouldOutputMetadataPointingToSingleFileInFolderForPartition() {
+            // Given
+            PartitionTree partitionTree = createPartitionsBuilder()
+                    .singlePartition("test-partition")
+                    .buildTree();
 
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
+                    input, partitionTree, "test-file");
 
-        // Then
-        assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
-                .containsExactly(
-                        Arrays.asList(
-                                createRecord("a", 1, 2),
-                                createRecord("b", 1, 2),
-                                createRecord("c", 1, 2),
-                                createRecord("d", 1, 2)));
-    }
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .containsExactly(RowFactory.create(
+                            "test-partition",
+                            "file://" + tempFolder + "/partition_test-partition/test-file.parquet",
+                            4));
+        }
 
-    @Test
-    void shouldOutputMetadataPointingToSingleFileInFolderForPartition() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
-        PartitionTree partitionTree = createPartitionsBuilder()
-                .singlePartition("test-partition")
-                .buildTree();
+        @Test
+        void shouldReturnTrueForHasNextWithPopulatedIterator() {
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
 
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
-                input, partitionTree, "test-file");
-
-        // Then
-        assertThat(fileWritingIterator).toIterable()
-                .containsExactly(RowFactory.create(
-                        "test-partition",
-                        "file://" + tempFolder + "/partition_test-partition/test-file.parquet",
-                        4));
+            // Then
+            assertThat(fileWritingIterator).hasNext();
+        }
     }
 
     @Nested
