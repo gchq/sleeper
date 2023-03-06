@@ -173,6 +173,18 @@ class SingleFileWritingIteratorTest {
                     .containsExactly("left");
         }
 
+        @Test
+        void shouldAssumeAllRowsAreInTheSamePartition() {
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                    .containsExactly(
+                            Arrays.asList(
+                                    createRecord("a", 1, 2),
+                                    createRecord("b", 1, 2),
+                                    createRecord("d", 1, 2),
+                                    createRecord("e", 1, 2)));
+        }
     }
 
     private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
