@@ -10,15 +10,35 @@ environment setup" section in the [deployment guide](02-deployment-guide.md)
 as exactly the same will apply here, especially for running the system
 tests.
 
-## Building
+### Install Prerequisite Software
 
-To build Sleeper from source you'll need Docker and maven installed.
+You will need the following software:
+
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
+* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
+* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
+* [Java 11/17](https://openjdk.java.net/install/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
+* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
+
+If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
+these pre-installed. You'll need to clone the Git repository, and this will be persisted between executions of
+`sleeper builder`. Use the commands below:
+
+```bash
+sleeper builder
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+```
+
+## Building
 
 Provided script (recommended) - this builds the code and copies the jars
 into the scripts directory so that the scripts work.
 
 ```bash
-./scripts/build/build.sh
+./scripts/build/buildForTest.sh
 ```
 
 maven (removing the '-Pquick' option will cause the unit and integration tests
@@ -60,8 +80,8 @@ by editing the files in `./scripts/templates`. However, note that properties in
 these files with the value `changeme` will be overwritten by the script.
 
 You can also change any system test specific properties in the file
-`scripts/test/deployAll/system-test-instance.properties`. This includes the 
-optional stacks property - you may want to customise this to experiment with 
+`scripts/test/deployAll/system-test-instance.properties`. This includes the
+optional stacks property - you may want to customise this to experiment with
 different stacks.
 
 All resources are tagged with the tags defined in the file `deploy/templates/tags.properties.template`
