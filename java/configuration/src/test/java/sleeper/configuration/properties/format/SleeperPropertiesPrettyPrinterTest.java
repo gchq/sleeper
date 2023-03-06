@@ -128,4 +128,61 @@ class SleeperPropertiesPrettyPrinterTest {
                         "# The logging level for everything else.\n" +
                         "sleeper.logging.root.level: INFO");
     }
+
+    @Test
+    void shouldPrintPropertyGroupDescriptions() throws IOException {
+        // When / Then
+        assertThat(printEmptyInstanceProperties())
+                .contains("# The following properties are commonly used throughout Sleeper\n\n")
+                .contains("# The following properties relate to standard ingest\n\n")
+                .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
+                        "# or EKS.\n\n")
+                .contains("# The following properties relate to the splitting of partitions\n\n")
+                .contains("# The following properties relate to compactions.\n\n")
+                .contains("# The following properties relate to queries.\n\n");
+    }
+
+    @Test
+    void shouldPrintPropertyGroupsInTheCorrectOrder() throws IOException {
+        // When
+        String output = printEmptyInstanceProperties();
+
+        // Then
+        assertThat(output.indexOf("The following properties relate to standard ingest"))
+                .isLessThan(output.indexOf("The following properties relate to bulk import"));
+        assertThat(output.indexOf("The following properties relate to garbage collection"))
+                .isLessThan(output.indexOf("The following properties relate to compactions"));
+        assertThat(output.indexOf("The following properties relate to compactions"))
+                .isLessThan(output.indexOf("The following properties relate to queries"));
+    }
+
+    @Test
+    void shouldPrintPropertiesInTheCorrectOrder() throws IOException {
+        // When
+        String output = printEmptyInstanceProperties();
+
+        // Then
+        assertThat(output.indexOf("sleeper.account"))
+                .isLessThan(output.indexOf("sleeper.log.retention.days"))
+                .isLessThan(output.indexOf("sleeper.vpc"));
+        assertThat(output.indexOf("sleeper.ingest"))
+                .isLessThan(output.indexOf("sleeper.compaction"));
+    }
+
+    @Test
+    void shouldDisplayPropertiesInTheCorrectGroup() throws IOException {
+        // When
+        String output = printEmptyInstanceProperties();
+
+        // Then check that one UserDefinedInstanceProperty is in the correct group
+        assertThat(output.indexOf("sleeper.id"))
+                .isBetween(
+                        output.indexOf("The following properties are commonly used throughout Sleeper"),
+                        output.indexOf("The following properties relate to standard ingest"));
+        // Then check that one SystemDefinedInstanceProperty is in the correct group
+        assertThat(output.indexOf("sleeper.config.bucket"))
+                .isBetween(
+                        output.indexOf("The following properties are commonly used throughout Sleeper"),
+                        output.indexOf("The following properties relate to standard ingest"));
+    }
 }
