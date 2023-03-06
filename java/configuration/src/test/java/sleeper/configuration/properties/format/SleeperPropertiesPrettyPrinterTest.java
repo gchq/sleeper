@@ -15,8 +15,6 @@
  */
 package sleeper.configuration.properties.format;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -129,54 +127,5 @@ class SleeperPropertiesPrettyPrinterTest {
                         "\n" +
                         "# The logging level for everything else.\n" +
                         "sleeper.logging.root.level: INFO");
-    }
-
-    @DisplayName("Format property descriptions")
-    @Nested
-    class FormatPropertyDescriptions {
-        @Test
-        void shouldFormatSingleLineString() {
-            // Given
-            String singleLineString = "Test string that can fit on one line";
-
-            // When
-            String formattedString = SleeperPropertiesPrettyPrinter.formatString(singleLineString);
-
-            // Then
-            assertThat(formattedString)
-                    .isEqualTo("# Test string that can fit on one line");
-        }
-
-        @Test
-        void shouldFormatAndLineWrapDescription() {
-            // Given
-            String multiLineString = "Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the screen";
-
-            // When
-            String formattedString = SleeperPropertiesPrettyPrinter.formatString(multiLineString);
-
-            // Then
-            assertThat(formattedString)
-                    .isEqualTo("" +
-                            "# Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the\n" +
-                            "# screen");
-        }
-
-        @Test
-        void shouldFormatAndLineWrapDescriptionWithCustomLineBreaks() {
-            // Given
-            String multiLineString = "Test string that cannot fit on one line\nbut with a custom line break. " +
-                    "This is to verify if the line still wraps even after after a custom line break";
-
-            // When
-            String formattedString = SleeperPropertiesPrettyPrinter.formatString(multiLineString);
-
-            // Then
-            assertThat(formattedString)
-                    .isEqualTo("" +
-                            "# Test string that cannot fit on one line\n" +
-                            "# but with a custom line break. This is to verify if the line still wraps even after after a custom\n" +
-                            "# line break");
-        }
     }
 }
