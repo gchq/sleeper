@@ -16,19 +16,10 @@
 
 package sleeper.configuration.properties;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
-
-    private static final Map<String, SystemDefinedInstanceProperty> ALL_MAP = new HashMap<>();
-    private static final List<SystemDefinedInstanceProperty> ALL = new ArrayList<>();
 
     private final String propertyName;
     private final String description;
@@ -46,14 +37,6 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
 
     public static Builder named(String propertyName) {
         return builder().propertyName(propertyName);
-    }
-
-    public static List<SystemDefinedInstanceProperty> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static Optional<SystemDefinedInstanceProperty> getByName(String propertyName) {
-        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override
@@ -89,7 +72,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         private String propertyName;
         private String description;
         private PropertyGroup group;
-        private Consumer<SystemDefinedInstanceProperty> addToAllList = Builder::addToAllList;
+        private Consumer<SystemDefinedInstanceProperty> addToIndex;
 
         private Builder() {
         }
@@ -109,20 +92,15 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
             return this;
         }
 
-        public Builder addToAllList(Consumer<SystemDefinedInstanceProperty> addToAllList) {
-            this.addToAllList = addToAllList;
+        public Builder addToIndex(Consumer<SystemDefinedInstanceProperty> addToIndex) {
+            this.addToIndex = addToIndex;
             return this;
         }
 
         public SystemDefinedInstanceProperty build() {
             SystemDefinedInstanceProperty property = new SystemDefinedInstancePropertyImpl(this);
-            addToAllList.accept(property);
+            addToIndex.accept(property);
             return property;
-        }
-
-        private static void addToAllList(SystemDefinedInstanceProperty property) {
-            ALL_MAP.put(property.getPropertyName(), property);
-            ALL.add(property);
         }
     }
 }

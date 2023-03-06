@@ -30,10 +30,6 @@ import static sleeper.configuration.properties.InstancePropertyGroup.INGEST;
 class PropertyGroupingTest {
     private final List<PropertyGroup> groups = List.of(COMMON, INGEST, BULK_IMPORT);
 
-    static {
-        InstanceProperty.getAll();
-    }
-
     @Test
     void shouldOrderByGroup() {
         // Given groups are out of order and each property has a different group
@@ -90,18 +86,18 @@ class PropertyGroupingTest {
     }
 
     private static InstanceProperty userProperty(
-            String name, PropertyGroup group, Consumer<UserDefinedInstanceProperty> addToList) {
+            String name, PropertyGroup group, Consumer<UserDefinedInstanceProperty> addToIndex) {
         return UserDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
                 .description("Test user property")
-                .addToAllList(addToList).build();
+                .addToIndex(addToIndex).build();
     }
 
     private static InstanceProperty systemProperty(
-            String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToList) {
+            String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToIndex) {
         return SystemDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
                 .description("Test system property")
-                .addToAllList(addToList).build();
+                .addToIndex(addToIndex).build();
     }
 }
