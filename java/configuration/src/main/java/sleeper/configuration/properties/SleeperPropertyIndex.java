@@ -26,14 +26,29 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
 
     private final Map<String, T> allMap = new HashMap<>();
     private final List<T> all = new ArrayList<>();
+    private final List<T> userDefined = new ArrayList<>();
+    private final List<T> systemDefined = new ArrayList<>();
 
     public void add(T property) {
         allMap.put(property.getPropertyName(), property);
         all.add(property);
+        if (property.isSystemDefined()) {
+            systemDefined.add(property);
+        } else {
+            userDefined.add(property);
+        }
     }
 
     public List<T> getAll() {
         return Collections.unmodifiableList(all);
+    }
+
+    public List<T> getUserDefined() {
+        return Collections.unmodifiableList(userDefined);
+    }
+
+    public List<T> getSystemDefined() {
+        return Collections.unmodifiableList(systemDefined);
     }
 
     public Optional<T> getByName(String propertyName) {
