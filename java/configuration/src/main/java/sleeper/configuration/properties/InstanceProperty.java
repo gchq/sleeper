@@ -17,17 +17,12 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
+import static sleeper.configuration.Utils.combineLists;
+
 public interface InstanceProperty extends SleeperProperty {
 
     static List<InstanceProperty> getAll() {
-        return Index.INSTANCE.getAll();
-    }
-
-    class Index {
-        private Index() {
-        }
-
-        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
+        return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
     }
 
 }

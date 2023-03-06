@@ -268,10 +268,7 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
 
     static SystemDefinedInstancePropertyImpl.Builder named(String propertyName) {
         return SystemDefinedInstancePropertyImpl.named(propertyName)
-                .addToIndex(property -> {
-                    Index.INSTANCE.add(property);
-                    InstanceProperty.Index.INSTANCE.add(property);
-                });
+                .addToIndex(Index.INSTANCE::add);
     }
 
     class Index {

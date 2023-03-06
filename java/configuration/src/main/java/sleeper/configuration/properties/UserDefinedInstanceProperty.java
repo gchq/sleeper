@@ -966,10 +966,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     static UserDefinedInstancePropertyImpl.Builder named(String propertyName) {
         return UserDefinedInstancePropertyImpl.named(propertyName)
-                .addToIndex(property -> {
-                    Index.INSTANCE.add(property);
-                    InstanceProperty.Index.INSTANCE.add(property);
-                });
+                .addToIndex(Index.INSTANCE::add);
     }
 
     class Index {
