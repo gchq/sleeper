@@ -21,6 +21,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -139,28 +141,38 @@ class SingleFileWritingIteratorTest {
                         4));
     }
 
-    @Test
-    void shouldInferPartitionIdFromFirstRecordWhenSomeRecordsAreInDifferentPartitions() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("d", 1, 2),
-                RowFactory.create("e", 1, 2)
-        ).iterator();
-        PartitionTree partitionTree = createPartitionsBuilder()
-                .leavesWithSplits(List.of("left", "right"), List.of("c"))
-                .parentJoining("root", "left", "right")
-                .buildTree();
+    @Nested
+    @DisplayName("Infer output partition")
+    class InferOutputPartition {
+        private SingleFileWritingIterator fileWritingIterator;
 
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
-                input, partitionTree, "test-file");
+        @BeforeEach
+        void setUp() {
+            // Given
+            Iterator<Row> input = Lists.newArrayList(
+                    RowFactory.create("a", 1, 2),
+                    RowFactory.create("b", 1, 2),
+                    RowFactory.create("d", 1, 2),
+                    RowFactory.create("e", 1, 2)
+            ).iterator();
+            PartitionTree partitionTree = createPartitionsBuilder()
+                    .leavesWithSplits(List.of("left", "right"), List.of("c"))
+                    .parentJoining("root", "left", "right")
+                    .buildTree();
 
-        // Then
-        assertThat(fileWritingIterator).toIterable()
-                .extracting(this::readPartitionIdFromOutputFileMetadata)
-                .containsExactly("left");
+            // When
+            fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
+                    input, partitionTree, "test-file");
+        }
+
+        @Test
+        void shouldInferPartitionIdFromFirstRecordWhenSomeRecordsAreInDifferentPartitions() {
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .extracting(SingleFileWritingIteratorTest.this::readPartitionIdFromOutputFileMetadata)
+                    .containsExactly("left");
+        }
+
     }
 
     private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
