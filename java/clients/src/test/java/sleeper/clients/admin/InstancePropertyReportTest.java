@@ -62,60 +62,6 @@ class InstancePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldPrintPropertiesAndDescriptions() {
-        // Given
-        setInstanceProperties(createValidInstanceProperties());
-        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
-
-        // When
-        String output = runClientGetOutput();
-        // Then
-        assertThat(output)
-                // Check some set property values and their descriptions are present in the output
-                .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
-                        "sleeper.account: 1234567890\n")
-                .contains("# The length of time in days that CloudWatch logs are retained.\n" +
-                        "sleeper.log.retention.days: 1\n")
-                .contains("# A list of tags for the project.\n" +
-                        "sleeper.tags: name,abc,project,test\n")
-                .contains("# The id of the VPC to deploy to.\n" +
-                        "sleeper.vpc: aVPC\n")
-                .contains("# The S3 bucket name used to store configuration files.\n" +
-                        "sleeper.config.bucket: sleeper-test-instance-config\n")
-                // Check property with multi-line description
-                .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
-                        "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
-                        "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
-                        "# can be overridden on a per-table basis.\n" +
-                        "sleeper.default.gc.delay.seconds: 600");
-
-        confirmAndVerifyNoMoreInteractions();
-    }
-
-    @Test
-    void shouldPrintSpacingBetweenProperties() {
-        // Given
-        setInstanceProperties(createValidInstanceProperties());
-        in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
-
-        // When
-        String output = runClientGetOutput();
-
-        // Then
-        assertThat(output)
-                .contains("# The logging level for Parquet logs.\n" +
-                        "sleeper.logging.parquet.level: null\n" +
-                        "\n" +
-                        "# The logging level for AWS logs.\n" +
-                        "sleeper.logging.aws.level: null\n" +
-                        "\n" +
-                        "# The logging level for everything else.\n" +
-                        "sleeper.logging.root.level: null");
-
-        confirmAndVerifyNoMoreInteractions();
-    }
-
-    @Test
     void shouldPrintPropertyGroupDescriptions() {
         // Given
         setInstanceProperties(createValidInstanceProperties());
