@@ -391,6 +391,25 @@ comma separated list of stack names, for example:
 sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ```
 
+### Utility Scripts
+There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
+
+#### Update Existing Instance
+The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars 
+that have changed, update all the docker images, and perform a `cdk deploy`.
+
+```bash
+sleeper deployment deploy/deployExisting.sh <instance-id>
+```
+
+#### Add Table
+The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with 
+properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
+
+```bash
+sleeper deployment deploy/addTable.sh <instance-id> <new-table-id>
+```
+
 ## Tear Down
 
 Once your finished with your Sleeper instance, you can delete it, i.e. remove all the resources
