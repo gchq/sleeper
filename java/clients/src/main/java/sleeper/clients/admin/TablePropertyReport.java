@@ -15,14 +15,14 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-import static sleeper.util.ClientUtils.formatDescription;
 
 public class TablePropertyReport {
 
@@ -42,17 +42,8 @@ public class TablePropertyReport {
 
     private void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
-        PropertyGroup currentGroup = null;
-        for (TableProperty property : TableProperty.getAllGrouped()) {
-            if (currentGroup == null || !currentGroup.equals(property.getPropertyGroup())) {
-                currentGroup = property.getPropertyGroup();
-                out.println();
-                out.println(formatDescription(currentGroup));
-            }
-            out.println();
-            out.println(formatDescription(property));
-            out.println(property.getPropertyName() + ": " + tableProperties.get(property));
-        }
+        new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), out::println)
+                .print(tableProperties);
         confirmReturnToMainScreen(out, in);
     }
 }

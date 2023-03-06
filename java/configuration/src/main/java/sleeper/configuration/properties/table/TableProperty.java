@@ -21,7 +21,6 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -252,10 +251,6 @@ public interface TableProperty extends SleeperProperty {
             .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .systemDefined(true).build();
-
-    static List<TableProperty> getAllGrouped() {
-        return TablePropertyGroup.sortProperties(new ArrayList<>(getAll()));
-    }
 
     static List<TableProperty> getAll() {
         return TablePropertyImpl.getAll();

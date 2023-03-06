@@ -17,14 +17,12 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
-import java.util.List;
-
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-import static sleeper.util.ClientUtils.formatDescription;
 
 public class InstancePropertyReport {
 
@@ -43,19 +41,9 @@ public class InstancePropertyReport {
     }
 
     private void print(InstanceProperties instanceProperties) {
-        List<InstanceProperty> propertyList = InstanceProperty.getAllGrouped();
-        PropertyGroup currentGroup = null;
         out.println("\n\n Instance Property Report \n -------------------------");
-        for (InstanceProperty instanceProperty : propertyList) {
-            if (currentGroup == null || !currentGroup.equals(instanceProperty.getPropertyGroup())) {
-                currentGroup = instanceProperty.getPropertyGroup();
-                out.println();
-                out.println(formatDescription(currentGroup));
-            }
-            out.println();
-            out.println(formatDescription(instanceProperty));
-            out.println(instanceProperty.getPropertyName() + ": " + instanceProperties.get(instanceProperty));
-        }
+        new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), out::println)
+                .print(instanceProperties);
         confirmReturnToMainScreen(out, in);
     }
 }
