@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
@@ -36,7 +36,6 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static sleeper.clients.admin.deploy.CdkDeployInstance.Type.STANDARD;
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 
 public class DeployNewInstance {
@@ -84,7 +83,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
-                .instanceType(STANDARD)
+                .instanceType(CdkDeployInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
 

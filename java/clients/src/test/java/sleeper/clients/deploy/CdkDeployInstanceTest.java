@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,8 +53,7 @@ class CdkDeployInstanceTest {
         CdkDeployInstance cdk = CdkDeployInstance.builder()
                 .instancePropertiesFile(Path.of("instance.properties"))
                 .jarsDirectory(Path.of("."))
-                .version("1.0")
-                .ensureNewInstance(false).build();
+                .version("1.0").build();
 
         // Then
         assertThat(commandRunOnDeployOf(cdk, CdkDeployInstance.Type.SYSTEM_TEST))

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import com.amazonaws.services.ecr.model.ListImagesRequest;
 import com.amazonaws.services.s3.model.Bucket;

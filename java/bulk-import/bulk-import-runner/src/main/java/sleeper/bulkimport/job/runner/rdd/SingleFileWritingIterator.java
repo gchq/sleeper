@@ -69,7 +69,6 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private Map<String, ItemsSketch> sketches;
     private String path;
     private long numRecords;
-    private String partitionId;
     private Instant startTime;
 
     public SingleFileWritingIterator(Iterator<Row> input,
@@ -100,12 +99,13 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             return null;
         }
         try {
+            String partitionId = null;
             while (input.hasNext()) {
                 Row row = input.next();
                 if (null == parquetWriter) {
                     startTime = Instant.now();
-                    initialiseState(partitionId);
                     partitionId = getPartitionId(row);
+                    initialiseState(partitionId);
                 }
                 write(row);
             }

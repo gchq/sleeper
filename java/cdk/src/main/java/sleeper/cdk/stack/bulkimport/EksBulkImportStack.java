@@ -42,9 +42,7 @@ import software.amazon.awscdk.services.eks.Selector;
 import software.amazon.awscdk.services.eks.ServiceAccount;
 import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -63,6 +61,9 @@ import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
@@ -80,6 +81,7 @@ import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
 /**
  * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
@@ -94,6 +96,7 @@ public final class EksBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
+            BuiltJars jars,
             BulkImportBucketStack importBucketStack,
             TableStack tableStack,
             TopicStack errorsTopicStack) {
@@ -138,16 +141,15 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
-        S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar");
+        IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
+        LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
 
-        Function bulkImportJobStarter = Function.Builder.create(this, "BulkImportEKSJobStarter")
-                .code(code)
+        IFunction bulkImportJobStarter = bulkImportStarterJar.buildFunction(this, "BulkImportEKSJobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
                 .memorySize(1024)
@@ -156,8 +158,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))
-                .build();
+                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
 
         configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
@@ -329,7 +330,7 @@ public final class EksBulkImportStack extends NestedStack {
         return json.replace("namespace-placeholder", namespace);
     }
 
-    public void grantAccessToResources(Function starterFunction, IBucket ingestBucket) {
+    public void grantAccessToResources(IFunction starterFunction, IBucket ingestBucket) {
         stateMachine.grantStartExecution(starterFunction);
         if (ingestBucket != null) {
             ingestBucket.grantRead(sparkServiceAccount);

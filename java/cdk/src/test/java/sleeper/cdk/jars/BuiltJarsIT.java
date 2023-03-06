@@ -13,32 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin.testutils;
+package sleeper.cdk.jars;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.io.TempDir;
+import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminConfigStore;
-import sleeper.clients.deploy.CdkDeployInstance;
 import sleeper.core.CommonTestConstants;
 
-import java.nio.file.Path;
+import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
+import static com.amazonaws.services.s3.model.BucketVersioningConfiguration.ENABLED;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-public abstract class AdminClientITBase extends AdminClientTestBase {
-
-    protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
+public class BuiltJarsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -48,34 +44,19 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
             .build();
-    protected final CdkDeployInstance cdk = mock(CdkDeployInstance.class);
 
-    @TempDir
-    protected Path tempDir;
+    private final String bucketName = UUID.randomUUID().toString();
+    private final BuiltJars builtJars = new BuiltJars(s3, bucketName);
 
-    protected String runClientGetOutput() {
-        return runClientGetOutput(client());
+    @Test
+    void shouldGetLatestVersionOfAJar() {
+        s3.createBucket(new CreateBucketRequest(bucketName));
+        s3.setBucketVersioningConfiguration(new SetBucketVersioningConfigurationRequest(bucketName,
+                new BucketVersioningConfiguration(ENABLED)));
+        String versionId = s3.putObject(bucketName, "test.jar", "data").getVersionId();
+
+        assertThat(builtJars.getLatestVersionId(BuiltJar.fromFormat("test.jar")))
+                .isEqualTo(versionId);
+        assertThat(versionId).isNotNull();
     }
-
-    protected AdminClient client() {
-        return new AdminClient(store(), out.consoleOut(), in.consoleIn());
-    }
-
-    protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, cdk, tempDir);
-    }
-
-    @BeforeEach
-    public void setUpITBase() {
-        s3.createBucket(CONFIG_BUCKET_NAME);
-    }
-
-    @AfterEach
-    public void tearDownITBase() {
-        S3Objects.inBucket(s3, CONFIG_BUCKET_NAME)
-                .forEach(object -> s3.deleteObject(CONFIG_BUCKET_NAME, object.getKey()));
-        s3.deleteBucket(CONFIG_BUCKET_NAME);
-        s3.shutdown();
-    }
-
 }

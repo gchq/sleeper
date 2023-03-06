@@ -20,6 +20,7 @@ SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 DEPLOY_SCRIPTS_DIR="${SCRIPTS_DIR}/deploy"
 GENERATED_DIR="${SCRIPTS_DIR}/generated"
+JARS_DIR="${SCRIPTS_DIR}/jars"
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 CONFIG_BUCKET=$(cat "${GENERATED_DIR}/configBucket.txt")
@@ -45,13 +46,13 @@ END_DOWNLOAD_CONFIG_TIME=$(record_time)
 echo "Download instance configuration finished at $(recorded_time_str "$END_DOWNLOAD_CONFIG_TIME")," \
   "took $(elapsed_time_str "$START_TIME" "$END_DOWNLOAD_CONFIG_TIME")"
 
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.util.CleanUpTestBeforeDestroy "$GENERATED_DIR"
+java -cp "${JARS_DIR}/system-test-${VERSION}-utility.jar" sleeper.systemtest.util.CleanUpTestBeforeDestroy "$GENERATED_DIR"
 
 END_CLEANUP_TIME=$(record_time)
 echo "Clean up finished at $(recorded_time_str "$END_CLEANUP_TIME"), took $(elapsed_time_str "$END_DOWNLOAD_CONFIG_TIME" "$END_CLEANUP_TIME")"
 
 echo "Running cdk destroy to remove the system"
-cdk -a "java -cp ${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
+cdk -a "java -cp ${JARS_DIR}/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" \
 destroy --force -c propertiesfile="${INSTANCE_PROPERTIES}" -c validate=false "*"
 
 END_CDK_DESTROY_TIME=$(record_time)

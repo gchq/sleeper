@@ -13,14 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.clients.deploy;
 
-package sleeper.clients.admin.deploy;
-
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.CommonTestConstants;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -34,16 +47,27 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class GeneratePropertiesTest {
+@Testcontainers
+public class GeneratePropertiesIT {
+
+    @Container
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.STS);
+    private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
+            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.STS))
+            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+            .build();
+
+    @TempDir
+    private Path tempDir;
+
     @Test
     void shouldGenerateInstancePropertiesCorrectly() {
         // Given/When
         InstanceProperties properties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
                 .build().generate();
 
         // Then
@@ -57,44 +81,44 @@ public class GeneratePropertiesTest {
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expected.set(ACCOUNT, "test-account-id");
-        expected.set(REGION, "aws-global");
+        expected.set(ACCOUNT, sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
+        expected.set(REGION, localStackContainer.getRegion());
 
         assertThat(properties).isEqualTo(expected);
     }
 
     @Test
-    void shouldGenerateTablePropertiesCorrectly() {
+    void shouldSaveBucketNamesToLocalDirectoryWhenInstancePropertiesGenerated() throws IOException {
+        // Given
+        InstanceProperties properties = generateInstancePropertiesBuilder()
+                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
+                .build().generate();
+
+        // When
+        SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+
+        // Then
+        assertThat(tempDir.resolve("configBucket.txt")).exists();
+        assertThat(tempDir.resolve("queryResultsBucket.txt")).exists();
+    }
+
+    @Test
+    void shouldSaveBucketNamesToLocalDirectoryWhenTablePropertiesGenerated() throws IOException {
         // Given
         InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
                 .build().generate();
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "test-table");
 
+        // When
+        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(tableProperties));
+
         // Then
-        InstanceProperties expectedInstanceProperties = new InstanceProperties();
-        expectedInstanceProperties.set(ID, "test-instance");
-        expectedInstanceProperties.set(CONFIG_BUCKET, "sleeper-test-instance-config");
-        expectedInstanceProperties.set(JARS_BUCKET, "sleeper-test-instance-jars");
-        expectedInstanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
-        expectedInstanceProperties.set(VPC_ID, "some-vpc");
-        expectedInstanceProperties.set(SUBNET, "some-subnet");
-        expectedInstanceProperties.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
-        expectedInstanceProperties.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expectedInstanceProperties.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expectedInstanceProperties.set(ACCOUNT, "test-account-id");
-        expectedInstanceProperties.set(REGION, "aws-global");
-
-        TableProperties expected = new TableProperties(expectedInstanceProperties);
-        expected.setSchema(schemaWithKey("key"));
-        expected.set(TABLE_NAME, "test-table");
-        expected.set(DATA_BUCKET, "sleeper-test-instance-table-test-table");
-
-        assertThat(tableProperties).isEqualTo(expected);
+        assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).exists();
     }
 
     private GenerateInstanceProperties.Builder generateInstancePropertiesBuilder() {
         return GenerateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL);
+                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet");
     }
 }
