@@ -16,6 +16,8 @@
 
 package sleeper.configuration.properties;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -97,6 +99,8 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
             return this;
         }
 
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
         public SystemDefinedInstanceProperty build() {
             SystemDefinedInstanceProperty property = new SystemDefinedInstancePropertyImpl(this);
             addToIndex.accept(property);

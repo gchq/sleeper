@@ -16,6 +16,8 @@
 
 package sleeper.configuration.properties.table;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
@@ -157,6 +159,8 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
         public TableProperty build() {
             TableProperty property = new TablePropertyImpl(this);
             addToIndex.accept(property);

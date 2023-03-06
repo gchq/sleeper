@@ -16,6 +16,8 @@
 
 package sleeper.configuration.properties;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -126,6 +128,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
         public UserDefinedInstanceProperty build() {
             UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
             addToIndex.accept(property);
