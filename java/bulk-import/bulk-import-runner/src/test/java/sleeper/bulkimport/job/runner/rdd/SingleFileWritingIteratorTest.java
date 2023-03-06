@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -27,6 +28,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -42,7 +45,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SingleFileWritingIteratorTest {
@@ -52,7 +54,12 @@ class SingleFileWritingIteratorTest {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
+    private TableProperties tableProperties;
+
+    @BeforeEach
+    void setUp() {
+        tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
+    }
 
     @Test
     void shouldReturnFalseForHasNextWithEmptyIterator() {
@@ -107,10 +114,48 @@ class SingleFileWritingIteratorTest {
                                 createRecord("d", 1, 2)));
     }
 
+    @Test
+    void shouldOutputMetadataPointingToSingleFileInFolderForPartition() {
+        // Given
+        Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2),
+                RowFactory.create("b", 1, 2),
+                RowFactory.create("c", 1, 2),
+                RowFactory.create("d", 1, 2)
+        ).iterator();
+        PartitionTree partitionTree = createPartitionsBuilder()
+                .singlePartition("test-partition")
+                .buildTree();
+
+        // When
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
+                input, partitionTree, "test-file");
+
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .containsExactly(RowFactory.create(
+                        "test-partition",
+                        "file://" + tempFolder + "/partition_test-partition/test-file.parquet",
+                        4));
+    }
+
     private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
+        return createIteratorOverRecordsWithPartitions(records,
+                PartitionsFromSplitPoints.treeFrom(schema, List.of("T")));
+    }
+
+    private SingleFileWritingIterator createIteratorOverRecordsWithPartitions(
+            Iterator<Row> records, PartitionTree partitionTree) {
         return new SingleFileWritingIterator(records,
                 instanceProperties, tableProperties,
-                new Configuration(), PartitionsFromSplitPoints.treeFrom(schema, List.of("T")));
+                new Configuration(), partitionTree);
+    }
+
+    private SingleFileWritingIterator createIteratorOverRecordsWithPartitionsAndOutputFilename(
+            Iterator<Row> records, PartitionTree partitionTree, String filename) {
+        return new SingleFileWritingIterator(records,
+                instanceProperties, tableProperties,
+                new Configuration(), partitionTree, filename);
     }
 
     private static InstanceProperties createInstanceProperties() {
@@ -131,11 +176,7 @@ class SingleFileWritingIteratorTest {
             InstanceProperties instanceProperties, Schema schema, java.nio.file.Path tempFolder) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        try {
-            tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder, null).toString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create temp folder for test", e);
-        }
+        tableProperties.set(TableProperty.DATA_BUCKET, tempFolder.toString());
 
         return tableProperties;
     }
@@ -171,5 +212,9 @@ class SingleFileWritingIteratorTest {
 
     private String readPathFromOutputFileMetadata(Row metadataRow) {
         return metadataRow.getString(1);
+    }
+
+    private PartitionsBuilder createPartitionsBuilder() {
+        return new PartitionsBuilder(schema);
     }
 }
