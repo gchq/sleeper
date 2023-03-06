@@ -27,7 +27,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -51,7 +50,23 @@ class SingleFileWritingIteratorTest {
     @TempDir
     public java.nio.file.Path tempFolder;
 
-    private Schema createSchema() {
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final Schema schema = createSchema();
+    private final TableProperties tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
+
+    private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
+        return new SingleFileWritingIterator(records,
+                instanceProperties, tableProperties,
+                new Configuration(), PartitionsFromSplitPoints.treeFrom(schema, List.of("T")));
+    }
+
+    private static InstanceProperties createInstanceProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(UserDefinedInstanceProperty.FILE_SYSTEM, "file://");
+        return instanceProperties;
+    }
+
+    private static Schema createSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("int", new IntType()))
@@ -59,9 +74,10 @@ class SingleFileWritingIteratorTest {
                 .build();
     }
 
-    private TableProperties createTableProperties() {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.setSchema(createSchema());
+    private static TableProperties createTableProperties(
+            InstanceProperties instanceProperties, Schema schema, java.nio.file.Path tempFolder) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
         try {
             tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder, null).toString());
         } catch (IOException e) {
@@ -71,18 +87,8 @@ class SingleFileWritingIteratorTest {
         return tableProperties;
     }
 
-    private InstanceProperties createInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(UserDefinedInstanceProperty.FILE_SYSTEM, "file://");
-        return instanceProperties;
-    }
-
-    private PartitionTree getPartitionTree() {
-        return PartitionsFromSplitPoints.treeFrom(createSchema(), List.of("T"));
-    }
-
     private Record createRecord(Object... values) {
-        return createRecord(RowFactory.create(values), createSchema());
+        return createRecord(RowFactory.create(values), schema);
     }
 
     private Record createRecord(Row row, Schema schema) {
@@ -96,7 +102,7 @@ class SingleFileWritingIteratorTest {
     }
 
     private List<Record> readRecords(String path) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), createSchema())) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), schema)) {
             List<Record> records = new ArrayList<>();
             Record record = reader.read();
             while (null != record) {
@@ -120,9 +126,7 @@ class SingleFileWritingIteratorTest {
         Iterator<Row> empty = Collections.emptyIterator();
 
         // When
-        SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(empty,
-                new InstanceProperties(), createTableProperties(),
-                new Configuration(), getPartitionTree());
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(empty);
 
         // Then
         assertThat(fileWritingIterator).isExhausted();
@@ -139,9 +143,7 @@ class SingleFileWritingIteratorTest {
         ).iterator();
 
         // When
-        SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(input,
-                new InstanceProperties(), createTableProperties(),
-                new Configuration(), getPartitionTree());
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
 
         // Then
         assertThat(fileWritingIterator).hasNext();
@@ -158,9 +160,7 @@ class SingleFileWritingIteratorTest {
         ).iterator();
 
         // When
-        SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(input,
-                createInstanceProperties(), createTableProperties(),
-                new Configuration(), getPartitionTree());
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
 
         // Then
         assertThat(fileWritingIterator).toIterable()
