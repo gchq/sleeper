@@ -39,13 +39,14 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SingleFileWritingIteratorTest {
+class SingleFileWritingIteratorTest {
 
     @TempDir
     public java.nio.file.Path tempFolder;
@@ -77,7 +78,7 @@ public class SingleFileWritingIteratorTest {
     }
 
     private PartitionTree getPartitionTree() {
-        return PartitionsFromSplitPoints.treeFrom(createSchema(), Arrays.asList("T"));
+        return PartitionsFromSplitPoints.treeFrom(createSchema(), List.of("T"));
     }
 
     private Record createRecord(Object... values) {
@@ -109,10 +110,14 @@ public class SingleFileWritingIteratorTest {
         }
     }
 
+    private String readPathFromOutputFileMetadata(Row metadataRow) {
+        return metadataRow.getString(1);
+    }
+
     @Test
-    public void shouldReturnFalseForHasNextWithEmptyIterator() {
+    void shouldReturnFalseForHasNextWithEmptyIterator() {
         // Given
-        Iterator<Row> empty = new ArrayList<Row>().iterator();
+        Iterator<Row> empty = Collections.emptyIterator();
 
         // When
         SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(empty,
@@ -124,7 +129,7 @@ public class SingleFileWritingIteratorTest {
     }
 
     @Test
-    public void shouldReturnTrueForHasNextWithPopulatedIterator() {
+    void shouldReturnTrueForHasNextWithPopulatedIterator() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2),
@@ -143,7 +148,7 @@ public class SingleFileWritingIteratorTest {
     }
 
     @Test
-    public void shouldWriteAllRecordsToAParquetFile() {
+    void shouldWriteAllRecordsToAParquetFile() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2),
@@ -159,7 +164,7 @@ public class SingleFileWritingIteratorTest {
 
         // Then
         assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(row.getString(1)))
+                .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
                 .containsExactly(
                         Arrays.asList(
                                 createRecord("a", 1, 2),
