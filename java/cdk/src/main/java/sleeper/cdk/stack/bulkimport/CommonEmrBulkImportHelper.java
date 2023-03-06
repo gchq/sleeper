@@ -24,9 +24,7 @@ import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -36,6 +34,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -100,21 +101,20 @@ public class CommonEmrBulkImportHelper {
         return emrBulkImportJobQueue;
     }
 
-    protected Function createJobStarterFunction(String bulkImportPlatform, Queue jobQueue,
-                                                IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
+                                              IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
-        S3Code code = Code.fromBucket(Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
-                "bulk-import-starter-" + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar");
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
+        LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
-        Function function = Function.Builder.create(scope, "BulkImport" + shortId + "JobStarter")
-                .code(code)
+        IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + shortId + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
                 .memorySize(1024)
@@ -123,8 +123,7 @@ public class CommonEmrBulkImportHelper {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(new SqsEventSource(jobQueue)))
-                .build();
+                .events(Lists.newArrayList(new SqsEventSource(jobQueue))));
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);

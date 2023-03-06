@@ -41,8 +41,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -51,6 +50,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
@@ -74,7 +76,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
@@ -97,10 +98,11 @@ public class IngestStack extends NestedStack {
     public IngestStack(
             Construct scope,
             String id,
+            InstanceProperties instanceProperties,
+            BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets,
-            Topic topic,
-            InstanceProperties instanceProperties) {
+            Topic topic) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         this.statusStore = IngestStatusStoreStack.from(scope, instanceProperties);
@@ -115,7 +117,10 @@ public class IngestStack extends NestedStack {
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+
+        // Job creation code
+        LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(topic);
@@ -124,7 +129,7 @@ public class IngestStack extends NestedStack {
         ecsClusterForIngestTasks(configBucket, jarsBucket, dataBuckets, stateStoreStacks, ingestJobQueue);
 
         // Lambda to create ingest tasks
-        lambdaToCreateIngestTasks(configBucket, ingestJobQueue);
+        lambdaToCreateIngestTasks(configBucket, ingestJobQueue, taskCreatorJar);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -265,30 +270,22 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(IBucket configBucket, Queue ingestJobQueue) {
-        // Job creation code
-        IBucket jarsBucket = Bucket.fromBucketArn(this,
-                "jarsBucket-ingest",
-                "arn:aws:s3:::" + instanceProperties.get(JARS_BUCKET));
-        Code code = Code.fromBucket(jarsBucket, "ingest-starter-" + instanceProperties.get(VERSION) + ".jar");
+    private void lambdaToCreateIngestTasks(IBucket configBucket, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-tasks-creator"));
 
-        Function handler = Function.Builder
-                .create(this, "IngestTasksCreator")
+        IFunction handler = taskCreatorJar.buildFunction(this, "IngestTasksCreator", builder -> builder
                 .functionName(functionName)
                 .description("If there are ingest jobs on queue create tasks to run them")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .code(code)
                 .handler("sleeper.ingest.starter.RunTasksLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission to read from the S3 bucket
         configBucket.grantRead(handler);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;

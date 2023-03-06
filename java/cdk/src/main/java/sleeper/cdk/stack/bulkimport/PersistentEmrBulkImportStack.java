@@ -28,13 +28,14 @@ import software.amazon.awscdk.services.emr.CfnCluster.VolumeSpecificationPropert
 import software.amazon.awscdk.services.emr.CfnClusterProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -74,6 +75,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
+            BuiltJars jars,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             TopicStack errorsTopicStack) {
@@ -81,8 +83,8 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 this, "PersistentEMR", instanceProperties);
         Queue jobQueue = commonHelper.createJobQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
-        Function jobStarter = commonHelper.createJobStarterFunction(
-                "PersistentEMR", jobQueue, importBucketStack.getImportBucket(), commonEmrStack);
+        IFunction jobStarter = commonHelper.createJobStarterFunction(
+                "PersistentEMR", jobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(jobStarter);
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
         Utils.addStackTagIfSet(this, instanceProperties);
@@ -172,7 +174,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
 
-    private static void configureJobStarterFunction(Function bulkImportJobStarter) {
+    private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .actions(Lists.newArrayList("elasticmapreduce:*", "elasticmapreduce:ListClusters"))

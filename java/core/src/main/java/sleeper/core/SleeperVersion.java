@@ -27,7 +27,13 @@ public class SleeperVersion {
         // Prevent instantiation
     }
 
+    private static final String VERSION = loadVersion();
+
     public static String getVersion() {
+        return VERSION;
+    }
+
+    private static String loadVersion() {
         URL resource = SleeperVersion.class.getClassLoader().getResource("version.txt");
         if (resource == null) {
             throw new IllegalStateException("Sleeper version not found");

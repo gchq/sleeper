@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin.deploy;
+package sleeper.clients.deploy;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +28,8 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.CommonTestConstants;
@@ -229,6 +231,42 @@ class SyncJarsIT {
 
             // Then
             assertThat(changed).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Save version when jars uploaded")
+    class SaveVersions {
+        @Test
+        void shouldCreateVersionsForNewJars() throws IOException {
+            // Given
+            Files.createFile(tempDir.resolve("test.jar"));
+
+            // When
+            uploadJarsToBucket(bucketName);
+
+            // Then
+            assertThat(s3.headObject(builder -> builder.bucket(bucketName).key("test.jar")))
+                    .extracting(HeadObjectResponse::versionId)
+                    .isNotNull();
+        }
+
+        @Test
+        void shouldCreateTwoVersionsWhenUpdatingExistingJar() throws IOException, InterruptedException {
+            // Given
+            Files.writeString(tempDir.resolve("test.jar"), "data1");
+            uploadJarsToBucket(bucketName);
+
+            // When
+            Thread.sleep(1000);
+            Files.writeString(tempDir.resolve("test.jar"), "data2");
+            uploadJarsToBucket(bucketName);
+
+            // Then
+            assertThat(s3.listObjectVersionsPaginator(builder -> builder
+                    .bucket(bucketName).keyMarker("test.jar").maxKeys(1)))
+                    .flatMap(ListObjectVersionsResponse::versions)
+                    .hasSize(2);
         }
     }
 

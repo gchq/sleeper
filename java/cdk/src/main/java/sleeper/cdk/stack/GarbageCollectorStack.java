@@ -20,14 +20,16 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Collections;
@@ -36,7 +38,6 @@ import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -44,7 +45,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
 /**
- * A {@link Stack} to garbage collect files which have been marked as being ready
+ * A {@link NestedStack} to garbage collect files which have been marked as being ready
  * for garbage collection after a compaction job.
  */
 public class GarbageCollectorStack extends NestedStack {
@@ -53,6 +54,7 @@ public class GarbageCollectorStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
+            BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets) {
         super(scope, id);
@@ -64,14 +66,13 @@ public class GarbageCollectorStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         // Garbage collector code
-        Code code = Code.fromBucket(jarsBucket, "lambda-garbagecollector-" + instanceProperties.get(VERSION) + ".jar");
+        LambdaCode gcJar = jars.lambdaCode(BuiltJar.GARBAGE_COLLECTOR, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
-        Function handler = Function.Builder
-                .create(this, "GarbageCollectorLambda")
+        IFunction handler = gcJar.buildFunction(this, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need deleting and delete them")
                 .runtime(Runtime.JAVA_11)
@@ -80,12 +81,10 @@ public class GarbageCollectorStack extends NestedStack {
                 // with a maximum of 900 seconds (15 minutes) which is the maximum execution time
                 // of a lambda.
                 .timeout(Duration.seconds(Math.max(1, Math.min((int) (0.9 * 60 * instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES)), 900))))
-                .code(code)
                 .handler("sleeper.garbagecollector.GarbageCollectorLambda::eventHandler")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table

@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.cdk;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
@@ -22,6 +23,7 @@ import software.amazon.awscdk.Tags;
 
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
@@ -29,6 +31,7 @@ import sleeper.systemtest.SystemTestProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 /**
@@ -38,10 +41,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;
 
-    public SystemTestApp(App app, String id, SystemTestProperties sleeperProperties, StackProps props) {
-        super(app, id, sleeperProperties, props);
+    public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
+        super(app, id, props, sleeperProperties, jars);
     }
 
+    @Override
     public void create() {
         super.create();
         SystemTestProperties systemTestProperties = getInstanceProperties();
@@ -89,11 +93,14 @@ public class SystemTestApp extends SleeperCdkApp {
                 .account(systemTestProperties.get(ACCOUNT))
                 .region(systemTestProperties.get(REGION))
                 .build();
+        BuiltJars jars = new BuiltJars(AmazonS3ClientBuilder.defaultClient(), systemTestProperties.get(JARS_BUCKET));
 
-        new SystemTestApp(app, id, systemTestProperties, StackProps.builder()
+        new SystemTestApp(app, id, StackProps.builder()
                 .stackName(id)
                 .env(environment)
-                .build()).create();
+                .build(),
+                systemTestProperties, jars).create();
+
         app.synth();
     }
 }

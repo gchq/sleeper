@@ -54,3 +54,6 @@ RUN apt-get -y install docker-ce docker-ce-cli containerd.io
 
 # Install text editors
 RUN apt-get -y install nano vim emacs
+
+# Enable autocompletion
+RUN apt-get -y install bash-completion

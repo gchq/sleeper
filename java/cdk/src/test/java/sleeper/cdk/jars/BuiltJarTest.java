@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.cdk.jars;
 
-package sleeper.clients.admin.deploy;
+import org.junit.jupiter.api.Test;
 
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.lambda.LambdaClient;
+import sleeper.core.SleeperVersion;
 
-public class InvokeLambda {
-    private InvokeLambda() {
+import static org.assertj.core.api.Assertions.assertThat;
+
+class BuiltJarTest {
+
+    @Test
+    void shouldBuildJarNameWithoutVersion() {
+        // When
+        BuiltJar jar = BuiltJar.fromFormat("test.jar");
+
+        // Then
+        assertThat(jar.getFileName()).isEqualTo("test.jar");
     }
 
-    public static void invoke(String lambdaFunction) {
-        try (LambdaClient lambda = LambdaClient.create()) {
-            invokeWith(lambda, lambdaFunction);
-        }
-    }
+    @Test
+    void shouldBuildJarNameWithVersion() {
+        // When
+        BuiltJar jar = BuiltJar.fromFormat("test-%s.jar");
 
-    public static void invokeWith(LambdaClient lambdaClient, String lambdaFunction) {
-        lambdaClient.invoke(builder -> builder
-                .functionName(lambdaFunction)
-                .payload(SdkBytes.fromUtf8String("{}")));
+        // Then
+        assertThat(jar.getFileName()).contains(SleeperVersion.getVersion());
     }
 }
