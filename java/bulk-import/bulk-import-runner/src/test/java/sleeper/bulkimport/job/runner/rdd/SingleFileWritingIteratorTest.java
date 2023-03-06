@@ -54,6 +54,59 @@ class SingleFileWritingIteratorTest {
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
 
+    @Test
+    void shouldReturnFalseForHasNextWithEmptyIterator() {
+        // Given
+        Iterator<Row> empty = Collections.emptyIterator();
+
+        // When
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(empty);
+
+        // Then
+        assertThat(fileWritingIterator).isExhausted();
+    }
+
+    @Test
+    void shouldReturnTrueForHasNextWithPopulatedIterator() {
+        // Given
+        Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2),
+                RowFactory.create("b", 1, 2),
+                RowFactory.create("c", 1, 2),
+                RowFactory.create("d", 1, 2)
+        ).iterator();
+
+        // When
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
+
+        // Then
+        assertThat(fileWritingIterator).hasNext();
+    }
+
+    @Test
+    void shouldWriteAllRecordsToAParquetFile() {
+        // Given
+        Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2),
+                RowFactory.create("b", 1, 2),
+                RowFactory.create("c", 1, 2),
+                RowFactory.create("d", 1, 2)
+        ).iterator();
+
+        // When
+        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
+
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                .containsExactly(
+                        Arrays.asList(
+                                createRecord("a", 1, 2),
+                                createRecord("b", 1, 2),
+                                createRecord("c", 1, 2),
+                                createRecord("d", 1, 2)));
+    }
+
     private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
         return new SingleFileWritingIterator(records,
                 instanceProperties, tableProperties,
@@ -118,58 +171,5 @@ class SingleFileWritingIteratorTest {
 
     private String readPathFromOutputFileMetadata(Row metadataRow) {
         return metadataRow.getString(1);
-    }
-
-    @Test
-    void shouldReturnFalseForHasNextWithEmptyIterator() {
-        // Given
-        Iterator<Row> empty = Collections.emptyIterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(empty);
-
-        // Then
-        assertThat(fileWritingIterator).isExhausted();
-    }
-
-    @Test
-    void shouldReturnTrueForHasNextWithPopulatedIterator() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
-
-        // Then
-        assertThat(fileWritingIterator).hasNext();
-    }
-
-    @Test
-    void shouldWriteAllRecordsToAParquetFile() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
-
-        // Then
-        assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
-                .containsExactly(
-                        Arrays.asList(
-                                createRecord("a", 1, 2),
-                                createRecord("b", 1, 2),
-                                createRecord("c", 1, 2),
-                                createRecord("d", 1, 2)));
     }
 }
