@@ -161,8 +161,7 @@ class SingleFileWritingIteratorTest {
                     .buildTree();
 
             // When
-            fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
-                    input, partitionTree, "test-file");
+            fileWritingIterator = createIteratorOverRecordsWithPartitions(input, partitionTree);
         }
 
         @Test
