@@ -17,7 +17,7 @@ package sleeper.configuration.properties.local;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
+import sleeper.configuration.properties.table.TableProperty;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -82,8 +82,9 @@ public class LoadLocalProperties {
         try {
             Properties properties = loadProperties(propertiesPath);
             if (Files.exists(schemaPath)) {
-                Schema schema = Schema.load(schemaPath);
-                return new TableProperties(instanceProperties, schema, properties);
+                String schemaString = Files.readString(schemaPath);
+                properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
+                return new TableProperties(instanceProperties, properties);
             }
             return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {
