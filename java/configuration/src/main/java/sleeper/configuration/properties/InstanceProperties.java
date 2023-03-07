@@ -22,9 +22,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS;
@@ -139,5 +142,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
             count++;
         }
         return builder.toString();
+    }
+
+    public Stream<Map.Entry<String, String>> getUnknownProperties() {
+        List<String> allNames = InstanceProperty.getAll().stream().map(InstanceProperty::getPropertyName).collect(Collectors.toList());
+        return getProperties().entrySet().stream()
+                .filter(entry -> !allNames.contains(entry.getKey().toString()))
+                .map(entry -> Map.entry(entry.getKey().toString(), entry.getValue().toString()));
     }
 }

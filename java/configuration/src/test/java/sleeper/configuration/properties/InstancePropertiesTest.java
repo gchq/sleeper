@@ -261,6 +261,17 @@ class InstancePropertiesTest {
         assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isTrue();
     }
 
+    @Test
+    void shouldGetUnknownPropertyValues() throws IOException {
+        // Given
+        InstanceProperties properties = new InstanceProperties(loadProperties(
+                createTestInstanceProperties().saveAsString() + "\n" +
+                        "unknown.property=123"));
+
+        assertThat(properties.getUnknownProperties())
+                .containsExactly(Map.entry("unknown.property", "123"));
+    }
+
     private static InstanceProperties getSleeperProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "1234567890");
