@@ -27,6 +27,10 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
+import sleeper.core.schema.Schema;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SleeperProperties.loadProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -124,6 +129,15 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
+        void shouldPrintTableSchema() {
+            // Given
+            String schema = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"LongType\"}],\"sortKeyFields\":[],\"valueFields\":[]}";
+            // When / Then
+            assertThat(printTableProperties(Schema.loadFromString(schema)))
+                    .contains("sleeper.table.schema: " + schema + "\n");
+        }
+
+        @Test
         void shouldPrintUnsetPropertyValue() throws Exception {
             // When / Then
             assertThat(printEmptyInstanceProperties())
@@ -186,6 +200,11 @@ class SleeperPropertiesPrettyPrinterTest {
     private static String printInstanceProperties(String properties) throws IOException {
         return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(),
                 new InstanceProperties(loadProperties(properties)));
+    }
+
+    private static String printTableProperties(Schema schema) {
+        TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schema);
+        return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(
