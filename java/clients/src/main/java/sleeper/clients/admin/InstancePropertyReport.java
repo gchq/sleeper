@@ -16,8 +16,6 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
@@ -42,7 +40,7 @@ public class InstancePropertyReport {
 
     private void print(InstanceProperties instanceProperties) {
         out.println("\n\n Instance Property Report \n -------------------------");
-        new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), out.writer())
+        SleeperPropertiesPrettyPrinter.forInstanceProperties(out.writer())
                 .print(instanceProperties);
         confirmReturnToMainScreen(out, in);
     }

@@ -17,8 +17,6 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
@@ -42,7 +40,7 @@ public class TablePropertyReport {
 
     private void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
-        new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), out.writer())
+        SleeperPropertiesPrettyPrinter.forTableProperties(out.writer())
                 .print(tableProperties);
         confirmReturnToMainScreen(out, in);
     }

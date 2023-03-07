@@ -20,24 +20,20 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.InstancePropertyGroup;
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
-import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -287,7 +283,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstanceProperties(InstanceProperties properties) {
-        return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), properties);
+        return print(SleeperPropertiesPrettyPrinter::forInstanceProperties, properties);
     }
 
     private static String printTableProperties(Schema schema) {
@@ -306,17 +302,15 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printTableProperties(TableProperties tableProperties) {
-        return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
+        return print(SleeperPropertiesPrettyPrinter::forTableProperties, tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(
-            List<T> properties, List<PropertyGroup> groups, SleeperProperties<T> values) {
+            Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer, SleeperProperties<T> values) {
         // Test against PrintStream as the clients module builds its writer from that.
         // This forces us to ensure the output is flushed to the console before the system continues.
         ToStringPrintStream out = new ToStringPrintStream();
-        new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, out.getPrintWriter())
-                .print(values);
+        printer.apply(out.getPrintWriter()).print(values);
         return out.toString();
     }
 }

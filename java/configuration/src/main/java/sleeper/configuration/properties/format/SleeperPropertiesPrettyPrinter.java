@@ -18,10 +18,14 @@ package sleeper.configuration.properties.format;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.lang.WordUtils;
 
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -37,10 +41,18 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
 
-    public SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+    private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
         this.writer = writer;
         this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
+    }
+
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
+        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), writer);
+    }
+
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
+        return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
     }
 
     private void println(String line) {
