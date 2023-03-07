@@ -42,7 +42,7 @@ public class InstancePropertyReport {
 
     private void print(InstanceProperties instanceProperties) {
         out.println("\n\n Instance Property Report \n -------------------------");
-        new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), out::println)
+        new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), out.writer())
                 .print(instanceProperties);
         confirmReturnToMainScreen(out, in);
     }

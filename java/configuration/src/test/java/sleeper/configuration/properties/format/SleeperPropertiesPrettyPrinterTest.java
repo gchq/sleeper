@@ -32,11 +32,9 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Schema;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -253,11 +251,10 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static <T extends SleeperProperty> String print(
             List<T> properties, List<PropertyGroup> groups, SleeperProperties<T> values) {
-        OutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+        StringWriter writer = new StringWriter();
         new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, printStream::println)
+                properties, groups, new PrintWriter(writer))
                 .print(values);
-        return outputStream.toString();
+        return writer.toString();
     }
 }

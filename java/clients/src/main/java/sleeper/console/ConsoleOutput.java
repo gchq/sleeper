@@ -16,6 +16,7 @@
 package sleeper.console;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 
 public class ConsoleOutput {
 
@@ -43,5 +44,9 @@ public class ConsoleOutput {
 
     public void printf(String format, Object... args) {
         out.printf(format, args);
+    }
+
+    public PrintWriter writer() {
+        return new PrintWriter(out);
     }
 }

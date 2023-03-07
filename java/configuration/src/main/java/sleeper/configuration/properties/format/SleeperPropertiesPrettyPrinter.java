@@ -16,38 +16,47 @@
 package sleeper.configuration.properties.format;
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.lang.WordUtils;
 
+import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
 
     private final List<T> sortedProperties;
-    private final Consumer<String> printLine;
+    private final PrintWriter writer;
+    private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
 
-    public SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, Consumer<String> printLine) {
+    public SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
-        this.printLine = printLine;
+        this.writer = writer;
+        this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
     }
 
     private void println(String line) {
-        printLine.accept(line);
+        writer.println(line);
     }
 
     private void println() {
-        printLine.accept("");
+        writer.println();
+    }
+
+    private void printProperty(String name, String value) {
+        try {
+            propertiesWriter.writeProperty(name, value);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -75,20 +84,8 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             println();
             println("# The following properties are not recognised by Sleeper.");
             unknownProperties.keySet().stream().sorted().forEach(name ->
-                    println(buildLine(name, unknownProperties.get(name))));
+                    printProperty(name, unknownProperties.get(name)));
         }
-    }
-
-    private static String buildLine(String propertyName, String propertyValue) {
-        StringWriter stringWriter = new StringWriter();
-        PropertiesConfiguration.PropertiesWriter writer = new PropertiesConfiguration.PropertiesWriter(stringWriter, new DefaultListDelimiterHandler(','));
-        writer.setGlobalSeparator("=");
-        try {
-            writer.writeProperty(propertyName, propertyValue);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return stringWriter.toString().lines().findFirst().orElseThrow();
     }
 
     private static String formatDescription(SleeperProperty property) {
