@@ -51,6 +51,10 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         writer.println();
     }
 
+    private void print(String value) {
+        writer.print(value);
+    }
+
     private void printProperty(String name, String value) {
         try {
             propertiesWriter.writeProperty(name, value);
@@ -74,7 +78,8 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printProperty(property.getPropertyName(), value);
             } else {
                 println("# (no value set, uncomment to set a value)");
-                println("# " + property.getPropertyName() + "=");
+                print("# ");
+                printProperty(property.getPropertyName(), "");
             }
         }
         Map<String, String> unknownProperties = properties.getUnknownProperties()
