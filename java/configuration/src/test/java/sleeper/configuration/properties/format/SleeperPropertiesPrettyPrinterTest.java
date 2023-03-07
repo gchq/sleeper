@@ -31,7 +31,9 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -188,15 +191,26 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldEscapeSpecialCharactersInPropertyValueForKnownProperty() {
+        void shouldEscapeSpecialCharactersInSchemaPropertyValue() {
             // Given
-            String schemaWithNewlines = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"LongType\"}],\\n" +
+            String schemaWithNewlines = "{\"rowKeyFields\":[{\\n" +
+                    "\"name\":\"key\",\"type\":\"LongType\"\\n" +
+                    "}],\\n" +
                     "\"sortKeyFields\":[],\\n" +
                     "\"valueFields\":[]}";
+            TableProperties tableProperties = createTablePropertiesWithSchemaInString("" +
+                    "sleeper.table.schema=" + schemaWithNewlines);
             // When / Then
-            assertThat(printTableProperties("" +
-                    "sleeper.table.schema=" + schemaWithNewlines))
+            assertThat(printTableProperties(tableProperties))
                     .contains("\nsleeper.table.schema=" + schemaWithNewlines + "\n");
+            assertThat(tableProperties.getSchema()).isEqualTo(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .build());
+            assertThat(tableProperties.get(SCHEMA)).isEqualTo("{\"rowKeyFields\":[{\n" +
+                    "\"name\":\"key\",\"type\":\"LongType\"\n" +
+                    "}],\n" +
+                    "\"sortKeyFields\":[],\n" +
+                    "\"valueFields\":[]}");
         }
 
         @Disabled("TODO")
@@ -268,16 +282,20 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static String printTableProperties(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schema);
-        return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
+        return printTableProperties(tableProperties);
     }
 
-    private static String printTableProperties(String properties) {
+    private static TableProperties createTablePropertiesWithSchemaInString(String properties) {
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(new InstanceProperties());
         try {
             tableProperties.loadFromString(properties);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        return tableProperties;
+    }
+
+    private static String printTableProperties(TableProperties tableProperties) {
         return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
     }
 
