@@ -38,7 +38,11 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Abstract class which backs both {@link InstanceProperties} and
@@ -61,6 +65,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     protected abstract void validate();
+
+    protected abstract boolean isKnownProperty(String propertyName);
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
@@ -178,6 +184,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) throws IOException {
         String propertiesString = s3Client.getObjectAsString(bucket, key);
         loadFromString(propertiesString);
+    }
+
+    public Stream<Map.Entry<String, String>> getUnknownProperties() {
+        return properties.stringPropertyNames().stream()
+                .filter(not(this::isKnownProperty))
+                .map(name -> Map.entry(name, properties.getProperty(name)));
     }
 
     @Override

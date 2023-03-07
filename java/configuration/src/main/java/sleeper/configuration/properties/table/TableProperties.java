@@ -137,6 +137,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
     }
 
+    protected boolean isKnownProperty(String propertyName) {
+        return TableProperty.has(propertyName);
+    }
+
     public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
         Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
                 s3, instanceProperties.get(CONFIG_BUCKET), "tables/");

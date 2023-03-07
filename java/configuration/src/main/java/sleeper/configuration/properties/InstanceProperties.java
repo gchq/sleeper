@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS;
@@ -116,6 +115,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
     }
 
+    protected boolean isKnownProperty(String propertyName) {
+        return InstanceProperty.has(propertyName);
+    }
+
     public static Map<String, String> csvTagsToMap(String csvTags) {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {
@@ -140,12 +143,5 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
             count++;
         }
         return builder.toString();
-    }
-
-    public Stream<Map.Entry<String, String>> getUnknownProperties() {
-        Properties properties = getProperties();
-        return properties.stringPropertyNames().stream()
-                .filter(name -> !InstanceProperty.has(name))
-                .map(name -> Map.entry(name, properties.getProperty(name)));
     }
 }
