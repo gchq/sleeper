@@ -16,6 +16,7 @@
 package sleeper.configuration.properties;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,10 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
         } else {
             userDefined.add(property);
         }
+    }
+
+    public void addAll(Collection<? extends T> properties) {
+        properties.forEach(this::add);
     }
 
     public List<T> getAll() {

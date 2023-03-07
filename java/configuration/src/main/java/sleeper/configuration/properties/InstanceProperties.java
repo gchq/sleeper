@@ -145,7 +145,9 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     public Stream<Map.Entry<String, String>> getUnknownProperties() {
-        List<String> allNames = InstanceProperty.getAll().stream().map(InstanceProperty::getPropertyName).collect(Collectors.toList());
+        List<String> allNames = InstanceProperty.getAll().stream()
+                .map(InstanceProperty::getPropertyName)
+                .collect(Collectors.toList());
         return getProperties().entrySet().stream()
                 .filter(entry -> !allNames.contains(entry.getKey().toString()))
                 .map(entry -> Map.entry(entry.getKey().toString(), entry.getValue().toString()));
