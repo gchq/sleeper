@@ -160,7 +160,7 @@ class SleeperPropertiesPrettyPrinterTest {
 
         @Test
         void shouldNotPrintPropertiesNotKnownBySleeperWhenNoneSet() throws IOException {
-            assertThat(printInstanceProperties(""))
+            assertThat(printEmptyInstanceProperties())
                     .doesNotContain("The following properties are not recognised by Sleeper.");
         }
 
