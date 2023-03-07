@@ -21,9 +21,13 @@ import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -70,8 +74,20 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             println();
             println("# The following properties are not recognised by Sleeper.");
             unknownProperties.keySet().stream().sorted().forEach(name ->
-                    println(name + "=" + unknownProperties.get(name)));
+                    println(buildLine(name, unknownProperties.get(name))));
         }
+    }
+
+    private static String buildLine(String propertyName, String propertyValue) {
+        Properties properties = new Properties();
+        properties.setProperty(propertyName, propertyValue);
+        StringWriter stringWriter = new StringWriter();
+        try {
+            properties.store(stringWriter, "");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return stringWriter.toString().split("\n")[2];
     }
 
     private static String formatDescription(SleeperProperty property) {

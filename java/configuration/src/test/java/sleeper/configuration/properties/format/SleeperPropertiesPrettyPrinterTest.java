@@ -179,6 +179,14 @@ class SleeperPropertiesPrettyPrinterTest {
                             "unknown.property.2=test\n" +
                             "unknown.property.3=test\n");
         }
+
+        @Test
+        void shouldEscapeSpecialCharactersInPropertyKey() throws IOException {
+            assertThat(printInstanceProperties("unknown\\=property=test"))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "unknown\\=property=test\n");
+        }
     }
 
     @Nested
