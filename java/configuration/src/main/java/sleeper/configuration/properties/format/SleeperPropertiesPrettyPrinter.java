@@ -23,6 +23,7 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -61,6 +62,15 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 println("# (no value set, uncomment to set a value)");
                 println("# " + property.getPropertyName() + "=");
             }
+        }
+        Map<String, String> unknownProperties = properties.getUnknownProperties()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!unknownProperties.isEmpty()) {
+            println();
+            println("# The following properties are not recognised by Sleeper.");
+            unknownProperties.forEach((name, value) ->
+                    println(name + "=" + value));
         }
     }
 

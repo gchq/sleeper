@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties.format;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -153,7 +152,6 @@ class SleeperPropertiesPrettyPrinterTest {
                             "sleeper.logging.root.level=INFO");
         }
 
-        @Disabled("TODO")
         @Test
         void shouldPrintPropertiesNotKnownBySleeper() throws IOException {
             assertThat(printInstanceProperties("unknown.property=test"))
@@ -161,6 +159,14 @@ class SleeperPropertiesPrettyPrinterTest {
                             "# The following properties are not recognised by Sleeper.\n" +
                             "unknown.property=test\n");
         }
+
+        @Test
+        void shouldNotPrintPropertiesNotKnownBySleeperWhenNoneSet() throws IOException {
+            assertThat(printInstanceProperties(""))
+                    .doesNotContain("The following properties are not recognised by Sleeper.");
+        }
+
+        // TODO Escape property keys, sort unknown properties by key
     }
 
     @Nested
