@@ -111,6 +111,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.stringPropertyNames().stream().anyMatch(name -> name.startsWith(propertyNameStart));
     }
 
+    public boolean isSet(T property) {
+        return properties.containsKey(property.getPropertyName());
+    }
+
     protected Properties getProperties() {
         return properties;
     }

@@ -64,7 +64,7 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithMultipleLines() throws Exception {
             // When / Then
-            assertThat(printEmptyInstanceProperties())
+            assertThat(printInstanceProperties("sleeper.default.gc.delay.seconds=123"))
                     .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
                             "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                             "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
@@ -75,7 +75,7 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithCustomLineBreaks() throws Exception {
             // When / Then
-            assertThat(printEmptyInstanceProperties())
+            assertThat(printInstanceProperties("sleeper.ingest.partition.file.writer.type=direct"))
                     .contains("# The way in which partition files are written to the main Sleeper store.\n" +
                             "# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes\n" +
                             "# locally and then copies the completed Parquet file asynchronously into S3).\n" +
@@ -124,6 +124,14 @@ class SleeperPropertiesPrettyPrinterTest {
             assertThat(printEmptyInstanceProperties())
                     .contains("# (no value set, uncomment to set a value)\n" +
                             "# sleeper.logging.root.level=\n");
+        }
+
+        @Test
+        void shouldPrintDefaultedPropertyValue() throws Exception {
+            // When / Then
+            assertThat(printEmptyInstanceProperties())
+                    .contains("# (using default value, uncomment to set a value)\n" +
+                            "# sleeper.retain.infra.after.destroy=true\n");
         }
 
         @Test
