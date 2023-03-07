@@ -87,23 +87,6 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintSpacingBetweenProperties() throws Exception {
-            // When / Then
-            assertThat(printInstanceProperties("" +
-                    "sleeper.logging.parquet.level=INFO\n" +
-                    "sleeper.logging.aws.level=INFO\n" +
-                    "sleeper.logging.root.level=INFO"))
-                    .contains("# The logging level for Parquet logs.\n" +
-                            "sleeper.logging.parquet.level: INFO\n" +
-                            "\n" +
-                            "# The logging level for AWS logs.\n" +
-                            "sleeper.logging.aws.level: INFO\n" +
-                            "\n" +
-                            "# The logging level for everything else.\n" +
-                            "sleeper.logging.root.level: INFO");
-        }
-
-        @Test
         void shouldPrintPropertiesInTheCorrectOrder() throws IOException {
             // When
             String output = printEmptyInstanceProperties();
@@ -125,7 +108,7 @@ class SleeperPropertiesPrettyPrinterTest {
             // When / Then
             assertThat(printInstanceProperties("sleeper.account=1234567890"))
                     .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
-                            "sleeper.account: 1234567890\n");
+                            "sleeper.account=1234567890\n");
         }
 
         @Test
@@ -134,14 +117,39 @@ class SleeperPropertiesPrettyPrinterTest {
             String schema = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"LongType\"}],\"sortKeyFields\":[],\"valueFields\":[]}";
             // When / Then
             assertThat(printTableProperties(Schema.loadFromString(schema)))
-                    .contains("sleeper.table.schema: " + schema + "\n");
+                    .contains("\nsleeper.table.schema=" + schema + "\n");
         }
 
         @Test
         void shouldPrintUnsetPropertyValue() throws Exception {
             // When / Then
             assertThat(printEmptyInstanceProperties())
-                    .contains("sleeper.logging.root.level: null\n");
+                    .contains("# (no value set, uncomment to set a value)\n" +
+                            "# sleeper.logging.root.level=\n");
+        }
+
+        @Test
+        void shouldPrintPropertyValueSetToEmptyString() throws Exception {
+            // When / Then
+            assertThat(printInstanceProperties("sleeper.logging.root.level="))
+                    .contains("\nsleeper.logging.root.level=\n");
+        }
+
+        @Test
+        void shouldPrintSpacingBetweenProperties() throws Exception {
+            // When / Then
+            assertThat(printInstanceProperties("" +
+                    "sleeper.logging.parquet.level=INFO\n" +
+                    "sleeper.logging.aws.level=INFO\n" +
+                    "sleeper.logging.root.level=INFO"))
+                    .contains("# The logging level for Parquet logs.\n" +
+                            "sleeper.logging.parquet.level=INFO\n" +
+                            "\n" +
+                            "# The logging level for AWS logs.\n" +
+                            "sleeper.logging.aws.level=INFO\n" +
+                            "\n" +
+                            "# The logging level for everything else.\n" +
+                            "sleeper.logging.root.level=INFO");
         }
     }
 

@@ -55,7 +55,7 @@ class AdminClientIT extends AdminClientITBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                .contains("sleeper.account: 1234567890\n");
+                .contains("sleeper.account=1234567890\n");
     }
 
     @Test
@@ -98,7 +98,7 @@ class AdminClientIT extends AdminClientITBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
-                .contains("sleeper.table.name: test-table\n");
+                .contains("sleeper.table.name=test-table\n");
     }
 
     @Test
@@ -121,7 +121,7 @@ class AdminClientIT extends AdminClientITBase {
                         + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                .contains("sleeper.s3.max-connections: 2\n");
+                .contains("sleeper.s3.max-connections=2\n");
 
         InstanceProperties instancePropertiesAfter = new InstanceProperties();
         instancePropertiesAfter.loadFromS3(s3, instanceProperties.get(CONFIG_BUCKET));
@@ -152,7 +152,7 @@ class AdminClientIT extends AdminClientITBase {
                         + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
-                .contains("sleeper.table.iterator.class.name: AfterIteratorClass\n");
+                .contains("sleeper.table.iterator.class.name=AfterIteratorClass\n");
 
         TableProperties tablePropertiesAfter = new TableProperties(instanceProperties);
         tablePropertiesAfter.loadFromS3(s3, tableProperties.get(TABLE_NAME));
