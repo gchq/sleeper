@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.format;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -150,6 +151,13 @@ class SleeperPropertiesPrettyPrinterTest {
                             "\n" +
                             "# The logging level for everything else.\n" +
                             "sleeper.logging.root.level=INFO");
+        }
+
+        @Disabled("TODO")
+        @Test
+        void shouldPrintPropertiesNotKnownBySleeper() throws IOException {
+            assertThat(printInstanceProperties("unknown.property=test"))
+                    .contains("\nunknown.property=test\n");
         }
     }
 
