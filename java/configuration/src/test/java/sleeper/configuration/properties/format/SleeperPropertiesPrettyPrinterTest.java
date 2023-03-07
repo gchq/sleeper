@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties.format;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,6 +37,7 @@ import sleeper.core.schema.type.LongType;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -184,10 +184,14 @@ class SleeperPropertiesPrettyPrinterTest {
 
         @Test
         void shouldEscapeSpecialCharactersInPropertyKey() throws IOException {
-            assertThat(printInstanceProperties("unknown\\=property=test"))
+            InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
+                    "unknown\\=property=test"));
+            assertThat(printInstanceProperties(instanceProperties))
                     .contains("\n\n" +
                             "# The following properties are not recognised by Sleeper.\n" +
                             "unknown\\=property=test\n");
+            assertThat(instanceProperties.getUnknownProperties())
+                    .containsExactly(Map.entry("unknown=property", "test"));
         }
 
         @Test
@@ -213,13 +217,16 @@ class SleeperPropertiesPrettyPrinterTest {
                     "\"valueFields\":[]}");
         }
 
-        @Disabled("TODO")
         @Test
         void shouldEscapeSpecialCharactersInPropertyValueForUnknownProperty() throws IOException {
-            assertThat(printInstanceProperties("unknown.property=test"))
+            InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
+                    "multiline.property=one\\ntwo\\nthree"));
+            assertThat(printInstanceProperties("multiline.property=one\\ntwo\\nthree"))
                     .contains("\n\n" +
                             "# The following properties are not recognised by Sleeper.\n" +
-                            "unknown\\=property=test\n");
+                            "multiline.property=one\\ntwo\\nthree\n");
+            assertThat(instanceProperties.getUnknownProperties())
+                    .containsExactly(Map.entry("multiline.property", "one\ntwo\nthree"));
         }
     }
 
@@ -276,8 +283,11 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstanceProperties(String properties) throws IOException {
-        return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(),
-                new InstanceProperties(loadProperties(properties)));
+        return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
+    }
+
+    private static String printInstanceProperties(InstanceProperties properties) {
+        return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), properties);
     }
 
     private static String printTableProperties(Schema schema) {
