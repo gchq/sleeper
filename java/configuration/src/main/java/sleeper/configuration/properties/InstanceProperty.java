@@ -23,6 +23,10 @@ public interface InstanceProperty extends SleeperProperty {
         return Index.INSTANCE.getAll();
     }
 
+    static boolean has(String propertyName) {
+        return Index.INSTANCE.getByName(propertyName).isPresent();
+    }
+
     class Index {
         private Index() {
         }
