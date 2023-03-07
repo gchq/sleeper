@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
@@ -116,7 +115,7 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
-                Schema.load(templatesDirectory.resolve("schema.template")),
+                Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
         boolean jarsChanged = SyncJars.builder().s3(s3)

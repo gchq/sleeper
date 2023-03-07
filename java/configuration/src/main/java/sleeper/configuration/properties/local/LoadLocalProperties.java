@@ -84,7 +84,6 @@ public class LoadLocalProperties {
             if (Files.exists(schemaPath)) {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
-                return new TableProperties(instanceProperties, properties);
             }
             return new TableProperties(instanceProperties, properties);
         } catch (IOException e) {

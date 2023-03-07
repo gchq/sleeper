@@ -59,13 +59,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR") // Needed until we have an immutable model
-    public TableProperties(InstanceProperties instanceProperties, Schema schema, Properties properties) {
-        super(properties);
-        this.instanceProperties = instanceProperties;
-        setSchema(schema);
-        validate();
-    }
-
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;

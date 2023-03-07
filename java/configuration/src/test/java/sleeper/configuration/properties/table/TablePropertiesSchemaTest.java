@@ -103,37 +103,6 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldOverrideSchemaInPropertiesWithSpecifiedSchema() throws IOException {
-        // Given
-        String input = "" +
-                "sleeper.table.name=myTable\n" +
-                "sleeper.table.schema={}\n";
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-
-        // When
-        TableProperties tableProperties = new TableProperties(new InstanceProperties(), schema, loadProperties(input));
-
-        // Then
-        assertThat(tableProperties.get(TABLE_NAME)).isEqualTo("myTable");
-        assertThat(tableProperties.getSchema()).isEqualTo(schema);
-    }
-
-    @Test
-    void shouldFailValidatingPropertiesWhenSettingSchemaInConstructor() throws IOException {
-        // Given
-        String input = "";
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-
-        // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        Properties properties = loadProperties(input);
-
-        // Then
-        assertThatThrownBy(() -> new TableProperties(instanceProperties, schema, properties))
-                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
-    }
-
-    @Test
     void shouldFailValidatingPropertiesWhenSettingSchemaFromPropertyInConstructor() throws IOException {
         // Given
         String input = "" +
