@@ -33,8 +33,6 @@ import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -251,10 +249,12 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static <T extends SleeperProperty> String print(
             List<T> properties, List<PropertyGroup> groups, SleeperProperties<T> values) {
-        StringWriter writer = new StringWriter();
+        // Test against PrintStream as the clients module builds its writer from that.
+        // This forces us to ensure the output is flushed to the console before the system continues.
+        ToStringPrintStream out = new ToStringPrintStream();
         new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, new PrintWriter(writer))
+                properties, groups, out.getPrintWriter())
                 .print(values);
-        return writer.toString();
+        return out.toString();
     }
 }

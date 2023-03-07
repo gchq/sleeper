@@ -86,6 +86,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             unknownProperties.keySet().stream().sorted().forEach(name ->
                     printProperty(name, unknownProperties.get(name)));
         }
+        writer.flush();
     }
 
     private static String formatDescription(SleeperProperty property) {
