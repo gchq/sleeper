@@ -71,7 +71,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             println(formatDescription(property));
             String value = properties.get(property);
             if (value != null) {
-                println(property.getPropertyName() + "=" + value);
+                printProperty(property.getPropertyName(), value);
             } else {
                 println("# (no value set, uncomment to set a value)");
                 println("# " + property.getPropertyName() + "=");

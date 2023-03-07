@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.format;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,12 +34,14 @@ import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -183,6 +186,27 @@ class SleeperPropertiesPrettyPrinterTest {
                             "# The following properties are not recognised by Sleeper.\n" +
                             "unknown\\=property=test\n");
         }
+
+        @Test
+        void shouldEscapeSpecialCharactersInPropertyValueForKnownProperty() {
+            // Given
+            String schemaWithNewlines = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"LongType\"}],\\n" +
+                    "\"sortKeyFields\":[],\\n" +
+                    "\"valueFields\":[]}";
+            // When / Then
+            assertThat(printTableProperties("" +
+                    "sleeper.table.schema=" + schemaWithNewlines))
+                    .contains("\nsleeper.table.schema=" + schemaWithNewlines + "\n");
+        }
+
+        @Disabled("TODO")
+        @Test
+        void shouldEscapeSpecialCharactersInPropertyValueForUnknownProperty() throws IOException {
+            assertThat(printInstanceProperties("unknown.property=test"))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "unknown\\=property=test\n");
+        }
     }
 
     @Nested
@@ -244,6 +268,16 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static String printTableProperties(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schema);
+        return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
+    }
+
+    private static String printTableProperties(String properties) {
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(new InstanceProperties());
+        try {
+            tableProperties.loadFromString(properties);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
     }
 

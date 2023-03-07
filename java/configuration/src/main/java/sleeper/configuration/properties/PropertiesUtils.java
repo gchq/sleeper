@@ -16,7 +16,7 @@
 package sleeper.configuration.properties;
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
-import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.convert.DisabledListDelimiterHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class PropertiesUtils {
 
     public static PropertiesConfiguration.PropertiesWriter buildPropertiesWriter(Writer writer) {
         PropertiesConfiguration.PropertiesWriter propertiesWriter = new PropertiesConfiguration.PropertiesWriter(
-                writer, new DefaultListDelimiterHandler(','));
+                writer, new DisabledListDelimiterHandler());
         propertiesWriter.setGlobalSeparator("=");
         return propertiesWriter;
     }
