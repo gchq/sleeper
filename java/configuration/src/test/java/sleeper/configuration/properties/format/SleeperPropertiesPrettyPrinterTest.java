@@ -166,7 +166,7 @@ class SleeperPropertiesPrettyPrinterTest {
                     .doesNotContain("The following properties are not recognised by Sleeper.");
         }
 
-        // TODO Escape property keys, sort unknown properties by key
+        // TODO Escape property keys (colon, equals), sort unknown properties by key, escape property values (newline)
     }
 
     @Nested
