@@ -15,6 +15,8 @@
  */
 package sleeper.configuration.properties.format;
 
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.PropertyGroup;
@@ -27,7 +29,6 @@ import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -79,15 +80,15 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private static String buildLine(String propertyName, String propertyValue) {
-        Properties properties = new Properties();
-        properties.setProperty(propertyName, propertyValue);
         StringWriter stringWriter = new StringWriter();
+        PropertiesConfiguration.PropertiesWriter writer = new PropertiesConfiguration.PropertiesWriter(stringWriter, new DefaultListDelimiterHandler(','));
+        writer.setGlobalSeparator("=");
         try {
-            properties.store(stringWriter, "");
+            writer.writeProperty(propertyName, propertyValue);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return stringWriter.toString().split("\n")[2];
+        return stringWriter.toString().lines().findFirst().orElseThrow();
     }
 
     private static String formatDescription(SleeperProperty property) {
