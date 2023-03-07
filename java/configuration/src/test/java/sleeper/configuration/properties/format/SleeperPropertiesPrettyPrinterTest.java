@@ -41,25 +41,6 @@ import static sleeper.configuration.properties.SleeperProperties.loadProperties;
 
 class SleeperPropertiesPrettyPrinterTest {
 
-    private static String printEmptyInstanceProperties() throws IOException {
-        return printInstanceProperties("");
-    }
-
-    private static String printInstanceProperties(String properties) throws IOException {
-        return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(),
-                new InstanceProperties(loadProperties(properties)));
-    }
-
-    private static <T extends SleeperProperty> String print(
-            List<T> properties, List<PropertyGroup> groups, SleeperProperties<T> values) {
-        OutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
-        new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, printStream::println)
-                .print(values);
-        return outputStream.toString();
-    }
-
     @Nested
     @DisplayName("Print properties")
     class PrintProperties {
@@ -144,8 +125,6 @@ class SleeperPropertiesPrettyPrinterTest {
 
         @Test
         void shouldPrintUnsetPropertyValue() throws Exception {
-            // TODO comment out unset property in output
-            // TODO ensure we can load properties back from the output and we get the same thing
             // When / Then
             assertThat(printEmptyInstanceProperties())
                     .contains("sleeper.logging.root.level: null\n");
@@ -198,5 +177,24 @@ class SleeperPropertiesPrettyPrinterTest {
                             output.indexOf("The following properties are commonly used throughout Sleeper"),
                             output.indexOf("The following properties relate to standard ingest"));
         }
+    }
+
+    private static String printEmptyInstanceProperties() throws IOException {
+        return printInstanceProperties("");
+    }
+
+    private static String printInstanceProperties(String properties) throws IOException {
+        return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(),
+                new InstanceProperties(loadProperties(properties)));
+    }
+
+    private static <T extends SleeperProperty> String print(
+            List<T> properties, List<PropertyGroup> groups, SleeperProperties<T> values) {
+        OutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+        new SleeperPropertiesPrettyPrinter<>(
+                properties, groups, printStream::println)
+                .print(values);
+        return outputStream.toString();
     }
 }
