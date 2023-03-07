@@ -166,7 +166,19 @@ class SleeperPropertiesPrettyPrinterTest {
                     .doesNotContain("The following properties are not recognised by Sleeper.");
         }
 
-        // TODO Escape property keys (colon, equals), sort unknown properties by key, escape property values (newline)
+        // TODO Escape property keys (colon, equals), escape property values (newline)
+        @Test
+        void shouldSortPropertiesNotKnownBySleeper() throws IOException {
+            assertThat(printInstanceProperties("" +
+                    "unknown.property.2=test\n" +
+                    "unknown.property.1=test\n" +
+                    "unknown.property.3=test\n"))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "unknown.property.1=test\n" +
+                            "unknown.property.2=test\n" +
+                            "unknown.property.3=test\n");
+        }
     }
 
     @Nested

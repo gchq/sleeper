@@ -69,8 +69,8 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         if (!unknownProperties.isEmpty()) {
             println();
             println("# The following properties are not recognised by Sleeper.");
-            unknownProperties.forEach((name, value) ->
-                    println(name + "=" + value));
+            unknownProperties.keySet().stream().sorted().forEach(name ->
+                    println(name + "=" + unknownProperties.get(name)));
         }
     }
 
