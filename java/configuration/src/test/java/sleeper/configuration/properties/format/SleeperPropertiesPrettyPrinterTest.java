@@ -172,7 +172,6 @@ class SleeperPropertiesPrettyPrinterTest {
                     .doesNotContain("The following properties are not recognised by Sleeper.");
         }
 
-        // TODO Escape property keys (colon, equals), escape property values (newline)
         @Test
         void shouldSortPropertiesNotKnownBySleeper() throws IOException {
             assertThat(printInstanceProperties("" +
