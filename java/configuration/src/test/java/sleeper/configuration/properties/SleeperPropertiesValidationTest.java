@@ -23,8 +23,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -44,7 +42,20 @@ public class SleeperPropertiesValidationTest {
     @Nested
     class ValidateInstanceProperties {
         @Test
-        void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
+        void shouldThrowExceptionOnLoadIfValidationFails() throws Exception {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
+            String serialised = instanceProperties.saveAsString();
+
+            // When / Then
+            InstanceProperties properties = new InstanceProperties();
+            assertThatThrownBy(() -> properties.loadFromString(serialised))
+                    .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
+        }
+
+        @Test
+        void shouldFailValidationIfRequiredPropertyIsMissing() {
             // Given - no account set
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.set(REGION, "eu-west-2");
@@ -54,25 +65,19 @@ public class SleeperPropertiesValidationTest {
             instanceProperties.set(VPC_ID, "aVPC");
             instanceProperties.set(SUBNET, "subnet1");
 
-            // When
-            String serialised = instanceProperties.saveAsString();
-
-            // Then
-            InstanceProperties properties = new InstanceProperties();
-            assertThatThrownBy(() -> properties.loadFromString(serialised))
+            // When / Then
+            assertThatThrownBy(instanceProperties::validate)
                     .hasMessageContaining(ACCOUNT.getPropertyName());
         }
 
         @Test
-        void shouldThrowExceptionOnLoadIfPropertyIsInvalid() throws IOException {
+        void shouldFailValidationIfPropertyIsInvalid() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
-            String serialised = instanceProperties.saveAsString();
 
             // When / Then
-            InstanceProperties properties = new InstanceProperties();
-            assertThatThrownBy(() -> properties.loadFromString(serialised))
+            assertThatThrownBy(instanceProperties::validate)
                     .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
         }
     }
