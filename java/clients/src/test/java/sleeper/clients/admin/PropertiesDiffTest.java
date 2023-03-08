@@ -23,7 +23,10 @@ import software.amazon.awssdk.regions.Region;
 
 import sleeper.clients.deploy.GenerateInstanceProperties;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
@@ -41,12 +44,8 @@ public class PropertiesDiffTest {
             InstanceProperties before = createInstanceProperties("test-instance");
             InstanceProperties after = createInstanceProperties("test-instance");
 
-            // When
-            PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(before, after);
-
-            // Then
-            assertThat(diff.isChanged()).isFalse();
-            assertThat(diff.getChanges()).isEmpty();
+            // When / Then
+            assertThat(getChanges(before, after)).isEmpty();
         }
 
         @Test
@@ -57,13 +56,9 @@ public class PropertiesDiffTest {
             InstanceProperties after = createInstanceProperties("test-instance");
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
-            // When
-            PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(before, after);
-
-            // Then
-            assertThat(diff.isChanged()).isTrue();
-            assertThat(diff.getChanges())
-                    .containsExactly(new PropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "30", "50"));
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "30", "50"));
         }
 
         @Test
@@ -73,14 +68,24 @@ public class PropertiesDiffTest {
             InstanceProperties after = createInstanceProperties("test-instance");
             after.set(INGEST_SOURCE_BUCKET, "some-bucket");
 
-            // When
-            PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(before, after);
-
-            // Then
-            assertThat(diff.isChanged()).isTrue();
-            assertThat(diff.getChanges())
-                    .containsExactly(new PropertyDiff(INGEST_SOURCE_BUCKET, null, "some-bucket"));
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(newValue(INGEST_SOURCE_BUCKET, "some-bucket"));
         }
+
+        // TODO differentiate between case when value is a default or not
+    }
+
+    private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
+        return new PropertiesDiff<>(before, after).getChanges();
+    }
+
+    private PropertyDiff valueChanged(SleeperProperty property, String before, String after) {
+        return new PropertyDiff(property, before, after);
+    }
+
+    private PropertyDiff newValue(SleeperProperty property, String value) {
+        return new PropertyDiff(property, null, value);
     }
 
     private InstanceProperties createInstanceProperties(String instanceId) {

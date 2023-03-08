@@ -43,10 +43,6 @@ public class PropertiesDiff<T extends SleeperProperty> {
                 .collect(Collectors.toList());
     }
 
-    public boolean isChanged() {
-        return !propertyDiffs.isEmpty();
-    }
-
     public List<PropertyDiff> getChanges() {
         return propertyDiffs;
     }
