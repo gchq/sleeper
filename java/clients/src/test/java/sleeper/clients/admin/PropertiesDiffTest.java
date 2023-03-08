@@ -19,10 +19,7 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.regions.Region;
 
-import sleeper.clients.deploy.GenerateInstanceProperties;
-import sleeper.clients.deploy.GenerateTableProperties;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
@@ -31,11 +28,12 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
+import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class PropertiesDiffTest {
 
@@ -46,8 +44,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectNoChanges() {
             // Given
-            InstanceProperties before = createInstanceProperties();
-            InstanceProperties after = createInstanceProperties();
+            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
 
             // When / Then
             assertThat(getChanges(before, after)).isEmpty();
@@ -56,9 +54,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            InstanceProperties before = createInstanceProperties();
+            InstanceProperties before = generateTestInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "30");
-            InstanceProperties after = createInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
@@ -69,8 +67,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createInstanceProperties();
-            InstanceProperties after = createInstanceProperties();
+            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
             after.set(INGEST_SOURCE_BUCKET, "some-bucket");
 
             // When / Then
@@ -81,9 +79,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsUnset() {
             // Given
-            InstanceProperties before = createInstanceProperties();
+            InstanceProperties before = generateTestInstanceProperties();
             before.set(INGEST_SOURCE_BUCKET, "some-bucket");
-            InstanceProperties after = createInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
 
             // When / Then
             assertThat(getChanges(before, after))
@@ -93,8 +91,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectDefaultedPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createInstanceProperties();
-            InstanceProperties after = createInstanceProperties();
+            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
@@ -105,9 +103,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectDefaultedPropertyIsUnset() {
             // Given
-            InstanceProperties before = createInstanceProperties();
+            InstanceProperties before = generateTestInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
-            InstanceProperties after = createInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
 
             // When / Then
             assertThat(getChanges(before, after))
@@ -175,9 +173,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            TableProperties before = createTableProperties();
+            TableProperties before = generateTestTableProperties();
             before.set(ITERATOR_CONFIG, "config-before");
-            TableProperties after = createTableProperties();
+            TableProperties after = generateTestTableProperties();
             after.set(ITERATOR_CONFIG, "config-after");
 
             // When / Then
@@ -212,19 +210,5 @@ public class PropertiesDiffTest {
 
     private PropertyDiff newValue(String property, String value) {
         return new PropertyDiff(property, null, value);
-    }
-
-    private InstanceProperties createInstanceProperties() {
-        return createInstanceProperties("test-instance");
-    }
-
-    private InstanceProperties createInstanceProperties(String instanceId) {
-        return GenerateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
-                .instanceId(instanceId).vpcId("some-vpc").subnetId("some-subnet").build().generate();
-    }
-
-    private TableProperties createTableProperties() {
-        return GenerateTableProperties.from(createInstanceProperties(), schemaWithKey("key"), "test-table");
     }
 }
