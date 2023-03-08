@@ -16,11 +16,14 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithNano {
 
@@ -30,10 +33,11 @@ public class UpdatePropertiesWithNano {
         this.tempDirectory = tempDirectory;
     }
 
-    public void updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
+    public PropertiesDiff<InstanceProperty> updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/instance.properties");
         properties.save(propertiesFile);
         runCommand.run("nano", propertiesFile.toString());
+        return new PropertiesDiff<>(properties, new InstanceProperties(loadProperties(propertiesFile)));
     }
 }

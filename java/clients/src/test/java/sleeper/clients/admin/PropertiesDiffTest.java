@@ -28,6 +28,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.admin.PropertiesDiffTestHelper.newValue;
+import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
+import static sleeper.clients.admin.PropertiesDiffTestHelper.valueDeleted;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
@@ -186,29 +189,5 @@ public class PropertiesDiffTest {
 
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
         return new PropertiesDiff<>(before, after).getChanges();
-    }
-
-    private PropertyDiff valueChanged(SleeperProperty property, String before, String after) {
-        return new PropertyDiff(property, before, after);
-    }
-
-    private PropertyDiff valueDeleted(SleeperProperty property, String value) {
-        return new PropertyDiff(property, value, null);
-    }
-
-    private PropertyDiff newValue(SleeperProperty property, String value) {
-        return new PropertyDiff(property, null, value);
-    }
-
-    private PropertyDiff valueChanged(String property, String before, String after) {
-        return new PropertyDiff(property, before, after);
-    }
-
-    private PropertyDiff valueDeleted(String property, String value) {
-        return new PropertyDiff(property, value, null);
-    }
-
-    private PropertyDiff newValue(String property, String value) {
-        return new PropertyDiff(property, null, value);
     }
 }

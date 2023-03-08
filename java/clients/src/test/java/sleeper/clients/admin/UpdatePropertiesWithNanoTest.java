@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
@@ -27,8 +28,10 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
+import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 class UpdatePropertiesWithNanoTest {
@@ -46,7 +49,7 @@ class UpdatePropertiesWithNanoTest {
     @Test
     void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstanceProperties();
+        InstanceProperties properties = generateTestInstanceProperties();
 
         // When / Then
         assertThat(updateInstancePropertiesGetCommandRun(properties))
@@ -56,11 +59,24 @@ class UpdatePropertiesWithNanoTest {
     @Test
     void shouldWriteInstancePropertiesFile() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstanceProperties();
+        InstanceProperties properties = generateTestInstanceProperties();
 
         // When / Then
         assertThat(updateInstancePropertiesGetPropertiesWritten(properties))
                 .isEqualTo(properties);
+    }
+
+    @Test
+    void shouldGetDiffAfterPropertiesChanged() throws Exception {
+        // Given
+        InstanceProperties before = generateTestInstanceProperties();
+        before.set(INGEST_SOURCE_BUCKET, "bucket-before");
+        InstanceProperties after = generateTestInstanceProperties();
+        after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+
+        assertThat(updateInstancePropertiesGetDiff(before, after))
+                .extracting(PropertiesDiff::getChanges).asList()
+                .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
     }
 
     private String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
@@ -77,7 +93,14 @@ class UpdatePropertiesWithNanoTest {
         return foundProperties.get();
     }
 
-    private void updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
-        new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
+    private PropertiesDiff<InstanceProperty> updateInstancePropertiesGetDiff(InstanceProperties before, InstanceProperties after) throws Exception {
+        return updateProperties(before, command -> {
+            after.save(expectedInstancePropertiesFile);
+            return 0;
+        });
+    }
+
+    private PropertiesDiff<InstanceProperty> updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
+        return new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
     }
 }
