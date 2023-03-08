@@ -18,6 +18,8 @@ package sleeper.clients.admin;
 import sleeper.configuration.properties.SleeperProperty;
 
 public class PropertiesDiffTestHelper {
+    private PropertiesDiffTestHelper() {
+    }
 
     public static PropertyDiff valueChanged(SleeperProperty property, String before, String after) {
         return new PropertyDiff(property, before, after);

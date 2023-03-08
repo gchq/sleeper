@@ -23,6 +23,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class GeneratePropertiesTestHelper {
+    private GeneratePropertiesTestHelper() {
+    }
 
     public static InstanceProperties generateTestInstanceProperties() {
         return GenerateInstanceProperties.builder()
