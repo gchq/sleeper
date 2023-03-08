@@ -74,6 +74,18 @@ public class PropertiesDiffTest {
         }
 
         @Test
+        void shouldDetectPropertyIsUnset() {
+            // Given
+            InstanceProperties before = createInstanceProperties();
+            before.set(INGEST_SOURCE_BUCKET, "some-bucket");
+            InstanceProperties after = createInstanceProperties();
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(valueDeleted(INGEST_SOURCE_BUCKET, "some-bucket"));
+        }
+
+        @Test
         void shouldDetectDefaultedPropertyIsNewlySet() {
             // Given
             InstanceProperties before = createInstanceProperties();
