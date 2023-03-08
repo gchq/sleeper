@@ -33,11 +33,14 @@ public class UpdatePropertiesWithNano {
         this.tempDirectory = tempDirectory;
     }
 
-    public PropertiesDiff<InstanceProperty> updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
+    public UpdatePropertiesRequest<InstanceProperty> updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/instance.properties");
         properties.save(propertiesFile);
         runCommand.run("nano", propertiesFile.toString());
-        return new PropertiesDiff<>(properties, new InstanceProperties(loadProperties(propertiesFile)));
+        InstanceProperties updatedProperties = new InstanceProperties(loadProperties(propertiesFile));
+        return new UpdatePropertiesRequest<>(
+                new PropertiesDiff<>(properties, updatedProperties),
+                updatedProperties.isValid());
     }
 }
