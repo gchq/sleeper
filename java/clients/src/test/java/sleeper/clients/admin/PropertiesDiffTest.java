@@ -41,8 +41,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectNoChanges() {
             // Given
-            InstanceProperties before = createInstanceProperties("test-instance");
-            InstanceProperties after = createInstanceProperties("test-instance");
+            InstanceProperties before = createInstanceProperties();
+            InstanceProperties after = createInstanceProperties();
 
             // When / Then
             assertThat(getChanges(before, after)).isEmpty();
@@ -51,9 +51,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            InstanceProperties before = createInstanceProperties("test-instance");
+            InstanceProperties before = createInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "30");
-            InstanceProperties after = createInstanceProperties("test-instance");
+            InstanceProperties after = createInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
@@ -64,8 +64,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createInstanceProperties("test-instance");
-            InstanceProperties after = createInstanceProperties("test-instance");
+            InstanceProperties before = createInstanceProperties();
+            InstanceProperties after = createInstanceProperties();
             after.set(INGEST_SOURCE_BUCKET, "some-bucket");
 
             // When / Then
@@ -73,7 +73,29 @@ public class PropertiesDiffTest {
                     .containsExactly(newValue(INGEST_SOURCE_BUCKET, "some-bucket"));
         }
 
-        // TODO differentiate between case when value is a default or not
+        @Test
+        void shouldDetectDefaultedPropertyIsNewlySet() {
+            // Given
+            InstanceProperties before = createInstanceProperties();
+            InstanceProperties after = createInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(newValue(MAXIMUM_CONNECTIONS_TO_S3, "50"));
+        }
+
+        @Test
+        void shouldDetectDefaultedPropertyIsUnset() {
+            // Given
+            InstanceProperties before = createInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
+            InstanceProperties after = createInstanceProperties();
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(valueDeleted(MAXIMUM_CONNECTIONS_TO_S3, "50"));
+        }
     }
 
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
@@ -84,8 +106,16 @@ public class PropertiesDiffTest {
         return new PropertyDiff(property, before, after);
     }
 
+    private PropertyDiff valueDeleted(SleeperProperty property, String value) {
+        return new PropertyDiff(property, value, null);
+    }
+
     private PropertyDiff newValue(SleeperProperty property, String value) {
         return new PropertyDiff(property, null, value);
+    }
+
+    private InstanceProperties createInstanceProperties() {
+        return createInstanceProperties("test-instance");
     }
 
     private InstanceProperties createInstanceProperties(String instanceId) {

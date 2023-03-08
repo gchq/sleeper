@@ -28,12 +28,20 @@ public class PropertyDiff {
     private final String newValue;
 
     public static <T extends SleeperProperty> Optional<PropertyDiff> compare(T property, SleeperProperties<T> before, SleeperProperties<T> after) {
-        String oldValue = before.get(property);
-        String newValue = after.get(property);
+        String oldValue = getIfSet(property, before);
+        String newValue = getIfSet(property, after);
         if (Objects.equals(oldValue, newValue)) {
             return Optional.empty();
         } else {
             return Optional.of(new PropertyDiff(property, oldValue, newValue));
+        }
+    }
+
+    private static <T extends SleeperProperty> String getIfSet(T property, SleeperProperties<T> properties) {
+        if (properties.isSet(property)) {
+            return properties.get(property);
+        } else {
+            return null;
         }
     }
 
