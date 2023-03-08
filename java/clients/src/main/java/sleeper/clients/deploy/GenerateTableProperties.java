@@ -18,12 +18,14 @@ package sleeper.clients.deploy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 
 import java.util.Locale;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GenerateTableProperties {
@@ -32,12 +34,13 @@ public class GenerateTableProperties {
     }
 
     public static TableProperties from(InstanceProperties instanceProperties, Schema schema, String tableName) {
-        return from(instanceProperties, schema, new Properties(), tableName);
+        return from(instanceProperties, new SchemaSerDe().toJson(schema), new Properties(), tableName);
     }
 
-    public static TableProperties from(InstanceProperties instanceProperties, Schema schema, Properties properties, String tableName) {
+    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson, Properties properties, String tableName) {
+        properties.setProperty(SCHEMA.getPropertyName(), schemaJson);
         properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
-        TableProperties tableProperties = new TableProperties(instanceProperties, schema, properties);
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
         tableProperties.set(DATA_BUCKET, String.join("-", "sleeper", instanceProperties.get(ID), "table", tableName).toLowerCase(Locale.ROOT));
         return tableProperties;
     }

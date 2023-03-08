@@ -15,33 +15,44 @@
  */
 package sleeper.configuration.properties.format;
 
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.lang.WordUtils;
 
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
 
     private final List<T> sortedProperties;
-    private final Consumer<String> printLine;
+    private final PrintWriter writer;
+    private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
 
-    public SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, Consumer<String> printLine) {
+    private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
-        this.printLine = printLine;
+        this.writer = writer;
+        this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
     }
 
-    private void println(String line) {
-        printLine.accept(line);
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
+        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), writer);
     }
 
-    private void println() {
-        printLine.accept("");
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
+        return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -54,7 +65,48 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             }
             println();
             println(formatDescription(property));
-            println(property.getPropertyName() + ": " + properties.get(property));
+            String value = properties.get(property);
+            if (value != null) {
+                if (!properties.isSet(property)) {
+                    println("# (using default value shown below, uncomment to set a value)");
+                    print("# ");
+                }
+                printProperty(property.getPropertyName(), value);
+            } else {
+                println("# (no value set, uncomment to set a value)");
+                print("# ");
+                printProperty(property.getPropertyName(), "");
+            }
+        }
+        Map<String, String> unknownProperties = properties.getUnknownProperties()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!unknownProperties.isEmpty()) {
+            println();
+            println("# The following properties are not recognised by Sleeper.");
+            unknownProperties.keySet().stream().sorted().forEach(name ->
+                    printProperty(name, unknownProperties.get(name)));
+        }
+        writer.flush();
+    }
+
+    private void println(String line) {
+        writer.println(line);
+    }
+
+    private void println() {
+        writer.println();
+    }
+
+    private void print(String value) {
+        writer.print(value);
+    }
+
+    private void printProperty(String name, String value) {
+        try {
+            propertiesWriter.writeProperty(name, value);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

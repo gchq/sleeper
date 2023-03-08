@@ -13,41 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console;
+package sleeper.configuration.properties.format;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-public class ConsoleOutput {
+public class ToStringPrintStream {
 
-    public static final String CLEAR_CONSOLE = "\033[H\033[2J";
+    private final OutputStream outputStream = new ByteArrayOutputStream();
 
-    private final PrintStream out;
-
-    public ConsoleOutput(PrintStream out) {
-        this.out = out;
+    public PrintStream getPrintStream() {
+        return new PrintStream(outputStream, false, StandardCharsets.UTF_8);
     }
 
-    public void clearScreen(String message) {
-        out.print(CLEAR_CONSOLE);
-        out.flush();
-        out.println(message);
+    public PrintWriter getPrintWriter() {
+        return new PrintWriter(getPrintStream());
     }
 
-    public void println(String message) {
-        out.println(message);
-    }
-
-    public void println() {
-        out.println();
-    }
-
-    public void printf(String format, Object... args) {
-        out.printf(format, args);
-    }
-
-    public PrintWriter writer() {
-        return new PrintWriter(out, true, StandardCharsets.UTF_8);
+    public String toString() {
+        return outputStream.toString();
     }
 }

@@ -21,6 +21,8 @@ import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -176,5 +178,17 @@ class TablePropertiesTest {
                 .filter(property -> property.getDefaultProperty()
                         .isRunCDKDeployWhenChanged() != property.isRunCDKDeployWhenChanged()))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldGetUnknownPropertyValues() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tableProperties.loadFromString("unknown.property=123");
+
+        // When / Then
+        assertThat(tableProperties.getUnknownProperties())
+                .containsExactly(Map.entry("unknown.property", "123"));
     }
 }

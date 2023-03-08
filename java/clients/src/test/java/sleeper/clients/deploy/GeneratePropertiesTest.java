@@ -21,6 +21,9 @@ import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.SchemaSerDe;
+
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -35,10 +38,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class GeneratePropertiesTest {
+class GeneratePropertiesTest {
     @Test
     void shouldGenerateInstancePropertiesCorrectly() {
         // Given/When
@@ -69,24 +73,40 @@ public class GeneratePropertiesTest {
         InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
                 .build().generate();
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "test-table");
+        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
+                new SchemaSerDe().toJson(schemaWithKey("key")),
+                new Properties(),
+                "test-table");
 
         // Then
-        InstanceProperties expectedInstanceProperties = new InstanceProperties();
-        expectedInstanceProperties.set(ID, "test-instance");
-        expectedInstanceProperties.set(CONFIG_BUCKET, "sleeper-test-instance-config");
-        expectedInstanceProperties.set(JARS_BUCKET, "sleeper-test-instance-jars");
-        expectedInstanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
-        expectedInstanceProperties.set(VPC_ID, "some-vpc");
-        expectedInstanceProperties.set(SUBNET, "some-subnet");
-        expectedInstanceProperties.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
-        expectedInstanceProperties.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expectedInstanceProperties.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expectedInstanceProperties.set(ACCOUNT, "test-account-id");
-        expectedInstanceProperties.set(REGION, "aws-global");
-
-        TableProperties expected = new TableProperties(expectedInstanceProperties);
+        TableProperties expected = new TableProperties(instanceProperties);
         expected.setSchema(schemaWithKey("key"));
+        expected.set(TABLE_NAME, "test-table");
+        expected.set(DATA_BUCKET, "sleeper-test-instance-table-test-table");
+
+        assertThat(tableProperties).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldRetainWhitespaceInSchema() {
+        // Given
+        InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .build().generate();
+        String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
+                "\"name\":\"key\",\"type\":\"LongType\"\n" +
+                "}],\n" +
+                "\"sortKeyFields\":[],\n" +
+                "\"valueFields\":[]}";
+        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
+                schemaWithNewlines,
+                new Properties(),
+                "test-table");
+
+        // Then
+        TableProperties expected = new TableProperties(instanceProperties);
+        expected.setSchema(schemaWithKey("key"));
+        expected.set(SCHEMA, schemaWithNewlines);
         expected.set(TABLE_NAME, "test-table");
         expected.set(DATA_BUCKET, "sleeper-test-instance-table-test-table");
 

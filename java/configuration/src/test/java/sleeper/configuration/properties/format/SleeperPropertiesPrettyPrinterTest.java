@@ -20,29 +20,27 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.InstancePropertyGroup;
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.table.TablePropertyGroup;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.io.PrintWriter;
+import java.io.UncheckedIOException;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.SleeperProperties.loadProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -66,7 +64,7 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithMultipleLines() throws Exception {
             // When / Then
-            assertThat(printEmptyInstanceProperties())
+            assertThat(printInstanceProperties("sleeper.default.gc.delay.seconds=123"))
                     .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
                             "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                             "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
@@ -77,30 +75,13 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithCustomLineBreaks() throws Exception {
             // When / Then
-            assertThat(printEmptyInstanceProperties())
+            assertThat(printInstanceProperties("sleeper.ingest.partition.file.writer.type=direct"))
                     .contains("# The way in which partition files are written to the main Sleeper store.\n" +
                             "# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes\n" +
                             "# locally and then copies the completed Parquet file asynchronously into S3).\n" +
                             "# The direct method is simpler but the async method should provide better performance when the number\n" +
                             "# of partitions is large.\n" +
                             "sleeper.ingest.partition.file.writer.type");
-        }
-
-        @Test
-        void shouldPrintSpacingBetweenProperties() throws Exception {
-            // When / Then
-            assertThat(printInstanceProperties("" +
-                    "sleeper.logging.parquet.level=INFO\n" +
-                    "sleeper.logging.aws.level=INFO\n" +
-                    "sleeper.logging.root.level=INFO"))
-                    .contains("# The logging level for Parquet logs.\n" +
-                            "sleeper.logging.parquet.level: INFO\n" +
-                            "\n" +
-                            "# The logging level for AWS logs.\n" +
-                            "sleeper.logging.aws.level: INFO\n" +
-                            "\n" +
-                            "# The logging level for everything else.\n" +
-                            "sleeper.logging.root.level: INFO");
         }
 
         @Test
@@ -125,7 +106,7 @@ class SleeperPropertiesPrettyPrinterTest {
             // When / Then
             assertThat(printInstanceProperties("sleeper.account=1234567890"))
                     .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
-                            "sleeper.account: 1234567890\n");
+                            "sleeper.account=1234567890\n");
         }
 
         @Test
@@ -134,14 +115,121 @@ class SleeperPropertiesPrettyPrinterTest {
             String schema = "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"LongType\"}],\"sortKeyFields\":[],\"valueFields\":[]}";
             // When / Then
             assertThat(printTableProperties(Schema.loadFromString(schema)))
-                    .contains("sleeper.table.schema: " + schema + "\n");
+                    .contains("\nsleeper.table.schema=" + schema + "\n");
         }
 
         @Test
         void shouldPrintUnsetPropertyValue() throws Exception {
             // When / Then
             assertThat(printEmptyInstanceProperties())
-                    .contains("sleeper.logging.root.level: null\n");
+                    .contains("# (no value set, uncomment to set a value)\n" +
+                            "# sleeper.logging.root.level=\n");
+        }
+
+        @Test
+        void shouldPrintDefaultedPropertyValue() throws Exception {
+            // When / Then
+            assertThat(printEmptyInstanceProperties())
+                    .contains("# (using default value shown below, uncomment to set a value)\n" +
+                            "# sleeper.retain.infra.after.destroy=true\n");
+        }
+
+        @Test
+        void shouldPrintPropertyValueSetToEmptyString() throws Exception {
+            // When / Then
+            assertThat(printInstanceProperties("sleeper.logging.root.level="))
+                    .contains("\nsleeper.logging.root.level=\n");
+        }
+
+        @Test
+        void shouldPrintSpacingBetweenProperties() throws Exception {
+            // When / Then
+            assertThat(printInstanceProperties("" +
+                    "sleeper.logging.parquet.level=INFO\n" +
+                    "sleeper.logging.aws.level=INFO\n" +
+                    "sleeper.logging.root.level=INFO"))
+                    .contains("# The logging level for Parquet logs.\n" +
+                            "sleeper.logging.parquet.level=INFO\n" +
+                            "\n" +
+                            "# The logging level for AWS logs.\n" +
+                            "sleeper.logging.aws.level=INFO\n" +
+                            "\n" +
+                            "# The logging level for everything else.\n" +
+                            "sleeper.logging.root.level=INFO");
+        }
+
+        @Test
+        void shouldPrintPropertiesNotKnownBySleeper() throws IOException {
+            assertThat(printInstanceProperties("unknown.property=test"))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "unknown.property=test\n");
+        }
+
+        @Test
+        void shouldNotPrintPropertiesNotKnownBySleeperWhenNoneSet() throws IOException {
+            assertThat(printEmptyInstanceProperties())
+                    .doesNotContain("The following properties are not recognised by Sleeper.");
+        }
+
+        @Test
+        void shouldSortPropertiesNotKnownBySleeper() throws IOException {
+            assertThat(printInstanceProperties("" +
+                    "unknown.property.2=test\n" +
+                    "unknown.property.1=test\n" +
+                    "unknown.property.3=test\n"))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "unknown.property.1=test\n" +
+                            "unknown.property.2=test\n" +
+                            "unknown.property.3=test\n");
+        }
+
+        @Test
+        void shouldEscapeSpecialCharactersInPropertyKey() throws IOException {
+            InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
+                    "unknown\\=property=test"));
+            assertThat(printInstanceProperties(instanceProperties))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "unknown\\=property=test\n");
+            assertThat(instanceProperties.getUnknownProperties())
+                    .containsExactly(Map.entry("unknown=property", "test"));
+        }
+
+        @Test
+        void shouldEscapeSpecialCharactersInSchemaPropertyValue() {
+            // Given
+            String schemaWithNewlines = "{\"rowKeyFields\":[{\\n" +
+                    "\"name\":\"key\",\"type\":\"LongType\"\\n" +
+                    "}],\\n" +
+                    "\"sortKeyFields\":[],\\n" +
+                    "\"valueFields\":[]}";
+            TableProperties tableProperties = createTablePropertiesWithSchemaInString("" +
+                    "sleeper.table.schema=" + schemaWithNewlines);
+            // When / Then
+            assertThat(printTableProperties(tableProperties))
+                    .contains("\nsleeper.table.schema=" + schemaWithNewlines + "\n");
+            assertThat(tableProperties.getSchema()).isEqualTo(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .build());
+            assertThat(tableProperties.get(SCHEMA)).isEqualTo("{\"rowKeyFields\":[{\n" +
+                    "\"name\":\"key\",\"type\":\"LongType\"\n" +
+                    "}],\n" +
+                    "\"sortKeyFields\":[],\n" +
+                    "\"valueFields\":[]}");
+        }
+
+        @Test
+        void shouldEscapeSpecialCharactersInPropertyValueForUnknownProperty() throws IOException {
+            InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
+                    "multiline.property=one\\ntwo\\nthree"));
+            assertThat(printInstanceProperties("multiline.property=one\\ntwo\\nthree"))
+                    .contains("\n\n" +
+                            "# The following properties are not recognised by Sleeper.\n" +
+                            "multiline.property=one\\ntwo\\nthree\n");
+            assertThat(instanceProperties.getUnknownProperties())
+                    .containsExactly(Map.entry("multiline.property", "one\ntwo\nthree"));
         }
     }
 
@@ -198,22 +286,38 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstanceProperties(String properties) throws IOException {
-        return print(InstanceProperty.getAll(), InstancePropertyGroup.getAll(),
-                new InstanceProperties(loadProperties(properties)));
+        return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
+    }
+
+    private static String printInstanceProperties(InstanceProperties properties) {
+        return print(SleeperPropertiesPrettyPrinter::forInstanceProperties, properties);
     }
 
     private static String printTableProperties(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schema);
-        return print(TableProperty.getAll(), TablePropertyGroup.getAll(), tableProperties);
+        return printTableProperties(tableProperties);
+    }
+
+    private static TableProperties createTablePropertiesWithSchemaInString(String properties) {
+        TableProperties tableProperties = createTestTablePropertiesWithNoSchema(new InstanceProperties());
+        try {
+            tableProperties.loadFromString(properties);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return tableProperties;
+    }
+
+    private static String printTableProperties(TableProperties tableProperties) {
+        return print(SleeperPropertiesPrettyPrinter::forTableProperties, tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(
-            List<T> properties, List<PropertyGroup> groups, SleeperProperties<T> values) {
-        OutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
-        new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, printStream::println)
-                .print(values);
-        return outputStream.toString();
+            Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer, SleeperProperties<T> values) {
+        // Test against PrintStream as the clients module builds its writer from that.
+        // This forces us to ensure the output is flushed to the console before the system continues.
+        ToStringPrintStream out = new ToStringPrintStream();
+        printer.apply(out.getPrintWriter()).print(values);
+        return out.toString();
     }
 }

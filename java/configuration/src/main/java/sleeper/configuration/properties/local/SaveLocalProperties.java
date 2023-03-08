@@ -19,9 +19,12 @@ package sleeper.configuration.properties.local;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +50,7 @@ public class SaveLocalProperties {
     public static void saveToDirectory(Path directory,
                                        InstanceProperties instanceProperties,
                                        Stream<TableProperties> tablePropertiesStream) throws IOException {
-        instanceProperties.save(directory.resolve("instance.properties"));
+        writeInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
         Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
         writeStringIfSet(directory.resolve("configBucket.txt"), instanceProperties.get(CONFIG_BUCKET));
         writeStringIfSet(directory.resolve("queryResultsBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
@@ -69,7 +72,7 @@ public class SaveLocalProperties {
         // Store in the same directory structure as in S3 (tables/table-name)
         Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
         Files.createDirectories(tableDir);
-        tableProperties.save(tableDir.resolve("table.properties"));
+        writeTableProperties(tableProperties, tableDir.resolve("table.properties"));
 
         // Unpack properties for schema & table bucket
         tableProperties.getSchema().save(tableDir.resolve("schema.json"));
@@ -79,6 +82,20 @@ public class SaveLocalProperties {
     private static void writeStringIfSet(Path file, String value) throws IOException {
         if (value != null) {
             Files.writeString(file, value);
+        }
+    }
+
+    private static void writeInstanceProperties(InstanceProperties instanceProperties, Path file) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
+            SleeperPropertiesPrettyPrinter.forInstanceProperties(new PrintWriter(writer))
+                    .print(instanceProperties);
+        }
+    }
+
+    private static void writeTableProperties(TableProperties tableProperties, Path file) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
+            SleeperPropertiesPrettyPrinter.forTableProperties(new PrintWriter(writer))
+                    .print(tableProperties);
         }
     }
 }
