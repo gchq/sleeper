@@ -103,7 +103,7 @@ public class Schema {
     private <T> List<T> getMappedFields(Stream<Field> fields, Function<Field, T> mapping) {
         return fields
                 .map(mapping)
-                .collect(Collectors.toList());
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public List<Field> getAllFields() {
