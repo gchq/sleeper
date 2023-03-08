@@ -62,7 +62,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         validate();
     }
 
-    protected abstract void validate();
+    public abstract void validate();
 
     protected abstract SleeperPropertyIndex<T> getIndex();
 

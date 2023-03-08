@@ -168,7 +168,7 @@ class SleeperPropertiesTest {
         }
 
         @Override
-        protected void validate() {
+        public void validate() {
             // do nothing
         }
 

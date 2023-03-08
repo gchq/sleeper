@@ -83,7 +83,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected void validate() {
+    public void validate() {
         TableProperty.getAll().stream().filter(prop -> !prop.validationPredicate().test(get(prop)))
                 .forEach(prop -> {
                     throw new TablePropertyInvalidException(prop, get(prop));
