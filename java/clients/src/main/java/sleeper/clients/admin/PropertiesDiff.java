@@ -33,6 +33,10 @@ public class PropertiesDiff<T extends SleeperProperty> {
         this.propertyDiffs = calculateDiffs(before, after);
     }
 
+    public List<PropertyDiff> getChanges() {
+        return propertyDiffs;
+    }
+
     private static <T extends SleeperProperty> List<PropertyDiff> calculateDiffs(
             SleeperProperties<T> before, SleeperProperties<T> after) {
         return Stream.concat(
@@ -63,9 +67,5 @@ public class PropertiesDiff<T extends SleeperProperty> {
 
         return unknownProperties.stream()
                 .flatMap(propertyName -> PropertyDiff.compare(propertyName, beforeMap, afterMap).stream());
-    }
-
-    public List<PropertyDiff> getChanges() {
-        return propertyDiffs;
     }
 }
