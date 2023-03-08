@@ -138,14 +138,34 @@ public class PropertiesDiffTest {
             assertThat(getChanges(before, after))
                     .containsExactly(valueChanged("unknown.property", "1", "2"));
         }
+
+        @Test
+        void shouldDetectPropertyIsNewlySet() throws Exception {
+            // Given
+            InstanceProperties before = new InstanceProperties();
+            InstanceProperties after = new InstanceProperties(
+                    loadProperties("unknown.property=12"));
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(newValue("unknown.property", "12"));
+        }
+
+        @Test
+        void shouldDetectPropertyIsUnset() throws Exception {
+            // Given
+            InstanceProperties before = new InstanceProperties(
+                    loadProperties("unknown.property=12"));
+            InstanceProperties after = new InstanceProperties();
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(valueDeleted("unknown.property", "12"));
+        }
     }
 
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
         return new PropertiesDiff<>(before, after).getChanges();
-    }
-
-    private PropertyDiff valueChanged(String property, String before, String after) {
-        return new PropertyDiff(property, before, after);
     }
 
     private PropertyDiff valueChanged(SleeperProperty property, String before, String after) {
@@ -157,6 +177,18 @@ public class PropertiesDiffTest {
     }
 
     private PropertyDiff newValue(SleeperProperty property, String value) {
+        return new PropertyDiff(property, null, value);
+    }
+
+    private PropertyDiff valueChanged(String property, String before, String after) {
+        return new PropertyDiff(property, before, after);
+    }
+
+    private PropertyDiff valueDeleted(String property, String value) {
+        return new PropertyDiff(property, value, null);
+    }
+
+    private PropertyDiff newValue(String property, String value) {
         return new PropertyDiff(property, null, value);
     }
 
