@@ -238,7 +238,8 @@ public interface TableProperty extends SleeperProperty {
             .systemDefined(true).build();
     TableProperty PARTITION_TABLENAME = named("sleeper.table.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA).build();
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .systemDefined(true).build();
     TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = named("sleeper.table.metadata.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
