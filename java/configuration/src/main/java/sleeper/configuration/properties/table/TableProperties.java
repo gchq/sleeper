@@ -29,6 +29,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -133,8 +134,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
     }
 
-    protected boolean isKnownProperty(String propertyName) {
-        return TableProperty.has(propertyName);
+    @Override
+    protected SleeperPropertyIndex<TableProperty> getIndex() {
+        return TableProperty.Index.INSTANCE;
     }
 
     public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {

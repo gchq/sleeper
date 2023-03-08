@@ -64,7 +64,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
 
     protected abstract void validate();
 
-    protected abstract boolean isKnownProperty(String propertyName);
+    protected abstract SleeperPropertyIndex<T> getIndex();
+
+    protected boolean isKnownProperty(String propertyName) {
+        return getIndex().getByName(propertyName).isPresent();
+    }
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());

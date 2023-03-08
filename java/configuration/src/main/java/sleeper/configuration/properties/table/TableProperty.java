@@ -277,7 +277,7 @@ public interface TableProperty extends SleeperProperty {
         private Index() {
         }
 
-        private static final SleeperPropertyIndex<TableProperty> INSTANCE = new SleeperPropertyIndex<>();
+        static final SleeperPropertyIndex<TableProperty> INSTANCE = new SleeperPropertyIndex<>();
     }
 
     SleeperProperty getDefaultProperty();
