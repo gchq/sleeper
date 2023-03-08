@@ -19,29 +19,35 @@ package sleeper.clients.admin;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PropertiesDiff<T extends SleeperProperty> {
-    private final SleeperProperties<T> properties1;
-    private final SleeperProperties<T> properties2;
     private final List<PropertyDiff> propertyDiffs;
 
-    public PropertiesDiff(SleeperProperties<T> properties1, SleeperProperties<T> properties2) {
-        this.properties1 = properties1;
-        this.properties2 = properties2;
-        this.propertyDiffs = new ArrayList<>();
-        calculateDiffs();
+    public PropertiesDiff(SleeperProperties<T> before, SleeperProperties<T> after) {
+        this.propertyDiffs = calculateDiffs(before, after);
     }
 
-    private void calculateDiffs() {
+    private static <T extends SleeperProperty> List<PropertyDiff> calculateDiffs(
+            SleeperProperties<T> before, SleeperProperties<T> after) {
+
+        Set<T> setProperties = new HashSet<>();
+        before.getKnownSetProperties().forEach(setProperties::add);
+        after.getKnownSetProperties().forEach(setProperties::add);
+
+        return setProperties.stream()
+                .flatMap(property -> PropertyDiff.compare(property, before, after).stream())
+                .collect(Collectors.toList());
     }
 
     public boolean isChanged() {
-        return !properties1.equals(properties2);
+        return !propertyDiffs.isEmpty();
     }
 
     public List<PropertyDiff> getChanges() {
-        return List.of();
+        return propertyDiffs;
     }
 }

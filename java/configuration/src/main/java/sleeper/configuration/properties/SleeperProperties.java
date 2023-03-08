@@ -70,6 +70,17 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return getIndex().getByName(propertyName).isPresent();
     }
 
+    public Stream<T> getKnownSetProperties() {
+        return properties.stringPropertyNames().stream()
+                .flatMap(propertyName -> getIndex().getByName(propertyName).stream());
+    }
+
+    public Stream<Map.Entry<String, String>> getUnknownPropertyValues() {
+        return properties.stringPropertyNames().stream()
+                .filter(not(this::isKnownProperty))
+                .map(name -> Map.entry(name, properties.getProperty(name)));
+    }
+
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
     }
@@ -174,12 +185,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) throws IOException {
         String propertiesString = s3Client.getObjectAsString(bucket, key);
         loadFromString(propertiesString);
-    }
-
-    public Stream<Map.Entry<String, String>> getUnknownProperties() {
-        return properties.stringPropertyNames().stream()
-                .filter(not(this::isKnownProperty))
-                .map(name -> Map.entry(name, properties.getProperty(name)));
     }
 
     @Override

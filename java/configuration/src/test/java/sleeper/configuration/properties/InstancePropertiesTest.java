@@ -269,7 +269,7 @@ class InstancePropertiesTest {
                         "unknown.property=123"));
 
         // When / Then
-        assertThat(properties.getUnknownProperties())
+        assertThat(properties.getUnknownPropertyValues())
                 .containsExactly(Map.entry("unknown.property", "123"));
     }
 

@@ -16,14 +16,26 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class PropertyDiff {
     private final SleeperProperty property;
     private final String oldValue;
     private final String newValue;
+
+    public static <T extends SleeperProperty> Optional<PropertyDiff> compare(T property, SleeperProperties<T> before, SleeperProperties<T> after) {
+        String oldValue = before.get(property);
+        String newValue = after.get(property);
+        if (Objects.equals(oldValue, newValue)) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new PropertyDiff(property, oldValue, newValue));
+        }
+    }
 
     public PropertyDiff(SleeperProperty property, String oldValue, String newValue) {
         this.property = Objects.requireNonNull(property, "property must not be null");

@@ -16,7 +16,8 @@
 
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.regions.Region;
 
@@ -25,39 +26,61 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 
 public class PropertiesDiffTest {
-    @Test
-    void shouldNotDetectDifferenceIfInstancePropertiesHaveNotChanged() {
-        // Given
-        InstanceProperties properties1 = createInstanceProperties("test-instance");
-        InstanceProperties properties2 = createInstanceProperties("test-instance");
 
-        // When
-        PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(properties1, properties2);
+    @DisplayName("Compare instance properties")
+    @Nested
+    class CompareInstanceProperties {
 
-        // Then
-        assertThat(diff.isChanged()).isFalse();
-        assertThat(diff.getChanges()).isEmpty();
-    }
+        @Test
+        void shouldDetectNoChanges() {
+            // Given
+            InstanceProperties before = createInstanceProperties("test-instance");
+            InstanceProperties after = createInstanceProperties("test-instance");
 
-    @Disabled("TODO")
-    @Test
-    void shouldDetectDifferenceIfPropertyHasBeenUpdatedInInstanceProperties() {
-        // Given
-        InstanceProperties properties1 = createInstanceProperties("test-instance");
-        properties1.set(MAXIMUM_CONNECTIONS_TO_S3, "30");
-        InstanceProperties properties2 = createInstanceProperties("test-instance");
-        properties2.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+            // When
+            PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(before, after);
 
-        // When
-        PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(properties1, properties2);
+            // Then
+            assertThat(diff.isChanged()).isFalse();
+            assertThat(diff.getChanges()).isEmpty();
+        }
 
-        // Then
-        assertThat(diff.isChanged()).isTrue();
-        assertThat(diff.getChanges())
-                .containsExactly(new PropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "30", "25"));
+        @Test
+        void shouldDetectPropertyHasBeenUpdated() {
+            // Given
+            InstanceProperties before = createInstanceProperties("test-instance");
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "30");
+            InstanceProperties after = createInstanceProperties("test-instance");
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
+
+            // When
+            PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(before, after);
+
+            // Then
+            assertThat(diff.isChanged()).isTrue();
+            assertThat(diff.getChanges())
+                    .containsExactly(new PropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "30", "50"));
+        }
+
+        @Test
+        void shouldDetectPropertyIsNewlySet() {
+            // Given
+            InstanceProperties before = createInstanceProperties("test-instance");
+            InstanceProperties after = createInstanceProperties("test-instance");
+            after.set(INGEST_SOURCE_BUCKET, "some-bucket");
+
+            // When
+            PropertiesDiff<InstanceProperty> diff = new PropertiesDiff<>(before, after);
+
+            // Then
+            assertThat(diff.isChanged()).isTrue();
+            assertThat(diff.getChanges())
+                    .containsExactly(new PropertyDiff(INGEST_SOURCE_BUCKET, null, "some-bucket"));
+        }
     }
 
     private InstanceProperties createInstanceProperties(String instanceId) {

@@ -78,7 +78,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printProperty(property.getPropertyName(), "");
             }
         }
-        Map<String, String> unknownProperties = properties.getUnknownProperties()
+        Map<String, String> unknownProperties = properties.getUnknownPropertyValues()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (!unknownProperties.isEmpty()) {

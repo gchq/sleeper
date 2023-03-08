@@ -193,7 +193,7 @@ class SleeperPropertiesPrettyPrinterTest {
                     .contains("\n\n" +
                             "# The following properties are not recognised by Sleeper.\n" +
                             "unknown\\=property=test\n");
-            assertThat(instanceProperties.getUnknownProperties())
+            assertThat(instanceProperties.getUnknownPropertyValues())
                     .containsExactly(Map.entry("unknown=property", "test"));
         }
 
@@ -228,7 +228,7 @@ class SleeperPropertiesPrettyPrinterTest {
                     .contains("\n\n" +
                             "# The following properties are not recognised by Sleeper.\n" +
                             "multiline.property=one\\ntwo\\nthree\n");
-            assertThat(instanceProperties.getUnknownProperties())
+            assertThat(instanceProperties.getUnknownPropertyValues())
                     .containsExactly(Map.entry("multiline.property", "one\ntwo\nthree"));
         }
     }
