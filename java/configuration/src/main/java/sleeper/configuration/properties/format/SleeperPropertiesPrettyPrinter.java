@@ -55,26 +55,6 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
     }
 
-    private void println(String line) {
-        writer.println(line);
-    }
-
-    private void println() {
-        writer.println();
-    }
-
-    private void print(String value) {
-        writer.print(value);
-    }
-
-    private void printProperty(String name, String value) {
-        try {
-            propertiesWriter.writeProperty(name, value);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     public void print(SleeperProperties<T> properties) {
         PropertyGroup currentGroup = null;
         for (T property : sortedProperties) {
@@ -108,6 +88,26 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                     printProperty(name, unknownProperties.get(name)));
         }
         writer.flush();
+    }
+
+    private void println(String line) {
+        writer.println(line);
+    }
+
+    private void println() {
+        writer.println();
+    }
+
+    private void print(String value) {
+        writer.print(value);
+    }
+
+    private void printProperty(String name, String value) {
+        try {
+            propertiesWriter.writeProperty(name, value);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static String formatDescription(SleeperProperty property) {
