@@ -22,9 +22,11 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.clients.deploy.GenerateInstanceProperties;
+import sleeper.clients.deploy.GenerateTableProperties;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.List;
 
@@ -32,6 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class PropertiesDiffTest {
 
@@ -164,6 +168,24 @@ public class PropertiesDiffTest {
         }
     }
 
+    @DisplayName("Compare table properties")
+    @Nested
+    class CompareTableProperties {
+
+        @Test
+        void shouldDetectPropertyHasBeenUpdated() {
+            // Given
+            TableProperties before = createTableProperties();
+            before.set(ITERATOR_CONFIG, "config-before");
+            TableProperties after = createTableProperties();
+            after.set(ITERATOR_CONFIG, "config-after");
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(valueChanged(ITERATOR_CONFIG, "config-before", "config-after"));
+        }
+    }
+
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
         return new PropertiesDiff<>(before, after).getChanges();
     }
@@ -200,5 +222,9 @@ public class PropertiesDiffTest {
         return GenerateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
                 .instanceId(instanceId).vpcId("some-vpc").subnetId("some-subnet").build().generate();
+    }
+
+    private TableProperties createTableProperties() {
+        return GenerateTableProperties.from(createInstanceProperties(), schemaWithKey("key"), "test-table");
     }
 }
