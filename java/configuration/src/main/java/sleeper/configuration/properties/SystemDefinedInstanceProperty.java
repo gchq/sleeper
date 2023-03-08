@@ -19,8 +19,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl.named;
-
 /**
  * Properties set internally by sleeper and not by the user. These are set by the system itself at deployment time
  * so require no default or validation. Even if you set these in your properties file, they will be overwritten.
@@ -28,7 +26,7 @@ import static sleeper.configuration.properties.SystemDefinedInstancePropertyImpl
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemDefinedInstanceProperty extends InstanceProperty {
-    SystemDefinedInstanceProperty VERSION = SystemDefinedInstancePropertyImpl.named("sleeper.version")
+    SystemDefinedInstanceProperty VERSION = named("sleeper.version")
             .description("The version of Sleeper that is being used. This property is used to identify the correct jars in the S3JarsBucket and to " +
                     "select the correct tag in the ECR repositories.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
@@ -256,15 +254,27 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     static List<SystemDefinedInstanceProperty> getAll() {
-        return SystemDefinedInstancePropertyImpl.getAll();
+        return Index.INSTANCE.getAll();
     }
 
     static boolean has(String propertyName) {
-        return SystemDefinedInstancePropertyImpl.getByName(propertyName).isPresent();
+        return Index.INSTANCE.getByName(propertyName).isPresent();
     }
 
     @Override
     default boolean isSystemDefined() {
         return true;
+    }
+
+    static SystemDefinedInstancePropertyImpl.Builder named(String propertyName) {
+        return SystemDefinedInstancePropertyImpl.named(propertyName)
+                .addToIndex(Index.INSTANCE::add);
+    }
+
+    class Index {
+        private Index() {
+        }
+
+        private static final SleeperPropertyIndex<SystemDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
     }
 }

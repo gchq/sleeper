@@ -13,16 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.configuration.properties;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static sleeper.configuration.Utils.combineLists;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstanceProperty.getAll;
 
-public interface InstanceProperty extends SleeperProperty {
+public class InstancePropertyGroupTest {
+    @Test
+    void shouldGetAllUserDefinedAndSystemDefinedProperties() {
+        // Given/When
+        List<InstanceProperty> propertyList = getAll();
 
-    static List<InstanceProperty> getAll() {
-        return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
+        // Then
+        assertThat(propertyList)
+                .containsAll(UserDefinedInstanceProperty.getAll())
+                .containsAll(SystemDefinedInstanceProperty.getAll());
     }
-
 }

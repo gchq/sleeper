@@ -16,20 +16,13 @@
 
 package sleeper.configuration.properties;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
-
-    private static final Map<String, UserDefinedInstanceProperty> ALL_MAP = new HashMap<>();
-    private static final List<UserDefinedInstanceProperty> ALL = new ArrayList<>();
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
@@ -52,14 +45,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
     public static Builder named(String name) {
         return builder().propertyName(name);
-    }
-
-    public static List<UserDefinedInstanceProperty> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
-        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override
@@ -103,7 +88,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private String description;
         private PropertyGroup propertyGroup;
         private boolean runCDKDeployWhenChanged;
-        private Consumer<UserDefinedInstanceProperty> addToAllList = Builder::addToAll;
+        private Consumer<UserDefinedInstanceProperty> addToIndex;
 
         private Builder() {
         }
@@ -138,20 +123,17 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public Builder addToAllList(Consumer<UserDefinedInstanceProperty> addToAllList) {
-            this.addToAllList = addToAllList;
+        public Builder addToIndex(Consumer<UserDefinedInstanceProperty> addToIndex) {
+            this.addToIndex = addToIndex;
             return this;
         }
 
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
         public UserDefinedInstanceProperty build() {
             UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
-            addToAllList.accept(property);
+            addToIndex.accept(property);
             return property;
-        }
-
-        private static void addToAll(UserDefinedInstanceProperty property) {
-            ALL_MAP.put(property.getPropertyName(), property);
-            ALL.add(property);
         }
     }
 }

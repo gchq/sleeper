@@ -16,24 +16,16 @@
 
 package sleeper.configuration.properties.table;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class TablePropertyImpl implements TableProperty {
-
-    private static final Map<String, TableProperty> ALL_MAP = new HashMap<>();
-    private static final List<TableProperty> ALL = new ArrayList<>();
-    private static final List<TableProperty> SYSTEM_DEFINED = new ArrayList<>();
 
     private final String propertyName;
     private final String defaultValue;
@@ -56,25 +48,12 @@ class TablePropertyImpl implements TableProperty {
     }
 
 
-
     static Builder builder() {
         return new Builder();
     }
 
     public static Builder named(String name) {
         return builder().propertyName(name);
-    }
-
-    public static List<TableProperty> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static List<TableProperty> getSystemDefined() {
-        return Collections.unmodifiableList(SYSTEM_DEFINED);
-    }
-
-    public static Optional<TableProperty> getByName(String propertyName) {
-        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override
@@ -129,7 +108,7 @@ class TablePropertyImpl implements TableProperty {
         private String description;
         private boolean runCDKDeployWhenChanged;
         private PropertyGroup propertyGroup;
-        private Consumer<TableProperty> addToList = Builder::addToAllList;
+        private Consumer<TableProperty> addToIndex;
         private boolean systemDefined;
 
         private Builder() {
@@ -170,8 +149,8 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
-        public Builder addToList(Consumer<TableProperty> addToList) {
-            this.addToList = addToList;
+        public Builder addToIndex(Consumer<TableProperty> addToIndex) {
+            this.addToIndex = addToIndex;
             return this;
         }
 
@@ -180,18 +159,12 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
         public TableProperty build() {
             TableProperty property = new TablePropertyImpl(this);
-            addToList.accept(property);
+            addToIndex.accept(property);
             return property;
-        }
-
-        private static void addToAllList(TableProperty property) {
-            ALL_MAP.put(property.getPropertyName(), property);
-            ALL.add(property);
-            if (property.isSystemDefined()) {
-                SYSTEM_DEFINED.add(property);
-            }
         }
     }
 }

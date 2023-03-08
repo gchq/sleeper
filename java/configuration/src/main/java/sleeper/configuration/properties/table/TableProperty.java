@@ -20,8 +20,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,7 +44,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
-import static sleeper.configuration.properties.table.TablePropertyImpl.named;
 
 /**
  * These contain the table properties which are stored separately to the instance properties.
@@ -253,24 +252,32 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.METADATA)
             .systemDefined(true).build();
 
-    static List<TableProperty> getAllGrouped() {
-        return TablePropertyGroup.sortProperties(new ArrayList<>(getAll()));
-    }
-
     static List<TableProperty> getAll() {
-        return TablePropertyImpl.getAll();
+        return Index.INSTANCE.getAll();
     }
 
     static List<TableProperty> getSystemDefined() {
-        return TablePropertyImpl.getSystemDefined();
+        return Index.INSTANCE.getSystemDefined();
     }
 
     static Optional<TableProperty> getByName(String propertyName) {
-        return TablePropertyImpl.getByName(propertyName);
+        return Index.INSTANCE.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return TablePropertyImpl.getByName(propertyName).isPresent();
+        return Index.INSTANCE.getByName(propertyName).isPresent();
+    }
+
+    static TablePropertyImpl.Builder named(String propertyName) {
+        return TablePropertyImpl.named(propertyName)
+                .addToIndex(Index.INSTANCE::add);
+    }
+
+    class Index {
+        private Index() {
+        }
+
+        private static final SleeperPropertyIndex<TableProperty> INSTANCE = new SleeperPropertyIndex<>();
     }
 
     SleeperProperty getDefaultProperty();
