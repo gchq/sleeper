@@ -29,6 +29,7 @@ import sleeper.configuration.properties.SleeperProperty;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 
@@ -110,8 +111,41 @@ public class PropertiesDiffTest {
         }
     }
 
+    @DisplayName("Compare unknown properties")
+    @Nested
+    class CompareUnknownProperties {
+        @Test
+        void shouldDetectNoChanges() throws Exception {
+            // Given
+            InstanceProperties before = new InstanceProperties(
+                    loadProperties("unknown.property=1"));
+            InstanceProperties after = new InstanceProperties(
+                    loadProperties("unknown.property=1"));
+
+            // When / Then
+            assertThat(getChanges(before, after)).isEmpty();
+        }
+
+        @Test
+        void shouldDetectPropertyHasBeenUpdated() throws Exception {
+            // Given
+            InstanceProperties before = new InstanceProperties(
+                    loadProperties("unknown.property=1"));
+            InstanceProperties after = new InstanceProperties(
+                    loadProperties("unknown.property=2"));
+
+            // When / Then
+            assertThat(getChanges(before, after))
+                    .containsExactly(valueChanged("unknown.property", "1", "2"));
+        }
+    }
+
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
         return new PropertiesDiff<>(before, after).getChanges();
+    }
+
+    private PropertyDiff valueChanged(String property, String before, String after) {
+        return new PropertyDiff(property, before, after);
     }
 
     private PropertyDiff valueChanged(SleeperProperty property, String before, String after) {

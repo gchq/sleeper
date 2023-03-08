@@ -21,8 +21,10 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PropertiesDiff<T extends SleeperProperty> {
     private final List<PropertyDiff> propertyDiffs;
@@ -33,14 +35,34 @@ public class PropertiesDiff<T extends SleeperProperty> {
 
     private static <T extends SleeperProperty> List<PropertyDiff> calculateDiffs(
             SleeperProperties<T> before, SleeperProperties<T> after) {
+        return Stream.concat(
+                        calculateKnownPropertyDiffs(before, after),
+                        calculateUnknownPropertyDiffs(before, after))
+                .collect(Collectors.toList());
+    }
 
+    private static <T extends SleeperProperty> Stream<PropertyDiff> calculateKnownPropertyDiffs(
+            SleeperProperties<T> before, SleeperProperties<T> after) {
         Set<T> setProperties = new HashSet<>();
         before.getKnownSetProperties().forEach(setProperties::add);
         after.getKnownSetProperties().forEach(setProperties::add);
-
         return setProperties.stream()
-                .flatMap(property -> PropertyDiff.compare(property, before, after).stream())
-                .collect(Collectors.toList());
+                .flatMap(property -> PropertyDiff.compare(property, before, after).stream());
+    }
+
+    private static <T extends SleeperProperty> Stream<PropertyDiff> calculateUnknownPropertyDiffs(
+            SleeperProperties<T> before, SleeperProperties<T> after) {
+        Set<String> unknownProperties = new HashSet<>();
+        Map<String, String> beforeMap = before.getUnknownPropertyValues()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> afterMap = after.getUnknownPropertyValues()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        unknownProperties.addAll(beforeMap.keySet());
+        unknownProperties.addAll(afterMap.keySet());
+
+
+        return unknownProperties.stream()
+                .flatMap(propertyName -> PropertyDiff.compare(propertyName, beforeMap, afterMap).stream());
     }
 
     public List<PropertyDiff> getChanges() {

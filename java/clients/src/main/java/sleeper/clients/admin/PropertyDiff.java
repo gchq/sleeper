@@ -19,11 +19,13 @@ package sleeper.clients.admin;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 public class PropertyDiff {
     private final SleeperProperty property;
+    private final String propertyName;
     private final String oldValue;
     private final String newValue;
 
@@ -37,6 +39,16 @@ public class PropertyDiff {
         }
     }
 
+    public static Optional<PropertyDiff> compare(String propertyName, Map<String, String> beforeMap, Map<String, String> afterMap) {
+        String oldValue = beforeMap.get(propertyName);
+        String newValue = afterMap.get(propertyName);
+        if (Objects.equals(oldValue, newValue)) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new PropertyDiff(propertyName, oldValue, newValue));
+        }
+    }
+
     private static <T extends SleeperProperty> String getIfSet(T property, SleeperProperties<T> properties) {
         if (properties.isSet(property)) {
             return properties.get(property);
@@ -45,8 +57,17 @@ public class PropertyDiff {
         }
     }
 
+    public PropertyDiff(String propertyName, String oldValue, String newValue) {
+        this.property = null;
+        this.propertyName = Objects.requireNonNull(propertyName, "propertyName must not be null");
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+    }
+
+
     public PropertyDiff(SleeperProperty property, String oldValue, String newValue) {
         this.property = Objects.requireNonNull(property, "property must not be null");
+        this.propertyName = property.getPropertyName();
         this.oldValue = oldValue;
         this.newValue = newValue;
     }
@@ -60,20 +81,22 @@ public class PropertyDiff {
             return false;
         }
         PropertyDiff that = (PropertyDiff) o;
-        return property.equals(that.property)
+        return Objects.equals(property, that.property)
+                && propertyName.equals(that.propertyName)
                 && Objects.equals(oldValue, that.oldValue)
                 && Objects.equals(newValue, that.newValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(property, oldValue, newValue);
+        return Objects.hash(property, propertyName, oldValue, newValue);
     }
 
     @Override
     public String toString() {
         return "PropertyDiff{" +
                 "property=" + property +
+                ", propertyName='" + propertyName + '\'' +
                 ", oldValue='" + oldValue + '\'' +
                 ", newValue='" + newValue + '\'' +
                 '}';
