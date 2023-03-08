@@ -130,7 +130,7 @@ class SleeperPropertiesPrettyPrinterTest {
         void shouldPrintDefaultedPropertyValue() throws Exception {
             // When / Then
             assertThat(printEmptyInstanceProperties())
-                    .contains("# (using default value, uncomment to set a value)\n" +
+                    .contains("# (using default value shown below, uncomment to set a value)\n" +
                             "# sleeper.retain.infra.after.destroy=true\n");
         }
 
