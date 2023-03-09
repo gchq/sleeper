@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
+import sleeper.clients.deploy.CdkDeploy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -193,7 +195,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
 
             // Then
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
-            verify(cdk).deployInferringType(instanceProperties);
+            verifyPropertiesDeployedWithCdk();
             assertThat(localPropertiesWhenCdkDeployed.get().get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
             assertThat(localTablesWhenCdkDeployed)
@@ -220,7 +222,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
 
             // Then
-            verify(cdk).deployInferringType(any());
+            verifyAnyPropertiesDeployedWithCdk();
             assertThat(store().loadInstanceProperties(INSTANCE_ID)
                     .get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
@@ -230,7 +232,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldFailWhenCdkDeployFails() throws Exception {
             // Given
             IOException thrown = new IOException("CDK failed");
-            doThrow(thrown).when(cdk).deployInferringType(any());
+            doThrowWhenPropertiesDeployedWithCdk(thrown);
             AdminConfigStore store = store();
 
             // When / Then
@@ -245,7 +247,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // Given
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
             instanceProperties.saveToS3(s3);
-            doThrow(new IOException("CDK failed")).when(cdk).deployInferringType(any());
+            doThrowWhenPropertiesDeployedWithCdk(new IOException("CDK failed"));
 
             // When / Then
             try {
@@ -275,7 +277,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
 
             // Then
-            verify(cdk).deployInferringType(instanceProperties);
+            verifyPropertiesDeployedWithCdk();
             assertThat(localPropertiesWhenCdkDeployed).hasValue(instanceProperties);
             assertThat(localTablesWhenCdkDeployed)
                     .extracting(table -> table.getBoolean(ENCRYPTED))
@@ -303,7 +305,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
 
             // Then
-            verify(cdk).deployInferringType(instanceProperties);
+            verifyPropertiesDeployedWithCdk();
             assertThat(store().loadTableProperties(INSTANCE_ID, "test-table")
                     .getBoolean(ENCRYPTED))
                     .isTrue();
@@ -314,7 +316,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // Given
             createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
             IOException thrown = new IOException("CDK failed");
-            doThrow(thrown).when(cdk).deployInferringType(any());
+            doThrowWhenPropertiesDeployedWithCdk(thrown);
             AdminConfigStore store = store();
 
             // When / Then
@@ -328,7 +330,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
             // Given
             createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
-            doThrow(new IOException("CDK failed")).when(cdk).deployInferringType(any());
+            doThrowWhenPropertiesDeployedWithCdk(new IOException("CDK failed"));
 
             // When / Then
             try {
@@ -351,7 +353,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).deployInferringType(any());
+        }).when(cdk).invokeInferringType(any(), eq(CdkDeploy.updateProperties()));
     }
 
     private void createTableInS3(String tableName) throws IOException {
@@ -368,4 +370,15 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         s3.deleteObject(CONFIG_BUCKET_NAME, TABLES_PREFIX + "/" + tableName);
     }
 
+    private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
+        verify(cdk).invokeInferringType(any(), eq(CdkDeploy.updateProperties()));
+    }
+
+    private void verifyPropertiesDeployedWithCdk() throws Exception {
+        verify(cdk).invokeInferringType(eq(instanceProperties), eq(CdkDeploy.updateProperties()));
+    }
+
+    private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
+        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkDeploy.updateProperties()));
+    }
 }

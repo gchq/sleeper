@@ -15,6 +15,7 @@
  */
 package sleeper.clients.deploy;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class CdkDeploy implements CdkCommand {
@@ -61,6 +62,31 @@ public class CdkDeploy implements CdkCommand {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CdkDeploy cdkDeploy = (CdkDeploy) o;
+        return ensureNewInstance == cdkDeploy.ensureNewInstance
+                && skipVersionCheck == cdkDeploy.skipVersionCheck;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ensureNewInstance, skipVersionCheck);
+    }
+
+    @Override
+    public String toString() {
+        return "CdkDeploy{" +
+                "ensureNewInstance=" + ensureNewInstance +
+                ", skipVersionCheck=" + skipVersionCheck +
+                '}';
+    }
 
     public static final class Builder {
         private boolean ensureNewInstance;
