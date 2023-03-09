@@ -98,7 +98,7 @@ public class DeployExistingInstance {
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)
                 .ensureNewInstance(false).skipVersionCheck(true)
-                .build().invokeInferringType(properties);
+                .build().deployInferringType(properties);
 
         // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
         // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.

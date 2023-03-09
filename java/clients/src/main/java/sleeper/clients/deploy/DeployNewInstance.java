@@ -139,7 +139,7 @@ public class DeployNewInstance {
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .ensureNewInstance(true)
-                .build().invoke(instanceType);
+                .build().deploy(instanceType);
         LOGGER.info("Finished deployment of new instance");
     }
 

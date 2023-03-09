@@ -63,16 +63,16 @@ public class InvokeCdkForInstance {
         return new Builder();
     }
 
-    public void invoke(Type type) throws IOException, InterruptedException {
-        invoke(type, ClientUtils::runCommand);
+    public void deploy(Type type) throws IOException, InterruptedException {
+        deploy(type, ClientUtils::runCommand);
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
-        invokeInferringType(instanceProperties, ClientUtils::runCommand);
+    public void deployInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
+        deployInferringType(instanceProperties, ClientUtils::runCommand);
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
-        invoke(inferType(instanceProperties), runCommand);
+    public void deployInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
+        deploy(inferType(instanceProperties), runCommand);
     }
 
     private static Type inferType(InstanceProperties instanceProperties) {
@@ -83,7 +83,7 @@ public class InvokeCdkForInstance {
         }
     }
 
-    public void invoke(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
+    public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",

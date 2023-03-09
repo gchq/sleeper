@@ -129,7 +129,7 @@ class InvokeCdkForInstanceTest {
             InstanceProperties instanceProperties = createTestInstanceProperties();
 
             // Then
-            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, runner)))
+            assertThat(commandRunOn(runner -> cdk.deployInferringType(instanceProperties, runner)))
                     .startsWith("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp");
         }
@@ -148,13 +148,13 @@ class InvokeCdkForInstanceTest {
                             "sleeper.systemtest.writers=123"));
 
             // Then
-            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, runner)))
+            assertThat(commandRunOn(runner -> cdk.deployInferringType(instanceProperties, runner)))
                     .startsWith("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp");
         }
     }
 
     private String[] commandRunOnDeployOf(InvokeCdkForInstance cdk, InvokeCdkForInstance.Type instanceType) throws IOException, InterruptedException {
-        return commandRunOn(runner -> cdk.invoke(instanceType, runner));
+        return commandRunOn(runner -> cdk.deploy(instanceType, runner));
     }
 }

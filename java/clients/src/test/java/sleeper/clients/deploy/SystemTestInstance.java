@@ -83,7 +83,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(instanceProperties.get(VERSION))
                 .ensureNewInstance(false)
-                .build().invoke(InvokeCdkForInstance.Type.STANDARD);
+                .build().deploy(InvokeCdkForInstance.Type.STANDARD);
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceProperties.get(ID));
         singleKeyTableProperties.loadFromS3(s3Client, singleKeyTableProperties.get(TABLE_NAME));
     }
