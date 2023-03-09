@@ -15,19 +15,15 @@
  */
 package sleeper.clients.deploy;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.time.Instant;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -238,38 +234,5 @@ class SyncJarsIT extends JarsBucketITBase {
                     .flatMap(ListObjectVersionsResponse::versions)
                     .hasSize(2);
         }
-    }
-
-    private boolean uploadJarsToBucket(String bucketName) throws IOException {
-        return syncJarsToBucket(bucketName, false);
-    }
-
-    private boolean uploadJarsToBucketDeletingOldJars(String bucketName) throws IOException {
-        return syncJarsToBucket(bucketName, true);
-    }
-
-    private boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
-        return SyncJars.builder()
-                .s3(s3)
-                .jarsDirectory(tempDir)
-                .region(localStackContainer.getRegion())
-                .bucketName(bucketName)
-                .deleteOldJars(deleteOld)
-                .build().sync();
-    }
-
-    private Stream<String> listObjectKeys() {
-        return s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
-                .flatMap(response -> response.contents().stream())
-                .map(S3Object::key);
-    }
-
-    private Instant getObjectLastModified(String key) {
-        return s3.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
-    }
-
-    private String getObjectContents(String key) {
-        return s3.getObject(builder -> builder.bucket(bucketName).key(key),
-                (metadata, inputStream) -> IOUtils.toString(inputStream, Charset.defaultCharset()));
     }
 }

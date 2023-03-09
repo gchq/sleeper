@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -25,11 +26,16 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Testcontainers
 public abstract class JarsBucketITBase {
@@ -48,4 +54,37 @@ public abstract class JarsBucketITBase {
     @TempDir
     protected Path tempDir;
     protected final String bucketName = UUID.randomUUID().toString();
+
+    protected boolean uploadJarsToBucket(String bucketName) throws IOException {
+        return syncJarsToBucket(bucketName, false);
+    }
+
+    protected boolean uploadJarsToBucketDeletingOldJars(String bucketName) throws IOException {
+        return syncJarsToBucket(bucketName, true);
+    }
+
+    protected boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
+        return SyncJars.builder()
+                .s3(s3)
+                .jarsDirectory(tempDir)
+                .region(localStackContainer.getRegion())
+                .bucketName(bucketName)
+                .deleteOldJars(deleteOld)
+                .build().sync();
+    }
+
+    protected Stream<String> listObjectKeys() {
+        return s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
+                .flatMap(response -> response.contents().stream())
+                .map(S3Object::key);
+    }
+
+    protected Instant getObjectLastModified(String key) {
+        return s3.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
+    }
+
+    protected String getObjectContents(String key) {
+        return s3.getObject(builder -> builder.bucket(bucketName).key(key),
+                (metadata, inputStream) -> IOUtils.toString(inputStream, Charset.defaultCharset()));
+    }
 }
