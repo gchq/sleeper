@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.CdkDeploy;
+import sleeper.clients.cdk.CdkDeploy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -375,7 +375,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
     }
 
     private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(eq(instanceProperties), eq(CdkDeploy.updateProperties()));
+        verify(cdk).invokeInferringType(instanceProperties, CdkDeploy.updateProperties());
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {

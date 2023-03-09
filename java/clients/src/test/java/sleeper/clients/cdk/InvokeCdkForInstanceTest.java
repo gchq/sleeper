@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy;
+package sleeper.clients.cdk;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

@@ -13,13 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy;
+package sleeper.clients.cdk;
 
 import java.util.stream.Stream;
 
-public interface CdkCommand {
+public class CdkDestroy implements CdkCommand {
 
-    Stream<String> getCommand();
+    public static CdkDestroy destroy() {
+        return new CdkDestroy();
+    }
 
-    Stream<String> getArguments();
+    @Override
+    public Stream<String> getCommand() {
+        return Stream.of("destroy", "--force");
+    }
+
+    @Override
+    public Stream<String> getArguments() {
+        return Stream.of("-c", "validate=false");
+    }
 }

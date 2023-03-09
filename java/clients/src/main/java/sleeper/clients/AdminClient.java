@@ -23,7 +23,7 @@ import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.clients.admin.UpdatePropertyScreen;
-import sleeper.clients.deploy.InvokeCdkForInstance;
+import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 

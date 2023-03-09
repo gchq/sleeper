@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy;
+package sleeper.clients.cdk;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
