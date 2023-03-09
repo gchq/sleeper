@@ -139,7 +139,7 @@ public class TableStack extends NestedStack {
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(encryption)
-                .removalPolicy(removalPolicy)
+                .removalPolicy(removalPolicy).autoDeleteObjects(true)
                 .build();
 
         databucket.grantReadWrite(sleeperTableLambda);

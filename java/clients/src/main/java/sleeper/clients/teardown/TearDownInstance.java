@@ -15,6 +15,8 @@
  */
 package sleeper.clients.teardown;
 
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
@@ -30,7 +32,6 @@ import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.status.update.DownloadConfig;
 import sleeper.util.ClientUtils;
@@ -39,7 +40,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -52,6 +52,7 @@ public class TearDownInstance {
 
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonCloudWatchEvents cloudWatch;
     private final AmazonECS ecs;
     private final AmazonECR ecr;
     private final Path scriptsDir;
@@ -63,6 +64,7 @@ public class TearDownInstance {
     private TearDownInstance(Builder builder) {
         s3 = Objects.requireNonNull(builder.s3, "s3 must not be null");
         s3v2 = Objects.requireNonNull(builder.s3v2, "s3v2 must not be null");
+        cloudWatch = Objects.requireNonNull(builder.cloudWatch, "cloudWatch must not be null");
         ecs = Objects.requireNonNull(builder.ecs, "ecs must not be null");
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
@@ -93,9 +95,7 @@ public class TearDownInstance {
         LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
         LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
 
-        List<TableProperties> tablePropertiesList = LoadLocalProperties
-                .loadTablesFromDirectory(instanceProperties, scriptsDir).collect(Collectors.toList());
-        new CleanUpBeforeDestroy(s3, ecs).cleanUp(instanceProperties, tablePropertiesList, extraEcsClusters);
+        new ShutdownSystemProcesses(cloudWatch, ecs).shutdown(instanceProperties, extraEcsClusters);
 
         LOGGER.info("Running cdk destroy to remove the system");
         InvokeCdkForInstance.builder()
@@ -134,6 +134,7 @@ public class TearDownInstance {
     public static final class Builder {
         private AmazonS3 s3;
         private S3Client s3v2;
+        private AmazonCloudWatchEvents cloudWatch;
         private AmazonECS ecs;
         private AmazonECR ecr;
         private Path scriptsDir;
@@ -151,6 +152,11 @@ public class TearDownInstance {
 
         public Builder s3v2(S3Client s3v2) {
             this.s3v2 = s3v2;
+            return this;
+        }
+
+        public Builder cloudWatch(AmazonCloudWatchEvents cloudWatch) {
+            this.cloudWatch = cloudWatch;
             return this;
         }
 
@@ -192,6 +198,7 @@ public class TearDownInstance {
             try (S3Client s3v2Client = S3Client.create()) {
                 s3(AmazonS3ClientBuilder.defaultClient());
                 s3v2(s3v2Client);
+                cloudWatch(AmazonCloudWatchEventsClientBuilder.defaultClient());
                 ecs(AmazonECSClientBuilder.defaultClient());
                 ecr(AmazonECRClientBuilder.defaultClient());
                 build().tearDown();

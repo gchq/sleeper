@@ -15,63 +15,44 @@
  */
 package sleeper.clients.teardown;
 
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.ecs.model.StopTaskRequest;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.status.update.PauseSystem;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
-public class CleanUpBeforeDestroy {
+public class ShutdownSystemProcesses {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CleanUpBeforeDestroy.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShutdownSystemProcesses.class);
 
-    private final AmazonS3 s3;
+    private final AmazonCloudWatchEvents cloudWatch;
     private final AmazonECS ecs;
 
-    public CleanUpBeforeDestroy(AmazonS3 s3, AmazonECS ecs) {
-        this.s3 = s3;
+    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs) {
+        this.cloudWatch = cloudWatch;
         this.ecs = ecs;
     }
 
-    public void cleanUp(
+    public void shutdown(
             InstanceProperties instanceProperties,
-            List<TableProperties> tableProperties,
             List<InstanceProperty> extraECSClusters) {
         LOGGER.info("Pausing the system");
-        PauseSystem.pause(instanceProperties);
+        PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
-        cleanUnretainedInfra(instanceProperties, tableProperties);
-    }
-
-    private void cleanUnretainedInfra(
-            InstanceProperties instanceProperties, List<TableProperties> tablePropertiesList) {
-        if (!instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            LOGGER.info("Removing all data from config, table and query results buckets");
-            emptyBucket(s3, instanceProperties.get(CONFIG_BUCKET));
-            emptyBucket(s3, instanceProperties.get(QUERY_RESULTS_BUCKET));
-            tablePropertiesList.forEach(tableProperties -> emptyBucket(s3, tableProperties.get(DATA_BUCKET)));
-            s3.shutdown();
-        }
     }
 
     private void stopECSTasks(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) {
@@ -79,16 +60,6 @@ public class CleanUpBeforeDestroy {
         stopTasks(ecs, instanceProperties.get(COMPACTION_CLUSTER));
         stopTasks(ecs, instanceProperties.get(SPLITTING_COMPACTION_CLUSTER));
         extraClusters.forEach(clusterName -> stopTasks(ecs, instanceProperties.get(clusterName)));
-        ecs.shutdown();
-    }
-
-    private static void emptyBucket(AmazonS3 s3, String bucketName) {
-        try {
-            S3Objects.inBucket(s3, bucketName).forEach(object ->
-                    s3.deleteObject(bucketName, object.getKey()));
-        } catch (Exception e) {
-            LOGGER.warn("Failed emptying S3 bucket {}, continuing", bucketName, e);
-        }
     }
 
     private static void stopTasks(AmazonECS ecs, String clusterName) {
