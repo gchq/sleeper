@@ -32,8 +32,6 @@ public class InvokeCdkForInstance {
     private final Path instancePropertiesFile;
     private final Path jarsDirectory;
     private final String version;
-    private final boolean ensureNewInstance;
-    private final boolean skipVersionCheck;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
@@ -51,28 +49,18 @@ public class InvokeCdkForInstance {
         instancePropertiesFile = requireNonNull(builder.instancePropertiesFile, "instancePropertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
-        ensureNewInstance = builder.ensureNewInstance;
-        skipVersionCheck = builder.skipVersionCheck;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void deploy(Type type) throws IOException, InterruptedException {
-        deploy(type, ClientUtils::runCommand);
-    }
-
     public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invokeInferringType(instanceProperties, cdkCommand, ClientUtils::runCommand);
+        invoke(inferType(instanceProperties), cdkCommand);
     }
 
     public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
         invoke(inferType(instanceProperties), cdkCommand, runCommand);
-    }
-
-    public void deployInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
-        deploy(inferType(instanceProperties), runCommand);
     }
 
     private static Type inferType(InstanceProperties instanceProperties) {
@@ -81,12 +69,6 @@ public class InvokeCdkForInstance {
         } else {
             return Type.STANDARD;
         }
-    }
-
-    public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
-        invoke(instanceType,
-                CdkDeploy.builder().ensureNewInstance(ensureNewInstance).skipVersionCheck(skipVersionCheck).build(),
-                runCommand);
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
@@ -123,8 +105,6 @@ public class InvokeCdkForInstance {
         private Path instancePropertiesFile;
         private Path jarsDirectory;
         private String version;
-        private boolean ensureNewInstance;
-        private boolean skipVersionCheck;
 
         private Builder() {
         }
@@ -141,16 +121,6 @@ public class InvokeCdkForInstance {
 
         public Builder version(String version) {
             this.version = version;
-            return this;
-        }
-
-        public Builder ensureNewInstance(boolean ensureNewInstance) {
-            this.ensureNewInstance = ensureNewInstance;
-            return this;
-        }
-
-        public Builder skipVersionCheck(boolean skipVersionCheck) {
-            this.skipVersionCheck = skipVersionCheck;
             return this;
         }
 

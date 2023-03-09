@@ -45,7 +45,8 @@ class InvokeCdkForInstanceTest {
                     .version("1.0").build();
 
             // Then
-            assertThat(commandRunOnDeployOf(cdk, InvokeCdkForInstance.Type.STANDARD))
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.updateProperties(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -63,7 +64,8 @@ class InvokeCdkForInstanceTest {
                     .version("1.0").build();
 
             // Then
-            assertThat(commandRunOnDeployOf(cdk, InvokeCdkForInstance.Type.SYSTEM_TEST))
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkDeploy.updateProperties(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "deploy",
@@ -73,16 +75,16 @@ class InvokeCdkForInstanceTest {
         }
 
         @Test
-        void shouldSetEnsureNewInstanceFlagWhenSpecified() throws IOException, InterruptedException {
+        void shouldSetEnsureNewInstanceFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // Given
             InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
-                    .version("1.0")
-                    .ensureNewInstance(true).build();
+                    .version("1.0").build();
 
             // Then
-            assertThat(commandRunOnDeployOf(cdk, InvokeCdkForInstance.Type.STANDARD))
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployNew(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -93,16 +95,16 @@ class InvokeCdkForInstanceTest {
         }
 
         @Test
-        void shouldSetSkipVersionCheckFlagWhenSpecified() throws IOException, InterruptedException {
+        void shouldSetSkipVersionCheckFlagWhenDeployingExistingInstance() throws IOException, InterruptedException {
             // Given
             InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
-                    .version("1.0")
-                    .skipVersionCheck(true).build();
+                    .version("1.0").build();
 
             // Then
-            assertThat(commandRunOnDeployOf(cdk, InvokeCdkForInstance.Type.STANDARD))
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployExisting(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -123,13 +125,12 @@ class InvokeCdkForInstanceTest {
             InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
-                    .version("1.0")
-                    .ensureNewInstance(false).build();
+                    .version("1.0").build();
 
             InstanceProperties instanceProperties = createTestInstanceProperties();
 
             // Then
-            assertThat(commandRunOn(runner -> cdk.deployInferringType(instanceProperties, runner)))
+            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkDeploy.deployExisting(), runner)))
                     .startsWith("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp");
         }
@@ -140,21 +141,16 @@ class InvokeCdkForInstanceTest {
             InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
-                    .version("1.0")
-                    .ensureNewInstance(false).build();
+                    .version("1.0").build();
 
             InstanceProperties instanceProperties = new InstanceProperties(loadProperties(
                     createTestInstanceProperties().saveAsString() + "\n" +
                             "sleeper.systemtest.writers=123"));
 
             // Then
-            assertThat(commandRunOn(runner -> cdk.deployInferringType(instanceProperties, runner)))
+            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkDeploy.deployExisting(), runner)))
                     .startsWith("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp");
         }
-    }
-
-    private String[] commandRunOnDeployOf(InvokeCdkForInstance cdk, InvokeCdkForInstance.Type instanceType) throws IOException, InterruptedException {
-        return commandRunOn(runner -> cdk.deploy(instanceType, runner));
     }
 }
