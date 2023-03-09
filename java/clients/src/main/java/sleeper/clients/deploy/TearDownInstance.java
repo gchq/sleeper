@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.cdk.CdkDestroy;
 import sleeper.clients.cdk.InvokeCdkForInstance;
@@ -39,12 +40,15 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);
 
     private final AmazonS3 s3;
+    private final S3Client s3v2;
+    private final AmazonECS ecs;
     private final Path scriptsDir;
     private final Path generatedDir;
     private final String instanceIdArg;
@@ -52,6 +56,8 @@ public class TearDownInstance {
 
     private TearDownInstance(Builder builder) {
         s3 = Objects.requireNonNull(builder.s3, "s3 must not be null");
+        s3v2 = Objects.requireNonNull(builder.s3v2, "s3v2 must not be null");
+        ecs = Objects.requireNonNull(builder.ecs, "ecs must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         extraEcsClusters = Objects.requireNonNull(builder.extraEcsClusters, "extraEcsClusters must not be null");
         instanceIdArg = builder.instanceId;
@@ -81,7 +87,6 @@ public class TearDownInstance {
 
         List<TableProperties> tablePropertiesList = LoadLocalProperties
                 .loadTablesFromDirectory(instanceProperties, scriptsDir).collect(Collectors.toList());
-        AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
         new CleanUpBeforeDestroy(s3, ecs).cleanUp(instanceProperties, tablePropertiesList, extraEcsClusters);
 
         InvokeCdkForInstance.builder()
@@ -89,6 +94,8 @@ public class TearDownInstance {
                 .jarsDirectory(scriptsDir.resolve("jars"))
                 .version(SleeperVersion.getVersion()).build()
                 .invokeInferringType(instanceProperties, CdkDestroy.destroy());
+
+        RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));
     }
 
     public static Builder builder() {
@@ -110,6 +117,8 @@ public class TearDownInstance {
 
     public static final class Builder {
         private AmazonS3 s3;
+        private S3Client s3v2;
+        private AmazonECS ecs;
         private Path scriptsDir;
         private String instanceId;
         private List<String> extraEcsClusters = List.of();
@@ -119,6 +128,16 @@ public class TearDownInstance {
 
         public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
+            return this;
+        }
+
+        public Builder s3v2(S3Client s3v2) {
+            this.s3v2 = s3v2;
+            return this;
+        }
+
+        public Builder ecs(AmazonECS ecs) {
+            this.ecs = ecs;
             return this;
         }
 
@@ -142,8 +161,12 @@ public class TearDownInstance {
         }
 
         public void tearDownWithDefaultClients() throws IOException, InterruptedException {
-            s3(AmazonS3ClientBuilder.defaultClient())
-                    .build().tearDown();
+            try (S3Client s3v2Client = S3Client.create()) {
+                s3(AmazonS3ClientBuilder.defaultClient());
+                s3v2(s3v2Client);
+                ecs(AmazonECSClientBuilder.defaultClient());
+                build().tearDown();
+            }
         }
     }
 }
