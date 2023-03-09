@@ -53,7 +53,6 @@ import java.io.IOException;
 
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.SOURCE_TYPE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD_RANGE;
 
 /**
  * An abstraction layer for the {@link RecordHandler} so that users can choose how to create a record iterator. The
@@ -63,9 +62,8 @@ import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD
 public abstract class SleeperRecordHandler extends RecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperRecordHandler.class);
 
-    private final Configuration defaultConfig;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final InstanceProperties instanceProperties;
+    protected final InstanceProperties instanceProperties;
 
     public SleeperRecordHandler() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -76,7 +74,6 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         this.instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.defaultConfig = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
     }
 
     public SleeperRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) throws IOException {
@@ -84,7 +81,6 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         this.instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.defaultConfig = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
     }
 
     /**
@@ -257,9 +253,8 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * @return the Hadoop configuration
      */
     protected Configuration getConfigurationForTable(TableProperties tableProperties) {
-        Configuration config = new Configuration(defaultConfig);
-        config.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
-        return config;
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
+        return conf;
     }
 
     protected InstanceProperties getInstanceProperties() {
