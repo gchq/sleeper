@@ -30,6 +30,9 @@ public class WiremockTestHelper {
     public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
+    private WiremockTestHelper() {
+    }
+
     public static AmazonECR wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {
         return AmazonECRClient.builder()
                 .withEndpointConfiguration(endpointConfiguration(runtimeInfo))
