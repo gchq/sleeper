@@ -34,7 +34,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.WiremockTestHelper.wiremockEcrClient;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 
 @WireMockTest
 class RemoveECRRepositoriesIT {
@@ -55,6 +57,25 @@ class RemoveECRRepositoriesIT {
 
         // Then
         verify(1, deleteRequestedFor("test-compaction-repo"));
+        verify(1, postRequestedFor(urlEqualTo("/")));
+    }
+
+    @Test
+    void shouldRemoveRepositoryWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
+        properties.set(ECR_INGEST_REPO, "test-ingest-repo");
+        properties.set(BULK_IMPORT_REPO, "test-bulk-import-repo");
+
+        // When
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties);
+
+        // Then
+        verify(1, deleteRequestedFor("test-compaction-repo"));
+        verify(1, deleteRequestedFor("test-ingest-repo"));
+        verify(1, deleteRequestedFor("test-bulk-import-repo"));
+        verify(3, postRequestedFor(urlEqualTo("/")));
     }
 
     private RequestPatternBuilder deleteRequestedFor(String repositoryName) {

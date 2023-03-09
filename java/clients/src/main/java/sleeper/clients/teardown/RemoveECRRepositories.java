@@ -20,15 +20,27 @@ import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 
+import java.util.List;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private RemoveECRRepositories() {
     }
 
     public static void remove(AmazonECR ecr, InstanceProperties properties) {
-        ecr.deleteRepository(new DeleteRepositoryRequest()
-                .withRepositoryName(properties.get(ECR_COMPACTION_REPO)));
+        List.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO).forEach(property ->
+                deleteIfSet(ecr, properties, property));
+    }
+
+    private static void deleteIfSet(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {
+        if (properties.isSet(property)) {
+            ecr.deleteRepository(new DeleteRepositoryRequest()
+                    .withRepositoryName(properties.get(property)));
+        }
     }
 }
