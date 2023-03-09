@@ -61,7 +61,7 @@ class RemoveECRRepositoriesIT {
     }
 
     @Test
-    void shouldRemoveRepositoryWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
+    void shouldRemoveRepositoriesWhenAllPropertiesAreSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
