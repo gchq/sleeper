@@ -16,6 +16,8 @@
 
 package sleeper.clients.deploy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
@@ -24,18 +26,23 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 public class RemoveJarsBucket {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoveJarsBucket.class);
+
     private RemoveJarsBucket() {
     }
 
     public static void remove(S3Client s3, String bucketName) {
+        LOGGER.info("Emptying bucket {}", bucketName);
         s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))
                 .stream().parallel()
                 .forEach(response -> deleteVersions(s3, bucketName, response));
+        LOGGER.info("Deleting bucket {}", bucketName);
         s3.deleteBucket(builder -> builder.bucket(bucketName));
     }
 
     private static void deleteVersions(S3Client s3, String bucketName, ListObjectVersionsResponse response) {
         if (!response.versions().isEmpty()) {
+            LOGGER.info("Deleting {} versions", response.versions().size());
             s3.deleteObjects(builder -> builder.bucket(bucketName)
                     .delete(deleteBuilder -> deleteBuilder
                             .objects(objectIdentifiers(response))));
