@@ -24,14 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-
-import javax.annotation.Nullable;
+import sleeper.status.update.DownloadConfig;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -42,19 +41,31 @@ import static sleeper.util.ClientUtils.optionalArgument;
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);
 
-    private TearDownInstance() {
+    private final AmazonS3 s3;
+    private final Path scriptsDir;
+    private final Path generatedDir;
+    private final String instanceIdArg;
+    private final List<String> extraEcsClusters;
+
+    private TearDownInstance(Builder builder) {
+        s3 = Objects.requireNonNull(builder.s3, "s3 must not be null");
+        scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
+        extraEcsClusters = Objects.requireNonNull(builder.extraEcsClusters, "extraEcsClusters must not be null");
+        instanceIdArg = builder.instanceId;
+        generatedDir = scriptsDir.resolve("generated");
     }
 
     public static void main(String[] args) throws IOException {
-        if (1 != args.length) {
+        if (args.length < 1 || args.length > 2) {
             throw new IllegalArgumentException("Usage: <scripts directory> <optional instance id>");
         }
-        Path scriptsDir = Path.of(args[0]);
-        Path generatedDir = scriptsDir.resolve("generated");
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = loadInstanceConfig(
-                optionalArgument(args, 1).orElse(null),
-                generatedDir, s3);
+        builder().scriptsDir(Path.of(args[0]))
+                .instanceId(optionalArgument(args, 1).orElse(null))
+                .tearDownWithDefaultClients();
+    }
+
+    public void tearDown() throws IOException {
+        InstanceProperties instanceProperties = loadInstanceConfig();
 
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("Tear Down");
@@ -68,11 +79,14 @@ public class TearDownInstance {
         List<TableProperties> tablePropertiesList = LoadLocalProperties
                 .loadTablesFromDirectory(instanceProperties, scriptsDir).collect(Collectors.toList());
         AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
-        new CleanUpBeforeDestroy(s3, ecs).cleanUp(instanceProperties, tablePropertiesList, List.of());
+        new CleanUpBeforeDestroy(s3, ecs).cleanUp(instanceProperties, tablePropertiesList, extraEcsClusters);
     }
 
-    private static InstanceProperties loadInstanceConfig(
-            @Nullable String instanceIdArg, Path generatedDir, AmazonS3 s3) throws IOException {
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private InstanceProperties loadInstanceConfig() throws IOException {
         String instanceId;
         if (instanceIdArg == null) {
             InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesFromDirectory(generatedDir);
@@ -81,6 +95,46 @@ public class TearDownInstance {
             instanceId = instanceIdArg;
         }
         LOGGER.info("Updating configuration for instance {}", instanceId);
-        return SaveLocalProperties.saveFromS3(s3, instanceId, generatedDir);
+        return DownloadConfig.overwriteTargetDirectoryIfDownloadSuccessful(
+                s3, instanceId, generatedDir, Path.of("/tmp/sleeper/generated"));
+    }
+
+    public static final class Builder {
+        private AmazonS3 s3;
+        private Path scriptsDir;
+        private String instanceId;
+        private List<String> extraEcsClusters = List.of();
+
+        private Builder() {
+        }
+
+        public Builder s3(AmazonS3 s3) {
+            this.s3 = s3;
+            return this;
+        }
+
+        public Builder scriptsDir(Path scriptsDir) {
+            this.scriptsDir = scriptsDir;
+            return this;
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder extraEcsClusters(List<String> extraEcsClusters) {
+            this.extraEcsClusters = extraEcsClusters;
+            return this;
+        }
+
+        public TearDownInstance build() {
+            return new TearDownInstance(this);
+        }
+
+        public void tearDownWithDefaultClients() throws IOException {
+            s3(AmazonS3ClientBuilder.defaultClient())
+                    .build().tearDown();
+        }
     }
 }
