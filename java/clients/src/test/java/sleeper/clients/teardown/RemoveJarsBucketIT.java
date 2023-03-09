@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy;
+package sleeper.clients.teardown;
 
 import org.junit.jupiter.api.Test;
+
+import sleeper.clients.deploy.JarsBucketITBase;
 
 import java.io.IOException;
 import java.nio.file.Files;
