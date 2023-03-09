@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -25,7 +24,7 @@ import java.nio.file.Files;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.util.BucketUtils.doesBucketExist;
 
-public class RemoveJarsBucketIT extends JarsBucketITBase {
+class RemoveJarsBucketIT extends JarsBucketITBase {
     @Test
     void shouldRemoveEmptyBucket() throws IOException {
         // Given
@@ -39,10 +38,25 @@ public class RemoveJarsBucketIT extends JarsBucketITBase {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldRemoveBucketWithJars() throws IOException {
         // Given
         Files.writeString(tempDir.resolve("test.jar"), "data");
+        uploadJarsToBucket(bucketName);
+
+        // When
+        RemoveJarsBucket.remove(s3, bucketName);
+
+        // Then
+        assertThat(doesBucketExist(s3, bucketName)).isFalse();
+    }
+
+    @Test
+    void shouldRemoveBucketWithMultipleVersions() throws IOException, InterruptedException {
+        // Given
+        Files.writeString(tempDir.resolve("test.jar"), "data1");
+        uploadJarsToBucket(bucketName);
+        Thread.sleep(1000);
+        Files.writeString(tempDir.resolve("test.jar"), "data2");
         uploadJarsToBucket(bucketName);
 
         // When

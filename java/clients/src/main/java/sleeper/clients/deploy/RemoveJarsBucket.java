@@ -17,12 +17,34 @@
 package sleeper.clients.deploy;
 
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 public class RemoveJarsBucket {
     private RemoveJarsBucket() {
     }
 
     public static void remove(S3Client s3, String bucketName) {
-        s3.deleteBucket(request -> request.bucket(bucketName));
+        s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))
+                .stream().parallel()
+                .forEach(response -> deleteVersions(s3, bucketName, response));
+        s3.deleteBucket(builder -> builder.bucket(bucketName));
+    }
+
+    private static void deleteVersions(S3Client s3, String bucketName, ListObjectVersionsResponse response) {
+        if (!response.versions().isEmpty()) {
+            s3.deleteObjects(builder -> builder.bucket(bucketName)
+                    .delete(deleteBuilder -> deleteBuilder
+                            .objects(objectIdentifiers(response))));
+        }
+    }
+
+    private static Collection<ObjectIdentifier> objectIdentifiers(ListObjectVersionsResponse response) {
+        return response.versions().stream()
+                .map(version -> ObjectIdentifier.builder().key(version.key()).versionId(version.versionId()).build())
+                .collect(Collectors.toList());
     }
 }
