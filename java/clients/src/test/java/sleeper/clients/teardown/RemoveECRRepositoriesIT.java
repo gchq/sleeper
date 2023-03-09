@@ -19,6 +19,7 @@ package sleeper.clients.teardown;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -37,12 +38,17 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_C
 
 @WireMockTest
 class RemoveECRRepositoriesIT {
+
+    @BeforeEach
+    void setUp() {
+        stubFor(post("/").willReturn(aResponse().withStatus(200)));
+    }
+
     @Test
     void shouldRemoveRepositoryWhenPropertyIsSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
-        stubFor(post("/").willReturn(aResponse().withStatus(200)));
 
         // When
         RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties);
