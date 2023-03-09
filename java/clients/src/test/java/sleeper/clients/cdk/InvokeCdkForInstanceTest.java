@@ -21,11 +21,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.utils.RunCommandTestHelper.commandRunOn;
@@ -102,7 +104,7 @@ class InvokeCdkForInstanceTest {
                     .jarsDirectory(Path.of("."))
                     .version("1.0").build();
 
-            // Then
+            // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
                     InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployExisting(), runner)))
                     .containsExactly("cdk",
@@ -112,6 +114,21 @@ class InvokeCdkForInstanceTest {
                             "-c", "propertiesfile=instance.properties",
                             "-c", "skipVersionCheck=true",
                             "*");
+        }
+
+        @Test
+        void shouldThrowIOExceptionWhenCommandFails() {
+            // Given
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
+                    .instancePropertiesFile(Path.of("instance.properties"))
+                    .jarsDirectory(Path.of("."))
+                    .version("1.0").build();
+            CdkCommand cdkCommand = CdkDeploy.deployExisting();
+            RunCommand runner = command -> 1; // Anything but 0 is a failed exit code
+
+            // When / Then
+            assertThatThrownBy(() -> cdk.invoke(InvokeCdkForInstance.Type.STANDARD, cdkCommand, runner))
+                    .isInstanceOf(IOException.class);
         }
     }
 
@@ -155,6 +172,21 @@ class InvokeCdkForInstanceTest {
                             "-c", "propertiesfile=instance.properties",
                             "-c", "validate=false",
                             "*");
+        }
+
+        @Test
+        void shouldThrowIOExceptionWhenCommandFails() {
+            // Given
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
+                    .instancePropertiesFile(Path.of("instance.properties"))
+                    .jarsDirectory(Path.of("."))
+                    .version("1.0").build();
+            CdkCommand cdkCommand = CdkDestroy.destroy();
+            RunCommand runner = command -> 1; // Anything but 0 is a failed exit code
+
+            // When / Then
+            assertThatThrownBy(() -> cdk.invoke(InvokeCdkForInstance.Type.STANDARD, cdkCommand, runner))
+                    .isInstanceOf(IOException.class);
         }
     }
 
