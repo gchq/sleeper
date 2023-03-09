@@ -71,10 +71,6 @@ public class InvokeCdkForInstance {
         invoke(inferType(instanceProperties), cdkCommand, runCommand);
     }
 
-    public void deployInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
-        deployInferringType(instanceProperties, ClientUtils::runCommand);
-    }
-
     public void deployInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
         deploy(inferType(instanceProperties), runCommand);
     }
@@ -91,6 +87,10 @@ public class InvokeCdkForInstance {
         invoke(instanceType,
                 CdkDeploy.builder().ensureNewInstance(ensureNewInstance).skipVersionCheck(skipVersionCheck).build(),
                 runCommand);
+    }
+
+    public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        invoke(instanceType, cdkCommand, ClientUtils::runCommand);
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {

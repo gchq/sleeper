@@ -138,8 +138,7 @@ public class DeployNewInstance {
         InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .ensureNewInstance(true)
-                .build().deploy(instanceType);
+                .build().invoke(instanceType, CdkDeploy.deployNew());
         LOGGER.info("Finished deployment of new instance");
     }
 
