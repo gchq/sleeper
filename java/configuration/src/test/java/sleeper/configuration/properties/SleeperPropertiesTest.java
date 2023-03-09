@@ -25,10 +25,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 
-public class SleeperPropertiesTest {
+class SleeperPropertiesTest {
 
     @Test
-    public void shouldGetNumericValueAsString() {
+    void shouldGetNumericValueAsString() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
@@ -40,7 +40,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldSetNumericValueAsNumber() {
+    void shouldSetNumericValueAsNumber() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
@@ -52,7 +52,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldBeAbleToRetrieveNumericalNumberAsALong() {
+    void shouldBeAbleToRetrieveNumericalNumberAsALong() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
@@ -64,7 +64,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldBeAbleToRetrieveNumericalNumberAsAnInteger() {
+    void shouldBeAbleToRetrieveNumericalNumberAsAnInteger() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
@@ -76,7 +76,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldDoNothingWhenSettingNullNumber() {
+    void shouldDoNothingWhenSettingNullNumber() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
         testSleeperProperties.set(PAGE_SIZE, "5");
@@ -89,7 +89,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldDoNothingWhenSettingNullString() {
+    void shouldDoNothingWhenSettingNullString() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
         testSleeperProperties.set(PAGE_SIZE, "5");
@@ -102,7 +102,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldReturnTrueForEqualityWhenPropertiesAreEqual() {
+    void shouldReturnTrueForEqualityWhenPropertiesAreEqual() {
         // Given
         Properties properties = new Properties();
         properties.setProperty("a", "b");
@@ -116,7 +116,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldReturnFalseForEqualityWhenPropertiesAreDifferent() {
+    void shouldReturnFalseForEqualityWhenPropertiesAreDifferent() {
         // Given
         Properties properties = new Properties();
         properties.setProperty("a", "b");
@@ -133,7 +133,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldParsePropertyAsList() {
+    void shouldParsePropertyAsList() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
         testSleeperProperties.set(OPTIONAL_STACKS, "a,b,c");
@@ -146,7 +146,7 @@ public class SleeperPropertiesTest {
     }
 
     @Test
-    public void shouldReturnNullIfListIsNullOrUnset() {
+    void shouldReturnNullIfListIsNullOrUnset() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
@@ -170,6 +170,11 @@ public class SleeperPropertiesTest {
         @Override
         protected void validate() {
             // do nothing
+        }
+
+        @Override
+        protected boolean isKnownProperty(String propertyName) {
+            return true;
         }
     }
 }

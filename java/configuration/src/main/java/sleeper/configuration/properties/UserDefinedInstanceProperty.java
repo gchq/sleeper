@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static sleeper.configuration.properties.UserDefinedInstancePropertyImpl.named;
-
 /**
  * Sleeper properties set by the user. All non-mandatory properties should be accompanied by a default value and should
  * have a validation predicate for determining if the value a user has provided is valid. By default the predicate
@@ -955,14 +953,27 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
-        return UserDefinedInstancePropertyImpl.getAll();
+        return Index.INSTANCE.getAll();
     }
 
     static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
-        return UserDefinedInstancePropertyImpl.getByName(propertyName);
+        return Index.INSTANCE.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
-        return UserDefinedInstancePropertyImpl.getByName(propertyName).isPresent();
+        return Index.INSTANCE.getByName(propertyName).isPresent();
+    }
+
+    static UserDefinedInstancePropertyImpl.Builder named(String propertyName) {
+        return UserDefinedInstancePropertyImpl.named(propertyName)
+                .addToIndex(Index.INSTANCE::add);
+    }
+
+    class Index {
+
+        private Index() {
+        }
+
+        private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
     }
 }

@@ -35,6 +35,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class LoadLocalPropertiesTablesTest {
@@ -148,5 +149,23 @@ class LoadLocalPropertiesTablesTest {
         // When / Then
         assertThat(loadTableProperties())
                 .containsExactly(properties1, properties2);
+    }
+
+    @Test
+    void shouldLoadWhitespaceFromSchemaJson() throws IOException {
+        // Given
+        TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        properties.save(tempDir.resolve("table.properties"));
+        String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
+                "\"name\":\"key\",\"type\":\"LongType\"\n" +
+                "}],\n" +
+                "\"sortKeyFields\":[],\n" +
+                "\"valueFields\":[]}";
+        Files.writeString(tempDir.resolve("schema.json"), schemaWithNewlines);
+
+        // When / Then
+        assertThat(loadTableProperties())
+                .extracting(table -> table.get(SCHEMA))
+                .containsExactly(schemaWithNewlines);
     }
 }

@@ -69,6 +69,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private Map<String, ItemsSketch> sketches;
     private String path;
     private long numRecords;
+    private String outputFilename;
     private Instant startTime;
 
     public SingleFileWritingIterator(Iterator<Row> input,
@@ -76,6 +77,15 @@ public class SingleFileWritingIterator implements Iterator<Row> {
                                      TableProperties tableProperties,
                                      Configuration conf,
                                      PartitionTree partitionTree) {
+        this(input, instanceProperties, tableProperties, conf, partitionTree, UUID.randomUUID().toString());
+    }
+
+    public SingleFileWritingIterator(Iterator<Row> input,
+                                     InstanceProperties instanceProperties,
+                                     TableProperties tableProperties,
+                                     Configuration conf,
+                                     PartitionTree partitionTree,
+                                     String outputFilename) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
@@ -83,6 +93,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
         this.partitionTree = partitionTree;
+        this.outputFilename = outputFilename;
         LOGGER.info("Initialised SingleFileWritingIterator");
         LOGGER.info("Schema is {}", schema);
         LOGGER.info("Configuration is {}", conf);
@@ -190,7 +201,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         numRecords = 0L;
         path = instanceProperties.get(UserDefinedInstanceProperty.FILE_SYSTEM)
                 + tableProperties.get(TableProperty.DATA_BUCKET) + "/partition_" + partitionId
-                + "/" + UUID.randomUUID().toString() + ".parquet";
+                + "/" + outputFilename + ".parquet";
 
         int rowGroupSize = tableProperties.getInt(TableProperty.ROW_GROUP_SIZE);
         int pageSize = tableProperties.getInt(TableProperty.PAGE_SIZE);

@@ -23,23 +23,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstanceProperty.getAll;
 import static sleeper.configuration.properties.InstancePropertyGroup.BULK_IMPORT;
 import static sleeper.configuration.properties.InstancePropertyGroup.COMMON;
 import static sleeper.configuration.properties.InstancePropertyGroup.INGEST;
-import static sleeper.configuration.properties.InstancePropertyGroup.sortPropertiesByGroup;
 
-class InstancePropertyGroupingTest {
-    @Test
-    void shouldGetAllUserDefinedAndSystemDefinedProperties() {
-        // Given/When
-        List<InstanceProperty> propertyList = getAll();
-
-        // Then
-        assertThat(propertyList)
-                .containsAll(UserDefinedInstanceProperty.getAll())
-                .containsAll(SystemDefinedInstanceProperty.getAll());
-    }
+class PropertyGroupingTest {
+    private final List<PropertyGroup> groups = List.of(COMMON, INGEST, BULK_IMPORT);
 
     @Test
     void shouldOrderByGroup() {
@@ -92,19 +81,23 @@ class InstancePropertyGroupingTest {
                 .containsExactly(userProperty1, systemProperty1, userProperty2, systemProperty2, userProperty3, systemProperty3);
     }
 
-    private static UserDefinedInstanceProperty userProperty(
-            String name, PropertyGroup group, Consumer<UserDefinedInstanceProperty> addToList) {
+    private List<InstanceProperty> sortPropertiesByGroup(List<InstanceProperty> propertyList) {
+        return PropertyGroup.sortPropertiesByGroup(propertyList, groups);
+    }
+
+    private static InstanceProperty userProperty(
+            String name, PropertyGroup group, Consumer<UserDefinedInstanceProperty> addToIndex) {
         return UserDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
                 .description("Test user property")
-                .addToAllList(addToList).build();
+                .addToIndex(addToIndex).build();
     }
 
-    private static SystemDefinedInstanceProperty systemProperty(
-            String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToList) {
+    private static InstanceProperty systemProperty(
+            String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToIndex) {
         return SystemDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
                 .description("Test system property")
-                .addToAllList(addToList).build();
+                .addToIndex(addToIndex).build();
     }
 }

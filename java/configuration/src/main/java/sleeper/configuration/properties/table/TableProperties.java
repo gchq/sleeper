@@ -59,15 +59,11 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR") // Needed until we have an immutable model
-    public TableProperties(InstanceProperties instanceProperties, Schema schema, Properties properties) {
+    public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;
-        setSchema(schema);
+        schema = loadSchema(properties);
         validate();
-    }
-
-    public TableProperties(InstanceProperties instanceProperties, Properties properties) {
-        this(instanceProperties, loadSchema(properties), properties);
     }
 
     private static Schema loadSchema(Properties properties) {
@@ -135,6 +131,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
         LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
+    }
+
+    protected boolean isKnownProperty(String propertyName) {
+        return TableProperty.has(propertyName);
     }
 
     public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {

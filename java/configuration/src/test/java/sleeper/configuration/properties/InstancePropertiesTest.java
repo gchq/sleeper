@@ -29,7 +29,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.SleeperProperties.loadProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -259,6 +259,18 @@ class InstancePropertiesTest {
                         "sleeper.systemtest.writers=123"));
 
         assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isTrue();
+    }
+
+    @Test
+    void shouldGetUnknownPropertyValues() throws IOException {
+        // Given
+        InstanceProperties properties = new InstanceProperties(loadProperties(
+                createTestInstanceProperties().saveAsString() + "\n" +
+                        "unknown.property=123"));
+
+        // When / Then
+        assertThat(properties.getUnknownProperties())
+                .containsExactly(Map.entry("unknown.property", "123"));
     }
 
     private static InstanceProperties getSleeperProperties() {

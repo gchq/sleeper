@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -96,7 +97,8 @@ public class PropertyGroup {
     }
 
     public static <T extends SleeperProperty> List<T> sortPropertiesByGroup(List<T> properties, List<PropertyGroup> groups) {
-        properties.sort(Comparator.comparingInt(p -> groups.indexOf(p.getPropertyGroup())));
-        return properties;
+        List<T> sorted = new ArrayList<>(properties);
+        sorted.sort(Comparator.comparingInt(p -> groups.indexOf(p.getPropertyGroup())));
+        return sorted;
     }
 }

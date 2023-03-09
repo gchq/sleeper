@@ -31,55 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ClientUtilsTest {
 
-    @DisplayName("Format property descriptions")
-    @Nested
-    class FormatPropertyDescriptions {
-        @Test
-        void shouldFormatSingleLineString() {
-            // Given
-            String singleLineString = "Test string that can fit on one line";
-
-            // When
-            String formattedString = ClientUtils.formatString(singleLineString);
-
-            // Then
-            assertThat(formattedString)
-                    .isEqualTo("# Test string that can fit on one line");
-        }
-
-        @Test
-        void shouldFormatAndLineWrapDescription() {
-            // Given
-            String multiLineString = "Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the screen";
-
-            // When
-            String formattedString = ClientUtils.formatString(multiLineString);
-
-            // Then
-            assertThat(formattedString)
-                    .isEqualTo("" +
-                            "# Test string that cannot fit on one line, so needs one or more than one lines to fit it all on the\n" +
-                            "# screen");
-        }
-
-        @Test
-        void shouldFormatAndLineWrapDescriptionWithCustomLineBreaks() {
-            // Given
-            String multiLineString = "Test string that cannot fit on one line\nbut with a custom line break. " +
-                    "This is to verify if the line still wraps even after after a custom line break";
-
-            // When
-            String formattedString = ClientUtils.formatString(multiLineString);
-
-            // Then
-            assertThat(formattedString)
-                    .isEqualTo("" +
-                            "# Test string that cannot fit on one line\n" +
-                            "# but with a custom line break. This is to verify if the line still wraps even after after a custom\n" +
-                            "# line break");
-        }
-    }
-
     @DisplayName("Clear directories")
     @Nested
     class ClearDirectory {

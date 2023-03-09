@@ -115,6 +115,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
     }
 
+    protected boolean isKnownProperty(String propertyName) {
+        return InstanceProperty.has(propertyName);
+    }
+
     public static Map<String, String> csvTagsToMap(String csvTags) {
         Map<String, String> tags = new HashMap<>();
         if (null != csvTags && !csvTags.isEmpty()) {

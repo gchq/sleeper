@@ -13,28 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper;
 
-import sleeper.console.ConsoleOutput;
+package sleeper.configuration.properties;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.Test;
 
-public class ToStringPrintStream {
+import java.util.List;
 
-    private final OutputStream outputStream = new ByteArrayOutputStream();
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstanceProperty.getAll;
 
-    public PrintStream getPrintStream() {
-        return new PrintStream(outputStream, false, StandardCharsets.UTF_8);
-    }
+public class InstancePropertyGroupTest {
+    @Test
+    void shouldGetAllUserDefinedAndSystemDefinedProperties() {
+        // Given/When
+        List<InstanceProperty> propertyList = getAll();
 
-    public ConsoleOutput consoleOut() {
-        return new ConsoleOutput(getPrintStream());
-    }
-
-    public String toString() {
-        return outputStream.toString();
+        // Then
+        assertThat(propertyList)
+                .containsAll(UserDefinedInstanceProperty.getAll())
+                .containsAll(SystemDefinedInstanceProperty.getAll());
     }
 }
