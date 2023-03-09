@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.CdkDeploy;
 import sleeper.clients.deploy.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -90,7 +91,7 @@ public class AdminConfigStore {
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             if (property.isRunCDKDeployWhenChanged()) {
                 LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
-                cdk.deployInferringType(properties);
+                cdk.invokeInferringType(properties, CdkDeploy.updateProperties());
             } else {
                 LOGGER.info("Saving to AWS");
                 properties.saveToS3(s3);
@@ -122,7 +123,7 @@ public class AdminConfigStore {
                                     ? properties : table));
             if (property.isRunCDKDeployWhenChanged()) {
                 LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
-                cdk.deployInferringType(instanceProperties);
+                cdk.invokeInferringType(instanceProperties, CdkDeploy.updateProperties());
             } else {
                 LOGGER.info("Saving to AWS");
                 properties.saveToS3(s3);

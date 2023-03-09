@@ -30,6 +30,10 @@ public class CdkDeploy implements CdkCommand {
         return new Builder();
     }
 
+    public static CdkDeploy updateProperties() {
+        return builder().ensureNewInstance(false).skipVersionCheck(false).build();
+    }
+
     @Override
     public Stream<String> getCommand() {
         return Stream.of("deploy",

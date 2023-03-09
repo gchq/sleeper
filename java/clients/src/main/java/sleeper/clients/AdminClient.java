@@ -55,8 +55,7 @@ public class AdminClient {
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
         InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
-                .jarsDirectory(jarsDir).version(version)
-                .ensureNewInstance(false).build();
+                .jarsDirectory(jarsDir).version(version).build();
 
         new AdminClient(
                 new AdminConfigStore(AmazonS3ClientBuilder.defaultClient(), cdk, generatedDir),

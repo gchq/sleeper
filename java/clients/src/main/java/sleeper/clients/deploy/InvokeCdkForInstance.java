@@ -63,6 +63,14 @@ public class InvokeCdkForInstance {
         deploy(type, ClientUtils::runCommand);
     }
 
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        invokeInferringType(instanceProperties, cdkCommand, ClientUtils::runCommand);
+    }
+
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
+        invoke(inferType(instanceProperties), cdkCommand, runCommand);
+    }
+
     public void deployInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
         deployInferringType(instanceProperties, ClientUtils::runCommand);
     }
