@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class CdkDeployInstance {
+public class InvokeCdkForInstance {
 
     private final Path instancePropertiesFile;
     private final Path jarsDirectory;
@@ -36,18 +36,18 @@ public class CdkDeployInstance {
     private final boolean skipVersionCheck;
 
     public enum Type {
-        STANDARD("sleeper.cdk.SleeperCdkApp", CdkDeployInstance::cdkJarFile),
-        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", CdkDeployInstance::systemTestJarFile);
+        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
+        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile);
         private final String cdkAppClassName;
-        private final Function<CdkDeployInstance, Path> getCdkJarFile;
+        private final Function<InvokeCdkForInstance, Path> getCdkJarFile;
 
-        Type(String cdkAppClassName, Function<CdkDeployInstance, Path> getCdkJarFile) {
+        Type(String cdkAppClassName, Function<InvokeCdkForInstance, Path> getCdkJarFile) {
             this.cdkAppClassName = cdkAppClassName;
             this.getCdkJarFile = getCdkJarFile;
         }
     }
 
-    private CdkDeployInstance(Builder builder) {
+    private InvokeCdkForInstance(Builder builder) {
         instancePropertiesFile = requireNonNull(builder.instancePropertiesFile, "instancePropertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
@@ -55,20 +55,24 @@ public class CdkDeployInstance {
         skipVersionCheck = builder.skipVersionCheck;
     }
 
-    public static Builder builder() {
+    public static Builder deploy() {
+        return builder();
+    }
+
+    private static Builder builder() {
         return new Builder();
     }
 
-    public void deploy(Type type) throws IOException, InterruptedException {
-        deploy(type, ClientUtils::runCommand);
+    public void invoke(Type type) throws IOException, InterruptedException {
+        invoke(type, ClientUtils::runCommand);
     }
 
-    public void deployInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
-        deployInferringType(instanceProperties, ClientUtils::runCommand);
+    public void invokeInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
+        invokeInferringType(instanceProperties, ClientUtils::runCommand);
     }
 
-    public void deployInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
-        deploy(inferType(instanceProperties), runCommand);
+    public void invokeInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
+        invoke(inferType(instanceProperties), runCommand);
     }
 
     private static Type inferType(InstanceProperties instanceProperties) {
@@ -79,7 +83,7 @@ public class CdkDeployInstance {
         }
     }
 
-    public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
+    public void invoke(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
@@ -146,8 +150,8 @@ public class CdkDeployInstance {
             return this;
         }
 
-        public CdkDeployInstance build() {
-            return new CdkDeployInstance(this);
+        public InvokeCdkForInstance build() {
+            return new InvokeCdkForInstance(this);
         }
     }
 }

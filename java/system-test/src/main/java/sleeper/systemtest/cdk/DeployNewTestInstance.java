@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.cdk;
 
-import sleeper.clients.deploy.CdkDeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.InvokeCdkForInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,7 +40,7 @@ public class DeployNewTestInstance {
                 .vpcId(args[3])
                 .subnetId(args[4])
                 .tableName("system-test")
-                .instanceType(CdkDeployInstance.Type.SYSTEM_TEST)
+                .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();
     }
 }

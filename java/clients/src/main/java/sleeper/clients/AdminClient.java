@@ -23,7 +23,7 @@ import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.clients.admin.UpdatePropertyScreen;
-import sleeper.clients.deploy.CdkDeployInstance;
+import sleeper.clients.deploy.InvokeCdkForInstance;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
@@ -53,7 +53,7 @@ public class AdminClient {
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        CdkDeployInstance cdk = CdkDeployInstance.builder()
+        InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version)
                 .ensureNewInstance(false).build();
