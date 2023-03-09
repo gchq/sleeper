@@ -33,6 +33,7 @@ import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.status.update.DownloadConfig;
+import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -96,15 +97,21 @@ public class TearDownInstance {
                 .loadTablesFromDirectory(instanceProperties, scriptsDir).collect(Collectors.toList());
         new CleanUpBeforeDestroy(s3, ecs).cleanUp(instanceProperties, tablePropertiesList, extraEcsClusters);
 
+        LOGGER.info("Running cdk destroy to remove the system");
         InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(scriptsDir.resolve("jars"))
                 .version(SleeperVersion.getVersion()).build()
                 .invokeInferringType(instanceProperties, CdkDestroy.destroy());
 
+        LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));
-
         RemoveECRRepositories.remove(ecr, instanceProperties, extraEcrRepositories);
+
+        LOGGER.info("Removing generated files");
+        ClientUtils.clearDirectory(generatedDir);
+
+        LOGGER.info("Successfully torn down");
     }
 
     public static Builder builder() {

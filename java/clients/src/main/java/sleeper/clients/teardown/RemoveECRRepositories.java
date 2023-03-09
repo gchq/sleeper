@@ -18,6 +18,8 @@ package sleeper.clients.teardown;
 
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
@@ -29,6 +31,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_C
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);
+
     private RemoveECRRepositories() {
     }
 
@@ -40,8 +44,10 @@ public class RemoveECRRepositories {
 
     private static void deleteIfSet(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {
         if (properties.isSet(property)) {
+            String repositoryName = properties.get(property);
+            LOGGER.info("Deleting repository {}", repositoryName);
             ecr.deleteRepository(new DeleteRepositoryRequest()
-                    .withRepositoryName(properties.get(property)));
+                    .withRepositoryName(repositoryName));
         }
     }
 }
