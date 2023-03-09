@@ -116,6 +116,49 @@ class InvokeCdkForInstanceTest {
     }
 
     @Nested
+    @DisplayName("Run destroy command")
+    class RunDestroy {
+
+        @Test
+        void shouldRunStandardCdkDestroySuccessfully() throws IOException, InterruptedException {
+            // Given
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
+                    .instancePropertiesFile(Path.of("instance.properties"))
+                    .jarsDirectory(Path.of("."))
+                    .version("1.0").build();
+
+            // Then
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.STANDARD, CdkDestroy.destroy(), runner)))
+                    .containsExactly("cdk",
+                            "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
+                            "destroy", "--force",
+                            "-c", "propertiesfile=instance.properties",
+                            "-c", "validate=false",
+                            "*");
+        }
+
+        @Test
+        void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
+            // Given
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
+                    .instancePropertiesFile(Path.of("instance.properties"))
+                    .jarsDirectory(Path.of("."))
+                    .version("1.0").build();
+
+            // Then
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkDestroy.destroy(), runner)))
+                    .containsExactly("cdk",
+                            "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                            "destroy", "--force",
+                            "-c", "propertiesfile=instance.properties",
+                            "-c", "validate=false",
+                            "*");
+        }
+    }
+
+    @Nested
     @DisplayName("Infer whether to invoke as a standard or system test instance")
     class InferStandardOrSystemTest {
 
