@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.status.update.PauseSystem;
 
@@ -55,7 +56,7 @@ public class CleanUpBeforeDestroy {
     public void cleanUp(
             InstanceProperties instanceProperties,
             List<TableProperties> tableProperties,
-            List<String> extraECSClusters) {
+            List<InstanceProperty> extraECSClusters) {
         LOGGER.info("Pausing the system");
         PauseSystem.pause(instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
@@ -73,11 +74,11 @@ public class CleanUpBeforeDestroy {
         }
     }
 
-    private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
+    private void stopECSTasks(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) {
         stopTasks(ecs, instanceProperties.get(INGEST_CLUSTER));
         stopTasks(ecs, instanceProperties.get(COMPACTION_CLUSTER));
         stopTasks(ecs, instanceProperties.get(SPLITTING_COMPACTION_CLUSTER));
-        extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
+        extraClusters.forEach(clusterName -> stopTasks(ecs, instanceProperties.get(clusterName)));
         ecs.shutdown();
     }
 

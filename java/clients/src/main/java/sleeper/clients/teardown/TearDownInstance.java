@@ -57,7 +57,7 @@ public class TearDownInstance {
     private final Path scriptsDir;
     private final Path generatedDir;
     private final String instanceIdArg;
-    private final List<String> extraEcsClusters;
+    private final List<InstanceProperty> extraEcsClusters;
     private final List<InstanceProperty> extraEcrRepositories;
 
     private TearDownInstance(Builder builder) {
@@ -138,7 +138,7 @@ public class TearDownInstance {
         private AmazonECR ecr;
         private Path scriptsDir;
         private String instanceId;
-        private List<String> extraEcsClusters = List.of();
+        private List<InstanceProperty> extraEcsClusters = List.of();
         private List<InstanceProperty> extraEcrRepositories = List.of();
 
         private Builder() {
@@ -174,7 +174,7 @@ public class TearDownInstance {
             return this;
         }
 
-        public Builder extraEcsClusters(List<String> extraEcsClusters) {
+        public Builder extraEcsClusters(List<InstanceProperty> extraEcsClusters) {
             this.extraEcsClusters = extraEcsClusters;
             return this;
         }
