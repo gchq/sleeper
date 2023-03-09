@@ -55,11 +55,7 @@ public class InvokeCdkForInstance {
         skipVersionCheck = builder.skipVersionCheck;
     }
 
-    public static Builder deploy() {
-        return builder();
-    }
-
-    private static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -84,20 +80,20 @@ public class InvokeCdkForInstance {
     }
 
     public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
+        invoke(instanceType,
+                CdkDeploy.builder().ensureNewInstance(ensureNewInstance).skipVersionCheck(skipVersionCheck).build(),
+                runCommand);
+    }
+
+    public void invoke(Type instanceType, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
-                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName),
-                "deploy",
-                "--require-approval", "never",
-                "-c", String.format("propertiesfile=%s", instancePropertiesFile)
+                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)
         ));
-        if (ensureNewInstance) {
-            command.addAll(List.of("-c", "newinstance=true"));
-        }
-        if (skipVersionCheck) {
-            command.addAll(List.of("-c", "skipVersionCheck=true"));
-        }
+        cdkCommand.getCommand().forEach(command::add);
+        command.addAll(List.of("-c", String.format("propertiesfile=%s", instancePropertiesFile)));
+        cdkCommand.getArguments().forEach(command::add);
         command.add("*");
 
         int exitCode = runCommand.run(command.toArray(new String[0]));

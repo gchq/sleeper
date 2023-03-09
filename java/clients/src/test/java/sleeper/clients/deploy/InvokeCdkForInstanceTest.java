@@ -39,7 +39,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
             // Given
-            InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
                     .version("1.0").build();
@@ -57,7 +57,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // Given
-            InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
                     .version("1.0").build();
@@ -75,7 +75,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldSetEnsureNewInstanceFlagWhenSpecified() throws IOException, InterruptedException {
             // Given
-            InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
                     .version("1.0")
@@ -95,7 +95,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldSetSkipVersionCheckFlagWhenSpecified() throws IOException, InterruptedException {
             // Given
-            InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
                     .version("1.0")
@@ -120,7 +120,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldInferStandardDeploymentWhenNoSystemTestPropertiesAreSet() throws IOException, InterruptedException {
             // Given
-            InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
                     .version("1.0")
@@ -137,7 +137,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldInferSystemTestDeploymentWhenSystemTestPropertyIsSet() throws IOException, InterruptedException {
             // Given
-            InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+            InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                     .instancePropertiesFile(Path.of("instance.properties"))
                     .jarsDirectory(Path.of("."))
                     .version("1.0")

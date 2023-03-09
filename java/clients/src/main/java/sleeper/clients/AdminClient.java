@@ -53,7 +53,7 @@ public class AdminClient {
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        InvokeCdkForInstance cdk = InvokeCdkForInstance.deploy()
+        InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version)
                 .ensureNewInstance(false).build();

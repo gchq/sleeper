@@ -93,7 +93,7 @@ public class DeployExistingInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        InvokeCdkForInstance.deploy()
+        InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)

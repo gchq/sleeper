@@ -135,7 +135,7 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        InvokeCdkForInstance.deploy()
+        InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .ensureNewInstance(true)

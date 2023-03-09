@@ -79,7 +79,7 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .build().upload();
         ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
-        InvokeCdkForInstance.deploy()
+        InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(instanceProperties.get(VERSION))
                 .ensureNewInstance(false)
