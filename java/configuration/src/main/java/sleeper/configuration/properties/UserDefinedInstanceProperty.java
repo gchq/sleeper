@@ -938,6 +938,21 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("ZSTD")
             .validationPredicate(Utils::isValidCompressionCodec)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS = named("sleeper.default.parquet.dictionary.encoding.rowkey.fields")
+            .description("Whether dictionary encoding should be used for row key columns in the Parquet files.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS = named("sleeper.default.parquet.dictionary.encoding.sortkey.fields")
+            .description("Whether dictionary encoding should be used for sort key columns in the Parquet files.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS = named("sleeper.default.parquet.dictionary.encoding.value.fields")
+            .description("Whether dictionary encoding should be used for value columns in the Parquet files.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED = named("sleeper.default.table.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is turned on for DynamoDB tables. This default can " +
                     "be overridden by a table property.")
