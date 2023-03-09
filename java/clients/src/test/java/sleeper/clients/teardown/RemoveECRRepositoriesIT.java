@@ -16,34 +16,44 @@
 
 package sleeper.clients.teardown;
 
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.ecr.AmazonECR;
-import com.amazonaws.services.ecr.AmazonECRClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import org.junit.jupiter.api.Disabled;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import static com.amazonaws.regions.Regions.DEFAULT_REGION;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static sleeper.WiremockTestHelper.wiremockEcrClient;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 
 @WireMockTest
 class RemoveECRRepositoriesIT {
     @Test
-    @Disabled("TODO")
-    void shouldRemoveRepositories(WireMockRuntimeInfo runtimeInfo) {
-        AmazonECR ecrClient = AmazonECRClient.builder()
-                .withEndpointConfiguration(
-                        new AwsClientBuilder.EndpointConfiguration(runtimeInfo.getHttpsBaseUrl(), DEFAULT_REGION.getName()))
-                .build();
+    void shouldRemoveRepositoryWhenPropertyIsSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
+        stubFor(post("/").willReturn(aResponse().withStatus(200)));
 
         // When
-        RemoveECRRepositories.remove(ecrClient, properties);
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties);
+
+        // Then
+        verify(1, deleteRequestedFor("test-compaction-repo"));
+    }
+
+    private RequestPatternBuilder deleteRequestedFor(String repositoryName) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", matching("^AmazonEC2ContainerRegistry_V\\d+\\.DeleteRepository$"))
+                .withRequestBody(equalToJson("{\"repositoryName\":\"" + repositoryName + "\"}"));
     }
 }

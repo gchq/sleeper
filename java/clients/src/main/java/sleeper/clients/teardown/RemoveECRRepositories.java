@@ -17,14 +17,18 @@
 package sleeper.clients.teardown;
 
 import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
 
 import sleeper.configuration.properties.InstanceProperties;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 
 public class RemoveECRRepositories {
     private RemoveECRRepositories() {
     }
 
     public static void remove(AmazonECR ecr, InstanceProperties properties) {
-
+        ecr.deleteRepository(new DeleteRepositoryRequest()
+                .withRepositoryName(properties.get(ECR_COMPACTION_REPO)));
     }
 }
