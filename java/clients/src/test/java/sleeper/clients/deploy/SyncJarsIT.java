@@ -19,49 +19,19 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.core.CommonTestConstants;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
-class SyncJarsIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
-
-    protected final S3Client s3 = S3Client.builder()
-            .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
-            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
-            )))
-            .region(Region.of(localStackContainer.getRegion()))
-            .build();
-
-    @TempDir
-    private Path tempDir;
-    private final String bucketName = UUID.randomUUID().toString();
+class SyncJarsIT extends JarsBucketITBase {
 
     @Nested
     @DisplayName("Upload jars")
