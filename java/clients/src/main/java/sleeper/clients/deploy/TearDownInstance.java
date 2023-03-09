@@ -22,9 +22,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.cdk.CdkDestroy;
+import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.SleeperVersion;
 import sleeper.status.update.DownloadConfig;
 
 import java.io.IOException;
@@ -55,7 +58,7 @@ public class TearDownInstance {
         generatedDir = scriptsDir.resolve("generated");
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 1 || args.length > 2) {
             throw new IllegalArgumentException("Usage: <scripts directory> <optional instance id>");
         }
@@ -64,7 +67,7 @@ public class TearDownInstance {
                 .tearDownWithDefaultClients();
     }
 
-    public void tearDown() throws IOException {
+    public void tearDown() throws IOException, InterruptedException {
         InstanceProperties instanceProperties = loadInstanceConfig();
 
         LOGGER.info("--------------------------------------------------------");
@@ -80,6 +83,12 @@ public class TearDownInstance {
                 .loadTablesFromDirectory(instanceProperties, scriptsDir).collect(Collectors.toList());
         AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
         new CleanUpBeforeDestroy(s3, ecs).cleanUp(instanceProperties, tablePropertiesList, extraEcsClusters);
+
+        InvokeCdkForInstance.builder()
+                .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                .jarsDirectory(scriptsDir.resolve("jars"))
+                .version(SleeperVersion.getVersion()).build()
+                .invokeInferringType(instanceProperties, CdkDestroy.destroy());
     }
 
     public static Builder builder() {
@@ -132,7 +141,7 @@ public class TearDownInstance {
             return new TearDownInstance(this);
         }
 
-        public void tearDownWithDefaultClients() throws IOException {
+        public void tearDownWithDefaultClients() throws IOException, InterruptedException {
             s3(AmazonS3ClientBuilder.defaultClient())
                     .build().tearDown();
         }
