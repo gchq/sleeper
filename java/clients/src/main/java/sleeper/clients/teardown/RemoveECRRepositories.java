@@ -32,9 +32,10 @@ public class RemoveECRRepositories {
     private RemoveECRRepositories() {
     }
 
-    public static void remove(AmazonECR ecr, InstanceProperties properties) {
+    public static void remove(AmazonECR ecr, InstanceProperties properties, List<InstanceProperty> extraRepositories) {
         List.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO).forEach(property ->
                 deleteIfSet(ecr, properties, property));
+        extraRepositories.forEach(property -> deleteIfSet(ecr, properties, property));
     }
 
     private static void deleteIfSet(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {

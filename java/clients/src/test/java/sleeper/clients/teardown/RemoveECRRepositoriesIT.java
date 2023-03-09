@@ -22,7 +22,10 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.DummyInstanceProperty;
 import sleeper.configuration.properties.InstanceProperties;
+
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
@@ -53,7 +56,7 @@ class RemoveECRRepositoriesIT {
         properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
 
         // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties);
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
 
         // Then
         verify(1, deleteRequestedFor("test-compaction-repo"));
@@ -69,13 +72,28 @@ class RemoveECRRepositoriesIT {
         properties.set(BULK_IMPORT_REPO, "test-bulk-import-repo");
 
         // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties);
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
 
         // Then
         verify(1, deleteRequestedFor("test-compaction-repo"));
         verify(1, deleteRequestedFor("test-ingest-repo"));
         verify(1, deleteRequestedFor("test-bulk-import-repo"));
         verify(3, postRequestedFor(urlEqualTo("/")));
+    }
+
+    @Test
+    void shouldRemoveExtraRepositoriesWhenSetInProperties(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        DummyInstanceProperty extraRepository = new DummyInstanceProperty("extra.repo");
+        properties.set(extraRepository, "test-extra-repo");
+
+        // When
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of(extraRepository));
+
+        // Then
+        verify(1, deleteRequestedFor("test-extra-repo"));
+        verify(1, postRequestedFor(urlEqualTo("/")));
     }
 
     private RequestPatternBuilder deleteRequestedFor(String repositoryName) {
