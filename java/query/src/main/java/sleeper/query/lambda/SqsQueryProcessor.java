@@ -100,7 +100,7 @@ public class SqsQueryProcessor {
             queryTrackers.queryInProgress(query);
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
             if (query instanceof LeafPartitionQuery) {
-                results = processLeafPartitionQuery((LeafPartitionQuery) query, tableProperties);
+                results = processLeafPartitionQuery((LeafPartitionQuery) query);
             } else {
                 results = processRangeQuery(query, queryTrackers);
             }
