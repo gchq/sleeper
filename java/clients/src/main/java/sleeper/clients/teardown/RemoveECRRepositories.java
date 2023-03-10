@@ -40,20 +40,19 @@ public class RemoveECRRepositories {
 
     public static void remove(AmazonECR ecr, InstanceProperties properties, List<InstanceProperty> extraRepositories) {
         Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO), extraRepositories.stream())
-                .parallel().forEach(property -> deleteIfSet(ecr, properties, property));
+                .filter(properties::isSet)
+                .parallel().forEach(property -> deleteRepository(ecr, properties, property));
     }
 
-    private static void deleteIfSet(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {
-        if (properties.isSet(property)) {
-            String repositoryName = properties.get(property);
-            LOGGER.info("Deleting repository {}", repositoryName);
-            try {
-                ecr.deleteRepository(new DeleteRepositoryRequest()
-                        .withRepositoryName(repositoryName)
-                        .withForce(true));
-            } catch (RepositoryNotFoundException e) {
-                LOGGER.info("Repository not found: {}", repositoryName);
-            }
+    private static void deleteRepository(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {
+        String repositoryName = properties.get(property);
+        LOGGER.info("Deleting repository {}", repositoryName);
+        try {
+            ecr.deleteRepository(new DeleteRepositoryRequest()
+                    .withRepositoryName(repositoryName)
+                    .withForce(true));
+        } catch (RepositoryNotFoundException e) {
+            LOGGER.info("Repository not found: {}", repositoryName);
         }
     }
 }
