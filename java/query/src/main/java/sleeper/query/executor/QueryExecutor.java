@@ -266,8 +266,4 @@ public class QueryExecutor {
         }
         return files;
     }
-
-    public Configuration getConfiguration() {
-        return configuration;
-    }
 }

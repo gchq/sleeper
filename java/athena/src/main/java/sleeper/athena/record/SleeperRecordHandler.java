@@ -63,7 +63,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperRecordHandler.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
-    protected final InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties;
 
     public SleeperRecordHandler() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
