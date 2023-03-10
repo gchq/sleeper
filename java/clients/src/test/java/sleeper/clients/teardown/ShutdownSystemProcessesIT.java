@@ -54,7 +54,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TAB
 @WireMockTest
 class ShutdownSystemProcessesIT {
 
-    private static final String OPERATION_HEADER_KEY = "X-Amz-Target";
+    private static final String OPERATION_HEADER = "X-Amz-Target";
     private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
     private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
@@ -87,7 +87,7 @@ class ShutdownSystemProcessesIT {
         properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
 
         stubFor(post("/")
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_DISABLE_RULE_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
 
         // When
@@ -117,7 +117,7 @@ class ShutdownSystemProcessesIT {
         properties.set(extraClusterProperty, "test-system-test-cluster");
 
         stubFor(post("/")
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_LIST_TASKS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
 
         // When
@@ -138,10 +138,10 @@ class ShutdownSystemProcessesIT {
         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
 
         stubFor(post("/")
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_LIST_TASKS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
         stubFor(post("/")
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_STOP_TASK_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
 
         // When
@@ -155,19 +155,19 @@ class ShutdownSystemProcessesIT {
 
     private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
         return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_DISABLE_RULE_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
                 .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
     }
 
     private RequestPatternBuilder listTasksRequestedFor(String clusterName) {
         return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_LIST_TASKS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
     }
 
     private RequestPatternBuilder stopTaskRequestedFor(String clusterName, String taskArn) {
         return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER_KEY, MATCHING_STOP_TASK_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
                         .and(matchingJsonPath("$.task", equalTo(taskArn))));
     }
