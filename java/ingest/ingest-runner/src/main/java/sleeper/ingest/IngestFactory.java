@@ -110,7 +110,7 @@ public class IngestFactory {
                     .buildAcceptingRecords();
         } else if (recordBatchType.equals("arrow")) {
             return ArrowRecordBatchFactory.builderWith(instanceProperties)
-                    .schema(parquetConfiguration.getSleeperSchema())
+                    .schema(parquetConfiguration.getTableProperties().getSchema())
                     .localWorkingDirectory(localDir)
                     .buildAcceptingRecords();
         } else {

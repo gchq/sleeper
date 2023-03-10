@@ -102,7 +102,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             S3TransferManager s3TransferManager,
             String localWorkingDirectory) throws IOException {
         this.s3TransferManager = requireNonNull(s3TransferManager);
-        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
+        this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.s3BucketName = requireNonNull(s3BucketName);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();

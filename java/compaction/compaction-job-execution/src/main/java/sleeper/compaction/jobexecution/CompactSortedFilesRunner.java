@@ -46,7 +46,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
@@ -65,9 +64,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
@@ -221,10 +217,8 @@ public class CompactSortedFilesRunner {
 
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(compactionJob.getTableName());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, objectFactory,
-                tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
-                stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
-                tableProperties.get(COMPRESSION_CODEC), taskId);
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
+                compactionJob, stateStore, jobStatusStore, taskId);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Delete message from queue

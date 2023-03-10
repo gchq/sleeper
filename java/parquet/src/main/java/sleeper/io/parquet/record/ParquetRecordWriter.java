@@ -22,10 +22,20 @@ import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.schema.MessageType;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * Uses a {@link RecordWriteSupport} to write data to Parquet.
@@ -62,6 +72,53 @@ public class ParquetRecordWriter extends ParquetWriter<Record> {
         @Override
         protected Builder self() {
             return this;
+        }
+    }
+
+    public static class ParquetRecordWriterFactory {
+
+        public static ParquetWriter<Record> createParquetRecordWriter(Path path, Schema schema) throws IOException {
+            return new Builder(path, SchemaConverter.getSchema(schema), schema).build();
+        }
+
+        public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
+            return createParquetRecordWriter(path,
+                tableProperties.getSchema(),
+                tableProperties.get(COMPRESSION_CODEC),
+                tableProperties.getLong(ROW_GROUP_SIZE),
+                tableProperties.getInt(PAGE_SIZE),
+                tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS),
+                tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS),
+                tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS),
+                conf);
+        }
+
+        public static ParquetWriter<Record> createParquetRecordWriter(Path path,
+                Schema schema,
+                String compressionCodec,
+                long rowGroupSize,
+                int pageSize,
+                boolean dictionaryEncodingForRowKeyFields,
+                boolean dictionaryEncodingForSortKeyFields,
+                boolean dictionaryEncodingForValueFields,
+                Configuration conf) throws IOException {
+            Builder builder = new Builder(path, SchemaConverter.getSchema(schema), schema)
+                .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec.toUpperCase(Locale.ROOT)))
+                .withRowGroupSize(rowGroupSize)
+                .withPageSize(pageSize)
+                .withConf(conf);
+
+            setDictionaryEncoding(builder, schema.getRowKeyFieldNames(), dictionaryEncodingForRowKeyFields);
+            setDictionaryEncoding(builder, schema.getSortKeyFieldNames(), dictionaryEncodingForSortKeyFields);
+            setDictionaryEncoding(builder, schema.getValueFieldNames(), dictionaryEncodingForValueFields);
+
+            return builder.build();
+        }
+
+        private static void setDictionaryEncoding(Builder builder, List<String> fieldNames, boolean dictionaryEncodingEnabled) {
+            for (String fieldName : fieldNames) {
+                builder = builder.withDictionaryEncoding(fieldName, dictionaryEncodingEnabled);
+            }
         }
     }
 }

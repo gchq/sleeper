@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -67,6 +68,8 @@ public class S3ResultsOutputTest {
     public Path tempDir;
 
     InstanceProperties instanceProperties = new InstanceProperties();
+    TableProperties tableProperties = new TableProperties(instanceProperties);
+
     Schema schema = setupSchema();
     List<Record> recordList = setupData();
     String outputDir;
@@ -81,14 +84,14 @@ public class S3ResultsOutputTest {
 
     @Test
     public void testDefaultConfig() throws Exception {
-        //Given
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, schema, new HashMap<>());
+        // Given
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, schema, new HashMap<>());
         Query query = new Query("table", "query-id", Collections.emptyList());
 
-        //When
+        // When
         resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
 
-        //Then
+        // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
         assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
@@ -97,17 +100,17 @@ public class S3ResultsOutputTest {
 
     @Test
     public void testPassingPageSizeAsParam() throws Exception {
-        //Given
+        // Given
         Map<String, String> config = new HashMap<>();
         config.put(ROW_GROUP_SIZE, "1024");
         config.put(PAGE_SIZE, "1024");
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, schema, config);
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, schema, config);
         Query query = new Query("table", "query-id", Collections.emptyList());
 
-        //When
+        // When
         resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
 
-        //Then
+        // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
         assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
@@ -116,16 +119,16 @@ public class S3ResultsOutputTest {
 
     @Test
     public void testNonDefaultPageSize() throws Exception {
-        //Given
+        // Given
         instanceProperties.set(DEFAULT_RESULTS_ROW_GROUP_SIZE, "1024");
         instanceProperties.set(DEFAULT_RESULTS_PAGE_SIZE, "1020");
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, schema, new HashMap<>());
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, schema, new HashMap<>());
         Query query = new Query("table", "query-id", Collections.emptyList());
 
-        //When
+        // When
         resultsOutput.publish(query, new WrappedIterator<>(recordList.iterator()));
 
-        //Then
+        // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
         assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
