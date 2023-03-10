@@ -29,8 +29,9 @@ import sleeper.configuration.properties.InstanceProperty;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -56,6 +57,7 @@ class ShutdownSystemProcessesIT {
     private static final String OPERATION_HEADER_KEY = "X-Amz-Target";
     private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
     private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
+    private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
 
     private ShutdownSystemProcesses shutdown;
 
@@ -129,16 +131,45 @@ class ShutdownSystemProcessesIT {
         verify(1, listTasksRequestedFor("test-system-test-cluster"));
     }
 
+    @Test
+    void shouldStopECSTaskWhenOneIsFound() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(INGEST_CLUSTER, "test-ingest-cluster");
+
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER_KEY, MATCHING_LIST_TASKS_OPERATION)
+                .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER_KEY, MATCHING_STOP_TASK_OPERATION)
+                .willReturn(aResponse().withStatus(200)));
+
+        // When
+        shutdown(properties);
+
+        // Then
+        verify(2, postRequestedFor(urlEqualTo("/")));
+        verify(1, listTasksRequestedFor("test-ingest-cluster"));
+        verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
+    }
+
     private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER_KEY, MATCHING_DISABLE_RULE_OPERATION)
-                .withRequestBody(equalToJson("{\"Name\":\"" + ruleName + "\"}"));
+                .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
     }
 
     private RequestPatternBuilder listTasksRequestedFor(String clusterName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER_KEY, MATCHING_LIST_TASKS_OPERATION)
-                .withRequestBody(equalToJson("{\"cluster\":\"" + clusterName + "\"}"));
+                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
+    }
+
+    private RequestPatternBuilder stopTaskRequestedFor(String clusterName, String taskArn) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER_KEY, MATCHING_STOP_TASK_OPERATION)
+                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
+                        .and(matchingJsonPath("$.task", equalTo(taskArn))));
     }
 
 }
