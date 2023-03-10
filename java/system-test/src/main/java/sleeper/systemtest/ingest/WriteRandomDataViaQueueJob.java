@@ -21,7 +21,6 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,11 +29,9 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
@@ -46,10 +43,7 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
@@ -69,8 +63,7 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
 
     @Override
     public void run() throws IOException {
-        Schema schema = getTableProperties().getSchema();
-        Iterator<Record> recordIterator = createRecordIterator(schema);
+        Iterator<Record> recordIterator = createRecordIterator(getTableProperties().getSchema());
 
         int fileNumber = 0;
         String dir = getTableProperties().get(DATA_BUCKET) + "/ingest/" + UUID.randomUUID() + "/";
@@ -80,14 +73,9 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         conf.set("fs.s3a.fast.upload", "true");
-        ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(path),
-                SchemaConverter.getSchema(schema), schema)
-                .withCompressionCodec(CompressionCodecName.fromConf(getTableProperties().get(COMPRESSION_CODEC)))
-                .withRowGroupSize(getTableProperties().getInt(ROW_GROUP_SIZE))
-                .withPageSize(getTableProperties().getInt(PAGE_SIZE))
-                .withConf(conf);
+
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), getTableProperties(), conf);
         long count = 0L;
-        ParquetWriter<Record> writer = builder.build();
         LOGGER.info("Created writer to path {}", path);
         while (recordIterator.hasNext()) {
             writer.write(recordIterator.next());
@@ -100,12 +88,7 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
                     fileNumber++;
                     filename = dir + fileNumber + ".parquet";
                     path = "s3a://" + filename;
-                    writer = new ParquetRecordWriter.Builder(new Path(path), SchemaConverter.getSchema(schema), schema)
-                            .withCompressionCodec(CompressionCodecName.fromConf(getTableProperties().get(COMPRESSION_CODEC)))
-                            .withRowGroupSize(getTableProperties().getInt(ROW_GROUP_SIZE))
-                            .withPageSize(getTableProperties().getInt(PAGE_SIZE))
-                            .withConf(conf)
-                            .build();
+                    writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), getTableProperties(), conf);
                 }
             }
         }

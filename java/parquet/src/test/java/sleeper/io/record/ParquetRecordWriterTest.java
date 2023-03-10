@@ -28,8 +28,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -51,8 +50,8 @@ public class ParquetRecordWriterTest {
                 .valueFields(new Field("column2", new StringType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
         map1.put("column2", "B");
@@ -88,8 +87,8 @@ public class ParquetRecordWriterTest {
                 .valueFields(new Field("column3", new LongType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
@@ -132,8 +131,8 @@ public class ParquetRecordWriterTest {
                 .valueFields(new Field("column2", new ByteArrayType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", byteArray1);
         map1.put("column2", byteArray2);

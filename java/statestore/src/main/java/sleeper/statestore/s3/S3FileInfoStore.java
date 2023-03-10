@@ -36,8 +36,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
@@ -484,9 +483,8 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = new ParquetRecordWriter.Builder(new Path(path), SchemaConverter.getSchema(fileSchema), fileSchema)
-                .withConf(conf)
-                .build();
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileSchema, conf);
+
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
         }
@@ -506,7 +504,6 @@ public class S3FileInfoStore implements FileInfoStore {
         recordReader.close();
         return fileInfos;
     }
-
 
     public static final class Builder {
         private AmazonDynamoDB dynamoDB;
@@ -539,7 +536,6 @@ public class S3FileInfoStore implements FileInfoStore {
             this.fs = fs;
             return this;
         }
-
 
         public Builder s3Bucket(String s3Bucket) {
             this.s3Bucket = s3Bucket;

@@ -48,7 +48,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
@@ -141,7 +141,7 @@ public class CompactSortedFiles {
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
-        ParquetWriter<Record> writer = ParquetRecordWriter.ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
@@ -215,13 +215,11 @@ public class CompactSortedFiles {
 
         // Create writers
         Path leftPath = new Path(compactionJob.getOutputFiles().getLeft());
-        ParquetWriter<Record> leftWriter = ParquetRecordWriter.ParquetRecordWriterFactory
-            .createParquetRecordWriter(leftPath, tableProperties, conf);
+        ParquetWriter<Record> leftWriter = ParquetRecordWriterFactory.createParquetRecordWriter(leftPath, tableProperties, conf);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
 
         Path rightPath = new Path(compactionJob.getOutputFiles().getRight());
-        ParquetWriter<Record> rightWriter = ParquetRecordWriter.ParquetRecordWriterFactory
-            .createParquetRecordWriter(rightPath, tableProperties, conf);
+        ParquetWriter<Record> rightWriter = ParquetRecordWriterFactory.createParquetRecordWriter(rightPath, tableProperties, conf);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();

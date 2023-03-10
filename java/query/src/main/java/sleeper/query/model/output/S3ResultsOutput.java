@@ -26,7 +26,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.io.parquet.record.ParquetRecordWriter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.query.model.Query;
 
 import java.io.IOException;
@@ -90,7 +90,7 @@ public class S3ResultsOutput implements ResultsOutput {
 
         LOGGER.info("Opening writer for results of query {} to {}", query.getQueryId(), outputFile);
         long count = 0L;
-        try (ParquetWriter<Record> writer = ParquetRecordWriter.ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), schema, outputFile,
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), schema, outputFile,
             rowGroupSize, pageSize, dictionaryEncodingForRowKeyFields, dictionaryEncodingForSortKeyFields, dictionaryEncodingForValueFields, new Configuration())) {
             long startTime = System.currentTimeMillis();
             while (results.hasNext()) {

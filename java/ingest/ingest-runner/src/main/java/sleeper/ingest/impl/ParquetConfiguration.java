@@ -21,7 +21,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.io.parquet.record.ParquetRecordWriter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -64,7 +64,7 @@ public class ParquetConfiguration {
      * @throws IOException Thrown when the writer cannot be created
      */
     public ParquetWriter<Record> createParquetWriter(String outputFile) throws IOException {
-        return ParquetRecordWriter.ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
+        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
     }
 
     public static final class Builder {

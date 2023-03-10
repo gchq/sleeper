@@ -28,7 +28,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
 
 import java.io.IOException;
@@ -93,7 +93,7 @@ public class PartitionFileWriterUtils {
     public static ParquetWriter<Record> createParquetWriter(String outputFile,
                                                             TableProperties tableProperties,
                                                             Configuration hadoopConfiguration) throws IOException {
-        return ParquetRecordWriter.ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
+        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
     }
 
     /**

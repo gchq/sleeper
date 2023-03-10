@@ -35,7 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
@@ -203,7 +203,7 @@ public class FileWritingIterator implements Iterator<Row> {
 
         LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
 
-        return ParquetRecordWriter.ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
     }
 
     private String getPartitionId(Row row) {
