@@ -19,8 +19,12 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
+import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClient;
+import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.AmazonECSClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 
 import static com.amazonaws.regions.Regions.DEFAULT_REGION;
@@ -35,6 +39,20 @@ public class WiremockTestHelper {
 
     public static AmazonECR wiremockEcrClient(WireMockRuntimeInfo runtimeInfo) {
         return AmazonECRClient.builder()
+                .withEndpointConfiguration(endpointConfiguration(runtimeInfo))
+                .withCredentials(credentialsProvider())
+                .build();
+    }
+
+    public static AmazonCloudWatchEvents wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
+        return AmazonCloudWatchEventsClient.builder()
+                .withEndpointConfiguration(endpointConfiguration(runtimeInfo))
+                .withCredentials(credentialsProvider())
+                .build();
+    }
+
+    public static AmazonECS wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
+        return AmazonECSClient.builder()
                 .withEndpointConfiguration(endpointConfiguration(runtimeInfo))
                 .withCredentials(credentialsProvider())
                 .build();
