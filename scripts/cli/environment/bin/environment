@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment <subcommand>"
-	exit 1
+  echo "Usage: environment <subcommand>"
+  exit 1
 fi
 
 SUBCOMMAND=$1
