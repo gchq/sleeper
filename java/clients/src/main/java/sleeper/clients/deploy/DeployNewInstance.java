@@ -23,7 +23,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkDeploy;
+import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -140,7 +140,7 @@ public class DeployNewInstance {
         InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .build().invoke(instanceType, CdkDeploy.deployNew());
+                .build().invoke(instanceType, CdkCommand.deployNew());
         LOGGER.info("Finished deployment of new instance");
     }
 

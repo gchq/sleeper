@@ -19,10 +19,6 @@ import java.util.stream.Stream;
 
 public class CdkDestroy implements CdkCommand {
 
-    public static CdkDestroy destroy() {
-        return new CdkDestroy();
-    }
-
     @Override
     public Stream<String> getCommand() {
         return Stream.of("destroy", "--force");

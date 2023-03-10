@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.cdk.CdkDeploy;
+import sleeper.clients.cdk.CdkCommand;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -353,7 +353,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invokeInferringType(any(), eq(CdkDeploy.deployPropertiesChange()));
+        }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
     }
 
     private void createTableInS3(String tableName) throws IOException {
@@ -371,14 +371,14 @@ public class AdminConfigStoreIT extends AdminClientITBase {
     }
 
     private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(any(), eq(CdkDeploy.deployPropertiesChange()));
+        verify(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
     }
 
     private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(instanceProperties, CdkDeploy.deployPropertiesChange());
+        verify(cdk).invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange());
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkDeploy.deployPropertiesChange()));
+        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
     }
 }

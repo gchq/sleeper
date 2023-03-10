@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkDestroy;
+import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
@@ -102,7 +102,7 @@ public class TearDownInstance {
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(scriptsDir.resolve("jars"))
                 .version(SleeperVersion.getVersion()).build()
-                .invokeInferringType(instanceProperties, CdkDestroy.destroy());
+                .invokeInferringType(instanceProperties, CdkCommand.destroy());
 
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));

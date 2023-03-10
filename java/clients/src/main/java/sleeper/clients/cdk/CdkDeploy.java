@@ -31,18 +31,6 @@ public class CdkDeploy implements CdkCommand {
         return new Builder();
     }
 
-    public static CdkDeploy deployPropertiesChange() {
-        return builder().ensureNewInstance(false).skipVersionCheck(false).build();
-    }
-
-    public static CdkDeploy deployExisting() {
-        return builder().ensureNewInstance(false).skipVersionCheck(true).build();
-    }
-
-    public static CdkDeploy deployNew() {
-        return builder().ensureNewInstance(true).skipVersionCheck(false).build();
-    }
-
     @Override
     public Stream<String> getCommand() {
         return Stream.of("deploy",

@@ -47,7 +47,7 @@ class InvokeCdkForInstanceTest {
         void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployPropertiesChange(), runner)))
+                    InvokeCdkForInstance.Type.STANDARD, CdkCommand.deployPropertiesChange(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -60,7 +60,7 @@ class InvokeCdkForInstanceTest {
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkDeploy.deployPropertiesChange(), runner)))
+                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "deploy",
@@ -73,7 +73,7 @@ class InvokeCdkForInstanceTest {
         void shouldSetEnsureNewInstanceFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployNew(), runner)))
+                    InvokeCdkForInstance.Type.STANDARD, CdkCommand.deployNew(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -87,7 +87,7 @@ class InvokeCdkForInstanceTest {
         void shouldSetSkipVersionCheckFlagWhenDeployingExistingInstance() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployExisting(), runner)))
+                    InvokeCdkForInstance.Type.STANDARD, CdkCommand.deployExisting(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -100,7 +100,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
-            CdkCommand cdkCommand = CdkDeploy.deployExisting();
+            CdkCommand cdkCommand = CdkCommand.deployExisting();
             RunCommand runner = command -> 1; // Anything but 0 is a failed exit code
 
             // When / Then
@@ -117,7 +117,7 @@ class InvokeCdkForInstanceTest {
         void shouldRunStandardCdkDestroySuccessfully() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.STANDARD, CdkDestroy.destroy(), runner)))
+                    InvokeCdkForInstance.Type.STANDARD, CdkCommand.destroy(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "destroy", "--force",
@@ -130,7 +130,7 @@ class InvokeCdkForInstanceTest {
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkDestroy.destroy(), runner)))
+                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.destroy(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "destroy", "--force",
@@ -142,7 +142,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
-            CdkCommand cdkCommand = CdkDestroy.destroy();
+            CdkCommand cdkCommand = CdkCommand.destroy();
             RunCommand runner = command -> 1; // Anything but 0 is a failed exit code
 
             // When / Then
@@ -161,7 +161,7 @@ class InvokeCdkForInstanceTest {
             InstanceProperties instanceProperties = createTestInstanceProperties();
 
             // When / Then
-            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkDeploy.deployExisting(), runner)))
+            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkCommand.deployExisting(), runner)))
                     .startsWith("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp");
         }
@@ -174,7 +174,7 @@ class InvokeCdkForInstanceTest {
                             "sleeper.systemtest.writers=123"));
 
             // When / Then
-            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkDeploy.deployExisting(), runner)))
+            assertThat(commandRunOn(runner -> cdk.invokeInferringType(instanceProperties, CdkCommand.deployExisting(), runner)))
                     .startsWith("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp");
         }

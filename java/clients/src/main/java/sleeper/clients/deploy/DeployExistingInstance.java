@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkDeploy;
+import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -99,7 +99,7 @@ public class DeployExistingInstance {
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)
-                .build().invokeInferringType(properties, CdkDeploy.deployExisting());
+                .build().invokeInferringType(properties, CdkCommand.deployExisting());
 
         // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
         // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.

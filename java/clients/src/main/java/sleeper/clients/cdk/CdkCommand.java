@@ -22,4 +22,20 @@ public interface CdkCommand {
     Stream<String> getCommand();
 
     Stream<String> getArguments();
+
+    static CdkDeploy deployPropertiesChange() {
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).build();
+    }
+
+    static CdkDeploy deployExisting() {
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).build();
+    }
+
+    static CdkDeploy deployNew() {
+        return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).build();
+    }
+
+    static CdkDestroy destroy() {
+        return new CdkDestroy();
+    }
 }
