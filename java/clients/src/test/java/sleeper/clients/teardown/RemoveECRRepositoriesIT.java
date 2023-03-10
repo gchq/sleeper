@@ -16,6 +16,7 @@
 
 package sleeper.clients.teardown;
 
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -27,6 +28,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.List;
 
+import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
@@ -97,10 +99,34 @@ class RemoveECRRepositoriesIT {
         verify(1, postRequestedFor(urlEqualTo("/")));
     }
 
+    @Test
+    void shouldNotThrowAnExceptionWhenRepositoryDoesNotExist(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(post("/").willReturn(repositoryNotFound("test-compaction-repo")));
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(ECR_COMPACTION_REPO, "test-compaction-repo");
+
+        // When
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of());
+
+        // Then
+        verify(1, deleteRequestedFor("test-compaction-repo"));
+        verify(1, postRequestedFor(urlEqualTo("/")));
+    }
+
     private RequestPatternBuilder deleteRequestedFor(String repositoryName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", matching("^AmazonEC2ContainerRegistry_V\\d+\\.DeleteRepository$"))
                 .withRequestBody(matchingJsonPath("$.repositoryName", equalTo(repositoryName))
                         .and(matchingJsonPath("$.force", equalTo("true"))));
+    }
+
+    private ResponseDefinitionBuilder repositoryNotFound(String repositoryName) {
+        return aResponse()
+                .withHeader(CONTENT_TYPE, "application/json")
+                .withHeader("x-amzn-ErrorType", "RepositoryNotFoundException")
+                .withBody("{\"message\":\"The repository with name '" + repositoryName + "' " +
+                        "does not exist in the registry with id '123'.\"}")
+                .withStatus(400);
     }
 }

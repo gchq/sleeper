@@ -18,6 +18,7 @@ package sleeper.clients.teardown;
 
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
+import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,9 +47,13 @@ public class RemoveECRRepositories {
         if (properties.isSet(property)) {
             String repositoryName = properties.get(property);
             LOGGER.info("Deleting repository {}", repositoryName);
-            ecr.deleteRepository(new DeleteRepositoryRequest()
-                    .withRepositoryName(repositoryName)
-                    .withForce(true));
+            try {
+                ecr.deleteRepository(new DeleteRepositoryRequest()
+                        .withRepositoryName(repositoryName)
+                        .withForce(true));
+            } catch (RepositoryNotFoundException e) {
+                LOGGER.info("Repository not found: {}", repositoryName);
+            }
         }
     }
 }
