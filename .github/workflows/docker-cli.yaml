@@ -41,14 +41,16 @@ jobs:
           docker buildx build --platform linux/amd64,linux/arm64 \
             --tag sleeper-dependencies:current \
             --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            .
       - name: Builder Docker build
         working-directory: ./scripts/cli/builder
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
             --tag $BUILDER_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            .
       - name: Environment Maven build
         run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
       - name: Environment Docker build
@@ -57,7 +59,8 @@ jobs:
           docker buildx build --platform linux/amd64,linux/arm64 \
             --tag $ENV_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            .
       - name: Deployment Docker build
         working-directory: ./scripts/cli/deployment
         run: |
@@ -65,6 +68,7 @@ jobs:
             --tag $DEPLOY_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            .
       - name: Log in to registry
         if: ${{ inputs.pushImages }}
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
