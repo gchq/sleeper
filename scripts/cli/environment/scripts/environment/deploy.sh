@@ -45,10 +45,11 @@ popd > /dev/null
 echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 
 # If an EC2 was created, save SSH details
-SSH_KEY_FILE="$ENVIRONMENT_ID-BuildEC2.pem"
+SSH_KEY_FILE="$CDK_DIR/$ENVIRONMENT_ID-BuildEC2.pem"
 if [ -f "$SSH_KEY_FILE" ]; then
 
-  mv "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
+  echo "Saving SSH key file"
+  mv -f "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
 
   # Wait for deployment, scan SSH to remember EC2 certificate
   "$THIS_DIR/scan-ssh.sh"
