@@ -23,4 +23,4 @@ fi
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.teardown.TearDownInstance "${SCRIPTS_DIR}" "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.teardown.TearDownInstance "${SCRIPTS_DIR}" "$@"
