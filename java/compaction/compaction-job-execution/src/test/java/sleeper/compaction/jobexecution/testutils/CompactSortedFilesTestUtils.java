@@ -85,7 +85,10 @@ public class CompactSortedFilesTestUtils {
 
     public static CompactSortedFiles createCompactSortedFiles(
             Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore, String taskId) {
-        return new CompactSortedFiles(new InstanceProperties(), new TableProperties(new InstanceProperties()), ObjectFactory.noUserJars(),
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
                 compactionJob, stateStore, jobStatusStore, taskId);
     }
 
@@ -109,5 +112,4 @@ public class CompactSortedFilesTestUtils {
             fail("StateStoreException generated: " + e.getMessage());
         }
     }
-
 }
