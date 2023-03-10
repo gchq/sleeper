@@ -28,8 +28,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -99,6 +100,7 @@ class RemoveECRRepositoriesIT {
     private RequestPatternBuilder deleteRequestedFor(String repositoryName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", matching("^AmazonEC2ContainerRegistry_V\\d+\\.DeleteRepository$"))
-                .withRequestBody(equalToJson("{\"repositoryName\":\"" + repositoryName + "\"}"));
+                .withRequestBody(matchingJsonPath("$.repositoryName", equalTo(repositoryName))
+                        .and(matchingJsonPath("$.force", equalTo("true"))));
     }
 }

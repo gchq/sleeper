@@ -47,7 +47,8 @@ public class RemoveECRRepositories {
             String repositoryName = properties.get(property);
             LOGGER.info("Deleting repository {}", repositoryName);
             ecr.deleteRepository(new DeleteRepositoryRequest()
-                    .withRepositoryName(repositoryName));
+                    .withRepositoryName(repositoryName)
+                    .withForce(true));
         }
     }
 }
