@@ -80,12 +80,13 @@ public class S3ResultsOutputTest {
         String queryResultsBucket = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
         instanceProperties.set(FILE_SYSTEM, outputDir + "/");
+        tableProperties.setSchema(schema);
     }
 
     @Test
     public void testDefaultConfig() throws Exception {
         // Given
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, schema, new HashMap<>());
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
         Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
@@ -104,7 +105,7 @@ public class S3ResultsOutputTest {
         Map<String, String> config = new HashMap<>();
         config.put(ROW_GROUP_SIZE, "1024");
         config.put(PAGE_SIZE, "1024");
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, schema, config);
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, config);
         Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
@@ -122,7 +123,7 @@ public class S3ResultsOutputTest {
         // Given
         instanceProperties.set(DEFAULT_RESULTS_ROW_GROUP_SIZE, "1024");
         instanceProperties.set(DEFAULT_RESULTS_PAGE_SIZE, "1020");
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, schema, new HashMap<>());
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
         Query query = new Query("table", "query-id", Collections.emptyList());
 
         // When
@@ -136,7 +137,7 @@ public class S3ResultsOutputTest {
     }
 
     private String getParquetFilesWithinDirPath(String dir) throws IOException {
-        int levelsDeep = 5; //the results are a few level deep
+        int levelsDeep = 5; // the results are a few levels deep
         try (Stream<Path> stream = Files.walk(Paths.get(dir), levelsDeep)) {
             List<String> files = stream
                     .filter(file -> !Files.isDirectory(file))

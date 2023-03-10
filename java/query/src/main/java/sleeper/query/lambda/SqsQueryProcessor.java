@@ -160,11 +160,11 @@ public class SqsQueryProcessor {
         try {
             ResultsOutputInfo outputInfo;
             if (null == query.getResultsPublisherConfig() || query.getResultsPublisherConfig().isEmpty()) {
-                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, schema, new HashMap<>()).publish(query, results);
+                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>()).publish(query, results);
             } else if (SQSResultsOutput.SQS.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
                 outputInfo = new SQSResultsOutput(instanceProperties, sqsClient, schema, query.getResultsPublisherConfig()).publish(query, results);
             } else if (S3ResultsOutput.S3.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, schema, query.getResultsPublisherConfig()).publish(query, results);
+                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, query.getResultsPublisherConfig()).publish(query, results);
             } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
                 outputInfo = new WebSocketResultsOutput(query.getResultsPublisherConfig()).publish(query, results);
             } else {
