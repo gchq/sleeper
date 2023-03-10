@@ -28,7 +28,7 @@ SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/subcommands && pwd)
 
 SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
 if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then
-  echo "Environment subcommand not found: $SUBCOMMAND"
+  echo "Subcommand not found: environment $SUBCOMMAND"
   exit 1
 fi
 
