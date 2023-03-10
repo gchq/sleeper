@@ -47,7 +47,7 @@ class InvokeCdkForInstanceTest {
         void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.updateProperties(), runner)))
+                    InvokeCdkForInstance.Type.STANDARD, CdkDeploy.deployPropertiesChange(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                             "deploy",
@@ -60,7 +60,7 @@ class InvokeCdkForInstanceTest {
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When / Then
             assertThat(commandRunOn(runner -> cdk.invoke(
-                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkDeploy.updateProperties(), runner)))
+                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkDeploy.deployPropertiesChange(), runner)))
                     .containsExactly("cdk",
                             "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
                             "deploy",

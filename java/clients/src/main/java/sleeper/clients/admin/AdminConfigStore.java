@@ -91,7 +91,7 @@ public class AdminConfigStore {
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             if (property.isRunCDKDeployWhenChanged()) {
                 LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
-                cdk.invokeInferringType(properties, CdkDeploy.updateProperties());
+                cdk.invokeInferringType(properties, CdkDeploy.deployPropertiesChange());
             } else {
                 LOGGER.info("Saving to AWS");
                 properties.saveToS3(s3);
@@ -123,7 +123,7 @@ public class AdminConfigStore {
                                     ? properties : table));
             if (property.isRunCDKDeployWhenChanged()) {
                 LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
-                cdk.invokeInferringType(instanceProperties, CdkDeploy.updateProperties());
+                cdk.invokeInferringType(instanceProperties, CdkDeploy.deployPropertiesChange());
             } else {
                 LOGGER.info("Saving to AWS");
                 properties.saveToS3(s3);

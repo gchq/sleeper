@@ -353,7 +353,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invokeInferringType(any(), eq(CdkDeploy.updateProperties()));
+        }).when(cdk).invokeInferringType(any(), eq(CdkDeploy.deployPropertiesChange()));
     }
 
     private void createTableInS3(String tableName) throws IOException {
@@ -371,14 +371,14 @@ public class AdminConfigStoreIT extends AdminClientITBase {
     }
 
     private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(any(), eq(CdkDeploy.updateProperties()));
+        verify(cdk).invokeInferringType(any(), eq(CdkDeploy.deployPropertiesChange()));
     }
 
     private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(instanceProperties, CdkDeploy.updateProperties());
+        verify(cdk).invokeInferringType(instanceProperties, CdkDeploy.deployPropertiesChange());
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkDeploy.updateProperties()));
+        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkDeploy.deployPropertiesChange()));
     }
 }

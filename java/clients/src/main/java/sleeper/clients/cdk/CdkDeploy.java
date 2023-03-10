@@ -31,7 +31,7 @@ public class CdkDeploy implements CdkCommand {
         return new Builder();
     }
 
-    public static CdkDeploy updateProperties() {
+    public static CdkDeploy deployPropertiesChange() {
         return builder().ensureNewInstance(false).skipVersionCheck(false).build();
     }
 
