@@ -194,9 +194,9 @@ public class ParquetRecordWriterFactoryTest {
         writeParquetFile(path1, tableProperties, record);
         try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path1, new Configuration()))) {
             List<ColumnChunkMetaData> columns = reader.getRowGroups().get(0).getColumns();
-            assertThat(columns.get(0).getEncodings().stream().map(e -> e.usesDictionary())).containsExactly(true, false);
-            assertThat(columns.get(1).getEncodings().stream().map(e -> e.usesDictionary())).containsExactly(true, false);
-            assertThat(columns.get(2).getEncodings().stream().map(e -> e.usesDictionary())).containsExactly(true, false);
+            assertThat(columns.get(0).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(1).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(2).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
         }
 
         // When/Then - Dictionary encoding off
