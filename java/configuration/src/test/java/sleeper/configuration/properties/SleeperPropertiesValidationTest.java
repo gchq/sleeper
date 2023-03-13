@@ -21,7 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
+
+import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,14 +36,18 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SleeperPropertiesValidationTest {
-    @DisplayName("Validate instance properties")
+    @DisplayName("Trigger validation")
     @Nested
-    class ValidateInstanceProperties {
+    class TriggerValidation {
         @Test
-        void shouldThrowExceptionOnLoadIfValidationFails() throws Exception {
+        void shouldThrowExceptionOnLoadIfInstancePropertiesValidationFails() throws Exception {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
@@ -51,9 +56,27 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             InstanceProperties properties = new InstanceProperties();
             assertThatThrownBy(() -> properties.loadFromString(serialised))
-                    .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
+                    .hasMessage("Property sleeper.s3.max-connections was invalid. It was \"-1\"");
         }
 
+        @Test
+        void shouldThrowExceptionOnLoadIfTablePropertiesValidationFails() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            tableProperties.set(COMPRESSION_CODEC, "madeUp");
+            String serialised = tableProperties.saveAsString();
+
+            // When / Then
+            TableProperties properties = new TableProperties(instanceProperties);
+            assertThatThrownBy(() -> properties.loadFromString(serialised))
+                    .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
+        }
+    }
+
+    @DisplayName("Validate instance properties")
+    @Nested
+    class ValidateInstanceProperties {
         @Test
         void shouldFailValidationIfRequiredPropertyIsMissing() {
             // Given - no account set
@@ -86,26 +109,24 @@ public class SleeperPropertiesValidationTest {
     @Nested
     class ValidateTableProperties {
         @Test
-        void shouldThrowExceptionIfCompressionCodecIsInvalidOnInit() {
+        void shouldFailValidationIfCompressionCodecIsInvalid() {
             // Given
-            String input = "" +
-                    "sleeper.table.name=myTable\n" +
-                    "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n" +
-                    "sleeper.table.compression.codec=madeUp";
-            TableProperties tableProperties = new TableProperties(new InstanceProperties());
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            tableProperties.set(COMPRESSION_CODEC, "madeUp");
             // When / Then
-            assertThatThrownBy(() -> tableProperties.loadFromString(input))
+            assertThatThrownBy(tableProperties::validate)
                     .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
         }
 
         @Test
-        void shouldThrowExceptionIfTableNameIsAbsentOnInit() {
+        void shouldFailValidationIfTableNameIsAbsent() {
             // Given
-            String input = "" +
-                    "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
-            TableProperties tableProperties = new TableProperties(new InstanceProperties());
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            tableProperties.unset(TABLE_NAME);
             // When / Then
-            assertThatThrownBy(() -> tableProperties.loadFromString(input))
+            assertThatThrownBy(tableProperties::validate)
                     .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
         }
 
@@ -114,8 +135,8 @@ public class SleeperPropertiesValidationTest {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-            tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 49);
+            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
+            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 49);
 
             // When/Then
             assertThatThrownBy(tableProperties::validate)
@@ -129,8 +150,8 @@ public class SleeperPropertiesValidationTest {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
-            tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 49);
+            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
+            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 49);
 
             // When/Then
             assertThatCode(tableProperties::validate).doesNotThrowAnyException();
