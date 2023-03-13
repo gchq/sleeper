@@ -31,7 +31,7 @@ public class PropertyDiff {
         this.newValue = newValue;
     }
 
-    public static Optional<PropertyDiff> compare(String propertyName, Map<String, String> beforeMap, Map<String, String> afterMap) {
+    public static Optional<PropertyDiff> forProperty(String propertyName, Map<String, String> beforeMap, Map<String, String> afterMap) {
         String oldValue = beforeMap.get(propertyName);
         String newValue = afterMap.get(propertyName);
         if (Objects.equals(oldValue, newValue)) {

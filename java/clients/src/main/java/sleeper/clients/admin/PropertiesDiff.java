@@ -24,24 +24,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PropertiesDiff {
-    private final List<PropertyDiff> propertyDiffs;
+    private final List<PropertyDiff> changes;
 
     public PropertiesDiff(Map<String, String> before, Map<String, String> after) {
-        this.propertyDiffs = calculateDiffs(before, after);
+        this.changes = calculateChanges(before, after);
     }
 
     public List<PropertyDiff> getChanges() {
-        return propertyDiffs;
+        return changes;
     }
 
-    private static List<PropertyDiff> calculateDiffs(
-            Map<String, String> before, Map<String, String> after) {
-        return getPropertyDiffs(before, after).collect(Collectors.toList());
-    }
-
-    private static Stream<PropertyDiff> getPropertyDiffs(Map<String, String> before, Map<String, String> after) {
+    private static List<PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {
         return getAllSetPropertyNames(before, after)
-                .flatMap(propertyName -> PropertyDiff.compare(propertyName, before, after).stream());
+                .flatMap(propertyName -> PropertyDiff.forProperty(propertyName, before, after).stream())
+                .collect(Collectors.toList());
     }
 
     private static Stream<String> getAllSetPropertyNames(Map<String, String> before, Map<String, String> after) {
