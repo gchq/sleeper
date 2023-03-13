@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.build.github.api.GitHubApi;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 
@@ -79,12 +80,18 @@ public class DeleteGHCRVersions {
     public void deleteVersions() {
         LOGGER.info("Deleting versions for {} in org {}, ignoring {} and keeping {}",
                 packageNames, organization, ignoreTags, keepMostRecent);
-        packageNames.forEach(packageName -> {
-            List<GitHubPackageVersionResponse> all = getAllVersions(packageName);
-            List<GitHubPackageVersionResponse> toDelete = getVersionsToDelete(all).collect(Collectors.toList());
-            LOGGER.info("Deleting {} of {} versions", toDelete.size(), all.size());
-            toDelete.forEach(version -> deleteVersion(packageName, version));
-        });
+        packageNames.stream()
+                .parallel().map(this::getVersionsToDelete)
+                .forEach(versions -> versions.stream().parallel().forEach(PackageVersion::delete));
+    }
+
+    private List<PackageVersion> getVersionsToDelete(String packageName) {
+        List<GitHubPackageVersionResponse> all = getAllVersions(packageName);
+        List<PackageVersion> toDelete = getVersionsToDelete(all)
+                .map(version -> new PackageVersion(packageName, version))
+                .collect(Collectors.toList());
+        LOGGER.info("Deleting {} of {} versions for package {}", toDelete.size(), all.size(), packageName);
+        return toDelete;
     }
 
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // GenericType is intended to be used as an anonymous class
@@ -105,13 +112,30 @@ public class DeleteGHCRVersions {
         return ignoreTags == null || version.getTags().stream().noneMatch(tag -> ignoreTags.matcher(tag).find());
     }
 
-    private void deleteVersion(String packageName, GitHubPackageVersionResponse version) {
-        WebTarget target = packagePath(packageName).path("versions").path(version.getId());
-        api.request(target).delete(Void.class);
-    }
-
     private WebTarget packagePath(String packageName) {
         return api.path("orgs").path(organization).path("packages").path("container").path(packageName);
+    }
+
+    private class PackageVersion {
+        final String packageName;
+        final GitHubPackageVersionResponse version;
+
+        PackageVersion(String packageName, GitHubPackageVersionResponse version) {
+            this.packageName = packageName;
+            this.version = version;
+        }
+
+        void delete() {
+            WebTarget target = packagePath(packageName).path("versions").path(version.getId());
+            try {
+                api.request(target).delete(Void.class);
+            } catch (NotFoundException e) {
+                LOGGER.warn("Version not found deleting package '{}' version {}", packageName, version.getId());
+            } catch (Exception e) {
+                LOGGER.error("Failed deleting package '{}' version {}", packageName, version.getId());
+                throw e;
+            }
+        }
     }
 
     public static final class Builder {

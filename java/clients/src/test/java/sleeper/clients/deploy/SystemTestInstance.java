@@ -26,6 +26,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.cdk.CdkCommand;
+import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -79,11 +81,10 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .build().upload();
         ClientUtils.clearDirectory(generatedDir);
         SaveLocalProperties.saveToDirectory(generatedDir, instanceProperties, Stream.of(singleKeyTableProperties));
-        CdkDeployInstance.builder()
+        InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(instanceProperties.get(VERSION))
-                .ensureNewInstance(false)
-                .build().deploy(CdkDeployInstance.Type.STANDARD);
+                .build().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommand.deployExisting());
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceProperties.get(ID));
         singleKeyTableProperties.loadFromS3(s3Client, singleKeyTableProperties.get(TABLE_NAME));
     }

@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -37,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.util.BucketUtils.doesBucketExist;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
@@ -61,16 +61,15 @@ public class SyncJars {
     public boolean sync() throws IOException {
         // Note that LocalStack doesn't fail bucket creation if it already exists, but the AWS API does.
         boolean changed = false;
-        if (!doesBucketExist()) {
+        if (!doesBucketExist(s3, bucketName)) {
+            changed = true;
+
             LOGGER.info("Creating jars bucket");
             s3.createBucket(builder -> builder
                     .bucket(bucketName)
                     .acl(BucketCannedACL.PRIVATE)
                     .createBucketConfiguration(configBuilder -> configBuilder
                             .locationConstraint(region)));
-            s3.putBucketVersioning(builder -> builder
-                    .bucket(bucketName)
-                    .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
             s3.putPublicAccessBlock(builder -> builder
                     .bucket(bucketName)
                     .publicAccessBlockConfiguration(configBuilder -> configBuilder
@@ -78,7 +77,15 @@ public class SyncJars {
                             .ignorePublicAcls(true)
                             .blockPublicPolicy(true)
                             .restrictPublicBuckets(true)));
-            changed = true;
+
+            // We enable versioning so that the CDK is able to update the functions when the code changes in the bucket.
+            // See the following:
+            // https://www.define.run/posts/cdk-not-updating-lambda/
+            // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
+            // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
+            s3.putBucketVersioning(builder -> builder
+                    .bucket(bucketName)
+                    .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         }
 
         List<Path> jars = listJarsInDirectory(jarsDirectory);
@@ -113,17 +120,6 @@ public class SyncJars {
             changed = true;
         }
         return changed;
-    }
-
-    private boolean doesBucketExist() {
-        try {
-            s3.headBucket(builder -> builder
-                    .bucket(bucketName)
-                    .build());
-            return true;
-        } catch (NoSuchBucketException e) {
-            return false;
-        }
     }
 
     private static List<Path> listJarsInDirectory(Path directory) throws IOException {
