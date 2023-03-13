@@ -35,7 +35,7 @@ public final class JdkImmutableListRegistrator implements KryoRegistrator {
         kryo.register(List.of(1, 2, 3, 4).iterator().getClass(), serializer);
     }
 
-    public static class ImmutableListSerializer extends Serializer<List<Object>> {
+    private static class ImmutableListSerializer extends Serializer<List<Object>> {
         @Override
         public void write(Kryo kryo, Output output, List<Object> object) {
             output.writeInt(object.size(), true);
