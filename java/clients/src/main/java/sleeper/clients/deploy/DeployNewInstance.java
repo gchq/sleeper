@@ -23,6 +23,8 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.cdk.CdkCommand;
+import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -50,7 +52,7 @@ public class DeployNewInstance {
     private final String tableName;
     private final Path instancePropertiesTemplate;
     private final Consumer<Properties> extraInstanceProperties;
-    private final CdkDeployInstance.Type instanceType;
+    private final InvokeCdkForInstance.Type instanceType;
 
     private DeployNewInstance(Builder builder) {
         sts = builder.sts;
@@ -82,7 +84,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
-                .instanceType(CdkDeployInstance.Type.STANDARD)
+                .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
 
@@ -135,11 +137,10 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        CdkDeployInstance.builder()
+        InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .ensureNewInstance(true)
-                .build().deploy(instanceType);
+                .build().invoke(instanceType, CdkCommand.deployNew());
         LOGGER.info("Finished deployment of new instance");
     }
 
@@ -161,7 +162,7 @@ public class DeployNewInstance {
         private Path instancePropertiesTemplate;
         private Consumer<Properties> extraInstanceProperties = properties -> {
         };
-        private CdkDeployInstance.Type instanceType;
+        private InvokeCdkForInstance.Type instanceType;
 
         private Builder() {
         }
@@ -216,7 +217,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instanceType(CdkDeployInstance.Type instanceType) {
+        public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
             this.instanceType = instanceType;
             return this;
         }
