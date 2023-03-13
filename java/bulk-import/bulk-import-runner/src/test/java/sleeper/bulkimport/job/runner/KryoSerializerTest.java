@@ -19,37 +19,45 @@ package sleeper.bulkimport.job.runner;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.objenesis.strategy.StdInstantiatorStrategy;
+
+import sleeper.bulkimport.job.runner.dataframelocalsort.JdkImmutableListRegistrator;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class KryoSerializerTest {
     @TempDir
     private Path tempDir;
 
     @Test
-    @Disabled("TODO")
-    void shouldSerializeUnmodifiableList() throws IOException {
+    void shouldSerializeAndDeserializePartition() throws IOException {
+        // Given
         Kryo kryo = new Kryo();
-        kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
-        kryo.register(DummySerializableClass.class);
+        kryo.setRegistrationRequired(false);
+        kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+        new JdkImmutableListRegistrator().registerClasses(kryo);
+        kryo.register(Partition.class);
+        Partition partition = new PartitionFactory(schemaWithKey("key"))
+                .partition("test-partition", Long.MIN_VALUE, null);
 
-        DummySerializableClass object = new DummySerializableClass("abc");
-
+        // When
         Output output = new Output(Files.newOutputStream(tempDir.resolve("test-file")));
-        kryo.writeObject(output, object);
+        kryo.writeObject(output, partition);
         output.close();
 
+        // Then
         Input input = new Input(Files.newInputStream(tempDir.resolve("test-file")));
-        assertThatCode(() -> kryo.readObject(input, DummySerializableClass.class))
-                .doesNotThrowAnyException();
+        Partition result = kryo.readObject(input, Partition.class);
+        assertThat(result).isEqualTo(partition);
         input.close();
     }
 }
