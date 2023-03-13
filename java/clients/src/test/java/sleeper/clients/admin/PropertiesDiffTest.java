@@ -188,6 +188,6 @@ public class PropertiesDiffTest {
     }
 
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
-        return new PropertiesDiff<>(before, after).getChanges();
+        return new PropertiesDiff(before.toMap(), after.toMap()).getChanges();
     }
 }

@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
@@ -77,11 +78,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
 
     protected boolean isKnownProperty(String propertyName) {
         return getIndex().getByName(propertyName).isPresent();
-    }
-
-    public Stream<T> getKnownSetProperties() {
-        return properties.stringPropertyNames().stream()
-                .flatMap(propertyName -> getIndex().getByName(propertyName).stream());
     }
 
     public Stream<Map.Entry<String, String>> getUnknownPropertyValues() {
@@ -194,6 +190,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) throws IOException {
         String propertiesString = s3Client.getObjectAsString(bucket, key);
         loadFromString(propertiesString);
+    }
+
+    public Map<String, String> toMap() {
+        return properties.stringPropertyNames().stream()
+                .collect(Collectors.toUnmodifiableMap(propertyName -> propertyName, properties::getProperty));
     }
 
     @Override

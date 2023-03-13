@@ -16,9 +16,6 @@
 
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +23,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class PropertiesDiff<T extends SleeperProperty> {
+public class PropertiesDiff {
     private final List<PropertyDiff> propertyDiffs;
 
-    public PropertiesDiff(SleeperProperties<T> before, SleeperProperties<T> after) {
+    public PropertiesDiff(Map<String, String> before, Map<String, String> after) {
         this.propertyDiffs = calculateDiffs(before, after);
     }
 
@@ -37,31 +34,9 @@ public class PropertiesDiff<T extends SleeperProperty> {
         return propertyDiffs;
     }
 
-    private static <T extends SleeperProperty> List<PropertyDiff> calculateDiffs(
-            SleeperProperties<T> before, SleeperProperties<T> after) {
-        return Stream.concat(
-                        calculateKnownPropertyDiffs(before, after),
-                        calculateUnknownPropertyDiffs(before, after))
-                .collect(Collectors.toList());
-    }
-
-    private static <T extends SleeperProperty> Stream<PropertyDiff> calculateKnownPropertyDiffs(
-            SleeperProperties<T> before, SleeperProperties<T> after) {
-        Set<T> setProperties = new HashSet<>();
-        before.getKnownSetProperties().forEach(setProperties::add);
-        after.getKnownSetProperties().forEach(setProperties::add);
-        return setProperties.stream()
-                .flatMap(property -> PropertyDiff.compare(property, before, after).stream());
-    }
-
-    private static <T extends SleeperProperty> Stream<PropertyDiff> calculateUnknownPropertyDiffs(
-            SleeperProperties<T> before, SleeperProperties<T> after) {
-        Map<String, String> beforeMap = before.getUnknownPropertyValues()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<String, String> afterMap = after.getUnknownPropertyValues()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return getPropertyDiffs(beforeMap, afterMap);
+    private static List<PropertyDiff> calculateDiffs(
+            Map<String, String> before, Map<String, String> after) {
+        return getPropertyDiffs(before, after).collect(Collectors.toList());
     }
 
     private static Stream<PropertyDiff> getPropertyDiffs(Map<String, String> before, Map<String, String> after) {

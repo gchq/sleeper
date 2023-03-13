@@ -15,19 +15,17 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.SleeperProperty;
+public class UpdatePropertiesRequest {
 
-public class UpdatePropertiesRequest<T extends SleeperProperty> {
-
-    private final PropertiesDiff<T> diff;
+    private final PropertiesDiff diff;
     private final boolean valid;
 
-    public UpdatePropertiesRequest(PropertiesDiff<T> diff, boolean valid) {
+    public UpdatePropertiesRequest(PropertiesDiff diff, boolean valid) {
         this.diff = diff;
         this.valid = valid;
     }
 
-    public PropertiesDiff<T> getDiff() {
+    public PropertiesDiff getDiff() {
         return diff;
     }
 

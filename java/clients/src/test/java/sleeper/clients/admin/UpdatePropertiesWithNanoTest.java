@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
@@ -117,18 +116,18 @@ class UpdatePropertiesWithNanoTest {
         return foundProperties.get();
     }
 
-    private PropertiesDiff<InstanceProperty> updateInstancePropertiesGetDiff(InstanceProperties before, InstanceProperties after) throws Exception {
+    private PropertiesDiff updateInstancePropertiesGetDiff(InstanceProperties before, InstanceProperties after) throws Exception {
         return updateInstanceProperties(before, after).getDiff();
     }
 
-    private UpdatePropertiesRequest<InstanceProperty> updateInstanceProperties(InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
+    private UpdatePropertiesRequest updateInstanceProperties(InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
         return updateInstanceProperties(before, command -> {
             after.save(expectedInstancePropertiesFile);
             return 0;
         });
     }
 
-    private UpdatePropertiesRequest<InstanceProperty> updateInstanceProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
+    private UpdatePropertiesRequest updateInstanceProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
         return new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
     }
 }

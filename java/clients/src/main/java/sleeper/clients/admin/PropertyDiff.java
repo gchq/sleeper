@@ -16,7 +16,6 @@
 
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Map;
@@ -36,16 +35,6 @@ public class PropertyDiff {
         this.newValue = newValue;
     }
 
-    public static <T extends SleeperProperty> Optional<PropertyDiff> compare(T property, SleeperProperties<T> before, SleeperProperties<T> after) {
-        String oldValue = getIfSet(property, before);
-        String newValue = getIfSet(property, after);
-        if (Objects.equals(oldValue, newValue)) {
-            return Optional.empty();
-        } else {
-            return Optional.of(new PropertyDiff(property.getPropertyName(), oldValue, newValue));
-        }
-    }
-
     public static Optional<PropertyDiff> compare(String propertyName, Map<String, String> beforeMap, Map<String, String> afterMap) {
         String oldValue = beforeMap.get(propertyName);
         String newValue = afterMap.get(propertyName);
@@ -53,14 +42,6 @@ public class PropertyDiff {
             return Optional.empty();
         } else {
             return Optional.of(new PropertyDiff(propertyName, oldValue, newValue));
-        }
-    }
-
-    private static <T extends SleeperProperty> String getIfSet(T property, SleeperProperties<T> properties) {
-        if (properties.isSet(property)) {
-            return properties.get(property);
-        } else {
-            return null;
         }
     }
 
