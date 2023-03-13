@@ -30,6 +30,7 @@ public class ExpectedAdminConsoleValues {
             "[2] Print Sleeper table names\n" +
             "[3] Print Sleeper table property report\n" +
             "[4] Update an instance or table property\n" +
+            "[5] Run partition status report\n" +
             "\n" +
             "Input: \n";
 
@@ -75,6 +76,7 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_NAMES_REPORT_OPTION = "2";
     public static final String TABLE_PROPERTY_REPORT_OPTION = "3";
     public static final String UPDATE_PROPERTY_OPTION = "4";
+    public static final String PARTITION_STATUS_REPORT_OPTION = "5";
 
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 

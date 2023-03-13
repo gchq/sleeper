@@ -19,6 +19,7 @@ import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStore;
 
 import java.util.Arrays;
 
@@ -48,5 +49,12 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
         setInstanceProperties(instanceProperties);
         when(store.listTables(instanceProperties.get(ID))).thenReturn(Arrays.asList(tableNames));
+    }
+
+    protected void setStateStore(InstanceProperties properties, TableProperties tableProperties, StateStore stateStore) {
+        when(store.loadTableProperties(properties.get(ID), tableProperties.get(TABLE_NAME)))
+                .thenReturn(tableProperties);
+        when(store.loadStateStore(properties.get(ID), tableProperties.get(TABLE_NAME)))
+                .thenReturn(stateStore);
     }
 }

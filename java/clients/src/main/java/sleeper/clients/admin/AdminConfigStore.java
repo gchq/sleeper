@@ -15,8 +15,10 @@
  */
 package sleeper.clients.admin;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,8 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
 import sleeper.util.ClientUtils;
 
@@ -42,11 +46,13 @@ public class AdminConfigStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(AdminConfigStore.class);
 
     private final AmazonS3 s3;
+    private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
     private final Path generatedDirectory;
 
-    public AdminConfigStore(AmazonS3 s3, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminConfigStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
         this.s3 = s3;
+        this.dynamoDB = dynamoDB;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
     }
@@ -140,6 +146,12 @@ public class AdminConfigStore {
             }
             throw wrapped;
         }
+    }
+
+    public StateStore loadStateStore(String instanceId, String tableName) {
+        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
+        return stateStoreProvider.getStateStore(tableName, new TablePropertiesProvider(s3, instanceProperties));
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {
