@@ -85,10 +85,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     public void validate() {
-        TableProperty.getAll().stream().filter(prop -> !prop.validationPredicate().test(get(prop)))
-                .forEach(prop -> {
-                    throw new SleeperPropertyInvalidException(prop, get(prop));
-                });
+        TableProperty.getAll().forEach(property -> property.validate(get(property)));
 
         // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
         // Also see the DynamoDB documentation:
