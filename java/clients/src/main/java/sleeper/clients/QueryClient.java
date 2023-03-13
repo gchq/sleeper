@@ -69,7 +69,7 @@ public class QueryClient extends QueryCommandLineClient {
     @Override
     protected void init(TableProperties tableProperties) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(getInstanceProperties());
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(getInstanceProperties(), tableProperties);
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
 
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
