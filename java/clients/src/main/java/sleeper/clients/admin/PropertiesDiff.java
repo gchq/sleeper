@@ -56,16 +56,23 @@ public class PropertiesDiff<T extends SleeperProperty> {
 
     private static <T extends SleeperProperty> Stream<PropertyDiff> calculateUnknownPropertyDiffs(
             SleeperProperties<T> before, SleeperProperties<T> after) {
-        Set<String> unknownProperties = new HashSet<>();
         Map<String, String> beforeMap = before.getUnknownPropertyValues()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, String> afterMap = after.getUnknownPropertyValues()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        unknownProperties.addAll(beforeMap.keySet());
-        unknownProperties.addAll(afterMap.keySet());
 
+        return getPropertyDiffs(beforeMap, afterMap);
+    }
 
-        return unknownProperties.stream()
-                .flatMap(propertyName -> PropertyDiff.compare(propertyName, beforeMap, afterMap).stream());
+    private static Stream<PropertyDiff> getPropertyDiffs(Map<String, String> before, Map<String, String> after) {
+        return getAllSetPropertyNames(before, after)
+                .flatMap(propertyName -> PropertyDiff.compare(propertyName, before, after).stream());
+    }
+
+    private static Stream<String> getAllSetPropertyNames(Map<String, String> before, Map<String, String> after) {
+        Set<String> propertyNames = new HashSet<>();
+        propertyNames.addAll(before.keySet());
+        propertyNames.addAll(after.keySet());
+        return propertyNames.stream();
     }
 }

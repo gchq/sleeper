@@ -22,15 +22,15 @@ public class PropertiesDiffTestHelper {
     }
 
     public static PropertyDiff valueChanged(SleeperProperty property, String before, String after) {
-        return new PropertyDiff(property, before, after);
+        return valueChanged(property.getPropertyName(), before, after);
     }
 
     public static PropertyDiff valueDeleted(SleeperProperty property, String value) {
-        return new PropertyDiff(property, value, null);
+        return valueDeleted(property.getPropertyName(), value);
     }
 
     public static PropertyDiff newValue(SleeperProperty property, String value) {
-        return new PropertyDiff(property, null, value);
+        return newValue(property.getPropertyName(), value);
     }
 
     public static PropertyDiff valueChanged(String property, String before, String after) {

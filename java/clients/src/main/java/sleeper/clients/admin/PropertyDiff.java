@@ -29,13 +29,20 @@ public class PropertyDiff {
     private final String oldValue;
     private final String newValue;
 
+    public PropertyDiff(String propertyName, String oldValue, String newValue) {
+        this.property = null;
+        this.propertyName = Objects.requireNonNull(propertyName, "propertyName must not be null");
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+    }
+
     public static <T extends SleeperProperty> Optional<PropertyDiff> compare(T property, SleeperProperties<T> before, SleeperProperties<T> after) {
         String oldValue = getIfSet(property, before);
         String newValue = getIfSet(property, after);
         if (Objects.equals(oldValue, newValue)) {
             return Optional.empty();
         } else {
-            return Optional.of(new PropertyDiff(property, oldValue, newValue));
+            return Optional.of(new PropertyDiff(property.getPropertyName(), oldValue, newValue));
         }
     }
 
@@ -55,21 +62,6 @@ public class PropertyDiff {
         } else {
             return null;
         }
-    }
-
-    public PropertyDiff(String propertyName, String oldValue, String newValue) {
-        this.property = null;
-        this.propertyName = Objects.requireNonNull(propertyName, "propertyName must not be null");
-        this.oldValue = oldValue;
-        this.newValue = newValue;
-    }
-
-
-    public PropertyDiff(SleeperProperty property, String oldValue, String newValue) {
-        this.property = Objects.requireNonNull(property, "property must not be null");
-        this.propertyName = property.getPropertyName();
-        this.oldValue = oldValue;
-        this.newValue = newValue;
     }
 
     @Override
