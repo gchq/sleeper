@@ -16,15 +16,15 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment <command>"
-	exit 1
+  echo "Usage: environment <subcommand>"
+  exit 1
 fi
 
 SUBCOMMAND=$1
 shift
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/environment && pwd)
+SUBCOMMANDS_DIR=$(cd "$THIS_DIR" && cd ../scripts/subcommands && pwd)
 
 SUBCOMMAND_SCRIPT="$SUBCOMMANDS_DIR/$SUBCOMMAND.sh"
 if [ ! -f "$SUBCOMMAND_SCRIPT" ] || [ "$(dirname "$SUBCOMMAND_SCRIPT")" != "$SUBCOMMANDS_DIR" ]; then

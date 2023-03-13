@@ -48,12 +48,11 @@ public class PauseSystem {
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
         amazonS3.shutdown();
-        pause(instanceProperties);
+        AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
+        pause(cwClient, instanceProperties);
     }
 
-    public static void pause(InstanceProperties instanceProperties) {
-
-        AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
+    public static void pause(AmazonCloudWatchEvents cwClient, InstanceProperties instanceProperties) {
 
         // Rule that creates compaction jobs
         disableRule(cwClient, instanceProperties, COMPACTION_JOB_CREATION_CLOUDWATCH_RULE);

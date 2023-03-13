@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy;
+package sleeper.clients.cdk;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.util.ClientUtils;
@@ -27,48 +27,40 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class CdkDeployInstance {
+public class InvokeCdkForInstance {
 
     private final Path instancePropertiesFile;
     private final Path jarsDirectory;
     private final String version;
-    private final boolean ensureNewInstance;
-    private final boolean skipVersionCheck;
 
     public enum Type {
-        STANDARD("sleeper.cdk.SleeperCdkApp", CdkDeployInstance::cdkJarFile),
-        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", CdkDeployInstance::systemTestJarFile);
+        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
+        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile);
         private final String cdkAppClassName;
-        private final Function<CdkDeployInstance, Path> getCdkJarFile;
+        private final Function<InvokeCdkForInstance, Path> getCdkJarFile;
 
-        Type(String cdkAppClassName, Function<CdkDeployInstance, Path> getCdkJarFile) {
+        Type(String cdkAppClassName, Function<InvokeCdkForInstance, Path> getCdkJarFile) {
             this.cdkAppClassName = cdkAppClassName;
             this.getCdkJarFile = getCdkJarFile;
         }
     }
 
-    private CdkDeployInstance(Builder builder) {
+    private InvokeCdkForInstance(Builder builder) {
         instancePropertiesFile = requireNonNull(builder.instancePropertiesFile, "instancePropertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
-        ensureNewInstance = builder.ensureNewInstance;
-        skipVersionCheck = builder.skipVersionCheck;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void deploy(Type type) throws IOException, InterruptedException {
-        deploy(type, ClientUtils::runCommand);
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        invoke(inferType(instanceProperties), cdkCommand);
     }
 
-    public void deployInferringType(InstanceProperties instanceProperties) throws IOException, InterruptedException {
-        deployInferringType(instanceProperties, ClientUtils::runCommand);
-    }
-
-    public void deployInferringType(InstanceProperties instanceProperties, RunCommand runCommand) throws IOException, InterruptedException {
-        deploy(inferType(instanceProperties), runCommand);
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
+        invoke(inferType(instanceProperties), cdkCommand, runCommand);
     }
 
     private static Type inferType(InstanceProperties instanceProperties) {
@@ -79,27 +71,25 @@ public class CdkDeployInstance {
         }
     }
 
-    public void deploy(Type instanceType, RunCommand runCommand) throws IOException, InterruptedException {
+    public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        invoke(instanceType, cdkCommand, ClientUtils::runCommand);
+    }
+
+    public void invoke(Type instanceType, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
-                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName),
-                "deploy",
-                "--require-approval", "never",
-                "-c", String.format("propertiesfile=%s", instancePropertiesFile)
+                        instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)
         ));
-        if (ensureNewInstance) {
-            command.addAll(List.of("-c", "newinstance=true"));
-        }
-        if (skipVersionCheck) {
-            command.addAll(List.of("-c", "skipVersionCheck=true"));
-        }
+        cdkCommand.getCommand().forEach(command::add);
+        command.addAll(List.of("-c", String.format("propertiesfile=%s", instancePropertiesFile)));
+        cdkCommand.getArguments().forEach(command::add);
         command.add("*");
 
         int exitCode = runCommand.run(command.toArray(new String[0]));
 
         if (exitCode != 0) {
-            throw new IOException("Failed in cdk deploy");
+            throw new IOException("Failed invoking CDK");
         }
     }
 
@@ -115,8 +105,6 @@ public class CdkDeployInstance {
         private Path instancePropertiesFile;
         private Path jarsDirectory;
         private String version;
-        private boolean ensureNewInstance;
-        private boolean skipVersionCheck;
 
         private Builder() {
         }
@@ -136,18 +124,8 @@ public class CdkDeployInstance {
             return this;
         }
 
-        public Builder ensureNewInstance(boolean ensureNewInstance) {
-            this.ensureNewInstance = ensureNewInstance;
-            return this;
-        }
-
-        public Builder skipVersionCheck(boolean skipVersionCheck) {
-            this.skipVersionCheck = skipVersionCheck;
-            return this;
-        }
-
-        public CdkDeployInstance build() {
-            return new CdkDeployInstance(this);
+        public InvokeCdkForInstance build() {
+            return new InvokeCdkForInstance(this);
         }
     }
 }
