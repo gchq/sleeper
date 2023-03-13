@@ -20,6 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
@@ -29,9 +32,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
+import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 class UpdatePropertiesWithNanoTest {
@@ -75,7 +80,7 @@ class UpdatePropertiesWithNanoTest {
         after.set(INGEST_SOURCE_BUCKET, "bucket-after");
 
         // When / Then
-        assertThat(updateInstancePropertiesGetDiff(before, after))
+        assertThat(updateProperties(before, after).getDiff())
                 .extracting(PropertiesDiff::getChanges).asList()
                 .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
     }
@@ -88,7 +93,7 @@ class UpdatePropertiesWithNanoTest {
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
         // When / Then
-        assertThat(updateInstanceProperties(before, after).isValid()).isFalse();
+        assertThat(updateProperties(before, after).isValid()).isFalse();
     }
 
     @Test
@@ -99,35 +104,47 @@ class UpdatePropertiesWithNanoTest {
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "12");
 
         // When / Then
-        assertThat(updateInstanceProperties(before, after).isValid()).isTrue();
+        assertThat(updateProperties(before, after).isValid()).isTrue();
+    }
+
+    @Test
+    void shouldUpdateTableProperties() throws Exception {
+        // Given
+        TableProperties before = generateTestTableProperties();
+        before.set(ROW_GROUP_SIZE, "123");
+        TableProperties after = generateTestTableProperties();
+        after.set(ROW_GROUP_SIZE, "456");
+
+        // When / Then
+        assertThat(updateProperties(before, after).getDiff())
+                .extracting(PropertiesDiff::getChanges).asList()
+                .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
     }
 
     private String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
         return commandRunOn(runCommand ->
-                updateInstanceProperties(properties, runCommand));
+                updateProperties(properties, runCommand));
     }
 
     private InstanceProperties updateInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
         AtomicReference<InstanceProperties> foundProperties = new AtomicReference<>();
-        updateInstanceProperties(properties, command -> {
+        updateProperties(properties, command -> {
             foundProperties.set(new InstanceProperties(loadProperties(expectedInstancePropertiesFile)));
             return 0;
         });
         return foundProperties.get();
     }
 
-    private PropertiesDiff updateInstancePropertiesGetDiff(InstanceProperties before, InstanceProperties after) throws Exception {
-        return updateInstanceProperties(before, after).getDiff();
-    }
-
-    private UpdatePropertiesRequest updateInstanceProperties(InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
-        return updateInstanceProperties(before, command -> {
+    private <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
+            SleeperProperties<T> before, SleeperProperties<T> after) throws IOException, InterruptedException {
+        return updateProperties(before, command -> {
             after.save(expectedInstancePropertiesFile);
             return 0;
         });
     }
 
-    private UpdatePropertiesRequest updateInstanceProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
+    private <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
+            SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
         return new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
     }
 }

@@ -16,6 +16,8 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
@@ -32,7 +34,7 @@ public class UpdatePropertiesWithNano {
         this.tempDirectory = tempDirectory;
     }
 
-    public UpdatePropertiesRequest updateProperties(InstanceProperties properties, RunCommand runCommand) throws IOException, InterruptedException {
+    public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/instance.properties");
         properties.save(propertiesFile);
