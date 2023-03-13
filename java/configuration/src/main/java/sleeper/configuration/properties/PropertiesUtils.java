@@ -25,7 +25,9 @@ import java.io.StringReader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class PropertiesUtils {
 
@@ -54,5 +56,12 @@ public class PropertiesUtils {
                 writer, new DisabledListDelimiterHandler());
         propertiesWriter.setGlobalSeparator("=");
         return propertiesWriter;
+    }
+
+    public static Map<String, String> toMap(Properties properties) {
+        return properties.stringPropertyNames().stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        propertyName -> propertyName,
+                        properties::getProperty));
     }
 }

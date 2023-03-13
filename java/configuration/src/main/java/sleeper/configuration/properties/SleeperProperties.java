@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
@@ -66,15 +65,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     public abstract void validate();
 
     protected abstract SleeperPropertyIndex<T> getIndex();
-
-    public boolean isValid() {
-        try {
-            validate();
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
 
     protected boolean isKnownProperty(String propertyName) {
         return getIndex().getByName(propertyName).isPresent();
@@ -193,8 +183,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public Map<String, String> toMap() {
-        return properties.stringPropertyNames().stream()
-                .collect(Collectors.toUnmodifiableMap(propertyName -> propertyName, properties::getProperty));
+        return PropertiesUtils.toMap(properties);
     }
 
     @Override

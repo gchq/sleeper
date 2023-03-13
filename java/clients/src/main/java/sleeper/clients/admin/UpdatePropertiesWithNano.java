@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.util.RunCommand;
@@ -23,8 +22,10 @@ import sleeper.util.RunCommand;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.PropertiesUtils.toMap;
 
 public class UpdatePropertiesWithNano {
 
@@ -36,12 +37,12 @@ public class UpdatePropertiesWithNano {
 
     public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
-        Path propertiesFile = tempDirectory.resolve("sleeper/admin/instance.properties");
+        Path propertiesFile = tempDirectory.resolve("sleeper/admin/temp.properties");
         properties.save(propertiesFile);
         runCommand.run("nano", propertiesFile.toString());
-        InstanceProperties updatedProperties = new InstanceProperties(loadProperties(propertiesFile));
+        Properties updatedProperties = loadProperties(propertiesFile);
         return new UpdatePropertiesRequest(
-                new PropertiesDiff(properties.toMap(), updatedProperties.toMap()),
-                updatedProperties.isValid());
+                new PropertiesDiff(properties.toMap(), toMap(updatedProperties)),
+                updatedProperties);
     }
 }

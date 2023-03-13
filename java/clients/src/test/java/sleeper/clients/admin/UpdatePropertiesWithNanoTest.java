@@ -27,6 +27,7 @@ import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,7 @@ class UpdatePropertiesWithNanoTest {
 
     @BeforeEach
     void setUp() {
-        expectedInstancePropertiesFile = tempDir.resolve("sleeper/admin/instance.properties");
+        expectedInstancePropertiesFile = tempDir.resolve("sleeper/admin/temp.properties");
     }
 
     @Test
@@ -86,25 +87,17 @@ class UpdatePropertiesWithNanoTest {
     }
 
     @Test
-    void shouldDetectWhenPropertiesAreInvalidAfterChange() throws Exception {
+    void shouldRetrievePropertiesAfterChange() throws Exception {
         // Given
         InstanceProperties before = generateTestInstanceProperties();
         InstanceProperties after = generateTestInstanceProperties();
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
-        // When / Then
-        assertThat(updateProperties(before, after).isValid()).isFalse();
-    }
+        // When
+        Properties properties = updateProperties(before, after).getUpdatedProperties();
 
-    @Test
-    void shouldDetectWhenPropertiesAreValidAfterChange() throws Exception {
-        // Given
-        InstanceProperties before = generateTestInstanceProperties();
-        InstanceProperties after = generateTestInstanceProperties();
-        after.set(MAXIMUM_CONNECTIONS_TO_S3, "12");
-
-        // When / Then
-        assertThat(updateProperties(before, after).isValid()).isTrue();
+        // Then
+        assertThat(new InstanceProperties(properties)).isEqualTo(after);
     }
 
     @Test

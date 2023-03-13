@@ -15,21 +15,23 @@
  */
 package sleeper.clients.admin;
 
+import java.util.Properties;
+
 public class UpdatePropertiesRequest {
 
     private final PropertiesDiff diff;
-    private final boolean valid;
+    private final Properties updatedProperties;
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, boolean valid) {
+    public UpdatePropertiesRequest(PropertiesDiff diff, Properties updatedProperties) {
         this.diff = diff;
-        this.valid = valid;
+        this.updatedProperties = updatedProperties;
     }
 
     public PropertiesDiff getDiff() {
         return diff;
     }
 
-    public boolean isValid() {
-        return valid;
+    public Properties getUpdatedProperties() {
+        return updatedProperties;
     }
 }
