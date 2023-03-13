@@ -33,8 +33,6 @@ jobs:
             "${{ github.ref }}"
       - name: Maven build
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
-      - name: Create Docker builder
-        run: docker buildx create --name sleeper --use
       - name: Dependencies Docker build
         working-directory: ./scripts/cli/dependencies
         run: |
