@@ -16,7 +16,7 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
+	echo "Usage: environment destroy <uniqueId> <optional_cdk_parameters>"
 	exit 1
 fi
 
@@ -25,32 +25,24 @@ shift
 
 if [ "$#" -lt 2 ]; then
 	CDK_PARAMS=("--all")
+  DELETE_ENVIRONMENT_DIR=true
 else
   CDK_PARAMS=("$@")
+  DELETE_ENVIRONMENT_DIR=false
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+UTIL_SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../util && pwd)
 CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
-OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
-"$SCRIPTS_DIR/util/configure-aws.sh"
+"$UTIL_SCRIPTS_DIR/configure-aws.sh"
 
 pushd "$CDK_DIR" > /dev/null
-cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
+cdk destroy -c instanceId="$ENVIRONMENT_ID" "${CDK_PARAMS[@]}"
 popd > /dev/null
 
-echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
-
-# If an EC2 was created, save SSH details
-SSH_KEY_FILE="$CDK_DIR/$ENVIRONMENT_ID-BuildEC2.pem"
-if [ -f "$SSH_KEY_FILE" ]; then
-
-  echo "Saving SSH key file"
-  mv -f "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
-
-  # Wait for deployment, scan SSH to remember EC2 certificate
-  "$THIS_DIR/scan-ssh.sh"
+if [ "$DELETE_ENVIRONMENT_DIR" = true ]; then
+  rm -rf "$ENVIRONMENT_DIR"
 fi
