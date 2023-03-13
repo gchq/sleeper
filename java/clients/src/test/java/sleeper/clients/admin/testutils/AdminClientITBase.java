@@ -28,7 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
-import sleeper.clients.deploy.CdkDeployInstance;
+import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.core.CommonTestConstants;
 
 import java.nio.file.Path;
@@ -48,7 +48,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
             .build();
-    protected final CdkDeployInstance cdk = mock(CdkDeployInstance.class);
+    protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
 
     @TempDir
     protected Path tempDir;

@@ -45,6 +45,7 @@ public class ConfigurationStack extends NestedStack {
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
+                .autoDeleteObjects(true)
                 .build();
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());

@@ -172,7 +172,7 @@ public class QueryStack extends NestedStack {
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
-                .removalPolicy(removalPolicy)
+                .removalPolicy(removalPolicy).autoDeleteObjects(removalPolicy == RemovalPolicy.DESTROY)
                 .lifecycleRules(Collections.singletonList(
                         LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
                 .build();
