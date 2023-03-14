@@ -53,16 +53,6 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super.init();
     }
 
-    /**
-     * Validates all UserDefinedProperties
-     */
-    @Override
-    public void validate() {
-        for (UserDefinedInstanceProperty sleeperProperty : UserDefinedInstanceProperty.getAll()) {
-            sleeperProperty.validate(get(sleeperProperty));
-        }
-    }
-
     public Map<String, String> getTags() {
         return tags;
     }
@@ -114,7 +104,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     @Override
-    protected SleeperPropertyIndex<InstanceProperty> getIndex() {
+    protected SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
         return InstanceProperty.Index.INSTANCE;
     }
 

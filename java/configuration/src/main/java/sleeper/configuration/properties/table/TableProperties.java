@@ -88,7 +88,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     public void validate() {
-        TableProperty.getAll().forEach(property -> property.validate(get(property)));
+        super.validate();
 
         // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
         // Also see the DynamoDB documentation:
@@ -136,7 +136,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected SleeperPropertyIndex<TableProperty> getIndex() {
+    protected SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.Index.INSTANCE;
     }
 
