@@ -173,8 +173,8 @@ class SleeperPropertiesTest {
         }
 
         @Override
-        protected boolean isKnownProperty(String propertyName) {
-            return true;
+        protected SleeperPropertyIndex<SleeperProperty> getIndex() {
+            return new SleeperPropertyIndex<>();
         }
     }
 }
