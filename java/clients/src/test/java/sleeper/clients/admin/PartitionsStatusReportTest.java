@@ -22,10 +22,6 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,34 +30,34 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OP
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PARTITION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
 public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldRunPartitionStatusReportIfStateStoreExists() {
         // Given
-        InstanceProperties properties = createValidInstanceProperties();
-        setInstanceProperties(properties);
-        setStateStore(properties, createValidTableProperties(properties, "test-table"),
-                StateStoreTestBuilder.from(createPartitionsBuilder()
-                                .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
-                                .parentJoining("parent", "A", "B"))
-                        .singleFileInEachLeafPartitionWithRecords(5)
-                        .buildStateStore());
-
+        createStateStore();
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);
 
         // When
         String output = runClientGetOutput();
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
+                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Partitions Status Report:")
                 .contains("There are 3 partitions (2 leaf partitions")
                 .contains("There are 0 leaf partitions that need splitting")
                 .contains("Split threshold is 1000000000 records");
         confirmAndVerifyNoMoreInteractions();
+    }
+
+    private void createStateStore() {
+        InstanceProperties properties = createValidInstanceProperties();
+        setInstanceProperties(properties);
+        setStateStore(properties,
+                createValidTableProperties(properties, "test-table"),
+                createValidStateStore());
     }
 
     private void confirmAndVerifyNoMoreInteractions() {

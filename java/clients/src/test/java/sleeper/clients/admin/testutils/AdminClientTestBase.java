@@ -23,8 +23,12 @@ import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -39,6 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
 public abstract class AdminClientTestBase {
 
@@ -88,5 +93,13 @@ public abstract class AdminClientTestBase {
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ENCRYPTED, "false");
         return tableProperties;
+    }
+
+    protected StateStore createValidStateStore() {
+        return StateStoreTestBuilder.from(createPartitionsBuilder()
+                        .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
+                        .parentJoining("parent", "A", "B"))
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
     }
 }
