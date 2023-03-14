@@ -27,7 +27,6 @@ import java.util.Properties;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
@@ -167,49 +166,6 @@ class InstancePropertiesTest {
         assertThat(pageSizeLong).isEqualTo(Long.valueOf(100L));
     }
 
-
-    @Test
-    void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
-        // Given - no account set
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(JARS_BUCKET, "jars");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(ID, "test");
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
-
-        // When
-        String serialised = instanceProperties.saveAsString();
-
-        // Then
-        InstanceProperties properties = new InstanceProperties();
-        assertThatThrownBy(() -> properties.loadFromString(serialised))
-                .hasMessageContaining(ACCOUNT.getPropertyName());
-    }
-
-    @Test
-    void shouldThrowExceptionOnLoadIfPropertyIsInvalid() throws IOException {
-        // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ACCOUNT, "12345");
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(JARS_BUCKET, "jars");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(ID, "test");
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
-
-        // When
-        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
-        String serialised = instanceProperties.saveAsString();
-
-        // Then
-        InstanceProperties properties = new InstanceProperties();
-        assertThatThrownBy(() -> properties.loadFromString(serialised))
-                .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
-    }
-
     @Test
     void shouldLoadTagsFromProperties() {
         // Given
@@ -270,7 +226,7 @@ class InstancePropertiesTest {
                         "unknown.property=123"));
 
         // When / Then
-        assertThat(properties.getUnknownProperties())
+        assertThat(properties.getUnknownPropertyValues())
                 .containsExactly(Map.entry("unknown.property", "123"));
     }
 

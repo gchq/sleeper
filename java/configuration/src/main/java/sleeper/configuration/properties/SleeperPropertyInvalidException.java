@@ -15,9 +15,9 @@
  */
 package sleeper.configuration.properties;
 
-public class TablePropertyInvalidException extends IllegalArgumentException {
+public class SleeperPropertyInvalidException extends IllegalArgumentException {
 
-    public TablePropertyInvalidException(SleeperProperty property, String value) {
+    public SleeperPropertyInvalidException(SleeperProperty property, String value) {
         super("Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"");
     }
 
