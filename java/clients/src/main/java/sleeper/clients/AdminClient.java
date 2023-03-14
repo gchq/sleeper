@@ -67,6 +67,10 @@ public class AdminClient {
                 new ConsoleInput(System.console())).start(instanceId);
     }
 
+    public UpdatePropertiesWithNano getUpdateProperties() {
+        return updateProperties;
+    }
+
     public void start(String instanceId) {
         new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
