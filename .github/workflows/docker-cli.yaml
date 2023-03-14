@@ -9,6 +9,7 @@ on:
 env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
+  BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
   build:
@@ -66,7 +67,7 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
           labels: |
             git-commit=${{ github.sha }}
-            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+            build-url=${{ env.BUILD_URL }}
       - name: Build builder image
         uses: docker/build-push-action@v4
         with:
@@ -77,7 +78,7 @@ jobs:
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
           labels: |
             git-commit=${{ github.sha }}
-            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+            build-url=${{ env.BUILD_URL }}
       - name: Build environment image
         uses: docker/build-push-action@v4
         with:
@@ -88,7 +89,7 @@ jobs:
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
           labels: |
             git-commit=${{ github.sha }}
-            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+            build-url=${{ env.BUILD_URL }}
       - name: Build deployment image
         uses: docker/build-push-action@v4
         with:
@@ -99,7 +100,7 @@ jobs:
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
           labels: |
             git-commit=${{ github.sha }}
-            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+            build-url=${{ env.BUILD_URL }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
