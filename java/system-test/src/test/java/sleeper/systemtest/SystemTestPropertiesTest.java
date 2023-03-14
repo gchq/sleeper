@@ -17,7 +17,7 @@ package sleeper.systemtest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.SleeperPropertyInvalidException;
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 
 import java.io.IOException;
 
@@ -52,7 +52,7 @@ class SystemTestPropertiesTest {
 
         // When / Then
         assertThatThrownBy(properties::validate)
-                .isInstanceOf(SleeperPropertyInvalidException.class);
+                .isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 
     @Test
@@ -63,7 +63,7 @@ class SystemTestPropertiesTest {
 
         // When / Then
         assertThatThrownBy(properties::validate)
-                .isInstanceOf(SleeperPropertyInvalidException.class);
+                .isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 
     @Test
@@ -74,7 +74,7 @@ class SystemTestPropertiesTest {
 
         // When / Then
         assertThatThrownBy(properties::validate)
-                .isInstanceOf(SleeperPropertyInvalidException.class);
+                .isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 
     @Test

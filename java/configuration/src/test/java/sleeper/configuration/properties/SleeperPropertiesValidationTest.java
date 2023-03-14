@@ -71,7 +71,7 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             InstanceProperties properties = new InstanceProperties();
             assertThatThrownBy(() -> properties.loadFromString(serialised))
-                    .isInstanceOf(SleeperPropertyInvalidException.class);
+                    .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
 
         @Test
@@ -83,7 +83,7 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             TableProperties properties = new TableProperties(instanceProperties);
             assertThatThrownBy(() -> properties.loadFromString(serialised))
-                    .isInstanceOf(SleeperPropertyInvalidException.class);
+                    .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
 
         @Test
@@ -204,7 +204,7 @@ public class SleeperPropertiesValidationTest {
 
             // When
             assertThatThrownBy(instanceProperties::validate)
-                    .isInstanceOf(SleeperPropertyInvalidException.class)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
                     .hasMessage("Property sleeper.log.retention.days was invalid. It was \"abc\". Failure 1 of 2.")
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(

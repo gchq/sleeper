@@ -17,11 +17,11 @@ package sleeper.configuration.properties;
 
 import java.util.Map;
 
-public class SleeperPropertyInvalidException extends IllegalArgumentException {
+public class SleeperPropertiesInvalidException extends IllegalArgumentException {
 
     private final Map<SleeperProperty, String> invalidValues;
 
-    public SleeperPropertyInvalidException(Map<SleeperProperty, String> invalidValues) {
+    public SleeperPropertiesInvalidException(Map<SleeperProperty, String> invalidValues) {
         super(buildMessage(invalidValues));
         this.invalidValues = invalidValues;
     }

@@ -28,7 +28,7 @@ public class SleeperPropertiesValidationReporter {
 
     public void throwIfFailed() {
         if (!invalidValues.isEmpty()) {
-            throw new SleeperPropertyInvalidException(invalidValues);
+            throw new SleeperPropertiesInvalidException(invalidValues);
         }
     }
 
