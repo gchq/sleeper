@@ -18,7 +18,6 @@ package sleeper.configuration.properties.table;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -60,7 +59,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         this.instanceProperties = instanceProperties;
     }
 
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR") // Needed until we have an immutable model
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;

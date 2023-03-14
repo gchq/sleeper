@@ -56,7 +56,7 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldFailToLoadAndValidateIfTableSchemaIsAbsent() throws IOException {
+    void shouldFailToConstructFromPropertiesIfTableSchemaIsAbsent() throws IOException {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
@@ -64,7 +64,7 @@ class TablePropertiesSchemaTest {
         Properties properties = loadProperties(input);
 
         // When / Then
-        assertThatThrownBy(() -> TableProperties.loadAndValidate(instanceProperties, properties))
+        assertThatThrownBy(() -> new TableProperties(instanceProperties, properties))
                 .hasMessage("Schema not set in property sleeper.table.schema");
     }
 
