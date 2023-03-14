@@ -43,7 +43,7 @@ class SystemTestPropertiesTest {
     }
 
     @Test
-    void shouldFailValidationWhenMandatorySystemPropertyNotSet() throws IOException {
+    void shouldFailValidationWhenMandatorySystemTestPropertyNotSet() throws IOException {
         // Given
         SystemTestProperties properties = validProperties();
         properties.unset(NUMBER_OF_WRITERS);
