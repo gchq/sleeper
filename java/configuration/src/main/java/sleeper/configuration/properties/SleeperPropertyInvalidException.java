@@ -15,10 +15,25 @@
  */
 package sleeper.configuration.properties;
 
+import java.util.Map;
+
 public class SleeperPropertyInvalidException extends IllegalArgumentException {
 
-    public SleeperPropertyInvalidException(SleeperProperty property, String value) {
-        super("Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"");
+    private final Map<SleeperProperty, String> invalidValues;
+
+    public SleeperPropertyInvalidException(Map<SleeperProperty, String> invalidValues) {
+        super(buildMessage(invalidValues));
+        this.invalidValues = invalidValues;
     }
 
+    private static String buildMessage(Map<SleeperProperty, String> invalidValues) {
+        Map.Entry<SleeperProperty, String> oneFailure = invalidValues.entrySet().stream().findFirst().orElseThrow();
+        SleeperProperty property = oneFailure.getKey();
+        String value = oneFailure.getValue();
+        return "Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"";
+    }
+
+    public Map<SleeperProperty, String> getInvalidValues() {
+        return invalidValues;
+    }
 }

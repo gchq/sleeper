@@ -62,9 +62,15 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         validate();
     }
 
-    public void validate() {
+    public final void validate() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        reporter.throwIfFailed();
+    }
+
+    protected void validate(SleeperPropertiesValidationReporter reporter) {
         getPropertiesIndex().getUserDefined().forEach(property ->
-                property.validate(get(property)));
+                property.validate(get(property), reporter));
     }
 
     protected abstract SleeperPropertyIndex<T> getPropertiesIndex();

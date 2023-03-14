@@ -39,9 +39,9 @@ public interface SleeperProperty {
         return s -> true;
     }
 
-    default void validate(String value) {
+    default void validate(String value, SleeperPropertiesValidationReporter reporter) {
         if (!validationPredicate().test(value)) {
-            throw new SleeperPropertyInvalidException(this, value);
+            reporter.invalidProperty(this, value);
         }
     }
 

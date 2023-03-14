@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.SleeperPropertyInvalidException;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -87,8 +87,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    public void validate() {
-        super.validate();
+    public void validate(SleeperPropertiesValidationReporter reporter) {
+        super.validate(reporter);
 
         // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
         // Also see the DynamoDB documentation:
@@ -97,7 +97,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 && getInt(COMPACTION_FILES_BATCH_SIZE) > 48) {
             LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
                     "chosen statestore. Maximum value is 48.");
-            throw new SleeperPropertyInvalidException(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
+            reporter.invalidProperty(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
         }
     }
 

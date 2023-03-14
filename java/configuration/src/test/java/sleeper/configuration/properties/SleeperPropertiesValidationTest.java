@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -203,7 +204,11 @@ public class SleeperPropertiesValidationTest {
 
             // When
             assertThatThrownBy(instanceProperties::validate)
-                    .isInstanceOf(SleeperPropertyInvalidException.class);
+                    .isInstanceOf(SleeperPropertyInvalidException.class)
+                    .extracting("invalidValues")
+                    .isEqualTo(Map.of(
+                            MAXIMUM_CONNECTIONS_TO_S3, "abc",
+                            LOG_RETENTION_IN_DAYS, "def"));
         }
     }
 }
