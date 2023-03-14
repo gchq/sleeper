@@ -60,7 +60,7 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
@@ -79,7 +79,7 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10L);
         splitPoints.add(1000L);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
@@ -98,7 +98,7 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("A");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
@@ -117,7 +117,7 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{100});
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 

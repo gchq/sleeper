@@ -28,30 +28,18 @@ import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,27 +66,21 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 public class ReinitialiseTable {
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDBClient;
-    private final boolean splitPointStringsBase64Encoded;
     private final boolean deletePartitions;
     private final String instanceId;
     private final String tableName;
-    private final String splitPointsFileLocation;
 
     public ReinitialiseTable(
             AmazonS3 s3Client,
             AmazonDynamoDB dynamoDBClient,
             String instanceId,
             String tableName,
-            boolean deletePartitions,
-            String splitPointsFileLocation,
-            boolean splitPointStringsBase64Encoded) {
+            boolean deletePartitions) {
         this.s3Client = s3Client;
         this.dynamoDBClient = dynamoDBClient;
         this.deletePartitions = deletePartitions;
-        this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.instanceId = Objects.requireNonNull(instanceId, "instanceId must not be null");
         this.tableName = Objects.requireNonNull(tableName, "tableName must not be null");
-        this.splitPointsFileLocation = splitPointsFileLocation;
         if (instanceId.isEmpty() || tableName.isEmpty()) {
             throw new IllegalArgumentException("You have tried to create a ReinitialiseTable class with " +
                     "an empty String in the instance id or table name. These must not be empty.");
@@ -127,16 +109,13 @@ public class ReinitialiseTable {
         }
 
         if (deletePartitions) {
-            List<Object> splitPoints = calculateSplitPoints(tableProperties);
             deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
             deleteObjectsInTableBucket(s3TableBucketName, isS3StateStore);
 
             System.out.println("Fully reinitialising table");
             StateStore statestore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf)
                     .getStateStore(tableProperties);
-            InitialiseStateStore initialiseStateStore =
-                    new InitialiseStateStore(tableProperties, statestore, splitPoints);
-            initialiseStateStore.run();
+            initialiseStateStore(tableProperties, statestore);
         } else {
             deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
             deleteObjectsInTableBucket(s3TableBucketName, isS3StateStore);
@@ -147,6 +126,10 @@ public class ReinitialiseTable {
                 s3StateStore.setInitialFileInfos();
             }
         }
+    }
+
+    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
+        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, null).run();
     }
 
     private void deleteObjectsInTableBucket(String s3TableBucketName, boolean isS3StateStore) {
@@ -244,55 +227,21 @@ public class ReinitialiseTable {
         System.out.println(countOfDeletedItems + " items successfully deleted from " + dynamoTableName + " Dynamo DB Table");
     }
 
-    private List<Object> calculateSplitPoints(TableProperties tableProperties) throws IOException {
-        List<Object> splitPoints = null;
-        if (splitPointsFileLocation != null && !splitPointsFileLocation.isEmpty()) {
-            splitPoints = new ArrayList<>();
-
-            PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            List<String> lines = new ArrayList<>();
-            try (InputStream inputStream = new FileInputStream(splitPointsFileLocation);
-                 Reader tempReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                 BufferedReader reader = new BufferedReader(tempReader)) {
-                String lineFromFile = reader.readLine();
-                while (null != lineFromFile) {
-                    lines.add(lineFromFile);
-                    lineFromFile = reader.readLine();
-                }
-            }
-            for (String line : lines) {
-                if (rowKey1Type instanceof IntType) {
-                    splitPoints.add(Integer.parseInt(line));
-                } else if (rowKey1Type instanceof LongType) {
-                    splitPoints.add(Long.parseLong(line));
-                } else if (rowKey1Type instanceof StringType) {
-                    if (splitPointStringsBase64Encoded) {
-                        byte[] encodedString = Base64.decodeBase64(line);
-                        splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                    } else {
-                        splitPoints.add(line);
-                    }
-                } else if (rowKey1Type instanceof ByteArrayType) {
-                    splitPoints.add(Base64.decodeBase64(line));
-                } else {
-                    throw new RuntimeException("Unknown key type " + rowKey1Type);
-                }
-            }
-            System.out.println("Read " + splitPoints.size() + " split points from file");
-        }
-        return splitPoints;
-    }
-
     public static void main(String[] args) {
-        if (args.length < 2 || args.length > 5) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> " +
-                    "<optional_delete_partitions_true_or_false> " +
-                    "<optional_split_points_file_location> " +
-                    "<optional_split_points_file_is_base64_encoded_true_or_false>");
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException("Usage: <instance id> <table name> <optional_delete_partitions_true_or_false>");
         }
+        String instanceId = args[0];
+        String tableName = args[1];
+        boolean deletePartitions = args.length == 2 ? false : Boolean.parseBoolean(args[2]);
 
-        System.out.println("\nIf you continue all data will be deleted in the table\n" +
-                "Including the partitions data as well, if you have chosen that option\n");
+        System.out.println("If you continue all data will be deleted in the table.");
+        if (deletePartitions) {
+            System.out.println("The metadata about the partitions will be deleted and the "
+                + "table will be reset to consist of one root partiition.");
+        } else {
+            System.out.println("The metadata about the partitions will not be deleted.");
+        }
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
         if (!choice.equalsIgnoreCase("y")) {
@@ -302,52 +251,8 @@ public class ReinitialiseTable {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         try {
-            ReinitialiseTable reinitialiseTable;
-            if (args.length == 2) {
-                reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1], false,
-                        null, false);
-                reinitialiseTable.run();
-            } else {
-                if (args.length == 3) {
-                    if (!Boolean.parseBoolean(args[2])) {
-                        reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                false, null, false);
-                        reinitialiseTable.run();
-                    } else {
-                        reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                true, null, false);
-                        reinitialiseTable.run();
-                    }
-                }
-                if (args.length == 4) {
-                    if (!Boolean.parseBoolean(args[2])) {
-                        reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                false, null, false);
-                        reinitialiseTable.run();
-                    } else {
-                        reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                true, args[3], false);
-                        reinitialiseTable.run();
-                    }
-                }
-                if (args.length == 5) {
-                    if (!Boolean.parseBoolean(args[2])) {
-                        reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                false, null, false);
-                        reinitialiseTable.run();
-                    } else {
-                        if (!Boolean.parseBoolean(args[4])) {
-                            reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                    true, args[3], false);
-                            reinitialiseTable.run();
-                        } else {
-                            reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, args[0], args[1],
-                                    true, args[3], true);
-                            reinitialiseTable.run();
-                        }
-                    }
-                }
-            }
+            ReinitialiseTable reinitialiseTable = new ReinitialiseTable(amazonS3, dynamoDBClient, instanceId, tableName, deletePartitions);
+            reinitialiseTable.run();
             System.out.println("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
             System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
