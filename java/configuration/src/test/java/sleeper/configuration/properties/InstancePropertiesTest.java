@@ -167,7 +167,6 @@ class InstancePropertiesTest {
         assertThat(pageSizeLong).isEqualTo(Long.valueOf(100L));
     }
 
-
     @Test
     void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
         // Given - no account set
