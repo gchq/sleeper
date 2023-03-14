@@ -136,7 +136,7 @@ class TablePropertiesTest {
         tableProperties.loadFromString("unknown.property=123");
 
         // When / Then
-        assertThat(tableProperties.getUnknownPropertyValues())
+        assertThat(tableProperties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
     }
 }
