@@ -58,9 +58,9 @@ jobs:
           push: true
           tags: ${{ env.DEPENDENCIES_IMAGE }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          labels:
-            - git-commit=${{ github.sha }}
-            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
       - name: Build builder image
         uses: docker/build-push-action@v4
         with:
@@ -68,11 +68,10 @@ jobs:
           push: ${{ inputs.pushImages }}
           tags: ${{ env.BUILDER_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          build-args:
-            - DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
-          labels:
-            - git-commit=${{ github.sha }}
-            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
       - name: Build environment image
         uses: docker/build-push-action@v4
         with:
@@ -80,11 +79,10 @@ jobs:
           push: ${{ inputs.pushImages }}
           tags: ${{ env.ENV_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          build-args:
-            - DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
-          labels:
-            - git-commit=${{ github.sha }}
-            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
       - name: Build deployment image
         uses: docker/build-push-action@v4
         with:
@@ -92,11 +90,10 @@ jobs:
           push: ${{ inputs.pushImages }}
           tags: ${{ env.DEPLOY_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          build-args:
-            - DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
-          labels:
-            - git-commit=${{ github.sha }}
-            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
