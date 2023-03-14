@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class SleeperPropertiesInvalidException extends IllegalArgumentException {
 
-    private final Map<SleeperProperty, String> invalidValues;
+    private final transient Map<SleeperProperty, String> invalidValues;
 
     public SleeperPropertiesInvalidException(Map<SleeperProperty, String> invalidValues) {
         super(buildMessage(invalidValues));
@@ -27,15 +27,22 @@ public class SleeperPropertiesInvalidException extends IllegalArgumentException 
     }
 
     private static String buildMessage(Map<SleeperProperty, String> invalidValues) {
-        Map.Entry<SleeperProperty, String> oneFailure = invalidValues.entrySet().stream().findFirst().orElseThrow();
-        SleeperProperty property = oneFailure.getKey();
-        String value = oneFailure.getValue();
-        String message = "Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"";
+        String message = buildFailureMessage(firstFailure(invalidValues));
         int failures = invalidValues.size();
         if (failures > 1) {
             message += ". Failure 1 of " + failures + ".";
         }
         return message;
+    }
+
+    private static Map.Entry<SleeperProperty, String> firstFailure(Map<SleeperProperty, String> invalidValues) {
+        return invalidValues.entrySet().stream().findFirst().orElseThrow();
+    }
+
+    private static String buildFailureMessage(Map.Entry<SleeperProperty, String> failure) {
+        SleeperProperty property = failure.getKey();
+        String value = failure.getValue();
+        return "Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"";
     }
 
     public Map<SleeperProperty, String> getInvalidValues() {
