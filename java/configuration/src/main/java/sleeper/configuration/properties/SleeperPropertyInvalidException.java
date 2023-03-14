@@ -30,7 +30,12 @@ public class SleeperPropertyInvalidException extends IllegalArgumentException {
         Map.Entry<SleeperProperty, String> oneFailure = invalidValues.entrySet().stream().findFirst().orElseThrow();
         SleeperProperty property = oneFailure.getKey();
         String value = oneFailure.getValue();
-        return "Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"";
+        String message = "Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"";
+        int failures = invalidValues.size();
+        if (failures > 1) {
+            message += ". Failure 1 of " + failures + ".";
+        }
+        return message;
     }
 
     public Map<SleeperProperty, String> getInvalidValues() {

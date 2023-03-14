@@ -199,16 +199,17 @@ public class SleeperPropertiesValidationTest {
         void shouldFailValidationWithTwoInvalidInstanceProperties() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
-            instanceProperties.set(LOG_RETENTION_IN_DAYS, "def");
+            instanceProperties.set(LOG_RETENTION_IN_DAYS, "abc");
+            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "def");
 
             // When
             assertThatThrownBy(instanceProperties::validate)
                     .isInstanceOf(SleeperPropertyInvalidException.class)
+                    .hasMessage("Property sleeper.log.retention.days was invalid. It was \"abc\". Failure 1 of 2.")
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
-                            MAXIMUM_CONNECTIONS_TO_S3, "abc",
-                            LOG_RETENTION_IN_DAYS, "def"));
+                            LOG_RETENTION_IN_DAYS, "abc",
+                            MAXIMUM_CONNECTIONS_TO_S3, "def"));
         }
     }
 }

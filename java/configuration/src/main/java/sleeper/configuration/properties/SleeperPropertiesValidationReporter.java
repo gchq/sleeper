@@ -15,12 +15,12 @@
  */
 package sleeper.configuration.properties;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SleeperPropertiesValidationReporter {
 
-    private final Map<SleeperProperty, String> invalidValues = new HashMap<>();
+    private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
 
     public void invalidProperty(SleeperProperty property, String value) {
         invalidValues.put(property, value);
