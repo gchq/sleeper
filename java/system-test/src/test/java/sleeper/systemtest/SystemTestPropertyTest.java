@@ -17,6 +17,8 @@ package sleeper.systemtest;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.InstanceProperty;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SystemTestPropertyTest {
@@ -24,7 +26,7 @@ class SystemTestPropertyTest {
     @Test
     void shouldSetUniqueDescriptionsOnAllProperties() {
         assertThat(SystemTestProperty.getAll())
-                .extracting(SystemTestProperty::getDescription)
+                .extracting(InstanceProperty::getDescription)
                 .doesNotContainNull()
                 .doesNotHaveDuplicates();
     }

@@ -16,22 +16,16 @@
 package sleeper.systemtest;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SleeperPropertyInvalidException;
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 
 /**
  * A class that extends {@link InstanceProperties} adding properties needed to
  * run the system tests that add random data to Sleeper.
  */
 public class SystemTestProperties extends InstanceProperties {
-
     @Override
-    public void validate() {
-        super.validate();
-        for (SystemTestProperty systemTestProperty : SystemTestProperty.getAll()) {
-            String value = get(systemTestProperty);
-            if (!systemTestProperty.validationPredicate().test(value)) {
-                throw new SleeperPropertyInvalidException(systemTestProperty, value);
-            }
-        }
+    protected SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
+        return SystemTestProperty.Index.INSTANCE;
     }
 }

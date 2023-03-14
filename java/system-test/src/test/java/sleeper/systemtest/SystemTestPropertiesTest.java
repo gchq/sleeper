@@ -21,6 +21,7 @@ import sleeper.configuration.properties.SleeperPropertyInvalidException;
 
 import java.io.IOException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -54,8 +55,6 @@ class SystemTestPropertiesTest {
                 .isInstanceOf(SleeperPropertyInvalidException.class);
     }
 
-    // TODO report no unknown properties
-
     @Test
     void shouldFailValidationWhenIngestModeIsNotRecognised() throws IOException {
         // Given
@@ -76,6 +75,16 @@ class SystemTestPropertiesTest {
         // When / Then
         assertThatThrownBy(properties::validate)
                 .isInstanceOf(SleeperPropertyInvalidException.class);
+    }
+
+    @Test
+    void shouldFindNoUnknownProperties() throws IOException {
+        // Given
+        SystemTestProperties properties = validProperties();
+
+        // When / Then
+        assertThat(properties.getUnknownProperties())
+                .isEmpty();
     }
 
     private SystemTestProperties validProperties() throws IOException {
