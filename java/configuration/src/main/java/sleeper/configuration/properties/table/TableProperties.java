@@ -65,7 +65,12 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super(properties);
         this.instanceProperties = instanceProperties;
         schema = loadSchema(properties);
-        validate();
+    }
+
+    public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        tableProperties.validate();
+        return tableProperties;
     }
 
     private static Schema loadSchema(Properties properties) {

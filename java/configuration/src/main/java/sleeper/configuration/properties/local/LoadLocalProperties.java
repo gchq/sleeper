@@ -85,7 +85,7 @@ public class LoadLocalProperties {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            return new TableProperties(instanceProperties, properties);
+            return TableProperties.loadAndValidate(instanceProperties, properties);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

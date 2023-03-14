@@ -85,6 +85,19 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             assertThatCode(() -> new InstanceProperties(properties)).doesNotThrowAnyException();
         }
+
+        @Test
+        void shouldNotValidateWhenConstructingTableProperties() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            tableProperties.set(COMPRESSION_CODEC, "madeUp");
+            Properties properties = loadProperties(tableProperties.saveAsString());
+
+            // When / Then
+            assertThatCode(() -> new TableProperties(instanceProperties, properties))
+                    .doesNotThrowAnyException();
+        }
     }
 
     @DisplayName("Validate instance properties")
