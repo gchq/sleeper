@@ -23,10 +23,12 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -71,6 +73,17 @@ public class SleeperPropertiesValidationTest {
             TableProperties properties = new TableProperties(instanceProperties);
             assertThatThrownBy(() -> properties.loadFromString(serialised))
                     .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
+        }
+
+        @Test
+        void shouldNotValidateWhenConstructingInstanceProperties() throws IOException {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
+            Properties properties = loadProperties(instanceProperties.saveAsString());
+
+            // When / Then
+            assertThatCode(() -> new InstanceProperties(properties)).doesNotThrowAnyException();
         }
     }
 
