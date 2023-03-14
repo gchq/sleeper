@@ -48,51 +48,57 @@ public class SleeperPropertiesValidationTest {
     @DisplayName("Trigger validation")
     @Nested
     class TriggerValidation {
+
+        private InstanceProperties invalidInstanceProperties() {
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
+            return instanceProperties;
+        }
+
+        private TableProperties invalidTableProperties(InstanceProperties instanceProperties) {
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+            tableProperties.set(COMPRESSION_CODEC, "madeUp");
+            return tableProperties;
+        }
+
         @Test
         void shouldThrowExceptionOnLoadIfInstancePropertiesValidationFails() throws Exception {
             // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
-            String serialised = instanceProperties.saveAsString();
+            String serialised = invalidInstanceProperties().saveAsString();
 
             // When / Then
             InstanceProperties properties = new InstanceProperties();
             assertThatThrownBy(() -> properties.loadFromString(serialised))
-                    .hasMessage("Property sleeper.s3.max-connections was invalid. It was \"-1\"");
+                    .isInstanceOf(SleeperPropertyInvalidException.class);
         }
 
         @Test
         void shouldThrowExceptionOnLoadIfTablePropertiesValidationFails() throws IOException {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(COMPRESSION_CODEC, "madeUp");
-            String serialised = tableProperties.saveAsString();
+            String serialised = invalidTableProperties(instanceProperties).saveAsString();
 
             // When / Then
             TableProperties properties = new TableProperties(instanceProperties);
             assertThatThrownBy(() -> properties.loadFromString(serialised))
-                    .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
+                    .isInstanceOf(SleeperPropertyInvalidException.class);
         }
 
         @Test
         void shouldNotValidateWhenConstructingInstanceProperties() throws IOException {
             // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
-            Properties properties = loadProperties(instanceProperties.saveAsString());
+            Properties properties = loadProperties(invalidInstanceProperties().saveAsString());
 
             // When / Then
-            assertThatCode(() -> new InstanceProperties(properties)).doesNotThrowAnyException();
+            assertThatCode(() -> new InstanceProperties(properties))
+                    .doesNotThrowAnyException();
         }
 
         @Test
         void shouldNotValidateWhenConstructingTableProperties() throws IOException {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(COMPRESSION_CODEC, "madeUp");
-            Properties properties = loadProperties(tableProperties.saveAsString());
+            Properties properties = loadProperties(invalidTableProperties(instanceProperties).saveAsString());
 
             // When / Then
             assertThatCode(() -> new TableProperties(instanceProperties, properties))
