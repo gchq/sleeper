@@ -33,6 +33,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VER
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
@@ -187,6 +188,22 @@ public class SleeperPropertiesValidationTest {
 
             // When/Then
             assertThatCode(tableProperties::validate).doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("Multiple validation errors")
+    class MultipleValidationErrors {
+        @Test
+        void shouldFailValidationWithTwoInvalidInstanceProperties() {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            instanceProperties.set(LOG_RETENTION_IN_DAYS, "def");
+
+            // When
+            assertThatThrownBy(instanceProperties::validate)
+                    .isInstanceOf(SleeperPropertyInvalidException.class);
         }
     }
 }
