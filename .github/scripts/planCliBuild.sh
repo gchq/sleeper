@@ -30,8 +30,7 @@ export_github_env_for_image() {
   IMAGE_ID=$(echo "$IMAGE_ID" | tr '[A-Z]' '[a-z]')
 
   {
-    echo "${ENV_PREFIX}_IMAGE_ID=$IMAGE_ID"
-    echo "${ENV_PREFIX}_IMAGE_NAME=$IMAGE_NAME"
+    echo "${ENV_PREFIX}_PUSH_TAG=$IMAGE_ID:$VERSION"
   } >> "$GITHUB_ENV"
 }
 
@@ -47,7 +46,6 @@ export_common_github_env() {
 
   {
     echo "GHCR_PACKAGE_NAMES=$IMAGE_NAMES"
-    echo "VERSION=$VERSION"
   } >> "$GITHUB_ENV"
 }
 

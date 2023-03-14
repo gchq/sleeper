@@ -6,6 +6,10 @@ on:
         required: false
         type: boolean
 
+env:
+  DOCKER_PLATFORMS: linux/amd64,linux/arm64
+  DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,62 +30,73 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Maven build
+        run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
+      - name: Environment Maven build
+        run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
       - name: Plan build
         run: |
           ./.github/scripts/planCliBuild.sh \
             "${{ github.repository_owner }}" \
             "${{ github.ref }}"
-      - name: Maven build
-        run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
-      - name: Create Docker builder
-        run: docker buildx create --name sleeper --use
-      - name: Dependencies Docker build
-        working-directory: ./scripts/cli/dependencies
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            --tag sleeper-dependencies:current \
-            --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            --load \
-            .
-      - name: Builder Docker build
-        working-directory: ./scripts/cli/builder
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            --tag $BUILDER_IMAGE_NAME \
-            --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            .
-      - name: Environment Maven build
-        run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
-      - name: Environment Docker build
-        working-directory: ./scripts/cli/environment
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            --tag $ENV_IMAGE_NAME \
-            --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            .
-      - name: Deployment Docker build
-        working-directory: ./scripts/cli/deployment
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            --tag $DEPLOY_IMAGE_NAME \
-            --label "git-commit=$GITHUB_SHA" \
-            --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            .
-      - name: Log in to registry
-        if: ${{ inputs.pushImages }}
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-      - name: Push images
-        if: ${{ inputs.pushImages }}
-        run: |
-          docker tag $ENV_IMAGE_NAME $ENV_IMAGE_ID:$VERSION
-          docker push $ENV_IMAGE_ID:$VERSION
-          docker tag $DEPLOY_IMAGE_NAME $DEPLOY_IMAGE_ID:$VERSION
-          docker push $DEPLOY_IMAGE_ID:$VERSION
-          docker tag $BUILDER_IMAGE_NAME $BUILDER_IMAGE_ID:$VERSION
-          docker push $BUILDER_IMAGE_ID:$VERSION
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker dependencies
+        uses: docker/build-push-action@v4
+        with:
+          context: ./scripts/cli/dependencies
+          push: true
+          tags: ${{ env.DEPENDENCIES_IMAGE }}
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+          labels:
+            - git-commit=${{ github.sha }}
+            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+      - name: Build builder image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./scripts/cli/builder
+          push: ${{ inputs.pushImages }}
+          tags: ${{ env.BUILDER_PUSH_TAG }}
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+          build-args:
+            - DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels:
+            - git-commit=${{ github.sha }}
+            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+      - name: Build environment image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./scripts/cli/environment
+          push: ${{ inputs.pushImages }}
+          tags: ${{ env.ENV_PUSH_TAG }}
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+          build-args:
+            - DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels:
+            - git-commit=${{ github.sha }}
+            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
+      - name: Build deployment image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./scripts/cli/deployment
+          push: ${{ inputs.pushImages }}
+          tags: ${{ env.DEPLOY_PUSH_TAG }}
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+          build-args:
+            - DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
+          labels:
+            - git-commit=${{ github.sha }}
+            - build-url=${{ github.repositoryUrl }}/actions/runs/${{ github.run_id }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build

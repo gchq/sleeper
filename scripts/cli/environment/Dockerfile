@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM sleeper-dependencies:current
+ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
+FROM ${DEPENDENCIES_IMAGE}
 
 RUN apt-get update
 RUN apt-get install -y ssh jq
