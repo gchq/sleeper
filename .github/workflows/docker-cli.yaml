@@ -42,7 +42,7 @@ jobs:
             --tag sleeper-dependencies:current \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            --cache-to=user/sleeper:cache \
+            --load \
             .
       - name: Builder Docker build
         working-directory: ./scripts/cli/builder
@@ -51,7 +51,6 @@ jobs:
             --tag $BUILDER_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            --cache-from=user/sleeper:cache \
             .
       - name: Environment Maven build
         run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
@@ -62,7 +61,6 @@ jobs:
             --tag $ENV_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            --cache-from=user/sleeper:cache \
             .
       - name: Deployment Docker build
         working-directory: ./scripts/cli/deployment
@@ -71,7 +69,6 @@ jobs:
             --tag $DEPLOY_IMAGE_NAME \
             --label "git-commit=$GITHUB_SHA" \
             --label "build-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-            --cache-from=user/sleeper:cache \
             .
       - name: Log in to registry
         if: ${{ inputs.pushImages }}
