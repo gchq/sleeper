@@ -66,14 +66,14 @@ public class ExportPartitions {
     }
 
     public void writePartitionsToFile(String filename) throws FileNotFoundException, IOException, StateStoreException {
-        List<String> paritionsAsJsonStrings = getPartitionsAsJsonStrings();
+        List<String> partitionsAsJsonStrings = getPartitionsAsJsonStrings();
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8))) {
-            for (String partition : paritionsAsJsonStrings) {
+            for (String partition : partitionsAsJsonStrings) {
                 writer.write(partition);
                 writer.write("\n");
             }
         }
-        LOGGER.info("Wrote {} partitions to file {}", paritionsAsJsonStrings.size(), filename);
+        LOGGER.info("Wrote {} partitions to file {}", partitionsAsJsonStrings.size(), filename);
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {

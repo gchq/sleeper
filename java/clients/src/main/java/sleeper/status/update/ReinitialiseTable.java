@@ -238,7 +238,7 @@ public class ReinitialiseTable {
         System.out.println("If you continue all data will be deleted in the table.");
         if (deletePartitions) {
             System.out.println("The metadata about the partitions will be deleted and the "
-                + "table will be reset to consist of one root partiition.");
+                + "table will be reset to consist of one root partition.");
         } else {
             System.out.println("The metadata about the partitions will not be deleted.");
         }
