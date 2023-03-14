@@ -92,7 +92,7 @@ jobs:
       - name: Build deployment image
         uses: docker/build-push-action@v4
         with:
-          context: ./scripts/cli/deployment
+          context: ./scripts
           push: ${{ inputs.pushImages }}
           tags: ${{ env.DEPLOY_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
