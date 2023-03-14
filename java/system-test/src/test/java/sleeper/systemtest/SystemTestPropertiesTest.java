@@ -24,6 +24,7 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -53,13 +54,24 @@ class SystemTestPropertiesTest {
                 .isInstanceOf(SleeperPropertyInvalidException.class);
     }
 
-    // TODO fail validation for instance property, report no unknown properties
+    // TODO report no unknown properties
 
     @Test
     void shouldFailValidationWhenIngestModeIsNotRecognised() throws IOException {
         // Given
         SystemTestProperties properties = validProperties();
         properties.set(INGEST_MODE, "invalid");
+
+        // When / Then
+        assertThatThrownBy(properties::validate)
+                .isInstanceOf(SleeperPropertyInvalidException.class);
+    }
+
+    @Test
+    void shouldFailValidationWhenInstancePropertyIsInvalid() throws IOException {
+        // Given
+        SystemTestProperties properties = validProperties();
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
 
         // When / Then
         assertThatThrownBy(properties::validate)
