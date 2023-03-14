@@ -15,15 +15,28 @@
  */
 package sleeper.statestore;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+ import com.amazonaws.services.s3.AmazonS3;
+ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+ import org.apache.hadoop.conf.Configuration;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.schema.Schema;
+ import sleeper.configuration.properties.InstanceProperties;
+ import sleeper.configuration.properties.table.TableProperties;
+ import sleeper.configuration.properties.table.TablePropertiesProvider;
+ import sleeper.core.partition.Partition;
+ import sleeper.core.partition.PartitionsFromSplitPoints;
+ import sleeper.core.schema.Schema;
+ import sleeper.statestore.dynamodb.DynamoDBStateStore;
+ import sleeper.statestore.s3.S3StateStore;
 
-import java.util.List;
+ import java.io.IOException;
+ import java.util.List;
+
+ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
  * Initialises a {@link StateStore} from the given list of {@link Partition}s. Utility methods
@@ -69,5 +82,36 @@ public class InitialiseStateStore {
         LOGGER.info("Database appears to be empty");
 
         stateStore.initialise(initialPartitions);
+    }
+
+    public static void main(String[] args) throws StateStoreException, IOException {
+        if (2 != args.length) {
+            System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name>");
+            return;
+        }
+
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, args[0]);
+
+        TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
+
+        StateStore stateStore;
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals("sleeper.statestore.s3.S3StateStore")) {
+            System.out.println("S3 State Store detected");
+            Configuration conf = new Configuration();
+            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+            stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, conf);
+        } else {
+            System.out.println("Dynamo DB State Store detected");
+            stateStore = new DynamoDBStateStore(tableProperties, dynamoDBClient);
+        }
+
+        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, null).run();
+
+        dynamoDBClient.shutdown();
+        s3Client.shutdown();
     }
 }
