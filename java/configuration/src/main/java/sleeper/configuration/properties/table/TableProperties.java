@@ -30,11 +30,13 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Properties;
@@ -138,6 +140,11 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     @Override
     protected SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.Index.INSTANCE;
+    }
+
+    @Override
+    protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
     }
 
     public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {

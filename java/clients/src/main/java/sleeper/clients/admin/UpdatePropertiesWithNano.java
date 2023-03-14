@@ -20,7 +20,9 @@ import sleeper.configuration.properties.SleeperProperty;
 import sleeper.util.ClientUtils;
 import sleeper.util.RunCommand;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -45,7 +47,9 @@ public class UpdatePropertiesWithNano {
     public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(SleeperProperties<T> properties) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/temp.properties");
-        properties.save(propertiesFile);
+        try (BufferedWriter writer = Files.newBufferedWriter(propertiesFile)) {
+            properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+        }
         runCommand.run("nano", propertiesFile.toString());
         Properties updatedProperties = loadProperties(propertiesFile);
         return new UpdatePropertiesRequest(

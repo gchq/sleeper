@@ -51,6 +51,11 @@ public class UpdatePropertiesWithNanoTestHelper {
         return foundProperties.get();
     }
 
+    public Path updateInstancePropertiesGetPathToFile(InstanceProperties properties) throws IOException, InterruptedException {
+        updateProperties(properties, command -> 0);
+        return expectedPropertiesFile;
+    }
+
     public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
             SleeperProperties<T> before, SleeperProperties<T> after) throws IOException, InterruptedException {
         return updateProperties(before, command -> {

@@ -22,6 +22,9 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
@@ -104,5 +107,19 @@ class UpdatePropertiesWithNanoTest {
         assertThat(helper.updateProperties(before, after).getDiff())
                 .extracting(PropertiesDiff::getChanges).asList()
                 .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
+    }
+
+    @Test
+    void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
+        // Given
+        InstanceProperties properties = generateTestInstanceProperties();
+
+        // When
+        String tempFileString = Files.readString(helper.updateInstancePropertiesGetPathToFile(properties));
+
+        // Then
+        StringWriter writer = new StringWriter();
+        properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+        assertThat(tempFileString).isEqualTo(writer.toString());
     }
 }
