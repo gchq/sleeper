@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
@@ -35,6 +36,30 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class TablePropertiesTest {
+
+    @Test
+    void shouldThrowExceptionIfCompressionCodecIsInvalidOnInit() {
+        // Given
+        String input = "" +
+                "sleeper.table.name=myTable\n" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n" +
+                "sleeper.table.compression.codec=madeUp";
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        // When / Then
+        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+                .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
+    }
+
+    @Test
+    void shouldThrowExceptionIfTableNameIsAbsentOnInit() {
+        // Given
+        String input = "" +
+                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        // When / Then
+        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
+    }
 
     @Test
     void shouldDefaultToInstancePropertiesValueWhenConfigured() {
@@ -111,6 +136,33 @@ class TablePropertiesTest {
     }
 
     @Test
+    void shouldFailValidationIfCompactionFilesBatchSizeTooLargeForDynamoDBStateStore() {
+        // Given
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 49);
+
+        // When/Then
+        assertThatThrownBy(tableProperties::validate)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
+                        "It was \"49\"");
+    }
+
+    @Test
+    void shouldPassValidationIfCompactionFilesBatchSizeTooLargeForDynamoDBStateStoreButS3StateStoreChosen() {
+        // Given
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
+        tableProperties.setNumber(TableProperty.COMPACTION_FILES_BATCH_SIZE, 49);
+
+        // When/Then
+        assertThatCode(tableProperties::validate).doesNotThrowAnyException();
+    }
+
+    @Test
     void shouldKeepValidationPredicateSameAsOnDefaultProperty() {
         assertThat(TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultProperty() != null)
@@ -136,7 +188,7 @@ class TablePropertiesTest {
         tableProperties.loadFromString("unknown.property=123");
 
         // When / Then
-        assertThat(tableProperties.getUnknownPropertyValues())
+        assertThat(tableProperties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
     }
 }

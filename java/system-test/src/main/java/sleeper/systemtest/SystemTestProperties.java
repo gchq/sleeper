@@ -24,7 +24,7 @@ import sleeper.configuration.properties.InstanceProperties;
 public class SystemTestProperties extends InstanceProperties {
 
     @Override
-    public void validate() {
+    protected void validate() {
         super.validate();
         for (SystemTestProperty systemTestProperty : SystemTestProperty.getAll()) {
             if (!systemTestProperty.validationPredicate().test(get(systemTestProperty))) {

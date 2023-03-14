@@ -57,9 +57,11 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      * Validates all UserDefinedProperties
      */
     @Override
-    public void validate() {
+    protected void validate() {
         for (UserDefinedInstanceProperty sleeperProperty : UserDefinedInstanceProperty.getAll()) {
-            sleeperProperty.validate(get(sleeperProperty));
+            if (!sleeperProperty.validationPredicate().test(get(sleeperProperty))) {
+                throw new IllegalArgumentException("sleeper property: " + sleeperProperty.getPropertyName() + " is invalid");
+            }
         }
     }
 

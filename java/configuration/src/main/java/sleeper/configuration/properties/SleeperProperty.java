@@ -39,12 +39,6 @@ public interface SleeperProperty {
         return s -> true;
     }
 
-    default void validate(String value) {
-        if (!validationPredicate().test(value)) {
-            throw new SleeperPropertyInvalidException(this, value);
-        }
-    }
-
     default String toEnvironmentVariable() {
         return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
