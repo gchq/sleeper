@@ -53,6 +53,8 @@ class SystemTestPropertiesTest {
                 .isInstanceOf(SleeperPropertyInvalidException.class);
     }
 
+    // TODO fail validation for instance property, report no unknown properties
+
     private SystemTestProperties validProperties() throws IOException {
         SystemTestProperties properties = new SystemTestProperties();
         properties.set(NUMBER_OF_WRITERS, "1");
