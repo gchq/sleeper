@@ -58,7 +58,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClient client() {
-        return new AdminClient(store(), out.consoleOut(), in.consoleIn());
+        return new AdminClient(store(), updateProperties, out.consoleOut(), in.consoleIn());
     }
 
     protected AdminConfigStore store() {

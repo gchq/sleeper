@@ -61,6 +61,6 @@ public class UpdatePropertiesWithNanoTestHelper {
 
     public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
             SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
-        return new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
+        return new UpdatePropertiesWithNano(tempDir, runCommand).updateProperties(properties);
     }
 }

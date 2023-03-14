@@ -22,6 +22,7 @@ import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
+import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.clients.admin.UpdatePropertyScreen;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.console.ConsoleInput;
@@ -34,11 +35,13 @@ import java.nio.file.Path;
 public class AdminClient {
 
     private final AdminConfigStore store;
+    private final UpdatePropertiesWithNano updateProperties;
     private final ConsoleOutput out;
     private final ConsoleInput in;
 
-    public AdminClient(AdminConfigStore store, ConsoleOutput out, ConsoleInput in) {
+    public AdminClient(AdminConfigStore store, UpdatePropertiesWithNano updateProperties, ConsoleOutput out, ConsoleInput in) {
         this.store = store;
+        this.updateProperties = updateProperties;
         this.out = out;
         this.in = in;
     }
@@ -59,6 +62,7 @@ public class AdminClient {
 
         new AdminClient(
                 new AdminConfigStore(AmazonS3ClientBuilder.defaultClient(), cdk, generatedDir),
+                new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console())).start(instanceId);
     }
