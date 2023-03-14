@@ -55,6 +55,17 @@ class SystemTestPropertiesTest {
 
     // TODO fail validation for instance property, report no unknown properties
 
+    @Test
+    void shouldFailValidationWhenIngestModeIsNotRecognised() throws IOException {
+        // Given
+        SystemTestProperties properties = validProperties();
+        properties.set(INGEST_MODE, "invalid");
+
+        // When / Then
+        assertThatThrownBy(properties::validate)
+                .isInstanceOf(SleeperPropertyInvalidException.class);
+    }
+
     private SystemTestProperties validProperties() throws IOException {
         SystemTestProperties properties = new SystemTestProperties();
         properties.set(NUMBER_OF_WRITERS, "1");
