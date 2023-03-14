@@ -16,6 +16,7 @@
 package sleeper.systemtest;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperPropertyInvalidException;
 
 /**
  * A class that extends {@link InstanceProperties} adding properties needed to
@@ -27,8 +28,9 @@ public class SystemTestProperties extends InstanceProperties {
     public void validate() {
         super.validate();
         for (SystemTestProperty systemTestProperty : SystemTestProperty.getAll()) {
-            if (!systemTestProperty.validationPredicate().test(get(systemTestProperty))) {
-                throw new IllegalArgumentException("sleeper property: " + systemTestProperty.getPropertyName() + " is invalid");
+            String value = get(systemTestProperty);
+            if (!systemTestProperty.validationPredicate().test(value)) {
+                throw new SleeperPropertyInvalidException(systemTestProperty, value);
             }
         }
     }
