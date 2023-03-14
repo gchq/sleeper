@@ -174,7 +174,7 @@ public class SleeperPropertiesValidationTest {
 
             // When/Then
             assertThatThrownBy(tableProperties::validate)
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
                     .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
                             "It was \"49\"");
         }
