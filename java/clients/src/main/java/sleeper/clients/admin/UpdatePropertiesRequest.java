@@ -40,7 +40,7 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return diff.isChanged();
     }
 
-    public void print(ConsoleOutput out) {
+    public void printChanges(ConsoleOutput out) {
         diff.print(out, updatedProperties.getPropertiesIndex());
     }
 }
