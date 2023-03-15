@@ -26,18 +26,20 @@ import sleeper.configuration.properties.InstanceProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PARTITION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
     @Test
     void shouldRunPartitionStatusReport() {
         // Given
-        createStateStore();
+        createStateStoreForTable("test-table");
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);
 
         // When
@@ -52,12 +54,11 @@ public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
         confirmAndVerifyNoMoreInteractions();
     }
 
-    private void createStateStore() {
+    private void createStateStoreForTable(String tableName) {
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
-        setStateStore(properties,
-                createValidTableProperties(properties, "test-table"),
-                createValidStateStore());
+        when(store.loadStateStore(properties.get(ID), tableName))
+                .thenReturn(createValidStateStore());
     }
 
     private void confirmAndVerifyNoMoreInteractions() {
