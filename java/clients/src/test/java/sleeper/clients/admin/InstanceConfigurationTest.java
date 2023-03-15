@@ -59,9 +59,30 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         order.verifyNoMoreInteractions();
     }
 
-    // TODO output changes and apply them in the store
+    // TODO apply changes in the store, handle multiple properties changed, output description
     @Test
-    void shouldEditAPropertyInInstanceConfiguration() throws Exception {
+    void shouldEditAProperty() throws Exception {
+        // Given
+        InstanceProperties before = createValidInstanceProperties();
+        setInstanceProperties(before);
+        before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+        InstanceProperties after = createValidInstanceProperties();
+        after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+
+        // When
+        String output = updatePropertiesGetOutput(before, after);
+
+        // Then
+        assertThat(output).isEqualTo("Found changes to properties:\n" +
+                "\n" +
+                "sleeper.s3.max-connections\n" +
+                "Before: 123\n" +
+                "After: 456\n" +
+                "\n");
+    }
+
+    @Test
+    void shouldSetADefaultedProperty() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
         setInstanceProperties(before);
@@ -75,8 +96,28 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         assertThat(output).isEqualTo("Found changes to properties:\n" +
                 "\n" +
                 "sleeper.s3.max-connections\n" +
-                "Before: null\n" +
+                "Unset before, default value: 25\n" +
                 "After: 123\n" +
+                "\n");
+    }
+
+    @Test
+    void shouldSetAnUnknownProperty() throws Exception {
+        // Given
+        InstanceProperties before = createValidInstanceProperties();
+        setInstanceProperties(before);
+        InstanceProperties after = createValidInstanceProperties();
+        after.loadFromString("unknown.property=abc");
+
+        // When
+        String output = updatePropertiesGetOutput(before, after);
+
+        // Then
+        assertThat(output).isEqualTo("Found changes to properties:\n" +
+                "\n" +
+                "unknown.property\n" +
+                "Unset before\n" +
+                "After: abc\n" +
                 "\n");
     }
 

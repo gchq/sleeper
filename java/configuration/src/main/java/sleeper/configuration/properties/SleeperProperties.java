@@ -76,7 +76,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
                 property.validate(get(property), reporter));
     }
 
-    protected abstract SleeperPropertyIndex<T> getPropertiesIndex();
+    public abstract SleeperPropertyIndex<T> getPropertiesIndex();
 
     protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
 

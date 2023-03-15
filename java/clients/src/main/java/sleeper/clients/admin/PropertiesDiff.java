@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.console.ConsoleOutput;
 
 import java.util.HashSet;
@@ -40,14 +41,14 @@ public class PropertiesDiff {
         return changes;
     }
 
-    public void printIfChanged(ConsoleOutput out) {
+    public void printIfChanged(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         if (changes.isEmpty()) {
             return;
         }
         out.println("Found changes to properties:");
         out.println();
         for (PropertyDiff diff : changes) {
-            diff.print(out);
+            diff.print(out, propertyIndex);
         }
     }
 

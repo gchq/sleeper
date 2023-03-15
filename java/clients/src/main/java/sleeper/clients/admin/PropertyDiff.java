@@ -16,6 +16,8 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.console.ConsoleOutput;
 
 import java.util.Map;
@@ -71,9 +73,19 @@ public class PropertyDiff {
                 '}';
     }
 
-    public void print(ConsoleOutput out) {
+    public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         out.println(propertyName);
-        out.printf("Before: %s%n", oldValue);
+        if (oldValue == null) {
+            String defaultValue = propertyIndex.getByName(propertyName)
+                    .map(SleeperProperty::getDefaultValue).orElse(null);
+            if (defaultValue != null) {
+                out.printf("Unset before, default value: %s%n", defaultValue);
+            } else {
+                out.println("Unset before");
+            }
+        } else {
+            out.printf("Before: %s%n", oldValue);
+        }
         out.printf("After: %s%n", newValue);
         out.println();
     }
