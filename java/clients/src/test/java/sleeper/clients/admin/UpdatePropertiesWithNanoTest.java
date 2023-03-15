@@ -102,10 +102,27 @@ class UpdatePropertiesWithNanoTest {
         TableProperties after = generateTestTableProperties();
         after.set(ROW_GROUP_SIZE, "456");
 
-        // When / Then
-        assertThat(helper.updateProperties(before, after).getDiff())
+        // When
+        PropertiesDiff diff = helper.updateProperties(before, after).getDiff();
+
+        // Then
+        assertThat(diff)
                 .extracting(PropertiesDiff::getChanges).asList()
                 .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
+    }
+
+    @Test
+    void shouldRetrieveTablePropertiesAfterChange() throws Exception {
+        // Given
+        TableProperties before = generateTestTableProperties();
+        TableProperties after = generateTestTableProperties();
+        after.set(ROW_GROUP_SIZE, "456");
+
+        // When
+        TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+
+        // Then
+        assertThat(properties).isEqualTo(after);
     }
 
     @Test
