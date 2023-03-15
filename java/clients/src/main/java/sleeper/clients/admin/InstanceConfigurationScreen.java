@@ -20,10 +20,11 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.ConsoleChoice;
+import sleeper.console.menu.MenuOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
@@ -42,10 +43,16 @@ public class InstanceConfigurationScreen {
         UpdatePropertiesRequest<InstanceProperties> request = openFile(instanceId);
         if (request.isChanged()) {
             request.printChanges(out);
-            chooseOne.chooseFrom(
-                    ConsoleChoice.describedAs("Apply changes"),
-                    ConsoleChoice.describedAs("Return to editor"),
-                    ConsoleChoice.describedAs("Discard changes and return to main menu"));
+            Optional<MenuOption> menuOption = chooseOne.chooseFrom(
+                    new MenuOption("Apply changes", () -> {
+                    }),
+                    new MenuOption("Return to editor", () -> {
+                    }),
+                    new MenuOption("Discard changes and return to main menu", () -> {
+                    })).getChoice();
+            if (menuOption.isPresent()) {
+                menuOption.get().run();
+            }
         }
     }
 

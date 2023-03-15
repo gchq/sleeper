@@ -87,6 +87,9 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_NAMES_REPORT_OPTION = "3";
     public static final String TABLE_PROPERTY_REPORT_OPTION = "4";
     public static final String UPDATE_PROPERTY_OPTION = "5";
+    public static final String APPLY_CHANGES_OPTION = "1";
+    public static final String RETURN_TO_EDITOR_OPTION = "2";
+    public static final String DISCARD_CHANGES_OPTION = "3";
 
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 

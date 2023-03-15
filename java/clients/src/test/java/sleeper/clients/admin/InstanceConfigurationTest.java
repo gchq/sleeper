@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_APPLY_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_EDITOR_OPTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 
@@ -84,6 +86,43 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock, times(2)).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldReturnToEditorAfterMakingChanges() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+            setInstanceProperties(before);
+            in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, RETURN_TO_EDITOR_OPTION, EXIT_OPTION);
+            when(editor.openPropertiesFile(before))
+                    .thenReturn(withChanges(before, after)); // Apply changes
+            when(editor.openPropertiesFile(after))
+                    .thenReturn(withChanges(after, before)); // Revert changes
+
+            // When
+            String output = runClientGetOutput();
+
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
+                    "Before: 123\n" +
+                    "After: 456\n" +
+                    "\n" +
+                    PROPERTY_APPLY_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(after);
+            order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
     }
