@@ -56,12 +56,12 @@ public class UpdatePropertiesWithNanoTestHelper {
         return expectedPropertiesFile;
     }
 
-    public UpdatePropertiesRequest updateProperties(
+    public UpdatePropertiesRequest<InstanceProperties> updateProperties(
             InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
         return updaterSavingProperties(after).updateProperties(before);
     }
 
-    public UpdatePropertiesRequest updateProperties(
+    public UpdatePropertiesRequest<TableProperties> updateProperties(
             TableProperties before, TableProperties after) throws IOException, InterruptedException {
         return updaterSavingProperties(after).updateProperties(before);
     }

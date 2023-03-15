@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.PropertiesUtils.toMap;
 
 public class UpdatePropertiesWithNano {
 
@@ -46,13 +45,13 @@ public class UpdatePropertiesWithNano {
         this.runCommand = runCommand;
     }
 
-    public UpdatePropertiesRequest updateProperties(InstanceProperties properties) throws IOException, InterruptedException {
-        Properties updatedProperties = editProperties(properties);
+    public UpdatePropertiesRequest<InstanceProperties> updateProperties(InstanceProperties properties) throws IOException, InterruptedException {
+        InstanceProperties updatedProperties = new InstanceProperties(editProperties(properties));
         return buildRequest(properties, updatedProperties);
     }
 
-    public UpdatePropertiesRequest updateProperties(TableProperties properties) throws IOException, InterruptedException {
-        Properties updatedProperties = editProperties(properties);
+    public UpdatePropertiesRequest<TableProperties> updateProperties(TableProperties properties) throws IOException, InterruptedException {
+        TableProperties updatedProperties = TableProperties.reinitialise(properties, editProperties(properties));
         return buildRequest(properties, updatedProperties);
     }
 
@@ -66,7 +65,7 @@ public class UpdatePropertiesWithNano {
         return loadProperties(propertiesFile);
     }
 
-    private <T extends SleeperProperties<?>> UpdatePropertiesRequest buildRequest(T before, Properties after) {
-        return new UpdatePropertiesRequest(new PropertiesDiff(before.toMap(), toMap(after)), after);
+    private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T before, T after) {
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(before.toMap(), after.toMap()), after);
     }
 }

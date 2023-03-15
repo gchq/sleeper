@@ -26,7 +26,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
@@ -89,10 +88,10 @@ class UpdatePropertiesWithNanoTest {
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
         // When
-        Properties properties = helper.updateProperties(before, after).getUpdatedProperties();
+        InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
 
         // Then
-        assertThat(new InstanceProperties(properties)).isEqualTo(after);
+        assertThat(properties).isEqualTo(after);
     }
 
     @Test

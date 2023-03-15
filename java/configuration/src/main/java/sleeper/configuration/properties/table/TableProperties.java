@@ -73,6 +73,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return tableProperties;
     }
 
+    public static TableProperties reinitialise(TableProperties tableProperties, Properties newProperties) {
+        return new TableProperties(tableProperties.instanceProperties, newProperties);
+    }
+
     private static Schema loadSchema(Properties properties) {
         return Schema.loadFromString(
                 Objects.requireNonNull(properties.getProperty(SCHEMA.getPropertyName()),
