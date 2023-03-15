@@ -57,6 +57,8 @@ public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
     private void createStateStoreForTable(String tableName) {
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
+        when(store.loadTableProperties(properties.get(ID), tableName))
+                .thenReturn(createValidTableProperties(properties, tableName));
         when(store.loadStateStore(properties.get(ID), tableName))
                 .thenReturn(createValidStateStore());
     }
