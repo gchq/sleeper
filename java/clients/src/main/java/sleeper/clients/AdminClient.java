@@ -77,7 +77,7 @@ public class AdminClient {
     }
 
     public InstanceConfigurationScreen instanceConfigurationScreen() {
-        return new InstanceConfigurationScreen(store, editor);
+        return new InstanceConfigurationScreen(out, in, store, editor);
     }
 
     public TableNamesReport tableNamesReport() {

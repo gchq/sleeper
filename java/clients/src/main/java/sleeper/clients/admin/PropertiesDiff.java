@@ -16,6 +16,8 @@
 
 package sleeper.clients.admin;
 
+import sleeper.console.ConsoleOutput;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,17 @@ public class PropertiesDiff {
 
     public List<PropertyDiff> getChanges() {
         return changes;
+    }
+
+    public void printIfChanged(ConsoleOutput out) {
+        if (changes.isEmpty()) {
+            return;
+        }
+        out.println("Found changes to properties:");
+        out.println();
+        for (PropertyDiff diff : changes) {
+            diff.print(out);
+        }
     }
 
     private static List<PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {

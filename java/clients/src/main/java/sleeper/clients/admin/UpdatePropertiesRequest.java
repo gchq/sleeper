@@ -16,6 +16,7 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.console.ConsoleOutput;
 
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
@@ -33,5 +34,9 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     public T getUpdatedProperties() {
         return updatedProperties;
+    }
+
+    public void printIfChanged(ConsoleOutput out) {
+        diff.printIfChanged(out);
     }
 }

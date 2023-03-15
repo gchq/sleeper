@@ -61,26 +61,38 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     // TODO output changes and apply them in the store
     @Test
-    void shouldEditAPropertyInInstanceConfiguration() throws IOException, InterruptedException {
+    void shouldEditAPropertyInInstanceConfiguration() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
         setInstanceProperties(before);
         InstanceProperties after = createValidInstanceProperties();
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+
+        // When
+        String output = updatePropertiesGetOutput(before, after);
+
+        // Then
+        assertThat(output).isEqualTo("Found changes to properties:\n" +
+                "\n" +
+                "sleeper.s3.max-connections\n" +
+                "Before: null\n" +
+                "After: 123\n" +
+                "\n");
+    }
+
+    private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
+        setInstanceProperties(before);
         in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, EXIT_OPTION);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
 
-        // When
-        String output = runClientGetOutput();
-
-        // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
-
-        InOrder order = Mockito.inOrder(in.mock, editor);
-        order.verify(in.mock).promptLine(any());
-        order.verify(editor).openPropertiesFile(before);
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
+        return getScreenOutput(runClientGetOutput());
     }
+
+    private static String getScreenOutput(String output) {
+        return output.substring(
+                (CLEAR_CONSOLE + MAIN_SCREEN).length(),
+                output.length() - (CLEAR_CONSOLE + MAIN_SCREEN).length());
+    }
+
 }

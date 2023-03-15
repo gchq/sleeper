@@ -16,24 +16,38 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.console.ConsoleInput;
+import sleeper.console.ConsoleOutput;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
 public class InstanceConfigurationScreen {
+    private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final AdminConfigStore store;
     private final UpdatePropertiesWithNano editor;
 
-    public InstanceConfigurationScreen(AdminConfigStore store, UpdatePropertiesWithNano editor) {
+    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store, UpdatePropertiesWithNano editor) {
+        this.out = out;
+        this.in = in;
         this.store = store;
         this.editor = editor;
     }
 
     public void viewAndEditProperties(String instanceId) {
+        UpdatePropertiesRequest<InstanceProperties> request = openFile(instanceId);
+        request.printIfChanged(out);
+    }
+
+    private UpdatePropertiesRequest<InstanceProperties> openFile(String instanceId) {
         try {
-            editor.openPropertiesFile(store.loadInstanceProperties(instanceId));
+            return editor.openPropertiesFile(store.loadInstanceProperties(instanceId));
         } catch (IOException e1) {
             throw new UncheckedIOException(e1);
         } catch (InterruptedException e2) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e2);
         }
     }

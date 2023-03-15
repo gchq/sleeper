@@ -16,6 +16,8 @@
 
 package sleeper.clients.admin;
 
+import sleeper.console.ConsoleOutput;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -67,5 +69,12 @@ public class PropertyDiff {
                 ", oldValue='" + oldValue + '\'' +
                 ", newValue='" + newValue + '\'' +
                 '}';
+    }
+
+    public void print(ConsoleOutput out) {
+        out.println(propertyName);
+        out.printf("Before: %s%n", oldValue);
+        out.printf("After: %s%n", newValue);
+        out.println();
     }
 }
