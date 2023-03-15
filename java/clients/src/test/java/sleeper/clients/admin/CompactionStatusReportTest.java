@@ -28,6 +28,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACT
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNKNOWN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
@@ -49,8 +50,32 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                     .contains("Compaction Job Status Report")
-                    .contains("Total jobs: 1")
-                    .contains("Total standard jobs: 1");
+                    .contains("" +
+                            "Total jobs: 1\n" +
+                            "\n" +
+                            "Total standard jobs: 1\n" +
+                            "Total standard jobs pending: 0\n" +
+                            "Total standard jobs in progress: 1\n" +
+                            "Total standard jobs finished: 0");
+        }
+
+        @Test
+        void shouldRunCompactionJobStatusReportWithQueryTypeUnknown() {
+            // Given
+            createCompactionStatusStore();
+            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
+                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_UNKNOWN_OPTION,
+                    EXIT_OPTION);
+
+            String output = runClientGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("Compaction Job Status Report")
+                    .contains("" +
+                            "Total unfinished jobs: 1\n" +
+                            "Total unfinished jobs in progress: 1\n" +
+                            "Total unfinished jobs not started: 0");
         }
     }
 

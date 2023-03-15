@@ -44,7 +44,7 @@ public class CompactionStatusReportScreen {
 
     public void chooseArgsAndPrint(String instanceId) {
         out.clearScreen("");
-        chooseOptionUntilValid("Which compaction report would you like to run",
+        chooseOptionUntilValid("Which compaction report would you like to run?",
                 new MenuOption("Compaction Job Status Report", () ->
                         chooseArgsForCompactionJobStatusReport(instanceId)),
                 new MenuOption("Compaction Task Status Report", () -> {
@@ -53,7 +53,7 @@ public class CompactionStatusReportScreen {
 
     private void chooseArgsForCompactionJobStatusReport(String instanceId) {
         String tableName = tableSelectHelper.chooseTable().getEntered();
-        chooseOptionUntilValid("Which query type would you like to use",
+        chooseOptionUntilValid("Which query type would you like to use?",
                 new MenuOption("All", () ->
                         runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
                 new MenuOption("Unfinished jobs", () ->
