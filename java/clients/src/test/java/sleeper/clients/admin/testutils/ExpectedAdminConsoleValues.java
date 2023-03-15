@@ -71,6 +71,14 @@ public class ExpectedAdminConsoleValues {
             "[1] Return to Main Menu\n" +
             "\n" +
             "Input: \n";
+    public static final String PROPERTY_APPLY_CHANGES_SCREEN = "" +
+            "Please select from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[1] Apply changes\n" +
+            "[2] Return to editor\n" +
+            "[3] Discard changes and return to main menu\n" +
+            "\n" +
+            "Input: \n";
 
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
@@ -89,9 +97,6 @@ public class ExpectedAdminConsoleValues {
     public static final String PROMPT_RETURN_TO_PROPERTY = "" +
             "\n\n----------------------------------\n" +
             "Hit enter to return to the property screen so you can adjust the property and continue\n";
-
-    public static final String PROMPT_APPLY_CHANGES = "" +
-            "Do you want to apply these changes? (y/N): \n";
 
     public static final String DISPLAY_MAIN_SCREEN = CLEAR_CONSOLE + MAIN_SCREEN;
 }

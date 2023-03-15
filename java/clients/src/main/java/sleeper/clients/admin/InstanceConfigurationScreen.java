@@ -19,6 +19,8 @@ package sleeper.clients.admin;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.menu.ChooseOne;
+import sleeper.console.menu.ConsoleChoice;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,10 +39,14 @@ public class InstanceConfigurationScreen {
     }
 
     public void viewAndEditProperties(String instanceId) throws InterruptedException {
+        ChooseOne chooseOne = new ChooseOne(out, in);
         UpdatePropertiesRequest<InstanceProperties> request = openFile(instanceId);
         if (request.isChanged()) {
             request.print(out);
-            in.promptLine("Do you want to apply these changes? (y/N): ");
+            chooseOne.chooseFrom(
+                    ConsoleChoice.describedAs("Apply changes"),
+                    ConsoleChoice.describedAs("Return to editor"),
+                    ConsoleChoice.describedAs("Discard changes and return to main menu"));
         }
     }
 

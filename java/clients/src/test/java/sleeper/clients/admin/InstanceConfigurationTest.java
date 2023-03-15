@@ -33,7 +33,7 @@ import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChange
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_APPLY_CHANGES;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_APPLY_CHANGES_SCREEN;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 
@@ -78,7 +78,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROMPT_APPLY_CHANGES + DISPLAY_MAIN_SCREEN);
+                    .endsWith(PROPERTY_APPLY_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock).promptLine(any());
@@ -195,7 +195,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     private static String getPropertiesDisplay(String output) {
         return output.substring(
                 DISPLAY_MAIN_SCREEN.length(),
-                output.length() - PROMPT_APPLY_CHANGES.length() - DISPLAY_MAIN_SCREEN.length());
+                output.length() - PROPERTY_APPLY_CHANGES_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
     }
 
 }
