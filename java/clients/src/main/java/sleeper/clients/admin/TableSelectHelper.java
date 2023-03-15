@@ -13,32 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.clients.admin;
 
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
+import sleeper.console.menu.ChooseOne;
 import sleeper.console.menu.Chosen;
 import sleeper.console.menu.ConsoleChoice;
 
-public class TablePropertyReportScreen {
+import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 
+class TableSelectHelper {
     private final ConsoleOutput out;
-    private final ConsoleInput in;
-    private final TableSelectHelper tableSelectHelper;
-    private final AdminConfigStore store;
+    private final ChooseOne chooseOne;
 
-    public TablePropertyReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    TableSelectHelper(ConsoleOutput out, ConsoleInput in) {
         this.out = out;
-        this.in = in;
-        this.tableSelectHelper = new TableSelectHelper(out, in);
-        this.store = store;
+        this.chooseOne = new ChooseOne(out, in);
     }
 
-    public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        Chosen<ConsoleChoice> chosen = tableSelectHelper.chooseTable();
-        if (!chosen.getChoice().isPresent()) {
-            new TablePropertyReport(out, in, store).print(instanceId, chosen.getEntered());
-        }
+    public Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
+        return chooseTable("")
+                .chooseUntilSomethingEntered(() ->
+                        chooseTable("\nYou did not enter anything please try again\n"));
+    }
+
+    private Chosen<ConsoleChoice> chooseTable(String message) {
+        out.clearScreen(message);
+        out.println("Which TABLE do you want to check?\n");
+        return chooseOne.chooseWithMessageFrom(
+                "Please enter the TABLE NAME now or use the following options:",
+                RETURN_TO_MAIN_MENU);
     }
 }
