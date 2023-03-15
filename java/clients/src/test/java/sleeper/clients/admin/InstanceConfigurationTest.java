@@ -32,6 +32,7 @@ import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChange
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -59,13 +60,12 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         order.verifyNoMoreInteractions();
     }
 
-    // TODO apply changes in the store, handle multiple properties changed, output description
+    // TODO apply changes in the store, handle multiple properties changed
     // TODO prompt to return to main menu or apply changes
     @Test
     void shouldEditAProperty() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
-        setInstanceProperties(before);
         before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
         InstanceProperties after = createValidInstanceProperties();
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
@@ -87,7 +87,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     void shouldSetADefaultedProperty() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
-        setInstanceProperties(before);
         InstanceProperties after = createValidInstanceProperties();
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
 
@@ -108,7 +107,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     void shouldSetAnUnknownProperty() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
-        setInstanceProperties(before);
         InstanceProperties after = createValidInstanceProperties();
         after.loadFromString("unknown.property=abc");
 
@@ -122,6 +120,28 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                 "Unknown property, no description available\n" +
                 "Unset before\n" +
                 "After: abc\n" +
+                "\n");
+    }
+
+    @Test
+    void shouldEditPropertyWithLongDescription() throws Exception {
+        // Given
+        InstanceProperties before = createValidInstanceProperties();
+        InstanceProperties after = createValidInstanceProperties();
+        after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
+
+        // When
+        String output = updatePropertiesGetOutput(before, after);
+
+        // Then
+        assertThat(output).isEqualTo("Found changes to properties:\n" +
+                "\n" +
+                "sleeper.ingest.partition.refresh.period\n" +
+                "The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
+                "(NB Refreshes only happen once a batch of data has been written so this is a lower bound on the\n" +
+                "refresh frequency.)\n" +
+                "Unset before, default value: 120\n" +
+                "After: 123\n" +
                 "\n");
     }
 
