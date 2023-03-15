@@ -36,7 +36,11 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
         return updatedProperties;
     }
 
-    public void printIfChanged(ConsoleOutput out) {
-        diff.printIfChanged(out, updatedProperties.getPropertiesIndex());
+    public boolean isChanged() {
+        return diff.isChanged();
+    }
+
+    public void print(ConsoleOutput out) {
+        diff.print(out, updatedProperties.getPropertiesIndex());
     }
 }

@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin.testutils;
 
+import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+
 public class ExpectedAdminConsoleValues {
 
     private ExpectedAdminConsoleValues() {
@@ -87,4 +89,9 @@ public class ExpectedAdminConsoleValues {
     public static final String PROMPT_RETURN_TO_PROPERTY = "" +
             "\n\n----------------------------------\n" +
             "Hit enter to return to the property screen so you can adjust the property and continue\n";
+
+    public static final String PROMPT_APPLY_CHANGES = "" +
+            "Do you want to apply these changes? (y/N): \n";
+
+    public static final String DISPLAY_MAIN_SCREEN = CLEAR_CONSOLE + MAIN_SCREEN;
 }

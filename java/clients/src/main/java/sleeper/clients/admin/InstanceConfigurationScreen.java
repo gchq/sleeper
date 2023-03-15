@@ -38,7 +38,10 @@ public class InstanceConfigurationScreen {
 
     public void viewAndEditProperties(String instanceId) {
         UpdatePropertiesRequest<InstanceProperties> request = openFile(instanceId);
-        request.printIfChanged(out);
+        if (request.isChanged()) {
+            request.print(out);
+            in.promptLine("Do you want to apply these changes? (y/N): ");
+        }
     }
 
     private UpdatePropertiesRequest<InstanceProperties> openFile(String instanceId) {

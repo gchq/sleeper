@@ -41,10 +41,7 @@ public class PropertiesDiff {
         return changes;
     }
 
-    public void printIfChanged(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
-        if (changes.isEmpty()) {
-            return;
-        }
+    public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         out.println("Found changes to properties:");
         out.println();
         for (PropertyDiff diff : changes) {
@@ -63,5 +60,9 @@ public class PropertiesDiff {
         propertyNames.addAll(before.keySet());
         propertyNames.addAll(after.keySet());
         return propertyNames.stream();
+    }
+
+    public boolean isChanged() {
+        return !changes.isEmpty();
     }
 }
