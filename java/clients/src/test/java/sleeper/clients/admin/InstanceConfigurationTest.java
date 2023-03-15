@@ -28,9 +28,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
+import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
@@ -53,6 +55,31 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         InOrder order = Mockito.inOrder(in.mock, editor);
         order.verify(in.mock).promptLine(any());
         order.verify(editor).openPropertiesFile(properties);
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    // TODO output changes and apply them in the store
+    @Test
+    void shouldEditAPropertyInInstanceConfiguration() throws IOException, InterruptedException {
+        // Given
+        InstanceProperties before = createValidInstanceProperties();
+        setInstanceProperties(before);
+        InstanceProperties after = createValidInstanceProperties();
+        after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, EXIT_OPTION);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, editor);
+        order.verify(in.mock).promptLine(any());
+        order.verify(editor).openPropertiesFile(before);
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
     }

@@ -27,4 +27,8 @@ public class UpdatePropertiesRequestTestHelper {
     public static UpdatePropertiesRequest<InstanceProperties> noChanges(InstanceProperties properties) {
         return new UpdatePropertiesRequest<>(new PropertiesDiff(Collections.emptyList()), properties);
     }
+
+    public static UpdatePropertiesRequest<InstanceProperties> withChanges(InstanceProperties before, InstanceProperties after) {
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(before.toMap(), after.toMap()), after);
+    }
 }
