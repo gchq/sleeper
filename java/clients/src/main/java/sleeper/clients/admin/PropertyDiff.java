@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.formatDescription;
+
 public class PropertyDiff {
     private final String propertyName;
     private final String oldValue;
@@ -75,6 +77,9 @@ public class PropertyDiff {
 
     public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         out.println(propertyName);
+        String description = propertyIndex.getByName(propertyName)
+                .map(SleeperProperty::getDescription).orElse("Unknown property, no description available");
+        out.println(formatDescription("", description));
         if (oldValue == null) {
             String defaultValue = propertyIndex.getByName(propertyName)
                     .map(SleeperProperty::getDefaultValue).orElse(null);

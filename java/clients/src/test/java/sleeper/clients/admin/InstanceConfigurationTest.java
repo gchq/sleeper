@@ -77,6 +77,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         assertThat(output).isEqualTo("Found changes to properties:\n" +
                 "\n" +
                 "sleeper.s3.max-connections\n" +
+                "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
                 "Before: 123\n" +
                 "After: 456\n" +
                 "\n");
@@ -97,6 +98,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         assertThat(output).isEqualTo("Found changes to properties:\n" +
                 "\n" +
                 "sleeper.s3.max-connections\n" +
+                "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
                 "Unset before, default value: 25\n" +
                 "After: 123\n" +
                 "\n");
@@ -117,6 +119,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         assertThat(output).isEqualTo("Found changes to properties:\n" +
                 "\n" +
                 "unknown.property\n" +
+                "Unknown property, no description available\n" +
                 "Unset before\n" +
                 "After: abc\n" +
                 "\n");
