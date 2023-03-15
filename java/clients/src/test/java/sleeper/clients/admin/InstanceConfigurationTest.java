@@ -36,12 +36,12 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     @Test
-    void shouldPrintAllInstanceProperties() throws IOException, InterruptedException {
+    void shouldViewInstanceConfiguration() throws IOException, InterruptedException {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
         in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, EXIT_OPTION);
-        when(updateProperties.updateProperties(properties))
+        when(editor.openPropertiesFile(properties))
                 .thenReturn(noChanges(properties));
 
         // When
@@ -50,9 +50,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
 
-        InOrder order = Mockito.inOrder(in.mock, updateProperties);
+        InOrder order = Mockito.inOrder(in.mock, editor);
         order.verify(in.mock).promptLine(any());
-        order.verify(updateProperties).updateProperties(properties);
+        order.verify(editor).openPropertiesFile(properties);
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
     }

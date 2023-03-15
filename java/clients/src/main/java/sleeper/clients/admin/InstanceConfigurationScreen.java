@@ -21,16 +21,16 @@ import java.io.UncheckedIOException;
 
 public class InstanceConfigurationScreen {
     private final AdminConfigStore store;
-    private final UpdatePropertiesWithNano updateProperties;
+    private final UpdatePropertiesWithNano editor;
 
-    public InstanceConfigurationScreen(AdminConfigStore store, UpdatePropertiesWithNano updateProperties) {
+    public InstanceConfigurationScreen(AdminConfigStore store, UpdatePropertiesWithNano editor) {
         this.store = store;
-        this.updateProperties = updateProperties;
+        this.editor = editor;
     }
 
     public void viewAndEditProperties(String instanceId) {
         try {
-            updateProperties.updateProperties(store.loadInstanceProperties(instanceId));
+            editor.openPropertiesFile(store.loadInstanceProperties(instanceId));
         } catch (IOException e1) {
             throw new UncheckedIOException(e1);
         } catch (InterruptedException e2) {

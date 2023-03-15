@@ -36,13 +36,13 @@ import java.nio.file.Path;
 public class AdminClient {
 
     private final AdminConfigStore store;
-    private final UpdatePropertiesWithNano updateProperties;
+    private final UpdatePropertiesWithNano editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
 
-    public AdminClient(AdminConfigStore store, UpdatePropertiesWithNano updateProperties, ConsoleOutput out, ConsoleInput in) {
+    public AdminClient(AdminConfigStore store, UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in) {
         this.store = store;
-        this.updateProperties = updateProperties;
+        this.editor = editor;
         this.out = out;
         this.in = in;
     }
@@ -77,7 +77,7 @@ public class AdminClient {
     }
 
     public InstanceConfigurationScreen instanceConfigurationScreen() {
-        return new InstanceConfigurationScreen(store, updateProperties);
+        return new InstanceConfigurationScreen(store, editor);
     }
 
     public TableNamesReport tableNamesReport() {

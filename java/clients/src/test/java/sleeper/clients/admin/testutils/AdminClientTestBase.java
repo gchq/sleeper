@@ -46,7 +46,7 @@ public abstract class AdminClientTestBase {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
-    protected final UpdatePropertiesWithNano updateProperties = mock(UpdatePropertiesWithNano.class);
+    protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

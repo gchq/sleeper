@@ -45,12 +45,12 @@ public class UpdatePropertiesWithNano {
         this.runCommand = runCommand;
     }
 
-    public UpdatePropertiesRequest<InstanceProperties> updateProperties(InstanceProperties properties) throws IOException, InterruptedException {
+    public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(InstanceProperties properties) throws IOException, InterruptedException {
         InstanceProperties updatedProperties = new InstanceProperties(editProperties(properties));
         return buildRequest(properties, updatedProperties);
     }
 
-    public UpdatePropertiesRequest<TableProperties> updateProperties(TableProperties properties) throws IOException, InterruptedException {
+    public UpdatePropertiesRequest<TableProperties> openPropertiesFile(TableProperties properties) throws IOException, InterruptedException {
         TableProperties updatedProperties = TableProperties.reinitialise(properties, editProperties(properties));
         return buildRequest(properties, updatedProperties);
     }

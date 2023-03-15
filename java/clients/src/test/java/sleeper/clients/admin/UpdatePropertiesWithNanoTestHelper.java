@@ -39,7 +39,7 @@ public class UpdatePropertiesWithNanoTestHelper {
 
     public String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
         return commandRunOn(runCommand ->
-                updater(runCommand).updateProperties(properties));
+                updater(runCommand).openPropertiesFile(properties));
     }
 
     public InstanceProperties updateInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
@@ -47,23 +47,23 @@ public class UpdatePropertiesWithNanoTestHelper {
         updater(command -> {
             foundProperties.set(new InstanceProperties(loadProperties(expectedPropertiesFile)));
             return 0;
-        }).updateProperties(properties);
+        }).openPropertiesFile(properties);
         return foundProperties.get();
     }
 
     public Path updateInstancePropertiesGetPathToFile(InstanceProperties properties) throws IOException, InterruptedException {
-        updater(command -> 0).updateProperties(properties);
+        updater(command -> 0).openPropertiesFile(properties);
         return expectedPropertiesFile;
     }
 
     public UpdatePropertiesRequest<InstanceProperties> updateProperties(
             InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
-        return updaterSavingProperties(after).updateProperties(before);
+        return updaterSavingProperties(after).openPropertiesFile(before);
     }
 
     public UpdatePropertiesRequest<TableProperties> updateProperties(
             TableProperties before, TableProperties after) throws IOException, InterruptedException {
-        return updaterSavingProperties(after).updateProperties(before);
+        return updaterSavingProperties(after).openPropertiesFile(before);
     }
 
     private UpdatePropertiesWithNano updaterSavingProperties(SleeperProperties<?> after) {
