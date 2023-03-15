@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
+import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
@@ -67,16 +68,16 @@ public class AdminClient {
                 new ConsoleInput(System.console())).start(instanceId);
     }
 
-    public UpdatePropertiesWithNano getUpdateProperties() {
-        return updateProperties;
-    }
-
     public void start(String instanceId) {
         new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 
     public InstancePropertyReport instancePropertyReport() {
         return new InstancePropertyReport(out, in, store);
+    }
+
+    public InstanceConfigurationScreen instanceConfigurationScreen() {
+        return new InstanceConfigurationScreen(store, updateProperties);
     }
 
     public TableNamesReport tableNamesReport() {

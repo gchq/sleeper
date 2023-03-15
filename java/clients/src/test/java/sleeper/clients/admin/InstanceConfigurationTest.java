@@ -22,9 +22,12 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
@@ -33,13 +36,13 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     @Test
-    void shouldPrintAllInstanceProperties() {
+    void shouldPrintAllInstanceProperties() throws IOException, InterruptedException {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
         in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, EXIT_OPTION);
-//        when(updateProperties.updateProperties(properties))
-//                .thenReturn(new UpdatePropertiesRequest(noChanges(), properties));
+        when(updateProperties.updateProperties(properties))
+                .thenReturn(noChanges(properties));
 
         // When
         String output = runClientGetOutput();
@@ -47,8 +50,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
 
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(2)).promptLine(any());
+        InOrder order = Mockito.inOrder(in.mock, updateProperties);
+        order.verify(in.mock).promptLine(any());
+        order.verify(updateProperties).updateProperties(properties);
+        order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
     }
 }
