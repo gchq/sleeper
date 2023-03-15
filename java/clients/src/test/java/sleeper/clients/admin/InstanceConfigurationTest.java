@@ -60,6 +60,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     }
 
     // TODO apply changes in the store, handle multiple properties changed, output description
+    // TODO prompt to return to main menu or apply changes
     @Test
     void shouldEditAProperty() throws Exception {
         // Given
