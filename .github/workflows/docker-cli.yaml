@@ -7,7 +7,7 @@ on:
         type: boolean
 
 env:
-  DOCKER_PLATFORMS: linux/amd64,linux/arm64
+  DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
