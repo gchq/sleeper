@@ -67,16 +67,16 @@ public class PropertyDiff {
         out.println();
     }
 
+    public Optional<PropertyDiff> andThen(PropertyDiff then) {
+        if (Objects.equals(oldValue, then.newValue)) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new PropertyDiff(propertyName, oldValue, then.newValue));
+        }
+    }
+
     public String getPropertyName() {
         return propertyName;
-    }
-
-    public String getOldValue() {
-        return oldValue;
-    }
-
-    public String getNewValue() {
-        return newValue;
     }
 
     @Override

@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -75,16 +74,21 @@ public class PropertiesDiff {
     }
 
     public PropertiesDiff andThen(PropertiesDiff diff) {
-        Map<String, PropertyDiff> combined = new HashMap<>(changes);
-        diff.changes.values().forEach(then -> {
-            String propertyName = then.getPropertyName();
-            PropertyDiff first = changes.get(propertyName);
-            if (first != null && Objects.equals(first.getOldValue(), then.getNewValue())) {
-                combined.remove(propertyName);
+        return new PropertiesDiff(combine(changes, diff.changes));
+    }
+
+    private static Map<String, PropertyDiff> combine(Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+        Map<String, PropertyDiff> combined = new HashMap<>(firstMap);
+        secondMap.values().forEach(second -> {
+            String propertyName = second.getPropertyName();
+            if (firstMap.containsKey(propertyName)) {
+                firstMap.get(propertyName).andThen(second).ifPresentOrElse(
+                        after -> combined.put(propertyName, after),
+                        () -> combined.remove(propertyName));
             } else {
-                combined.put(propertyName, then);
+                combined.put(propertyName, second);
             }
         });
-        return new PropertiesDiff(combined);
+        return combined;
     }
 }
