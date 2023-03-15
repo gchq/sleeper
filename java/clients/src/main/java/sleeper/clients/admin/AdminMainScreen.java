@@ -47,7 +47,9 @@ public class AdminMainScreen {
                 new MenuOption("Update an instance or table property", () ->
                         client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
                 new MenuOption("Run partition status report", () ->
-                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId))
+                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run compaction status report", () ->
+                        client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId))
         );
         while (true) {
             try {

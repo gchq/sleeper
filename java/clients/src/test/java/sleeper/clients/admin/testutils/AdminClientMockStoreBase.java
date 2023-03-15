@@ -17,11 +17,16 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
+import sleeper.compaction.job.CompactionJobStatusTestData;
+import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,6 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminConfigStore store = mock(AdminConfigStore.class);
+    protected final DynamoDBCompactionJobStatusStore compactionJobStatusStore = mock(DynamoDBCompactionJobStatusStore.class);
 
     protected String runClientGetOutput() {
         return runClientGetOutput(new AdminClient(store, out.consoleOut(), in.consoleIn()));
@@ -56,5 +62,16 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
                 .thenReturn(tableProperties);
         when(store.loadStateStore(properties.get(ID), tableProperties.get(TABLE_NAME)))
                 .thenReturn(stateStore);
+    }
+
+    protected void setCompactionStatusStore(InstanceProperties properties, TableProperties tableProperties) {
+        when(store.loadTableProperties(properties.get(ID), tableProperties.get(TABLE_NAME)))
+                .thenReturn(tableProperties);
+        when(store.loadCompactionJobStatusStore(properties.get(ID)))
+                .thenReturn(compactionJobStatusStore);
+        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+        when(compactionJobStatusStore.getAllJobs(tableProperties.get(TABLE_NAME)))
+                .thenReturn(List.of(CompactionJobStatusTestData.jobCreated(dataHelper.singleFileCompaction(),
+                        Instant.parse("2023-03-15T17:52:12.001Z"))));
     }
 }

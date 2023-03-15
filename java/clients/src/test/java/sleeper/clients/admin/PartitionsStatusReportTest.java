@@ -35,7 +35,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
     @Test
-    void shouldRunPartitionStatusReportIfStateStoreExists() {
+    void shouldRunPartitionStatusReport() {
         // Given
         createStateStore();
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);

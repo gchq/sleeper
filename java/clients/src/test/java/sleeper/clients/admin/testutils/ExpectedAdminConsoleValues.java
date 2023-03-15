@@ -31,6 +31,7 @@ public class ExpectedAdminConsoleValues {
             "[3] Print Sleeper table property report\n" +
             "[4] Update an instance or table property\n" +
             "[5] Run partition status report\n" +
+            "[6] Run compaction status report\n" +
             "\n" +
             "Input: \n";
 
@@ -77,6 +78,10 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_PROPERTY_REPORT_OPTION = "3";
     public static final String UPDATE_PROPERTY_OPTION = "4";
     public static final String PARTITION_STATUS_REPORT_OPTION = "5";
+    public static final String COMPACTION_STATUS_REPORT_OPTION = "6";
+    public static final String COMPACTION_JOB_STATUS_REPORT_OPTION = "1";
+
+    public static final String JOB_QUERY_ALL_OPTION = "1";
 
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
