@@ -18,7 +18,7 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
@@ -39,33 +39,41 @@ public class UpdatePropertiesWithNanoTestHelper {
 
     public String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
         return commandRunOn(runCommand ->
-                updateProperties(properties, runCommand));
+                updater(runCommand).updateProperties(properties));
     }
 
     public InstanceProperties updateInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
         AtomicReference<InstanceProperties> foundProperties = new AtomicReference<>();
-        updateProperties(properties, command -> {
+        updater(command -> {
             foundProperties.set(new InstanceProperties(loadProperties(expectedPropertiesFile)));
             return 0;
-        });
+        }).updateProperties(properties);
         return foundProperties.get();
     }
 
     public Path updateInstancePropertiesGetPathToFile(InstanceProperties properties) throws IOException, InterruptedException {
-        updateProperties(properties, command -> 0);
+        updater(command -> 0).updateProperties(properties);
         return expectedPropertiesFile;
     }
 
-    public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
-            SleeperProperties<T> before, SleeperProperties<T> after) throws IOException, InterruptedException {
-        return updateProperties(before, command -> {
+    public UpdatePropertiesRequest updateProperties(
+            InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
+        return updaterSavingProperties(after).updateProperties(before);
+    }
+
+    public UpdatePropertiesRequest updateProperties(
+            TableProperties before, TableProperties after) throws IOException, InterruptedException {
+        return updaterSavingProperties(after).updateProperties(before);
+    }
+
+    private UpdatePropertiesWithNano updaterSavingProperties(SleeperProperties<?> after) {
+        return updater(command -> {
             after.save(expectedPropertiesFile);
             return 0;
         });
     }
 
-    public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
-            SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
-        return new UpdatePropertiesWithNano(tempDir, runCommand).updateProperties(properties);
+    private UpdatePropertiesWithNano updater(RunCommand runCommand) {
+        return new UpdatePropertiesWithNano(tempDir, runCommand);
     }
 }

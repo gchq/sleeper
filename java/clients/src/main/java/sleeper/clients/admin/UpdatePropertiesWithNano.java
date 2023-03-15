@@ -15,8 +15,10 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.util.ClientUtils;
 import sleeper.util.RunCommand;
 
@@ -44,16 +46,27 @@ public class UpdatePropertiesWithNano {
         this.runCommand = runCommand;
     }
 
-    public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(SleeperProperties<T> properties) throws IOException, InterruptedException {
+    public UpdatePropertiesRequest updateProperties(InstanceProperties properties) throws IOException, InterruptedException {
+        Properties updatedProperties = editProperties(properties);
+        return buildRequest(properties, updatedProperties);
+    }
+
+    public UpdatePropertiesRequest updateProperties(TableProperties properties) throws IOException, InterruptedException {
+        Properties updatedProperties = editProperties(properties);
+        return buildRequest(properties, updatedProperties);
+    }
+
+    private <T extends SleeperProperty> Properties editProperties(SleeperProperties<T> properties) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/temp.properties");
         try (BufferedWriter writer = Files.newBufferedWriter(propertiesFile)) {
             properties.saveUsingPrettyPrinter(new PrintWriter(writer));
         }
         runCommand.run("nano", propertiesFile.toString());
-        Properties updatedProperties = loadProperties(propertiesFile);
-        return new UpdatePropertiesRequest(
-                new PropertiesDiff(properties.toMap(), toMap(updatedProperties)),
-                updatedProperties);
+        return loadProperties(propertiesFile);
+    }
+
+    private <T extends SleeperProperties<?>> UpdatePropertiesRequest buildRequest(T before, Properties after) {
+        return new UpdatePropertiesRequest(new PropertiesDiff(before.toMap(), toMap(after)), after);
     }
 }

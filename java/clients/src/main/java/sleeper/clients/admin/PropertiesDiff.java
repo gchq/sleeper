@@ -27,7 +27,11 @@ public class PropertiesDiff {
     private final List<PropertyDiff> changes;
 
     public PropertiesDiff(Map<String, String> before, Map<String, String> after) {
-        this.changes = calculateChanges(before, after);
+        this(calculateChanges(before, after));
+    }
+
+    public PropertiesDiff(List<PropertyDiff> changes) {
+        this.changes = changes;
     }
 
     public List<PropertyDiff> getChanges() {
