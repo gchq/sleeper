@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -90,7 +89,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldReturnToEditorAfterMakingChanges() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
@@ -127,7 +125,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    // TODO apply changes in the store, handle multiple properties changed
+    // TODO apply changes in the store, handle multiple properties changed, order properties in output
     // TODO handle validation failure
 
     @DisplayName("Display changes to edited properties")

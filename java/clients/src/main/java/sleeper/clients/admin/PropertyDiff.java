@@ -47,6 +47,38 @@ public class PropertyDiff {
         }
     }
 
+    public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
+        out.println(propertyName);
+        String description = propertyIndex.getByName(propertyName)
+                .map(SleeperProperty::getDescription).orElse("Unknown property, no description available");
+        out.println(formatDescription("", description));
+        if (oldValue == null) {
+            String defaultValue = propertyIndex.getByName(propertyName)
+                    .map(SleeperProperty::getDefaultValue).orElse(null);
+            if (defaultValue != null) {
+                out.printf("Unset before, default value: %s%n", defaultValue);
+            } else {
+                out.println("Unset before");
+            }
+        } else {
+            out.printf("Before: %s%n", oldValue);
+        }
+        out.printf("After: %s%n", newValue);
+        out.println();
+    }
+
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    public String getOldValue() {
+        return oldValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -73,25 +105,5 @@ public class PropertyDiff {
                 ", oldValue='" + oldValue + '\'' +
                 ", newValue='" + newValue + '\'' +
                 '}';
-    }
-
-    public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
-        out.println(propertyName);
-        String description = propertyIndex.getByName(propertyName)
-                .map(SleeperProperty::getDescription).orElse("Unknown property, no description available");
-        out.println(formatDescription("", description));
-        if (oldValue == null) {
-            String defaultValue = propertyIndex.getByName(propertyName)
-                    .map(SleeperProperty::getDefaultValue).orElse(null);
-            if (defaultValue != null) {
-                out.printf("Unset before, default value: %s%n", defaultValue);
-            } else {
-                out.println("Unset before");
-            }
-        } else {
-            out.printf("Before: %s%n", oldValue);
-        }
-        out.printf("After: %s%n", newValue);
-        out.println();
     }
 }

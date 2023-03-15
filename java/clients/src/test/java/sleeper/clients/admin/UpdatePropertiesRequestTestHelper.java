@@ -18,14 +18,12 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import java.util.Collections;
-
 public class UpdatePropertiesRequestTestHelper {
     private UpdatePropertiesRequestTestHelper() {
     }
 
     public static UpdatePropertiesRequest<InstanceProperties> noChanges(InstanceProperties properties) {
-        return new UpdatePropertiesRequest<>(new PropertiesDiff(Collections.emptyList()), properties);
+        return new UpdatePropertiesRequest<>(PropertiesDiff.noChanges(), properties);
     }
 
     public static UpdatePropertiesRequest<InstanceProperties> withChanges(InstanceProperties before, InstanceProperties after) {
