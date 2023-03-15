@@ -29,6 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.admin.PropertiesDiff.noChanges;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.newValue;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueDeleted;
@@ -36,6 +37,7 @@ import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestIn
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -194,32 +196,44 @@ public class PropertiesDiffTest {
         @Test
         void shouldCombineTwoDiffsIntoOne() {
             // Given
-            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
-            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
+            PropertiesDiff diff1 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
 
             assertThat(diff1.andThen(diff2).getChanges())
-                    .containsExactly(new PropertyDiff(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName(), "123", "789"));
+                    .containsExactly(valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "123", "789"));
         }
 
         @Test
         void shouldCancelOutDiffsWhenChangesHaveBeenReverted() {
             // Given
-            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
-            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "123");
+            PropertiesDiff diff1 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "123");
 
             assertThat(diff1.andThen(diff2))
-                    .isEqualTo(PropertiesDiff.noChanges());
+                    .isEqualTo(noChanges());
         }
 
         @Test
         void shouldCancelOutDiffsWhenChangesHaveBeenRevertedAfterMultipleChanges() {
             // Given
-            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
-            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
-            PropertiesDiff diff3 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "789", "123");
+            PropertiesDiff diff1 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
+            PropertiesDiff diff3 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "789", "123");
 
             assertThat(diff1.andThen(diff2).andThen(diff3))
-                    .isEqualTo(PropertiesDiff.noChanges());
+                    .isEqualTo(noChanges());
+        }
+
+        @Test
+        void shouldNotCombineDiffsWhenPropertyIsDifferent() {
+            // Given
+            PropertiesDiff diff1 = generateSingleInstancePropertyDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleInstancePropertyDiff(LOG_RETENTION_IN_DAYS, "456", "123");
+
+            assertThat(diff1.andThen(diff2).getChanges())
+                    .containsExactly(
+                            valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "123", "456"),
+                            valueChanged(LOG_RETENTION_IN_DAYS, "456", "123"));
         }
     }
 
@@ -227,11 +241,11 @@ public class PropertiesDiffTest {
         return new PropertiesDiff(before.toMap(), after.toMap()).getChanges();
     }
 
-    private PropertiesDiff generateSingleDiff(InstanceProperty property, String oldValue, String newValue) {
-        InstanceProperties before1 = generateTestInstanceProperties();
-        before1.set(property, oldValue);
-        InstanceProperties after1 = generateTestInstanceProperties();
-        after1.set(property, newValue);
-        return new PropertiesDiff(before1.toMap(), after1.toMap());
+    private PropertiesDiff generateSingleInstancePropertyDiff(InstanceProperty property, String oldValue, String newValue) {
+        InstanceProperties before = generateTestInstanceProperties();
+        before.set(property, oldValue);
+        InstanceProperties after = generateTestInstanceProperties();
+        after.set(property, newValue);
+        return new PropertiesDiff(before.toMap(), after.toMap());
     }
 }
