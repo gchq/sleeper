@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -187,7 +188,50 @@ public class PropertiesDiffTest {
         }
     }
 
+    @DisplayName("Combine multiple diffs")
+    @Nested
+    class CombineDiffs {
+        @Test
+        void shouldCombineTwoDiffsIntoOne() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
+
+            assertThat(diff1.andThen(diff2).getChanges())
+                    .containsExactly(new PropertyDiff(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName(), "123", "789"));
+        }
+
+        @Test
+        void shouldCancelOutDiffsWhenChangesHaveBeenReverted() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "123");
+
+            assertThat(diff1.andThen(diff2))
+                    .isEqualTo(PropertiesDiff.noChanges());
+        }
+
+        @Test
+        void shouldCancelOutDiffsWhenChangesHaveBeenRevertedAfterMultipleChanges() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
+            PropertiesDiff diff3 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "789", "123");
+
+            assertThat(diff1.andThen(diff2).andThen(diff3))
+                    .isEqualTo(PropertiesDiff.noChanges());
+        }
+    }
+
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
         return new PropertiesDiff(before.toMap(), after.toMap()).getChanges();
+    }
+
+    private PropertiesDiff generateSingleDiff(InstanceProperty property, String oldValue, String newValue) {
+        InstanceProperties before1 = generateTestInstanceProperties();
+        before1.set(property, oldValue);
+        InstanceProperties after1 = generateTestInstanceProperties();
+        after1.set(property, newValue);
+        return new PropertiesDiff(before1.toMap(), after1.toMap());
     }
 }
