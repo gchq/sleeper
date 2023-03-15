@@ -47,7 +47,7 @@ public class AdminClient {
         this.in = in;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id>");
         }
@@ -68,7 +68,7 @@ public class AdminClient {
                 new ConsoleInput(System.console())).start(instanceId);
     }
 
-    public void start(String instanceId) {
+    public void start(String instanceId) throws InterruptedException {
         new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 

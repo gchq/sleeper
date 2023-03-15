@@ -36,7 +36,7 @@ public class InstanceConfigurationScreen {
         this.editor = editor;
     }
 
-    public void viewAndEditProperties(String instanceId) {
+    public void viewAndEditProperties(String instanceId) throws InterruptedException {
         UpdatePropertiesRequest<InstanceProperties> request = openFile(instanceId);
         if (request.isChanged()) {
             request.print(out);
@@ -44,14 +44,11 @@ public class InstanceConfigurationScreen {
         }
     }
 
-    private UpdatePropertiesRequest<InstanceProperties> openFile(String instanceId) {
+    private UpdatePropertiesRequest<InstanceProperties> openFile(String instanceId) throws InterruptedException {
         try {
             return editor.openPropertiesFile(store.loadInstanceProperties(instanceId));
         } catch (IOException e1) {
             throw new UncheckedIOException(e1);
-        } catch (InterruptedException e2) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e2);
         }
     }
 

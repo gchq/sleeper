@@ -20,5 +20,5 @@ import sleeper.console.UserExitedException;
 @FunctionalInterface
 public interface MenuOperation {
 
-    void run() throws UserExitedException;
+    void run() throws UserExitedException, InterruptedException;
 }

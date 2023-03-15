@@ -36,7 +36,7 @@ public class AdminMainScreen {
         this.chooseOne = new ChooseOne(out, in);
     }
 
-    public void mainLoop(AdminClient client, String instanceId) {
+    public void mainLoop(AdminClient client, String instanceId) throws InterruptedException {
         List<MenuOption> options = Arrays.asList(
                 new MenuOption("View/edit instance configuration", () ->
                         client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),

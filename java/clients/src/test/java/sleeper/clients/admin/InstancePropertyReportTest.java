@@ -36,7 +36,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 class InstancePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
-    void shouldPrintAllInstanceProperties() {
+    void shouldPrintAllInstanceProperties() throws Exception {
         // Given
         setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);

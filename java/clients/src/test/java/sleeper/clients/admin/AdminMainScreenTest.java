@@ -28,7 +28,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class AdminMainScreenTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldDisplayMainScreenAndExitWhenChosen() {
+    public void shouldDisplayMainScreenAndExitWhenChosen() throws Exception {
         // Given
         in.enterNextPrompt(EXIT_OPTION);
 
@@ -37,7 +37,7 @@ public class AdminMainScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldPromptOnInvalidChoiceOnMainScreen() {
+    public void shouldPromptOnInvalidChoiceOnMainScreen() throws Exception {
         // Given
         in.enterNextPrompts("abc", EXIT_OPTION);
 

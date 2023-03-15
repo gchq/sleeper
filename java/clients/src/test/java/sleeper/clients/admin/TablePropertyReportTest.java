@@ -42,7 +42,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class TablePropertyReportTest extends AdminClientMockStoreBase {
     @Test
-    void shouldPrintAllTableProperties() {
+    void shouldPrintAllTableProperties() throws Exception {
         // Given
         createTablePropertiesAndSelectTable();
 
@@ -62,7 +62,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldExitWhenChosenOnTablePropertyReportScreen() {
+    void shouldExitWhenChosenOnTablePropertyReportScreen() throws Exception {
         // Given
         createTableProperties();
         in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
@@ -79,7 +79,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() {
+    void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() throws Exception {
         // Given
         createTableProperties();
         in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);

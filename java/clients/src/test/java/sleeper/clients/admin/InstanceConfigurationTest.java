@@ -24,8 +24,6 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -46,7 +44,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     class NavigateFromMainScreen {
 
         @Test
-        void shouldViewInstanceConfiguration() throws IOException, InterruptedException {
+        void shouldViewInstanceConfiguration() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);

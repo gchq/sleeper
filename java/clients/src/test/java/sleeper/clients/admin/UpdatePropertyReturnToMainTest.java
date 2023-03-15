@@ -32,7 +32,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class UpdatePropertyReturnToMainTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldReturnToMainScreenWhenChosenOnPropertyNameInput() {
+    public void shouldReturnToMainScreenWhenChosenOnPropertyNameInput() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 
@@ -46,7 +46,7 @@ public class UpdatePropertyReturnToMainTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldReturnToMainScreenWhenChosenOnPropertyValueInput() {
+    public void shouldReturnToMainScreenWhenChosenOnPropertyValueInput() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy",
                 RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
@@ -62,7 +62,7 @@ public class UpdatePropertyReturnToMainTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldReturnToMainScreenWhenChosenOnTableNameInput() {
+    public void shouldReturnToMainScreenWhenChosenOnTableNameInput() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.iterator.class.name", "SomeIteratorClass",
                 RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
