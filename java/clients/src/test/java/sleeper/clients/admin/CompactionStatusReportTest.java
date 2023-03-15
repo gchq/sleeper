@@ -19,6 +19,8 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
@@ -29,6 +31,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
@@ -70,6 +74,12 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                             "Total standard jobs pending: 0\n" +
                             "Total standard jobs in progress: 1\n" +
                             "Total standard jobs finished: 1");
+
+            InOrder order = Mockito.inOrder(in.mock);
+            order.verify(in.mock, times(4)).promptLine(any());
+            order.verify(in.mock).waitForLine();
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
         }
 
         @Test
@@ -91,6 +101,12 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                             "Total unfinished jobs: 2\n" +
                             "Total unfinished jobs in progress: 2\n" +
                             "Total unfinished jobs not started: 0");
+
+            InOrder order = Mockito.inOrder(in.mock);
+            order.verify(in.mock, times(4)).promptLine(any());
+            order.verify(in.mock).waitForLine();
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
         }
     }
 
