@@ -17,24 +17,17 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
-import sleeper.compaction.job.CompactionJobStatusTestData;
-import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.statestore.StateStore;
 
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
@@ -65,24 +58,5 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
                 .thenReturn(tableProperties);
         when(store.loadStateStore(properties.get(ID), tableProperties.get(TABLE_NAME)))
                 .thenReturn(stateStore);
-    }
-
-    protected void setCompactionStatusStore(InstanceProperties properties, TableProperties tableProperties) {
-        when(store.loadTableProperties(properties.get(ID), tableProperties.get(TABLE_NAME)))
-                .thenReturn(tableProperties);
-        when(store.loadCompactionJobStatusStore(properties.get(ID)))
-                .thenReturn(compactionJobStatusStore);
-        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        when(compactionJobStatusStore.getAllJobs(tableProperties.get(TABLE_NAME)))
-                .thenReturn(exampleJobStatuses(dataHelper));
-        when(compactionJobStatusStore.getUnfinishedJobs(tableProperties.get(TABLE_NAME)))
-                .thenReturn(exampleJobStatuses(dataHelper));
-    }
-
-    private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
-        return List.of(CompactionJobStatusTestData.jobCreated(dataHelper.singleFileCompaction(),
-                Instant.parse("2023-03-15T17:52:12.001Z"),
-                ProcessRun.started("test-task", startedStatus(
-                        Instant.parse("2023-03-15T17:53:12.001Z")))));
     }
 }
