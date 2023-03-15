@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -38,6 +40,9 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
+    private static final String ENTER_SCREEN_OUTPUT = CLEAR_CONSOLE + MAIN_SCREEN;
+    private static final String EXIT_SCREEN_OUTPUT = CLEAR_CONSOLE + MAIN_SCREEN;
+
     @Test
     void shouldViewInstanceConfiguration() throws IOException, InterruptedException {
         // Given
@@ -51,7 +56,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
+        assertThat(output).isEqualTo(ENTER_SCREEN_OUTPUT + EXIT_SCREEN_OUTPUT);
 
         InOrder order = Mockito.inOrder(in.mock, editor);
         order.verify(in.mock).promptLine(any());
@@ -63,87 +68,94 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     // TODO apply changes in the store, handle multiple properties changed
     // TODO prompt to return to main menu or apply changes
     // TODO add nested test classes
-    @Test
-    void shouldEditAProperty() throws Exception {
-        // Given
-        InstanceProperties before = createValidInstanceProperties();
-        before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-        InstanceProperties after = createValidInstanceProperties();
-        after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+    // TODO handle validation failure
 
-        // When
-        String output = updatePropertiesGetOutput(before, after);
+    @DisplayName("Display changes to edited properties")
+    @Nested
+    class DisplayChanges {
 
-        // Then
-        assertThat(output).isEqualTo("Found changes to properties:\n" +
-                "\n" +
-                "sleeper.s3.max-connections\n" +
-                "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                "Before: 123\n" +
-                "After: 456\n" +
-                "\n");
-    }
+        @Test
+        void shouldEditAProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
-    @Test
-    void shouldSetADefaultedProperty() throws Exception {
-        // Given
-        InstanceProperties before = createValidInstanceProperties();
-        InstanceProperties after = createValidInstanceProperties();
-        after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            // When
+            String output = updatePropertiesGetOutput(before, after);
 
-        // When
-        String output = updatePropertiesGetOutput(before, after);
+            // Then
+            assertThat(output).isEqualTo("Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
+                    "Before: 123\n" +
+                    "After: 456\n" +
+                    "\n");
+        }
 
-        // Then
-        assertThat(output).isEqualTo("Found changes to properties:\n" +
-                "\n" +
-                "sleeper.s3.max-connections\n" +
-                "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                "Unset before, default value: 25\n" +
-                "After: 123\n" +
-                "\n");
-    }
+        @Test
+        void shouldSetADefaultedProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
 
-    @Test
-    void shouldSetAnUnknownProperty() throws Exception {
-        // Given
-        InstanceProperties before = createValidInstanceProperties();
-        InstanceProperties after = createValidInstanceProperties();
-        after.loadFromString("unknown.property=abc");
+            // When
+            String output = updatePropertiesGetOutput(before, after);
 
-        // When
-        String output = updatePropertiesGetOutput(before, after);
+            // Then
+            assertThat(output).isEqualTo("Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
+                    "Unset before, default value: 25\n" +
+                    "After: 123\n" +
+                    "\n");
+        }
 
-        // Then
-        assertThat(output).isEqualTo("Found changes to properties:\n" +
-                "\n" +
-                "unknown.property\n" +
-                "Unknown property, no description available\n" +
-                "Unset before\n" +
-                "After: abc\n" +
-                "\n");
-    }
+        @Test
+        void shouldSetAnUnknownProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.loadFromString("unknown.property=abc");
 
-    @Test
-    void shouldEditPropertyWithLongDescription() throws Exception {
-        // Given
-        InstanceProperties before = createValidInstanceProperties();
-        InstanceProperties after = createValidInstanceProperties();
-        after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
+            // When
+            String output = updatePropertiesGetOutput(before, after);
 
-        // When
-        String output = updatePropertiesGetOutput(before, after);
+            // Then
+            assertThat(output).isEqualTo("Found changes to properties:\n" +
+                    "\n" +
+                    "unknown.property\n" +
+                    "Unknown property, no description available\n" +
+                    "Unset before\n" +
+                    "After: abc\n" +
+                    "\n");
+        }
 
-        // Then
-        assertThat(output).isEqualTo("Found changes to properties:\n" +
-                "\n" +
-                "sleeper.ingest.partition.refresh.period\n" +
-                "The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
-                "(NB Refreshes only happen once a batch of data has been written so this is a lower bound on the\n" +
-                "refresh frequency.)\n" +
-                "Unset before, default value: 120\n" +
-                "After: 123\n" +
-                "\n");
+        @Test
+        void shouldEditPropertyWithLongDescription() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
+
+            // When
+            String output = updatePropertiesGetOutput(before, after);
+
+            // Then
+            assertThat(output).isEqualTo("Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.ingest.partition.refresh.period\n" +
+                    "The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
+                    "(NB Refreshes only happen once a batch of data has been written so this is a lower bound on the\n" +
+                    "refresh frequency.)\n" +
+                    "Unset before, default value: 120\n" +
+                    "After: 123\n" +
+                    "\n");
+        }
     }
 
     private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
@@ -157,8 +169,8 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     private static String getScreenOutput(String output) {
         return output.substring(
-                (CLEAR_CONSOLE + MAIN_SCREEN).length(),
-                output.length() - (CLEAR_CONSOLE + MAIN_SCREEN).length());
+                ENTER_SCREEN_OUTPUT.length(),
+                output.length() - EXIT_SCREEN_OUTPUT.length());
     }
 
 }
