@@ -34,8 +34,8 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Input: \n";
 
-    public static final String TABLE_PROPERTY_REPORT_SCREEN = "\n" +
-            "Which TABLE do you want to check?\n" +
+    public static final String TABLE_SELECT_SCREEN = "\n" +
+            "Which TABLE do you want to select?\n" +
             "\n" +
             "Please enter the TABLE NAME now or use the following options:\n" +
             "[0] Exit program\n" +
