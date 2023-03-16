@@ -69,11 +69,11 @@ public class FilesStatusReport {
                              int maxNumberOfReadyForGCFilesToCount,
                              boolean verbose,
                              String outputType) {
+        this.maxNumberOfReadyForGCFilesToCount = maxNumberOfReadyForGCFilesToCount;
+        this.verbose = verbose;
         if (!FILE_STATUS_REPORTERS.containsKey(outputType)) {
             throw new IllegalArgumentException("Output type not supported " + outputType);
         }
-        this.maxNumberOfReadyForGCFilesToCount = maxNumberOfReadyForGCFilesToCount;
-        this.verbose = verbose;
         this.fileStatusReporter = FILE_STATUS_REPORTERS.get(outputType);
         this.fileStatusCollector = new FileStatusCollector(stateStore);
     }
