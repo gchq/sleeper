@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.console.ConsoleOutput;
 
@@ -45,7 +46,9 @@ public class PropertiesDiff {
         return new PropertiesDiff(Collections.emptyMap());
     }
 
-    public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
+    public void print(ConsoleOutput out,
+                      SleeperPropertyIndex<?> propertyIndex,
+                      Set<SleeperProperty> invalidProperties) {
         out.println("Found changes to properties:");
         out.println();
 
@@ -53,14 +56,22 @@ public class PropertiesDiff {
         propertyIndex.getUserDefined().stream()
                 .filter(property -> changes.containsKey(property.getPropertyName()))
                 .map(property -> changes.get(property.getPropertyName()))
-                .forEach(diff -> diff.print(out, propertyIndex));
+                .forEach(diff -> diff.print(out, propertyIndex, invalidProperties));
 
         // Print unknown properties
         List<String> unknownPropertyNames = changes.keySet().stream()
                 .filter(property -> propertyIndex.getByName(property).isEmpty())
                 .sorted().collect(Collectors.toList());
         for (String propertyName : unknownPropertyNames) {
-            changes.get(propertyName).print(out, propertyIndex);
+            changes.get(propertyName).print(out, propertyIndex, invalidProperties);
+        }
+
+        if (!invalidProperties.isEmpty()) {
+            out.println("Found invalid properties:");
+            for (SleeperProperty property : invalidProperties) {
+                out.println(property.getPropertyName());
+            }
+            out.println();
         }
     }
 

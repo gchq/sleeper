@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,13 +32,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISCARD_CHANGES_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ApplyChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_APPLY_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_EDITOR_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
@@ -97,7 +96,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @ParameterizedTest(name = "With option of \"{0}\"")
-        @ValueSource(strings = {RETURN_TO_EDITOR_OPTION, ""})
+        @ValueSource(strings = {ApplyChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
         void shouldMakeChangesThenReturnToEditorAndRevertChanges(String option) throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
@@ -270,7 +269,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     @Nested
     class HandleValidationFailures {
         @Test
-        @Disabled("TODO")
         void shouldShowValidationScreenWhenPropertyFailsToValidate() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
@@ -278,7 +276,19 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            // String output = updatePropertiesGetValidationDisplay(before, after);
+            String output = updatePropertiesGetValidationDisplay(before, after);
+
+            // Then
+            assertThat(output).isEqualTo("Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
+                    "Unset before, default value: 25\n" +
+                    "After (not valid, please change): abc\n" +
+                    "\n" +
+                    "Found invalid properties:\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "\n");
         }
     }
 
@@ -286,17 +296,22 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return getApplyChangesDisplay(updatePropertiesGetOutput(before, after));
     }
 
-    private String updatePropertiesGetValidationDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
-        return getValidationDisplay(updatePropertiesGetOutput(before, after));
-    }
-
     private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         setInstanceProperties(before);
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, DISCARD_CHANGES_OPTION, EXIT_OPTION);
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, ApplyChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
 
         return runClientGetOutput();
+    }
+
+    private String updatePropertiesGetValidationDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
+        setInstanceProperties(before);
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, ValidateChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+
+        return getValidationDisplay(runClientGetOutput());
     }
 
     private static String getApplyChangesDisplay(String output) {

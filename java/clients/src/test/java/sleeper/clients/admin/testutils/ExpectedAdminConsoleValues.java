@@ -82,10 +82,11 @@ public class ExpectedAdminConsoleValues {
     public static final String PROPERTY_VALIDATION_SCREEN = "" +
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +
-            "[2] Return to editor\n" +
-            "[3] Discard changes and return to main menu\n" +
+            "[1] Return to editor\n" +
+            "[2] Discard changes and return to main menu\n" +
             "\n" +
             "Input: \n";
+
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
     public static final String INSTANCE_CONFIGURATION_OPTION = "1";
@@ -93,9 +94,17 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_NAMES_REPORT_OPTION = "3";
     public static final String TABLE_PROPERTY_REPORT_OPTION = "4";
     public static final String UPDATE_PROPERTY_OPTION = "5";
-    public static final String APPLY_CHANGES_OPTION = "1";
-    public static final String RETURN_TO_EDITOR_OPTION = "2";
-    public static final String DISCARD_CHANGES_OPTION = "3";
+
+    public static final class ApplyChangesScreen {
+        public static final String APPLY_CHANGES_OPTION = "1";
+        public static final String RETURN_TO_EDITOR_OPTION = "2";
+        public static final String DISCARD_CHANGES_OPTION = "3";
+    }
+
+    public static final class ValidateChangesScreen {
+        public static final String RETURN_TO_EDITOR_OPTION = "1";
+        public static final String DISCARD_CHANGES_OPTION = "2";
+    }
 
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 

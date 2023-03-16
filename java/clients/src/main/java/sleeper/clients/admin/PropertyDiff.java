@@ -23,6 +23,7 @@ import sleeper.console.ConsoleOutput;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.formatDescription;
 
@@ -47,14 +48,16 @@ public class PropertyDiff {
         }
     }
 
-    public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
+    public void print(ConsoleOutput out,
+                      SleeperPropertyIndex<?> propertyIndex,
+                      Set<SleeperProperty> invalidProperties) {
         out.println(propertyName);
-        String description = propertyIndex.getByName(propertyName)
-                .map(SleeperProperty::getDescription).orElse("Unknown property, no description available");
+        var propertyOpt = propertyIndex.getByName(propertyName);
+        String description = propertyOpt.map(SleeperProperty::getDescription)
+                .orElse("Unknown property, no description available");
         out.println(formatDescription("", description));
         if (oldValue == null) {
-            String defaultValue = propertyIndex.getByName(propertyName)
-                    .map(SleeperProperty::getDefaultValue).orElse(null);
+            String defaultValue = propertyOpt.map(SleeperProperty::getDefaultValue).orElse(null);
             if (defaultValue != null) {
                 out.printf("Unset before, default value: %s%n", defaultValue);
             } else {
@@ -63,7 +66,9 @@ public class PropertyDiff {
         } else {
             out.printf("Before: %s%n", oldValue);
         }
-        out.printf("After: %s%n", newValue);
+        String invalidNote = propertyOpt.filter(invalidProperties::contains)
+                .map(property -> " (not valid, please change)").orElse("");
+        out.printf("After%s: %s%n", invalidNote, newValue);
         out.println();
     }
 

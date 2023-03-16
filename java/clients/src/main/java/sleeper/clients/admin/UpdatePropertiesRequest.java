@@ -16,6 +16,11 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
+import sleeper.configuration.properties.SleeperProperty;
+
+import java.util.Collections;
+import java.util.Set;
 
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
@@ -33,6 +38,15 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     public T getUpdatedProperties() {
         return updatedProperties;
+    }
+
+    public Set<SleeperProperty> getInvalidProperties() {
+        try {
+            updatedProperties.validate();
+            return Collections.emptySet();
+        } catch (SleeperPropertiesInvalidException e) {
+            return e.getInvalidValues().keySet();
+        }
     }
 
 }

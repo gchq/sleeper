@@ -17,6 +17,7 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ChooseOne;
@@ -24,6 +25,7 @@ import sleeper.console.menu.MenuOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Set;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
@@ -46,15 +48,27 @@ public class InstanceConfigurationScreen {
         UpdatePropertiesRequest<InstanceProperties> request = openFile(properties);
         PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
         if (changes.isChanged()) {
-            changes.print(out, properties.getPropertiesIndex());
-            MenuOption returnToEditor = new MenuOption("Return to editor", () ->
-                    viewAndEditProperties(request.getUpdatedProperties(), changes));
-            chooseOne.chooseFrom(
-                    new MenuOption("Apply changes", () -> {
-                    }),
-                    returnToEditor,
-                    new MenuOption("Discard changes and return to main menu", () -> {
-                    })).getChoice().orElse(returnToEditor).run();
+            Set<SleeperProperty> invalidProperties = request.getInvalidProperties();
+            changes.print(out, properties.getPropertiesIndex(), invalidProperties);
+
+            chooseFromOptions(request.getUpdatedProperties(), changes, invalidProperties.isEmpty());
+        }
+    }
+
+    private void chooseFromOptions(
+            InstanceProperties updatedProperties, PropertiesDiff changes, boolean valid) throws InterruptedException {
+        MenuOption applyChanges = new MenuOption("Apply changes", () -> {
+        });
+        MenuOption returnToEditor = new MenuOption("Return to editor", () ->
+                viewAndEditProperties(updatedProperties, changes));
+        MenuOption discardChanges = new MenuOption("Discard changes and return to main menu", () -> {
+        });
+        if (valid) {
+            chooseOne.chooseFrom(applyChanges, returnToEditor, discardChanges)
+                    .getChoice().orElse(returnToEditor).run();
+        } else {
+            chooseOne.chooseFrom(returnToEditor, discardChanges)
+                    .getChoice().orElse(returnToEditor).run();
         }
     }
 
