@@ -42,7 +42,7 @@ public class InstanceConfigurationScreen {
         viewAndEditProperties(store.loadInstanceProperties(instanceId), PropertiesDiff.noChanges());
     }
 
-    public void viewAndEditProperties(InstanceProperties properties, PropertiesDiff changesSoFar) throws InterruptedException {
+    private void viewAndEditProperties(InstanceProperties properties, PropertiesDiff changesSoFar) throws InterruptedException {
         UpdatePropertiesRequest<InstanceProperties> request = openFile(properties);
         PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
         if (changes.isChanged()) {
