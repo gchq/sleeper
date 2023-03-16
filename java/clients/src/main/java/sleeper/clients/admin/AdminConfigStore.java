@@ -152,12 +152,6 @@ public class AdminConfigStore {
         }
     }
 
-    public StateStore loadStateStore(String instanceId, String tableName) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
-        return stateStoreProvider.getStateStore(tableName, new TablePropertiesProvider(s3, instanceProperties));
-    }
-
     public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
