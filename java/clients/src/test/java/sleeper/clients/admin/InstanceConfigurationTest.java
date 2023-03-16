@@ -132,7 +132,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    // TODO apply changes in the store, handle multiple properties changed, order properties in output
+    // TODO apply changes in the store
     // TODO handle validation failure
 
     @DisplayName("Display changes to edited properties")
