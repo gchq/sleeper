@@ -83,6 +83,7 @@ public class ExpectedAdminConsoleValues {
 
     public static final String JOB_QUERY_ALL_OPTION = "1";
     public static final String JOB_QUERY_UNKNOWN_OPTION = "2";
+    public static final String JOB_QUERY_DETAILED_OPTION = "3";
 
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 

@@ -32,6 +32,10 @@ public class ConsoleHelper {
         this.chooseOne = new ChooseOne(out, in);
     }
 
+    public Chosen<ConsoleChoice> getInputStringOrChooseExit(String chooseMessage) throws UserExitedException {
+        return getInputStringOrChooseExit("", chooseMessage);
+    }
+
     public Chosen<ConsoleChoice> getInputStringOrChooseExit(String title, String chooseMessage) throws UserExitedException {
         return chooseWithTitleAndMessage("\n" + title, chooseMessage)
                 .chooseUntilSomethingEntered(() ->

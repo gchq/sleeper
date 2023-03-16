@@ -29,6 +29,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,6 +39,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACT
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNKNOWN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -104,6 +106,33 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
 
             InOrder order = Mockito.inOrder(in.mock);
             order.verify(in.mock, times(4)).promptLine(any());
+            order.verify(in.mock).waitForLine();
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldRunCompactionJobStatusReportWithQueryTypeDetailed() {
+            // Given
+            createCompactionStatusStore();
+            List<CompactionJobStatus> jobStatuses = exampleJobStatuses(dataHelper);
+            CompactionJobStatus exampleJob = jobStatuses.get(0);
+            when(compactionJobStatusStore.getJob(exampleJob.getJobId()))
+                    .thenReturn(Optional.of(exampleJob));
+            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
+                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_DETAILED_OPTION, exampleJob.getJobId(),
+                    EXIT_OPTION);
+
+            String output = runClientGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("Compaction Job Status Report")
+                    .contains("" +
+                            "Details for job " + exampleJob.getJobId());
+
+            InOrder order = Mockito.inOrder(in.mock);
+            order.verify(in.mock, times(5)).promptLine(any());
             order.verify(in.mock).waitForLine();
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();

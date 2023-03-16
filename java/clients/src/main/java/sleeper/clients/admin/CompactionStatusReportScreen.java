@@ -19,6 +19,8 @@ package sleeper.clients.admin;
 import sleeper.console.ConsoleHelper;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.menu.Chosen;
+import sleeper.console.menu.ConsoleChoice;
 import sleeper.console.menu.MenuOption;
 import sleeper.status.report.CompactionJobStatusReport;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
@@ -57,14 +59,20 @@ public class CompactionStatusReportScreen {
                 new MenuOption("All", () ->
                         runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
                 new MenuOption("Unfinished jobs", () ->
-                        runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED))).run();
+                        runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
+                new MenuOption("Detailed (specific job)", () ->
+                        chooseJobIdAndRunDetailedStatusReport(instanceId, tableName))
+        ).run();
     }
 
     private CompactionJobStatusReportArguments.Builder argsBuilder(String instanceId, String tableName, JobQuery.Type queryType) {
         return CompactionJobStatusReportArguments.builder()
-                .instanceId(instanceId)
-                .tableName(tableName)
+                .instanceId(instanceId).tableName(tableName)
                 .queryType(queryType).reporter(new StandardCompactionJobStatusReporter(out.printStream()));
+    }
+
+    private void runCompactionJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType, String queryParams) {
+        runCompactionJobStatusReport(argsBuilder(instanceId, tableName, queryType).queryParameters(queryParams).build());
     }
 
     private void runCompactionJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType) {
@@ -74,5 +82,14 @@ public class CompactionStatusReportScreen {
     private void runCompactionJobStatusReport(CompactionJobStatusReportArguments args) {
         new CompactionJobStatusReport(store.loadCompactionJobStatusStore(args.getInstanceId()), args).run();
         confirmReturnToMainScreen(out, in);
+    }
+
+    private void chooseJobIdAndRunDetailedStatusReport(String instanceId, String tableName) {
+        Chosen<ConsoleChoice> chosen = consoleHelper.getInputStringOrChooseExit(
+                "Enter the jobId of the job you want to view the details for, or use the following options: ");
+        if (chosen.getChoice().isEmpty()) {
+            String jobId = chosen.getEntered();
+            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED, jobId);
+        }
     }
 }
