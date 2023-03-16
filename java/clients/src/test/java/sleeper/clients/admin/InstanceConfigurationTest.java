@@ -18,6 +18,8 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
@@ -88,15 +90,16 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verifyNoMoreInteractions();
         }
 
-        @Test
-        void shouldReturnToEditorAfterMakingChanges() throws Exception {
+        @ParameterizedTest(name = "With option of \"{0}\"")
+        @ValueSource(strings = {RETURN_TO_EDITOR_OPTION, ""})
+        void shouldMakeChangesThenReturnToEditorAndRevertChanges(String option) throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
             InstanceProperties after = createValidInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
             setInstanceProperties(before);
-            in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, RETURN_TO_EDITOR_OPTION, EXIT_OPTION);
+            in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, option, EXIT_OPTION);
             when(editor.openPropertiesFile(before))
                     .thenReturn(withChanges(before, after)); // Apply changes
             when(editor.openPropertiesFile(after))
@@ -127,7 +130,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     // TODO apply changes in the store, handle multiple properties changed, order properties in output
     // TODO handle validation failure
-    // TODO return to editor if no option is chosen for applying changes
 
     @DisplayName("Display changes to edited properties")
     @Nested

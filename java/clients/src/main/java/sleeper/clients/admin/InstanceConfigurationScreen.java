@@ -47,12 +47,14 @@ public class InstanceConfigurationScreen {
         PropertiesDiff changes = changesSoFar.andThen(request.getDiff());
         if (changes.isChanged()) {
             changes.print(out, properties.getPropertiesIndex());
+            MenuOption returnToEditor = new MenuOption("Return to editor", () ->
+                    viewAndEditProperties(request.getUpdatedProperties(), changes));
             chooseOne.chooseFrom(
                     new MenuOption("Apply changes", () -> {
                     }),
-                    new MenuOption("Return to editor", () -> viewAndEditProperties(request.getUpdatedProperties(), changes)),
+                    returnToEditor,
                     new MenuOption("Discard changes and return to main menu", () -> {
-                    })).getChoice().orElse(MenuOption.none()).run();
+                    })).getChoice().orElse(returnToEditor).run();
         }
     }
 
