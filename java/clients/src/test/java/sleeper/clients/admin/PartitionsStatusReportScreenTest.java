@@ -35,7 +35,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
+public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldRunPartitionStatusReport() {
         // Given

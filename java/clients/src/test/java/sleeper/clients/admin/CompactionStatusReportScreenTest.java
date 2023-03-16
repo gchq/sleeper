@@ -57,7 +57,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
-class CompactionStatusReportTest extends AdminClientMockStoreBase {
+class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
