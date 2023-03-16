@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -38,7 +39,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
@@ -80,7 +80,7 @@ public class S3ResultsOutput implements ResultsOutput {
         this.fileSystem = instanceProperties.get(FILE_SYSTEM);
         this.rowGroupSize = Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize));
         this.pageSize = Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize));
-        this.compressionCodec = tableProperties.get(sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC);
+        this.compressionCodec = config.getOrDefault(COMPRESSION_CODEC, tableProperties.get(TableProperty.COMPRESSION_CODEC));
         this.dictionaryEncodingForRowKeyFields = tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS);
         this.dictionaryEncodingForSortKeyFields = tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS);
         this.dictionaryEncodingForValueFields = tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS);
@@ -94,7 +94,7 @@ public class S3ResultsOutput implements ResultsOutput {
         LOGGER.info("Opening writer for results of query {} to {}", query.getQueryId(), outputFile);
         long count = 0L;
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), schema, compressionCodec,
-            rowGroupSize, pageSize, dictionaryEncodingForRowKeyFields, dictionaryEncodingForSortKeyFields, dictionaryEncodingForValueFields, new Configuration())) {
+                rowGroupSize, pageSize, dictionaryEncodingForRowKeyFields, dictionaryEncodingForSortKeyFields, dictionaryEncodingForValueFields, new Configuration())) {
             long startTime = System.currentTimeMillis();
             while (results.hasNext()) {
                 writer.write(results.next());
