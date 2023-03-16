@@ -15,10 +15,21 @@
  */
 package sleeper.configuration.properties;
 
-public class TablePropertyInvalidException extends IllegalArgumentException {
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-    public TablePropertyInvalidException(SleeperProperty property, String value) {
-        super("Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"");
+public class SleeperPropertiesValidationReporter {
+
+    private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
+
+    public void invalidProperty(SleeperProperty property, String value) {
+        invalidValues.put(property, value);
+    }
+
+    public void throwIfFailed() {
+        if (!invalidValues.isEmpty()) {
+            throw new SleeperPropertiesInvalidException(invalidValues);
+        }
     }
 
 }

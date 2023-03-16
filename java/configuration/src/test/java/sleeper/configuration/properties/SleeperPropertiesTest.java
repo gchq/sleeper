@@ -168,12 +168,7 @@ class SleeperPropertiesTest {
         }
 
         @Override
-        protected void validate() {
-            // do nothing
-        }
-
-        @Override
-        protected SleeperPropertyIndex<SleeperProperty> getIndex() {
+        protected SleeperPropertyIndex<SleeperProperty> getPropertiesIndex() {
             return new SleeperPropertyIndex<>();
         }
     }

@@ -62,9 +62,18 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         validate();
     }
 
-    protected abstract void validate();
+    public final void validate() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        reporter.throwIfFailed();
+    }
 
-    protected abstract SleeperPropertyIndex<T> getIndex();
+    protected void validate(SleeperPropertiesValidationReporter reporter) {
+        getPropertiesIndex().getUserDefined().forEach(property ->
+                property.validate(get(property), reporter));
+    }
+
+    protected abstract SleeperPropertyIndex<T> getPropertiesIndex();
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
@@ -172,7 +181,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         loadFromString(propertiesString);
     }
 
-
     public Stream<Map.Entry<String, String>> getUnknownProperties() {
         return properties.stringPropertyNames().stream()
                 .filter(not(this::isKnownProperty))
@@ -180,7 +188,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     private boolean isKnownProperty(String propertyName) {
-        return getIndex().getByName(propertyName).isPresent();
+        return getPropertiesIndex().getByName(propertyName).isPresent();
     }
 
     public Map<String, String> toMap() {

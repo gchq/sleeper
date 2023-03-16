@@ -18,7 +18,6 @@ package sleeper.configuration.properties.table;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -28,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.configuration.properties.TablePropertyInvalidException;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -60,12 +59,16 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         this.instanceProperties = instanceProperties;
     }
 
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR") // Needed until we have an immutable model
     public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;
         schema = loadSchema(properties);
-        validate();
+    }
+
+    public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        tableProperties.validate();
+        return tableProperties;
     }
 
     private static Schema loadSchema(Properties properties) {
@@ -83,11 +86,9 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super.init();
     }
 
-    protected void validate() {
-        TableProperty.getAll().stream().filter(prop -> !prop.validationPredicate().test(get(prop)))
-                .forEach(prop -> {
-                    throw new TablePropertyInvalidException(prop, get(prop));
-                });
+    @Override
+    public void validate(SleeperPropertiesValidationReporter reporter) {
+        super.validate(reporter);
 
         // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
         // Also see the DynamoDB documentation:
@@ -96,7 +97,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
                 && getInt(COMPACTION_FILES_BATCH_SIZE) > 48) {
             LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
                     "chosen statestore. Maximum value is 48.");
-            throw new TablePropertyInvalidException(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
+            reporter.invalidProperty(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
         }
     }
 
@@ -135,7 +136,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected SleeperPropertyIndex<TableProperty> getIndex() {
+    protected SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.Index.INSTANCE;
     }
 
