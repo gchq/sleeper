@@ -17,7 +17,6 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -31,7 +30,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminConfigStore store = mock(AdminConfigStore.class);
-    protected final DynamoDBCompactionJobStatusStore compactionJobStatusStore = mock(DynamoDBCompactionJobStatusStore.class);
 
     protected String runClientGetOutput() {
         return runClientGetOutput(new AdminClient(store, out.consoleOut(), in.consoleIn()));

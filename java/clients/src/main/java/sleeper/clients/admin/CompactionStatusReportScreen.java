@@ -21,8 +21,11 @@ import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.MenuOption;
 import sleeper.status.report.CompactionJobStatusReport;
+import sleeper.status.report.CompactionTaskStatusReport;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
+import sleeper.status.report.compaction.task.CompactionTaskQuery;
+import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
@@ -47,8 +50,16 @@ public class CompactionStatusReportScreen {
         consoleHelper.chooseOptionUntilValid("Which compaction report would you like to run?",
                 new MenuOption("Compaction Job Status Report", () ->
                         chooseArgsForCompactionJobStatusReport(instanceId)),
-                new MenuOption("Compaction Task Status Report", () -> {
-                })).run();
+                new MenuOption("Compaction Task Status Report", () ->
+                        chooseArgsForCompactionTaskStatusReport(instanceId))
+        ).run();
+    }
+
+    private void chooseArgsForCompactionTaskStatusReport(String instanceId) {
+        consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
+                new MenuOption("All", () ->
+                        runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.ALL))
+        ).run();
     }
 
     private void chooseArgsForCompactionJobStatusReport(String instanceId) {
@@ -92,6 +103,12 @@ public class CompactionStatusReportScreen {
 
     private void runCompactionJobStatusReport(CompactionJobStatusReportArguments args) {
         new CompactionJobStatusReport(store.loadCompactionJobStatusStore(args.getInstanceId()), args).run();
+        confirmReturnToMainScreen(out, in);
+    }
+
+    private void runCompactionTaskStatusReport(String instanceId, CompactionTaskQuery queryType) {
+        new CompactionTaskStatusReport(store.loadCompactionTaskStatusStore(instanceId),
+                new StandardCompactionTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }
 }
