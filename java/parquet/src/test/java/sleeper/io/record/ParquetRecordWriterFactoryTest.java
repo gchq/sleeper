@@ -15,12 +15,18 @@
  */
 package sleeper.io.record;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -28,17 +34,20 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 
-public class ParquetRecordWriterTest {
+public class ParquetRecordWriterFactoryTest {
 
     @TempDir
     public java.nio.file.Path folder;
@@ -51,8 +60,8 @@ public class ParquetRecordWriterTest {
                 .valueFields(new Field("column2", new StringType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
         map1.put("column2", "B");
@@ -88,8 +97,8 @@ public class ParquetRecordWriterTest {
                 .valueFields(new Field("column3", new LongType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
@@ -132,8 +141,8 @@ public class ParquetRecordWriterTest {
                 .valueFields(new Field("column2", new ByteArrayType()))
                 .build();
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", byteArray1);
         map1.put("column2", byteArray2);
@@ -158,5 +167,61 @@ public class ParquetRecordWriterTest {
         assertThat((byte[]) readRecord2.get("column1")).containsExactly(byteArray3);
         assertThat((byte[]) readRecord2.get("column2")).containsExactly(byteArray4);
         assertThat(readRecord3).isNull();
+    }
+
+    @Test
+    public void shouldRespectDictionaryEncodingOption() throws IOException {
+        // Given
+        byte[] byteArray1 = new byte[]{1, 2, 3, 4, 5};
+        byte[] byteArray2 = new byte[]{6, 7, 8, 9, 10};
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .sortKeyFields(new Field("column2", new StringType()))
+                .valueFields(new Field("column3", new ByteArrayType()))
+                .build();
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.setSchema(schema);
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put("column1", byteArray1);
+        map1.put("column2", "ABC");
+        map1.put("column3", byteArray2);
+        Record record = new Record(map1);
+        // When/Then - Dictionary encoding on
+        tableProperties.set(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS, "true");
+        tableProperties.set(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS, "true");
+        tableProperties.set(DICTIONARY_ENCODING_FOR_VALUE_FIELDS, "true");
+        Path path1 = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
+        writeParquetFile(path1, tableProperties, record);
+        try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path1, new Configuration()))) {
+            List<ColumnChunkMetaData> columns = reader.getRowGroups().get(0).getColumns();
+            assertThat(columns.get(0).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(1).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(2).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
+        }
+
+        // When/Then - Dictionary encoding off
+        tableProperties.set(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS, "false");
+        tableProperties.set(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS, "false");
+        tableProperties.set(DICTIONARY_ENCODING_FOR_VALUE_FIELDS, "false");
+        Path path2 = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
+        writeParquetFile(path2, tableProperties, record);
+        try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path2, new Configuration()))) {
+            List<ColumnChunkMetaData> columns = reader.getRowGroups().get(0).getColumns();
+            assertThat(columns.get(0).getEncodings().stream().map(e -> e.usesDictionary())).containsOnly(false);
+            assertThat(columns.get(1).getEncodings().stream().map(e -> e.usesDictionary())).containsOnly(false);
+            assertThat(columns.get(2).getEncodings().stream().map(e -> e.usesDictionary())).containsOnly(false);
+        }
+    }
+
+    private void writeParquetFile(Path path, TableProperties tableProperties, Record record) throws IOException {
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, tableProperties, new Configuration());
+        writeRecordNTimes(writer, record, 10_000);
+        writer.close();
+    }
+
+    private void writeRecordNTimes(ParquetWriter<Record> writer, Record record, int numTimes) throws IOException {
+        for (int i = 0; i < numTimes; i++) {
+            writer.write(record);
+        }
     }
 }

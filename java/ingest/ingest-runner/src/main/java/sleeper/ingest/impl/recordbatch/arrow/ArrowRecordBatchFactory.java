@@ -120,7 +120,6 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
     }
 
     public static final class Builder<T> {
-
         private Schema schema;
         private String localWorkingDirectory;
         private long workingBufferAllocatorBytes;

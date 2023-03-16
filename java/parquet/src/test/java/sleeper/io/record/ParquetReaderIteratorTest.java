@@ -27,8 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -51,8 +50,8 @@ public class ParquetReaderIteratorTest {
     public void shouldReturnCorrectIterator() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
+
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
@@ -82,8 +81,7 @@ public class ParquetReaderIteratorTest {
     public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
         writer.close();
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
 

@@ -20,7 +20,6 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
@@ -39,8 +38,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
@@ -51,7 +49,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -203,20 +200,8 @@ public class SingleFileWritingIterator implements Iterator<Row> {
                 + tableProperties.get(TableProperty.DATA_BUCKET) + "/partition_" + partitionId
                 + "/" + outputFilename + ".parquet";
 
-        int rowGroupSize = tableProperties.getInt(TableProperty.ROW_GROUP_SIZE);
-        int pageSize = tableProperties.getInt(TableProperty.PAGE_SIZE);
-        CompressionCodecName compressionCodec = CompressionCodecName.valueOf(
-                tableProperties.get(TableProperty.COMPRESSION_CODEC).toUpperCase(Locale.ROOT));
-
-        LOGGER.info("Creating writer for partition {} to path {} with row group size {}, page size {}, compression codec {}",
-                partitionId, path, rowGroupSize, pageSize, compressionCodec);
-        return new ParquetRecordWriter.Builder(new Path(path),
-                SchemaConverter.getSchema(schema), schema)
-                .withCompressionCodec(compressionCodec)
-                .withRowGroupSize(rowGroupSize)
-                .withPageSize(pageSize)
-                .withConf(conf)
-                .build();
+        LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
+        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
     }
 
     private String getPartitionId(Row row) {

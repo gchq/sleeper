@@ -39,8 +39,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
@@ -166,12 +165,9 @@ public class IngestJobRunnerIT {
             String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet",
                     getIngestBucket(fileSystemPrefix), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(new Path(fileSystemPrefix + fileWithoutSystemPrefix),
-                    SchemaConverter.getSchema(recordListAndSchema.sleeperSchema), recordListAndSchema.sleeperSchema)
-                    .withRowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                    .withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                    .withConf(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                    .build();
+            Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
+            ParquetWriter<Record> writer = ParquetRecordWriterFactory
+                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
             for (Record record : recordListAndSchema.recordList) {
                 writer.write(record);
             }

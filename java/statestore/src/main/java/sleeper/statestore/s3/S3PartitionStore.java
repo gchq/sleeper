@@ -40,8 +40,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStoreException;
 
@@ -301,9 +300,8 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     private void writePartitionsToParquet(List<Partition> partitions, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = new ParquetRecordWriter.Builder(new Path(path), SchemaConverter.getSchema(partitionSchema), partitionSchema)
-                .withConf(conf)
-                .build();
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), partitionSchema, conf);
+
         for (Partition partition : partitions) {
             recordWriter.write(getRecordFromPartition(partition));
         }

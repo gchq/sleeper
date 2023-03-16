@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Named;
@@ -53,8 +53,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -278,8 +277,7 @@ public class BulkImportJobRunnerIT {
     }
 
     private static void writeRecordsToFile(List<Record> records, String file) throws IllegalArgumentException, IOException {
-        ParquetRecordWriter writer = new ParquetRecordWriter(new Path(file),
-                SchemaConverter.getSchema(getSchema()), getSchema(), CompressionCodecName.SNAPPY, 10000, 10000);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file), getSchema());
         for (Record record : records) {
             writer.write(record);
         }
