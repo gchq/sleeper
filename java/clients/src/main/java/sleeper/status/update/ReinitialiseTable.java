@@ -129,7 +129,7 @@ public class ReinitialiseTable {
     }
 
     protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
-        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, null).run();
+        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
     }
 
     private void deleteObjectsInTableBucket(String s3TableBucketName, boolean isS3StateStore) {

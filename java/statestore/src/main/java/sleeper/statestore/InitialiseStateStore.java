@@ -16,25 +16,26 @@
 package sleeper.statestore;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
- import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
- import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
- import com.amazonaws.services.s3.AmazonS3;
- import com.amazonaws.services.s3.AmazonS3ClientBuilder;
- import org.apache.hadoop.conf.Configuration;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
- import sleeper.configuration.properties.InstanceProperties;
- import sleeper.configuration.properties.table.TableProperties;
- import sleeper.configuration.properties.table.TablePropertiesProvider;
- import sleeper.core.partition.Partition;
- import sleeper.core.partition.PartitionsFromSplitPoints;
- import sleeper.core.schema.Schema;
- import sleeper.statestore.dynamodb.DynamoDBStateStore;
- import sleeper.statestore.s3.S3StateStore;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.schema.Schema;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.s3.S3StateStore;
 
- import java.io.IOException;
- import java.util.List;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
  import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
@@ -109,7 +110,7 @@ public class InitialiseStateStore {
             stateStore = new DynamoDBStateStore(tableProperties, dynamoDBClient);
         }
 
-        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, null).run();
+        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
