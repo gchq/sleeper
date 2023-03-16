@@ -52,8 +52,8 @@ public class FilesStatusReportScreen {
             } else {
                 chooseOptionalArgsAndPrint(instanceId, tableName);
             }
+            confirmReturnToMainScreen(out, in);
         }
-        confirmReturnToMainScreen(out, in);
     }
 
     public void chooseOptionalArgsAndPrint(String instanceId, String tableName) {

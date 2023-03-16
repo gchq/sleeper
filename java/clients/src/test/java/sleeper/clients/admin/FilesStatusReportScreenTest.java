@@ -25,6 +25,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OP
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.FILES_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -99,5 +100,16 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Error: Properties for table \"unknown-table\" could not be found");
+    }
+
+    @Test
+    void shouldReturnToMenuWhenOnTableNameScreen() {
+        // Given
+        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
+
+        // When/Then
+        String output = runClientGetOutput();
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE +
+                TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
     }
 }
