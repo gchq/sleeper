@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,8 +39,11 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OP
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_APPLY_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_EDITOR_OPTION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
@@ -217,6 +221,49 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "Unset before, default value: 120\n" +
                     "After: 123\n" +
                     "\n");
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldEditMultiplePropertiesOrderedAsTheyAreDisplayedInTheFile() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(OPTIONAL_STACKS, "CompactionStack");
+            after.set(DEFAULT_S3A_READAHEAD_RANGE, "123");
+            after.set(DEFAULT_RESULTS_PAGE_SIZE, "456");
+
+            // When
+            String output = updatePropertiesGetPropertiesDisplay(before, after);
+
+            // Then
+            assertThat(output.indexOf("sleeper.optional.stacks"))
+                    .isLessThan(output.indexOf("sleeper.default.fs.s3a.readahead.range"))
+                    .isLessThan(output.indexOf("sleeper.default.query.results.page.size"));
+            assertThat(output.indexOf("sleeper.default.fs.s3a.readahead.range"))
+                    .isLessThan(output.indexOf("sleeper.default.query.results.page.size"));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldOrderUnknownPropertiesAfterKnownProperties() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(OPTIONAL_STACKS, "CompactionStack");
+            after.loadFromString("" +
+                    "some.unknown.property=a-value\n" +
+                    "an.unknown.property=other-value");
+
+            // When
+            String output = updatePropertiesGetPropertiesDisplay(before, after);
+
+            // Then
+            assertThat(output.indexOf("sleeper.optional.stacks"))
+                    .isLessThan(output.indexOf("an.unknown.property"))
+                    .isLessThan(output.indexOf("some.unknown.property"));
+            assertThat(output.indexOf("an.unknown.property"))
+                    .isLessThan(output.indexOf("some.unknown.property"));
         }
     }
 
