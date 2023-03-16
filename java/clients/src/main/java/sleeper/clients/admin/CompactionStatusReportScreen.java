@@ -69,7 +69,7 @@ public class CompactionStatusReportScreen {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
                 new MenuOption("All", () ->
                         runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
-                new MenuOption("Unfinished jobs", () ->
+                new MenuOption("Unfinished", () ->
                         runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
                 new MenuOption("Detailed (specific job)", () ->
                         chooseJobIdAndRunDetailedStatusReport(instanceId, tableName)),
