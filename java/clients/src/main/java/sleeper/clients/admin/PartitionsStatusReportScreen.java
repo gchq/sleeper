@@ -44,15 +44,21 @@ public class PartitionsStatusReportScreen {
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
         Chosen<ConsoleChoice> chosen = tableSelectHelper.chooseTable();
         if (chosen.getChoice().isEmpty()) {
-            TableProperties tableProperties = store.loadTableProperties(instanceId, chosen.getEntered());
-            try {
-                new PartitionsStatusReporter(out.printStream()).report(
-                        PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, chosen.getEntered())));
+            String tableName = chosen.getEntered();
+            TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
+            if (tableProperties == null) {
+                out.println();
+                out.printf("Error: Properties for table \"%s\" could not be found", tableName);
+            } else {
+                try {
+                    new PartitionsStatusReporter(out.printStream()).report(
+                            PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, tableName)));
 
-                confirmReturnToMainScreen(out, in);
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
+                } catch (StateStoreException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            confirmReturnToMainScreen(out, in);
         }
     }
 }

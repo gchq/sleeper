@@ -54,6 +54,21 @@ public class PartitionsStatusReportTest extends AdminClientMockStoreBase {
         confirmAndVerifyNoMoreInteractions();
     }
 
+    @Test
+    void shouldNotRunPartitionStatusReportIfTableDoesNotExist() {
+        // Given
+        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+        assertThat(output)
+                .isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
+                        CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Error: Properties for table \"unknown-table\" could not be found" +
+                        PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
+        confirmAndVerifyNoMoreInteractions();
+    }
+
     private void createStateStoreForTable(String tableName) {
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
