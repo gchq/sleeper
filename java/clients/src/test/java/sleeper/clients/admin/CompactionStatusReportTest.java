@@ -60,13 +60,14 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() {
             // Given
-            createCompactionStatusStore();
+            createCompactionJobStatusStore();
             when(compactionJobStatusStore.getAllJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
             in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
                     COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_ALL_OPTION,
                     EXIT_OPTION);
 
+            // When/Then
             String output = runClientGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
@@ -78,23 +79,20 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                             "Total standard jobs in progress: 1\n" +
                             "Total standard jobs finished: 1");
 
-            InOrder order = Mockito.inOrder(in.mock);
-            order.verify(in.mock, times(4)).promptLine(any());
-            order.verify(in.mock).waitForLine();
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
+            verifyWithNumberOfInvocations(4);
         }
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeUnknown() {
             // Given
-            createCompactionStatusStore();
+            createCompactionJobStatusStore();
             when(compactionJobStatusStore.getUnfinishedJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
             in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
                     COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_UNKNOWN_OPTION,
                     EXIT_OPTION);
 
+            // When/Then
             String output = runClientGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
@@ -105,25 +103,23 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                             "Total unfinished jobs in progress: 2\n" +
                             "Total unfinished jobs not started: 0");
 
-            InOrder order = Mockito.inOrder(in.mock);
-            order.verify(in.mock, times(4)).promptLine(any());
-            order.verify(in.mock).waitForLine();
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
+            verifyWithNumberOfInvocations(4);
         }
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeDetailed() {
             // Given
-            createCompactionStatusStore();
+            createCompactionJobStatusStore();
             List<CompactionJobStatus> jobStatuses = exampleJobStatuses(dataHelper);
             CompactionJobStatus exampleJob = jobStatuses.get(0);
             when(compactionJobStatusStore.getJob(exampleJob.getJobId()))
                     .thenReturn(Optional.of(exampleJob));
             in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_DETAILED_OPTION, exampleJob.getJobId(),
+                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table",
+                    JOB_QUERY_DETAILED_OPTION, exampleJob.getJobId(),
                     EXIT_OPTION);
 
+            // When/Then
             String output = runClientGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
@@ -132,17 +128,13 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Details for job " + exampleJob.getJobId());
 
-            InOrder order = Mockito.inOrder(in.mock);
-            order.verify(in.mock, times(5)).promptLine(any());
-            order.verify(in.mock).waitForLine();
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
+            verifyWithNumberOfInvocations(5);
         }
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeRange() {
             // Given
-            createCompactionStatusStore();
+            createCompactionJobStatusStore();
             when(compactionJobStatusStore.getJobsInTimePeriod("test-table",
                     Instant.parse("2023-03-10T17:52:12Z"), Instant.parse("2023-03-18T17:52:12Z")))
                     .thenReturn(exampleJobStatuses(dataHelper));
@@ -151,6 +143,7 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                     JOB_QUERY_RANGE_OPTION, "20230310175212", "20230318175212",
                     EXIT_OPTION);
 
+            // When/Then
             String output = runClientGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
@@ -159,18 +152,22 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Total jobs in defined range: 2");
 
+            verifyWithNumberOfInvocations(6);
+        }
+
+        private void verifyWithNumberOfInvocations(int numberOfInvocations) {
             InOrder order = Mockito.inOrder(in.mock);
-            order.verify(in.mock, times(6)).promptLine(any());
+            order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
             order.verify(in.mock).waitForLine();
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
-    }
 
-    private void createCompactionStatusStore() {
-        InstanceProperties properties = createValidInstanceProperties();
-        when(store.loadCompactionJobStatusStore(properties.get(ID)))
-                .thenReturn(compactionJobStatusStore);
+        private void createCompactionJobStatusStore() {
+            InstanceProperties properties = createValidInstanceProperties();
+            when(store.loadCompactionJobStatusStore(properties.get(ID)))
+                    .thenReturn(compactionJobStatusStore);
+        }
     }
 
     private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
