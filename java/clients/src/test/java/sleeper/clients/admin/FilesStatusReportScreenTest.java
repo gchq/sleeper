@@ -40,8 +40,64 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
         String output = runClientGetOutput();
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Files Status Report:\n" +
+                .contains("No value entered, defaulting to 1000")
+                .contains("" +
+                        "Files Status Report:\n" +
                         "--------------------------\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions");
+    }
+
+    @Test
+    void shouldRunFilesStatusReportWithVerboseOption() {
+        // Given
+        setStateStoreForTable("test-table");
+        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
+                "test-table", "", "y", EXIT_OPTION);
+
+        // When/Then
+        String output = runClientGetOutput();
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("No value entered, defaulting to 1000")
+                .contains("" +
+                        "Files Status Report:\n" +
+                        "--------------------------\n" +
+                        "There are 2 leaf partitions and 1 non-leaf partitions")
+                .contains("" +
+                        "Ready_to_be_garbage_collected:\n" +
+                        "Active:");
+    }
+
+    @Test
+    void shouldRunFilesStatusReportWithCustomMaxGC() {
+        // Given
+        setStateStoreForTable("test-table");
+        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
+                "test-table", "1", "y", EXIT_OPTION);
+
+        // When/Then
+        String output = runClientGetOutput();
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .doesNotContain("defaulting to 1000")
+                .contains("" +
+                        "Files Status Report:\n" +
+                        "--------------------------\n" +
+                        "There are 2 leaf partitions and 1 non-leaf partitions")
+                .contains("" +
+                        "Ready_to_be_garbage_collected:\n" +
+                        "Active:");
+    }
+
+    @Test
+    void shouldNotRunFilesStatusReportIfTableDoesNotExist() {
+        // Given
+        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
+
+        // When/Then
+        String output = runClientGetOutput();
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("Error: Properties for table \"unknown-table\" could not be found");
     }
 }

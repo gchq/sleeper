@@ -16,8 +16,11 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.menu.Chosen;
+import sleeper.console.menu.ConsoleChoice;
 import sleeper.statestore.StateStoreException;
 import sleeper.status.report.FilesStatusReport;
 import sleeper.status.report.filestatus.StandardFileStatusReporter;
@@ -38,8 +41,22 @@ public class FilesStatusReportScreen {
         this.tableSelectHelper = new TableSelectHelper(out, in);
     }
 
-    public void chooseArgsAndPrint(String instanceId) {
-        String tableName = tableSelectHelper.chooseTable().getEntered();
+    public void chooseTableAndPrint(String instanceId) {
+        Chosen<ConsoleChoice> chosen = tableSelectHelper.chooseTable();
+        if (chosen.getChoice().isEmpty()) {
+            String tableName = chosen.getEntered();
+            TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
+            if (tableProperties == null) {
+                out.println();
+                out.printf("Error: Properties for table \"%s\" could not be found\n", tableName);
+            } else {
+                chooseOptionalArgsAndPrint(instanceId, tableName);
+            }
+        }
+        confirmReturnToMainScreen(out, in);
+    }
+
+    public void chooseOptionalArgsAndPrint(String instanceId, String tableName) {
         int maxReadyForGCFiles = 1000;
         String maxGcArg = in.promptLine("Enter the number for maxReadyForGCFiles (default is " + maxReadyForGCFiles + "): ");
         if (maxGcArg.isEmpty()) {
@@ -48,14 +65,13 @@ public class FilesStatusReportScreen {
             try {
                 maxReadyForGCFiles = Integer.parseInt(maxGcArg);
             } catch (NumberFormatException e) {
-                out.println("Failed to convert maxReadyForGCFiles to integer. Defaulting to " + maxReadyForGCFiles);
+                out.println("Failed to convert maxReadyForGCFiles to integer, defaulting to " + maxReadyForGCFiles);
             }
         }
         boolean verbose = in.promptLine("Run report in verbose mode? (y/N): ").equalsIgnoreCase("y");
         try {
             new FilesStatusReport(store.loadStateStore(instanceId, tableName), maxReadyForGCFiles, verbose,
                     new StandardFileStatusReporter(out.printStream())).run();
-            confirmReturnToMainScreen(out, in);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }
