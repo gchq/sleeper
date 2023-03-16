@@ -24,17 +24,15 @@ public class TablePropertyReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final TableSelectHelper tableSelectHelper;
-    private final AdminConfigStore store;
 
     public TablePropertyReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
         this.in = in;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
-        this.store = store;
     }
 
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableName ->
-                new TablePropertyReport(out, in, store).print(instanceId, tableName));
+        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties ->
+                new TablePropertyReport(out, in).print(tableProperties));
     }
 }

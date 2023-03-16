@@ -52,10 +52,11 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected void setStateStoreForTable(String tableName) {
         InstanceProperties properties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(properties, tableName);
         setInstanceProperties(properties);
         when(store.loadTableProperties(properties.get(ID), tableName))
-                .thenReturn(createValidTableProperties(properties, tableName));
-        when(store.loadStateStore(properties.get(ID), tableName))
+                .thenReturn(tableProperties);
+        when(store.loadStateStore(properties.get(ID), tableProperties))
                 .thenReturn(createValidStateStore());
     }
 }

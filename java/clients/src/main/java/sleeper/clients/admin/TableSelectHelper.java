@@ -42,7 +42,7 @@ class TableSelectHelper {
         this.store = store;
     }
 
-    public void chooseTableIfExistsThen(String instanceId, Consumer<String> callback) throws UserExitedException {
+    public void chooseTableIfExistsThen(String instanceId, Consumer<TableProperties> callback) throws UserExitedException {
         Chosen<ConsoleChoice> chosen = chooseTable("")
                 .chooseUntilSomethingEntered(() ->
                         chooseTable("\nYou did not enter anything please try again\n"));
@@ -54,7 +54,7 @@ class TableSelectHelper {
                 out.printf("Error: Properties for table \"%s\" could not be found", tableName);
                 confirmReturnToMainScreen(out, in);
             } else {
-                callback.accept(tableName);
+                callback.accept(tableProperties);
             }
         }
     }

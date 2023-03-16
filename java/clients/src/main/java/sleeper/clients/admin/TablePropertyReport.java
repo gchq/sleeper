@@ -26,19 +26,13 @@ public class TablePropertyReport {
 
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final AdminConfigStore store;
 
-    public TablePropertyReport(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public TablePropertyReport(ConsoleOutput out, ConsoleInput in) {
         this.out = out;
         this.in = in;
-        this.store = store;
     }
 
-    public void print(String instanceId, String tableName) {
-        print(store.loadTableProperties(instanceId, tableName));
-    }
-
-    private void print(TableProperties tableProperties) {
+    public void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
         SleeperPropertiesPrettyPrinter.forTableProperties(out.writer())
                 .print(tableProperties);

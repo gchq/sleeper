@@ -19,8 +19,6 @@ package sleeper.clients.admin;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.ConsoleChoice;
 import sleeper.statestore.StateStoreException;
 import sleeper.status.report.FilesStatusReport;
 import sleeper.status.report.filestatus.StandardFileStatusReporter;
@@ -42,21 +40,13 @@ public class FilesStatusReportScreen {
     }
 
     public void chooseTableAndPrint(String instanceId) {
-        Chosen<ConsoleChoice> chosen = tableSelectHelper.chooseTable();
-        if (chosen.getChoice().isEmpty()) {
-            String tableName = chosen.getEntered();
-            TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
-            if (tableProperties == null) {
-                out.println();
-                out.printf("Error: Properties for table \"%s\" could not be found\n", tableName);
-            } else {
-                chooseOptionalArgsAndPrint(instanceId, tableName);
-            }
+        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+            chooseOptionalArgsAndPrint(instanceId, tableProperties);
             confirmReturnToMainScreen(out, in);
-        }
+        });
     }
 
-    public void chooseOptionalArgsAndPrint(String instanceId, String tableName) {
+    public void chooseOptionalArgsAndPrint(String instanceId, TableProperties tableProperties) {
         int maxReadyForGCFiles = 1000;
         String maxGcArg = in.promptLine("Enter the number for maxReadyForGCFiles (default is " + maxReadyForGCFiles + "): ");
         if (maxGcArg.isEmpty()) {
@@ -70,7 +60,7 @@ public class FilesStatusReportScreen {
         }
         boolean verbose = in.promptLine("Run report in verbose mode? (y/N): ").equalsIgnoreCase("y");
         try {
-            new FilesStatusReport(store.loadStateStore(instanceId, tableName), maxReadyForGCFiles, verbose,
+            new FilesStatusReport(store.loadStateStore(instanceId, tableProperties), maxReadyForGCFiles, verbose,
                     new StandardFileStatusReporter(out.printStream())).run();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

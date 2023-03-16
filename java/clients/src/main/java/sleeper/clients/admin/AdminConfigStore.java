@@ -158,6 +158,12 @@ public class AdminConfigStore {
         return stateStoreProvider.getStateStore(tableName, new TablePropertiesProvider(s3, instanceProperties));
     }
 
+    public StateStore loadStateStore(String instanceId, TableProperties tableProperties) {
+        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
+        return stateStoreProvider.getStateStore(tableProperties);
+    }
+
     public CompactionJobStatusStore loadCompactionJobStatusStore(String instanceId) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         return DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);

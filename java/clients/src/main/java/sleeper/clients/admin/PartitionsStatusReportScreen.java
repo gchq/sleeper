@@ -16,12 +16,9 @@
 
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.ConsoleChoice;
 import sleeper.statestore.StateStoreException;
 import sleeper.status.report.partitions.PartitionsStatus;
 import sleeper.status.report.partitions.PartitionsStatusReporter;
@@ -42,22 +39,14 @@ public class PartitionsStatusReportScreen {
     }
 
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        Chosen<ConsoleChoice> chosen = tableSelectHelper.chooseTable();
-        if (chosen.getChoice().isEmpty()) {
-            String tableName = chosen.getEntered();
-            TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
-            if (tableProperties == null) {
-                out.println();
-                out.printf("Error: Properties for table \"%s\" could not be found", tableName);
-            } else {
-                try {
-                    new PartitionsStatusReporter(out.printStream()).report(
-                            PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, tableName)));
-                } catch (StateStoreException e) {
-                    throw new RuntimeException(e);
-                }
+        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+            try {
+                new PartitionsStatusReporter(out.printStream()).report(
+                        PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, tableProperties)));
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
             }
             confirmReturnToMainScreen(out, in);
-        }
+        });
     }
 }
