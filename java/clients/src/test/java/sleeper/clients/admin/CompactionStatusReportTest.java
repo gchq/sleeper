@@ -40,6 +40,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACT
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNKNOWN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -133,6 +134,33 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
 
             InOrder order = Mockito.inOrder(in.mock);
             order.verify(in.mock, times(5)).promptLine(any());
+            order.verify(in.mock).waitForLine();
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldRunCompactionJobStatusReportWithQueryTypeRange() {
+            // Given
+            createCompactionStatusStore();
+            when(compactionJobStatusStore.getJobsInTimePeriod("test-table",
+                    Instant.parse("2023-03-10T17:52:12Z"), Instant.parse("2023-03-18T17:52:12Z")))
+                    .thenReturn(exampleJobStatuses(dataHelper));
+            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
+                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table",
+                    JOB_QUERY_RANGE_OPTION, "20230310175212", "20230318175212",
+                    EXIT_OPTION);
+
+            String output = runClientGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("Compaction Job Status Report")
+                    .contains("" +
+                            "Total jobs in defined range: 2");
+
+            InOrder order = Mockito.inOrder(in.mock);
+            order.verify(in.mock, times(6)).promptLine(any());
             order.verify(in.mock).waitForLine();
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
