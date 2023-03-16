@@ -63,6 +63,8 @@ jobs:
         with:
           context: ./scripts/cli/dependencies
           push: true
+          sbom: false
+          provenance: false
           tags: ${{ env.DEPENDENCIES_IMAGE }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           labels: |
@@ -73,6 +75,8 @@ jobs:
         with:
           context: ./scripts/cli/builder
           push: ${{ inputs.pushImages }}
+          sbom: false
+          provenance: false
           tags: ${{ env.BUILDER_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
@@ -84,6 +88,8 @@ jobs:
         with:
           context: ./scripts/cli/environment
           push: ${{ inputs.pushImages }}
+          sbom: false
+          provenance: false
           tags: ${{ env.ENV_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
@@ -95,6 +101,8 @@ jobs:
         with:
           context: ./scripts
           push: ${{ inputs.pushImages }}
+          sbom: false
+          provenance: false
           tags: ${{ env.DEPLOY_PUSH_TAG }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
