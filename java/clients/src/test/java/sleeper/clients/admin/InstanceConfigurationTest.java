@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_APPLY_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_EDITOR_OPTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -148,7 +150,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesGetPropertiesDisplay(before, after);
+            String output = updatePropertiesGetApplyChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -168,7 +170,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
 
             // When
-            String output = updatePropertiesGetPropertiesDisplay(before, after);
+            String output = updatePropertiesGetApplyChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -188,7 +190,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.loadFromString("unknown.property=abc");
 
             // When
-            String output = updatePropertiesGetPropertiesDisplay(before, after);
+            String output = updatePropertiesGetApplyChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -208,7 +210,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
 
             // When
-            String output = updatePropertiesGetPropertiesDisplay(before, after);
+            String output = updatePropertiesGetApplyChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -232,7 +234,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DEFAULT_PAGE_SIZE, "456");
 
             // When
-            String output = updatePropertiesGetPropertiesDisplay(before, after);
+            String output = updatePropertiesGetApplyChangesDisplay(before, after);
 
             // Then
             assertThat(output.indexOf("sleeper.optional.stacks"))
@@ -253,7 +255,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "an.unknown.property=other-value");
 
             // When
-            String output = updatePropertiesGetPropertiesDisplay(before, after);
+            String output = updatePropertiesGetApplyChangesDisplay(before, after);
 
             // Then
             assertThat(output.indexOf("sleeper.optional.stacks"))
@@ -264,8 +266,28 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    private String updatePropertiesGetPropertiesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
-        return getPropertiesDisplay(updatePropertiesGetOutput(before, after));
+    @DisplayName("Handle validation failures")
+    @Nested
+    class HandleValidationFailures {
+        @Test
+        @Disabled("TODO")
+        void shouldShowValidationScreenWhenPropertyFailsToValidate() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When
+            // String output = updatePropertiesGetValidationDisplay(before, after);
+        }
+    }
+
+    private String updatePropertiesGetApplyChangesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
+        return getApplyChangesDisplay(updatePropertiesGetOutput(before, after));
+    }
+
+    private String updatePropertiesGetValidationDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
+        return getValidationDisplay(updatePropertiesGetOutput(before, after));
     }
 
     private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
@@ -277,10 +299,15 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return runClientGetOutput();
     }
 
-    private static String getPropertiesDisplay(String output) {
+    private static String getApplyChangesDisplay(String output) {
         return output.substring(
                 DISPLAY_MAIN_SCREEN.length(),
                 output.length() - PROPERTY_APPLY_CHANGES_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
     }
 
+    private static String getValidationDisplay(String output) {
+        return output.substring(
+                DISPLAY_MAIN_SCREEN.length(),
+                output.length() - PROPERTY_VALIDATION_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
+    }
 }

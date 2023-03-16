@@ -79,7 +79,13 @@ public class ExpectedAdminConsoleValues {
             "[3] Discard changes and return to main menu\n" +
             "\n" +
             "Input: \n";
-
+    public static final String PROPERTY_VALIDATION_SCREEN = "" +
+            "Please select from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[2] Return to editor\n" +
+            "[3] Discard changes and return to main menu\n" +
+            "\n" +
+            "Input: \n";
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
     public static final String INSTANCE_CONFIGURATION_OPTION = "1";
