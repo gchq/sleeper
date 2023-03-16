@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,11 +78,28 @@ public class PropertiesDiff {
         return new PropertiesDiff(combine(changes, diff.changes));
     }
 
-    private static Map<String, PropertyDiff> combine(Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+    private static Map<String, PropertyDiff> combine(
+            Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+
         return Stream.concat(firstMap.keySet().stream(), secondMap.keySet().stream())
                 .distinct()
-                .flatMap(propertyName -> PropertyDiff.combine(propertyName, firstMap, secondMap).stream())
+                .flatMap(propertyName -> combineProperty(propertyName, firstMap, secondMap).stream())
                 .collect(Collectors.toMap(PropertyDiff::getPropertyName, diff -> diff));
+    }
+
+    private static Optional<PropertyDiff> combineProperty(
+            String propertyName, Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+
+        PropertyDiff first = firstMap.get(propertyName);
+        PropertyDiff second = secondMap.get(propertyName);
+
+        if (first == null) {
+            return Optional.of(second);
+        } else if (second == null) {
+            return Optional.of(first);
+        } else {
+            return first.andThen(second);
+        }
     }
 
     @Override
