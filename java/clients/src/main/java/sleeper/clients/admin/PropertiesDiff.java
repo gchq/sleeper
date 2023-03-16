@@ -45,10 +45,6 @@ public class PropertiesDiff {
         return new PropertiesDiff(Collections.emptyMap());
     }
 
-    public List<PropertyDiff> getChanges() {
-        return new ArrayList<>(changes.values());
-    }
-
     public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         out.println("Found changes to properties:");
         out.println();
@@ -68,10 +64,6 @@ public class PropertiesDiff {
         propertyNames.addAll(before.keySet());
         propertyNames.addAll(after.keySet());
         return propertyNames.stream();
-    }
-
-    public boolean isChanged() {
-        return !changes.isEmpty();
     }
 
     public PropertiesDiff andThen(PropertiesDiff diff) {
@@ -100,6 +92,14 @@ public class PropertiesDiff {
         } else {
             return first.andThen(second);
         }
+    }
+
+    public List<PropertyDiff> getChanges() {
+        return new ArrayList<>(changes.values());
+    }
+
+    public boolean isChanged() {
+        return !changes.isEmpty();
     }
 
     @Override
