@@ -21,7 +21,6 @@ import sleeper.console.ConsoleOutput;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -79,18 +78,10 @@ public class PropertiesDiff {
     }
 
     private static Map<String, PropertyDiff> combine(Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
-        Map<String, PropertyDiff> combined = new HashMap<>(firstMap);
-        secondMap.values().forEach(second -> {
-            String propertyName = second.getPropertyName();
-            if (firstMap.containsKey(propertyName)) {
-                firstMap.get(propertyName).andThen(second).ifPresentOrElse(
-                        after -> combined.put(propertyName, after),
-                        () -> combined.remove(propertyName));
-            } else {
-                combined.put(propertyName, second);
-            }
-        });
-        return combined;
+        return Stream.concat(firstMap.keySet().stream(), secondMap.keySet().stream())
+                .distinct()
+                .flatMap(propertyName -> PropertyDiff.combine(propertyName, firstMap, secondMap).stream())
+                .collect(Collectors.toMap(PropertyDiff::getPropertyName, diff -> diff));
     }
 
     @Override

@@ -47,6 +47,18 @@ public class PropertyDiff {
         }
     }
 
+    public static Optional<PropertyDiff> combine(String propertyName, Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+        PropertyDiff first = firstMap.get(propertyName);
+        PropertyDiff second = secondMap.get(propertyName);
+        if (first == null) {
+            return Optional.of(second);
+        } else if (second == null) {
+            return Optional.of(first);
+        } else {
+            return first.andThen(second);
+        }
+    }
+
     public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         out.println(propertyName);
         String description = propertyIndex.getByName(propertyName)
