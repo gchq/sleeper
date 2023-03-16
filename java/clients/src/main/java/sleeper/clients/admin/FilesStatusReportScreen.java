@@ -38,7 +38,7 @@ public class FilesStatusReportScreen {
         this.out = out;
         this.in = in;
         this.store = store;
-        this.tableSelectHelper = new TableSelectHelper(out, in);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store);
     }
 
     public void chooseTableAndPrint(String instanceId) {

@@ -42,7 +42,7 @@ public class CompactionStatusReportScreen {
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
-        this.tableSelectHelper = new TableSelectHelper(out, in);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store);
     }
 
     public void chooseArgsAndPrint(String instanceId) {

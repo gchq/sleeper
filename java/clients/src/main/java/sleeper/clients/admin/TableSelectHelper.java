@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
@@ -23,15 +24,39 @@ import sleeper.console.menu.ChooseOne;
 import sleeper.console.menu.Chosen;
 import sleeper.console.menu.ConsoleChoice;
 
+import java.util.function.Consumer;
+
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
 class TableSelectHelper {
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final ChooseOne chooseOne;
+    private final AdminConfigStore store;
 
-    TableSelectHelper(ConsoleOutput out, ConsoleInput in) {
+    TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
+        this.in = in;
         this.chooseOne = new ChooseOne(out, in);
+        this.store = store;
+    }
+
+    public void chooseTableIfExistsThen(String instanceId, Consumer<String> callback) throws UserExitedException {
+        Chosen<ConsoleChoice> chosen = chooseTable("")
+                .chooseUntilSomethingEntered(() ->
+                        chooseTable("\nYou did not enter anything please try again\n"));
+        if (chosen.getChoice().isEmpty()) {
+            String tableName = chosen.getEntered();
+            TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
+            if (tableProperties == null) {
+                out.println();
+                out.printf("Error: Properties for table \"%s\" could not be found", tableName);
+                confirmReturnToMainScreen(out, in);
+            } else {
+                callback.accept(tableName);
+            }
+        }
     }
 
     public Chosen<ConsoleChoice> chooseTable() throws UserExitedException {

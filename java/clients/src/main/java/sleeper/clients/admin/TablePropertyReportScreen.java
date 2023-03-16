@@ -18,8 +18,6 @@ package sleeper.clients.admin;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.ConsoleChoice;
 
 public class TablePropertyReportScreen {
 
@@ -31,14 +29,12 @@ public class TablePropertyReportScreen {
     public TablePropertyReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
         this.in = in;
-        this.tableSelectHelper = new TableSelectHelper(out, in);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store);
         this.store = store;
     }
 
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        Chosen<ConsoleChoice> chosen = tableSelectHelper.chooseTable();
-        if (!chosen.getChoice().isPresent()) {
-            new TablePropertyReport(out, in, store).print(instanceId, chosen.getEntered());
-        }
+        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableName ->
+                new TablePropertyReport(out, in, store).print(instanceId, tableName));
     }
 }

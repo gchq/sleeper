@@ -37,7 +37,7 @@ public class PartitionsStatusReportScreen {
     public PartitionsStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
         this.in = in;
-        this.tableSelectHelper = new TableSelectHelper(out, in);
+        this.tableSelectHelper = new TableSelectHelper(out, in, store);
         this.store = store;
     }
 
@@ -53,7 +53,6 @@ public class PartitionsStatusReportScreen {
                 try {
                     new PartitionsStatusReporter(out.printStream()).report(
                             PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, tableName)));
-
                 } catch (StateStoreException e) {
                     throw new RuntimeException(e);
                 }

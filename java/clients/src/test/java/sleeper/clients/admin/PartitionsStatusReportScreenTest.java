@@ -77,7 +77,7 @@ public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE +
                 TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
         InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(2)).promptLine(any());
+        order.verify(in.mock, times(3)).promptLine(any());
         order.verifyNoMoreInteractions();
     }
 
