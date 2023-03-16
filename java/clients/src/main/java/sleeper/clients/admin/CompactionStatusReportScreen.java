@@ -29,6 +29,7 @@ import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporte
 import sleeper.status.report.job.query.JobQuery;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
@@ -55,26 +56,28 @@ public class CompactionStatusReportScreen {
         ).run();
     }
 
+    private void chooseArgsForCompactionJobStatusReport(String instanceId) {
+        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+            String tableName = tableProperties.get(TABLE_NAME);
+            consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
+                    new MenuOption("All", () ->
+                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
+                    new MenuOption("Unfinished", () ->
+                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
+                    new MenuOption("Detailed (specific job)", () ->
+                            chooseJobIdAndRunDetailedStatusReport(instanceId, tableName)),
+                    new MenuOption("Range", () ->
+                            chooseRangeAndRunRangeStatusReport(instanceId, tableName))
+            ).run();
+        });
+    }
+
     private void chooseArgsForCompactionTaskStatusReport(String instanceId) {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
                 new MenuOption("All", () ->
                         runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.ALL)),
                 new MenuOption("Unfinished", () ->
                         runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.UNFINISHED))
-        ).run();
-    }
-
-    private void chooseArgsForCompactionJobStatusReport(String instanceId) {
-        String tableName = tableSelectHelper.chooseTable().getEntered();
-        consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
-                new MenuOption("All", () ->
-                        runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
-                new MenuOption("Unfinished", () ->
-                        runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
-                new MenuOption("Detailed (specific job)", () ->
-                        chooseJobIdAndRunDetailedStatusReport(instanceId, tableName)),
-                new MenuOption("Range", () ->
-                        chooseRangeAndRunRangeStatusReport(instanceId, tableName))
         ).run();
     }
 

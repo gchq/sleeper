@@ -59,12 +59,6 @@ class TableSelectHelper {
         }
     }
 
-    public Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
-        return chooseTable("")
-                .chooseUntilSomethingEntered(() ->
-                        chooseTable("\nYou did not enter anything please try again\n"));
-    }
-
     private Chosen<ConsoleChoice> chooseTable(String message) {
         out.clearScreen(message);
         out.println("Which TABLE do you want to select?\n");

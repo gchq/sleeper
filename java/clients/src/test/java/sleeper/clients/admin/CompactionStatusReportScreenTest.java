@@ -29,6 +29,7 @@ import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.time.Instant;
 import java.util.List;
@@ -68,6 +69,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() {
             // Given
             createCompactionJobStatusStore();
+            setTablePropertiesForTable("test-table");
             when(compactionJobStatusStore.getAllJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
             in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
@@ -93,6 +95,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         void shouldRunCompactionJobStatusReportWithQueryTypeUnknown() {
             // Given
             createCompactionJobStatusStore();
+            setTablePropertiesForTable("test-table");
             when(compactionJobStatusStore.getUnfinishedJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
             in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
@@ -117,6 +120,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         void shouldRunCompactionJobStatusReportWithQueryTypeDetailed() {
             // Given
             createCompactionJobStatusStore();
+            setTablePropertiesForTable("test-table");
             List<CompactionJobStatus> jobStatuses = exampleJobStatuses(dataHelper);
             CompactionJobStatus exampleJob = jobStatuses.get(0);
             when(compactionJobStatusStore.getJob(exampleJob.getJobId()))
@@ -142,6 +146,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         void shouldRunCompactionJobStatusReportWithQueryTypeRange() {
             // Given
             createCompactionJobStatusStore();
+            setTablePropertiesForTable("test-table");
             when(compactionJobStatusStore.getJobsInTimePeriod("test-table",
                     Instant.parse("2023-03-10T17:52:12Z"), Instant.parse("2023-03-18T17:52:12Z")))
                     .thenReturn(exampleJobStatuses(dataHelper));
@@ -166,6 +171,14 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             when(store.loadCompactionJobStatusStore(properties.get(ID)))
                     .thenReturn(compactionJobStatusStore);
+        }
+
+        private void setTablePropertiesForTable(String tableName) {
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties tableProperties = createValidTableProperties(properties, tableName);
+            setInstanceProperties(properties);
+            when(store.loadTableProperties(properties.get(ID), tableName))
+                    .thenReturn(tableProperties);
         }
 
         private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
