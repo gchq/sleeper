@@ -48,6 +48,9 @@ public class AdminMainScreen {
                         client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
                 new MenuOption("Run partition status report", () ->
                         client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run files status report", () ->
+                        client.filesStatusReportScreen().chooseArgsAndPrint(instanceId)
+                ),
                 new MenuOption("Run compaction status report", () ->
                         client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId))
         );

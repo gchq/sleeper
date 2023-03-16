@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.CompactionStatusReportScreen;
+import sleeper.clients.admin.FilesStatusReportScreen;
 import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
@@ -91,6 +92,10 @@ public class AdminClient {
 
     public PartitionsStatusReportScreen partitionsStatusReportScreen() {
         return new PartitionsStatusReportScreen(out, in, store);
+    }
+
+    public FilesStatusReportScreen filesStatusReportScreen() {
+        return new FilesStatusReportScreen(out, in, store);
     }
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {

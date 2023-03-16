@@ -21,25 +21,22 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PARTITION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldRunPartitionStatusReport() {
         // Given
-        createStateStoreForTable("test-table");
+        setStateStoreForTable("test-table");
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);
 
         // When
@@ -67,15 +64,6 @@ public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
                         "Error: Properties for table \"unknown-table\" could not be found" +
                         PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
         confirmAndVerifyNoMoreInteractions();
-    }
-
-    private void createStateStoreForTable(String tableName) {
-        InstanceProperties properties = createValidInstanceProperties();
-        setInstanceProperties(properties);
-        when(store.loadTableProperties(properties.get(ID), tableName))
-                .thenReturn(createValidTableProperties(properties, tableName));
-        when(store.loadStateStore(properties.get(ID), tableName))
-                .thenReturn(createValidStateStore());
     }
 
     private void confirmAndVerifyNoMoreInteractions() {
