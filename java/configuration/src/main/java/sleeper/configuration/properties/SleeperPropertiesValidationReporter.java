@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest;
+package sleeper.configuration.properties;
 
-import org.junit.jupiter.api.Test;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import sleeper.configuration.properties.InstanceProperty;
+public class SleeperPropertiesValidationReporter {
 
-import static org.assertj.core.api.Assertions.assertThat;
+    private final Map<SleeperProperty, String> invalidValues = new LinkedHashMap<>();
 
-class SystemTestPropertyTest {
-
-    @Test
-    void shouldSetUniqueDescriptionsOnAllProperties() {
-        assertThat(SystemTestProperty.getAll())
-                .extracting(InstanceProperty::getDescription)
-                .doesNotContainNull()
-                .doesNotHaveDuplicates();
+    public void invalidProperty(SleeperProperty property, String value) {
+        invalidValues.put(property, value);
     }
+
+    public void throwIfFailed() {
+        if (!invalidValues.isEmpty()) {
+            throw new SleeperPropertiesInvalidException(invalidValues);
+        }
+    }
+
 }

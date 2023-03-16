@@ -16,20 +16,16 @@
 
 package sleeper.systemtest;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class SystemTestPropertyImpl implements SystemTestProperty {
-    private static final Map<String, SystemTestProperty> ALL_MAP = new HashMap<>();
-    private static final List<SystemTestProperty> ALL = new ArrayList<>();
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
@@ -48,14 +44,6 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
     public static Builder named(String name) {
         return builder().propertyName(name);
-    }
-
-    public static List<SystemTestProperty> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static SystemTestProperty get(String propertyName) {
-        return ALL_MAP.get(propertyName);
     }
 
     @Override
@@ -97,6 +85,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description;
+        private Consumer<SystemTestProperty> addToIndex;
 
         private Builder() {
         }
@@ -121,13 +110,16 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
             return this;
         }
 
-        public SystemTestProperty build() {
-            return addToAllList(new SystemTestPropertyImpl(this));
+        public Builder addToIndex(Consumer<SystemTestProperty> addToIndex) {
+            this.addToIndex = addToIndex;
+            return this;
         }
 
-        private static SystemTestProperty addToAllList(SystemTestProperty property) {
-            ALL_MAP.put(property.getPropertyName(), property);
-            ALL.add(property);
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+        public SystemTestProperty build() {
+            SystemTestProperty property = new SystemTestPropertyImpl(this);
+            addToIndex.accept(property);
             return property;
         }
     }

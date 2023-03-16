@@ -62,9 +62,18 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         validate();
     }
 
-    protected abstract void validate();
+    public final void validate() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        reporter.throwIfFailed();
+    }
 
-    protected abstract boolean isKnownProperty(String propertyName);
+    protected void validate(SleeperPropertiesValidationReporter reporter) {
+        getPropertiesIndex().getUserDefined().forEach(property ->
+                property.validate(get(property), reporter));
+    }
+
+    protected abstract SleeperPropertyIndex<T> getPropertiesIndex();
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
@@ -176,6 +185,14 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.stringPropertyNames().stream()
                 .filter(not(this::isKnownProperty))
                 .map(name -> Map.entry(name, properties.getProperty(name)));
+    }
+
+    private boolean isKnownProperty(String propertyName) {
+        return getPropertiesIndex().getByName(propertyName).isPresent();
+    }
+
+    public Map<String, String> toMap() {
+        return PropertiesUtils.toMap(properties);
     }
 
     @Override

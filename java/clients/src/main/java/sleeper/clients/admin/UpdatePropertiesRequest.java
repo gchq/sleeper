@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.table;
+package sleeper.clients.admin;
 
-public class TablePropertyInvalidException extends IllegalArgumentException {
+import java.util.Properties;
 
-    public TablePropertyInvalidException(TableProperty property, String value) {
-        super("Property " + property.getPropertyName() + " was invalid. It was \"" + value + "\"");
+public class UpdatePropertiesRequest {
+
+    private final PropertiesDiff diff;
+    private final Properties updatedProperties;
+
+    public UpdatePropertiesRequest(PropertiesDiff diff, Properties updatedProperties) {
+        this.diff = diff;
+        this.updatedProperties = updatedProperties;
     }
 
+    public PropertiesDiff getDiff() {
+        return diff;
+    }
+
+    public Properties getUpdatedProperties() {
+        return updatedProperties;
+    }
 }
