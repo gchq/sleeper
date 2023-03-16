@@ -190,7 +190,7 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
         private final DynamoDBCompactionTaskStatusStore compactionTaskStatusStore = mock(DynamoDBCompactionTaskStatusStore.class);
 
         @Test
-        void shouldRunCompactionJobStatusReportWithQueryTypeAll() {
+        void shouldRunCompactionTaskStatusReportWithQueryTypeAll() {
             // Given
             createCompactionTaskStatusStore();
             when(compactionTaskStatusStore.getAllTasks())
@@ -220,7 +220,7 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldRunCompactionJobStatusReportWithQueryTypeUnfinished() {
+        void shouldRunCompactionTaskStatusReportWithQueryTypeUnfinished() {
             // Given
             createCompactionTaskStatusStore();
             when(compactionTaskStatusStore.getTasksInProgress())
