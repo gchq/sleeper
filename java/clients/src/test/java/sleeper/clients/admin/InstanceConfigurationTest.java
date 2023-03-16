@@ -32,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISCARD_CHANGES_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
@@ -225,7 +226,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         setInstanceProperties(before);
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, "", EXIT_OPTION);
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, DISCARD_CHANGES_OPTION, EXIT_OPTION);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
 
