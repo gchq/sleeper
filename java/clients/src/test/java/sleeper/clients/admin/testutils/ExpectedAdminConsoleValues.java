@@ -88,6 +88,7 @@ public class ExpectedAdminConsoleValues {
     public static final String JOB_QUERY_RANGE_OPTION = "4";
 
     public static final String TASK_QUERY_ALL_OPTION = "1";
+    public static final String TASK_QUERY_UNFINISHED_OPTION = "2";
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final String PROMPT_RETURN_TO_MAIN = "" +

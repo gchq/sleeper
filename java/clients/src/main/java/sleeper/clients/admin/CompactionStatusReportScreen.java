@@ -58,7 +58,9 @@ public class CompactionStatusReportScreen {
     private void chooseArgsForCompactionTaskStatusReport(String instanceId) {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
                 new MenuOption("All", () ->
-                        runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.ALL))
+                        runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.ALL)),
+                new MenuOption("Unfinished", () ->
+                        runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.UNFINISHED))
         ).run();
     }
 

@@ -50,13 +50,13 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUE
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 class CompactionStatusReportTest extends AdminClientMockStoreBase {
@@ -206,7 +206,39 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                     .contains("Compaction Task Status Report")
                     .contains("" +
-                            "Total tasks: 2\n");
+                            "Total tasks: 1\n" +
+                            "\n" +
+                            "Total standard tasks: 1\n" +
+                            "Total standard tasks in progress: 1\n" +
+                            "Total standard tasks finished: 0\n" +
+                            "\n" +
+                            "Total splitting tasks: 0\n" +
+                            "Total splitting tasks in progress: 0\n" +
+                            "Total splitting tasks finished: 0\n");
+
+            verifyWithNumberOfInvocations(3);
+        }
+
+        @Test
+        void shouldRunCompactionJobStatusReportWithQueryTypeUnfinished() {
+            // Given
+            createCompactionTaskStatusStore();
+            when(compactionTaskStatusStore.getTasksInProgress())
+                    .thenReturn(exampleTaskStatuses());
+            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
+                    COMPACTION_TASK_STATUS_REPORT_OPTION, TASK_QUERY_UNFINISHED_OPTION,
+                    EXIT_OPTION);
+
+            // When/Then
+            String output = runClientGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("Compaction Task Status Report")
+                    .contains("" +
+                            "Total tasks in progress: 1\n" +
+                            "Total standard tasks in progress: 1\n" +
+                            "Total splitting tasks in progress: 0\n");
 
             verifyWithNumberOfInvocations(3);
         }
@@ -218,10 +250,7 @@ class CompactionStatusReportTest extends AdminClientMockStoreBase {
         }
 
         private List<CompactionTaskStatus> exampleTaskStatuses() {
-            return List.of(
-                    startedTask("task-1", "2023-03-15T18:53:12.001Z"),
-                    finishedTask("task-2", "2023-03-15T19:53:12.001Z", "2023-03-15T20:53:12.001Z",
-                            1000L, 2000L));
+            return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
         }
     }
 
