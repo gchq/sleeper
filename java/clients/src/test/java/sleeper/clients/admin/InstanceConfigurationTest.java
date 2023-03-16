@@ -127,6 +127,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     // TODO apply changes in the store, handle multiple properties changed, order properties in output
     // TODO handle validation failure
+    // TODO return to editor if no option is chosen for applying changes
 
     @DisplayName("Display changes to edited properties")
     @Nested
