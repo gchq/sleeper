@@ -225,7 +225,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
         @Test
         @Disabled("TODO")
-        void shouldEditMultiplePropertiesOrderedAsTheyAreDisplayedInTheFile() throws Exception {
+        void shouldOrderKnownPropertiesInTheOrderTheyAreDefinedInTheirGroups() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
