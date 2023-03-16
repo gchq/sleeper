@@ -44,7 +44,7 @@ public class ParquetRecordWriterFactory {
     }
 
     public static ParquetWriter<Record> createParquetRecordWriter(Path path, Schema schema) throws IOException {
-        return new Builder(path, SchemaConverter.getSchema(schema), schema).build();
+        return new Builder(path, schema).build();
     }
 
     public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
@@ -74,32 +74,24 @@ public class ParquetRecordWriterFactory {
             boolean dictionaryEncodingForSortKeyFields,
             boolean dictionaryEncodingForValueFields,
             Configuration conf) throws IOException {
-        Builder builder = new Builder(path, SchemaConverter.getSchema(schema), schema)
-            .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec.toUpperCase(Locale.ROOT)))
+        Builder builder = new Builder(path, schema)
+            .withCompressionCodec(compressionCodec)
             .withRowGroupSize(rowGroupSize)
             .withPageSize(pageSize)
-            .withConf(conf);
-
-        setDictionaryEncoding(builder, schema.getRowKeyFieldNames(), dictionaryEncodingForRowKeyFields);
-        setDictionaryEncoding(builder, schema.getSortKeyFieldNames(), dictionaryEncodingForSortKeyFields);
-        setDictionaryEncoding(builder, schema.getValueFieldNames(), dictionaryEncodingForValueFields);
-
+            .withConf(conf)
+            .withDictionaryEncodingForRowKeyFields(dictionaryEncodingForRowKeyFields)
+            .withDictionaryEncodingForSortKeyFields(dictionaryEncodingForSortKeyFields)
+            .withDictionaryEncodingForValueFields(dictionaryEncodingForValueFields);
         return builder.build();
-    }
-
-    private static void setDictionaryEncoding(Builder builder, List<String> fieldNames, boolean dictionaryEncodingEnabled) {
-        for (String fieldName : fieldNames) {
-            builder = builder.withDictionaryEncoding(fieldName, dictionaryEncodingEnabled);
-        }
     }
 
     public static class Builder extends ParquetWriter.Builder<Record, Builder> {
         private final MessageType messageType;
         private final Schema schema;
 
-        public Builder(Path path, MessageType messageType, Schema schema) {
+        private Builder(Path path, Schema schema) {
             super(path);
-            this.messageType = messageType;
+            this.messageType = SchemaConverter.getSchema(schema);
             this.schema = schema;
         }
 
@@ -111,6 +103,31 @@ public class ParquetRecordWriterFactory {
         @Override
         protected Builder self() {
             return this;
+        }
+
+        protected Builder withCompressionCodec(String compressionCodec) {
+            return withCompressionCodec(CompressionCodecName.fromConf(compressionCodec.toUpperCase(Locale.ROOT)));
+        }
+
+        protected Builder withDictionaryEncodingForRowKeyFields(boolean dictionaryEncodingForRowKeyFields) {
+            setDictionaryEncoding(this, schema.getRowKeyFieldNames(), dictionaryEncodingForRowKeyFields);
+            return this;
+        }
+
+        protected Builder withDictionaryEncodingForSortKeyFields(boolean dictionaryEncodingForSortKeyFields) {
+            setDictionaryEncoding(this, schema.getSortKeyFieldNames(), dictionaryEncodingForSortKeyFields);
+            return this;
+        }
+
+        protected Builder withDictionaryEncodingForValueFields(boolean dictionaryEncodingForValueFields) {
+            setDictionaryEncoding(this, schema.getValueFieldNames(), dictionaryEncodingForValueFields);
+            return this;
+        }
+    }
+
+    private static void setDictionaryEncoding(Builder builder, List<String> fieldNames, boolean dictionaryEncodingEnabled) {
+        for (String fieldName : fieldNames) {
+            builder = builder.withDictionaryEncoding(fieldName, dictionaryEncodingEnabled);
         }
     }
 }
