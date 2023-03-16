@@ -16,7 +16,6 @@
 package sleeper.clients.admin.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -44,16 +43,13 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+            .withServices(LocalStackContainer.Service.S3);
 
     protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
             .build();
-    protected final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.standard()
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-            .build();
+    protected final AmazonDynamoDB dynamoDB = mock(AmazonDynamoDB.class);
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
 
     @TempDir
