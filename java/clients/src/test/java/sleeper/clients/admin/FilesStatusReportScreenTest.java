@@ -17,10 +17,14 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.FILES_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
@@ -46,6 +50,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                         "Files Status Report:\n" +
                         "--------------------------\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions");
+        confirmAndVerifyNoMoreInteractions();
     }
 
     @Test
@@ -67,6 +72,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                 .contains("" +
                         "Ready_to_be_garbage_collected:\n" +
                         "Active:");
+        confirmAndVerifyNoMoreInteractions();
     }
 
     @Test
@@ -88,6 +94,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
                 .contains("" +
                         "Ready_to_be_garbage_collected:\n" +
                         "Active:");
+        confirmAndVerifyNoMoreInteractions();
     }
 
     @Test
@@ -100,6 +107,11 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Error: Properties for table \"unknown-table\" could not be found");
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock, times(2)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
     }
 
     @Test
@@ -111,5 +123,16 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
         String output = runClientGetOutput();
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE +
                 TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock, times(3)).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    private void confirmAndVerifyNoMoreInteractions() {
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock, times(4)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
     }
 }
