@@ -48,8 +48,19 @@ public class PropertiesDiff {
     public void print(ConsoleOutput out, SleeperPropertyIndex<?> propertyIndex) {
         out.println("Found changes to properties:");
         out.println();
-        for (PropertyDiff diff : changes.values()) {
-            diff.print(out, propertyIndex);
+
+        // Print known properties
+        propertyIndex.getUserDefined().stream()
+                .filter(property -> changes.containsKey(property.getPropertyName()))
+                .map(property -> changes.get(property.getPropertyName()))
+                .forEach(diff -> diff.print(out, propertyIndex));
+
+        // Print unknown properties
+        List<String> unknownPropertyNames = changes.keySet().stream()
+                .filter(property -> propertyIndex.getByName(property).isEmpty())
+                .sorted().collect(Collectors.toList());
+        for (String propertyName : unknownPropertyNames) {
+            changes.get(propertyName).print(out, propertyIndex);
         }
     }
 
