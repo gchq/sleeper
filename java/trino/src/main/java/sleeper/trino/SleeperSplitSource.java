@@ -25,6 +25,7 @@ import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.Ranges;
 import io.trino.spi.predicate.TupleDomain;
+
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
@@ -37,7 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.StreamSupport;
 

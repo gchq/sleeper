@@ -25,11 +25,12 @@ import io.airlift.log.Logging;
 import io.trino.Session;
 import io.trino.plugin.tpch.TpchPlugin;
 import io.trino.testing.DistributedQueryRunner;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.SleeperPlugin;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProviderForDeployedS3Instance;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.util.Map;
 

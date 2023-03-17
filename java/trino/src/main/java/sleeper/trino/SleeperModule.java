@@ -22,10 +22,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProviderForDeployedS3Instance;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 

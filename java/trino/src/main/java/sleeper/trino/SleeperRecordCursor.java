@@ -24,6 +24,7 @@ import io.trino.spi.block.VariableWidthBlockBuilder;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.Type;
+
 import sleeper.trino.utils.SleeperPageBlockUtils;
 
 import java.util.Iterator;

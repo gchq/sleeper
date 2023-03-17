@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
+
 import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.type.PrimitiveType;

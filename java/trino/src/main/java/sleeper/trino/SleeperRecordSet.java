@@ -20,6 +20,7 @@ import io.airlift.log.Logger;
 import io.trino.spi.connector.RecordCursor;
 import io.trino.spi.connector.RecordSet;
 import io.trino.spi.type.Type;
+
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTransactionHandle;

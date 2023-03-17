@@ -44,6 +44,7 @@ import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.statistics.ComputedStatistics;
+
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;

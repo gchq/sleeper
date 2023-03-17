@@ -17,6 +17,7 @@ package sleeper.trino.remotesleeperconnection;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.hadoop.conf.Configuration;
+
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;

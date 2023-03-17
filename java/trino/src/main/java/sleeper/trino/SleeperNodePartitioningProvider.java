@@ -25,6 +25,7 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.type.Type;
+
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
 import sleeper.trino.handle.SleeperColumnHandle;

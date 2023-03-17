@@ -26,6 +26,7 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SystemTable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
+
 import sleeper.trino.SleeperRecordCursor;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 

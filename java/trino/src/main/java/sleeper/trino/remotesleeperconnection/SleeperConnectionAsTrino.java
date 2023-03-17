@@ -29,6 +29,8 @@ import io.trino.spi.type.ArrayType;
 import io.trino.spi.type.BooleanType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.VarcharType;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
@@ -45,7 +47,6 @@ import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.utils.SleeperTypeConversionUtils;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import javax.inject.Inject;
 

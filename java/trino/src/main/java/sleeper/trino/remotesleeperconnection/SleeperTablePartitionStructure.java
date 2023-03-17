@@ -16,6 +16,7 @@
 package sleeper.trino.remotesleeperconnection;
 
 import io.airlift.log.Logger;
+
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;

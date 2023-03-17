@@ -24,6 +24,7 @@ import io.trino.spi.type.BigintType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarcharType;
+
 import sleeper.trino.handle.SleeperColumnHandle;
 
 import java.util.List;

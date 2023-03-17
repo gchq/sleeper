@@ -20,6 +20,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.SleeperConnector;
 import sleeper.trino.SleeperMetadata;
@@ -28,7 +30,6 @@ import sleeper.trino.SleeperRecordSetProvider;
 import sleeper.trino.SleeperSplitManager;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import static java.util.Objects.requireNonNull;
 

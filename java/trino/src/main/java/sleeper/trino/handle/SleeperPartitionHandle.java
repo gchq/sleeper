@@ -16,6 +16,7 @@
 package sleeper.trino.handle;
 
 import io.trino.spi.connector.ConnectorPartitionHandle;
+
 import sleeper.core.key.Key;
 
 import java.util.Objects;
