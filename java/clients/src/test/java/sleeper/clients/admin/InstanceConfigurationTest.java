@@ -435,6 +435,14 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_CONFIGURATION_ENTER_TABLE_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
         }
     }
 
