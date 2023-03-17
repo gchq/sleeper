@@ -265,11 +265,11 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    @DisplayName("Handle validation failures")
+    @DisplayName("Display validation failures")
     @Nested
-    class HandleValidationFailures {
+    class DisplayValidationFailures {
         @Test
-        void shouldShowValidationScreenWhenPropertyFailsToValidate() throws Exception {
+        void shouldShowValidationFailure() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
@@ -290,6 +290,21 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "sleeper.s3.max-connections\n" +
                     "\n");
         }
+
+        @Test
+        void shouldShowValidationScreen() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When
+            String output = updateInvalidPropertiesGetOutput(before, after);
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .endsWith(PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
+        }
     }
 
     private String updatePropertiesGetApplyChangesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
@@ -306,12 +321,15 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     }
 
     private String updatePropertiesGetValidationDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
+        return getValidationDisplay(updateInvalidPropertiesGetOutput(before, after));
+    }
+
+    private String updateInvalidPropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         setInstanceProperties(before);
         in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, ValidateChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
-
-        return getValidationDisplay(runClientGetOutput());
+        return runClientGetOutput();
     }
 
     private static String getApplyChangesDisplay(String output) {
