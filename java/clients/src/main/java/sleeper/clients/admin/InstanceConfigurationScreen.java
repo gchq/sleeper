@@ -19,6 +19,7 @@ package sleeper.clients.admin;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ChooseOne;
@@ -48,8 +49,19 @@ public class InstanceConfigurationScreen {
                 .viewAndEditProperties();
     }
 
+    public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
+        String tableName = "";
+        withTableProperties(instanceId, store.loadTableProperties(instanceId, tableName))
+                .viewAndEditProperties();
+    }
+
     private WithProperties<InstanceProperties> withInstanceProperties(InstanceProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile, store::saveInstanceProperties);
+    }
+
+    private WithProperties<TableProperties> withTableProperties(String instanceId, TableProperties properties) {
+        return new WithProperties<>(properties, editor::openPropertiesFile,
+                (tableProperties, diff) -> store.saveTableProperties(instanceId, tableProperties, diff));
     }
 
     private interface OpenFile<T extends SleeperProperties<?>> {

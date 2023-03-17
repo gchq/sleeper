@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,12 +42,15 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_ENTER_TABLE_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
@@ -405,6 +410,30 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
+        }
+    }
+
+    @DisplayName("Configure table properties")
+    @Nested
+    class ConfigureTableProperties {
+        @Test
+        @Disabled("TODO")
+        void shouldEditAProperty() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = createValidTableProperties(properties);
+            after.set(ROW_GROUP_SIZE, "123");
+            setInstanceProperties(properties, before);
+            when(editor.openPropertiesFile(before))
+                    .thenReturn(withChanges(before, after));
+            in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
+                    SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
+
+            // When
+            String output = runClientGetOutput();
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + TABLE_CONFIGURATION_ENTER_TABLE_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
     }
 

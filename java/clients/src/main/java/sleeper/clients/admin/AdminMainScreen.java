@@ -47,7 +47,9 @@ public class AdminMainScreen {
                 new MenuOption("Print Sleeper table property report", () ->
                         client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("Update an instance or table property", () ->
-                        client.updatePropertyScreen().choosePropertyAndUpdate(instanceId))
+                        client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
+                new MenuOption("View/edit table configuration", () ->
+                        client.instanceConfigurationScreen().viewAndEditProperties(instanceId))
         );
         while (true) {
             try {

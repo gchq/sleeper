@@ -16,17 +16,17 @@
 
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperProperties;
 
 public class UpdatePropertiesRequestTestHelper {
     private UpdatePropertiesRequestTestHelper() {
     }
 
-    public static UpdatePropertiesRequest<InstanceProperties> noChanges(InstanceProperties properties) {
+    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> noChanges(T properties) {
         return new UpdatePropertiesRequest<>(PropertiesDiff.noChanges(), properties);
     }
 
-    public static UpdatePropertiesRequest<InstanceProperties> withChanges(InstanceProperties before, InstanceProperties after) {
+    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> withChanges(T before, T after) {
         return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), after);
     }
 }
