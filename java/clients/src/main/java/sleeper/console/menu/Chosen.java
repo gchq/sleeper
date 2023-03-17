@@ -78,7 +78,9 @@ public class Chosen<T extends ConsoleChoice> {
     }
 
     public void ifEnteredNonChoiceValue(Consumer<String> doWithEnteredValue) {
-        if (!exit && choice == null) {
+        if (exit) {
+            throw new UserExitedException();
+        } else if (choice == null) {
             doWithEnteredValue.accept(entered);
         }
     }

@@ -33,6 +33,7 @@ public class ExpectedAdminConsoleValues {
             "[3] Print Sleeper table names\n" +
             "[4] Print Sleeper table property report\n" +
             "[5] Update an instance or table property\n" +
+            "[6] View/edit table configuration\n" +
             "\n" +
             "Input: \n";
 
@@ -72,6 +73,8 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Input: \n";
     public static final String TABLE_CONFIGURATION_ENTER_TABLE_SCREEN = "\n" +
+            "Which TABLE do you want to configure?\n" +
+            "\n" +
             "Please enter the TABLE NAME now or use the following options:\n" +
             "[0] Exit program\n" +
             "[1] Return to Main Menu\n" +

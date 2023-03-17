@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,6 +50,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGES
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
@@ -417,7 +417,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     @Nested
     class ConfigureTableProperties {
         @Test
-        @Disabled("TODO")
         void shouldEditAProperty() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
@@ -432,7 +431,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // When
             String output = runClientGetOutput();
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + TABLE_CONFIGURATION_ENTER_TABLE_SCREEN)
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_CONFIGURATION_ENTER_TABLE_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         }
     }

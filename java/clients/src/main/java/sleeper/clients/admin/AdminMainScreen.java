@@ -49,7 +49,7 @@ public class AdminMainScreen {
                 new MenuOption("Update an instance or table property", () ->
                         client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
                 new MenuOption("View/edit table configuration", () ->
-                        client.instanceConfigurationScreen().viewAndEditProperties(instanceId))
+                        client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId))
         );
         while (true) {
             try {
