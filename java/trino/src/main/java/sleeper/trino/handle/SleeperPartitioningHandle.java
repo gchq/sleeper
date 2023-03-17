@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
 
 import sleeper.core.key.Key;
@@ -138,9 +139,9 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
         return encodeKeyListToString(getPartitionMinKeysInOrder());
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public int getPartitionNo(Key key) {
         Key floorKey = partitionMinKeyToPartitionNoSortedMap.floorKey(key);
         return this.partitionMinKeyToPartitionNoSortedMap.get(floorKey);
     }
-
 }

@@ -18,6 +18,7 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
@@ -98,6 +99,7 @@ public class SleeperMetadata implements ConnectorMetadata {
      * @param session The current session. This makes no difference at present.
      * @return A list of all the names of the schemas.
      */
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Suppress warning for now, method can probably be deleted
     @Override
     public List<String> listSchemaNames(ConnectorSession session) {
         return sleeperConnectionAsTrino.getAllTrinoSchemaNames();

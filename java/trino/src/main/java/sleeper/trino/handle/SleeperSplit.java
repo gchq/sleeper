@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.trino.spi.HostAddress;
 import io.trino.spi.connector.ConnectorSplit;
 
@@ -63,6 +64,7 @@ public class SleeperSplit implements ConnectorSplit {
      * During deserialisation, those values are passed from that JSON into this constructor, where the JsonProperty
      * matches the name of the getter that originally supplied the values.
      */
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     @JsonCreator
     public SleeperSplit(@JsonProperty("tableName") String tableName,
                         @JsonProperty("sleeperSchemaAsString") String sleeperSchemaAsString,

@@ -15,6 +15,7 @@
  */
 package sleeper.trino;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import io.trino.spi.Page;
@@ -73,6 +74,7 @@ public class SleeperPageSink implements ConnectorPageSink {
      * @return NOT_BLOCKED
      */
     @Override
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION") // Suppress for now, catch can probably be removed
     public CompletableFuture<?> appendPage(Page page) {
         try {
             noOfAppends++;
