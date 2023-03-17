@@ -140,7 +140,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -155,7 +155,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table-2");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -167,12 +167,12 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() throws IOException {
             // Given
             createTableInS3("old-test-table");
-            store().updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
+            updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -276,7 +276,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+            updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
 
             // Then
             verifyPropertiesDeployedWithCdk();
@@ -292,7 +292,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             verifyNoInteractions(cdk);
@@ -304,7 +304,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+            updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
 
             // Then
             verifyPropertiesDeployedWithCdk();
@@ -319,10 +319,9 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
             IOException thrown = new IOException("CDK failed");
             doThrowWhenPropertiesDeployedWithCdk(thrown);
-            AdminConfigStore store = store();
 
             // When / Then
-            assertThatThrownBy(() -> store.updateTableProperty(
+            assertThatThrownBy(() -> updateTableProperty(
                     INSTANCE_ID, "test-table", ENCRYPTED, "false"))
                     .isInstanceOf(AdminConfigStore.CouldNotSaveTableProperties.class)
                     .hasCauseReference(thrown);
@@ -336,7 +335,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
 
             // When / Then
             try {
-                store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+                updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
                 fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
