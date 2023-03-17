@@ -26,7 +26,6 @@ import sleeper.status.report.filestatus.StandardFileStatusReporter;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
 public class FilesStatusReportScreen {
-    //<instance id> <table name> <optional_max_num_ready_for_gc_files_to_count> <optional_verbose_true_or_false>
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final AdminConfigStore store;
