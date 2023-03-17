@@ -34,15 +34,15 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_SCREEN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class AdminClientIT extends AdminClientITBase {
+class AdminClientIT extends AdminClientITBase {
 
     @Test
-    public void shouldPrintInstancePropertyReportWhenChosen() throws Exception {
+    void shouldPrintInstancePropertyReportWhenChosen() throws Exception {
         // Given
         createValidInstanceProperties().saveToS3(s3);
         in.enterNextPrompts(INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
@@ -55,11 +55,11 @@ public class AdminClientIT extends AdminClientITBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                .contains("sleeper.account: 1234567890\n");
+                .contains("sleeper.account=1234567890\n");
     }
 
     @Test
-    public void shouldPrintTableNamesReportWhenChosen() throws Exception {
+    void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         instanceProperties.saveToS3(s3);
@@ -82,7 +82,7 @@ public class AdminClientIT extends AdminClientITBase {
     }
 
     @Test
-    public void shouldPrintTablePropertyReportWhenChosen() throws Exception {
+    void shouldPrintTablePropertyReportWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         instanceProperties.saveToS3(s3);
@@ -98,16 +98,16 @@ public class AdminClientIT extends AdminClientITBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
-                .contains("sleeper.table.name: test-table\n");
+                .contains("sleeper.table.name=test-table\n");
     }
 
     @Test
-    public void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws Exception {
+    void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "true");
+        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "2");
         instanceProperties.saveToS3(s3);
-        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "false",
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.s3.max-connections", "2",
                 INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
 
         // When
@@ -117,19 +117,19 @@ public class AdminClientIT extends AdminClientITBase {
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN
                         + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
                         + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
-                        + "sleeper.retain.infra.after.destroy has been updated to false\n"
+                        + "sleeper.s3.max-connections has been updated to 2\n"
                         + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                .contains("sleeper.retain.infra.after.destroy: false\n");
+                .contains("sleeper.s3.max-connections=2\n");
 
         InstanceProperties instancePropertiesAfter = new InstanceProperties();
         instancePropertiesAfter.loadFromS3(s3, instanceProperties.get(CONFIG_BUCKET));
-        assertThat(instancePropertiesAfter.getBoolean(RETAIN_INFRA_AFTER_DESTROY)).isFalse();
+        assertThat(instancePropertiesAfter.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(2);
     }
 
     @Test
-    public void shouldUpdateTablePropertyWhenNameValueAndTableEntered() throws Exception {
+    void shouldUpdateTablePropertyWhenNameValueAndTableEntered() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         instanceProperties.saveToS3(s3);
@@ -152,7 +152,7 @@ public class AdminClientIT extends AdminClientITBase {
                         + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
-                .contains("sleeper.table.iterator.class.name: AfterIteratorClass\n");
+                .contains("sleeper.table.iterator.class.name=AfterIteratorClass\n");
 
         TableProperties tablePropertiesAfter = new TableProperties(instanceProperties);
         tablePropertiesAfter.loadFromS3(s3, tableProperties.get(TABLE_NAME));

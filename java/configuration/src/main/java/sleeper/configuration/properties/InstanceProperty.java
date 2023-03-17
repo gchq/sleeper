@@ -17,16 +17,27 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
-import static sleeper.configuration.Utils.combineLists;
-
 public interface InstanceProperty extends SleeperProperty {
-    static List<InstanceProperty> getAllGrouped() {
-        return InstancePropertyGroup.sortPropertiesByGroup(getAll());
-    }
 
     static List<InstanceProperty> getAll() {
-        return combineLists(UserDefinedInstanceProperty.getAll(), SystemDefinedInstanceProperty.getAll());
+        return Index.INSTANCE.getAll();
     }
 
-    PropertyGroup getPropertyGroup();
+    static boolean has(String propertyName) {
+        return Index.INSTANCE.getByName(propertyName).isPresent();
+    }
+
+    class Index {
+        private Index() {
+        }
+
+        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = createInstance();
+
+        private static SleeperPropertyIndex<InstanceProperty> createInstance() {
+            SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();
+            index.addAll(UserDefinedInstanceProperty.getAll());
+            index.addAll(SystemDefinedInstanceProperty.getAll());
+            return index;
+        }
+    }
 }

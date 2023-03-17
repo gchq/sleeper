@@ -24,8 +24,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.apache.parquet.schema.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +32,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
@@ -49,7 +48,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
@@ -76,42 +75,32 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
  */
 public class CompactSortedFiles {
     private final InstanceProperties instanceProperties;
-    private final ObjectFactory objectFactory;
+    private final TableProperties tableProperties;
     private final Schema schema;
+    private final ObjectFactory objectFactory;
     private final String rowKeyName0;
-    private final MessageType messageType;
     private final CompactionJob compactionJob;
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
-    private final int rowGroupSize;
-    private final int pageSize;
-    private final String compressionCodec;
     private final String taskId;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
     public CompactSortedFiles(InstanceProperties instanceProperties,
+                              TableProperties tableProperties,
                               ObjectFactory objectFactory,
-                              Schema schema,
-                              MessageType messageType,
                               CompactionJob compactionJob,
                               StateStore stateStore,
                               CompactionJobStatusStore jobStatusStore,
-                              int rowGroupSize,
-                              int pageSize,
-                              String compressionCodec,
                               String taskId) {
         this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        this.schema = this.tableProperties.getSchema();
         this.objectFactory = objectFactory;
-        this.schema = schema;
-        this.rowKeyName0 = schema.getRowKeyFieldNames().get(0);
-        this.messageType = messageType;
+        this.rowKeyName0 = this.schema.getRowKeyFieldNames().get(0);
         this.compactionJob = compactionJob;
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
-        this.rowGroupSize = rowGroupSize;
-        this.pageSize = pageSize;
-        this.compressionCodec = compressionCodec;
         this.taskId = taskId;
     }
 
@@ -151,13 +140,9 @@ public class CompactSortedFiles {
 
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
-        ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(compactionJob.getOutputFile()),
-                messageType, schema)
-                .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
-                .withRowGroupSize(rowGroupSize)
-                .withPageSize(pageSize)
-                .withConf(conf);
-        ParquetWriter<Record> writer = builder.build();
+        Path outputPath = new Path(compactionJob.getOutputFile());
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
+
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
@@ -229,11 +214,12 @@ public class CompactSortedFiles {
         CloseableIterator<Record> mergingIterator = getMergingIterator(inputIterators);
 
         // Create writers
-        ParquetRecordWriter leftWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getLeft()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+        Path leftPath = new Path(compactionJob.getOutputFiles().getLeft());
+        ParquetWriter<Record> leftWriter = ParquetRecordWriterFactory.createParquetRecordWriter(leftPath, tableProperties, conf);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
-        ParquetRecordWriter rightWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getRight()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+
+        Path rightPath = new Path(compactionJob.getOutputFiles().getRight());
+        ParquetWriter<Record> rightWriter = ParquetRecordWriterFactory.createParquetRecordWriter(rightPath, tableProperties, conf);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();

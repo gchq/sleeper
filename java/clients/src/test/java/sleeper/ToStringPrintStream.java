@@ -20,18 +20,14 @@ import sleeper.console.ConsoleOutput;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 public class ToStringPrintStream {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
 
     public PrintStream getPrintStream() {
-        try {
-            return new PrintStream(outputStream, false, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new UnsupportedOperationException("Cannot run without UTF-8 encoding", e);
-        }
+        return new PrintStream(outputStream, false, StandardCharsets.UTF_8);
     }
 
     public ConsoleOutput consoleOut() {

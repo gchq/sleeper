@@ -17,13 +17,14 @@
 package sleeper.configuration.properties.local;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,42 +40,43 @@ public class SaveLocalProperties {
     private SaveLocalProperties() {
     }
 
-    public static void saveFromS3(AmazonS3 s3, String instanceId, Path directory) {
+    public static InstanceProperties saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        saveToDirectory(directory, instanceProperties, loadTablesFromS3(s3, instanceProperties));
+        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        saveToDirectory(directory, instanceProperties, TableProperties.streamTablesFromS3(s3, instanceProperties));
+        return instanceProperties;
     }
 
     public static void saveToDirectory(Path directory,
                                        InstanceProperties instanceProperties,
-                                       Stream<TableProperties> tablePropertiesStream) {
+                                       Stream<TableProperties> tablePropertiesStream) throws IOException {
+        writeInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
+        Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
+        writeStringIfSet(directory.resolve("configBucket.txt"), instanceProperties.get(CONFIG_BUCKET));
+        writeStringIfSet(directory.resolve("queryResultsBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
+        saveTablesToDirectory(directory, tablePropertiesStream);
+    }
+
+    private static void saveTablesToDirectory(Path directory, Stream<TableProperties> tablePropertiesStream) throws IOException {
         try {
-            instanceProperties.save(directory.resolve("instance.properties"));
-            Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
-            writeStringIfSet(directory.resolve("configBucket.txt"), instanceProperties.get(CONFIG_BUCKET));
-            writeStringIfSet(directory.resolve("queryResultsBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        tablePropertiesStream.forEach(tableProperties -> {
-            // Store in the same directory structure as in S3 (tables/table-name)
-            Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
-            try {
-                Files.createDirectories(tableDir);
-                tableProperties.save(tableDir.resolve("table.properties"));
-
-                // Unpack properties for schema & table bucket
-                tableProperties.getSchema().save(tableDir.resolve("schema.json"));
-                Files.writeString(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            for (TableProperties tableProperties : (Iterable<TableProperties>) tablePropertiesStream::iterator) {
+                saveTableToDirectory(directory, tableProperties);
             }
-        });
+        } catch (UncheckedIOException e) {
+            // Stream could throw an UncheckedIOException, so unwrap it
+            throw e.getCause();
+        }
+    }
+
+    private static void saveTableToDirectory(Path directory, TableProperties tableProperties) throws IOException {
+        // Store in the same directory structure as in S3 (tables/table-name)
+        Path tableDir = directory.resolve("tables").resolve(tableProperties.get(TABLE_NAME));
+        Files.createDirectories(tableDir);
+        writeTableProperties(tableProperties, tableDir.resolve("table.properties"));
+
+        // Unpack properties for schema & table bucket
+        tableProperties.getSchema().save(tableDir.resolve("schema.json"));
+        writeStringIfSet(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
     }
 
     private static void writeStringIfSet(Path file, String value) throws IOException {
@@ -83,24 +85,17 @@ public class SaveLocalProperties {
         }
     }
 
-    private static Stream<TableProperties> loadTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        return s3.listObjectsV2(configBucket, "tables/")
-                .getObjectSummaries().stream()
-                .map(tableConfigObject -> loadTableFromS3(s3, instanceProperties, tableConfigObject));
+    private static void writeInstanceProperties(InstanceProperties instanceProperties, Path file) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
+            SleeperPropertiesPrettyPrinter.forInstanceProperties(new PrintWriter(writer))
+                    .print(instanceProperties);
+        }
     }
 
-    private static TableProperties loadTableFromS3(
-            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        try (InputStream in = s3.getObject(
-                        tableConfigObject.getBucketName(),
-                        tableConfigObject.getKey())
-                .getObjectContent()) {
-            tableProperties.load(in);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    private static void writeTableProperties(TableProperties tableProperties, Path file) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
+            SleeperPropertiesPrettyPrinter.forTableProperties(new PrintWriter(writer))
+                    .print(tableProperties);
         }
-        return tableProperties;
     }
 }

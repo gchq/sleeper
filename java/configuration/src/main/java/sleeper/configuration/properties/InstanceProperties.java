@@ -53,18 +53,6 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super.init();
     }
 
-    /**
-     * Validates all UserDefinedProperties
-     */
-    @Override
-    protected void validate() {
-        for (UserDefinedInstanceProperty sleeperProperty : UserDefinedInstanceProperty.getAll()) {
-            if (!sleeperProperty.validationPredicate().test(get(sleeperProperty))) {
-                throw new IllegalArgumentException("sleeper property: " + sleeperProperty.getPropertyName() + " is invalid");
-            }
-        }
-    }
-
     public Map<String, String> getTags() {
         return tags;
     }
@@ -113,6 +101,11 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     public void saveToS3(AmazonS3 s3Client) throws IOException {
         super.saveToS3(s3Client, get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
         LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
+    }
+
+    @Override
+    protected SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
+        return InstanceProperty.Index.INSTANCE;
     }
 
     public static Map<String, String> csvTagsToMap(String csvTags) {

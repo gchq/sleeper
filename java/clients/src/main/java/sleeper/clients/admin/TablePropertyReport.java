@@ -15,13 +15,12 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-import static sleeper.util.ClientUtils.formatPropertyDescription;
 
 public class TablePropertyReport {
 
@@ -41,11 +40,8 @@ public class TablePropertyReport {
 
     private void print(TableProperties tableProperties) {
         out.println("\n\n Table Property Report \n -------------------------");
-        for (TableProperty property : TableProperty.getAll()) {
-            out.println();
-            out.println(formatPropertyDescription(property.getDescription()));
-            out.println(property.getPropertyName() + ": " + tableProperties.get(property));
-        }
+        SleeperPropertiesPrettyPrinter.forTableProperties(out.writer())
+                .print(tableProperties);
         confirmReturnToMainScreen(out, in);
     }
 }

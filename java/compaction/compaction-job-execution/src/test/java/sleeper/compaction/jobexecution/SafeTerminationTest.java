@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,70 +19,65 @@ import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SafeTerminationTest {
+class SafeTerminationTest {
 
-    /** Fake Lambda context class. */
+    /**
+     * Fake Lambda context class.
+     */
     public static class FakeContext implements Context {
 
         @Override
         public String getAwsRequestId() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public String getLogGroupName() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public String getLogStreamName() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public String getFunctionName() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public String getFunctionVersion() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public String getInvokedFunctionArn() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public CognitoIdentity getIdentity() {
-            // TODO Auto-generated method stub
             return null;
         }
 
         @Override
         public ClientContext getClientContext() {
-            // TODO Auto-generated method stub
             return null;
         }
 
@@ -93,152 +88,148 @@ public class SafeTerminationTest {
 
         @Override
         public int getMemoryLimitInMB() {
-            // TODO Auto-generated method stub
             return 0;
         }
 
         @Override
         public LambdaLogger getLogger() {
-            // TODO Auto-generated method stub
             return null;
         }
     }
 
     /**
      * Custom termination Lambda input test from
-     * https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html.
+     * <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html">AWS documentation</a>.
      */
     public static final String IN_TEST = "{\n"
-                    + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
-                    + "  \"AutoScalingGroupName\": \"my-asg\",\n"
-                    + "  \"CapacityToTerminate\": [\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"Capacity\": 3,\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    }\n"
-                    + "  ],\n"
-                    + "  \"Instances\": [\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-02e1c69383a3ed501\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-036bc44b6092c01c7\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    }\n"
-                    + "  ],\n"
-                    + "  \"Cause\": \"SCALE_IN\"\n"
-                    + "}";
+            + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
+            + "  \"AutoScalingGroupName\": \"my-asg\",\n"
+            + "  \"CapacityToTerminate\": [\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"Capacity\": 3,\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    }\n"
+            + "  ],\n"
+            + "  \"Instances\": [\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-02e1c69383a3ed501\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-036bc44b6092c01c7\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    }\n"
+            + "  ],\n"
+            + "  \"Cause\": \"SCALE_IN\"\n"
+            + "}";
 
     public static final String IN_TEST_MULTI = "{\n"
-                    + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
-                    + "  \"AutoScalingGroupName\": \"my-asg\",\n"
-                    + "  \"CapacityToTerminate\": [\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"Capacity\": 3,\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"Capacity\": 4,\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    }\n"
-                    + "  ],\n"
-                    + "  \"Instances\": [\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-02e1c69383a3ed501\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-036bc44b6092c01c7\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"InstanceId\": \"i-0056faf8da3e11234\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"InstanceId\": \"i-02e1c69383a34567\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"InstanceId\": \"i-036bc44b6092cbcdd\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"InstanceId\": \"i-036bc44b6092cabcd\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    }\n"
-                    + "  ],\n"
-                    + "  \"Cause\": \"SCALE_IN\"\n"
-                    + "}";
+            + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
+            + "  \"AutoScalingGroupName\": \"my-asg\",\n"
+            + "  \"CapacityToTerminate\": [\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"Capacity\": 3,\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+            + "      \"Capacity\": 4,\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    }\n"
+            + "  ],\n"
+            + "  \"Instances\": [\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-02e1c69383a3ed501\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-036bc44b6092c01c7\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+            + "      \"InstanceId\": \"i-0056faf8da3e11234\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+            + "      \"InstanceId\": \"i-02e1c69383a34567\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+            + "      \"InstanceId\": \"i-036bc44b6092cbcdd\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    },\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+            + "      \"InstanceId\": \"i-036bc44b6092cabcd\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    }\n"
+            + "  ],\n"
+            + "  \"Cause\": \"SCALE_IN\"\n"
+            + "}";
 
     public static final String IN_TEST_ZERO = "{\n"
-                    + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
-                    + "  \"AutoScalingGroupName\": \"my-asg\",\n"
-                    + "  \"CapacityToTerminate\": [\n"
-                    + "  ],\n"
-                    + "  \"Instances\": [\n"
-                    + "  ],\n"
-                    + "  \"Cause\": \"SCALE_IN\"\n"
-                    + "}";
+            + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
+            + "  \"AutoScalingGroupName\": \"my-asg\",\n"
+            + "  \"CapacityToTerminate\": [\n"
+            + "  ],\n"
+            + "  \"Instances\": [\n"
+            + "  ],\n"
+            + "  \"Cause\": \"SCALE_IN\"\n"
+            + "}";
 
     /**
      * Custom termination Lambda input test from
-     * https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html.
+     * <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/lambda-custom-termination-policy.html">AWS documentation</a>.
      */
     public static final String IN_TEST_LIMIT = "{\n"
-                    + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
-                    + "  \"AutoScalingGroupName\": \"my-asg\",\n"
-                    + "  \"CapacityToTerminate\": [\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1b\",\n"
-                    + "      \"Capacity\": 1,\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    }"
-                    + "  ],\n"
-                    + "  \"Instances\": [\n"
-                    + "    {\n"
-                    + "      \"AvailabilityZone\": \"us-east-1c\",\n"
-                    + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
-                    + "      \"InstanceType\": \"t2.nano\",\n"
-                    + "      \"InstanceMarketOption\": \"on-demand\"\n"
-                    + "    }\n"
-                    + "  ],\n"
-                    + "  \"Cause\": \"SCALE_IN\"\n"
-                    + "}";
-
-    public static final Set<String> EXPECTED_SET = new HashSet<>(Arrays.asList("i-0056faf8da3e1f75d", "i-02e1c69383a3ed501", "i-036bc44b6092c01c7"));
+            + "  \"AutoScalingGroupARN\": \"arn:aws:autoscaling:us-east-1:<account-id>:autoScalingGroup:d4738357-2d40-4038-ae7e-b00ae0227003:autoScalingGroupName/my-asg\",\n"
+            + "  \"AutoScalingGroupName\": \"my-asg\",\n"
+            + "  \"CapacityToTerminate\": [\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1b\",\n"
+            + "      \"Capacity\": 1,\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    }"
+            + "  ],\n"
+            + "  \"Instances\": [\n"
+            + "    {\n"
+            + "      \"AvailabilityZone\": \"us-east-1c\",\n"
+            + "      \"InstanceId\": \"i-0056faf8da3e1f75d\",\n"
+            + "      \"InstanceType\": \"t2.nano\",\n"
+            + "      \"InstanceMarketOption\": \"on-demand\"\n"
+            + "    }\n"
+            + "  ],\n"
+            + "  \"Cause\": \"SCALE_IN\"\n"
+            + "}";
 
     public static final String JSON_RESPONSE = "{\"InstanceIDs\":[\"id1\",\"id2\",\"id3\"]}";
     public static final String JSON_RESPONSE_LIMIT = "{\"InstanceIDs\":[\"id1\"]}";
@@ -254,23 +245,31 @@ public class SafeTerminationTest {
         INSTANCE_LIST_LIMIT.add(new InstanceDetails("id1", "arn1", Instant.now(), 1, 1, 1, 1, 0, 0));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullDetails() {
-        SafeTerminationLambda.findEmptyInstances(null, 0, new FakeContext());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void throwOnNegativeSize() {
-        SafeTerminationLambda.findEmptyInstances(new ArrayList<>(), -1, new FakeContext());
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullContext() {
-        SafeTerminationLambda.findEmptyInstances(new ArrayList<>(), 0, null);
+    @Test
+    void throwOnNullDetails() {
+        Context context = new FakeContext();
+        assertThatThrownBy(() -> SafeTerminationLambda.findEmptyInstances(null, 0, context))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldFindZeroEmptyInstances() {
+    void throwOnNegativeSize() {
+        List<InstanceDetails> instanceDetails = new ArrayList<>();
+        Context context = new FakeContext();
+        assertThatThrownBy(() -> SafeTerminationLambda.findEmptyInstances(instanceDetails, -1, context))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void throwOnNullContext() {
+        List<InstanceDetails> instanceDetails = new ArrayList<>();
+        assertThatThrownBy(() ->
+                SafeTerminationLambda.findEmptyInstances(instanceDetails, 0, null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldFindZeroEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
         details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
@@ -285,7 +284,7 @@ public class SafeTerminationTest {
     }
 
     @Test
-    public void shouldFindOneEmptyInstances() {
+    void shouldFindOneEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
         details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 1, 1));
@@ -300,7 +299,7 @@ public class SafeTerminationTest {
     }
 
     @Test
-    public void shouldFindMultiEmptyInstances() {
+    void shouldFindMultiEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
         details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
@@ -315,7 +314,7 @@ public class SafeTerminationTest {
     }
 
     @Test
-    public void shouldFindAndLimitMultiEmptyInstances() {
+    void shouldFindAndLimitMultiEmptyInstances() {
         // Given
         List<InstanceDetails> details = new ArrayList<>();
         details.add(new InstanceDetails("id1", "someARN", Instant.now(), 1, 1, 1, 1, 0, 0));
@@ -326,32 +325,45 @@ public class SafeTerminationTest {
         Set<String> multi = SafeTerminationLambda.findEmptyInstances(details, 1, new FakeContext());
 
         // Then
-        assertThat(multi).hasSize(1);
-        assertThat(multi).containsAnyOf("id1", "id3");
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullReader() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(null, new StringWriter(), INSTANCE_LIST, new FakeContext());
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullWriter() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), null, INSTANCE_LIST, new FakeContext());
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullInstances() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), new StringWriter(), null, new FakeContext());
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullContextSuggestions() throws IOException {
-        SafeTerminationLambda.suggestIDsToTerminate(new StringReader(""), new StringWriter(), INSTANCE_LIST, null);
+        assertThat(multi).hasSize(1)
+                .containsAnyOf("id1", "id3");
     }
 
     @Test
-    public void shouldWriteCorrectJSONOutputNoLimit() throws IOException {
+    void throwOnNullReader() {
+        Writer output = new StringWriter();
+        Context context = new FakeContext();
+        assertThatThrownBy(() -> SafeTerminationLambda.suggestIDsToTerminate(null, output, INSTANCE_LIST, context))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void throwOnNullWriter() {
+        Reader input = new StringReader("");
+        Context context = new FakeContext();
+        assertThatThrownBy(() -> SafeTerminationLambda.suggestIDsToTerminate(input, null, INSTANCE_LIST, context))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void throwOnNullInstances() {
+        Reader input = new StringReader("");
+        Writer output = new StringWriter();
+        Context context = new FakeContext();
+        assertThatThrownBy(() -> SafeTerminationLambda.suggestIDsToTerminate(input, output, null, context))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void throwOnNullContextSuggestions() {
+        Reader input = new StringReader("");
+        Writer output = new StringWriter();
+        assertThatThrownBy(() -> SafeTerminationLambda.suggestIDsToTerminate(input, output, INSTANCE_LIST, null))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void shouldWriteCorrectJSONOutputNoLimit() throws IOException {
         // Given
         StringReader input = new StringReader(IN_TEST);
         StringWriter output = new StringWriter();
@@ -364,7 +376,7 @@ public class SafeTerminationTest {
     }
 
     @Test
-    public void shouldWriteCorrectJSONOutputWithLimit() throws IOException {
+    void shouldWriteCorrectJSONOutputWithLimit() throws IOException {
         // Given
         StringReader input = new StringReader(IN_TEST_LIMIT);
         StringWriter output = new StringWriter();
@@ -376,13 +388,14 @@ public class SafeTerminationTest {
         assertThat(output.toString()).isEqualToIgnoringWhitespace(JSON_RESPONSE_LIMIT);
     }
 
-    @Test(expected = NullPointerException.class)
-    public void throwOnNullReaderTotalTerminations() {
-        SafeTerminationLambda.totalTerminations(null);
+    @Test
+    void throwOnNullReaderTotalTerminations() {
+        assertThatThrownBy(() -> SafeTerminationLambda.totalTerminations(null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    public void shouldReturnZeroTotalTerminations() {
+    void shouldReturnZeroTotalTerminations() {
         // Given
         StringReader input = new StringReader(IN_TEST_ZERO);
 
@@ -390,11 +403,11 @@ public class SafeTerminationTest {
         int totalCapacity = SafeTerminationLambda.totalTerminations(input);
 
         // Then
-        assertThat(totalCapacity).isEqualTo(0);
+        assertThat(totalCapacity).isZero();
     }
 
     @Test
-    public void shouldReturnSingleTotalTerminations() {
+    void shouldReturnSingleTotalTerminations() {
         // Given
         StringReader input = new StringReader(IN_TEST);
 
@@ -406,7 +419,7 @@ public class SafeTerminationTest {
     }
 
     @Test
-    public void shouldReturnMultipleTotalTerminations() {
+    void shouldReturnMultipleTotalTerminations() {
         // Given
         StringReader input = new StringReader(IN_TEST_MULTI);
 

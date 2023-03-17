@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.build.github.api.GitHubApi;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 
@@ -30,6 +31,7 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -44,14 +46,14 @@ public class DeleteGHCRVersions {
 
     private final GitHubApi api;
     private final String organization;
-    private final String packageName;
+    private final List<String> packageNames;
     private final Pattern ignoreTags;
     private final int keepMostRecent;
 
     private DeleteGHCRVersions(Builder builder) {
         api = Objects.requireNonNull(builder.api, "api must not be null");
         organization = Objects.requireNonNull(builder.organization, "organization must not be null");
-        packageName = Objects.requireNonNull(builder.packageName, "packageName must not be null");
+        packageNames = Objects.requireNonNull(builder.packageNames, "packageNames must not be null");
         ignoreTags = builder.ignoreTags;
         keepMostRecent = builder.keepMostRecent;
     }
@@ -76,17 +78,25 @@ public class DeleteGHCRVersions {
     }
 
     public void deleteVersions() {
-        LOGGER.info("Deleting versions for {}/{}, ignoring {} and keeping {}",
-                organization, packageName, ignoreTags, keepMostRecent);
-        List<GitHubPackageVersionResponse> all = getAllVersions();
-        List<GitHubPackageVersionResponse> toDelete = getVersionsToDelete(all).collect(Collectors.toList());
-        LOGGER.info("Deleting {} of {} versions", toDelete.size(), all.size());
-        toDelete.forEach(this::deleteVersion);
+        LOGGER.info("Deleting versions for {} in org {}, ignoring {} and keeping {}",
+                packageNames, organization, ignoreTags, keepMostRecent);
+        packageNames.stream()
+                .parallel().map(this::getVersionsToDelete)
+                .forEach(versions -> versions.stream().parallel().forEach(PackageVersion::delete));
+    }
+
+    private List<PackageVersion> getVersionsToDelete(String packageName) {
+        List<GitHubPackageVersionResponse> all = getAllVersions(packageName);
+        List<PackageVersion> toDelete = getVersionsToDelete(all)
+                .map(version -> new PackageVersion(packageName, version))
+                .collect(Collectors.toList());
+        LOGGER.info("Deleting {} of {} versions for package {}", toDelete.size(), all.size(), packageName);
+        return toDelete;
     }
 
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON") // GenericType is intended to be used as an anonymous class
-    private List<GitHubPackageVersionResponse> getAllVersions() {
-        WebTarget target = packagePath().path("versions");
+    private List<GitHubPackageVersionResponse> getAllVersions(String packageName) {
+        WebTarget target = packagePath(packageName).path("versions");
         return api.request(target).get(new GenericType<>() {
         });
     }
@@ -102,23 +112,44 @@ public class DeleteGHCRVersions {
         return ignoreTags == null || version.getTags().stream().noneMatch(tag -> ignoreTags.matcher(tag).find());
     }
 
-    private void deleteVersion(GitHubPackageVersionResponse version) {
-        WebTarget target = packagePath().path("versions").path(version.getId());
-        api.request(target).delete(Void.class);
+    private WebTarget packagePath(String packageName) {
+        return api.path("orgs").path(organization).path("packages").path("container").path(packageName);
     }
 
-    private WebTarget packagePath() {
-        return api.path("orgs").path(organization).path("packages").path("container").path(packageName);
+    private class PackageVersion {
+        final String packageName;
+        final GitHubPackageVersionResponse version;
+
+        PackageVersion(String packageName, GitHubPackageVersionResponse version) {
+            this.packageName = packageName;
+            this.version = version;
+        }
+
+        void delete() {
+            WebTarget target = packagePath(packageName).path("versions").path(version.getId());
+            try {
+                api.request(target).delete(Void.class);
+            } catch (NotFoundException e) {
+                LOGGER.warn("Version not found deleting package '{}' version {}", packageName, version.getId());
+            } catch (Exception e) {
+                LOGGER.error("Failed deleting package '{}' version {}", packageName, version.getId());
+                throw e;
+            }
+        }
     }
 
     public static final class Builder {
         private GitHubApi api;
         private String organization;
-        private String packageName;
+        private List<String> packageNames;
         private Pattern ignoreTags;
         private int keepMostRecent;
 
         private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder api(GitHubApi api) {
@@ -131,8 +162,8 @@ public class DeleteGHCRVersions {
             return this;
         }
 
-        public Builder packageName(String packageName) {
-            this.packageName = packageName;
+        public Builder packageNames(List<String> packageNames) {
+            this.packageNames = packageNames;
             return this;
         }
 
@@ -156,9 +187,22 @@ public class DeleteGHCRVersions {
 
         public Builder properties(Properties properties) {
             return organization(properties.getProperty("organization"))
-                    .packageName(properties.getProperty("packageName"))
+                    .packageNames(readPackageNames(properties))
                     .ignoreTagsPattern(properties.getProperty("ignoreTagsPattern"))
                     .keepMostRecent(properties.getProperty("keepMostRecent"));
+        }
+
+        private static List<String> readPackageNames(Properties properties) {
+            List<String> packageNames = new ArrayList<>();
+            String name = properties.getProperty("packageName");
+            if (name != null) {
+                packageNames.add(name);
+            }
+            String names = properties.getProperty("packageNames");
+            if (names != null) {
+                packageNames.addAll(List.of(names.split("\\s*,\\s*")));
+            }
+            return packageNames;
         }
 
         public DeleteGHCRVersions build() {

@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.Duration;
@@ -26,10 +25,8 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.lambda.S3Code;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -38,6 +35,9 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.List;
@@ -51,26 +51,20 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHEN
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
-    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties,
+    public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
                        List<StateStoreStack> stateStoreStacks, List<IBucket> dataBuckets) {
         super(scope, id);
 
-        String jarsBucketName = instanceProperties.get(JARS_BUCKET);
-        String version = instanceProperties.get(VERSION);
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
-        List<String> userJars = instanceProperties.getList(USER_JARS);
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
-        S3Code s3Code = Code.fromBucket(jarsBucket, "athena-" + version + ".jar");
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
 
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
@@ -127,13 +121,9 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            Function handler = createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout);
+            IFunction handler = createConnector(className, instanceId, logRetentionDays, jarCode, env, memory, timeout);
 
-            if (userJars != null) {
-                for (String jar : userJars) {
-                    jarsBucket.grantRead(handler, jar);
-                }
-            }
+            jarsBucket.grantRead(handler);
 
             stateStoreStacks.forEach(sss -> {
                 sss.grantReadActiveFileMetadata(handler);
@@ -160,7 +150,7 @@ public class AthenaStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Function createConnector(String className, String instanceId, int logRetentionDays, S3Code s3Code, Map<String, String> env, Integer memory, Integer timeout) {
+    private IFunction createConnector(String className, String instanceId, int logRetentionDays, LambdaCode jar, Map<String, String> env, Integer memory, Integer timeout) {
         String simpleClassName = className.substring(className.lastIndexOf(".") + 1);
         if (simpleClassName.endsWith("CompositeHandler")) {
             simpleClassName = simpleClassName.substring(0, simpleClassName.indexOf("CompositeHandler"));
@@ -169,22 +159,20 @@ public class AthenaStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
 
-        Function athenaCompositeHandler = Function.Builder.create(this, simpleClassName + "AthenaCompositeHandler")
+        IFunction athenaCompositeHandler = jar.buildFunction(this, simpleClassName + "AthenaCompositeHandler", builder -> builder
                 .functionName(functionName)
                 .memorySize(memory)
                 .timeout(Duration.seconds(timeout))
-                .code(s3Code)
                 .runtime(Runtime.JAVA_11)
                 .logRetention(Utils.getRetentionDays(logRetentionDays))
                 .handler(className)
-                .environment(env)
-                .build();
+                .environment(env));
 
         CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
                 .name(instanceId + simpleClassName + "SleeperConnector")
                 .description("Athena Connector for " + instanceId)
                 .type("LAMBDA")
-                .parameters(ImmutableMap.of("function", athenaCompositeHandler.getFunctionArn()))
+                .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
                 .build();
 
         return athenaCompositeHandler;

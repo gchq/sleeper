@@ -20,14 +20,17 @@ set -e
 #####################
 
 if [[ -z $1 ]]; then
-	echo "Usage: $0 <instance-id>"
-	exit 1
+  echo "Usage: $0 <instance-id>"
+  exit 1
 fi
 
 INSTANCE_ID=$1
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 GENERATED_DIR=${SCRIPTS_DIR}/generated
+TEMP_DIR=/tmp/sleeper/generated
 
+mkdir -p "$TEMP_DIR"
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.update.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
 rm -rf "${GENERATED_DIR:?}"/*
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.update.DownloadConfig "$INSTANCE_ID" "$GENERATED_DIR"
+mv "$TEMP_DIR"/* "$GENERATED_DIR"

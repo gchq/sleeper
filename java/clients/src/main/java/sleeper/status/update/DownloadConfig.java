@@ -17,9 +17,13 @@ package sleeper.status.update;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.commons.io.file.PathUtils;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DownloadConfig {
@@ -27,7 +31,7 @@ public class DownloadConfig {
     private DownloadConfig() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length != 2) {
             throw new IllegalArgumentException("Usage: <instance id> <directory to write to>");
         }
@@ -35,5 +39,16 @@ public class DownloadConfig {
         Path basePath = Path.of(args[1]);
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
+    }
+
+    public static InstanceProperties overwriteTargetDirectoryIfDownloadSuccessful(AmazonS3 s3, String instanceId, Path targetDir, Path tempDir) throws IOException {
+        Files.createDirectories(tempDir);
+        PathUtils.cleanDirectory(tempDir);
+        InstanceProperties properties = SaveLocalProperties.saveFromS3(s3, instanceId, tempDir);
+        Files.createDirectories(targetDir);
+        PathUtils.cleanDirectory(targetDir);
+        PathUtils.copyDirectory(tempDir, targetDir);
+        PathUtils.cleanDirectory(tempDir);
+        return properties;
     }
 }

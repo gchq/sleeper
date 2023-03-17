@@ -27,7 +27,8 @@ import java.util.Properties;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -45,6 +46,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
@@ -92,7 +94,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 class InstancePropertiesTest {
@@ -166,48 +167,6 @@ class InstancePropertiesTest {
     }
 
     @Test
-    void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
-        // Given - no account set
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(JARS_BUCKET, "jars");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(ID, "test");
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
-
-        // When
-        String serialised = instanceProperties.saveAsString();
-
-        // Then
-        InstanceProperties properties = new InstanceProperties();
-        assertThatThrownBy(() -> properties.loadFromString(serialised))
-                .hasMessageContaining(ACCOUNT.getPropertyName());
-    }
-
-    @Test
-    void shouldThrowExceptionOnLoadIfPropertyIsInvalid() throws IOException {
-        // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ACCOUNT, "12345");
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(JARS_BUCKET, "jars");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(ID, "test");
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
-
-        // When
-        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
-        String serialised = instanceProperties.saveAsString();
-
-        // Then
-        InstanceProperties properties = new InstanceProperties();
-        assertThatThrownBy(() -> properties.loadFromString(serialised))
-                .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
-    }
-
-    @Test
     void shouldLoadTagsFromProperties() {
         // Given
         Properties tags = new Properties();
@@ -231,6 +190,44 @@ class InstancePropertiesTest {
         properties.loadTags(tags);
 
         assertThat(properties.getTags()).isEmpty();
+    }
+
+    @Test
+    void shouldDetectNoSystemTestPropertySetWhenNoPropertiesSet() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+
+        assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isFalse();
+    }
+
+    @Test
+    void shouldDetectNoSystemTestPropertySetWhenValidPropertiesSet() {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+
+        assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isFalse();
+    }
+
+    @Test
+    void shouldDetectSystemTestPropertySetWhenValidPropertiesAlsoSet() throws IOException {
+        // Given
+        InstanceProperties properties = new InstanceProperties(loadProperties(
+                createTestInstanceProperties().saveAsString() + "\n" +
+                        "sleeper.systemtest.writers=123"));
+
+        assertThat(properties.isAnyPropertySetStartingWith("sleeper.systemtest")).isTrue();
+    }
+
+    @Test
+    void shouldGetUnknownPropertyValues() throws IOException {
+        // Given
+        InstanceProperties properties = new InstanceProperties(loadProperties(
+                createTestInstanceProperties().saveAsString() + "\n" +
+                        "unknown.property=123"));
+
+        // When / Then
+        assertThat(properties.getUnknownProperties())
+                .containsExactly(Map.entry("unknown.property", "123"));
     }
 
     private static InstanceProperties getSleeperProperties() {

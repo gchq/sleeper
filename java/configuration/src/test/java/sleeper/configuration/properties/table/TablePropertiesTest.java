@@ -17,42 +17,24 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperty;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class TablePropertiesTest {
-
-    @Test
-    void shouldThrowExceptionIfCompressionCodecIsInvalidOnInit() {
-        // Given
-        String input = "" +
-                "sleeper.table.name=myTable\n" +
-                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n" +
-                "sleeper.table.compression.codec=madeUp";
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        // When / Then
-        assertThatThrownBy(() -> tableProperties.loadFromString(input))
-                .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
-    }
-
-    @Test
-    void shouldThrowExceptionIfTableNameIsAbsentOnInit() {
-        // Given
-        String input = "" +
-                "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        // When / Then
-        assertThatThrownBy(() -> tableProperties.loadFromString(input))
-                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
-    }
 
     @Test
     void shouldDefaultToInstancePropertiesValueWhenConfigured() {
@@ -74,27 +56,7 @@ class TablePropertiesTest {
         tableProperties.set(TABLE_NAME, "id");
 
         // When
-        TableProperty defaultingProperty = new TableProperty() {
-            @Override
-            public SleeperProperty getDefaultProperty() {
-                return TABLE_NAME;
-            }
-
-            @Override
-            public String getPropertyName() {
-                return "made.up";
-            }
-
-            @Override
-            public String getDefaultValue() {
-                return null;
-            }
-
-            @Override
-            public String getDescription() {
-                return null;
-            }
-        };
+        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(TABLE_NAME);
 
         // Then
         assertThat(tableProperties.get(defaultingProperty)).isEqualTo("id");
@@ -107,44 +69,8 @@ class TablePropertiesTest {
         tableProperties.set(TABLE_NAME, "id");
 
         // When
-        SleeperProperty sleeperProperty = new SleeperProperty() {
-            @Override
-            public String getPropertyName() {
-                return null;
-            }
-
-            @Override
-            public String getDefaultValue() {
-                return null;
-            }
-
-            @Override
-            public String getDescription() {
-                return null;
-            }
-        };
-
-        TableProperty defaultingProperty = new TableProperty() {
-            @Override
-            public SleeperProperty getDefaultProperty() {
-                return sleeperProperty;
-            }
-
-            @Override
-            public String getPropertyName() {
-                return "made.up";
-            }
-
-            @Override
-            public String getDefaultValue() {
-                return null;
-            }
-
-            @Override
-            public String getDescription() {
-                return null;
-            }
-        };
+        SleeperProperty sleeperProperty = new DummySleeperProperty();
+        TableProperty defaultingProperty = DummyTableProperty.defaultedFrom(sleeperProperty);
 
         // Then
         assertThatThrownBy(() -> tableProperties.get(defaultingProperty))
@@ -182,5 +108,35 @@ class TablePropertiesTest {
 
         // Then
         assertThat(differentTableProperties).isNotEqualTo(tableProperties);
+    }
+
+    @Test
+    void shouldKeepValidationPredicateSameAsOnDefaultProperty() {
+        assertThat(TableProperty.getAll().stream()
+                .filter(property -> property.getDefaultProperty() != null)
+                .filter(property -> property.getDefaultProperty()
+                        .validationPredicate() != property.validationPredicate()))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldKeepCDKDeploymentTriggerSameAsOnDefaultProperty() {
+        assertThat(TableProperty.getAll().stream()
+                .filter(property -> property.getDefaultProperty() != null)
+                .filter(property -> property.getDefaultProperty()
+                        .isRunCDKDeployWhenChanged() != property.isRunCDKDeployWhenChanged()))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldGetUnknownPropertyValues() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tableProperties.loadFromString("unknown.property=123");
+
+        // When / Then
+        assertThat(tableProperties.getUnknownProperties())
+                .containsExactly(Map.entry("unknown.property", "123"));
     }
 }

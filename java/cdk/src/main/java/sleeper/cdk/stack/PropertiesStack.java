@@ -18,15 +18,16 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.FunctionProps;
+import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
@@ -37,7 +38,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.
@@ -46,7 +46,8 @@ public class PropertiesStack extends NestedStack {
 
     public PropertiesStack(Construct scope,
                            String id,
-                           InstanceProperties instanceProperties) {
+                           InstanceProperties instanceProperties,
+                           BuiltJars jars) {
         super(scope, id);
 
         // Config bucket
@@ -54,6 +55,7 @@ public class PropertiesStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
         try {
@@ -65,16 +67,14 @@ public class PropertiesStack extends NestedStack {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
 
-        Function propertiesWriterLambda = new Function(this, "PropertiesWriterLambda", FunctionProps.builder()
-                .code(Code.fromBucket(jarsBucket, "cdk-custom-resources-" + instanceProperties.get(VERSION) + ".jar"))
+        IFunction propertiesWriterLambda = jar.buildFunction(this, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
                 .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .runtime(Runtime.JAVA_11)
-                .build());
+                .runtime(Runtime.JAVA_11));
 
         configBucket.grantWrite(propertiesWriterLambda);
 

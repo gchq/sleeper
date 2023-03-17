@@ -17,13 +17,13 @@ package sleeper.compaction.jobexecution.testutils;
 
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -162,7 +162,7 @@ public class CompactSortedFilesTestData {
     }
 
     public static void writeDataFile(Schema schema, String filename, List<Record> records) throws IOException {
-        try (ParquetRecordWriter writer = new ParquetRecordWriter(new Path(filename), SchemaConverter.getSchema(schema), schema)) {
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
                 writer.write(record);
             }

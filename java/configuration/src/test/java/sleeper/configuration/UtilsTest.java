@@ -38,4 +38,31 @@ public class UtilsTest {
         assertThat(combinedList)
                 .containsExactly("test1", "test2", "test3", "test4");
     }
+
+    @Test
+    void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
+        // When/Then
+        assertThat(Utils.isPositiveInteger("123"))
+                .isTrue();
+        assertThat(Utils.isPositiveInteger("ABC"))
+                .isFalse();
+    }
+
+    @Test
+    void shouldNotThrowExceptionDuringPositiveLongCheck() {
+        // When/Then
+        assertThat(Utils.isPositiveLong("123"))
+                .isTrue();
+        assertThat(Utils.isPositiveLong("ABC"))
+                .isFalse();
+    }
+
+    @Test
+    void shouldNotThrowExceptionDuringPositiveDoubleCheck() {
+        // When/Then
+        assertThat(Utils.isPositiveDouble("123"))
+                .isTrue();
+        assertThat(Utils.isPositiveDouble("ABC"))
+                .isFalse();
+    }
 }

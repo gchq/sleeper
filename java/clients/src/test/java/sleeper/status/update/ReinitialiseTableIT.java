@@ -79,6 +79,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -86,7 +87,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -154,17 +154,13 @@ public class ReinitialiseTableIT {
         String tableName = UUID.randomUUID().toString();
 
         // When
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client,
-                dynamoDBClient, "", tableName, false,
-                null, false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, "", tableName, false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldThrowExceptionIfTableIsEmpty() {
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client,
-                dynamoDBClient, CONFIG_BUCKET_NAME, "", false,
-                null, false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, CONFIG_BUCKET_NAME, "", false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -187,8 +183,7 @@ public class ReinitialiseTableIT {
 
         // When
         ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, false,
-                null, false);
+                dynamoDBClient, INSTANCE_NAME, tableName, false);
         reinitialiseTable.run();
 
         // Then
@@ -217,8 +212,7 @@ public class ReinitialiseTableIT {
 
         // When
         ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, false,
-                null, false);
+                dynamoDBClient, INSTANCE_NAME, tableName, false);
         reinitialiseTable.run();
 
         // Then
@@ -253,8 +247,7 @@ public class ReinitialiseTableIT {
 
         // When
         ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true,
-                null, false);
+                dynamoDBClient, INSTANCE_NAME, tableName, true);
         reinitialiseTable.run();
 
         // Then
@@ -284,8 +277,7 @@ public class ReinitialiseTableIT {
 
         // When
         ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true,
-                null, false);
+                dynamoDBClient, INSTANCE_NAME, tableName, true);
         reinitialiseTable.run();
 
         // Then
@@ -323,7 +315,7 @@ public class ReinitialiseTableIT {
         String splitPointsFileName = createSplitPointsFile(false);
 
         // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
+        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, INSTANCE_NAME, tableName, true,
                 splitPointsFileName, false);
         reinitialiseTable.run();
@@ -360,7 +352,7 @@ public class ReinitialiseTableIT {
         String splitPointsFileName = createSplitPointsFile(false);
 
         // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
+        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, INSTANCE_NAME, tableName, true,
                 splitPointsFileName, false);
         reinitialiseTable.run();
@@ -405,7 +397,7 @@ public class ReinitialiseTableIT {
         String splitPointsFileName = createSplitPointsFile(true);
 
         // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
+        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, INSTANCE_NAME, tableName, true,
                 splitPointsFileName, true);
         reinitialiseTable.run();
@@ -442,7 +434,7 @@ public class ReinitialiseTableIT {
         String splitPointsFileName = createSplitPointsFile(true);
 
         // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
+        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, INSTANCE_NAME, tableName, true,
                 splitPointsFileName, true);
         reinitialiseTable.run();
@@ -468,7 +460,7 @@ public class ReinitialiseTableIT {
     }
 
     @Test
-    public void shouldIgnoreSplitFileAndEncryptedOptionsIfDeletePartitionsFalseForDynamoStateStore() throws Exception {
+    public void shouldIgnoreSplitFileAndEncodedOptionsIfDeletePartitionsFalseForDynamoStateStore() throws Exception {
         // Given
         String tableName = UUID.randomUUID().toString();
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
@@ -487,7 +479,7 @@ public class ReinitialiseTableIT {
         String splitPointsFileName = createSplitPointsFile(false);
 
         // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
+        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, INSTANCE_NAME, tableName, false,
                 splitPointsFileName, true);
         reinitialiseTable.run();
@@ -521,7 +513,7 @@ public class ReinitialiseTableIT {
         String splitPointsFileName = createSplitPointsFile(false);
 
         // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
+        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
                 dynamoDBClient, INSTANCE_NAME, tableName, false,
                 splitPointsFileName, true);
         reinitialiseTable.run();

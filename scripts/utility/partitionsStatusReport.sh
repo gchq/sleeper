@@ -20,8 +20,8 @@ set -e
 #####################
 
 if [[ -z $1 || -z $2 ]]; then
-	echo "Usage: $0 <instance-id> <table-name>"
-	exit 1
+  echo "Usage: $0 <instance-id> <table-name>"
+  exit 1
 fi
 
 INSTANCE_ID=$1

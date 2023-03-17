@@ -28,20 +28,25 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.SleeperVersion;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -166,11 +171,16 @@ public class Utils {
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Construct scope) {
-        Path propertiesFile = getInstancePropertiesPath(scope);
+        return loadInstanceProperties(properties, tryGetContext(scope));
+    }
+
+    public static <T extends InstanceProperties> T loadInstanceProperties(
+            T properties, Function<String, String> tryGetContext) {
+        Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
         LoadLocalProperties.loadInstanceProperties(properties, propertiesFile);
 
-        String validate = (String) scope.getNode().tryGetContext("validate");
-        String newinstance = (String) scope.getNode().tryGetContext("newinstance");
+        String validate = tryGetContext.apply("validate");
+        String newinstance = tryGetContext.apply("newinstance");
         if (!"false".equalsIgnoreCase(validate)) {
             new ConfigValidator().validate(properties, propertiesFile);
         }
@@ -178,17 +188,38 @@ public class Utils {
             new NewInstanceValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(properties, propertiesFile);
         }
+        String deployedVersion = properties.get(VERSION);
+        String localVersion = SleeperVersion.getVersion();
+        SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
+
+        if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
+                && deployedVersion != null
+                && !localVersion.equals(deployedVersion)) {
+            throw new MismatchedVersionException(format("Local version %s does not match deployed version %s. " +
+                            "Please upgrade/downgrade to make these match",
+                    localVersion, deployedVersion));
+        }
+        properties.set(VERSION, localVersion);
         return properties;
     }
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
-        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, getInstancePropertiesPath(scope));
+        return getAllTableProperties(instanceProperties, tryGetContext(scope));
     }
 
-    private static Path getInstancePropertiesPath(Construct scope) {
-        return Paths.get((String) scope.getNode().tryGetContext("propertiesfile"));
+    public static Stream<TableProperties> getAllTableProperties(
+            InstanceProperties instanceProperties, Function<String, String> tryGetContext) {
+        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
+                        instanceProperties, Path.of(tryGetContext.apply("propertiesfile")))
+                .map(tableProperties -> {
+                    TableProperty.getSystemDefined().forEach(tableProperties::unset);
+                    return tableProperties;
+                });
+    }
+
+    private static Function<String, String> tryGetContext(Construct scope) {
+        return key -> (String) scope.getNode().tryGetContext(key);
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
@@ -205,8 +236,9 @@ public class Utils {
     }
 
     /**
-     * Normalises EC2 instance size strings so they can be looked up in the {@link InstanceSize}
-     * enum. Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
+     * Normalises EC2 instance size strings so they can be looked up in the
+     * {@link software.amazon.awscdk.services.ec2.InstanceSize} enum.
+     * Java identifiers can't start with a number, so "2xlarge" becomes "xlarge2".
      *
      * @param size the human readable size
      * @return the internal enum name
@@ -223,4 +255,5 @@ public class Utils {
             return size;
         }
     }
+
 }

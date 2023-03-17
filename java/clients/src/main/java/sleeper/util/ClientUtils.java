@@ -17,20 +17,18 @@ package sleeper.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.lang.WordUtils;
 
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- *
- */
 public class ClientUtils {
 
     private ClientUtils() {
@@ -101,9 +99,17 @@ public class ClientUtils {
         return String.join(",", parts);
     }
 
-    public static String formatPropertyDescription(String str) {
-        return Arrays.stream(str.split("\n")).
-                map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
-                .collect(Collectors.joining("\n"));
+    public static void clearDirectory(Path tempDir) throws IOException {
+        try (Stream<Path> paths = Files.walk(tempDir)) {
+            Stream<Path> nestedPaths = paths.skip(1).sorted(Comparator.reverseOrder());
+            for (Path path : (Iterable<Path>) nestedPaths::iterator) {
+                Files.delete(path);
+            }
+        }
+    }
+
+    public static int runCommand(String... commands) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(commands).inheritIO().start();
+        return process.waitFor();
     }
 }

@@ -25,6 +25,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -52,8 +53,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.job.common.action.ActionException;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -205,7 +205,7 @@ public class CompactSortedFilesRunnerIT {
                         .minRowKey(Key.create(1L))
                         .maxRowKey(Key.create(199L))
                         .build();
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", (long) 2 * i);
@@ -214,7 +214,7 @@ public class CompactSortedFilesRunnerIT {
             writer1.write(record);
         }
         writer1.close();
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer2 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file2), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", (long) 2 * i + 1);
@@ -223,7 +223,7 @@ public class CompactSortedFilesRunnerIT {
             writer2.write(record);
         }
         writer2.close();
-        ParquetRecordWriter writer3 = new ParquetRecordWriter(new Path(file3), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer3 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file3), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", (long) 2 * i);
@@ -232,7 +232,7 @@ public class CompactSortedFilesRunnerIT {
             writer3.write(record);
         }
         writer3.close();
-        ParquetRecordWriter writer4 = new ParquetRecordWriter(new Path(file4), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer4 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file4), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", (long) 2 * i + 1);

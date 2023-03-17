@@ -62,7 +62,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY
 
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
-
     private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
@@ -71,19 +70,21 @@ public class SqsQueryProcessor {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
-    private final Configuration queryConfiguration;
     private final DynamoDBQueryTracker queryTracker;
     private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
+    private final Map<String, Configuration> configurationCache = new HashMap<>();
 
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
         objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
-        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, queryConfiguration);
+        // The following Configuration is only used in StateStoreProvider for reading from S3 if the S3StateStore is used,
+        // so use the standard Configuration rather than the one for query lambdas which is specific to the table.
+        Configuration confForStateStore = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, confForStateStore);
     }
 
     public static Builder builder() {
@@ -97,13 +98,14 @@ public class SqsQueryProcessor {
         CloseableIterator<Record> results;
         try {
             queryTrackers.queryInProgress(query);
+            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
             if (query instanceof LeafPartitionQuery) {
-                results = processLeafPartitionQuery((LeafPartitionQuery) query, tablePropertiesProvider.getTableProperties(query.getTableName()));
+                results = processLeafPartitionQuery((LeafPartitionQuery) query);
             } else {
                 results = processRangeQuery(query, queryTrackers);
             }
             if (null != results) {
-                publishResults(results, query, queryTrackers);
+                publishResults(results, query, tableProperties, queryTrackers);
             }
         } catch (StateStoreException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
@@ -116,7 +118,8 @@ public class SqsQueryProcessor {
         if (!queryExecutorCache.containsKey(query.getTableName())) {
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, queryConfiguration, executorService);
+            Configuration conf = getConfiguration(query.getTableName(), tableProperties);
+            QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
             queryExecutor.init();
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
@@ -147,23 +150,32 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery, TableProperties tableProperties)
-            throws QueryException {
-        LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, queryConfiguration, tableProperties);
+    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery) throws QueryException {
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(leafPartitionQuery.getTableName());
+        Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
+        LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
         return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
     }
 
-    private void publishResults(CloseableIterator<Record> results, Query query, QueryStatusReportListeners queryTrackers) {
+    private Configuration getConfiguration(String tableName, TableProperties tableProperties) {
+        if (!configurationCache.containsKey(tableName)) {
+            Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
+            configurationCache.put(tableName, conf);
+        }
+        return configurationCache.get(tableName);
+    }
+
+    private void publishResults(CloseableIterator<Record> results, Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         Schema schema = tablePropertiesProvider.getTableProperties(query.getTableName()).getSchema();
 
         try {
             ResultsOutputInfo outputInfo;
             if (null == query.getResultsPublisherConfig() || query.getResultsPublisherConfig().isEmpty()) {
-                outputInfo = new S3ResultsOutput(instanceProperties, schema, new HashMap<>()).publish(query, results);
+                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>()).publish(query, results);
             } else if (SQSResultsOutput.SQS.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
                 outputInfo = new SQSResultsOutput(instanceProperties, sqsClient, schema, query.getResultsPublisherConfig()).publish(query, results);
             } else if (S3ResultsOutput.S3.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new S3ResultsOutput(instanceProperties, schema, query.getResultsPublisherConfig()).publish(query, results);
+                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, query.getResultsPublisherConfig()).publish(query, results);
             } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
                 outputInfo = new WebSocketResultsOutput(query.getResultsPublisherConfig()).publish(query, results);
             } else {

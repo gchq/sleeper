@@ -13,26 +13,30 @@ Before running this demo functionality, you will need the following installed:
 
 * [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
+* Sleeper CLI
 
-### Deployment environment
+#### Sleeper CLI installation
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. A local Docker image
-contains the necessary dependencies and scripts to do this. Run the following commands to install a CLI to work with
-the local Docker image. The \[version\] can be `main` or a version like `v0.13.0`.
+The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
+following commands to install the CLI. The version can be `main` or a release in the format `v0.14.0`.
 
 ```bash
-curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/local/install.sh" -o ./sleeper-install.sh
+curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
 chmod +x ./sleeper-install.sh
 ./sleeper-install.sh [version]
 ```
 
-This installs a `sleeper` command to run other commands inside a local Docker image. If you run it on its own you'll
-get a shell inside the container. You can use `aws` commands under that to configure alternative authentication rather
-than using `aws configure`. You can also set AWS environment variables or configuration on the host machine which will
-be propagated to the Docker container when you use `sleeper`.
+This installs a `sleeper` command to run other commands inside a Docker container. You can use `sleeper aws` or
+`sleeper cdk` to run `aws` or `cdk` commands without needing to install the AWS or CDK CLI on your machine. If you set
+AWS environment variables or configuration on the host machine, that will be propagated to the Docker container when
+you use `sleeper`.
 
-Run these commands to deploy an EC2 instance in AWS (note that cdk bootstrap only needs to be done once in a given AWS
-account):
+You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
+
+### Deployment environment
+
+You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Run these commands to
+do this with the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
 
 ```bash
 sleeper aws configure
@@ -47,7 +51,7 @@ You can then SSH to it with this command:
 sleeper environment connect
 ```
 
-Immediately after it's deployed, commands will run on this instance to install development tools. Once you're connected,
+Immediately after it's deployed, commands will run on this instance to install the Sleeper CLI. Once you're connected,
 you can check the progress of those commands like this:
 
 ```bash
@@ -60,7 +64,16 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-Once it has finished the instance might restart. The Sleeper Git repository will be checked out at `~/sleeper`.
+Once it has finished the instance might restart.
+
+You can access a built copy of the Sleeper scripts by running `sleeper deployment` in the EC2. That will get you a shell
+inside a Docker container inside the EC2. You can run all the deployment scripts there as explained below. If you run it
+outside of the EC2, you'll get the same thing but in your local Docker host. Use the one in the EC2 to avoid the
+deployment being slow uploading jars and Docker images.
+
+The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
+That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
+for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
 
 To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
 See
@@ -82,10 +95,10 @@ zones).
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
-While connected to your EC2 instance, from the sleeper repository directory run:
+While connected to your EC2 instance run:
 
 ```bash
-./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+sleeper deployment test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
 This will use Maven to build Sleeper (this will take around 3 minutes, and the script will be silent during this time).
@@ -102,7 +115,7 @@ sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
 Run the following command to see how many records are currently in the system:
 
 ```bash
-./scripts/utility/filesStatusReport.sh ${ID} system-test
+sleeper deployment utility/filesStatusReport.sh ${ID} system-test
 ```
 
 The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
@@ -110,7 +123,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-./scripts/utility/query.sh ${ID}
+sleeper deployment utility/query.sh ${ID}
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
@@ -136,19 +149,25 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-java -cp java/system-test/target/system-test-*-utility.jar sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+sleeper deployment java -cp jars/system-test-*-utility.jar sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run
 
 ```bash
-./scripts/test/tearDown.sh
+sleeper deployment test/tearDown.sh
 ```
 
 Note that this will sometimes fail if there are ECS tasks running. Ensure that there are no compaction tasks running
 before doing this.
 
-It is possible to run variations on this system-test by editing the following file:
-`scripts/test/deployAll/system-test-instance.properties`.
+It is possible to run variations on this system-test by editing the system test properties, like this:
+
+```bash
+sleeper deployment
+cd test/deployAll
+editor system-test-instance.properties
+./buildDeployTest.sh  ${ID} ${VPC} ${SUBNET}
+```
 
 To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide.md).

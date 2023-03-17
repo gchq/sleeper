@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.SleeperProperties.loadProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
@@ -49,7 +49,7 @@ class SaveLocalPropertiesTest {
     private Path tempDir;
 
     @Test
-    void shouldSaveInstanceProperties() {
+    void shouldSaveInstanceProperties() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
 
@@ -62,7 +62,7 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
-    void shouldSaveTableProperties() {
+    void shouldSaveTableProperties() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
@@ -76,7 +76,7 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
-    void shouldLoadNoTablePropertiesWhenNoneSaved() {
+    void shouldLoadNoTablePropertiesWhenNoneSaved() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
 
@@ -147,6 +147,21 @@ class SaveLocalPropertiesTest {
         // Then
         assertThat(Files.readString(tempDir.resolve("tables/test-table/tableBucket.txt")))
                 .isEqualTo("test-data-bucket");
+    }
+
+    @Test
+    void shouldNotSaveTableBucketFileIfNotYetSetByCdk() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.unset(DATA_BUCKET);
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).doesNotExist();
     }
 
     @Test

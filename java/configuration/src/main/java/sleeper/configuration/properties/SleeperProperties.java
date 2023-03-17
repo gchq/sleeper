@@ -25,23 +25,22 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Abstract class which backs both {@link InstanceProperties} and
@@ -51,11 +50,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
     private final Properties properties;
 
-    public SleeperProperties() {
+    protected SleeperProperties() {
         this(new Properties());
     }
 
-    public SleeperProperties(Properties properties) {
+    protected SleeperProperties(Properties properties) {
         this.properties = properties;
     }
 
@@ -63,7 +62,18 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         validate();
     }
 
-    protected abstract void validate();
+    public final void validate() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        reporter.throwIfFailed();
+    }
+
+    protected void validate(SleeperPropertiesValidationReporter reporter) {
+        getPropertiesIndex().getUserDefined().forEach(property ->
+                property.validate(get(property), reporter));
+    }
+
+    protected abstract SleeperPropertyIndex<T> getPropertiesIndex();
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
@@ -102,30 +112,30 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         }
     }
 
+    public void unset(T property) {
+        properties.remove(property.getPropertyName());
+    }
+
+    public boolean isAnyPropertySetStartingWith(String propertyNameStart) {
+        return properties.stringPropertyNames().stream().anyMatch(name -> name.startsWith(propertyNameStart));
+    }
+
+    public boolean isSet(T property) {
+        return properties.containsKey(property.getPropertyName());
+    }
+
     protected Properties getProperties() {
         return properties;
     }
 
-    public Iterator<Map.Entry<Object, Object>> getPropertyIterator() {
-        return properties.entrySet().iterator();
-    }
-
-    public void load(InputStream inputStream) {
-        try {
+    public void load(InputStream inputStream) throws IOException {
+        try (inputStream) {
             properties.load(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load store properties file : " + e.getMessage(), e);
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to close store properties stream: " + e.getMessage(), e);
-            }
         }
         this.init();
     }
 
-    public void load(File file) throws FileNotFoundException {
+    public void load(File file) throws IOException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
         load(inputStream);
     }
@@ -133,22 +143,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     public void load(Path file) throws IOException {
         InputStream inputStream = new BufferedInputStream(Files.newInputStream(file));
         load(inputStream);
-    }
-
-    public static Properties loadProperties(Path file) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(file)) {
-            return loadProperties(reader);
-        }
-    }
-
-    public static Properties loadProperties(String input) throws IOException {
-        return loadProperties(new StringReader(input));
-    }
-
-    public static Properties loadProperties(Reader reader) throws IOException {
-        Properties properties = new Properties();
-        properties.load(reader);
-        return properties;
     }
 
     public void save(OutputStream oututStream) throws IOException {
@@ -187,6 +181,20 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         loadFromString(propertiesString);
     }
 
+    public Stream<Map.Entry<String, String>> getUnknownProperties() {
+        return properties.stringPropertyNames().stream()
+                .filter(not(this::isKnownProperty))
+                .map(name -> Map.entry(name, properties.getProperty(name)));
+    }
+
+    private boolean isKnownProperty(String propertyName) {
+        return getPropertiesIndex().getByName(propertyName).isPresent();
+    }
+
+    public Map<String, String> toMap() {
+        return PropertiesUtils.toMap(properties);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -196,7 +204,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
             return false;
         }
 
-        SleeperProperties that = (SleeperProperties) o;
+        SleeperProperties<?> that = (SleeperProperties<?>) o;
 
         return new EqualsBuilder().append(properties, that.properties).isEquals();
     }

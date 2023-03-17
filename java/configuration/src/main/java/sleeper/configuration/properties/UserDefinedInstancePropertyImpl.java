@@ -16,25 +16,19 @@
 
 package sleeper.configuration.properties;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
-
-    private static final Map<String, UserDefinedInstanceProperty> ALL_MAP = new HashMap<>();
-    private static final List<UserDefinedInstanceProperty> ALL = new ArrayList<>();
     private final String propertyName;
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final String description;
     private final PropertyGroup propertyGroup;
+    private final boolean runCDKDeployWhenChanged;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -42,6 +36,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
+        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
     }
 
     public static Builder builder() {
@@ -50,14 +45,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
     public static Builder named(String name) {
         return builder().propertyName(name);
-    }
-
-    public static List<UserDefinedInstanceProperty> getAll() {
-        return Collections.unmodifiableList(ALL);
-    }
-
-    public static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
-        return Optional.ofNullable(ALL_MAP.get(propertyName));
     }
 
     @Override
@@ -89,13 +76,19 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return description;
     }
 
+    @Override
+    public boolean isRunCDKDeployWhenChanged() {
+        return runCDKDeployWhenChanged;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
-        private String description = "No description available";
+        private String description;
         private PropertyGroup propertyGroup;
-        private Consumer<UserDefinedInstanceProperty> addToAllList = Builder::addToAll;
+        private boolean runCDKDeployWhenChanged;
+        private Consumer<UserDefinedInstanceProperty> addToIndex;
 
         private Builder() {
         }
@@ -125,20 +118,22 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public Builder addToAllList(Consumer<UserDefinedInstanceProperty> addToAllList) {
-            this.addToAllList = addToAllList;
+        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
+            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
             return this;
         }
 
-        public UserDefinedInstanceProperty build() {
-            UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
-            addToAllList.accept(property);
-            return property;
+        public Builder addToIndex(Consumer<UserDefinedInstanceProperty> addToIndex) {
+            this.addToIndex = addToIndex;
+            return this;
         }
 
-        private static void addToAll(UserDefinedInstanceProperty property) {
-            ALL_MAP.put(property.getPropertyName(), property);
-            ALL.add(property);
+        // We want an exception to be thrown if addToIndex is null
+        @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+        public UserDefinedInstanceProperty build() {
+            UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
+            addToIndex.accept(property);
+            return property;
         }
     }
 }

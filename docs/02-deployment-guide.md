@@ -1,26 +1,13 @@
 Building and deploying Sleeper
 ==============================
 
-This contains instructions on how to build and deploy Sleeper.
+This contains instructions on how to deploy Sleeper.
 
 ## Get your environment set up
 
-You will need to get your environment set up correctly so that you can deploy a Sleeper instance
-to AWS and then interact with it.
-
-### Install Prerequisite Software
-
-You will need the following software:
-
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
-* [Bash](https://www.gnu.org/software/bash/): Tested with v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/): Tested with v20.10.17
-* [Java 11/17](https://openjdk.java.net/install/)
-* [Maven](https://maven.apache.org/): Tested with v3.8.6
-* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
-
-If you deployed an environment with the local Docker image, the EC2 instance will have these pre-installed.
+You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
+interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information
+below provides more detail.
 
 ### Configure AWS
 
@@ -81,59 +68,54 @@ You're now ready to build and deploy Sleeper.
 See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
 to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
 
-When you use the local Docker image described in [getting started](01-getting-started.md#deployment-environment), you
-can manage multiple environments. This is built in the directory `scripts/local` with `./build.sh`. Once that's built,
-you can use `./runInDocker.sh` in that directory to run commands inside the local Docker image.
+When you use the Sleeper CLI described in [getting started](01-getting-started.md#deployment-environment), you can
+manage multiple environments.
 
-If you run `./runInDocker.sh` on its own you'll get a shell inside the local Docker container, where you can run
-`aws`, `cdk` and Sleeper `environment` commands directly.
+If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
+Sleeper `environment` commands directly, without prefixing with `sleeper`.
 
 You can use `aws` commands there to set the AWS account, region and authentication. You can also set AWS environment
 variables or configuration on the host machine, which will be propagated to the Docker container when you use
-`./runInDocker.sh`.
+`sleeper` commands.
 
 #### Managing environments
 
 You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify an environment ID when deploying an environment, and you can specify an environment to connect to.
-Parameters after the environment ID will be passed to a `cdk deploy` command.
+You must specify an environment ID when deploying an environment. Parameters after the environment ID will be passed to
+a `cdk deploy` command.
 
 ```bash
-./runInDocker.sh environment deploy MyEnvironment
-./runInDocker.sh environment deploy EmptyEnvironment "*-Networking"
-./runInDocker.sh environment deploy MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
-./runInDocker.sh environment connect OtherEnvironment
+# Deploy EC2 in a new VPC
+sleeper environment deploy MyEnvironment
+
+# Only deploy VPC
+sleeper environment deploy VPCEnvironment "*-Networking"
+
+# Deploy EC2 in an existing VPC
+sleeper environment deploy EC2Environment -c vpcId=[vpc-id] "*-BuildEC2"
 ```
 
 You can switch environments like this:
 
 ```bash
-./runInDocker.sh environment set OtherEnvironment
-./runInDocker.sh environment connect
+sleeper environment list
+sleeper environment set OtherEnvironment
+sleeper environment connect
 ```
 
 You can tear down the deployed environment like this:
 
 ```bash
-./runInDocker.sh environment destroy MyEnvironment
+sleeper environment destroy MyEnvironment
 ```
 
 You can also tear down individual parts of the environment like this:
 
 ```bash
-./runInDocker.sh environment destroy MyEnvironment "*-BuildEC2"
+sleeper environment destroy MyEnvironment "*-BuildEC2"
 ```
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
-
-## Building
-
-The first step is to build Sleeper. We have a section in our
-[developer guide](./09-dev-guide.md#Building) for how to do that but the easiest way is:
-
-```bash
-./scripts/build/build.sh
-```
 
 ## Deployment
 
@@ -141,59 +123,42 @@ There are two ways to deploy Sleeper: you can use the automated scripts or a mor
 
 ### Automated Deployment
 
-The automated script uses template files to provide a default
-configuration for Sleeper. It also deploys only one table
-into Sleeper with the schema provided in these template files.
-You can find the template files [here](../scripts/templates).
+The automated deployment uses template files to provide a default configuration for Sleeper. It also deploys only one
+table into Sleeper with the schema provided in these template files. You can find the template
+files [here](../scripts/templates).
 
-It is recommended that you change these templates to configure Sleeper
-in the way that you want before you run the automated script. At
-the very least you will want to change the schema.template and
-tags.template files. See the Configuration section below
-for further details.
+It is recommended that you change these templates to configure Sleeper in the way that you want before you run the
+automated script. At the very least you will want to change the schema.template and tags.template files. See the
+Configuration section below for further details.
 
-Note that anything property in the templates with "changeme"
-as its value will be overwritten automatically by the scripts.
+Note that any property in the templates with "changeme" will be overwritten automatically.
 
-You can then use the automated script by running the following command
-from the root directory:
+You can use the automated script like this:
 
 ```bash
-./scripts/deploy/buildAndDeploy.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
+sleeper deployment
+editor templates/instanceproperties.template
+editor templates/schema.template
+editor templates/tableproperties.template
+editor templates/tags.template
+deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
 ```
 
-Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper
-will be deployed into.
+Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper will be deployed into.
 
-This script will build Sleeper and upload the necessary jars to a bucket in S3
-and push the Docker container images to respositories in ECR.
+This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
+ECR.
 
-The deployment scripts will create all of the required configuration files in a
-folder called `generated` under the root directory. It is recommended you keep
-this folder somewhere safe.
+The deployment scripts will create all of the required configuration files in a folder called `generated` in the scripts
+directory.
 
-#### Scripts in Docker
+#### Sleeper CLI Docker environment
 
-The automated scripts can also be run from inside a Docker container. You can build a Docker container with all
-the dependencies needed for deployment, using the Dockerfile in the scripts directory.
+The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
+dependencies or build Sleeper yourself.
 
-This can let you avoid needing to install AWS CDK, CLI or NodeJS/NPM.
-
-Starting in the scripts directory, run these commands:
-
-```shell
-./build/buildForTest.sh
-docker build -t sleeper .
-```
-
-You can then run that image like this:
-
-```shell
-./runInDocker.sh sleeper
-```
-
-That will get you a shell inside the Docker image, as though you were in the scripts directory of the repository. The
-rest of the repository will not be present.
+The `sleeper deployment` command gets you a shell inside a Docker container as though you were in the scripts directory
+of the Sleeper Git repository. The rest of the repository will not be present.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
@@ -201,13 +166,13 @@ to the container as well.
 
 The host Docker environment will be propagated to the container via the Docker socket.
 
-The files generated for the Sleeper instance will be persisted in the host home directory, so that if you run the
-Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
+if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
 
 If you add a command on the end, you can run a specific script like this:
 
 ```shell
-./runInDocker.sh sleeper ./test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+sleeper deployment test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
 ### Manual Deployment
@@ -215,6 +180,9 @@ If you add a command on the end, you can run a specific script like this:
 For Sleeper to be deployed manually, some resources have to be uploaded to AWS first:
 the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
+
+These instructions will assume you're using a development environment, so see [dev guide](09-dev-guide.md) for how to
+set that up.
 
 #### Upload the Docker images to ECR
 
@@ -315,7 +283,6 @@ properties:
   `sleeper-${INSTANCE_ID}-jars`
 * `sleeper.account`
 * `sleeper.region`
-* `sleeper.version` - set this to the value of ${VERSION}
 * `sleeper.vpc`
 * `sleeper.subnet`
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
@@ -406,6 +373,25 @@ comma separated list of stack names, for example:
 
 ```properties
 sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
+```
+
+### Utility Scripts
+There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
+
+#### Update Existing Instance
+The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars 
+that have changed, update all the docker images, and perform a `cdk deploy`.
+
+```bash
+sleeper deployment deploy/deployExisting.sh <instance-id>
+```
+
+#### Add Table
+The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with 
+properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
+
+```bash
+sleeper deployment deploy/addTable.sh <instance-id> <new-table-id>
 ```
 
 ## Tear Down

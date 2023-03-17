@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2022-2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.ingest;
 
-import sleeper.systemtest.util.InvokeLambda;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
@@ -32,6 +32,6 @@ public class InvokeIngestTaskCreation {
             return;
         }
 
-        InvokeLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
+        InvokeSystemTestLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
     }
 }

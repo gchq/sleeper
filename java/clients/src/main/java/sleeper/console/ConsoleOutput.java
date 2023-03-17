@@ -16,6 +16,8 @@
 package sleeper.console;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 
 public class ConsoleOutput {
 
@@ -43,5 +45,9 @@ public class ConsoleOutput {
 
     public void printf(String format, Object... args) {
         out.printf(format, args);
+    }
+
+    public PrintWriter writer() {
+        return new PrintWriter(out, true, StandardCharsets.UTF_8);
     }
 }

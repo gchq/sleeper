@@ -16,10 +16,13 @@
 
 package sleeper.build.github.api.containers;
 
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.Test;
+
+import javax.ws.rs.InternalServerErrorException;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,6 +36,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.build.github.api.GitHubApiTestHelper.doWithGitHubApi;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubRequest;
 import static sleeper.build.github.api.GitHubApiTestHelper.gitHubResponse;
@@ -73,6 +77,22 @@ class DeleteGHCRVersionsTest {
         // Then
         verify(packageVersionDeleted("test-image", 1));
         verify(packageVersionDeleted("test-image", 2));
+    }
+
+    @Test
+    void shouldDeleteMultiplePackages(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        packageVersionListReturns("package-1", versionWithId(1));
+        packageVersionListReturns("package-2", versionWithId(2));
+        packageVersionDeleteSucceeds("package-1", 1);
+        packageVersionDeleteSucceeds("package-2", 2);
+
+        // When
+        deleteVersions(runtimeInfo, "packageNames=package-1,package-2");
+
+        // Then
+        verify(packageVersionDeleted("package-1", 1));
+        verify(packageVersionDeleted("package-2", 2));
     }
 
     @Test
@@ -130,6 +150,33 @@ class DeleteGHCRVersionsTest {
         verify(0, packageVersionDeleted("test-image", 4));
     }
 
+    @Test
+    void shouldNotFailWhenVersionAlreadyDeleted(WireMockRuntimeInfo runtimeInfo) {
+        // Note that another process may run at the same time also deleting old images, in which case
+        // versions may be deleted while we're deleting them as well.
+
+        // Given
+        packageVersionListReturns("test-image", versionWithId(1));
+        packageVersionDeleteReturns("test-image", 1, gitHubResponse().withStatus(404));
+
+        //When
+        deleteVersions(runtimeInfo, "packageName=test-image");
+
+        // Then
+        verify(1, packageVersionDeleted("test-image", 1));
+    }
+
+    @Test
+    void shouldFailWhenGitHubFailsToDelete(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        packageVersionListReturns("test-image", versionWithId(1));
+        packageVersionDeleteReturns("test-image", 1, gitHubResponse().withStatus(500));
+
+        //When / Then
+        assertThatThrownBy(() -> deleteVersions(runtimeInfo, "packageName=test-image"))
+                .isInstanceOf(InternalServerErrorException.class);
+    }
+
     private void deleteVersions(WireMockRuntimeInfo runtimeInfo, String propertiesStr) {
         Properties properties = loadProperties(propertiesStr);
         properties.setProperty("organization", "test-org");
@@ -149,8 +196,12 @@ class DeleteGHCRVersionsTest {
     }
 
     private void packageVersionDeleteSucceeds(String packageName, int versionId) {
+        packageVersionDeleteReturns(packageName, versionId, gitHubResponse().withStatus(204));
+    }
+
+    private void packageVersionDeleteReturns(String packageName, int versionId, ResponseDefinitionBuilder response) {
         stubFor(gitHubRequest(delete("/orgs/test-org/packages/container/" + packageName + "/versions/" + versionId))
-                .willReturn(gitHubResponse().withStatus(204)));
+                .willReturn(response));
     }
 
     private RequestPatternBuilder packageVersionDeleted(String packageName, int versionId) {

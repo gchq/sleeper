@@ -20,7 +20,6 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
@@ -39,8 +38,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
@@ -51,7 +49,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -69,7 +66,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private Map<String, ItemsSketch> sketches;
     private String path;
     private long numRecords;
-    private String partitionId;
+    private String outputFilename;
     private Instant startTime;
 
     public SingleFileWritingIterator(Iterator<Row> input,
@@ -77,6 +74,15 @@ public class SingleFileWritingIterator implements Iterator<Row> {
                                      TableProperties tableProperties,
                                      Configuration conf,
                                      PartitionTree partitionTree) {
+        this(input, instanceProperties, tableProperties, conf, partitionTree, UUID.randomUUID().toString());
+    }
+
+    public SingleFileWritingIterator(Iterator<Row> input,
+                                     InstanceProperties instanceProperties,
+                                     TableProperties tableProperties,
+                                     Configuration conf,
+                                     PartitionTree partitionTree,
+                                     String outputFilename) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
@@ -84,6 +90,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
         this.partitionTree = partitionTree;
+        this.outputFilename = outputFilename;
         LOGGER.info("Initialised SingleFileWritingIterator");
         LOGGER.info("Schema is {}", schema);
         LOGGER.info("Configuration is {}", conf);
@@ -100,12 +107,13 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             return null;
         }
         try {
+            String partitionId = null;
             while (input.hasNext()) {
                 Row row = input.next();
                 if (null == parquetWriter) {
                     startTime = Instant.now();
-                    initialiseState(partitionId);
                     partitionId = getPartitionId(row);
+                    initialiseState(partitionId);
                 }
                 write(row);
             }
@@ -190,22 +198,10 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         numRecords = 0L;
         path = instanceProperties.get(UserDefinedInstanceProperty.FILE_SYSTEM)
                 + tableProperties.get(TableProperty.DATA_BUCKET) + "/partition_" + partitionId
-                + "/" + UUID.randomUUID().toString() + ".parquet";
+                + "/" + outputFilename + ".parquet";
 
-        int rowGroupSize = tableProperties.getInt(TableProperty.ROW_GROUP_SIZE);
-        int pageSize = tableProperties.getInt(TableProperty.PAGE_SIZE);
-        CompressionCodecName compressionCodec = CompressionCodecName.valueOf(
-                tableProperties.get(TableProperty.COMPRESSION_CODEC).toUpperCase(Locale.ROOT));
-
-        LOGGER.info("Creating writer for partition {} to path {} with row group size {}, page size {}, compression codec {}",
-                partitionId, path, rowGroupSize, pageSize, compressionCodec);
-        return new ParquetRecordWriter.Builder(new Path(path),
-                SchemaConverter.getSchema(schema), schema)
-                .withCompressionCodec(compressionCodec)
-                .withRowGroupSize(rowGroupSize)
-                .withPageSize(pageSize)
-                .withConf(conf)
-                .build();
+        LOGGER.info("Creating writer for partition {} to path {}", partitionId, path);
+        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
     }
 
     private String getPartitionId(Row row) {

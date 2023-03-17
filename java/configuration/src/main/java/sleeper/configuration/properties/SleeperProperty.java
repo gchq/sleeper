@@ -29,12 +29,29 @@ public interface SleeperProperty {
 
     String getDescription();
 
+    PropertyGroup getPropertyGroup();
+
+    default boolean isSystemDefined() {
+        return false;
+    }
+
     default Predicate<String> validationPredicate() {
-        return (s) -> true;
+        return s -> true;
+    }
+
+    default void validate(String value, SleeperPropertiesValidationReporter reporter) {
+        if (!validationPredicate().test(value)) {
+            reporter.invalidProperty(this, value);
+        }
     }
 
     default String toEnvironmentVariable() {
         return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
+
+    /**
+     * @return True if the property can only be applied by running the CDK, and not just by saving it to S3
+     */
+    boolean isRunCDKDeployWhenChanged();
 
 }

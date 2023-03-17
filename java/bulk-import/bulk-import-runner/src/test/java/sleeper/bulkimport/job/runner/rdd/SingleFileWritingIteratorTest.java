@@ -20,6 +20,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -28,6 +31,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -39,18 +43,171 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SingleFileWritingIteratorTest {
+class SingleFileWritingIteratorTest {
 
     @TempDir
     public java.nio.file.Path tempFolder;
 
-    private Schema createSchema() {
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final Schema schema = createSchema();
+    private TableProperties tableProperties;
+
+    @BeforeEach
+    void setUp() {
+        tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
+    }
+
+    @Nested
+    @DisplayName("Output a single file")
+    class OutputSingleFile {
+
+        private final Iterator<Row> input = Lists.newArrayList(
+                RowFactory.create("a", 1, 2),
+                RowFactory.create("b", 1, 2),
+                RowFactory.create("c", 1, 2),
+                RowFactory.create("d", 1, 2)
+        ).iterator();
+
+        @Test
+        void shouldWriteAllRecordsToAParquetFile() {
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(input);
+
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                    .containsExactly(
+                            Arrays.asList(
+                                    createRecord("a", 1, 2),
+                                    createRecord("b", 1, 2),
+                                    createRecord("c", 1, 2),
+                                    createRecord("d", 1, 2)));
+        }
+
+        @Test
+        void shouldOutputMetadataPointingToSingleFileInFolderForPartition() {
+            // Given
+            PartitionTree partitionTree = createPartitionsBuilder()
+                    .singlePartition("test-partition")
+                    .buildTree();
+
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecordsWithPartitionsAndOutputFilename(
+                    input, partitionTree, "test-file");
+
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .containsExactly(RowFactory.create(
+                            "test-partition",
+                            "file://" + tempFolder + "/partition_test-partition/test-file.parquet",
+                            4));
+        }
+    }
+
+    @Nested
+    @DisplayName("Infer output partition")
+    class InferOutputPartition {
+        private SingleFileWritingIterator fileWritingIterator;
+
+        @BeforeEach
+        void setUp() {
+            // Given
+            Iterator<Row> input = Lists.newArrayList(
+                    RowFactory.create("a", 1, 2),
+                    RowFactory.create("b", 1, 2),
+                    RowFactory.create("d", 1, 2),
+                    RowFactory.create("e", 1, 2)
+            ).iterator();
+            PartitionTree partitionTree = createPartitionsBuilder()
+                    .leavesWithSplits(List.of("left", "right"), List.of("c"))
+                    .parentJoining("root", "left", "right")
+                    .buildTree();
+
+            // When
+            fileWritingIterator = createIteratorOverRecordsWithPartitions(input, partitionTree);
+        }
+
+        @Test
+        void shouldInferPartitionIdFromFirstRecordWhenSomeRecordsAreInDifferentPartitions() {
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .extracting(SingleFileWritingIteratorTest.this::readPartitionIdFromOutputFileMetadata)
+                    .containsExactly("left");
+        }
+
+        @Test
+        void shouldAssumeAllRowsAreInTheSamePartition() {
+            // Then
+            assertThat(fileWritingIterator).toIterable()
+                    .extracting(row -> readRecords(readPathFromOutputFileMetadata(row)))
+                    .containsExactly(
+                            Arrays.asList(
+                                    createRecord("a", 1, 2),
+                                    createRecord("b", 1, 2),
+                                    createRecord("d", 1, 2),
+                                    createRecord("e", 1, 2)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Behaves as an iterator")
+    class BehavesAsAnIterator {
+
+        @Test
+        void shouldReturnTrueForHasNextWithPopulatedIterator() {
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(
+                    List.of(RowFactory.create("a", 1, 2)).iterator());
+
+            // Then
+            assertThat(fileWritingIterator).hasNext();
+        }
+
+        @Test
+        void shouldReturnFalseForHasNextWithEmptyIterator() {
+            // Given
+            Iterator<Row> empty = Collections.emptyIterator();
+
+            // When
+            SingleFileWritingIterator fileWritingIterator = createIteratorOverRecords(empty);
+
+            // Then
+            assertThat(fileWritingIterator).isExhausted();
+        }
+    }
+
+    private SingleFileWritingIterator createIteratorOverRecords(Iterator<Row> records) {
+        return createIteratorOverRecordsWithPartitions(records,
+                PartitionsFromSplitPoints.treeFrom(schema, List.of("T")));
+    }
+
+    private SingleFileWritingIterator createIteratorOverRecordsWithPartitions(
+            Iterator<Row> records, PartitionTree partitionTree) {
+        return new SingleFileWritingIterator(records,
+                instanceProperties, tableProperties,
+                new Configuration(), partitionTree);
+    }
+
+    private SingleFileWritingIterator createIteratorOverRecordsWithPartitionsAndOutputFilename(
+            Iterator<Row> records, PartitionTree partitionTree, String filename) {
+        return new SingleFileWritingIterator(records,
+                instanceProperties, tableProperties,
+                new Configuration(), partitionTree, filename);
+    }
+
+    private static InstanceProperties createInstanceProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(UserDefinedInstanceProperty.FILE_SYSTEM, "file://");
+        return instanceProperties;
+    }
+
+    private static Schema createSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("int", new IntType()))
@@ -58,30 +215,17 @@ public class SingleFileWritingIteratorTest {
                 .build();
     }
 
-    private TableProperties createTableProperties() {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.setSchema(createSchema());
-        try {
-            tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder, null).toString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create temp folder for test", e);
-        }
+    private static TableProperties createTableProperties(
+            InstanceProperties instanceProperties, Schema schema, java.nio.file.Path tempFolder) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        tableProperties.set(TableProperty.DATA_BUCKET, tempFolder.toString());
 
         return tableProperties;
     }
 
-    private InstanceProperties createInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(UserDefinedInstanceProperty.FILE_SYSTEM, "file://");
-        return instanceProperties;
-    }
-
-    private PartitionTree getPartitionTree() {
-        return PartitionsFromSplitPoints.treeFrom(createSchema(), Arrays.asList("T"));
-    }
-
     private Record createRecord(Object... values) {
-        return createRecord(RowFactory.create(values), createSchema());
+        return createRecord(RowFactory.create(values), schema);
     }
 
     private Record createRecord(Row row, Schema schema) {
@@ -95,7 +239,7 @@ public class SingleFileWritingIteratorTest {
     }
 
     private List<Record> readRecords(String path) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), createSchema())) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), schema)) {
             List<Record> records = new ArrayList<>();
             Record record = reader.read();
             while (null != record) {
@@ -109,62 +253,15 @@ public class SingleFileWritingIteratorTest {
         }
     }
 
-    @Test
-    public void shouldReturnFalseForHasNextWithEmptyIterator() {
-        // Given
-        Iterator<Row> empty = new ArrayList<Row>().iterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(empty,
-                new InstanceProperties(), createTableProperties(),
-                new Configuration(), getPartitionTree());
-
-        // Then
-        assertThat(fileWritingIterator).isExhausted();
+    private String readPartitionIdFromOutputFileMetadata(Row metadataRow) {
+        return metadataRow.getString(0);
     }
 
-    @Test
-    public void shouldReturnTrueForHasNextWithPopulatedIterator() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(input,
-                new InstanceProperties(), createTableProperties(),
-                new Configuration(), getPartitionTree());
-
-        // Then
-        assertThat(fileWritingIterator).hasNext();
+    private String readPathFromOutputFileMetadata(Row metadataRow) {
+        return metadataRow.getString(1);
     }
 
-    @Test
-    public void shouldWriteAllRecordsToAParquetFile() {
-        // Given
-        Iterator<Row> input = Lists.newArrayList(
-                RowFactory.create("a", 1, 2),
-                RowFactory.create("b", 1, 2),
-                RowFactory.create("c", 1, 2),
-                RowFactory.create("d", 1, 2)
-        ).iterator();
-
-        // When
-        SingleFileWritingIterator fileWritingIterator = new SingleFileWritingIterator(input,
-                createInstanceProperties(), createTableProperties(),
-                new Configuration(), getPartitionTree());
-
-        // Then
-        assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(row.getString(1)))
-                .containsExactly(
-                        Arrays.asList(
-                                createRecord("a", 1, 2),
-                                createRecord("b", 1, 2),
-                                createRecord("c", 1, 2),
-                                createRecord("d", 1, 2)));
+    private PartitionsBuilder createPartitionsBuilder() {
+        return new PartitionsBuilder(schema);
     }
 }

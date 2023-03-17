@@ -16,7 +16,8 @@
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.amazonaws.services.s3.iterable.S3Objects;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -26,16 +27,24 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
@@ -50,16 +59,16 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         this.instanceProperties = instanceProperties;
     }
 
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR") // Needed until we have an immutable model
-    public TableProperties(InstanceProperties instanceProperties, Schema schema, Properties properties) {
+    public TableProperties(InstanceProperties instanceProperties, Properties properties) {
         super(properties);
         this.instanceProperties = instanceProperties;
-        setSchema(schema);
-        validate();
+        schema = loadSchema(properties);
     }
 
-    public TableProperties(InstanceProperties instanceProperties, Properties properties) {
-        this(instanceProperties, loadSchema(properties), properties);
+    public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        tableProperties.validate();
+        return tableProperties;
     }
 
     private static Schema loadSchema(Properties properties) {
@@ -78,12 +87,18 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected void validate() {
-        TableProperty.getAll().stream().filter(prop -> !prop.validationPredicate().test(get(prop)))
-                .forEach(prop -> {
-                    throw new IllegalArgumentException("Property " + prop.getPropertyName() +
-                            " was invalid. It was \"" + get(prop) + "\"");
-                });
+    public void validate(SleeperPropertiesValidationReporter reporter) {
+        super.validate(reporter);
+
+        // This limit is based on calls to WriteTransactItems in DynamoDBFileInfoStore.atomicallyUpdateX.
+        // Also see the DynamoDB documentation:
+        // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html
+        if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equals(get(STATESTORE_CLASSNAME))
+                && getInt(COMPACTION_FILES_BATCH_SIZE) > 48) {
+            LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
+                    "chosen statestore. Maximum value is 48.");
+            reporter.invalidProperty(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
+        }
     }
 
     @Override
@@ -118,6 +133,36 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
         LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
         loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
+    }
+
+    @Override
+    protected SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
+        return TableProperty.Index.INSTANCE;
+    }
+
+    public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
+        Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
+                s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
+        return StreamSupport.stream(objects.spliterator(), false)
+                .map(tableConfigObject -> {
+                    try {
+                        return loadTableFromS3(s3, instanceProperties, tableConfigObject);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+    }
+
+    private static TableProperties loadTableFromS3(
+            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) throws IOException {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        try (InputStream in = s3.getObject(
+                        tableConfigObject.getBucketName(),
+                        tableConfigObject.getKey())
+                .getObjectContent()) {
+            tableProperties.load(in);
+        }
+        return tableProperties;
     }
 
     @Override

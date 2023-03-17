@@ -20,8 +20,8 @@ set -e
 #####################
 
 if [[ -z $1 || -z $2 ]]; then
-	echo "Usage: $0 <instance-id> <table name> <optional_delete_partitions_true_or_false> <optional_split_points_file_location> <optional_split_points_file_base64_encoded_true_or_false>"
-	exit 1
+  echo "Usage: $0 <instance-id> <table name> <optional_delete_partitions_true_or_false> <optional_split_points_file_location> <optional_split_points_file_base64_encoded_true_or_false>"
+  exit 1
 fi
 
 INSTANCE_ID=$1
@@ -29,23 +29,20 @@ TABLE_NAME=$2
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-if [[ -z $3 ]];
-then
+if [[ -z $3 ]]; then
   java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.update.ReinitialiseTable ${INSTANCE_ID} ${TABLE_NAME}
 else
   DELETE_PARTITIONS=$3
   echo "Optional parameter for <delete_partitions> recognised and set to" ${DELETE_PARTITIONS}
-  if [[ ! -z $4 ]];
-  then
+  if [[ ! -z $4 ]]; then
     SPLIT_POINT_FILE_LOCATION=$4
     echo "Optional parameter for <split point file location> recognised and set to" ${SPLIT_POINT_FILE_LOCATION}
-    if [[ ! -z $5 ]];
-    then
+    if [[ ! -z $5 ]]; then
       SPLIT_POINTS_FILE_ENCODED=$5
       echo "Optional parameter for <split points file base64 encoded> recognised and set to" ${SPLIT_POINTS_FILE_ENCODED}
-      java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.update.ReinitialiseTable ${INSTANCE_ID} ${TABLE_NAME} ${DELETE_PARTITIONS} ${SPLIT_POINT_FILE_LOCATION}  ${SPLIT_POINTS_FILE_ENCODED}
+      java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.update.ReinitialiseTableFromSplitPoints ${INSTANCE_ID} ${TABLE_NAME} ${SPLIT_POINT_FILE_LOCATION} ${SPLIT_POINTS_FILE_ENCODED}
     else
-      java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.update.ReinitialiseTable ${INSTANCE_ID} ${TABLE_NAME} ${DELETE_PARTITIONS} ${SPLIT_POINT_FILE_LOCATION}
+      java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.update.ReinitialiseTableFromSplitPoints ${INSTANCE_ID} ${TABLE_NAME} ${SPLIT_POINT_FILE_LOCATION}
     fi
   else
     java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.update.ReinitialiseTable ${INSTANCE_ID} ${TABLE_NAME} ${DELETE_PARTITIONS}
