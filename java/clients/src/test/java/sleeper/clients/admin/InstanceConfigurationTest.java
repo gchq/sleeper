@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -364,7 +363,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldPromptAndReturnToEditorWhenSavingFails() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
@@ -390,6 +388,8 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            "\n\n" +
+                            "----------------------------------\n" +
                             "\n" +
                             "Failed saving properties with the following messages:\n" +
                             "Could not save properties for instance test-instance\n" +

@@ -60,10 +60,19 @@ public class InstanceConfigurationScreen {
     private void chooseFromOptions(
             InstanceProperties updatedProperties, PropertiesDiff changes, boolean valid) throws InterruptedException {
         MenuOption saveChanges = new MenuOption("Save changes", () -> {
-            store.saveInstanceProperties(updatedProperties, changes);
-            out.println("\n\n----------------------------------");
-            out.println("Saved successfully, hit enter to return to main screen");
-            in.waitForLine();
+            try {
+                store.saveInstanceProperties(updatedProperties, changes);
+                out.println("\n\n----------------------------------");
+                out.println("Saved successfully, hit enter to return to main screen");
+                in.waitForLine();
+            } catch (AdminConfigStore.CouldNotSaveInstanceProperties e) {
+                out.println("\n\n----------------------------------\n");
+                out.println("Failed saving properties with the following messages:");
+                out.println(e.getMessage());
+                out.println(e.getCause().getMessage());
+                out.println();
+                chooseFromOptions(updatedProperties, changes, valid);
+            }
         });
         MenuOption returnToEditor = new MenuOption("Return to editor", () ->
                 viewAndEditProperties(updatedProperties, changes));
