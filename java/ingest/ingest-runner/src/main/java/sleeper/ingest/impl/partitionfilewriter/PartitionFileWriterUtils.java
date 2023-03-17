@@ -20,16 +20,15 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
 
 import java.io.IOException;
@@ -83,10 +82,7 @@ public class PartitionFileWriterUtils {
      * Create a {@link ParquetWriter} for {@link Record} objects, based on the supplied details.
      *
      * @param outputFile              The file to write to, which may include a prefix such as s3a://
-     * @param sleeperSchema           -
-     * @param parquetCompressionCodec -
-     * @param parquetRowGroupSize     -
-     * @param parquetPageSize         -
+     * @param tableProperties         The table properties
      * @param hadoopConfiguration     The Hadoop configuration to use to create the Parquet writer. This allows the
      *                                library to locate classes which correspond to a prefix such as s3a://. Note that
      *                                the library uses a cache and so unusual errors may occur if this configuration
@@ -95,18 +91,9 @@ public class PartitionFileWriterUtils {
      * @throws IOException -
      */
     public static ParquetWriter<Record> createParquetWriter(String outputFile,
-                                                            Schema sleeperSchema,
-                                                            String parquetCompressionCodec,
-                                                            long parquetRowGroupSize,
-                                                            int parquetPageSize,
+                                                            TableProperties tableProperties,
                                                             Configuration hadoopConfiguration) throws IOException {
-        ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(outputFile),
-                SchemaConverter.getSchema(sleeperSchema), sleeperSchema)
-                .withCompressionCodec(CompressionCodecName.fromConf(parquetCompressionCodec))
-                .withRowGroupSize(parquetRowGroupSize)
-                .withPageSize(parquetPageSize)
-                .withConf(hadoopConfiguration);
-        return builder.build();
+        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
     }
 
     /**

@@ -31,7 +31,7 @@ public interface InstanceProperty extends SleeperProperty {
         private Index() {
         }
 
-        private static final SleeperPropertyIndex<InstanceProperty> INSTANCE = createInstance();
+        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = createInstance();
 
         private static SleeperPropertyIndex<InstanceProperty> createInstance() {
             SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();

@@ -22,7 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -60,13 +59,10 @@ public class TableInitialiser {
                            TableProperties tableProperties,
                            String configBucket,
                            Configuration configuration) throws IOException {
-        Schema schema = tableProperties.getSchema();
         StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(tableProperties);
-
         List<Object> splitPoints = getSplitPoints(tableProperties, configBucket);
-
         try {
-            new InitialiseStateStore(schema, stateStore, splitPoints).run();
+            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, splitPoints).run();
         } catch (StateStoreException e) {
             throw new RuntimeException("Failed to initialise State Store", e);
         }

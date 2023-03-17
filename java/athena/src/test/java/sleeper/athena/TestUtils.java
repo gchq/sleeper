@@ -109,7 +109,7 @@ public class TestUtils {
 
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(tableName, schema, dynamoDB).create();
-            new InitialiseStateStore(schema, stateStore, Lists.newArrayList(splitPoints)).run();
+            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Lists.newArrayList(splitPoints)).run();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } finally {

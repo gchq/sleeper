@@ -43,8 +43,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -661,8 +660,7 @@ public class FilterTranslatorTest {
     }
 
     private void writeData(String dataDir) throws IOException {
-        ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(new Path(dataDir), SchemaConverter.getSchema(SCHEMA), SCHEMA)
-                .build();
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(dataDir), SCHEMA);
 
         generateRecords(0, 20).forEach(record -> {
             try {
