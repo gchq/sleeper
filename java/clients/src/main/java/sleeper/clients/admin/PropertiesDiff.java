@@ -38,6 +38,11 @@ public class PropertiesDiff {
         this(calculateChanges(before, after));
     }
 
+    public PropertiesDiff(SleeperProperty property, String before, String after) {
+        this(Map.of(property.getPropertyName(),
+                new PropertyDiff(property.getPropertyName(), before, after)));
+    }
+
     private PropertiesDiff(Map<String, PropertyDiff> changes) {
         this.changes = changes;
     }
@@ -73,6 +78,13 @@ public class PropertiesDiff {
             }
             out.println();
         }
+    }
+
+    public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
+        return changes.values().stream()
+                .flatMap(diff -> diff.getProperty(propertyIndex).stream())
+                .filter(SleeperProperty::isRunCDKDeployWhenChanged)
+                .collect(Collectors.toList());
     }
 
     private static Map<String, PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {

@@ -80,7 +80,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String filePathPrefix) throws IOException {
-        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
+        this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         UUID uuid = UUID.randomUUID();

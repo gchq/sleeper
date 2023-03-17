@@ -84,6 +84,10 @@ public class PropertyDiff {
         return propertyName;
     }
 
+    public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
+        return propertyIndex.getByName(propertyName);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -35,6 +35,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -80,6 +83,21 @@ public interface TableProperty extends SleeperProperty {
     TableProperty PAGE_SIZE = Index.propertyBuilder("sleeper.table.page.size")
             .defaultProperty(DEFAULT_PAGE_SIZE)
             .description("The size of the page in the Parquet files - defaults to the value in the instance properties.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS = Index.propertyBuilder("sleeper.table.parquet.dictionary.encoding.rowkey.fields")
+            .defaultProperty(DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS)
+            .description("Whether dictionary encoding should be used for row key columns in the Parquet files.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS = Index.propertyBuilder("sleeper.table.parquet.dictionary.encoding.sortkey.fields")
+            .defaultProperty(DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS)
+            .description("Whether dictionary encoding should be used for sort key columns in the Parquet files.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty DICTIONARY_ENCODING_FOR_VALUE_FIELDS = Index.propertyBuilder("sleeper.table.parquet.dictionary.encoding.value.fields")
+            .defaultProperty(DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS)
+            .description("Whether dictionary encoding should be used for value columns in the Parquet files.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
