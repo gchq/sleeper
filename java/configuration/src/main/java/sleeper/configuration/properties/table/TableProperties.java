@@ -136,7 +136,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
+    public SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.Index.INSTANCE;
     }
 

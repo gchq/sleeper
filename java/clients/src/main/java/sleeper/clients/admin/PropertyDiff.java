@@ -16,6 +16,9 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +42,10 @@ public class PropertyDiff {
         } else {
             return Optional.of(new PropertyDiff(propertyName, oldValue, newValue));
         }
+    }
+
+    public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
+        return propertyIndex.getByName(propertyName);
     }
 
     @Override

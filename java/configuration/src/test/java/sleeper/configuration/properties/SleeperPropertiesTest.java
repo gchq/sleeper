@@ -168,7 +168,7 @@ class SleeperPropertiesTest {
         }
 
         @Override
-        protected SleeperPropertyIndex<SleeperProperty> getPropertiesIndex() {
+        public SleeperPropertyIndex<SleeperProperty> getPropertiesIndex() {
             return new SleeperPropertyIndex<>();
         }
     }

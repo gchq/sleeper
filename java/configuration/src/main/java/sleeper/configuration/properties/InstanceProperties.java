@@ -104,7 +104,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     @Override
-    protected SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
+    public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
         return InstanceProperty.Index.INSTANCE;
     }
 

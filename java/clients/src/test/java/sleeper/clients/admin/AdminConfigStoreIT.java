@@ -66,7 +66,9 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInS3() {
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            InstanceProperties updated = createValidInstanceProperties();
+            updated.set(FARGATE_VERSION, "1.2.3");
+            saveInstanceProperties(instanceProperties, updated);
 
             // Then
             assertThat(store().loadInstanceProperties(INSTANCE_ID).get(FARGATE_VERSION))
@@ -342,6 +344,10 @@ public class AdminConfigStoreIT extends AdminClientITBase {
                         .containsExactly(true);
             }
         }
+    }
+
+    private void saveInstanceProperties(InstanceProperties before, InstanceProperties after) {
+        store().saveInstanceProperties(after, new PropertiesDiff(before.toMap(), after.toMap()));
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(
