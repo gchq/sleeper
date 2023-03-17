@@ -122,7 +122,18 @@ public class AdminConfigStore {
     public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         TableProperties properties = loadTableProperties(instanceProperties, tableName);
+        String valueBefore = properties.get(property);
         properties.set(property, propertyValue);
+        saveTableProperties(instanceProperties, properties, new PropertiesDiff(property, valueBefore, propertyValue));
+    }
+
+    public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
+        saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
+    }
+
+    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
+        String instanceId = instanceProperties.get(ID);
+        String tableName = properties.get(TABLE_NAME);
         try {
             LOGGER.info("Saving to local configuration");
             ClientUtils.clearDirectory(generatedDirectory);
@@ -130,8 +141,9 @@ public class AdminConfigStore {
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME))
                                     ? properties : table));
-            if (property.isRunCDKDeployWhenChanged()) {
-                LOGGER.info("Property {} is deployed via AWS CDK, running now", property);
+            List<TableProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
+            if (!propertiesDeployedByCdk.isEmpty()) {
+                LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
                 cdk.invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange());
             } else {
                 LOGGER.info("Saving to AWS");

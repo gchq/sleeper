@@ -24,7 +24,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,9 +68,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInS3() {
             // When
-            InstanceProperties updated = createValidInstanceProperties();
-            updated.set(FARGATE_VERSION, "1.2.3");
-            saveInstanceProperties(instanceProperties, updated);
+            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(store().loadInstanceProperties(INSTANCE_ID).get(FARGATE_VERSION))
@@ -78,7 +78,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInLocalDirectory() {
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadInstancePropertiesFromDirectory(tempDir).get(FARGATE_VERSION))
@@ -91,7 +91,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -103,12 +103,12 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() throws IOException {
             // Given
             createTableInS3("old-test-table");
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
+            updateInstanceProperty(FARGATE_VERSION, "4.5.6");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -127,7 +127,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(store().loadTableProperties(INSTANCE_ID, "test-table").getInt(ROW_GROUP_SIZE))
@@ -346,8 +346,21 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         }
     }
 
+    private void updateInstanceProperty(InstanceProperty property, String value) {
+        InstanceProperties updated = createValidInstanceProperties();
+        updated.set(property, value);
+        saveInstanceProperties(instanceProperties, updated);
+    }
+
     private void saveInstanceProperties(InstanceProperties before, InstanceProperties after) {
         store().saveInstanceProperties(after, new PropertiesDiff(before.toMap(), after.toMap()));
+    }
+
+    private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
+        TableProperties properties = store().loadTableProperties(instanceId, tableName);
+        String valueBefore = properties.get(property);
+        properties.set(property, value);
+        store().saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(
