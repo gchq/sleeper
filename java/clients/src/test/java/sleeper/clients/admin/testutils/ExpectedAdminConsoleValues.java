@@ -71,10 +71,10 @@ public class ExpectedAdminConsoleValues {
             "[1] Return to Main Menu\n" +
             "\n" +
             "Input: \n";
-    public static final String PROPERTY_APPLY_CHANGES_SCREEN = "" +
+    public static final String PROPERTY_SAVE_CHANGES_SCREEN = "" +
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +
-            "[1] Apply changes\n" +
+            "[1] Save changes\n" +
             "[2] Return to editor\n" +
             "[3] Discard changes and return to main menu\n" +
             "\n" +
@@ -95,8 +95,8 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_PROPERTY_REPORT_OPTION = "4";
     public static final String UPDATE_PROPERTY_OPTION = "5";
 
-    public static final class ApplyChangesScreen {
-        public static final String APPLY_CHANGES_OPTION = "1";
+    public static final class SaveChangesScreen {
+        public static final String SAVE_CHANGES_OPTION = "1";
         public static final String RETURN_TO_EDITOR_OPTION = "2";
         public static final String DISCARD_CHANGES_OPTION = "3";
     }
@@ -111,6 +111,10 @@ public class ExpectedAdminConsoleValues {
     public static final String PROMPT_RETURN_TO_MAIN = "" +
             "\n\n----------------------------------\n" +
             "Hit enter to return to main screen\n";
+
+    public static final String PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN = "" +
+            "\n\n----------------------------------\n" +
+            "Saved successfully, hit enter to return to main screen\n";
 
     public static final String PROMPT_RETURN_TO_PROPERTY = "" +
             "\n\n----------------------------------\n" +

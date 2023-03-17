@@ -29,12 +29,14 @@ import java.util.Set;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final ChooseOne chooseOne;
     private final AdminConfigStore store;
     private final UpdatePropertiesWithNano editor;
 
     public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store, UpdatePropertiesWithNano editor) {
         this.out = out;
+        this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
         this.editor = editor;
@@ -57,14 +59,18 @@ public class InstanceConfigurationScreen {
 
     private void chooseFromOptions(
             InstanceProperties updatedProperties, PropertiesDiff changes, boolean valid) throws InterruptedException {
-        MenuOption applyChanges = new MenuOption("Apply changes", () -> {
+        MenuOption saveChanges = new MenuOption("Save changes", () -> {
+            store.saveInstanceProperties(updatedProperties, changes);
+            out.println("\n\n----------------------------------");
+            out.println("Saved successfully, hit enter to return to main screen");
+            in.waitForLine();
         });
         MenuOption returnToEditor = new MenuOption("Return to editor", () ->
                 viewAndEditProperties(updatedProperties, changes));
         MenuOption discardChanges = new MenuOption("Discard changes and return to main menu", () -> {
         });
         if (valid) {
-            chooseOne.chooseFrom(applyChanges, returnToEditor, discardChanges)
+            chooseOne.chooseFrom(saveChanges, returnToEditor, discardChanges)
                     .getChoice().orElse(returnToEditor).run();
         } else {
             chooseOne.chooseFrom(returnToEditor, discardChanges)

@@ -32,12 +32,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ApplyChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_APPLY_CHANGES_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -86,7 +87,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
-                    .endsWith(PROPERTY_APPLY_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock).promptLine(any());
@@ -96,7 +97,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @ParameterizedTest(name = "With option of \"{0}\"")
-        @ValueSource(strings = {ApplyChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
+        @ValueSource(strings = {SaveChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
         void shouldMakeChangesThenReturnToEditorAndRevertChanges(String option) throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
@@ -113,15 +114,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // When
             String output = runClientGetOutput();
 
-            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
-                    "Found changes to properties:\n" +
-                    "\n" +
-                    "sleeper.s3.max-connections\n" +
-                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                    "Before: 123\n" +
-                    "After: 456\n" +
-                    "\n" +
-                    PROPERTY_APPLY_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .containsOnlyOnce(PROPERTY_SAVE_CHANGES_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock).promptLine(any());
@@ -132,9 +127,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verifyNoMoreInteractions();
         }
     }
-
-    // TODO apply changes in the store
-    // TODO handle validation failure
 
     @DisplayName("Display changes to edited properties")
     @Nested
@@ -149,7 +141,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesGetApplyChangesDisplay(before, after);
+            String output = updatePropertiesGetSaveChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -169,7 +161,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
 
             // When
-            String output = updatePropertiesGetApplyChangesDisplay(before, after);
+            String output = updatePropertiesGetSaveChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -189,7 +181,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.loadFromString("unknown.property=abc");
 
             // When
-            String output = updatePropertiesGetApplyChangesDisplay(before, after);
+            String output = updatePropertiesGetSaveChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -209,7 +201,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
 
             // When
-            String output = updatePropertiesGetApplyChangesDisplay(before, after);
+            String output = updatePropertiesGetSaveChangesDisplay(before, after);
 
             // Then
             assertThat(output).isEqualTo("Found changes to properties:\n" +
@@ -233,7 +225,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DEFAULT_PAGE_SIZE, "456");
 
             // When
-            String output = updatePropertiesGetApplyChangesDisplay(before, after);
+            String output = updatePropertiesGetSaveChangesDisplay(before, after);
 
             // Then
             assertThat(output.indexOf("sleeper.optional.stacks"))
@@ -254,7 +246,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "an.unknown.property=other-value");
 
             // When
-            String output = updatePropertiesGetApplyChangesDisplay(before, after);
+            String output = updatePropertiesGetSaveChangesDisplay(before, after);
 
             // Then
             assertThat(output.indexOf("sleeper.optional.stacks"))
@@ -340,13 +332,43 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    private String updatePropertiesGetApplyChangesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
-        return getApplyChangesDisplay(updatePropertiesGetOutput(before, after));
+    @DisplayName("Save changes")
+    @Nested
+    class SaveChanges {
+        @Test
+        void shouldSaveChangesWithStore() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+
+            // When
+            String output = updatePropertiesAndSave(before, after);
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before.toMap(), after.toMap()));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+    }
+
+    private String updatePropertiesGetSaveChangesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
+        return getSaveChangesDisplay(updatePropertiesGetOutput(before, after));
     }
 
     private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         setInstanceProperties(before);
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, ApplyChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
 
@@ -365,10 +387,19 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return runClientGetOutput();
     }
 
-    private static String getApplyChangesDisplay(String output) {
+    private String updatePropertiesAndSave(InstanceProperties before, InstanceProperties after) throws Exception {
+        setInstanceProperties(before);
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+
+        return runClientGetOutput();
+    }
+
+    private static String getSaveChangesDisplay(String output) {
         return output.substring(
                 DISPLAY_MAIN_SCREEN.length(),
-                output.length() - PROPERTY_APPLY_CHANGES_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
+                output.length() - PROPERTY_SAVE_CHANGES_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
     }
 
     private static String getValidationDisplay(String output) {
