@@ -279,7 +279,8 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             String output = updatePropertiesGetValidationDisplay(before, after);
 
             // Then
-            assertThat(output).isEqualTo("Found changes to properties:\n" +
+            assertThat(output).isEqualTo("" +
+                    "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.s3.max-connections\n" +
                     "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
@@ -304,6 +305,38 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
                     .endsWith(PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
+        }
+
+        @Test
+        void shouldShowValidationFailuresForMultipleProperties() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            after.set(DEFAULT_S3A_READAHEAD_RANGE, "def");
+
+            // When
+            String output = updatePropertiesGetValidationDisplay(before, after);
+
+            // Then
+            assertThat(output).isEqualTo("" +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
+                    "Unset before, default value: 25\n" +
+                    "After (not valid, please change): abc\n" +
+                    "\n" +
+                    "sleeper.default.fs.s3a.readahead.range\n" +
+                    "The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
+                    "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).\n" +
+                    "Unset before, default value: 64K\n" +
+                    "After (not valid, please change): def\n" +
+                    "\n" +
+                    "Found invalid properties:\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "sleeper.default.fs.s3a.readahead.range\n" +
+                    "\n");
         }
     }
 
