@@ -168,7 +168,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${shade.plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -176,6 +175,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>utility</shadedClassifierName>
                             <artifactSet>
                                 <excludes>
                                     <exclude>io.trino:*</exclude>
