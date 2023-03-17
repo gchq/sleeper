@@ -18,9 +18,9 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.sql.query.QueryAssertions;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -48,8 +48,7 @@ public class SimpleKeyValueSchemaInsertIT {
                             Optional.empty(),
                             Optional.empty()));
 
-
-    @ClassRule
+    @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
             new PopulatedSleeperExternalResource(ImmutableMap.of(), TABLE_DEFINITIONS, Optional.empty());
     private static QueryAssertions assertions;
@@ -70,7 +69,7 @@ public class SimpleKeyValueSchemaInsertIT {
         });
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         assertions = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions();
         String valuesTerms = generateSimpleRecordStream()

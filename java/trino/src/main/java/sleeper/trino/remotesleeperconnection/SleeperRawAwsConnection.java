@@ -354,7 +354,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         return BespokeIngestCoordinator.asyncFromPage(
                 objectFactory,
                 stateStore,
-                tableProperties.getSchema(),
+                tableProperties,
                 sleeperConfig,
                 hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties),
                 null,

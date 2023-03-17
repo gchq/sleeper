@@ -18,11 +18,10 @@ package sleeper.trino.ingest;
 import io.trino.spi.Page;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.core.schema.Schema;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
@@ -40,7 +39,7 @@ public class BespokeIngestCoordinator {
 
     public static IngestCoordinator<Page> asyncFromPage(ObjectFactory objectFactory,
                                                         StateStore sleeperStateStore,
-                                                        Schema sleeperSchema,
+                                                        TableProperties tableProperties,
                                                         SleeperConfig sleeperConfig,
                                                         Configuration hadoopConfiguration,
                                                         String sleeperIteratorClassName,
@@ -55,7 +54,7 @@ public class BespokeIngestCoordinator {
 
         RecordBatchFactory<Page> recordBatchFactory = ArrowRecordBatchFactory.builder()
                 .bufferAllocator(arrowBufferAllocator)
-                .schema(sleeperSchema)
+                .schema(tableProperties.getSchema())
                 .localWorkingDirectory(localWorkingDirectory)
                 .workingBufferAllocatorBytes(SleeperRawAwsConnection.WORKING_ARROW_BUFFER_ALLOCATOR_BYTES)
                 .minBatchBufferAllocatorBytes(SleeperRawAwsConnection.BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN)
@@ -65,10 +64,7 @@ public class BespokeIngestCoordinator {
                 .recordWriter(new ArrowRecordWriterAcceptingPages())
                 .build();
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.builder()
-                .sleeperSchema(sleeperSchema)
-                .parquetCompressionCodec(SleeperRawAwsConnection.INGEST_COMPRESSION_CODEC)
-                .parquetRowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .parquetPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .tableProperties(tableProperties)
                 .hadoopConfiguration(hadoopConfiguration)
                 .build();
         PartitionFileWriterFactory partitionFileWriterFactory = AsyncS3PartitionFileWriterFactory.builder()
@@ -80,7 +76,7 @@ public class BespokeIngestCoordinator {
         return IngestCoordinator.builder()
                 .objectFactory(objectFactory)
                 .stateStore(sleeperStateStore)
-                .schema(sleeperSchema)
+                .schema(tableProperties.getSchema())
                 .iteratorClassName(sleeperIteratorClassName)
                 .iteratorConfig(sleeperIteratorConfig)
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)

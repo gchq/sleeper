@@ -18,9 +18,9 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.sql.query.QueryAssertions;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
@@ -62,13 +62,13 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
 
     private static final Map<String, String> EXTRA_PROPERTIES_FOR_QUERY_RUNNER = ImmutableMap.of("task.writer-count", "4");
     private static final SleeperConfig SLEEPER_CONFIG = (new SleeperConfig()).setEnableTrinoPartitioning(false);
-    @ClassRule
+    @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
             new PopulatedSleeperExternalResource(EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS, Optional.of(SLEEPER_CONFIG));
 
     private static QueryAssertions assertions;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         assertions = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions();
         assertions.execute(

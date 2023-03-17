@@ -18,9 +18,9 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.sql.query.QueryAssertions;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -55,12 +55,12 @@ public class TpchSchemaInsertIT {
                             Optional.empty(),
                             Optional.empty()));
 
-    @ClassRule
+    @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
             new PopulatedSleeperExternalResource(ImmutableMap.of(), TABLE_DEFINITIONS, Optional.empty());
     private static QueryAssertions assertions;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         assertions = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions();
         assertions.execute(

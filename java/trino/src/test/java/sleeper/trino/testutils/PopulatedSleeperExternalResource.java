@@ -25,8 +25,9 @@ import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.rules.ExternalResource;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -58,6 +59,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -66,7 +68,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -83,13 +84,12 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * this caches the S3AFileSystem objects which actually communicate with S3. The cache needs to be reset between
  * different recreations of the localstack container. It would be good to fix this in future.
  */
-public class PopulatedSleeperExternalResource extends ExternalResource {
+public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
     private static final String TEST_CONFIG_BUCKET_NAME = "test-config-bucket";
 
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final TemporaryFolder temporaryFolder = new TemporaryFolder();
     private final LocalStackContainer localStackContainer =
             new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
                     .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3)
@@ -142,7 +142,7 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
         Configuration hadoopConfiguration = this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties);
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .localDir(temporaryFolder.newFolder().getAbsolutePath())
+                .localDir(createTempDirectory(UUID.randomUUID().toString()).toString())
                 .stateStoreProvider(stateStoreProvider)
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConfiguration)
@@ -157,7 +157,6 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
         instanceProperties.set(JARS_BUCKET, "");
         instanceProperties.set(ACCOUNT, "");
         instanceProperties.set(REGION, "");
-        instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
         instanceProperties.set(FILE_SYSTEM, "s3a://");
@@ -214,8 +213,7 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
     }
 
     @Override
-    protected void before() throws Throwable {
-        this.temporaryFolder.create();
+    public void beforeAll(ExtensionContext context) throws Exception {
         this.localStackContainer.start();
         this.s3Client = createS3Client();
         this.s3AsyncClient = createS3AsyncClient();
@@ -224,7 +222,7 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
         System.out.println("S3 endpoint:       " + localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
         System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
 
-        sleeperConfig.setLocalWorkingDirectory(temporaryFolder.newFolder().getAbsolutePath());
+        sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
         InstanceProperties instanceProperties = createInstanceProperties();
 
@@ -235,7 +233,8 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
                         tableDefinition);
                 StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, instanceProperties);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                InitialiseStateStore initialiseStateStore = new InitialiseStateStore(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
+                InitialiseStateStore initialiseStateStore = InitialiseStateStore
+                    .createInitialiseStateStoreFromSplitPoints(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
                 initialiseStateStore.run();
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
             } catch (Exception e) {
@@ -263,12 +262,11 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
     }
 
     @Override
-    protected void after() {
+    public void afterAll(ExtensionContext context) throws Exception {
         this.queryAssertions.close();
         this.s3Client.shutdown();
         this.dynamoDBClient.shutdown();
         this.localStackContainer.stop();
-        this.temporaryFolder.delete();
 
         // The Hadoop file system maintains a cache of the file system object to use. The S3AFileSystem object
         // retains the endpoint URL and so the cache needs to be cleared whenever the localstack instance changes.
