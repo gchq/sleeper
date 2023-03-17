@@ -66,6 +66,6 @@ public class UpdatePropertiesWithNano {
     }
 
     private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T before, T after) {
-        return new UpdatePropertiesRequest<>(new PropertiesDiff(before.toMap(), after.toMap()), after);
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), after);
     }
 }

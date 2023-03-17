@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.console.ConsoleOutput;
@@ -33,6 +34,10 @@ import java.util.stream.Stream;
 
 public class PropertiesDiff {
     private final Map<String, PropertyDiff> changes;
+
+    public PropertiesDiff(SleeperProperties<?> before, SleeperProperties<?> after) {
+        this(before.toMap(), after.toMap());
+    }
 
     public PropertiesDiff(Map<String, String> before, Map<String, String> after) {
         this(calculateChanges(before, after));

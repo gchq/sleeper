@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
@@ -356,8 +358,52 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before.toMap(), after.toMap()));
+            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldPromptAndReturnToEditorWhenSavingFails() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+            doThrow(new AdminConfigStore.CouldNotSaveInstanceProperties(INSTANCE_ID,
+                    new RuntimeException("Something went wrong")))
+                    .when(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+
+            setInstanceProperties(before);
+            in.enterNextPrompts(
+                    INSTANCE_CONFIGURATION_OPTION,
+                    SaveChangesScreen.SAVE_CHANGES_OPTION,
+                    SaveChangesScreen.DISCARD_CHANGES_OPTION,
+                    EXIT_OPTION);
+            when(editor.openPropertiesFile(before))
+                    .thenReturn(withChanges(before, after));
+
+            // When
+            String output = runClientGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            "\n" +
+                            "Failed saving properties with the following messages:\n" +
+                            "Could not save properties for instance test-instance\n" +
+                            "Something went wrong\n" +
+                            "\n" +
+                            PROPERTY_SAVE_CHANGES_SCREEN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
     }

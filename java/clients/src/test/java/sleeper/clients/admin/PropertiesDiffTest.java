@@ -240,11 +240,11 @@ public class PropertiesDiffTest {
             before.set(property, oldValue);
             InstanceProperties after = generateTestInstanceProperties();
             after.set(property, newValue);
-            return new PropertiesDiff(before.toMap(), after.toMap());
+            return new PropertiesDiff(before, after);
         }
     }
 
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
-        return new PropertiesDiff(before.toMap(), after.toMap()).getChanges();
+        return new PropertiesDiff(before, after).getChanges();
     }
 }
