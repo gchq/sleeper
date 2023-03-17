@@ -16,6 +16,9 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +33,19 @@ public class PropertiesDiff {
         this.changes = calculateChanges(before, after);
     }
 
+    public PropertiesDiff(SleeperProperty property, String before, String after) {
+        this.changes = List.of(new PropertyDiff(property.getPropertyName(), before, after));
+    }
+
     public List<PropertyDiff> getChanges() {
         return changes;
+    }
+
+    public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
+        return getChanges().stream()
+                .flatMap(diff -> diff.getProperty(propertyIndex).stream())
+                .filter(SleeperProperty::isRunCDKDeployWhenChanged)
+                .collect(Collectors.toList());
     }
 
     private static List<PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {
