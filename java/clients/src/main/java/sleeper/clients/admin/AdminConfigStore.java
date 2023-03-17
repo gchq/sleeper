@@ -24,10 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
-import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -177,16 +173,6 @@ public class AdminConfigStore {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return stateStoreProvider.getStateStore(tableProperties);
-    }
-
-    public CompactionJobStatusStore loadCompactionJobStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
-    }
-
-    public CompactionTaskStatusStore loadCompactionTaskStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {
