@@ -86,6 +86,7 @@ public class SleeperMetadata implements ConnectorMetadata {
         this.sleeperConnectionAsTrino = requireNonNull(sleeperConnectionAsTrino);
     }
 
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Suppress warning for now, method can probably be deleted
     private static List<String> handleToNames(List<ColumnHandle> columnHandles) {
         return columnHandles.stream()
                 .map(SleeperColumnHandle.class::cast)
@@ -99,7 +100,6 @@ public class SleeperMetadata implements ConnectorMetadata {
      * @param session The current session. This makes no difference at present.
      * @return A list of all the names of the schemas.
      */
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Suppress warning for now, method can probably be deleted
     @Override
     public List<String> listSchemaNames(ConnectorSession session) {
         return sleeperConnectionAsTrino.getAllTrinoSchemaNames();
