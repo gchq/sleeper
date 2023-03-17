@@ -68,7 +68,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInS3() {
             // When
-            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(store().loadInstanceProperties(INSTANCE_ID).get(FARGATE_VERSION))
@@ -78,7 +78,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInLocalDirectory() {
             // When
-            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadInstancePropertiesFromDirectory(tempDir).get(FARGATE_VERSION))
@@ -91,7 +91,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -103,12 +103,12 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() throws IOException {
             // Given
             createTableInS3("old-test-table");
-            updateInstanceProperty(FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            updateInstanceProperty(FARGATE_VERSION, "4.5.6");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -193,7 +193,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+            updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
 
             // Then
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
@@ -208,7 +208,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldNotRunCdkDeployWhenUnflaggedInstancePropertyUpdated() {
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             verifyNoInteractions(cdk);
@@ -221,7 +221,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             instanceProperties.saveToS3(s3);
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+            updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
 
             // Then
             verifyAnyPropertiesDeployedWithCdk();
@@ -235,10 +235,9 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // Given
             IOException thrown = new IOException("CDK failed");
             doThrowWhenPropertiesDeployedWithCdk(thrown);
-            AdminConfigStore store = store();
 
             // When / Then
-            assertThatThrownBy(() -> store.updateInstanceProperty(
+            assertThatThrownBy(() -> updateInstanceProperty(
                     INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminConfigStore.CouldNotSaveInstanceProperties.class)
                     .hasCauseReference(thrown);
@@ -253,7 +252,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
 
             // When / Then
             try {
-                store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+                updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
                 fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
@@ -345,14 +344,11 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         }
     }
 
-    private void updateInstanceProperty(InstanceProperty property, String value) {
-        InstanceProperties updated = createValidInstanceProperties();
-        updated.set(property, value);
-        saveInstanceProperties(instanceProperties, updated);
-    }
-
-    private void saveInstanceProperties(InstanceProperties before, InstanceProperties after) {
-        store().saveInstanceProperties(after, new PropertiesDiff(before.toMap(), after.toMap()));
+    private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
+        InstanceProperties properties = store().loadInstanceProperties(instanceId);
+        String valueBefore = properties.get(property);
+        properties.set(property, value);
+        store().saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
