@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin.testutils;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -49,7 +48,6 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
             .build();
-    protected final AmazonDynamoDB dynamoDB = mock(AmazonDynamoDB.class);
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
 
     @TempDir
@@ -64,7 +62,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, dynamoDB, cdk, tempDir);
+        return new AdminConfigStore(s3, null, cdk, tempDir);
     }
 
     @BeforeEach
