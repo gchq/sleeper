@@ -341,8 +341,7 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldNotShowUnknownPropertiesWhenFilteringByGroup() throws IOException {
             // When
-            String output = printInstancePropertiesByGroup("" +
-                    "unknown.property=123", InstancePropertyGroup.COMMON);
+            String output = printInstancePropertiesByGroup("unknown.property=123", InstancePropertyGroup.COMMON);
 
             // Then
             assertThat(output)
