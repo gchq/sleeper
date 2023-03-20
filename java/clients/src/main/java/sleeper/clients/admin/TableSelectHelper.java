@@ -29,13 +29,13 @@ import java.util.function.Consumer;
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
-class TableSelectHelper {
+public class TableSelectHelper {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
     private final AdminConfigStore store;
 
-    TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
