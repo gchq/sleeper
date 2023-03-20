@@ -85,6 +85,16 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
+        void shouldPrintSystemDefinedProperty() throws Exception {
+            // When / Then
+            assertThat(printInstanceProperties("sleeper.version=1.2.3"))
+                    .contains("# The version of Sleeper that is being used. This property is used to identify the correct jars in the\n" +
+                            "# S3 jars bucket and to select the correct tag in the ECR repositories.\n" +
+                            "# (this property is system-defined and may not be edited)\n" +
+                            "sleeper.version");
+        }
+
+        @Test
         void shouldPrintPropertiesInTheCorrectOrder() throws IOException {
             // When
             String output = printEmptyInstanceProperties();
