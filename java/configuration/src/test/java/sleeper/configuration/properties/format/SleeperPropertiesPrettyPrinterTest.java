@@ -306,7 +306,7 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldFilterInstancePropertiesByGroup() throws IOException {
             // When
-            String output = printInstancePropertiesByGroup(InstancePropertyGroup.COMMON);
+            String output = printInstancePropertiesByGroup("", InstancePropertyGroup.COMMON);
 
             // Then
             assertThat(output)
@@ -337,6 +337,17 @@ class SleeperPropertiesPrettyPrinterTest {
                             .map(SleeperProperty::getPropertyName)
                             .collect(Collectors.toList()));
         }
+
+        @Test
+        void shouldNotShowUnknownPropertiesWhenFilteringByGroup() throws IOException {
+            // When
+            String output = printInstancePropertiesByGroup("" +
+                    "unknown.property=123", InstancePropertyGroup.COMMON);
+
+            // Then
+            assertThat(output)
+                    .doesNotContain("unknown.property");
+        }
     }
 
     private static String printEmptyInstanceProperties() throws IOException {
@@ -347,8 +358,8 @@ class SleeperPropertiesPrettyPrinterTest {
         return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
     }
 
-    private static String printInstancePropertiesByGroup(PropertyGroup group) throws IOException {
-        return printInstancePropertiesByGroup(new InstanceProperties(loadProperties("")), group);
+    private static String printInstancePropertiesByGroup(String properties, PropertyGroup group) throws IOException {
+        return printInstancePropertiesByGroup(new InstanceProperties(loadProperties(properties)), group);
     }
 
     private static String printInstanceProperties(InstanceProperties properties) {
