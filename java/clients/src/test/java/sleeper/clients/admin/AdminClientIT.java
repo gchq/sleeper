@@ -30,6 +30,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.NO_INSTANCE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
@@ -158,5 +159,17 @@ class AdminClientIT extends AdminClientITBase {
         TableProperties found = new TableProperties(instanceProperties);
         found.loadFromS3(s3, before.get(TABLE_NAME));
         assertThat(found.get(ITERATOR_CLASS_NAME)).isEqualTo("AfterIteratorClass");
+    }
+
+    @Test
+    void shouldFailAtStartupWhenInstanceDoesNotExist() throws Exception {
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).startsWith(NO_INSTANCE_SCREEN +
+                        "Cause: The specified key does not exist.")
+                .contains("Amazon S3");
     }
 }

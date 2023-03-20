@@ -72,6 +72,13 @@ public class AdminClient {
     }
 
     public void start(String instanceId) throws InterruptedException {
+        try {
+            store.loadInstanceProperties(instanceId);
+        } catch (AdminConfigStore.CouldNotLoadInstanceProperties e) {
+            out.println(e.getMessage());
+            out.println("Cause: " + e.getCause().getMessage());
+            return;
+        }
         new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 

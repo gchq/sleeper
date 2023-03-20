@@ -59,6 +59,9 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Input: \n";
 
+    public static final String NO_INSTANCE_SCREEN = "" +
+            "Could not load properties for instance test-instance\n";
+
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
     public static final String INSTANCE_CONFIGURATION_OPTION = "1";
