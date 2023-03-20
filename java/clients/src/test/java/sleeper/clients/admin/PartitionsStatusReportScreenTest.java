@@ -21,6 +21,11 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.inmemory.StateStoreTestBuilder;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,12 +37,18 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
 public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldRunPartitionStatusReport() {
         // Given
-        setStateStoreForTable("test-table");
+        StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
+                        .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
+                        .parentJoining("parent", "A", "B"))
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
+        setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);
 
         // When
