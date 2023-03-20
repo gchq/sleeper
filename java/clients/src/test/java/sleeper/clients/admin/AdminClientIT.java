@@ -28,7 +28,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_ENTER_TABLE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_ENTER_VALUE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_OPTION;
@@ -95,7 +95,7 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
+                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
                 .contains("sleeper.table.name=test-table\n");

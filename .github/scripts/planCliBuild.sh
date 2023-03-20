@@ -21,6 +21,13 @@
 REPO_OWNER=$1
 GIT_REF=$2
 
+# Strip git ref prefix from version
+VERSION=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
+# Strip "v" prefix from tag name
+[[ "$GIT_REF" == "refs/tags/"* ]] && VERSION=$(echo "$VERSION" | sed -e 's/^v//')
+# Use Docker `latest` tag convention
+[ "$VERSION" == "main" ] && VERSION=latest
+
 export_github_env_for_image() {
   IMAGE_NAME=$1
   ENV_PREFIX=$2
@@ -30,24 +37,15 @@ export_github_env_for_image() {
   IMAGE_ID=$(echo "$IMAGE_ID" | tr '[A-Z]' '[a-z]')
 
   {
-    echo "${ENV_PREFIX}_IMAGE_ID=$IMAGE_ID"
-    echo "${ENV_PREFIX}_IMAGE_NAME=$IMAGE_NAME"
+    echo "${ENV_PREFIX}_PUSH_TAG=$IMAGE_ID:$VERSION"
   } >> "$GITHUB_ENV"
 }
 
 export_common_github_env() {
   IMAGE_NAMES=$1
 
-  # Strip git ref prefix from version
-  VERSION=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
-  # Strip "v" prefix from tag name
-  [[ "$GIT_REF" == "refs/tags/"* ]] && VERSION=$(echo "$VERSION" | sed -e 's/^v//')
-  # Use Docker `latest` tag convention
-  [ "$VERSION" == "main" ] && VERSION=latest
-
   {
     echo "GHCR_PACKAGE_NAMES=$IMAGE_NAMES"
-    echo "VERSION=$VERSION"
   } >> "$GITHUB_ENV"
 }
 

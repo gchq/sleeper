@@ -48,6 +48,10 @@ public class AdminMainScreen {
                         client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("Update an instance or table property", () ->
                         client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
+                new MenuOption("Run partition status report", () ->
+                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run files status report", () ->
+                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("View/edit table configuration", () ->
                         client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId))
         );

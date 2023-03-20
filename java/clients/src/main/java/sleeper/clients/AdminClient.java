@@ -15,12 +15,15 @@
  */
 package sleeper.clients;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
+import sleeper.clients.admin.FilesStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.InstancePropertyReport;
+import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
@@ -62,7 +65,10 @@ public class AdminClient {
                 .jarsDirectory(jarsDir).version(version).build();
 
         new AdminClient(
-                new AdminConfigStore(AmazonS3ClientBuilder.defaultClient(), cdk, generatedDir),
+                new AdminConfigStore(
+                        AmazonS3ClientBuilder.defaultClient(),
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        cdk, generatedDir),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console())).start(instanceId);
@@ -90,5 +96,13 @@ public class AdminClient {
 
     public UpdatePropertyScreen updatePropertyScreen() {
         return new UpdatePropertyScreen(out, in, store);
+    }
+
+    public PartitionsStatusReportScreen partitionsStatusReportScreen() {
+        return new PartitionsStatusReportScreen(out, in, store);
+    }
+
+    public FilesStatusReportScreen filesStatusReportScreen() {
+        return new FilesStatusReportScreen(out, in, store);
     }
 }

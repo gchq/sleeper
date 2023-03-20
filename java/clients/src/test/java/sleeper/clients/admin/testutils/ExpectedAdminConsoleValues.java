@@ -28,17 +28,19 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +
-            "[1] View/edit instance configuration\n" +
-            "[2] Print Sleeper instance property report\n" +
-            "[3] Print Sleeper table names\n" +
-            "[4] Print Sleeper table property report\n" +
-            "[5] Update an instance or table property\n" +
-            "[6] View/edit table configuration\n" +
+            "[1] Print Sleeper instance property report\n" +
+            "[2] Print Sleeper table names\n" +
+            "[3] Print Sleeper table property report\n" +
+            "[4] Update an instance or table property\n" +
+            "[5] Run partition status report\n" +
+            "[6] Run files status report\n" +
+            "[7] View/edit instance configuration\n" +
+            "[8] View/edit table configuration\n" +
             "\n" +
             "Input: \n";
 
-    public static final String TABLE_PROPERTY_REPORT_SCREEN = "\n" +
-            "Which TABLE do you want to check?\n" +
+    public static final String TABLE_SELECT_SCREEN = "\n" +
+            "Which TABLE do you want to select?\n" +
             "\n" +
             "Please enter the TABLE NAME now or use the following options:\n" +
             "[0] Exit program\n" +
@@ -98,12 +100,15 @@ public class ExpectedAdminConsoleValues {
 
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
-    public static final String INSTANCE_CONFIGURATION_OPTION = "1";
-    public static final String INSTANCE_PROPERTY_REPORT_OPTION = "2";
-    public static final String TABLE_NAMES_REPORT_OPTION = "3";
-    public static final String TABLE_PROPERTY_REPORT_OPTION = "4";
-    public static final String UPDATE_PROPERTY_OPTION = "5";
-    public static final String TABLE_CONFIGURATION_OPTION = "6";
+    public static final String INSTANCE_PROPERTY_REPORT_OPTION = "1";
+    public static final String TABLE_NAMES_REPORT_OPTION = "2";
+    public static final String TABLE_PROPERTY_REPORT_OPTION = "3";
+    public static final String UPDATE_PROPERTY_OPTION = "4";
+    public static final String PARTITION_STATUS_REPORT_OPTION = "5";
+    public static final String FILES_STATUS_REPORT_OPTION = "6";
+    public static final String INSTANCE_CONFIGURATION_OPTION = "7";
+    public static final String TABLE_CONFIGURATION_OPTION = "8";
+    public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final class SaveChangesScreen {
         public static final String SAVE_CHANGES_OPTION = "1";
@@ -115,8 +120,6 @@ public class ExpectedAdminConsoleValues {
         public static final String RETURN_TO_EDITOR_OPTION = "1";
         public static final String DISCARD_CHANGES_OPTION = "2";
     }
-
-    public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final String PROMPT_RETURN_TO_MAIN = "" +
             "\n\n----------------------------------\n" +
