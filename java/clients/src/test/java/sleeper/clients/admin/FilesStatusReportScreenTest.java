@@ -39,7 +39,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
-public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
+class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     private final StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
                     .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
                     .parentJoining("parent", "A", "B"))
@@ -47,7 +47,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
             .buildStateStore();
 
     @Test
-    void shouldRunFilesStatusReportWithDefaultArgs() {
+    void shouldRunFilesStatusReportWithDefaultArgs() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
@@ -66,7 +66,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldRunFilesStatusReportWithVerboseOption() {
+    void shouldRunFilesStatusReportWithVerboseOption() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
@@ -88,7 +88,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldRunFilesStatusReportWithCustomMaxGC() {
+    void shouldRunFilesStatusReportWithCustomMaxGC() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
@@ -110,7 +110,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldNotRunFilesStatusReportIfTableDoesNotExist() {
+    void shouldNotRunFilesStatusReportIfTableDoesNotExist() throws Exception {
         // Given
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
 
@@ -127,7 +127,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnToMenuWhenOnTableNameScreen() {
+    void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 

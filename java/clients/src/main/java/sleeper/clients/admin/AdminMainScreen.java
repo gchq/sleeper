@@ -38,8 +38,6 @@ public class AdminMainScreen {
 
     public void mainLoop(AdminClient client, String instanceId) throws InterruptedException {
         List<MenuOption> options = Arrays.asList(
-                new MenuOption("View/edit instance configuration", () ->
-                        client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
                 new MenuOption("Print Sleeper instance property report", () ->
                         client.instancePropertyReport().print(instanceId)),
                 new MenuOption("Print Sleeper table names", () ->
@@ -52,6 +50,8 @@ public class AdminMainScreen {
                         client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("Run files status report", () ->
                         client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("View/edit instance configuration", () ->
+                        client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
                 new MenuOption("View/edit table configuration", () ->
                         client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId))
         );

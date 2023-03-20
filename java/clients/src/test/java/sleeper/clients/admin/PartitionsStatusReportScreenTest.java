@@ -39,9 +39,9 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
-public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
+class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
-    void shouldRunPartitionStatusReport() {
+    void shouldRunPartitionStatusReport() throws Exception {
         // Given
         StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
                         .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
@@ -64,7 +64,7 @@ public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldNotRunPartitionStatusReportIfTableDoesNotExist() {
+    void shouldNotRunPartitionStatusReportIfTableDoesNotExist() throws Exception {
         // Given
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
 
@@ -79,7 +79,7 @@ public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnToMenuWhenOnTableNameScreen() {
+    void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 
