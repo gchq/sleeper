@@ -49,6 +49,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -81,7 +82,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldConfirmEditingInstanceConfiguration() throws Exception {
+        void shouldDiscardChangesToInstanceConfiguration() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
@@ -89,7 +90,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesGetOutput(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -410,6 +411,33 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
+
+        @Test
+        void shouldDiscardChangesToUneditableProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(VPC_ID, "before-vpc");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(VPC_ID, "after-vpc");
+
+            // When
+            String output = updatePropertiesAndSave(before, after);
+
+            // Then
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.vpc\n" +
+                    "The id of the VPC to deploy to.\n" +
+                    "Before: before-vpc\n" +
+                    "After (cannot be changed, will not be saved): after-vpc\n" +
+                    "\n" +
+                    PROPERTY_SAVE_CHANGES_SCREEN +
+                    PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                    DISPLAY_MAIN_SCREEN);
+            // TODO discard changes / handle this case
+//            verify(store).saveInstanceProperties(before, noChanges(before).getDiff());
+        }
     }
 
     @DisplayName("Configure table properties")
@@ -490,10 +518,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     }
 
     private String updatePropertiesGetSaveChangesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
-        return getSaveChangesDisplay(updatePropertiesGetOutput(before, after));
+        return getSaveChangesDisplay(updatePropertiesDiscardChangesGetOutput(before, after));
     }
 
-    private String updatePropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
+    private String updatePropertiesDiscardChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         setInstanceProperties(before);
         in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
         when(editor.openPropertiesFile(before))
