@@ -22,12 +22,9 @@ import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
-import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
-import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
-import sleeper.clients.admin.UpdatePropertyScreen;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
@@ -78,24 +75,12 @@ public class AdminClient {
         new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 
-    public InstancePropertyReport instancePropertyReport() {
-        return new InstancePropertyReport(out, in, store);
-    }
-
     public InstanceConfigurationScreen instanceConfigurationScreen() {
         return new InstanceConfigurationScreen(out, in, store, editor);
     }
 
     public TableNamesReport tableNamesReport() {
         return new TableNamesReport(out, in, store);
-    }
-
-    public TablePropertyReportScreen tablePropertyReportScreen() {
-        return new TablePropertyReportScreen(out, in, store);
-    }
-
-    public UpdatePropertyScreen updatePropertyScreen() {
-        return new UpdatePropertyScreen(out, in, store);
     }
 
     public PartitionsStatusReportScreen partitionsStatusReportScreen() {

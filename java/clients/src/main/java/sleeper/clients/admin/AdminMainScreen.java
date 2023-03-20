@@ -38,22 +38,16 @@ public class AdminMainScreen {
 
     public void mainLoop(AdminClient client, String instanceId) throws InterruptedException {
         List<MenuOption> options = Arrays.asList(
-                new MenuOption("Print Sleeper instance property report", () ->
-                        client.instancePropertyReport().print(instanceId)),
-                new MenuOption("Print Sleeper table names", () ->
-                        client.tableNamesReport().print(instanceId)),
-                new MenuOption("Print Sleeper table property report", () ->
-                        client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)),
-                new MenuOption("Update an instance or table property", () ->
-                        client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
-                new MenuOption("Run partition status report", () ->
-                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
-                new MenuOption("Run files status report", () ->
-                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("View/edit instance configuration", () ->
                         client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
                 new MenuOption("View/edit table configuration", () ->
-                        client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId))
+                        client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId)),
+                new MenuOption("Print Sleeper table names", () ->
+                        client.tableNamesReport().print(instanceId)),
+                new MenuOption("Run partition status report", () ->
+                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run files status report", () ->
+                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId))
         );
         while (true) {
             try {
