@@ -73,7 +73,11 @@ public class AdminConfigStore {
     }
 
     private TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
-        return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
+        try {
+            return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
+        } catch (AmazonS3Exception e) {
+            throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
+        }
     }
 
     public List<String> listTables(String instanceId) {
@@ -168,6 +172,12 @@ public class AdminConfigStore {
     public static class CouldNotSaveInstanceProperties extends RuntimeException {
         public CouldNotSaveInstanceProperties(String instanceId, Throwable e) {
             super("Could not save properties for instance " + instanceId, e);
+        }
+    }
+
+    public static class CouldNotLoadTableProperties extends RuntimeException {
+        public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable e) {
+            super("Could not load properties for table " + tableName + " in instance " + instanceId, e);
         }
     }
 

@@ -56,15 +56,17 @@ public class TableSelectHelper {
             return Optional.empty();
         }
         String tableName = chosen.getEntered();
-        TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
-        if (tableProperties == null) {
+        try {
+            return Optional.of(store.loadTableProperties(instanceId, tableName));
+        } catch (AdminConfigStore.CouldNotLoadInstanceProperties e) {
+            out.println();
+            out.printf("Error: Properties for instance \"%s\" could not be found", instanceId);
+        } catch (AdminConfigStore.CouldNotLoadTableProperties e) {
             out.println();
             out.printf("Error: Properties for table \"%s\" could not be found", tableName);
-            confirmReturnToMainScreen(out, in);
-            return Optional.empty();
-        } else {
-            return Optional.of(tableProperties);
         }
+        confirmReturnToMainScreen(out, in);
+        return Optional.empty();
     }
 
     private Chosen<ConsoleChoice> chooseTable(String message) {
