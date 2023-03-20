@@ -51,6 +51,13 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), writer);
     }
 
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstancePropertiesWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll().stream()
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()), List.of(group), writer);
+    }
+
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
     }

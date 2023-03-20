@@ -20,6 +20,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -36,6 +39,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
@@ -291,6 +295,27 @@ class SleeperPropertiesPrettyPrinterTest {
         }
     }
 
+    @Nested
+    @DisplayName("Filter by Group")
+    class FilterByGroup {
+        @Test
+        void shouldFilterInstancePropertiesByGroup() throws IOException {
+            // When
+            String output = printInstancePropertiesByGroup(InstancePropertyGroup.COMMON);
+
+            // Then
+            assertThat(output)
+                    .contains(InstanceProperty.getAll().stream()
+                            .filter(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()))
+                    .doesNotContain(InstanceProperty.getAll().stream()
+                            .filter(not(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON)))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()));
+        }
+    }
+
     private static String printEmptyInstanceProperties() throws IOException {
         return printInstanceProperties("");
     }
@@ -299,8 +324,16 @@ class SleeperPropertiesPrettyPrinterTest {
         return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
     }
 
+    private static String printInstancePropertiesByGroup(PropertyGroup group) throws IOException {
+        return printInstancePropertiesByGroup(new InstanceProperties(loadProperties("")), group);
+    }
+
     private static String printInstanceProperties(InstanceProperties properties) {
         return print(SleeperPropertiesPrettyPrinter::forInstanceProperties, properties);
+    }
+
+    private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {
+        return print((writer) -> SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, group), properties);
     }
 
     private static String printTableProperties(Schema schema) {
