@@ -40,7 +40,7 @@ public class TableNamesReport {
 
     private void print(List<String> tableNames) {
 
-        out.println("\n\n Table Names Report \n -------------------------");
+        out.println("\n\nTable Names\n----------------------------------");
         for (String tableName : tableNames) {
             out.println(tableName);
         }
