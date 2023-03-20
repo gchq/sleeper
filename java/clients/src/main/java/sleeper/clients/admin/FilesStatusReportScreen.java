@@ -45,16 +45,18 @@ public class FilesStatusReportScreen {
         });
     }
 
-    public void chooseOptionalArgsAndPrint(String instanceId, TableProperties tableProperties) {
+    private void chooseOptionalArgsAndPrint(String instanceId, TableProperties tableProperties) {
+        out.println("By default, we report on a maximum of 1000 files that are ready for garbage collection.");
         int maxReadyForGCFiles = 1000;
-        String maxGcArg = in.promptLine("Enter the number for maxReadyForGCFiles (default is " + maxReadyForGCFiles + "): ");
+        String maxGcArg = in.promptLine("If you would like to change this limit, enter a new value now, " +
+                "or press enter to use the default: ");
         if (maxGcArg.isEmpty()) {
             out.println("No value entered, defaulting to " + maxReadyForGCFiles);
         } else {
             try {
                 maxReadyForGCFiles = Integer.parseInt(maxGcArg);
             } catch (NumberFormatException e) {
-                out.println("Failed to convert maxReadyForGCFiles to integer, defaulting to " + maxReadyForGCFiles);
+                out.println("Failed to convert input to integer, defaulting to " + maxReadyForGCFiles);
             }
         }
         boolean verbose = in.promptLine("Run report in verbose mode? (y/N): ").equalsIgnoreCase("y");
