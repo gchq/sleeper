@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM sleeper-dependencies:current
+ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
+FROM ${DEPENDENCIES_IMAGE}
 
 # Set command line prompt to show you're in the deployment Docker container
 RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-deployment\e[0m: \w # "' >> ~/.bashrc
