@@ -396,7 +396,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             "\n\n" +
                             "----------------------------------\n" +
                             "\n" +
-                            "Failed saving properties with the following messages:\n" +
                             "Could not save properties for instance test-instance\n" +
                             "Something went wrong\n" +
                             "\n" +
@@ -474,7 +473,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             "\n\n" +
                             "----------------------------------\n" +
                             "\n" +
-                            "Failed saving properties with the following messages:\n" +
                             "Could not save properties for table test-table in instance test-instance\n" +
                             "Something went wrong\n" +
                             "\n" +

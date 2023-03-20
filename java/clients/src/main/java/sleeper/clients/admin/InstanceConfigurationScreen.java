@@ -118,7 +118,6 @@ public class InstanceConfigurationScreen {
                     in.waitForLine();
                 } catch (AdminConfigStore.CouldNotSaveProperties e) {
                     out.println("\n\n----------------------------------\n");
-                    out.println("Failed saving properties with the following messages:");
                     out.println(e.getMessage());
                     out.println(e.getCause().getMessage());
                     out.println();
