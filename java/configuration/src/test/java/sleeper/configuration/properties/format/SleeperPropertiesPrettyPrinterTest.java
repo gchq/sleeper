@@ -28,6 +28,8 @@ import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -42,9 +44,12 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup;
+import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -296,7 +301,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     @Nested
-    @DisplayName("Filter by Group")
+    @DisplayName("Filter by group")
     class FilterByGroup {
         @Test
         void shouldFilterInstancePropertiesByGroup() throws IOException {
@@ -311,6 +316,24 @@ class SleeperPropertiesPrettyPrinterTest {
                             .collect(Collectors.toList()))
                     .doesNotContain(InstanceProperty.getAll().stream()
                             .filter(not(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON)))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()));
+        }
+
+        @Test
+        void shouldFilterTablePropertiesByGroup() {
+            // When
+            TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schemaWithKey("key"));
+            String output = printTablePropertiesByGroup(tableProperties, TablePropertyGroup.METADATA);
+
+            // Then
+            assertThat(output)
+                    .contains(TableProperty.getAll().stream()
+                            .filter(property -> property.getPropertyGroup().equals(TablePropertyGroup.METADATA))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()))
+                    .doesNotContain(TableProperty.getAll().stream()
+                            .filter(not(property -> property.getPropertyGroup().equals(TablePropertyGroup.METADATA)))
                             .map(SleeperProperty::getPropertyName)
                             .collect(Collectors.toList()));
         }
@@ -333,7 +356,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {
-        return print((writer) -> SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, group), properties);
+        return print((writer) -> forInstancePropertiesWithGroup(writer, group), properties);
     }
 
     private static String printTableProperties(Schema schema) {
@@ -353,6 +376,10 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static String printTableProperties(TableProperties tableProperties) {
         return print(SleeperPropertiesPrettyPrinter::forTableProperties, tableProperties);
+    }
+
+    private static String printTablePropertiesByGroup(TableProperties tableProperties, PropertyGroup group) {
+        return print(writer -> forTablePropertiesWithGroup(writer, group), tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(
