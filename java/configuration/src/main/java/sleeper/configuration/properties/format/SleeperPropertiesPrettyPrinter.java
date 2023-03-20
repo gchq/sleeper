@@ -101,14 +101,16 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printProperty(property.getPropertyName(), "");
             }
         }
-        Map<String, String> unknownProperties = properties.getUnknownProperties()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!filtered) {
+            Map<String, String> unknownProperties = properties.getUnknownProperties()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (!filtered && !unknownProperties.isEmpty()) {
-            println();
-            println("# The following properties are not recognised by Sleeper.");
-            unknownProperties.keySet().stream().sorted().forEach(name ->
-                    printProperty(name, unknownProperties.get(name)));
+            if (!unknownProperties.isEmpty()) {
+                println();
+                println("# The following properties are not recognised by Sleeper.");
+                unknownProperties.keySet().stream().sorted().forEach(name ->
+                        printProperty(name, unknownProperties.get(name)));
+            }
         }
         writer.flush();
     }
