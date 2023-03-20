@@ -74,14 +74,6 @@ public class ExpectedAdminConsoleValues {
             "[1] Return to Main Menu\n" +
             "\n" +
             "Input: \n";
-    public static final String TABLE_CONFIGURATION_ENTER_TABLE_SCREEN = "\n" +
-            "Which TABLE do you want to configure?\n" +
-            "\n" +
-            "Please enter the TABLE NAME now or use the following options:\n" +
-            "[0] Exit program\n" +
-            "[1] Return to Main Menu\n" +
-            "\n" +
-            "Input: \n";
     public static final String PROPERTY_SAVE_CHANGES_SCREEN = "" +
             "Please select from the below options and hit return:\n" +
             "[0] Exit program\n" +

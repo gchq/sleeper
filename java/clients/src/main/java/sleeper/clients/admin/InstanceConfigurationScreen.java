@@ -22,22 +22,19 @@ import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
 import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.ConsoleChoice;
 import sleeper.console.menu.MenuOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import java.util.Set;
-
-import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
+    private final TableSelectHelper selectTable;
     private final AdminConfigStore store;
     private final UpdatePropertiesWithNano editor;
 
@@ -45,6 +42,7 @@ public class InstanceConfigurationScreen {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
+        this.selectTable = new TableSelectHelper(out, in, store);
         this.store = store;
         this.editor = editor;
     }
@@ -55,25 +53,11 @@ public class InstanceConfigurationScreen {
     }
 
     public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
-        Chosen<ConsoleChoice> chosen = chooseTable();
-        if (chosen.getChoice().isEmpty()) {
-            withTableProperties(instanceId, store.loadTableProperties(instanceId, chosen.getEntered()))
+        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
+        if (tableOpt.isPresent()) {
+            withTableProperties(instanceId, tableOpt.get())
                     .viewAndEditProperties();
         }
-    }
-
-    private Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
-        return chooseTable("")
-                .chooseUntilSomethingEntered(() ->
-                        chooseTable("\nYou did not enter anything please try again\n"));
-    }
-
-    private Chosen<ConsoleChoice> chooseTable(String message) {
-        out.clearScreen(message);
-        out.println("Which TABLE do you want to configure?\n");
-        return chooseOne.chooseWithMessageFrom(
-                "Please enter the TABLE NAME now or use the following options:",
-                RETURN_TO_MAIN_MENU);
     }
 
     private WithProperties<InstanceProperties> withInstanceProperties(InstanceProperties properties) {

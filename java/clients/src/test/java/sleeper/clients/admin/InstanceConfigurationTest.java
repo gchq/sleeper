@@ -41,8 +41,8 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_ENTER_TABLE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -433,7 +433,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             String output = runClientGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_CONFIGURATION_ENTER_TABLE_SCREEN)
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
