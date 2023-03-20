@@ -19,9 +19,13 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.console.UserExitedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
@@ -55,6 +59,29 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
                 .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
                         "Error: Properties for table \"unknown-table\" could not be found" +
                         PROMPT_RETURN_TO_MAIN);
+    }
+
+    @Test
+    void shouldReturnToMainMenuIfMenuOptionSelected() {
+        // Given
+        in.enterNextPrompts(RETURN_TO_MAIN_SCREEN_OPTION);
+
+        // When
+        String output = runTableSelectHelperGetOutput();
+
+        // Then
+        assertThat(output)
+                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN);
+    }
+
+    @Test
+    void shouldExitIfMenuOptionSelected() {
+        // Given
+        in.enterNextPrompts(EXIT_OPTION);
+
+        // When/Then
+        assertThatThrownBy(this::runTableSelectHelperGetOutput)
+                .isInstanceOf(UserExitedException.class);
     }
 
     private String runTableSelectHelperGetOutput() {
