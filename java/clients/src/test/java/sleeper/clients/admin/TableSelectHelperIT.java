@@ -29,7 +29,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TableSelectHelperIT extends AdminClientITBase {
+class TableSelectHelperIT extends AdminClientITBase {
     @Test
     void shouldReturnToMenuIfInstanceDoesNotExist() {
         // Given
@@ -41,7 +41,7 @@ public class TableSelectHelperIT extends AdminClientITBase {
         // Then
         assertThat(output)
                 .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Error: Properties for instance \"test-instance\" could not be found" +
+                        "Error: Could not load properties for instance test-instance" +
                         PROMPT_RETURN_TO_MAIN);
     }
 
@@ -58,7 +58,7 @@ public class TableSelectHelperIT extends AdminClientITBase {
         // Then
         assertThat(output)
                 .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Error: Properties for table \"test-table\" could not be found" +
+                        "Error: Could not load properties for table test-table in instance test-instance" +
                         PROMPT_RETURN_TO_MAIN);
     }
 

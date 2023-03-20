@@ -110,23 +110,6 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldNotRunFilesStatusReportIfTableDoesNotExist() throws Exception {
-        // Given
-        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
-
-        // When/Then
-        String output = runClientGetOutput();
-        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Error: Properties for table \"unknown-table\" could not be found");
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(2)).promptLine(any());
-        order.verify(in.mock).waitForLine();
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
-    }
-
-    @Test
     void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);

@@ -64,21 +64,6 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldNotRunPartitionStatusReportIfTableDoesNotExist() throws Exception {
-        // Given
-        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
-
-        // When
-        String output = runClientGetOutput();
-        assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
-                        CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Error: Properties for table \"unknown-table\" could not be found" +
-                        PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
-        confirmAndVerifyNoMoreInteractions();
-    }
-
-    @Test
     void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
