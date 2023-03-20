@@ -36,7 +36,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -51,7 +51,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
+                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
                 .contains(TableProperty.getAll().stream()
@@ -72,7 +72,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
-                + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN);
+                + CLEAR_CONSOLE + TABLE_SELECT_SCREEN);
 
         verify(in.mock, times(2)).promptLine(any());
         verifyNoMoreInteractions(in.mock);
@@ -89,7 +89,7 @@ class TablePropertyReportTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
-                + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN
+                + CLEAR_CONSOLE + TABLE_SELECT_SCREEN
                 + CLEAR_CONSOLE + MAIN_SCREEN);
 
         verify(in.mock, times(3)).promptLine(any());

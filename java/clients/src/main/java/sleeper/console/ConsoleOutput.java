@@ -50,4 +50,8 @@ public class ConsoleOutput {
     public PrintWriter writer() {
         return new PrintWriter(out, true, StandardCharsets.UTF_8);
     }
+
+    public PrintStream printStream() {
+        return out;
+    }
 }

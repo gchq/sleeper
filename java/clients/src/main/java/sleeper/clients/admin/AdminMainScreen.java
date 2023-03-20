@@ -45,7 +45,11 @@ public class AdminMainScreen {
                 new MenuOption("Print Sleeper table property report", () ->
                         client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("Update an instance or table property", () ->
-                        client.updatePropertyScreen().choosePropertyAndUpdate(instanceId))
+                        client.updatePropertyScreen().choosePropertyAndUpdate(instanceId)),
+                new MenuOption("Run partition status report", () ->
+                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run files status report", () ->
+                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId))
         );
         while (true) {
             try {
