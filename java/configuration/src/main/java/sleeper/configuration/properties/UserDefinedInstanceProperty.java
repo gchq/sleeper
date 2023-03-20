@@ -37,7 +37,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components.")
             .validationPredicate(Objects::nonNull)
@@ -74,15 +75,18 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
     UserDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
             .description("The AWS region to deploy to.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
     UserDefinedInstanceProperty VPC_ID = Index.propertyBuilder("sleeper.vpc")
             .description("The id of the VPC to deploy to.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
     UserDefinedInstanceProperty VPC_ENDPOINT_CHECK = Index.propertyBuilder("sleeper.vpc.endpoint.check")
             .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint.")
             .defaultValue("true")
@@ -90,7 +94,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty SUBNET = Index.propertyBuilder("sleeper.subnet")
             .description("The subnet to deploy ECS tasks to.")
             .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
     UserDefinedInstanceProperty FILE_SYSTEM = Index.propertyBuilder("sleeper.filesystem")
             .description("The Hadoop filesystem used to connect to S3.")
             .defaultValue("s3a://")

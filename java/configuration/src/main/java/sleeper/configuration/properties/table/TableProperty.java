@@ -59,12 +59,12 @@ public interface TableProperty extends SleeperProperty {
             .validationPredicate(Objects::nonNull)
             .description("A unique name identifying this table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
+            .editable(false).build();
     TableProperty SCHEMA = Index.propertyBuilder("sleeper.table.schema")
             .validationPredicate(Objects::nonNull)
             .description("The schema representing the structure of this table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
+            .editable(false).build();
     TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
@@ -166,7 +166,7 @@ public interface TableProperty extends SleeperProperty {
             .description("The name of the class used for the metadata store. The default is DynamoDBStateStore. " +
                     "An alternative option is the S3StateStore.")
             .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
+            .editable(false).build();
     TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.metadata.dynamo.consistent.reads")
             .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
             .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
