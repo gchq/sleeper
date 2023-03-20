@@ -58,9 +58,9 @@ public class TableSelectHelper {
         String tableName = chosen.getEntered();
         try {
             return Optional.of(store.loadTableProperties(instanceId, tableName));
-        } catch (AdminConfigStore.CouldNotLoadInstanceProperties | AdminConfigStore.CouldNotLoadTableProperties e) {
+        } catch (AdminConfigStore.CouldNotLoadProperties e) {
             out.println();
-            out.printf("Error: %s", e.getMessage());
+            e.print(out);
         }
         confirmReturnToMainScreen(out, in);
         return Optional.empty();

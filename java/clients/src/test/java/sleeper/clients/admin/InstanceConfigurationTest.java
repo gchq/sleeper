@@ -397,7 +397,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             "----------------------------------\n" +
                             "\n" +
                             "Could not save properties for instance test-instance\n" +
-                            "Something went wrong\n" +
+                            "Cause: Something went wrong\n" +
                             "\n" +
                             PROPERTY_SAVE_CHANGES_SCREEN +
                             DISPLAY_MAIN_SCREEN);
@@ -474,7 +474,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             "----------------------------------\n" +
                             "\n" +
                             "Could not save properties for table test-table in instance test-instance\n" +
-                            "Something went wrong\n" +
+                            "Cause: Something went wrong\n" +
                             "\n" +
                             PROPERTY_SAVE_CHANGES_SCREEN +
                             DISPLAY_MAIN_SCREEN);

@@ -40,9 +40,11 @@ class TableSelectHelperIT extends AdminClientITBase {
 
         // Then
         assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Error: Could not load properties for instance test-instance" +
-                        PROMPT_RETURN_TO_MAIN);
+                .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Could not load properties for instance test-instance\n" +
+                        "Cause: The specified key does not exist")
+                .contains("Amazon S3")
+                .endsWith(PROMPT_RETURN_TO_MAIN);
     }
 
     @Test
@@ -57,9 +59,11 @@ class TableSelectHelperIT extends AdminClientITBase {
 
         // Then
         assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Error: Could not load properties for table test-table in instance test-instance" +
-                        PROMPT_RETURN_TO_MAIN);
+                .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Could not load properties for table test-table in instance test-instance\n" +
+                        "Cause: The specified key does not exist")
+                .contains("Amazon S3")
+                .endsWith(PROMPT_RETURN_TO_MAIN);
     }
 
     private String runTableSelectHelperGetOutput() {

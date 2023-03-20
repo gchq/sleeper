@@ -30,6 +30,7 @@ import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.console.ConsoleOutput;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
@@ -163,33 +164,50 @@ public class AdminConfigStore {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    public static class CouldNotLoadInstanceProperties extends RuntimeException {
-        public CouldNotLoadInstanceProperties(String instanceId, Throwable e) {
-            super("Could not load properties for instance " + instanceId, e);
+    public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {
+        public CouldNotLoadInstanceProperties(String instanceId, Throwable cause) {
+            super("Could not load properties for instance " + instanceId, cause);
         }
     }
 
     public static class CouldNotSaveInstanceProperties extends CouldNotSaveProperties {
-        public CouldNotSaveInstanceProperties(String instanceId, Throwable e) {
-            super("Could not save properties for instance " + instanceId, e);
+        public CouldNotSaveInstanceProperties(String instanceId, Throwable cause) {
+            super("Could not save properties for instance " + instanceId, cause);
         }
     }
 
-    public static class CouldNotLoadTableProperties extends RuntimeException {
-        public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable e) {
-            super("Could not load properties for table " + tableName + " in instance " + instanceId, e);
+    public static class CouldNotLoadTableProperties extends CouldNotLoadProperties {
+        public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable cause) {
+            super("Could not load properties for table " + tableName + " in instance " + instanceId, cause);
         }
     }
 
     public static class CouldNotSaveTableProperties extends CouldNotSaveProperties {
-        public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable e) {
-            super("Could not save properties for table " + tableName + " in instance " + instanceId, e);
+        public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable cause) {
+            super("Could not save properties for table " + tableName + " in instance " + instanceId, cause);
         }
     }
 
-    public static class CouldNotSaveProperties extends RuntimeException {
-        public CouldNotSaveProperties(String message, Throwable e) {
-            super(message, e);
+    public static class CouldNotLoadProperties extends ConfigStoreException {
+        public CouldNotLoadProperties(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class CouldNotSaveProperties extends ConfigStoreException {
+        public CouldNotSaveProperties(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class ConfigStoreException extends RuntimeException {
+        public ConfigStoreException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public void print(ConsoleOutput out) {
+            out.println(getMessage());
+            out.println("Cause: " + getCause().getMessage());
         }
     }
 }

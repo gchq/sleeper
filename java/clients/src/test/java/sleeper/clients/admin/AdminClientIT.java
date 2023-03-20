@@ -79,8 +79,8 @@ class AdminClientIT extends AdminClientITBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
-                " Table Names Report \n" +
-                " -------------------------\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
                 "test-table-1\n" +
                 "test-table-2\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);

@@ -118,8 +118,7 @@ public class InstanceConfigurationScreen {
                     in.waitForLine();
                 } catch (AdminConfigStore.CouldNotSaveProperties e) {
                     out.println("\n\n----------------------------------\n");
-                    out.println(e.getMessage());
-                    out.println(e.getCause().getMessage());
+                    e.print(out);
                     out.println();
                     chooseFromOptions(updatedProperties, changes, valid);
                 }

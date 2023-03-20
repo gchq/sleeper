@@ -76,8 +76,7 @@ public class AdminClient {
             store.loadInstanceProperties(instanceId);
             new AdminMainScreen(out, in).mainLoop(this, instanceId);
         } catch (AdminConfigStore.CouldNotLoadInstanceProperties e) {
-            out.println(e.getMessage());
-            out.println("Cause: " + e.getCause().getMessage());
+            e.print(out);
         }
     }
 
