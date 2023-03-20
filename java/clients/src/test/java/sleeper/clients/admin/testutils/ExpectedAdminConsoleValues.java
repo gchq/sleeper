@@ -87,9 +87,5 @@ public class ExpectedAdminConsoleValues {
             "\n\n----------------------------------\n" +
             "Saved successfully, hit enter to return to main screen\n";
 
-    public static final String PROMPT_RETURN_TO_PROPERTY = "" +
-            "\n\n----------------------------------\n" +
-            "Hit enter to return to the property screen so you can adjust the property and continue\n";
-
     public static final String DISPLAY_MAIN_SCREEN = CLEAR_CONSOLE + MAIN_SCREEN;
 }
