@@ -26,7 +26,6 @@ import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -90,13 +89,6 @@ public class AdminConfigStore {
                 .map(tableName -> loadTableProperties(instanceProperties, tableName));
     }
 
-    public void updateInstanceProperty(String instanceId, UserDefinedInstanceProperty property, String propertyValue) {
-        InstanceProperties properties = loadInstanceProperties(instanceId);
-        String valueBefore = properties.get(property);
-        properties.set(property, propertyValue);
-        saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, propertyValue));
-    }
-
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
         try {
             LOGGER.info("Saving to local configuration");
@@ -123,14 +115,6 @@ public class AdminConfigStore {
             }
             throw wrapped;
         }
-    }
-
-    public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        TableProperties properties = loadTableProperties(instanceProperties, tableName);
-        String valueBefore = properties.get(property);
-        properties.set(property, propertyValue);
-        saveTableProperties(instanceProperties, properties, new PropertiesDiff(property, valueBefore, propertyValue));
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
