@@ -49,8 +49,8 @@ public class TableSelectHelper {
         if (chosen.getChoice().isEmpty()) {
             String tableName = chosen.getEntered();
             TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
+            out.println();
             if (tableProperties == null) {
-                out.println();
                 out.printf("Error: Properties for table \"%s\" could not be found", tableName);
                 confirmReturnToMainScreen(out, in);
             } else {

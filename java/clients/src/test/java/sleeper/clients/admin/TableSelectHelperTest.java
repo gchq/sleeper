@@ -21,40 +21,46 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TableSelectHelperTest extends AdminClientMockStoreBase {
+class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test
     void shouldContinueIfTableExists() {
         // Given
-        setStateStoreForTable("test-table");
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, "test-table", EXIT_OPTION);
+        setTableProperties(TABLE_NAME_VALUE);
+        in.enterNextPrompts(TABLE_NAME_VALUE);
 
         // When
-        String output = runClientGetOutput();
+        String output = runTableSelectHelperGetOutput();
+
+        // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("" +
-                        "Table Property Report \n" +
-                        " -------------------------");
+                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Found table " + TABLE_NAME_VALUE + "\n");
     }
 
     @Test
     void shouldReturnToMenuIfTableDoesNotExist() {
         // Given
-        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, "unknown-table", EXIT_OPTION);
+        in.enterNextPrompts("unknown-table");
 
         // When
-        String output = runClientGetOutput();
+        String output = runTableSelectHelperGetOutput();
+
+        // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Error: Properties for table \"unknown-table\" could not be found");
+                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Error: Properties for table \"unknown-table\" could not be found" +
+                        PROMPT_RETURN_TO_MAIN);
+    }
+
+    private String runTableSelectHelperGetOutput() {
+        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store)
+                .chooseTableIfExistsThen(INSTANCE_ID, tableProperties ->
+                        out.consoleOut().println("Found table " + tableProperties.get(TABLE_NAME)));
+        return out.toString();
     }
 }
