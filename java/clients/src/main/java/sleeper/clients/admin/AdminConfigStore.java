@@ -163,25 +163,25 @@ public class AdminConfigStore {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    public static class CouldNotLoadInstanceProperties extends RuntimeException {
+    public static class CouldNotLoadInstanceProperties extends AdminConfigStoreException {
         public CouldNotLoadInstanceProperties(String instanceId, Throwable e) {
             super("Could not load properties for instance " + instanceId, e);
         }
     }
 
-    public static class CouldNotSaveInstanceProperties extends RuntimeException {
+    public static class CouldNotSaveInstanceProperties extends AdminConfigStoreException {
         public CouldNotSaveInstanceProperties(String instanceId, Throwable e) {
             super("Could not save properties for instance " + instanceId, e);
         }
     }
 
-    public static class CouldNotLoadTableProperties extends RuntimeException {
+    public static class CouldNotLoadTableProperties extends AdminConfigStoreException {
         public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable e) {
             super("Could not load properties for table " + tableName + " in instance " + instanceId, e);
         }
     }
 
-    public static class CouldNotSaveTableProperties extends RuntimeException {
+    public static class CouldNotSaveTableProperties extends AdminConfigStoreException {
         public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable e) {
             super("Could not save properties for table " + tableName + " in instance " + instanceId, e);
         }
