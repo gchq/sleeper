@@ -116,7 +116,7 @@ public class InstanceConfigurationScreen {
                     out.println("\n\n----------------------------------");
                     out.println("Saved successfully, hit enter to return to main screen");
                     in.waitForLine();
-                } catch (AdminConfigStore.CouldNotSaveInstanceProperties e) {
+                } catch (AdminConfigStore.CouldNotSaveProperties e) {
                     out.println("\n\n----------------------------------\n");
                     out.println("Failed saving properties with the following messages:");
                     out.println(e.getMessage());

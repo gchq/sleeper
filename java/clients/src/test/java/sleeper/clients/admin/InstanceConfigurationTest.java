@@ -368,7 +368,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldPromptAndReturnToEditorWhenSavingFails() throws Exception {
+        void shouldReturnToSaveChangesScreenWhenSavingFails() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
@@ -442,6 +442,51 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldReturnToSaveChangesScreenWhenSavingFails() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = createValidTableProperties(properties);
+            after.set(ROW_GROUP_SIZE, "123");
+            doThrow(new AdminConfigStore.CouldNotSaveTableProperties(INSTANCE_ID, TABLE_NAME_VALUE,
+                    new RuntimeException("Something went wrong")))
+                    .when(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+
+            setInstanceProperties(properties, before);
+            in.enterNextPrompts(
+                    TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
+                    SaveChangesScreen.SAVE_CHANGES_OPTION,
+                    SaveChangesScreen.DISCARD_CHANGES_OPTION,
+                    EXIT_OPTION);
+            when(editor.openPropertiesFile(before))
+                    .thenReturn(withChanges(before, after));
+
+            // When
+            String output = runClientGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            "\n\n" +
+                            "----------------------------------\n" +
+                            "\n" +
+                            "Failed saving properties with the following messages:\n" +
+                            "Could not save properties for table test-table in instance test-instance\n" +
+                            "Something went wrong\n" +
+                            "\n" +
+                            PROPERTY_SAVE_CHANGES_SCREEN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
     }

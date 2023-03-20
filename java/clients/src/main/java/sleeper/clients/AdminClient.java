@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.admin.AdminConfigStore;
-import sleeper.clients.admin.AdminConfigStoreException;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
@@ -76,7 +75,7 @@ public class AdminClient {
         try {
             store.loadInstanceProperties(instanceId);
             new AdminMainScreen(out, in).mainLoop(this, instanceId);
-        } catch (AdminConfigStoreException e) {
+        } catch (AdminConfigStore.CouldNotLoadInstanceProperties e) {
             out.println(e.getMessage());
             out.println("Cause: " + e.getCause().getMessage());
         }

@@ -125,7 +125,7 @@ public class AdminConfigStore {
         saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
     }
 
-    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
+    private void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
         String instanceId = instanceProperties.get(ID);
         String tableName = properties.get(TABLE_NAME);
         try {
@@ -163,27 +163,33 @@ public class AdminConfigStore {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    public static class CouldNotLoadInstanceProperties extends AdminConfigStoreException {
+    public static class CouldNotLoadInstanceProperties extends RuntimeException {
         public CouldNotLoadInstanceProperties(String instanceId, Throwable e) {
             super("Could not load properties for instance " + instanceId, e);
         }
     }
 
-    public static class CouldNotSaveInstanceProperties extends AdminConfigStoreException {
+    public static class CouldNotSaveInstanceProperties extends CouldNotSaveProperties {
         public CouldNotSaveInstanceProperties(String instanceId, Throwable e) {
             super("Could not save properties for instance " + instanceId, e);
         }
     }
 
-    public static class CouldNotLoadTableProperties extends AdminConfigStoreException {
+    public static class CouldNotLoadTableProperties extends RuntimeException {
         public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable e) {
             super("Could not load properties for table " + tableName + " in instance " + instanceId, e);
         }
     }
 
-    public static class CouldNotSaveTableProperties extends AdminConfigStoreException {
+    public static class CouldNotSaveTableProperties extends CouldNotSaveProperties {
         public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable e) {
             super("Could not save properties for table " + tableName + " in instance " + instanceId, e);
+        }
+    }
+
+    public static class CouldNotSaveProperties extends RuntimeException {
+        public CouldNotSaveProperties(String message, Throwable e) {
+            super(message, e);
         }
     }
 }
