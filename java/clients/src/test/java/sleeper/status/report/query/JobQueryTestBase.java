@@ -45,7 +45,7 @@ public class JobQueryTestBase {
             dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus1, exampleStatus2);
     protected final ToStringPrintStream out = new ToStringPrintStream();
-    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut(), true);
 
     protected List<CompactionJobStatus> queryStatuses(Type queryType) {
         return queryStatusesWithParams(queryType, null);
