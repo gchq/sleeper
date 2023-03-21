@@ -32,8 +32,12 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminConfigStore store = mock(AdminConfigStore.class);
 
+    protected RunAdminClient runClient() {
+        return runClient(new AdminClient(store, editor, out.consoleOut(), in.consoleIn()));
+    }
+
     protected String runClientGetOutput() throws Exception {
-        return runClientGetOutput(new AdminClient(store, editor, out.consoleOut(), in.consoleIn()));
+        return runClient().runGetOutput();
     }
 
     protected void setInstanceProperties(InstanceProperties instanceProperties) {

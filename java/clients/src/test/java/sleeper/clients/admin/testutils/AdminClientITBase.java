@@ -53,8 +53,12 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @TempDir
     protected Path tempDir;
 
+    protected RunAdminClient runClient() {
+        return runClient(client());
+    }
+
     protected String runClientGetOutput() throws Exception {
-        return runClientGetOutput(client());
+        return runClient().runGetOutput();
     }
 
     protected AdminClient client() {

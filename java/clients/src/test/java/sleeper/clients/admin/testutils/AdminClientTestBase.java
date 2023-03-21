@@ -57,9 +57,8 @@ public abstract class AdminClientTestBase {
     protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
-    protected String runClientGetOutput(AdminClient client) throws Exception {
-        client.start(INSTANCE_ID);
-        return out.toString();
+    protected RunAdminClient runClient(AdminClient client) {
+        return new RunAdminClient(client, out, in, editor, INSTANCE_ID);
     }
 
     protected InstanceProperties createValidInstanceProperties() {
