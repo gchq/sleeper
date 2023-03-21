@@ -366,7 +366,7 @@ class SleeperPropertiesPrettyPrinterTest {
     }
 
     private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {
-        return print((writer) -> forInstancePropertiesWithGroup(writer, group), properties);
+        return print(writer -> forInstancePropertiesWithGroup(writer, group), properties);
     }
 
     private static String printTableProperties(Schema schema) {
