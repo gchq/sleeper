@@ -23,6 +23,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
@@ -76,7 +77,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
-            String output = runClientGetOutput();
+            String output = runCompactionJobStatusReport()
+                    .enterPrompts(JOB_QUERY_ALL_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -96,12 +99,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             createCompactionJobStatusStore();
             when(compactionJobStatusStore.getUnfinishedJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
-            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_UNKNOWN_OPTION,
-                    CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
-            String output = runClientGetOutput();
+            String output = runCompactionJobStatusReport()
+                    .enterPrompts(JOB_QUERY_UNKNOWN_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -122,13 +124,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             CompactionJobStatus exampleJob = jobStatuses.get(0);
             when(compactionJobStatusStore.getJob(exampleJob.getJobId()))
                     .thenReturn(Optional.of(exampleJob));
-            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table",
-                    JOB_QUERY_DETAILED_OPTION, exampleJob.getJobId(),
-                    CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
-            String output = runClientGetOutput();
+            String output = runCompactionJobStatusReport()
+                    .enterPrompts(JOB_QUERY_DETAILED_OPTION, exampleJob.getJobId(), CONFIRM_PROMPT)
+                    .exitGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -146,13 +146,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             when(compactionJobStatusStore.getJobsInTimePeriod("test-table",
                     Instant.parse("2023-03-10T17:52:12Z"), Instant.parse("2023-03-18T17:52:12Z")))
                     .thenReturn(exampleJobStatuses(dataHelper));
-            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table",
-                    JOB_QUERY_RANGE_OPTION, "20230310175212", "20230318175212",
-                    CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
-            String output = runClientGetOutput();
+            String output = runCompactionJobStatusReport()
+                    .enterPrompts(JOB_QUERY_RANGE_OPTION, "20230310175212", "20230318175212", CONFIRM_PROMPT)
+                    .exitGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -161,6 +159,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total jobs in defined range: 1");
 
             verifyWithNumberOfInvocations(6);
+        }
+
+        private RunAdminClient runCompactionJobStatusReport() {
+            return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
+                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table");
         }
 
         private void createCompactionJobStatusStore() {
@@ -189,12 +192,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             createCompactionTaskStatusStore();
             when(compactionTaskStatusStore.getAllTasks())
                     .thenReturn(exampleTaskStatuses());
-            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_TASK_STATUS_REPORT_OPTION, TASK_QUERY_ALL_OPTION,
-                    CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
-            String output = runClientGetOutput();
+            String output = runCompactionTaskStatusReport()
+                    .enterPrompts(TASK_QUERY_ALL_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -219,12 +221,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             createCompactionTaskStatusStore();
             when(compactionTaskStatusStore.getTasksInProgress())
                     .thenReturn(exampleTaskStatuses());
-            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_TASK_STATUS_REPORT_OPTION, TASK_QUERY_UNFINISHED_OPTION,
-                    CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
-            String output = runClientGetOutput();
+            String output = runCompactionTaskStatusReport()
+                    .enterPrompts(TASK_QUERY_UNFINISHED_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -235,6 +236,10 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total splitting tasks in progress: 0\n");
 
             verifyWithNumberOfInvocations(3);
+        }
+
+        private RunAdminClient runCompactionTaskStatusReport() {
+            return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION);
         }
 
         private void createCompactionTaskStatusStore() {
