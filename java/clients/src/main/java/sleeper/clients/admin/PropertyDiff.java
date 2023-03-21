@@ -75,7 +75,7 @@ public class PropertyDiff {
             return "";
         }
         if (!property.isEditable()) {
-            return " (cannot be changed, will not be saved)";
+            return " (cannot be changed, please undo)";
         }
         if (invalidProperties.contains(property)) {
             return " (not valid, please change)";

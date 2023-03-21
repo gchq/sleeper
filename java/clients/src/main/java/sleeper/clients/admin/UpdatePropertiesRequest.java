@@ -19,8 +19,10 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.SleeperProperty;
 
-import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
@@ -41,9 +43,13 @@ public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
     }
 
     public Set<SleeperProperty> getInvalidProperties() {
+        Set<SleeperProperty> uneditableChangedProperties = diff.getChanges().stream()
+                .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
+                .filter(not(SleeperProperty::isEditable))
+                .collect(Collectors.toSet());
         try {
             updatedProperties.validate();
-            return Collections.emptySet();
+            return uneditableChangedProperties;
         } catch (SleeperPropertiesInvalidException e) {
             return e.getInvalidValues().keySet();
         }

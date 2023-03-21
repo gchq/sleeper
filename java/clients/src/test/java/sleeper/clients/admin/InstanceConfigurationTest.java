@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -341,8 +340,8 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "\n"));
         }
 
+        // TODO test for invalid property and uneditable property that have been changed
         @Test
-        @Disabled("TODO")
         void shouldRejectAChangeToAnUneditableProperty() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
