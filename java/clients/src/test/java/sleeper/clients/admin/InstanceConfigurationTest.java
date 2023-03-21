@@ -53,6 +53,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
@@ -507,14 +508,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             TableProperties before = createValidTableProperties(properties);
             TableProperties after = createValidTableProperties(properties);
             after.set(ROW_GROUP_SIZE, "123");
-            setInstanceProperties(properties, before);
-            when(editor.openPropertiesFile(before))
-                    .thenReturn(withChanges(before, after));
-            in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
-                    SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
 
             // When
-            String output = runClientGetOutput();
+            String output = updateTablePropertiesAndExitGetOutput(properties, before, after,
+                    SaveChangesScreen.SAVE_CHANGES_OPTION);
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
@@ -540,17 +537,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     new RuntimeException("Something went wrong")))
                     .when(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
 
-            setInstanceProperties(properties, before);
-            in.enterNextPrompts(
-                    TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
-                    SaveChangesScreen.SAVE_CHANGES_OPTION,
-                    SaveChangesScreen.DISCARD_CHANGES_OPTION,
-                    EXIT_OPTION);
-            when(editor.openPropertiesFile(before))
-                    .thenReturn(withChanges(before, after));
-
             // When
-            String output = runClientGetOutput();
+            String output = updateTablePropertiesAndExitGetOutput(properties, before, after,
+                    SaveChangesScreen.SAVE_CHANGES_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION);
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -581,14 +570,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             before.set(DATA_BUCKET, "bucket-created-by-cdk");
             TableProperties after = createValidTableProperties(properties);
             after.set(DATA_BUCKET, "changed-bucket");
-            setInstanceProperties(properties, before);
-            when(editor.openPropertiesFile(before))
-                    .thenReturn(withChanges(before, after));
-            in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
-                    ValidateChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
 
             // When
-            String output = runClientGetOutput();
+            String output = updateTablePropertiesAndExitGetOutput(properties, before, after,
+                    ValidateChangesScreen.DISCARD_CHANGES_OPTION);
 
             // Then
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN +
@@ -618,9 +603,24 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return updatePropertiesAndExitGetOutput(before, after, SaveChangesScreen.SAVE_CHANGES_OPTION);
     }
 
-    private String updatePropertiesAndExitGetOutput(InstanceProperties before, InstanceProperties after, String... saveOrValidateScreenOptions) throws Exception {
+    private String updatePropertiesAndExitGetOutput(InstanceProperties before, InstanceProperties after,
+                                                    String... saveOrValidateScreenOptions) throws Exception {
         setInstanceProperties(before);
         in.enterNextPrompt(INSTANCE_CONFIGURATION_OPTION);
+        in.enterNextPrompts(saveOrValidateScreenOptions);
+        in.enterNextPrompt(EXIT_OPTION);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+
+        return runClientGetOutput();
+    }
+
+    private String updateTablePropertiesAndExitGetOutput(InstanceProperties properties,
+                                                         TableProperties before, TableProperties after,
+                                                         String... saveOrValidateScreenOptions) throws Exception {
+        setInstanceProperties(properties, before);
+        in.enterNextPrompt(TABLE_CONFIGURATION_OPTION);
+        in.enterNextPrompt(before.get(TABLE_NAME));
         in.enterNextPrompts(saveOrValidateScreenOptions);
         in.enterNextPrompt(EXIT_OPTION);
         when(editor.openPropertiesFile(before))
