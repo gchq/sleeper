@@ -51,13 +51,11 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
-import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -84,10 +82,10 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                     .contains("Compaction Job Status Report")
                     .contains("" +
-                            "Total standard jobs: 2\n" +
+                            "Total standard jobs: 1\n" +
                             "Total standard jobs pending: 0\n" +
                             "Total standard jobs in progress: 1\n" +
-                            "Total standard jobs finished: 1");
+                            "Total standard jobs finished: 0");
 
             verifyWithNumberOfInvocations(4);
         }
@@ -109,8 +107,8 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                     .contains("Compaction Job Status Report")
                     .contains("" +
-                            "Total unfinished jobs: 2\n" +
-                            "Total unfinished jobs in progress: 2\n" +
+                            "Total unfinished jobs: 1\n" +
+                            "Total unfinished jobs in progress: 1\n" +
                             "Total unfinished jobs not started: 0");
 
             verifyWithNumberOfInvocations(4);
@@ -160,7 +158,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                     .contains("Compaction Job Status Report")
                     .contains("" +
-                            "Total jobs in defined range: 2");
+                            "Total jobs in defined range: 1");
 
             verifyWithNumberOfInvocations(6);
         }
@@ -176,13 +174,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             return List.of(
                     jobCreated(dataHelper.singleFileCompaction(),
                             Instant.parse("2023-03-15T17:52:12.001Z"),
-                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))),
-                    jobCreated(dataHelper.singleFileCompaction(),
-                            Instant.parse("2023-03-15T18:52:12.001Z"),
-                            finishedCompactionRun("test-task-2", summary(
-                                    Instant.parse("2023-03-15T18:52:12.001Z"),
-                                    Instant.parse("2023-03-15T18:53:12.001Z"),
-                                    1000L, 2000L))));
+                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))));
         }
     }
 
