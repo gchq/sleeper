@@ -43,6 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 class AdminClientIT extends AdminClientITBase {
 
@@ -72,7 +73,7 @@ class AdminClientIT extends AdminClientITBase {
         tableProperties1.saveToS3(s3);
         TableProperties tableProperties2 = createValidTableProperties(instanceProperties, "test-table-2");
         tableProperties2.saveToS3(s3);
-        in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, EXIT_OPTION);
+        in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, CONFIRM_PROMPT, EXIT_OPTION);
 
         // When
         String output = runClientGetOutput();
@@ -115,7 +116,8 @@ class AdminClientIT extends AdminClientITBase {
         InstanceProperties after = createValidInstanceProperties();
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "2");
 
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
+        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.SAVE_CHANGES_OPTION,
+                CONFIRM_PROMPT, EXIT_OPTION);
         when(editor.openPropertiesFile(before)).thenReturn(withChanges(before, after));
 
         // When
@@ -144,7 +146,7 @@ class AdminClientIT extends AdminClientITBase {
         after.set(ITERATOR_CLASS_NAME, "AfterIteratorClass");
 
         in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
-                SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
+                SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT, EXIT_OPTION);
         when(editor.openPropertiesFile(before)).thenReturn(withChanges(before, after));
 
         // When

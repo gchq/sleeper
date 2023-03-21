@@ -28,6 +28,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 public class TableNamesReportTest extends AdminClientMockStoreBase {
 
@@ -35,7 +36,7 @@ public class TableNamesReportTest extends AdminClientMockStoreBase {
     public void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         setInstanceTables(createValidInstanceProperties(), "test-table-1", "test-table-2");
-        in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, EXIT_OPTION);
+        in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, CONFIRM_PROMPT, EXIT_OPTION);
 
         // When
         String output = runClientGetOutput();

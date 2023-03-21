@@ -45,7 +45,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public abstract class AdminClientTestBase {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
-    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut(), true);
     protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()

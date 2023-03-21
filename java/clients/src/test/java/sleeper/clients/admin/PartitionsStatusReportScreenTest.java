@@ -37,6 +37,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
 class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -49,7 +50,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
         setStateStoreForTable("test-table", stateStore);
-        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);
+        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", CONFIRM_PROMPT, EXIT_OPTION);
 
         // When
         String output = runClientGetOutput();
