@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -337,6 +338,32 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "sleeper.default.fs.s3a.readahead.range\n" +
                     "\n");
         }
+
+        @Test
+        @Disabled("TODO")
+        void shouldRejectAChangeToAnUneditableProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(VPC_ID, "before-vpc");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(VPC_ID, "after-vpc");
+
+            // When
+            String output = updatePropertiesGetValidationDisplay(before, after);
+
+            // Then
+            assertThat(output).isEqualTo("" +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.vpc\n" +
+                    "The id of the VPC to deploy to.\n" +
+                    "Before: before-vpc\n" +
+                    "After (cannot be changed, please undo): after-vpc\n" +
+                    "\n" +
+                    "Found invalid properties:\n" +
+                    "sleeper.vpc\n" +
+                    "\n");
+        }
     }
 
     @DisplayName("Save changes")
@@ -410,33 +437,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldDiscardChangesToUneditableProperty() throws Exception {
-            // Given
-            InstanceProperties before = createValidInstanceProperties();
-            before.set(VPC_ID, "before-vpc");
-            InstanceProperties after = createValidInstanceProperties();
-            after.set(VPC_ID, "after-vpc");
-
-            // When
-            String output = updatePropertiesAndSave(before, after);
-
-            // Then
-            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
-                    "Found changes to properties:\n" +
-                    "\n" +
-                    "sleeper.vpc\n" +
-                    "The id of the VPC to deploy to.\n" +
-                    "Before: before-vpc\n" +
-                    "After (cannot be changed, will not be saved): after-vpc\n" +
-                    "\n" +
-                    PROPERTY_SAVE_CHANGES_SCREEN +
-                    PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
-                    DISPLAY_MAIN_SCREEN);
-            // TODO discard changes / handle this case
-//            verify(store).saveInstanceProperties(before, noChanges(before).getDiff());
         }
     }
 
