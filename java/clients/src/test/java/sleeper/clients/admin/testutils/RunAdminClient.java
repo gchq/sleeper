@@ -42,6 +42,11 @@ public class RunAdminClient {
         this.instanceId = instanceId;
     }
 
+    public RunAdminClient specifyAllPrompts(boolean specifyAllPrompts) {
+        in.specifyAllPrompts(specifyAllPrompts);
+        return this;
+    }
+
     public RunAdminClient enterPrompt(String entered) {
         in.enterNextPrompt(entered);
         return this;

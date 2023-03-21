@@ -24,6 +24,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -35,7 +36,6 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
@@ -606,59 +606,30 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return DISPLAY_MAIN_SCREEN + expectedValidationDisplay + PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN;
     }
 
-    private RunClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
+    private RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
             throws Exception {
         setInstanceProperties(before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
-        return new RunClient()
+        return runClient().specifyAllPrompts(true)
                 .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
 
-    private RunClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
+    private RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
         setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties))
                 .thenReturn(noChanges(properties));
-        return new RunClient()
+        return runClient().specifyAllPrompts(true)
                 .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
 
-    private RunClient editTableConfiguration(InstanceProperties instanceProperties,
-                                             TableProperties before, TableProperties after)
+    private RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
+                                                  TableProperties before, TableProperties after)
             throws Exception {
         setInstanceProperties(instanceProperties, before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
-        return new RunClient()
+        return runClient().specifyAllPrompts(true)
                 .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME));
-    }
-
-    private class RunClient {
-
-        private RunClient() {
-            in.specifyAllPrompts(true);
-        }
-
-        private RunClient enterPrompt(String entered) {
-            in.enterNextPrompt(entered);
-            return this;
-        }
-
-        private RunClient enterPrompts(String... entered) {
-            in.enterNextPrompts(entered);
-            return this;
-        }
-
-        private RunClient editAgain(InstanceProperties before, InstanceProperties after) throws Exception {
-            when(editor.openPropertiesFile(before))
-                    .thenReturn(withChanges(before, after));
-            return this;
-        }
-
-        private String exitGetOutput() throws Exception {
-            in.enterNextPrompt(EXIT_OPTION);
-            return runClientGetOutput();
-        }
-
     }
 }
