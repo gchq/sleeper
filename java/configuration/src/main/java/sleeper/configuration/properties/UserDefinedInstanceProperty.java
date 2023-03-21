@@ -22,7 +22,6 @@ import sleeper.configuration.Utils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Sleeper properties set by the user. All non-mandatory properties should be accompanied by a default value and should
@@ -974,10 +973,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
-    }
-
-    static Optional<UserDefinedInstanceProperty> getByName(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {
