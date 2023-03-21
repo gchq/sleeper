@@ -113,15 +113,14 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
             InstanceProperties after = createValidInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-            setInstanceProperties(before);
-            in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, option, EXIT_OPTION);
+
             when(editor.openPropertiesFile(before))
                     .thenReturn(withChanges(before, after)); // Apply changes
             when(editor.openPropertiesFile(after))
                     .thenReturn(withChanges(after, before)); // Revert changes
 
             // When
-            String output = runClientGetOutput();
+            String output = updatePropertiesAndExitGetOutput(before, after, option);
 
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
                     .containsOnlyOnce(PROPERTY_SAVE_CHANGES_SCREEN)
@@ -436,7 +435,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesAndSave(before, after);
+            String output = updatePropertiesAndSaveGetOutput(before, after);
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -608,25 +607,22 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     }
 
     private String updatePropertiesDiscardChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
-        setInstanceProperties(before);
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-
-        return runClientGetOutput();
+        return updatePropertiesAndExitGetOutput(before, after, SaveChangesScreen.DISCARD_CHANGES_OPTION);
     }
 
     private String updateInvalidPropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
-        setInstanceProperties(before);
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, ValidateChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-        return runClientGetOutput();
+        return updatePropertiesAndExitGetOutput(before, after, ValidateChangesScreen.DISCARD_CHANGES_OPTION);
     }
 
-    private String updatePropertiesAndSave(InstanceProperties before, InstanceProperties after) throws Exception {
+    private String updatePropertiesAndSaveGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
+        return updatePropertiesAndExitGetOutput(before, after, SaveChangesScreen.SAVE_CHANGES_OPTION);
+    }
+
+    private String updatePropertiesAndExitGetOutput(InstanceProperties before, InstanceProperties after, String... saveOrValidateScreenOptions) throws Exception {
         setInstanceProperties(before);
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
+        in.enterNextPrompt(INSTANCE_CONFIGURATION_OPTION);
+        in.enterNextPrompts(saveOrValidateScreenOptions);
+        in.enterNextPrompt(EXIT_OPTION);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
 
