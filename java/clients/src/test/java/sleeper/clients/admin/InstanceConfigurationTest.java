@@ -613,15 +613,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     private String updateTablePropertiesAndExitGetOutput(InstanceProperties properties,
                                                          TableProperties before, TableProperties after,
                                                          String... saveOrValidateScreenOptions) throws Exception {
-        setInstanceProperties(properties, before);
-        in.enterNextPrompt(TABLE_CONFIGURATION_OPTION);
-        in.enterNextPrompt(before.get(TABLE_NAME));
-        in.enterNextPrompts(saveOrValidateScreenOptions);
-        in.enterNextPrompt(EXIT_OPTION);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-
-        return runClientGetOutput();
+        return editTableConfiguration(properties, before, after)
+                .enterPrompt(before.get(TABLE_NAME))
+                .enterPrompts(saveOrValidateScreenOptions)
+                .exitGetOutput();
     }
 
     private static String outputWithSaveChangesDisplayWhenDiscardingChanges(String expectedSaveChangesDisplay) {
@@ -638,13 +633,28 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
         return new RunClient()
-                .enterPrompts(INSTANCE_CONFIGURATION_OPTION);
+                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+    }
+
+    private RunClient editTableConfiguration(InstanceProperties instanceProperties,
+                                             TableProperties before, TableProperties after)
+            throws Exception {
+        setInstanceProperties(instanceProperties, before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return new RunClient()
+                .enterPrompt(TABLE_CONFIGURATION_OPTION);
     }
 
     private class RunClient {
 
-        private RunClient enterPrompts(String... options) {
-            in.enterNextPrompts(options);
+        private RunClient enterPrompt(String entered) {
+            in.enterNextPrompt(entered);
+            return this;
+        }
+
+        private RunClient enterPrompts(String... entered) {
+            in.enterNextPrompts(entered);
             return this;
         }
 
