@@ -51,6 +51,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGES
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -571,6 +572,38 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldRejectAChangeToASystemDefinedProperty() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            before.set(DATA_BUCKET, "bucket-created-by-cdk");
+            TableProperties after = createValidTableProperties(properties);
+            after.set(DATA_BUCKET, "changed-bucket");
+            setInstanceProperties(properties, before);
+            when(editor.openPropertiesFile(before))
+                    .thenReturn(withChanges(before, after));
+            in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
+                    ValidateChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
+
+            // When
+            String output = runClientGetOutput();
+
+            // Then
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.table.data.bucket\n" +
+                    "The S3 bucket name where table data is stored.\n" +
+                    "Before: bucket-created-by-cdk\n" +
+                    "After (cannot be changed, please undo): changed-bucket\n" +
+                    "\n" +
+                    "Found invalid properties:\n" +
+                    "sleeper.table.data.bucket\n" +
+                    "\n" +
+                    PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
         }
     }
 
