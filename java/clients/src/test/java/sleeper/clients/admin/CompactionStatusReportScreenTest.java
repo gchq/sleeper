@@ -43,7 +43,6 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_TASK_STATUS_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
@@ -64,7 +63,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
         private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        protected final DynamoDBCompactionJobStatusStore compactionJobStatusStore = mock(DynamoDBCompactionJobStatusStore.class);
+        private final DynamoDBCompactionJobStatusStore compactionJobStatusStore = mock(DynamoDBCompactionJobStatusStore.class);
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() throws Exception {
@@ -72,9 +71,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             createCompactionJobStatusStore();
             when(compactionJobStatusStore.getAllJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
-            in.enterNextPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table", JOB_QUERY_ALL_OPTION,
-                    CONFIRM_PROMPT, EXIT_OPTION);
 
             // When/Then
             String output = runCompactionJobStatusReport()

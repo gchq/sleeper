@@ -17,11 +17,13 @@ package sleeper.clients;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.CompactionStatusReportScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
+import sleeper.clients.admin.IngestStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
@@ -66,6 +68,7 @@ public class AdminClient {
                 new AdminConfigStore(
                         AmazonS3ClientBuilder.defaultClient(),
                         AmazonDynamoDBClientBuilder.defaultClient(),
+                        AmazonSQSClientBuilder.defaultClient(),
                         cdk, generatedDir),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
@@ -99,5 +102,9 @@ public class AdminClient {
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {
         return new CompactionStatusReportScreen(out, in, store);
+    }
+
+    public IngestStatusReportScreen ingestStatusReportScreen() {
+        return new IngestStatusReportScreen(out, in, store);
     }
 }

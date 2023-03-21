@@ -58,7 +58,7 @@ public class IngestJobStatusReport {
         this.jobQueueUrl = jobQueueUrl;
     }
 
-    private void run() {
+    public void run() {
         JobQuery query = arguments.buildQuery(Clock.systemUTC(),
                 new ConsoleInput(System.console()));
         if (query == null) {
