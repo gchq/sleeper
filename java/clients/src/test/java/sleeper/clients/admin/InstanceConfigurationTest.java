@@ -341,7 +341,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "\n"));
         }
 
-        // TODO test for invalid property and uneditable property that have been changed
         @Test
         void shouldRejectAChangeToAnUneditableProperty() throws Exception {
             // Given
@@ -376,7 +375,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(VPC_ID, "after-vpc");
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
-
             // When
             String output = updateInvalidPropertiesGetOutput(before, after);
 
@@ -406,7 +404,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
             after.set(CONFIG_BUCKET, "changed-bucket");
-
 
             // When
             String output = updateInvalidPropertiesGetOutput(before, after);
