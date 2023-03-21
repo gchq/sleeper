@@ -55,6 +55,7 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
@@ -436,7 +437,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesAndSaveGetOutput(before, after);
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -510,8 +513,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(ROW_GROUP_SIZE, "123");
 
             // When
-            String output = updateTablePropertiesAndExitGetOutput(properties, before, after,
-                    SaveChangesScreen.SAVE_CHANGES_OPTION);
+            String output = editTableConfiguration(properties, before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
@@ -538,8 +542,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     .when(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
 
             // When
-            String output = updateTablePropertiesAndExitGetOutput(properties, before, after,
-                    SaveChangesScreen.SAVE_CHANGES_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION);
+            String output = editTableConfiguration(properties, before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION)
+                    .exitGetOutput();
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -572,8 +577,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DATA_BUCKET, "changed-bucket");
 
             // When
-            String output = updateTablePropertiesAndExitGetOutput(properties, before, after,
-                    ValidateChangesScreen.DISCARD_CHANGES_OPTION);
+            String output = editTableConfiguration(properties, before, after)
+                    .enterPrompt(ValidateChangesScreen.DISCARD_CHANGES_OPTION)
+                    .exitGetOutput();
 
             // Then
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN +
@@ -599,22 +605,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return updatePropertiesAndExitGetOutput(before, after, ValidateChangesScreen.DISCARD_CHANGES_OPTION);
     }
 
-    private String updatePropertiesAndSaveGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
-        return updatePropertiesAndExitGetOutput(before, after, SaveChangesScreen.SAVE_CHANGES_OPTION);
-    }
-
     private String updatePropertiesAndExitGetOutput(InstanceProperties before, InstanceProperties after,
                                                     String... saveOrValidateScreenOptions) throws Exception {
         return editInstanceConfiguration(before, after)
-                .enterPrompts(saveOrValidateScreenOptions)
-                .exitGetOutput();
-    }
-
-    private String updateTablePropertiesAndExitGetOutput(InstanceProperties properties,
-                                                         TableProperties before, TableProperties after,
-                                                         String... saveOrValidateScreenOptions) throws Exception {
-        return editTableConfiguration(properties, before, after)
-                .enterPrompt(before.get(TABLE_NAME))
                 .enterPrompts(saveOrValidateScreenOptions)
                 .exitGetOutput();
     }
@@ -643,10 +636,14 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
         return new RunClient()
-                .enterPrompt(TABLE_CONFIGURATION_OPTION);
+                .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME));
     }
 
     private class RunClient {
+
+        private RunClient() {
+            in.specifyAllPrompts(true);
+        }
 
         private RunClient enterPrompt(String entered) {
             in.enterNextPrompt(entered);
