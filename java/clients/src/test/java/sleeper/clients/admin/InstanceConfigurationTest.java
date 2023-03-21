@@ -611,7 +611,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         setInstanceProperties(before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
-        return runClient().specifyAllPrompts(true)
+        return runClient()
                 .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
 
@@ -619,7 +619,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties))
                 .thenReturn(noChanges(properties));
-        return runClient().specifyAllPrompts(true)
+        return runClient()
                 .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
 
@@ -629,7 +629,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         setInstanceProperties(instanceProperties, before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
-        return runClient().specifyAllPrompts(true)
+        return runClient()
                 .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME));
     }
 }
