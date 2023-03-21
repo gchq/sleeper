@@ -979,7 +979,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
         return Index.INSTANCE.getByName(propertyName).isPresent();
     }
 
-
     class Index {
         private Index() {
         }
