@@ -24,6 +24,7 @@ public class ChooseOneTest extends ChooseOneTestBase {
     @Test
     public void shouldOutputOptions() {
         // When
+        in.enterNextPrompt("");
         chooseTestOption();
 
         // Then
@@ -39,6 +40,7 @@ public class ChooseOneTest extends ChooseOneTestBase {
     @Test
     public void shouldOutputSpecifiedMessage() {
         // When
+        in.enterNextPrompt("");
         chooseTestOptionWithMessage("Please enter your name or choose an option and hit return:");
 
         // Then

@@ -21,7 +21,7 @@ import sleeper.console.TestConsoleInput;
 public abstract class ChooseOneTestBase {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
-    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut(), true);
     private final ChooseOne chooseOne = new ChooseOne(out.consoleOut(), in.consoleIn());
 
     protected Chosen<ConsoleChoice> chooseTestOption() {

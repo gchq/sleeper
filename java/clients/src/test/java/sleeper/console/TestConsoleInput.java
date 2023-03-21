@@ -32,6 +32,11 @@ public class TestConsoleInput {
     private final Queue<String> nextPrompts = new LinkedList<>();
     private boolean specifyAllPrompts = false;
 
+    public TestConsoleInput(ConsoleOutput out, boolean specifyAllPrompts) {
+        this(out);
+        this.specifyAllPrompts = specifyAllPrompts;
+    }
+
     public TestConsoleInput(ConsoleOutput out) {
         when(mock.promptLine(any())).thenAnswer(invocation -> {
             String prompt = invocation.getArgument(0);
