@@ -44,6 +44,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveCha
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
@@ -363,6 +364,64 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.vpc\n" +
+                    "\n"));
+        }
+
+        @Test
+        void shouldRejectAChangeToAnUneditablePropertyAndAnInvalidProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(VPC_ID, "before-vpc");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(VPC_ID, "after-vpc");
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+
+            // When
+            String output = updateInvalidPropertiesGetOutput(before, after);
+
+            // Then
+            assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.vpc\n" +
+                    "The id of the VPC to deploy to.\n" +
+                    "Before: before-vpc\n" +
+                    "After (cannot be changed, please undo): after-vpc\n" +
+                    "\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
+                    "Unset before, default value: 25\n" +
+                    "After (not valid, please change): abc\n" +
+                    "\n" +
+                    "Found invalid properties:\n" +
+                    "sleeper.vpc\n" +
+                    "sleeper.s3.max-connections\n" +
+                    "\n"));
+        }
+
+        @Test
+        void shouldRejectAChangeToASystemDefinedProperty() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(CONFIG_BUCKET, "changed-bucket");
+
+
+            // When
+            String output = updateInvalidPropertiesGetOutput(before, after);
+
+            // Then
+            assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
+                    "Found changes to properties:\n" +
+                    "\n" +
+                    "sleeper.config.bucket\n" +
+                    "The S3 bucket name used to store configuration files.\n" +
+                    "Before: sleeper-test-instance-config\n" +
+                    "After (cannot be changed, please undo): changed-bucket\n" +
+                    "\n" +
+                    "Found invalid properties:\n" +
+                    "sleeper.config.bucket\n" +
                     "\n"));
         }
     }
