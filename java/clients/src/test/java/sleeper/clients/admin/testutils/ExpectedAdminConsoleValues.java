@@ -33,6 +33,7 @@ public class ExpectedAdminConsoleValues {
             "[3] Print Sleeper table names\n" +
             "[4] Run partition status report\n" +
             "[5] Run files status report\n" +
+            "[6] Run compaction status report\n" +
             "\n" +
             "Input: \n";
     public static final String TABLE_SELECT_SCREEN = "\n" +
@@ -69,6 +70,17 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_NAMES_REPORT_OPTION = "3";
     public static final String PARTITION_STATUS_REPORT_OPTION = "4";
     public static final String FILES_STATUS_REPORT_OPTION = "5";
+    public static final String COMPACTION_STATUS_REPORT_OPTION = "6";
+    public static final String COMPACTION_JOB_STATUS_REPORT_OPTION = "1";
+    public static final String COMPACTION_TASK_STATUS_REPORT_OPTION = "2";
+
+    public static final String JOB_QUERY_ALL_OPTION = "1";
+    public static final String JOB_QUERY_UNKNOWN_OPTION = "2";
+    public static final String JOB_QUERY_DETAILED_OPTION = "3";
+    public static final String JOB_QUERY_RANGE_OPTION = "4";
+
+    public static final String TASK_QUERY_ALL_OPTION = "1";
+    public static final String TASK_QUERY_UNFINISHED_OPTION = "2";
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final class SaveChangesScreen {

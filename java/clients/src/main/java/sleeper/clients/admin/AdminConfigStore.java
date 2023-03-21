@@ -24,6 +24,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -180,6 +184,16 @@ public class AdminConfigStore {
         public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable cause) {
             super("Could not load properties for table " + tableName + " in instance " + instanceId, cause);
         }
+    }
+
+    public CompactionJobStatusStore loadCompactionJobStatusStore(String instanceId) {
+        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
+        return DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
+    }
+
+    public CompactionTaskStatusStore loadCompactionTaskStatusStore(String instanceId) {
+        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
+        return DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
     }
 
     public static class CouldNotSaveTableProperties extends CouldNotSaveProperties {
