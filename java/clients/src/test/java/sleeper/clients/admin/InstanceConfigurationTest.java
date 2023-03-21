@@ -149,16 +149,17 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesGetSaveChangesDisplay(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("Found changes to properties:\n" +
+            assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
+                    "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.s3.max-connections\n" +
                     "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
                     "Before: 123\n" +
                     "After: 456\n" +
-                    "\n");
+                    "\n"));
         }
 
         @Test
@@ -169,16 +170,17 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
 
             // When
-            String output = updatePropertiesGetSaveChangesDisplay(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("Found changes to properties:\n" +
+            assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
+                    "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.s3.max-connections\n" +
                     "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
                     "Unset before, default value: 25\n" +
                     "After: 123\n" +
-                    "\n");
+                    "\n"));
         }
 
         @Test
@@ -189,16 +191,17 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.loadFromString("unknown.property=abc");
 
             // When
-            String output = updatePropertiesGetSaveChangesDisplay(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("Found changes to properties:\n" +
+            assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
+                    "Found changes to properties:\n" +
                     "\n" +
                     "unknown.property\n" +
                     "Unknown property, no description available\n" +
                     "Unset before\n" +
                     "After: abc\n" +
-                    "\n");
+                    "\n"));
         }
 
         @Test
@@ -209,10 +212,11 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
 
             // When
-            String output = updatePropertiesGetSaveChangesDisplay(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("Found changes to properties:\n" +
+            assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
+                    "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.ingest.partition.refresh.period\n" +
                     "The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
@@ -220,7 +224,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "refresh frequency.)\n" +
                     "Unset before, default value: 120\n" +
                     "After: 123\n" +
-                    "\n");
+                    "\n"));
         }
 
         @Test
@@ -233,14 +237,13 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DEFAULT_PAGE_SIZE, "456");
 
             // When
-            String output = updatePropertiesGetSaveChangesDisplay(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
-            assertThat(output.indexOf("sleeper.optional.stacks"))
-                    .isLessThan(output.indexOf("sleeper.default.fs.s3a.readahead.range"))
-                    .isLessThan(output.indexOf("sleeper.default.page.size"));
-            assertThat(output.indexOf("sleeper.default.fs.s3a.readahead.range"))
-                    .isLessThan(output.indexOf("sleeper.default.page.size"));
+            assertThat(output).containsSubsequence(
+                    "sleeper.optional.stacks",
+                    "sleeper.default.fs.s3a.readahead.range",
+                    "sleeper.default.page.size");
         }
 
         @Test
@@ -254,14 +257,13 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "an.unknown.property=other-value");
 
             // When
-            String output = updatePropertiesGetSaveChangesDisplay(before, after);
+            String output = updatePropertiesDiscardChangesGetOutput(before, after);
 
             // Then
-            assertThat(output.indexOf("sleeper.optional.stacks"))
-                    .isLessThan(output.indexOf("an.unknown.property"))
-                    .isLessThan(output.indexOf("some.unknown.property"));
-            assertThat(output.indexOf("an.unknown.property"))
-                    .isLessThan(output.indexOf("some.unknown.property"));
+            assertThat(output).containsSubsequence(
+                    "sleeper.optional.stacks",
+                    "an.unknown.property",
+                    "some.unknown.property");
         }
     }
 
@@ -276,10 +278,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            String output = updatePropertiesGetValidationDisplay(before, after);
+            String output = updateInvalidPropertiesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("" +
+            assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.s3.max-connections\n" +
@@ -289,7 +291,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.s3.max-connections\n" +
-                    "\n");
+                    "\n"));
         }
 
         @Test
@@ -316,10 +318,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DEFAULT_S3A_READAHEAD_RANGE, "def");
 
             // When
-            String output = updatePropertiesGetValidationDisplay(before, after);
+            String output = updateInvalidPropertiesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("" +
+            assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.s3.max-connections\n" +
@@ -336,7 +338,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "Found invalid properties:\n" +
                     "sleeper.s3.max-connections\n" +
                     "sleeper.default.fs.s3a.readahead.range\n" +
-                    "\n");
+                    "\n"));
         }
 
         @Test
@@ -349,10 +351,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(VPC_ID, "after-vpc");
 
             // When
-            String output = updatePropertiesGetValidationDisplay(before, after);
+            String output = updateInvalidPropertiesGetOutput(before, after);
 
             // Then
-            assertThat(output).isEqualTo("" +
+            assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.vpc\n" +
@@ -362,7 +364,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.vpc\n" +
-                    "\n");
+                    "\n"));
         }
     }
 
@@ -517,10 +519,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    private String updatePropertiesGetSaveChangesDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
-        return getSaveChangesDisplay(updatePropertiesDiscardChangesGetOutput(before, after));
-    }
-
     private String updatePropertiesDiscardChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         setInstanceProperties(before);
         in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION, EXIT_OPTION);
@@ -528,10 +526,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                 .thenReturn(withChanges(before, after));
 
         return runClientGetOutput();
-    }
-
-    private String updatePropertiesGetValidationDisplay(InstanceProperties before, InstanceProperties after) throws Exception {
-        return getValidationDisplay(updateInvalidPropertiesGetOutput(before, after));
     }
 
     private String updateInvalidPropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
@@ -551,15 +545,11 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         return runClientGetOutput();
     }
 
-    private static String getSaveChangesDisplay(String output) {
-        return output.substring(
-                DISPLAY_MAIN_SCREEN.length(),
-                output.length() - PROPERTY_SAVE_CHANGES_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
+    private static String outputWithSaveChangesDisplayWhenDiscardingChanges(String expectedSaveChangesDisplay) {
+        return DISPLAY_MAIN_SCREEN + expectedSaveChangesDisplay + PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN;
     }
 
-    private static String getValidationDisplay(String output) {
-        return output.substring(
-                DISPLAY_MAIN_SCREEN.length(),
-                output.length() - PROPERTY_VALIDATION_SCREEN.length() - DISPLAY_MAIN_SCREEN.length());
+    private static String outputWithValidationDisplayWhenDiscardingChanges(String expectedValidationDisplay) {
+        return DISPLAY_MAIN_SCREEN + expectedValidationDisplay + PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN;
     }
 }
