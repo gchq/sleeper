@@ -605,14 +605,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     private String updatePropertiesAndExitGetOutput(InstanceProperties before, InstanceProperties after,
                                                     String... saveOrValidateScreenOptions) throws Exception {
-        setInstanceProperties(before);
-        in.enterNextPrompt(INSTANCE_CONFIGURATION_OPTION);
-        in.enterNextPrompts(saveOrValidateScreenOptions);
-        in.enterNextPrompt(EXIT_OPTION);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-
-        return runClientGetOutput();
+        return editInstanceConfiguration(before, after)
+                .enterPrompts(saveOrValidateScreenOptions)
+                .exitGetOutput();
     }
 
     private String updateTablePropertiesAndExitGetOutput(InstanceProperties properties,
@@ -635,5 +630,28 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     private static String outputWithValidationDisplayWhenDiscardingChanges(String expectedValidationDisplay) {
         return DISPLAY_MAIN_SCREEN + expectedValidationDisplay + PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN;
+    }
+
+    private RunClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
+            throws Exception {
+        setInstanceProperties(before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return new RunClient()
+                .enterPrompts(INSTANCE_CONFIGURATION_OPTION);
+    }
+
+    private class RunClient {
+
+        private RunClient enterPrompts(String... options) {
+            in.enterNextPrompts(options);
+            return this;
+        }
+
+        private String exitGetOutput() throws Exception {
+            in.enterNextPrompt(EXIT_OPTION);
+            return runClientGetOutput();
+        }
+
     }
 }
