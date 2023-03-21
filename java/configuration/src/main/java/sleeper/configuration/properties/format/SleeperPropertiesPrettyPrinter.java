@@ -40,17 +40,18 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final List<T> sortedProperties;
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
-    private final boolean filtered;
+    private final boolean hideUnknownProperties;
 
     private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         this(properties, groups, writer, false);
     }
 
-    private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer, boolean filtered) {
+    private SleeperPropertiesPrettyPrinter(
+            List<T> properties, List<PropertyGroup> groups, PrintWriter writer, boolean hideUnknownProperties) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
         this.writer = writer;
         this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
-        this.filtered = filtered;
+        this.hideUnknownProperties = hideUnknownProperties;
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
@@ -101,7 +102,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printProperty(property.getPropertyName(), "");
             }
         }
-        if (!filtered) {
+        if (!hideUnknownProperties) {
             Map<String, String> unknownProperties = properties.getUnknownProperties()
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
