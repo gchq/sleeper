@@ -67,13 +67,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         void shouldViewInstanceConfiguration() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
-            setInstanceProperties(properties);
-            in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, EXIT_OPTION);
-            when(editor.openPropertiesFile(properties))
-                    .thenReturn(noChanges(properties));
 
             // When
-            String output = runClientGetOutput();
+            String output = viewInstanceConfiguration(properties).exitGetOutput();
 
             // Then
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + DISPLAY_MAIN_SCREEN);
@@ -94,7 +90,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompt(SaveChangesScreen.DISCARD_CHANGES_OPTION)
+                    .exitGetOutput();
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -107,22 +105,20 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verifyNoMoreInteractions();
         }
 
-        @ParameterizedTest(name = "With option of \"{0}\"")
+        @ParameterizedTest(name = "With return to editor option \"{0}\"")
         @ValueSource(strings = {SaveChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
-        void shouldMakeChangesThenReturnToEditorAndRevertChanges(String option) throws Exception {
+        void shouldMakeChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
             InstanceProperties after = createValidInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
-            when(editor.openPropertiesFile(before))
-                    .thenReturn(withChanges(before, after)); // Apply changes
-            when(editor.openPropertiesFile(after))
-                    .thenReturn(withChanges(after, before)); // Revert changes
-
             // When
-            String output = updatePropertiesAndExitGetOutput(before, after, option);
+            String output = editInstanceConfiguration(before, after) // Apply changes
+                    .enterPrompt(returnToEditorOption)
+                    .editAgain(after, before) // Revert changes
+                    .exitGetOutput();
 
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
                     .containsOnlyOnce(PROPERTY_SAVE_CHANGES_SCREEN)
@@ -151,7 +147,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editConfigurationDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
@@ -172,7 +168,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editConfigurationDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
@@ -193,7 +189,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.loadFromString("unknown.property=abc");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editConfigurationDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
@@ -214,7 +210,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editConfigurationDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
@@ -239,7 +235,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DEFAULT_PAGE_SIZE, "456");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editConfigurationDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).containsSubsequence(
@@ -259,7 +255,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "an.unknown.property=other-value");
 
             // When
-            String output = updatePropertiesDiscardChangesGetOutput(before, after);
+            String output = editConfigurationDiscardChangesGetOutput(before, after);
 
             // Then
             assertThat(output).containsSubsequence(
@@ -280,7 +276,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            String output = updateInvalidPropertiesGetOutput(before, after);
+            String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
@@ -304,7 +300,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            String output = updateInvalidPropertiesGetOutput(before, after);
+            String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -320,7 +316,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DEFAULT_S3A_READAHEAD_RANGE, "def");
 
             // When
-            String output = updateInvalidPropertiesGetOutput(before, after);
+            String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
@@ -352,7 +348,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(VPC_ID, "after-vpc");
 
             // When
-            String output = updateInvalidPropertiesGetOutput(before, after);
+            String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
@@ -378,7 +374,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
-            String output = updateInvalidPropertiesGetOutput(before, after);
+            String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
@@ -408,7 +404,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(CONFIG_BUCKET, "changed-bucket");
 
             // When
-            String output = updateInvalidPropertiesGetOutput(before, after);
+            String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
 
             // Then
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
@@ -467,17 +463,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     new RuntimeException("Something went wrong")))
                     .when(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
 
-            setInstanceProperties(before);
-            in.enterNextPrompts(
-                    INSTANCE_CONFIGURATION_OPTION,
-                    SaveChangesScreen.SAVE_CHANGES_OPTION,
-                    SaveChangesScreen.DISCARD_CHANGES_OPTION,
-                    EXIT_OPTION);
-            when(editor.openPropertiesFile(before))
-                    .thenReturn(withChanges(before, after));
-
             // When
-            String output = runClientGetOutput();
+            String output = editInstanceConfiguration(before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, SaveChangesScreen.DISCARD_CHANGES_OPTION)
+                    .exitGetOutput();
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -597,18 +586,15 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
     }
 
-    private String updatePropertiesDiscardChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
-        return updatePropertiesAndExitGetOutput(before, after, SaveChangesScreen.DISCARD_CHANGES_OPTION);
-    }
-
-    private String updateInvalidPropertiesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
-        return updatePropertiesAndExitGetOutput(before, after, ValidateChangesScreen.DISCARD_CHANGES_OPTION);
-    }
-
-    private String updatePropertiesAndExitGetOutput(InstanceProperties before, InstanceProperties after,
-                                                    String... saveOrValidateScreenOptions) throws Exception {
+    private String editConfigurationDiscardChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
         return editInstanceConfiguration(before, after)
-                .enterPrompts(saveOrValidateScreenOptions)
+                .enterPrompts(SaveChangesScreen.DISCARD_CHANGES_OPTION)
+                .exitGetOutput();
+    }
+
+    private String editConfigurationDiscardInvalidChangesGetOutput(InstanceProperties before, InstanceProperties after) throws Exception {
+        return editInstanceConfiguration(before, after)
+                .enterPrompts(ValidateChangesScreen.DISCARD_CHANGES_OPTION)
                 .exitGetOutput();
     }
 
@@ -625,6 +611,14 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         setInstanceProperties(before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
+        return new RunClient()
+                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+    }
+
+    private RunClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
+        setInstanceProperties(properties);
+        when(editor.openPropertiesFile(properties))
+                .thenReturn(noChanges(properties));
         return new RunClient()
                 .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
@@ -652,6 +646,12 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
         private RunClient enterPrompts(String... entered) {
             in.enterNextPrompts(entered);
+            return this;
+        }
+
+        private RunClient editAgain(InstanceProperties before, InstanceProperties after) throws Exception {
+            when(editor.openPropertiesFile(before))
+                    .thenReturn(withChanges(before, after));
             return this;
         }
 
