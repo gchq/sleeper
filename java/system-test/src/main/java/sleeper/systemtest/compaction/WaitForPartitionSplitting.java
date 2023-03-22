@@ -22,6 +22,7 @@ import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.systemtest.util.PollWithRetries;
 
 import java.util.List;
 import java.util.Set;
@@ -30,8 +31,9 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 
 public class WaitForPartitionSplitting {
-
-    private List<FindPartitionToSplitResult> toSplit;
+    private static final long POLL_INTERVAL_MILLIS = 5000;
+    private static final int MAX_POLLS = 12;
+    private final List<FindPartitionToSplitResult> toSplit;
 
     private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
         this.toSplit = toSplit;
@@ -43,13 +45,27 @@ public class WaitForPartitionSplitting {
                 FindPartitionsToSplit.getResults(tableProperties, stateStore));
     }
 
-    public boolean isSplitFinished(StateStore stateStore) throws StateStoreException {
-        Set<String> leafPartitionIds = stateStore.getLeafPartitions().stream()
-                .map(Partition::getId)
-                .collect(Collectors.toSet());
+    public void pollUntilFinished(StateStore stateStore) throws InterruptedException {
+        PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS)
+                .pollUntil("partition splits finished", () -> this.isSplitFinished(stateStore));
+    }
+
+    public boolean isSplitFinished(StateStore stateStore) {
+        Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
+
         return toSplit.stream()
                 .map(FindPartitionToSplitResult::getPartition)
                 .map(Partition::getId)
                 .allMatch(not(leafPartitionIds::contains));
+    }
+
+    private Set<String> getLeafPartitionIds(StateStore stateStore) {
+        try {
+            return stateStore.getLeafPartitions().stream()
+                    .map(Partition::getId)
+                    .collect(Collectors.toSet());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
