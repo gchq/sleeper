@@ -34,12 +34,8 @@ public class WaitForPartitionSplitting {
 
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        return fromPartitionsToSplit(
+        return new WaitForPartitionSplitting(
                 FindPartitionsToSplit.getResults(tableProperties, stateStore));
-    }
-
-    public static WaitForPartitionSplitting fromPartitionsToSplit(List<FindPartitionToSplitResult> toSplit) {
-        return new WaitForPartitionSplitting(toSplit);
     }
 
     public boolean isSplitFinished(StateStore stateStore) {
