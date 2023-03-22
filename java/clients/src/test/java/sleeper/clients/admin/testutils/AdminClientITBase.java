@@ -28,8 +28,12 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 import static org.mockito.Mockito.mock;
@@ -52,6 +56,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @TempDir
     protected Path tempDir;
 
+    @Override
     protected RunAdminClient runClient() {
         return runClient(store());
     }
@@ -75,6 +80,25 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                 .forEach(object -> s3.deleteObject(CONFIG_BUCKET_NAME, object.getKey()));
         s3.deleteBucket(CONFIG_BUCKET_NAME);
         s3.shutdown();
+    }
+
+    @Override
+    protected void setInstanceProperties(InstanceProperties instanceProperties) {
+        try {
+            instanceProperties.saveToS3(s3);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    protected void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        setInstanceProperties(instanceProperties);
+        try {
+            tableProperties.saveToS3(s3);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

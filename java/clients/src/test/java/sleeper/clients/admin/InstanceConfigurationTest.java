@@ -24,7 +24,6 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -32,16 +31,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -53,7 +47,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
@@ -604,32 +597,5 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
     private static String outputWithValidationDisplayWhenDiscardingChanges(String expectedValidationDisplay) {
         return DISPLAY_MAIN_SCREEN + expectedValidationDisplay + PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN;
-    }
-
-    private RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
-            throws Exception {
-        setInstanceProperties(before);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-        return runClient()
-                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
-    }
-
-    private RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
-        setInstanceProperties(properties);
-        when(editor.openPropertiesFile(properties))
-                .thenReturn(noChanges(properties));
-        return runClient()
-                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
-    }
-
-    private RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
-                                                  TableProperties before, TableProperties after)
-            throws Exception {
-        setInstanceProperties(instanceProperties, before);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-        return runClient()
-                .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME));
     }
 }
