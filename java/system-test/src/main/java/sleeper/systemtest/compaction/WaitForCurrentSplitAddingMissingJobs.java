@@ -44,7 +44,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final String instanceId;
     private final String tableName;
     private final CompactionJobStatusStore store;
-    private final WaitForPartitionSplitting waitForSplitting;
+    private final WaitForPartitionSplittingQueue waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForQueueEstimateNotEmpty waitForJobQueueEstimate;
 
@@ -54,7 +54,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         this.instanceId = instanceProperties.get(ID);
         this.tableName = tableName;
         this.store = store;
-        waitForSplitting = new WaitForPartitionSplitting(sqsClient, instanceProperties);
+        waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobQueueEstimate = new WaitForQueueEstimateNotEmpty(
                 sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);

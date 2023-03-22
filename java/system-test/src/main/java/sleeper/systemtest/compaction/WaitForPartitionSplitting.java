@@ -13,55 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.systemtest.compaction;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.systemtest.util.PollWithRetries;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import sleeper.statestore.StateStore;
 
 public class WaitForPartitionSplitting {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
-    private static final long POLL_INTERVAL_MILLIS = 5000;
-    private static final int MAX_POLLS = 12;
+    private final StateStore store;
 
-    private final AmazonSQS sqsClient;
-    private final InstanceProperties instanceProperties;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
-
-    public WaitForPartitionSplitting(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        this.sqsClient = sqsClient;
-        this.instanceProperties = instanceProperties;
-    }
-
-    public void pollUntilFinished() throws InterruptedException {
-        poll.pollUntil("partition splits finished", this::isPartitionSplitsFinished);
-    }
-
-    private boolean isPartitionSplitsFinished() {
-        int unconsumedMessages = getUnconsumedPartitionSplitMessages();
-        LOGGER.info("Unfinished partition splits: {}", unconsumedMessages);
-        return unconsumedMessages == 0;
-    }
-
-    private int getUnconsumedPartitionSplitMessages() {
-        GetQueueAttributesResult result = sqsClient.getQueueAttributes(new GetQueueAttributesRequest()
-                .withQueueUrl(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL))
-                .withAttributeNames(
-                        QueueAttributeName.ApproximateNumberOfMessages,
-                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible));
-        return getInt(result, QueueAttributeName.ApproximateNumberOfMessages) +
-                getInt(result, QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
-    }
-
-    private static int getInt(GetQueueAttributesResult result, QueueAttributeName attribute) {
-        return Integer.parseInt(result.getAttributes().get(attribute.toString()));
+    public WaitForPartitionSplitting(StateStore store) {
+        this.store = store;
     }
 }
