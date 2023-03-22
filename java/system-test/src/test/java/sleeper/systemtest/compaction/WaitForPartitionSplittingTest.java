@@ -16,27 +16,41 @@
 
 package sleeper.systemtest.compaction;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
-public class WaitForPartitionSplittingTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+
+class WaitForPartitionSplittingTest {
     @Test
-    @Disabled("TODO")
-    void shouldWaitWhenOnePartitionStillNeedsSplitting() {
+    void shouldWaitWhenOnePartitionStillNeedsSplitting() throws Exception {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
-        StateStore stateStore = StateStoreTestBuilder.from(new PartitionsBuilder(schema).singlePartition("root"))
-                .partitionFileWithRecords("root", "test.parquet", 123456789L)
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tableProperties.set(PARTITION_SPLIT_THRESHOLD, "10");
+        StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
+                        .singlePartition("root"))
+                .partitionFileWithRecords("root", "test.parquet", 11)
                 .buildStateStore();
 
         // When
-        WaitForPartitionSplitting waitForPartitionSplitting = new WaitForPartitionSplitting(stateStore);
+        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+
+        // Then
+        assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isFalse();
+    }
+
+    private PartitionsBuilder partitionsBuilder(TableProperties tableProperties) {
+        return new PartitionsBuilder(tableProperties.getSchema());
     }
 }

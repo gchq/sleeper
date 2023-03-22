@@ -16,12 +16,26 @@
 
 package sleeper.systemtest.compaction;
 
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.splitter.FindPartitionToSplitResult;
+import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+
+import java.util.List;
 
 public class WaitForPartitionSplitting {
-    private final StateStore store;
 
-    public WaitForPartitionSplitting(StateStore store) {
-        this.store = store;
+    public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
+            TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+        return fromPartitionsToSplit(FindPartitionsToSplit.getResults(tableProperties, stateStore));
+    }
+
+    public static WaitForPartitionSplitting fromPartitionsToSplit(List<FindPartitionToSplitResult> results) {
+        return new WaitForPartitionSplitting();
+    }
+
+    public boolean isSplitFinished(StateStore stateStore) {
+        return false;
     }
 }
