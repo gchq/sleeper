@@ -34,9 +34,7 @@ class WaitForPartitionSplittingTest {
     @Test
     void shouldWaitWhenOnePartitionStillNeedsSplitting() throws Exception {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-        tableProperties.set(PARTITION_SPLIT_THRESHOLD, "10");
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
         StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
                         .singlePartition("root"))
                 .partitionFileWithRecords("root", "test.parquet", 11)
@@ -50,7 +48,31 @@ class WaitForPartitionSplittingTest {
         assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isFalse();
     }
 
+    @Test
+    void shouldNotWaitWhenNoPartitionsNeedSplitting() throws Exception {
+        // Given
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
+        StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
+                        .singlePartition("root"))
+                .partitionFileWithRecords("root", "test.parquet", 5)
+                .buildStateStore();
+
+        // When
+        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+
+        // Then
+        assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isTrue();
+    }
+
     private PartitionsBuilder partitionsBuilder(TableProperties tableProperties) {
         return new PartitionsBuilder(tableProperties.getSchema());
+    }
+
+    private TableProperties createTablePropertiesWithSplitThreshold(String threshold) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tableProperties.set(PARTITION_SPLIT_THRESHOLD, threshold);
+        return tableProperties;
     }
 }

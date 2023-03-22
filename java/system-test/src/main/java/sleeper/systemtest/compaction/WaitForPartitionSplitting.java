@@ -26,16 +26,23 @@ import java.util.List;
 
 public class WaitForPartitionSplitting {
 
-    public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
-            TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        return fromPartitionsToSplit(FindPartitionsToSplit.getResults(tableProperties, stateStore));
+    private final List<FindPartitionToSplitResult> toSplit;
+
+    private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
+        this.toSplit = toSplit;
     }
 
-    public static WaitForPartitionSplitting fromPartitionsToSplit(List<FindPartitionToSplitResult> results) {
-        return new WaitForPartitionSplitting();
+    public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
+            TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+        return fromPartitionsToSplit(
+                FindPartitionsToSplit.getResults(tableProperties, stateStore));
+    }
+
+    public static WaitForPartitionSplitting fromPartitionsToSplit(List<FindPartitionToSplitResult> toSplit) {
+        return new WaitForPartitionSplitting(toSplit);
     }
 
     public boolean isSplitFinished(StateStore stateStore) {
-        return false;
+        return toSplit.isEmpty();
     }
 }
