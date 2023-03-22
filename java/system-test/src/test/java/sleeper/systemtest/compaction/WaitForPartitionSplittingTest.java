@@ -16,11 +16,15 @@
 
 package sleeper.systemtest.compaction;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
@@ -28,11 +32,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class WaitForPartitionSplittingTest {
     @Test
-    void shouldWaitWhenOnePartitionStillNeedsSplitting() throws Exception {
+    void shouldFindSplitsNotFinishedWhenOnePartitionStillNeedsSplitting() throws Exception {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
         StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -49,7 +52,7 @@ class WaitForPartitionSplittingTest {
     }
 
     @Test
-    void shouldNotWaitWhenNoPartitionsNeedSplitting() throws Exception {
+    void shouldFindSplitsFinishedWhenNoPartitionsNeedSplitting() throws Exception {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
         StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
@@ -65,13 +68,37 @@ class WaitForPartitionSplittingTest {
         assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isTrue();
     }
 
+    @Test
+    @Disabled("TODO")
+    void shouldFindSplitFinishedWhenOnePartitionWasSplitButSplittingCompactionHasNotHappenedYet() throws Exception {
+        // Given
+        TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
+        StateStore before = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
+                        .singlePartition("root"))
+                .partitionFileWithRecords("root", "test.parquet", 11)
+                .buildStateStore();
+        StateStore after = StateStoreTestBuilder.from(partitionsBuilder(tableProperties)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", "split point"))
+                .partitionFileWithRecords("root", "test.parquet", 11)
+                .buildStateStore();
+
+        // When
+        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+
+        // Then
+        assertThat(waitForPartitionSplitting.isSplitFinished(after)).isTrue();
+    }
+
     private PartitionsBuilder partitionsBuilder(TableProperties tableProperties) {
         return new PartitionsBuilder(tableProperties.getSchema());
     }
 
     private TableProperties createTablePropertiesWithSplitThreshold(String threshold) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties tableProperties = createTestTableProperties(instanceProperties,
+                Schema.builder().rowKeyFields(new Field("key", new StringType())).build());
         tableProperties.set(PARTITION_SPLIT_THRESHOLD, threshold);
         return tableProperties;
     }
