@@ -61,10 +61,6 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         return runClient(store());
     }
 
-    protected String runClientGetOutput() throws Exception {
-        return runClient().runGetOutput();
-    }
-
     protected AdminConfigStore store() {
         return new AdminConfigStore(s3, null, cdk, tempDir);
     }
