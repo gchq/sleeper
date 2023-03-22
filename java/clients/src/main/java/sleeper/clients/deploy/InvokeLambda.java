@@ -16,10 +16,14 @@
 
 package sleeper.clients.deploy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 public class InvokeLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InvokeLambda.class);
+
     private InvokeLambda() {
     }
 
@@ -30,6 +34,7 @@ public class InvokeLambda {
     }
 
     public static void invokeWith(LambdaClient lambdaClient, String lambdaFunction) {
+        LOGGER.info("Invoking lambda {}", lambdaFunction);
         lambdaClient.invoke(builder -> builder
                 .functionName(lambdaFunction)
                 .payload(SdkBytes.fromUtf8String("{}")));
