@@ -43,6 +43,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -77,6 +78,31 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total jobs waiting in queue (excluded from report): 10\n" +
                             "Total jobs in progress: 1\n" +
                             "Total jobs finished: 0");
+
+            verifyWithNumberOfInvocations(4);
+        }
+
+        @Test
+        void shouldRunIngestJobStatusReportWithQueryTypeUnknown() throws Exception {
+            // Given
+            createIngestJobStatusStore();
+            createSqsClient();
+            when(ingestJobStatusStore.getUnfinishedJobs("test-table"))
+                    .thenReturn(exampleJobStatuses());
+
+            // When/Then
+            String output = runIngestJobStatusReport()
+                    .enterPrompts(JOB_QUERY_UNFINISHED_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("" +
+                            "Ingest Job Status Report\n" +
+                            "------------------------\n" +
+                            "Total jobs waiting in queue (excluded from report): 10\n" +
+                            "Total jobs in progress: 1\n" +
+                            "-");
 
             verifyWithNumberOfInvocations(4);
         }

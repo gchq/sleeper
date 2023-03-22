@@ -62,7 +62,9 @@ public class IngestStatusReportScreen {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
-                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.ALL))
+                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
+                    new MenuOption("Unfinished", () ->
+                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED))
             ).run();
         }
     }
