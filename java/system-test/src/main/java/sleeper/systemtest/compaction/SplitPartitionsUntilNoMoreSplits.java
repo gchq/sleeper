@@ -64,15 +64,16 @@ public class SplitPartitionsUntilNoMoreSplits {
         tableProperties.loadFromS3(s3Client, tableName);
         StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties)
                 .getStateStore(tableProperties);
-        WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
 
         WaitForCurrentSplitAddingMissingJobs applySplit = new WaitForCurrentSplitAddingMissingJobs(
                 sqsClient, store, systemTestProperties, tableName);
 
         do {
+            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                    .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
             LOGGER.info("Splitting partitions");
             InvokeSystemTestLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
-        } while (applySplit.checkIfSplittingNeededAndWait()); // Repeat until no more splitting is needed
+            waitForPartitionSplitting.pollUntilFinished(stateStore);
+        } while (applySplit.checkIfSplittingCompactionNeededAndWait()); // Repeat until no more splitting is needed
     }
 }

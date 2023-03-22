@@ -60,12 +60,16 @@ public class WaitForCurrentSplitAddingMissingJobs {
                 sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
     }
 
+    public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
+        LOGGER.info("Waiting for partition splits");
+        waitForSplitting.pollUntilFinished();
+        checkIfSplittingCompactionNeededAndWait();
+    }
+
     /**
      * @return true if any splitting was done, false if none was needed
      */
-    public boolean checkIfSplittingNeededAndWait() throws InterruptedException, IOException {
-        LOGGER.info("Waiting for partition splits");
-        waitForSplitting.pollUntilFinished();
+    public boolean checkIfSplittingCompactionNeededAndWait() throws InterruptedException, IOException {
         LOGGER.info("Creating compaction jobs");
         InvokeSystemTestLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
         if (store.getUnfinishedJobs(tableName).isEmpty()) {
@@ -99,6 +103,6 @@ public class WaitForCurrentSplitAddingMissingJobs {
         CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
 
         new WaitForCurrentSplitAddingMissingJobs(sqsClient, store, systemTestProperties, tableName)
-                .checkIfSplittingNeededAndWait();
+                .waitForSplittingAndCompaction();
     }
 }
