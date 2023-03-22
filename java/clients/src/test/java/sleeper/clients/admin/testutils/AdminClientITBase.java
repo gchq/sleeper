@@ -26,7 +26,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.core.CommonTestConstants;
@@ -54,15 +53,11 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected Path tempDir;
 
     protected RunAdminClient runClient() {
-        return runClient(client());
+        return runClient(store());
     }
 
     protected String runClientGetOutput() throws Exception {
         return runClient().runGetOutput();
-    }
-
-    protected AdminClient client() {
-        return new AdminClient(store(), editor, out.consoleOut(), in.consoleIn());
     }
 
     protected AdminConfigStore store() {
