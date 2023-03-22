@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.compaction;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
@@ -48,7 +47,7 @@ class WaitForPartitionSplittingTest {
                 .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
 
         // Then
-        assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isFalse();
+        assertThat(waitForPartitionSplitting.isSplitFinished()).isFalse();
     }
 
     @Test
@@ -65,11 +64,10 @@ class WaitForPartitionSplittingTest {
                 .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
 
         // Then
-        assertThat(waitForPartitionSplitting.isSplitFinished(stateStore)).isTrue();
+        assertThat(waitForPartitionSplitting.isSplitFinished()).isTrue();
     }
 
     @Test
-    @Disabled("TODO")
     void shouldFindSplitFinishedWhenOnePartitionWasSplitButSplittingCompactionHasNotHappenedYet() throws Exception {
         // Given
         TableProperties tableProperties = createTablePropertiesWithSplitThreshold("10");
@@ -86,9 +84,11 @@ class WaitForPartitionSplittingTest {
         // When
         WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
                 .forCurrentPartitionsNeedingSplitting(tableProperties, before);
+        assertThat(waitForPartitionSplitting.isSplitFinished()).isFalse();
 
         // Then
-        assertThat(waitForPartitionSplitting.isSplitFinished(after)).isTrue();
+        waitForPartitionSplitting.check(tableProperties, after);
+        assertThat(waitForPartitionSplitting.isSplitFinished()).isTrue();
     }
 
     private PartitionsBuilder partitionsBuilder(TableProperties tableProperties) {

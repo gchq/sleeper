@@ -26,7 +26,7 @@ import java.util.List;
 
 public class WaitForPartitionSplitting {
 
-    private final List<FindPartitionToSplitResult> toSplit;
+    private List<FindPartitionToSplitResult> toSplit;
 
     private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
         this.toSplit = toSplit;
@@ -38,7 +38,12 @@ public class WaitForPartitionSplitting {
                 FindPartitionsToSplit.getResults(tableProperties, stateStore));
     }
 
-    public boolean isSplitFinished(StateStore stateStore) {
+    public void check(TableProperties tableProperties, StateStore stateStore)
+            throws StateStoreException {
+        this.toSplit = FindPartitionsToSplit.getResults(tableProperties, stateStore);
+    }
+
+    public boolean isSplitFinished() {
         return toSplit.isEmpty();
     }
 }
