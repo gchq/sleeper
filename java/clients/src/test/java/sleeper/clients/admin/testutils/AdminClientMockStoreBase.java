@@ -36,10 +36,6 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
         return runClient(store);
     }
 
-    protected String runClientGetOutput() throws Exception {
-        return runClient().runGetOutput();
-    }
-
     @Override
     protected void setInstanceProperties(InstanceProperties instanceProperties) {
         when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
