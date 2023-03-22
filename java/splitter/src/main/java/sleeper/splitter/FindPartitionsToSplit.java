@@ -28,6 +28,7 @@ import sleeper.statestore.StateStoreException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
@@ -73,25 +74,20 @@ public class FindPartitionsToSplit {
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableName);
-        for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(partition, activeFileInfos);
-        }
-    }
 
-    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> activeFileInfos) throws IOException {
-        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
-        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
-        if (check.isNeedsSplitting()) {
-            LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
+        List<FindPartitionToSplitResult> results = new ArrayList<>();
+        for (Partition partition : leafPartitions) {
+            splitPartitionIfNecessary(partition, activeFileInfos).ifPresent(results::add);
+        }
+        for (FindPartitionToSplitResult result : results) {
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
-            if (relevantFiles.size() < maxFilesInJob) {
-                filesForJob.addAll(relevantFiles.stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+            if (result.getRelevantFiles().size() < maxFilesInJob) {
+                filesForJob.addAll(result.getRelevantFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
             } else {
                 // Compare method has f2 first to sort in reverse order
                 filesForJob.addAll(
-                        relevantFiles
+                        result.getRelevantFiles()
                                 .stream()
                                 .sorted((f1, f2) -> Long.compare(f2.getNumberOfRecords(), f1.getNumberOfRecords()))
                                 .limit(maxFilesInJob)
@@ -100,10 +96,21 @@ public class FindPartitionsToSplit {
                 );
             }
             // Create job and call run to send to job queue
-            SplitPartitionJobCreator partitionJobCreator = new SplitPartitionJobCreator(tableName, tablePropertiesProvider, partition, filesForJob, sqsUrl, sqs);
+            SplitPartitionJobCreator partitionJobCreator = new SplitPartitionJobCreator(tableName, tablePropertiesProvider, result.getPartition(), filesForJob, sqsUrl, sqs);
             partitionJobCreator.run();
+        }
+    }
+
+    private Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(Partition partition, List<FileInfo> activeFileInfos) throws IOException {
+        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
+        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
+        if (check.isNeedsSplitting()) {
+            LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
+            return Optional.of(new FindPartitionToSplitResult(partition, relevantFiles));
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
+            return Optional.empty();
         }
     }
 
