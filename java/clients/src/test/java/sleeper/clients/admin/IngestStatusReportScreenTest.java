@@ -34,6 +34,7 @@ import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +44,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -105,6 +107,30 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "-");
 
             verifyWithNumberOfInvocations(4);
+        }
+
+        @Test
+        void shouldRunIngestJobStatusReportWithQueryTypeDetailed() throws Exception {
+            // Given
+            createIngestJobStatusStore();
+            createSqsClient();
+            IngestJobStatus exampleJob = exampleJobStatuses().get(0);
+            when(ingestJobStatusStore.getJob("test-job"))
+                    .thenReturn(Optional.of(exampleJob));
+
+            // When/Then
+            String output = runIngestJobStatusReport()
+                    .enterPrompts(JOB_QUERY_DETAILED_OPTION, "test-job", CONFIRM_PROMPT)
+                    .exitGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("" +
+                            "Ingest Job Status Report\n" +
+                            "------------------------\n" +
+                            "Details for job test-job");
+
+            verifyWithNumberOfInvocations(5);
         }
 
         private RunAdminClient runIngestJobStatusReport() {

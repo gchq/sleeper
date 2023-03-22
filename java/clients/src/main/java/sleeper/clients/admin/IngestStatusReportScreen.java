@@ -31,6 +31,7 @@ import sleeper.status.report.job.query.JobQuery;
 import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestStatusReportScreen {
@@ -64,23 +65,33 @@ public class IngestStatusReportScreen {
                     new MenuOption("All", () ->
                             runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
                     new MenuOption("Unfinished", () ->
-                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED))
+                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
+                    new MenuOption("Detailed", () ->
+                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED,
+                                    promptForJobId(in)))
             ).run();
         }
     }
 
-    private IngestJobStatusReportArguments buildArgs(String instanceId, String tableName, JobQuery.Type queryType) {
+    private IngestJobStatusReportArguments.Builder argsBuilder(String instanceId, String tableName, JobQuery.Type queryType) {
         return IngestJobStatusReportArguments.builder()
                 .instanceId(instanceId).tableName(tableName)
                 .queryType(queryType)
-                .reporter(new StandardIngestJobStatusReporter(out.printStream()))
-                .build();
+                .reporter(new StandardIngestJobStatusReporter(out.printStream()));
+    }
+
+    private void runIngestJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType, String queryArgs) {
+        runIngestJobStatusReport(instanceId, argsBuilder(instanceId, tableName, queryType)
+                .queryParameters(queryArgs).build());
     }
 
     private void runIngestJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType) {
+        runIngestJobStatusReport(instanceId, argsBuilder(instanceId, tableName, queryType).build());
+    }
+
+    private void runIngestJobStatusReport(String instanceId, IngestJobStatusReportArguments args) {
         InstanceProperties instanceProperties = store.loadInstanceProperties(instanceId);
-        new IngestJobStatusReport(store.loadIngestJobStatusStore(instanceId),
-                buildArgs(instanceId, tableName, queryType),
+        new IngestJobStatusReport(store.loadIngestJobStatusStore(instanceId), args,
                 store.getSqsClient(), instanceProperties.get(INGEST_JOB_QUEUE_URL)).run();
         confirmReturnToMainScreen(out, in);
     }

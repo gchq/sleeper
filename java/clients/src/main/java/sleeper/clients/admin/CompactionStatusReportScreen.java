@@ -33,6 +33,8 @@ import sleeper.status.report.job.query.JobQuery;
 import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
+import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
@@ -68,10 +70,12 @@ public class CompactionStatusReportScreen {
                             runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
                     new MenuOption("Unfinished", () ->
                             runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
-                    new MenuOption("Detailed (specific job)", () ->
-                            chooseJobIdAndRunDetailedStatusReport(instanceId, tableName)),
+                    new MenuOption("Detailed", () ->
+                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED,
+                                    promptForJobId(in))),
                     new MenuOption("Range", () ->
-                            chooseRangeAndRunRangeStatusReport(instanceId, tableName))).run();
+                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.RANGE,
+                                    promptForRange(in)))).run();
         }
     }
 
@@ -82,17 +86,6 @@ public class CompactionStatusReportScreen {
                 new MenuOption("Unfinished", () ->
                         runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.UNFINISHED))
         ).run();
-    }
-
-    private void chooseJobIdAndRunDetailedStatusReport(String instanceId, String tableName) {
-        String jobId = in.promptLine("Enter the jobId of the job you want to view the details for: ");
-        runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED, jobId);
-    }
-
-    private void chooseRangeAndRunRangeStatusReport(String instanceId, String tableName) {
-        String startRange = in.promptLine("Enter the start range in the format yyyyMMddhhmmss: ");
-        String endRange = in.promptLine("Enter the end range in the format yyyyMMddhhmmss: ");
-        runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.RANGE, startRange + "," + endRange);
     }
 
     private CompactionJobStatusReportArguments.Builder argsBuilder(String instanceId, String tableName, JobQuery.Type queryType) {
