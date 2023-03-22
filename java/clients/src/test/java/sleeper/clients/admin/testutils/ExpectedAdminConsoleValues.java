@@ -77,7 +77,7 @@ public class ExpectedAdminConsoleValues {
     public static final String COMPACTION_TASK_STATUS_REPORT_OPTION = "2";
 
     public static final String JOB_QUERY_ALL_OPTION = "1";
-    public static final String JOB_QUERY_UNKNOWN_OPTION = "2";
+    public static final String JOB_QUERY_UNFINISHED_OPTION = "2";
     public static final String JOB_QUERY_DETAILED_OPTION = "3";
     public static final String JOB_QUERY_RANGE_OPTION = "4";
 
