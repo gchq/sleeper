@@ -17,12 +17,17 @@
 package sleeper.systemtest.compaction;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 public class WaitForPartitionSplitting {
 
@@ -38,12 +43,13 @@ public class WaitForPartitionSplitting {
                 FindPartitionsToSplit.getResults(tableProperties, stateStore));
     }
 
-    public void check(TableProperties tableProperties, StateStore stateStore)
-            throws StateStoreException {
-        this.toSplit = FindPartitionsToSplit.getResults(tableProperties, stateStore);
-    }
-
-    public boolean isSplitFinished() {
-        return toSplit.isEmpty();
+    public boolean isSplitFinished(StateStore stateStore) throws StateStoreException {
+        Set<String> leafPartitionIds = stateStore.getLeafPartitions().stream()
+                .map(Partition::getId)
+                .collect(Collectors.toSet());
+        return toSplit.stream()
+                .map(FindPartitionToSplitResult::getPartition)
+                .map(Partition::getId)
+                .allMatch(not(leafPartitionIds::contains));
     }
 }
