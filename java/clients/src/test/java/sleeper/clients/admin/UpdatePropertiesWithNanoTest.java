@@ -189,5 +189,24 @@ class UpdatePropertiesWithNanoTest {
                     .print(properties);
             assertThat(tempFileString).isEqualTo(writer.toString());
         }
+
+        @Test
+        void shouldCreateUpdateRequestWithPropertiesInGroup() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(LOGGING_LEVEL, "ERROR");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(LOGGING_LEVEL, "INFO");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.logging.level=INFO", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
     }
 }

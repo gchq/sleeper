@@ -17,11 +17,13 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,6 +56,14 @@ public class UpdatePropertiesWithNanoTestHelper {
     public UpdatePropertiesRequest<InstanceProperties> updateProperties(
             InstanceProperties before, InstanceProperties after) throws Exception {
         return updaterSavingProperties(after).openPropertiesFile(before);
+    }
+
+    public UpdatePropertiesRequest<InstanceProperties> updatePropertiesWithGroup(
+            InstanceProperties before, String toWriteInEditor, PropertyGroup group) throws Exception {
+        return updaterWithCommandHandler(command -> {
+            Files.writeString(expectedPropertiesFile, toWriteInEditor);
+            return 0;
+        }).openPropertiesFile(before, group);
     }
 
     public UpdatePropertiesRequest<TableProperties> updateProperties(
