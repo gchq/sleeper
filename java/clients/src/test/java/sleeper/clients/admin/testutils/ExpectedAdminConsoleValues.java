@@ -15,6 +15,12 @@
  */
 package sleeper.clients.admin.testutils;
 
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.PropertyGroup;
+
+import java.util.List;
+import java.util.stream.IntStream;
+
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 public class ExpectedAdminConsoleValues {
@@ -30,10 +36,21 @@ public class ExpectedAdminConsoleValues {
             "[0] Exit program\n" +
             "[1] View/edit instance configuration\n" +
             "[2] View/edit table configuration\n" +
-            "[3] Print Sleeper table names\n" +
-            "[4] Run partition status report\n" +
-            "[5] Run files status report\n" +
+            "[3] View configuration by group\n" +
+            "[4] Print Sleeper table names\n" +
+            "[5] Run partition status report\n" +
+            "[6] Run files status report\n" +
             "\n" +
+            "Input: \n";
+    private static final List<PropertyGroup> INSTANCE_PROPERTY_GROUPS = InstancePropertyGroup.getAll();
+    public static final String GROUP_SELECT_SCREEN = "\n" +
+            "Please select a group from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[1] Return to Main Menu\n" +
+            IntStream.range(0, INSTANCE_PROPERTY_GROUPS.size())
+                    .mapToObj(index -> String.format("[%d] %s - %s", index + 2, "Instance Properties",
+                            INSTANCE_PROPERTY_GROUPS.get(index).getName()))
+                    .toString() +
             "Input: \n";
     public static final String TABLE_SELECT_SCREEN = "\n" +
             "Which TABLE do you want to select?\n" +
@@ -66,9 +83,10 @@ public class ExpectedAdminConsoleValues {
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
     public static final String INSTANCE_CONFIGURATION_OPTION = "1";
     public static final String TABLE_CONFIGURATION_OPTION = "2";
-    public static final String TABLE_NAMES_REPORT_OPTION = "3";
-    public static final String PARTITION_STATUS_REPORT_OPTION = "4";
-    public static final String FILES_STATUS_REPORT_OPTION = "5";
+    public static final String CONFIGURATION_BY_GROUP_OPTION = "3";
+    public static final String TABLE_NAMES_REPORT_OPTION = "4";
+    public static final String PARTITION_STATUS_REPORT_OPTION = "5";
+    public static final String FILES_STATUS_REPORT_OPTION = "6";
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final class SaveChangesScreen {

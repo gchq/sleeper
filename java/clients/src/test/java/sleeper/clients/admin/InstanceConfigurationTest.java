@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.GROUP_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
@@ -576,6 +579,25 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "sleeper.table.data.bucket\n" +
                     "\n" +
                     PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
+        }
+    }
+
+    @DisplayName("Filter by group")
+    @Nested
+    class FilterByGroup {
+        @Test
+        @Disabled("TODO")
+        void shouldViewPropertiesThatBelongToSpecificGroup() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+
+            // When
+            String output = viewInstanceConfigurationWithGroup(properties, InstancePropertyGroup.COMMON)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
         }
     }
 

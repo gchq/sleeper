@@ -20,12 +20,15 @@ import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -117,11 +121,24 @@ public abstract class AdminClientTestBase {
     }
 
     protected RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
+        setInstancePropertiesView(properties);
+        return runClient()
+                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+    }
+
+    protected RunAdminClient viewInstanceConfigurationWithGroup(InstanceProperties properties, PropertyGroup group)
+            throws Exception {
+        setInstancePropertiesView(properties);
+        return runClient()
+                .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                        "" + InstancePropertyGroup.getAll().indexOf(group));
+    }
+
+    private void setInstancePropertiesView(InstanceProperties properties)
+            throws IOException, InterruptedException {
         setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties))
                 .thenReturn(noChanges(properties));
-        return runClient()
-                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
 
     protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,

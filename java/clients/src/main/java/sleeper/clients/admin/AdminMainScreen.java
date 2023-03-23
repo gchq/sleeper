@@ -42,6 +42,8 @@ public class AdminMainScreen {
                         client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
                 new MenuOption("View/edit table configuration", () ->
                         client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId)),
+                new MenuOption("View configuration by group", () -> {
+                }),
                 new MenuOption("Print Sleeper table names", () ->
                         client.tableNamesReport().print(instanceId)),
                 new MenuOption("Run partition status report", () ->
