@@ -62,21 +62,15 @@ public class UpdatePropertiesWithNano {
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(
             InstanceProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = new Properties();
-        after.putAll(properties.getProperties());
-        Properties edited = editProperties(properties, writer ->
+        Properties after = editPropertiesAndMerge(properties, writer ->
                 SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, propertyGroup));
-        after.putAll(edited);
         return buildRequest(properties, new InstanceProperties(after));
     }
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
             TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = new Properties();
-        after.putAll(properties.getProperties());
-        Properties edited = editProperties(properties, writer ->
+        Properties after = editPropertiesAndMerge(properties, writer ->
                 SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
-        after.putAll(edited);
         return buildRequest(properties, TableProperties.reinitialise(properties, after));
     }
 
@@ -90,6 +84,16 @@ public class UpdatePropertiesWithNano {
         }
         runCommand.run("nano", propertiesFile.toString());
         return loadProperties(propertiesFile);
+    }
+
+    private <T extends SleeperProperty> Properties editPropertiesAndMerge(
+            SleeperProperties<T> properties,
+            Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer) throws IOException, InterruptedException {
+        Properties after = new Properties();
+        after.putAll(properties.getProperties());
+        Properties edited = editProperties(properties, printer);
+        after.putAll(edited);
+        return after;
     }
 
     private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T before, T after) {
