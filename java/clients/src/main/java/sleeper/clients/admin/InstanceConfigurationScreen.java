@@ -72,6 +72,7 @@ public class InstanceConfigurationScreen {
     }
 
     public void choosePropertyGroup(String instanceId) throws InterruptedException {
+        out.clearScreen("");
         Map<ConsoleChoice, PropertyGroup> choiceToInstanceGroup = new LinkedHashMap<>();
         Map<ConsoleChoice, PropertyGroup> choiceToTableGroup = new LinkedHashMap<>();
         InstancePropertyGroup.getAll().forEach(group ->
@@ -82,7 +83,6 @@ public class InstanceConfigurationScreen {
         choices.add(RETURN_TO_MAIN_MENU);
         choices.addAll(choiceToInstanceGroup.keySet());
         choices.addAll(choiceToTableGroup.keySet());
-        out.println();
         Chosen<ConsoleChoice> chosen = chooseOne.chooseWithMessageFrom(
                 "Please select a group from the below options and hit return:",
                 choices);

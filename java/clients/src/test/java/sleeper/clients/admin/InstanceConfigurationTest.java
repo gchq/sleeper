@@ -605,7 +605,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
-                    GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock, times(2)).promptLine(any());
@@ -631,7 +631,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     .exitGetOutput();
 
             // Then
-            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + GROUP_SELECT_SCREEN)
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + GROUP_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);
@@ -665,7 +665,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                            GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                            CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);
@@ -688,7 +688,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
-                    GROUP_SELECT_SCREEN);
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN);
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
