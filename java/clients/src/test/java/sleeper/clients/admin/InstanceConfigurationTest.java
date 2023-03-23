@@ -627,6 +627,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
                             groupSelectScreenOption(InstancePropertyGroup.COMMON))
                     .editFromStore(before, after, InstancePropertyGroup.COMMON)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
 
             // Then
@@ -660,6 +661,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             groupSelectScreenOption(TablePropertyGroup.METADATA),
                             before.get(TABLE_NAME))
                     .editFromStore(properties, before, after, TablePropertyGroup.METADATA)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
 
             // Then
