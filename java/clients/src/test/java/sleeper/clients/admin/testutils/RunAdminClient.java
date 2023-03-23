@@ -21,6 +21,7 @@ import sleeper.clients.AdminClient;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 
 import static org.mockito.Mockito.when;
@@ -77,6 +78,23 @@ public class RunAdminClient {
         return this;
     }
 
+    public RunAdminClient editFromStore(InstanceProperties properties,
+                                        TableProperties before, TableProperties after) throws Exception {
+        store.setInstanceProperties(properties, before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return this;
+    }
+
+    public RunAdminClient editFromStore(InstanceProperties properties,
+                                        TableProperties before, TableProperties after, PropertyGroup group)
+            throws Exception {
+        store.setInstanceProperties(properties, before);
+        when(editor.openPropertiesFile(before, group))
+                .thenReturn(withChanges(before, after));
+        return this;
+    }
+
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties) throws Exception {
         store.setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties))
@@ -88,6 +106,13 @@ public class RunAdminClient {
         store.setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties, propertyGroup))
                 .thenReturn(noChanges(properties));
+        return this;
+    }
+
+    public RunAdminClient viewInEditorFromStore(InstanceProperties properties, TableProperties tableProperties) throws Exception {
+        store.setInstanceProperties(properties, tableProperties);
+        when(editor.openPropertiesFile(tableProperties))
+                .thenReturn(noChanges(tableProperties));
         return this;
     }
 

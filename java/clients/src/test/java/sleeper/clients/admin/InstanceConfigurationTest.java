@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +52,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
@@ -630,6 +633,36 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(editor).openPropertiesFile(before, InstancePropertyGroup.COMMON);
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldEditTablePropertiesThatBelongToSpecificGroup() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
+            TableProperties after = createValidTableProperties(properties);
+            after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
+
+            // When
+            String output = editTableConfigurationWithGroup(properties, before, after, TablePropertyGroup.METADATA)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
+                            GROUP_SELECT_SCREEN + TABLE_SELECT_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(3)).promptLine(any());
+            order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
