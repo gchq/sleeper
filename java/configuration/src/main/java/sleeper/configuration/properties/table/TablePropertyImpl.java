@@ -35,6 +35,7 @@ class TablePropertyImpl implements TableProperty {
     private final PropertyGroup propertyGroup;
     private final boolean runCDKDeployWhenChanged;
     private final boolean systemDefined;
+    private final boolean editable;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -45,6 +46,7 @@ class TablePropertyImpl implements TableProperty {
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
         systemDefined = builder.systemDefined;
+        editable = builder.editable;
     }
 
 
@@ -96,6 +98,11 @@ class TablePropertyImpl implements TableProperty {
         return systemDefined;
     }
 
+    @Override
+    public boolean isEditable() {
+        return editable && !systemDefined;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -110,6 +117,7 @@ class TablePropertyImpl implements TableProperty {
         private PropertyGroup propertyGroup;
         private Consumer<TableProperty> addToIndex;
         private boolean systemDefined;
+        private boolean editable = true;
 
         private Builder() {
         }
@@ -141,6 +149,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
             this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+            return this;
+        }
+
+        public Builder editable(boolean editable) {
+            this.editable = editable;
             return this;
         }
 

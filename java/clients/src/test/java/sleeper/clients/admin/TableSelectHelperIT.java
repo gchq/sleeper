@@ -28,12 +28,13 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 class TableSelectHelperIT extends AdminClientITBase {
     @Test
     void shouldReturnToMenuIfInstanceDoesNotExist() {
         // Given
-        in.enterNextPrompts("test-table");
+        in.enterNextPrompts("test-table", CONFIRM_PROMPT);
 
         // When
         String output = runTableSelectHelperGetOutput();
@@ -52,7 +53,7 @@ class TableSelectHelperIT extends AdminClientITBase {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         instanceProperties.saveToS3(s3);
-        in.enterNextPrompts("test-table");
+        in.enterNextPrompts("test-table", CONFIRM_PROMPT);
 
         // When
         String output = runTableSelectHelperGetOutput();

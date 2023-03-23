@@ -23,19 +23,14 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.NO_INSTANCE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -43,6 +38,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 class AdminClientIT extends AdminClientITBase {
 
@@ -50,13 +46,9 @@ class AdminClientIT extends AdminClientITBase {
     void shouldViewInstancePropertiesWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.saveToS3(s3);
-
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, EXIT_OPTION);
-        when(editor.openPropertiesFile(instanceProperties)).thenReturn(noChanges(instanceProperties));
 
         // When
-        String output = runClientGetOutput();
+        String output = viewInstanceConfiguration(instanceProperties).exitGetOutput();
 
         // Then
         assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + DISPLAY_MAIN_SCREEN);
@@ -72,10 +64,11 @@ class AdminClientIT extends AdminClientITBase {
         tableProperties1.saveToS3(s3);
         TableProperties tableProperties2 = createValidTableProperties(instanceProperties, "test-table-2");
         tableProperties2.saveToS3(s3);
-        in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, EXIT_OPTION);
 
         // When
-        String output = runClientGetOutput();
+        String output = runClient()
+                .enterPrompts(TABLE_NAMES_REPORT_OPTION, CONFIRM_PROMPT, EXIT_OPTION)
+                .exitGetOutput();
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
@@ -90,15 +83,10 @@ class AdminClientIT extends AdminClientITBase {
     void shouldViewTablePropertiesWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.saveToS3(s3);
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
-        tableProperties.saveToS3(s3);
-
-        in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
-        when(editor.openPropertiesFile(tableProperties)).thenReturn(noChanges(tableProperties));
 
         // When
-        String output = runClientGetOutput();
+        String output = viewTableConfiguration(instanceProperties, tableProperties).exitGetOutput();
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
@@ -111,15 +99,13 @@ class AdminClientIT extends AdminClientITBase {
     void shouldEditAnInstanceProperty() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
-        before.saveToS3(s3);
         InstanceProperties after = createValidInstanceProperties();
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "2");
 
-        in.enterNextPrompts(INSTANCE_CONFIGURATION_OPTION, SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
-        when(editor.openPropertiesFile(before)).thenReturn(withChanges(before, after));
-
         // When
-        String output = runClientGetOutput();
+        String output = editInstanceConfiguration(before, after)
+                .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
 
         // Then
         assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -136,19 +122,15 @@ class AdminClientIT extends AdminClientITBase {
     void shouldEditATableProperty() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.saveToS3(s3);
         TableProperties before = createValidTableProperties(instanceProperties);
         before.set(ITERATOR_CLASS_NAME, "BeforeIteratorClass");
-        before.saveToS3(s3);
         TableProperties after = createValidTableProperties(instanceProperties);
         after.set(ITERATOR_CLASS_NAME, "AfterIteratorClass");
 
-        in.enterNextPrompts(TABLE_CONFIGURATION_OPTION, TABLE_NAME_VALUE,
-                SaveChangesScreen.SAVE_CHANGES_OPTION, EXIT_OPTION);
-        when(editor.openPropertiesFile(before)).thenReturn(withChanges(before, after));
-
         // When
-        String output = runClientGetOutput();
+        String output = editTableConfiguration(instanceProperties, before, after)
+                .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
 
         // Then
         assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
@@ -165,7 +147,7 @@ class AdminClientIT extends AdminClientITBase {
     void shouldFailAtStartupWhenInstanceDoesNotExist() throws Exception {
 
         // When
-        String output = runClientGetOutput();
+        String output = runClient().runGetOutput();
 
         // Then
         assertThat(output).startsWith(NO_INSTANCE_SCREEN +

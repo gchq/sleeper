@@ -63,7 +63,7 @@ public class PropertiesDiff {
         out.println();
 
         // Print known properties
-        propertyIndex.getUserDefined().stream()
+        propertyIndex.getAll().stream()
                 .filter(property -> changes.containsKey(property.getPropertyName()))
                 .map(property -> changes.get(property.getPropertyName()))
                 .forEach(diff -> diff.print(out, propertyIndex, invalidProperties));
@@ -78,9 +78,9 @@ public class PropertiesDiff {
 
         if (!invalidProperties.isEmpty()) {
             out.println("Found invalid properties:");
-            for (SleeperProperty property : invalidProperties) {
-                out.println(property.getPropertyName());
-            }
+            propertyIndex.getAll().stream()
+                    .filter(invalidProperties::contains)
+                    .forEach(property -> out.println(property.getPropertyName()));
             out.println();
         }
     }

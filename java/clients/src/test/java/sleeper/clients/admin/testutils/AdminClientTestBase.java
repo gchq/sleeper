@@ -17,6 +17,7 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
+import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -29,6 +30,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
+import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -57,10 +63,18 @@ public abstract class AdminClientTestBase {
     protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
-    protected String runClientGetOutput(AdminClient client) throws Exception {
-        client.start(INSTANCE_ID);
-        return out.toString();
+    protected abstract RunAdminClient runClient();
+
+    protected RunAdminClient runClient(AdminConfigStore store) {
+        return new RunAdminClient(
+                new AdminClient(store, editor, out.consoleOut(), in.consoleIn()),
+                out, in, editor, INSTANCE_ID);
     }
+
+    protected abstract void setInstanceProperties(InstanceProperties properties);
+
+    protected abstract void setInstanceProperties(
+            InstanceProperties instanceProperties, TableProperties tableProperties);
 
     protected InstanceProperties createValidInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -91,5 +105,42 @@ public abstract class AdminClientTestBase {
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ENCRYPTED, "false");
         return tableProperties;
+    }
+
+    protected RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
+            throws Exception {
+        setInstanceProperties(before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return runClient()
+                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+    }
+
+    protected RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
+        setInstanceProperties(properties);
+        when(editor.openPropertiesFile(properties))
+                .thenReturn(noChanges(properties));
+        return runClient()
+                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+    }
+
+    protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
+                                                    TableProperties before, TableProperties after)
+            throws Exception {
+        setInstanceProperties(instanceProperties, before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return runClient()
+                .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME));
+    }
+
+    protected RunAdminClient viewTableConfiguration(InstanceProperties instanceProperties,
+                                                    TableProperties tableProperties)
+            throws Exception {
+        setInstanceProperties(instanceProperties, tableProperties);
+        when(editor.openPropertiesFile(tableProperties))
+                .thenReturn(noChanges(tableProperties));
+        return runClient()
+                .enterPrompts(TABLE_CONFIGURATION_OPTION, tableProperties.get(TABLE_NAME));
     }
 }

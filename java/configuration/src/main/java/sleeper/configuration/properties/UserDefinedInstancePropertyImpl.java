@@ -29,6 +29,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final String description;
     private final PropertyGroup propertyGroup;
     private final boolean runCDKDeployWhenChanged;
+    private final boolean editable;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -37,6 +38,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
+        editable = builder.editable;
     }
 
     public static Builder builder() {
@@ -81,6 +83,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return runCDKDeployWhenChanged;
     }
 
+    @Override
+    public boolean isEditable() {
+        return editable;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
@@ -88,6 +95,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private String description;
         private PropertyGroup propertyGroup;
         private boolean runCDKDeployWhenChanged;
+        private boolean editable = true;
         private Consumer<UserDefinedInstanceProperty> addToIndex;
 
         private Builder() {
@@ -120,6 +128,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
             this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+            return this;
+        }
+
+        public Builder editable(boolean editable) {
+            this.editable = editable;
             return this;
         }
 

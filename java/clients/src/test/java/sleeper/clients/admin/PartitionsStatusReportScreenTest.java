@@ -30,13 +30,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PARTITION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
 class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -49,10 +49,14 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
         setStateStoreForTable("test-table", stateStore);
-        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "test-table", EXIT_OPTION);
 
         // When
-        String output = runClientGetOutput();
+        String output = runClient()
+                .enterPrompts(PARTITION_STATUS_REPORT_OPTION,
+                        "test-table", CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
         assertThat(output)
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -65,11 +69,13 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
-        // Given
-        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
+        // When
+        String output = runClient()
+                .enterPrompts(PARTITION_STATUS_REPORT_OPTION,
+                        RETURN_TO_MAIN_SCREEN_OPTION)
+                .exitGetOutput();
 
-        // When/Then
-        String output = runClientGetOutput();
+        // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE +
                 TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
         InOrder order = Mockito.inOrder(in.mock);

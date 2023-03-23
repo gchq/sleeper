@@ -37,6 +37,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
 class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -50,11 +51,14 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     void shouldRunFilesStatusReportWithDefaultArgs() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
-        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
-                "test-table", "", "", EXIT_OPTION);
 
-        // When/Then
-        String output = runClientGetOutput();
+        // When
+        String output = runClient()
+                .enterPrompts(FILES_STATUS_REPORT_OPTION,
+                        "test-table", "", "", CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("No value entered, defaulting to 1000")
@@ -69,11 +73,14 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     void shouldRunFilesStatusReportWithVerboseOption() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
-        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
-                "test-table", "", "y", EXIT_OPTION);
 
-        // When/Then
-        String output = runClientGetOutput();
+        // When
+        String output = runClient()
+                .enterPrompts(FILES_STATUS_REPORT_OPTION,
+                        "test-table", "", "y", CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("No value entered, defaulting to 1000")
@@ -91,11 +98,14 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     void shouldRunFilesStatusReportWithCustomMaxGC() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
-        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
-                "test-table", "1", "y", EXIT_OPTION);
 
-        // When/Then
-        String output = runClientGetOutput();
+        // When
+        String output = runClient()
+                .enterPrompts(FILES_STATUS_REPORT_OPTION,
+                        "test-table", "1", "y", CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
         assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .doesNotContain("defaulting to 1000")
@@ -114,8 +124,13 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
         // Given
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 
-        // When/Then
-        String output = runClientGetOutput();
+        // When
+        String output = runClient()
+                .enterPrompts(FILES_STATUS_REPORT_OPTION,
+                        RETURN_TO_MAIN_SCREEN_OPTION)
+                .exitGetOutput();
+
+        // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE +
                 TABLE_SELECT_SCREEN + CLEAR_CONSOLE + MAIN_SCREEN);
         InOrder order = Mockito.inOrder(in.mock);

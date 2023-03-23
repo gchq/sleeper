@@ -66,10 +66,21 @@ public class PropertyDiff {
         } else {
             out.printf("Before: %s%n", oldValue);
         }
-        String invalidNote = propertyOpt.filter(invalidProperties::contains)
-                .map(property -> " (not valid, please change)").orElse("");
-        out.printf("After%s: %s%n", invalidNote, newValue);
+        out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), invalidProperties), newValue);
         out.println();
+    }
+
+    private String invalidNote(SleeperProperty property, Set<SleeperProperty> invalidProperties) {
+        if (property == null) {
+            return "";
+        }
+        if (!property.isEditable()) {
+            return " (cannot be changed, please undo)";
+        }
+        if (invalidProperties.contains(property)) {
+            return " (not valid, please change)";
+        }
+        return "";
     }
 
     public Optional<PropertyDiff> andThen(PropertyDiff then) {
