@@ -88,24 +88,16 @@ public class InstanceConfigurationScreen {
                 choices);
         Optional<PropertyGroup> instanceGroupOpt = chosen.getChoice().map(choiceToInstanceGroup::get);
         if (instanceGroupOpt.isPresent()) {
-            viewAndEditPropertiesWithGroup(instanceId, instanceGroupOpt.get());
+            withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), instanceGroupOpt.get())
+                    .viewAndEditProperties();
         }
         Optional<PropertyGroup> tableGroupOpt = chosen.getChoice().map(choiceToTableGroup::get);
         if (tableGroupOpt.isPresent()) {
-            viewAndEditTablePropertiesWithGroup(instanceId, tableGroupOpt.get());
-        }
-    }
-
-    private void viewAndEditPropertiesWithGroup(String instanceId, PropertyGroup group) throws InterruptedException {
-        withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), group)
-                .viewAndEditProperties();
-    }
-
-    private void viewAndEditTablePropertiesWithGroup(String instanceId, PropertyGroup group) throws InterruptedException {
-        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
-        if (tableOpt.isPresent()) {
-            withGroupedTableProperties(instanceId, tableOpt.get(), group)
-                    .viewAndEditProperties();
+            Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
+            if (tableOpt.isPresent()) {
+                withGroupedTableProperties(instanceId, tableOpt.get(), tableGroupOpt.get())
+                        .viewAndEditProperties();
+            }
         }
     }
 
