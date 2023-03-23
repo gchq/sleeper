@@ -44,6 +44,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERT
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.groupSelectScreenOption;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -54,6 +55,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
@@ -595,7 +597,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
 
             // When
-            String output = viewInstanceConfigurationWithGroup(properties, InstancePropertyGroup.COMMON)
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                            groupSelectScreenOption(InstancePropertyGroup.COMMON))
+                    .viewInEditorFromStore(properties, InstancePropertyGroup.COMMON)
                     .exitGetOutput();
 
             // Then
@@ -618,8 +623,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
-            String output = editInstanceConfigurationWithGroup(before, after, InstancePropertyGroup.COMMON)
-                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                            groupSelectScreenOption(InstancePropertyGroup.COMMON))
+                    .editFromStore(before, after, InstancePropertyGroup.COMMON)
                     .exitGetOutput();
 
             // Then
@@ -648,7 +655,11 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
 
             // When
-            String output = editTableConfigurationWithGroup(properties, before, after, TablePropertyGroup.METADATA)
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                            groupSelectScreenOption(TablePropertyGroup.METADATA),
+                            before.get(TABLE_NAME))
+                    .editFromStore(properties, before, after, TablePropertyGroup.METADATA)
                     .exitGetOutput();
 
             // Then

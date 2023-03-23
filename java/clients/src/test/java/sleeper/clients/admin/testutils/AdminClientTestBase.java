@@ -20,7 +20,6 @@ import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
@@ -31,12 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.groupSelectScreenOption;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -120,21 +115,6 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
                 .viewInEditorFromStore(properties);
     }
 
-    protected RunAdminClient editInstanceConfigurationWithGroup(InstanceProperties before, InstanceProperties after, PropertyGroup group) throws Exception {
-        return runClient()
-                .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                        groupSelectScreenOption(group))
-                .editFromStore(before, after, group);
-    }
-
-    protected RunAdminClient viewInstanceConfigurationWithGroup(InstanceProperties properties, PropertyGroup group)
-            throws Exception {
-        return runClient()
-                .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                        groupSelectScreenOption(group))
-                .viewInEditorFromStore(properties, group);
-    }
-
     protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
                                                     TableProperties before, TableProperties after)
             throws Exception {
@@ -143,22 +123,9 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
                 .editFromStore(instanceProperties, before, after);
     }
 
-    protected RunAdminClient editTableConfigurationWithGroup(
-            InstanceProperties instanceProperties, TableProperties before, TableProperties after, PropertyGroup group)
-            throws Exception {
-        return runClient()
-                .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                        groupSelectScreenOption(group),
-                        before.get(TABLE_NAME))
-                .editFromStore(instanceProperties, before, after, group);
-    }
-
     protected RunAdminClient viewTableConfiguration(InstanceProperties instanceProperties,
                                                     TableProperties tableProperties)
             throws Exception {
-        setInstanceProperties(instanceProperties, tableProperties);
-        when(editor.openPropertiesFile(tableProperties))
-                .thenReturn(noChanges(tableProperties));
         return runClient()
                 .enterPrompts(TABLE_CONFIGURATION_OPTION, tableProperties.get(TABLE_NAME))
                 .viewInEditorFromStore(instanceProperties, tableProperties);
