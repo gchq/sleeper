@@ -31,7 +31,7 @@ import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.m
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.replaceBracketedJobIds;
 
-public class StandardIngestJobStatusReporterRangeQueryTest {
+class StandardIngestJobStatusReporterRangeQueryTest {
     @Test
     void shouldReportMixedIngestJobs() throws IOException {
         // Given

@@ -120,8 +120,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printRangeSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
-        out.printf("Total jobs in defined range: %d%n",
-                statusList.size());
+        out.printf("Total jobs in defined range: %d%n", statusList.size());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
