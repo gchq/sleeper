@@ -69,16 +69,4 @@ public class ChooseUntilChoiceFoundTest extends ChooseOneTestBase {
                 chosen.chooseUntilChoiceFound(this::chooseTestOption))
                 .isInstanceOf(UserExitedException.class);
     }
-
-    @Test
-    public void shouldExitWhenChoosingFirstTimeRequiringChoiceFound() {
-        // Given
-        in.enterNextPrompts("0");
-
-        // When / Then
-        Chosen<ConsoleChoice> chosen = chooseTestOption();
-        assertThatThrownBy(() ->
-                chosen.chooseUntilChoiceFound(this::chooseTestOption))
-                .isInstanceOf(UserExitedException.class);
-    }
 }

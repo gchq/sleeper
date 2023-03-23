@@ -17,6 +17,7 @@ package sleeper.console.menu;
 
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.UserExitedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +57,7 @@ public class ChooseOne {
         try {
             int entered = Integer.parseInt(enteredStr);
             if (entered == 0) {
-                return Chosen.exit(enteredStr);
+                throw new UserExitedException();
             }
             return new Chosen<>(enteredStr, choices.get(entered - 1));
         } catch (NumberFormatException | IndexOutOfBoundsException e) {

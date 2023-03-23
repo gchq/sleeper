@@ -32,7 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.GROUP_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
@@ -601,6 +603,21 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock, times(2)).promptLine(any());
             order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
             order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldExitWhenOnGroupSelectScreen() throws Exception {
+            // When
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION, EXIT_OPTION)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    GROUP_SELECT_SCREEN);
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
     }

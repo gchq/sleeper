@@ -17,7 +17,10 @@ package sleeper.console.menu;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.console.UserExitedException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ChooseOneTest extends ChooseOneTestBase {
 
@@ -86,12 +89,9 @@ public class ChooseOneTest extends ChooseOneTestBase {
         // Given
         in.enterNextPrompt("0");
 
-        // When
-        Chosen<ConsoleChoice> chosen = chooseTestOption();
-
-        // Then
-        assertThat(chosen.isExit()).isTrue();
-        assertThat(chosen.getEntered()).isEqualTo("0");
+        // When / Then
+        assertThatThrownBy(this::chooseTestOption)
+                .isInstanceOf(UserExitedException.class);
     }
 
     @Test
