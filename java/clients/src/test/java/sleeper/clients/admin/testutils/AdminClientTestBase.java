@@ -20,7 +20,6 @@ import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
@@ -38,6 +37,7 @@ import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChange
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.groupSelectScreenOption;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -51,7 +51,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public abstract class AdminClientTestBase {
+public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
@@ -71,12 +71,12 @@ public abstract class AdminClientTestBase {
     protected RunAdminClient runClient(AdminConfigStore store) {
         return new RunAdminClient(
                 new AdminClient(store, editor, out.consoleOut(), in.consoleIn()),
-                out, in, editor, INSTANCE_ID);
+                out, in, this, editor, INSTANCE_ID);
     }
 
-    protected abstract void setInstanceProperties(InstanceProperties properties);
+    public abstract void setInstanceProperties(InstanceProperties properties);
 
-    protected abstract void setInstanceProperties(
+    public abstract void setInstanceProperties(
             InstanceProperties instanceProperties, TableProperties tableProperties);
 
     protected InstanceProperties createValidInstanceProperties() {
@@ -112,29 +112,28 @@ public abstract class AdminClientTestBase {
 
     protected RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
             throws Exception {
-        setInstanceProperties(before);
-        when(editor.openPropertiesFile(before))
-                .thenReturn(withChanges(before, after));
-        return runClient()
-                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+        return runClient().enterPrompt(INSTANCE_CONFIGURATION_OPTION)
+                .editFromStore(before, after);
     }
 
     protected RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
-        setInstanceProperties(properties);
-        when(editor.openPropertiesFile(properties))
-                .thenReturn(noChanges(properties));
+        return runClient().enterPrompt(INSTANCE_CONFIGURATION_OPTION)
+                .viewInEditorFromStore(properties);
+    }
+
+    protected RunAdminClient editInstanceConfigurationWithGroup(InstanceProperties before, InstanceProperties after, PropertyGroup group) throws Exception {
         return runClient()
-                .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
+                .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                        groupSelectScreenOption(group))
+                .editFromStore(before, after, group);
     }
 
     protected RunAdminClient viewInstanceConfigurationWithGroup(InstanceProperties properties, PropertyGroup group)
             throws Exception {
-        setInstanceProperties(properties);
-        when(editor.openPropertiesFile(properties, group))
-                .thenReturn(noChanges(properties));
         return runClient()
                 .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                        "" + (InstancePropertyGroup.getAll().indexOf(group) + 2));
+                        groupSelectScreenOption(group))
+                .viewInEditorFromStore(properties, group);
     }
 
     protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,

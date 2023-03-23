@@ -54,6 +54,11 @@ public class ExpectedAdminConsoleValues {
                     .collect(Collectors.joining()) +
             "\n" +
             "Input: \n";
+
+    public static String groupSelectScreenOption(PropertyGroup group) {
+        return "" + (InstancePropertyGroup.getAll().indexOf(group) + 2);
+    }
+
     public static final String TABLE_SELECT_SCREEN = "\n" +
             "Which TABLE do you want to select?\n" +
             "\n" +

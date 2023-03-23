@@ -607,6 +607,34 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @Test
+        void shouldEditPropertiesThatBelongToSpecificGroup() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+
+            // When
+            String output = editInstanceConfigurationWithGroup(before, after, InstancePropertyGroup.COMMON)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + GROUP_SELECT_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(editor).openPropertiesFile(before, InstancePropertyGroup.COMMON);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
         void shouldExitWhenOnGroupSelectScreen() throws Exception {
             // When
             String output = runClient()
