@@ -70,6 +70,16 @@ public class UpdatePropertiesWithNano {
         return buildRequest(properties, new InstanceProperties(after));
     }
 
+    public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
+            TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
+        Properties after = new Properties();
+        after.putAll(properties.getProperties());
+        Properties edited = editProperties(properties, writer ->
+                SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
+        after.putAll(edited);
+        return buildRequest(properties, TableProperties.reinitialise(properties, after));
+    }
+
     private <T extends SleeperProperty> Properties editProperties(
             SleeperProperties<T> properties,
             Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer) throws IOException, InterruptedException {

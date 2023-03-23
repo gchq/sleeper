@@ -25,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,6 +40,7 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 class UpdatePropertiesWithNanoTest {
@@ -191,7 +193,7 @@ class UpdatePropertiesWithNanoTest {
         }
 
         @Test
-        void shouldCreateUpdateRequestWithPropertiesInGroup() throws Exception {
+        void shouldCreateUpdateRequestWithInstancePropertiesInGroup() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
             before.set(LOGGING_LEVEL, "ERROR");
@@ -201,6 +203,25 @@ class UpdatePropertiesWithNanoTest {
             // When
             UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
                     before, "sleeper.logging.level=INFO", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldCreateUpdateRequestWithTablePropertiesInGroup() throws Exception {
+            // Given
+            TableProperties before = generateTestTableProperties();
+            before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
+            TableProperties after = generateTestTableProperties();
+            after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
+
+            // When
+            UpdatePropertiesRequest<TableProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.table.metadata.dynamo.consistent.reads=true", TablePropertyGroup.METADATA);
 
             // Then
             assertThat(updatePropertiesRequest.getUpdatedProperties())

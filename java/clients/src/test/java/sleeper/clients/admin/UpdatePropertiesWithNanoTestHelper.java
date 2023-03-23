@@ -71,6 +71,14 @@ public class UpdatePropertiesWithNanoTestHelper {
         return updaterSavingProperties(after).openPropertiesFile(before);
     }
 
+    public UpdatePropertiesRequest<TableProperties> updatePropertiesWithGroup(
+            TableProperties before, String toWriteInEditor, PropertyGroup group) throws Exception {
+        return updaterWithCommandHandler(command -> {
+            Files.writeString(expectedPropertiesFile, toWriteInEditor);
+            return 0;
+        }).openPropertiesFile(before, group);
+    }
+
     @FunctionalInterface
     public interface OpenFile<T extends SleeperProperties<?>> {
         UpdatePropertiesRequest<T> open(UpdatePropertiesWithNano updater) throws IOException, InterruptedException;
