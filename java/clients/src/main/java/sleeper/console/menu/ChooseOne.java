@@ -33,20 +33,20 @@ public class ChooseOne {
     }
 
     @SafeVarargs
-    public final <T extends ConsoleChoice> Chosen<T> chooseFrom(T... choices) {
+    public final <T extends ConsoleChoice> Chosen<T> chooseFrom(T... choices) throws UserExitedException {
         return chooseFrom(Arrays.asList(choices));
     }
 
     @SafeVarargs
-    public final <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, T... choices) {
+    public final <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, T... choices) throws UserExitedException {
         return chooseWithMessageFrom(message, Arrays.asList(choices));
     }
 
-    public <T extends ConsoleChoice> Chosen<T> chooseFrom(List<T> choices) {
+    public <T extends ConsoleChoice> Chosen<T> chooseFrom(List<T> choices) throws UserExitedException {
         return chooseWithMessageFrom("Please select from the below options and hit return:", choices);
     }
 
-    public <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) {
+    public <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) throws UserExitedException {
         out.println(message);
         out.println("[0] Exit program");
         for (int i = 0; i < choices.size(); i++) {
