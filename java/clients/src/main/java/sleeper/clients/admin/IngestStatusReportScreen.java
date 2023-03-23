@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
+import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestStatusReportScreen {
@@ -68,7 +69,10 @@ public class IngestStatusReportScreen {
                             runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
                     new MenuOption("Detailed", () ->
                             runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED,
-                                    promptForJobId(in)))
+                                    promptForJobId(in))),
+                    new MenuOption("Range", () ->
+                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.RANGE,
+                                    promptForRange(in)))
             ).run();
         }
     }

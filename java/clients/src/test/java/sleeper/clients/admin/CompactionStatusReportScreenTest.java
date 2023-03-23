@@ -90,7 +90,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldRunCompactionJobStatusReportWithQueryTypeUnknown() throws Exception {
+        void shouldRunCompactionJobStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
             createCompactionJobStatusStore();
             when(compactionJobStatusStore.getUnfinishedJobs("test-table"))

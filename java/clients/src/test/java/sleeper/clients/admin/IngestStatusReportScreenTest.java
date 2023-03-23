@@ -45,6 +45,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -85,7 +86,7 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldRunIngestJobStatusReportWithQueryTypeUnknown() throws Exception {
+        void shouldRunIngestJobStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
             createIngestJobStatusStore();
             createSqsClient();
@@ -131,6 +132,32 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Details for job test-job");
 
             verifyWithNumberOfInvocations(5);
+        }
+
+        @Test
+        void shouldRunIngestJobStatusReportWithQueryTypeRange() throws Exception {
+            // Given
+            createIngestJobStatusStore();
+            createSqsClient();
+            when(ingestJobStatusStore.getJobsInTimePeriod("test-table",
+                    Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
+                    .thenReturn(exampleJobStatuses());
+
+            // When/Then
+            String output = runIngestJobStatusReport()
+                    .enterPrompts(JOB_QUERY_RANGE_OPTION,
+                            "20230315140000", "20230315180000", CONFIRM_PROMPT)
+                    .exitGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("" +
+                            "Ingest Job Status Report\n" +
+                            "------------------------\n" +
+                            "Total jobs waiting in queue (excluded from report): 10\n" +
+                            "Total jobs in defined range: 1\n");
+
+            verifyWithNumberOfInvocations(6);
         }
 
         private RunAdminClient runIngestJobStatusReport() {
