@@ -72,8 +72,7 @@ public class InstanceConfigurationScreen {
         if (group.isInstancePropertyGroup()) {
             withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), group.getGroup())
                     .viewAndEditProperties();
-        }
-        if (group.isTablePropertyGroup()) {
+        } else if (group.isTablePropertyGroup()) {
             Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
             if (tableOpt.isPresent()) {
                 withGroupedTableProperties(instanceId, tableOpt.get(), group.getGroup())
