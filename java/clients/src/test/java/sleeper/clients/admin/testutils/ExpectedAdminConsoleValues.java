@@ -19,6 +19,7 @@ import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
@@ -48,9 +49,10 @@ public class ExpectedAdminConsoleValues {
             "[0] Exit program\n" +
             "[1] Return to Main Menu\n" +
             IntStream.range(0, INSTANCE_PROPERTY_GROUPS.size())
-                    .mapToObj(index -> String.format("[%d] %s - %s", index + 2, "Instance Properties",
+                    .mapToObj(index -> String.format("[%d] %s - %s%n", index + 2, "Instance Properties",
                             INSTANCE_PROPERTY_GROUPS.get(index).getName()))
-                    .toString() +
+                    .collect(Collectors.joining()) +
+            "\n" +
             "Input: \n";
     public static final String TABLE_SELECT_SCREEN = "\n" +
             "Which TABLE do you want to select?\n" +

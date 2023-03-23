@@ -598,6 +598,12 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
                     GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
         }
     }
 

@@ -28,7 +28,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -121,24 +120,21 @@ public abstract class AdminClientTestBase {
     }
 
     protected RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
-        setInstancePropertiesView(properties);
+        setInstanceProperties(properties);
+        when(editor.openPropertiesFile(properties))
+                .thenReturn(noChanges(properties));
         return runClient()
                 .enterPrompt(INSTANCE_CONFIGURATION_OPTION);
     }
 
     protected RunAdminClient viewInstanceConfigurationWithGroup(InstanceProperties properties, PropertyGroup group)
             throws Exception {
-        setInstancePropertiesView(properties);
+        setInstanceProperties(properties);
+        when(editor.openPropertiesFile(properties, group))
+                .thenReturn(noChanges(properties));
         return runClient()
                 .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                        "" + InstancePropertyGroup.getAll().indexOf(group));
-    }
-
-    private void setInstancePropertiesView(InstanceProperties properties)
-            throws IOException, InterruptedException {
-        setInstanceProperties(properties);
-        when(editor.openPropertiesFile(properties))
-                .thenReturn(noChanges(properties));
+                        "" + (InstancePropertyGroup.getAll().indexOf(group) + 2));
     }
 
     protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
