@@ -17,6 +17,9 @@ package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Properties;
 
@@ -170,6 +173,11 @@ class SleeperPropertiesTest {
         @Override
         public SleeperPropertyIndex<SleeperProperty> getPropertiesIndex() {
             return new SleeperPropertyIndex<>();
+        }
+
+        @Override
+        protected SleeperPropertiesPrettyPrinter<SleeperProperty> getPrettyPrinter(PrintWriter writer) {
+            return null;
         }
     }
 }

@@ -15,34 +15,57 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.util.ClientUtils;
 import sleeper.util.RunCommand;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.PropertiesUtils.toMap;
 
 public class UpdatePropertiesWithNano {
 
     private final Path tempDirectory;
+    private final RunCommand runCommand;
 
     public UpdatePropertiesWithNano(Path tempDirectory) {
-        this.tempDirectory = tempDirectory;
+        this(tempDirectory, ClientUtils::runCommand);
     }
 
-    public <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
+    public UpdatePropertiesWithNano(Path tempDirectory, RunCommand runCommand) {
+        this.tempDirectory = tempDirectory;
+        this.runCommand = runCommand;
+    }
+
+    public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(InstanceProperties properties) throws IOException, InterruptedException {
+        InstanceProperties updatedProperties = new InstanceProperties(editProperties(properties));
+        return buildRequest(properties, updatedProperties);
+    }
+
+    public UpdatePropertiesRequest<TableProperties> openPropertiesFile(TableProperties properties) throws IOException, InterruptedException {
+        TableProperties updatedProperties = TableProperties.reinitialise(properties, editProperties(properties));
+        return buildRequest(properties, updatedProperties);
+    }
+
+    private <T extends SleeperProperty> Properties editProperties(SleeperProperties<T> properties) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/temp.properties");
-        properties.save(propertiesFile);
+        try (BufferedWriter writer = Files.newBufferedWriter(propertiesFile)) {
+            properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+        }
         runCommand.run("nano", propertiesFile.toString());
-        Properties updatedProperties = loadProperties(propertiesFile);
-        return new UpdatePropertiesRequest(
-                new PropertiesDiff(properties.toMap(), toMap(updatedProperties)),
-                updatedProperties);
+        return loadProperties(propertiesFile);
+    }
+
+    private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T before, T after) {
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), after);
     }
 }

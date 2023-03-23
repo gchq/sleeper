@@ -23,7 +23,6 @@ public class AdminCommonPrompts {
     private AdminCommonPrompts() {
     }
 
-    public static final String INPUT_EMPTY = "\nYou did not enter anything please try again\n";
     public static final ConsoleChoice RETURN_TO_MAIN_MENU = ConsoleChoice.describedAs("Return to Main Menu");
 
     public static void confirmReturnToMainScreen(ConsoleOutput out, ConsoleInput in) {

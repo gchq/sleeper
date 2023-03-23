@@ -39,9 +39,9 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
-public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
+class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
-    void shouldRunPartitionStatusReport() {
+    void shouldRunPartitionStatusReport() throws Exception {
         // Given
         StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
                         .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
@@ -64,22 +64,7 @@ public class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldNotRunPartitionStatusReportIfTableDoesNotExist() {
-        // Given
-        in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
-
-        // When
-        String output = runClientGetOutput();
-        assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
-                        CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Error: Properties for table \"unknown-table\" could not be found" +
-                        PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
-        confirmAndVerifyNoMoreInteractions();
-    }
-
-    @Test
-    void shouldReturnToMenuWhenOnTableNameScreen() {
+    void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
         in.enterNextPrompts(PARTITION_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 

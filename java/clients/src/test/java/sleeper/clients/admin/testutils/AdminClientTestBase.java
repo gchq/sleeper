@@ -17,6 +17,7 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
+import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
@@ -27,6 +28,7 @@ import sleeper.core.schema.type.StringType;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -44,6 +46,7 @@ public abstract class AdminClientTestBase {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -54,7 +57,7 @@ public abstract class AdminClientTestBase {
     protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
-    protected String runClientGetOutput(AdminClient client) {
+    protected String runClientGetOutput(AdminClient client) throws Exception {
         client.start(INSTANCE_ID);
         return out.toString();
     }

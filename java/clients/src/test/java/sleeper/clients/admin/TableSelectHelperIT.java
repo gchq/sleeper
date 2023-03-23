@@ -18,58 +18,56 @@ package sleeper.clients.admin;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.console.UserExitedException;
+import sleeper.clients.admin.testutils.AdminClientITBase;
+import sleeper.configuration.properties.InstanceProperties;
+
+import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-class TableSelectHelperTest extends AdminClientMockStoreBase {
+class TableSelectHelperIT extends AdminClientITBase {
     @Test
-    void shouldContinueIfTableExists() {
+    void shouldReturnToMenuIfInstanceDoesNotExist() {
         // Given
-        setTableProperties(TABLE_NAME_VALUE);
-        in.enterNextPrompts(TABLE_NAME_VALUE);
+        in.enterNextPrompts("test-table");
 
         // When
         String output = runTableSelectHelperGetOutput();
 
         // Then
         assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Found table " + TABLE_NAME_VALUE + "\n");
+                .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Could not load properties for instance test-instance\n" +
+                        "Cause: The specified key does not exist")
+                .contains("Amazon S3")
+                .endsWith(PROMPT_RETURN_TO_MAIN);
     }
 
     @Test
-    void shouldReturnToMainMenuIfMenuOptionSelected() {
+    void shouldReturnToMenuIfTableDoesNotExist() throws IOException {
         // Given
-        in.enterNextPrompts(RETURN_TO_MAIN_SCREEN_OPTION);
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        instanceProperties.saveToS3(s3);
+        in.enterNextPrompts("test-table");
 
         // When
         String output = runTableSelectHelperGetOutput();
 
         // Then
         assertThat(output)
-                .isEqualTo(CLEAR_CONSOLE + TABLE_SELECT_SCREEN);
-    }
-
-    @Test
-    void shouldExitIfMenuOptionSelected() {
-        // Given
-        in.enterNextPrompts(EXIT_OPTION);
-
-        // When/Then
-        assertThatThrownBy(this::runTableSelectHelperGetOutput)
-                .isInstanceOf(UserExitedException.class);
+                .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                        "Could not load properties for table test-table in instance test-instance\n" +
+                        "Cause: The specified key does not exist")
+                .contains("Amazon S3")
+                .endsWith(PROMPT_RETURN_TO_MAIN);
     }
 
     private String runTableSelectHelperGetOutput() {
-        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store)
+        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store())
                 .chooseTableIfExistsThen(INSTANCE_ID, tableProperties ->
                         out.consoleOut().println("\n" +
                                 "Found table " + tableProperties.get(TABLE_NAME)));

@@ -15,14 +15,19 @@
  */
 package sleeper.clients.admin;
 
-import java.util.Properties;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
+import sleeper.configuration.properties.SleeperProperty;
 
-public class UpdatePropertiesRequest {
+import java.util.Collections;
+import java.util.Set;
+
+public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
-    private final Properties updatedProperties;
+    private final T updatedProperties;
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, Properties updatedProperties) {
+    public UpdatePropertiesRequest(PropertiesDiff diff, T updatedProperties) {
         this.diff = diff;
         this.updatedProperties = updatedProperties;
     }
@@ -31,7 +36,17 @@ public class UpdatePropertiesRequest {
         return diff;
     }
 
-    public Properties getUpdatedProperties() {
+    public T getUpdatedProperties() {
         return updatedProperties;
     }
+
+    public Set<SleeperProperty> getInvalidProperties() {
+        try {
+            updatedProperties.validate();
+            return Collections.emptySet();
+        } catch (SleeperPropertiesInvalidException e) {
+            return e.getInvalidValues().keySet();
+        }
+    }
+
 }

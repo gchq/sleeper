@@ -16,42 +16,86 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.console.ConsoleOutput;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PropertiesDiff {
-    private final List<PropertyDiff> changes;
+    private final Map<String, PropertyDiff> changes;
+
+    public PropertiesDiff(SleeperProperties<?> before, SleeperProperties<?> after) {
+        this(before.toMap(), after.toMap());
+    }
 
     public PropertiesDiff(Map<String, String> before, Map<String, String> after) {
-        this.changes = calculateChanges(before, after);
+        this(calculateChanges(before, after));
     }
 
     public PropertiesDiff(SleeperProperty property, String before, String after) {
-        this.changes = List.of(new PropertyDiff(property.getPropertyName(), before, after));
+        this(Map.of(property.getPropertyName(),
+                new PropertyDiff(property.getPropertyName(), before, after)));
     }
 
-    public List<PropertyDiff> getChanges() {
-        return changes;
+    private PropertiesDiff(Map<String, PropertyDiff> changes) {
+        this.changes = changes;
+    }
+
+    public static PropertiesDiff noChanges() {
+        return new PropertiesDiff(Collections.emptyMap());
+    }
+
+    public void print(ConsoleOutput out,
+                      SleeperPropertyIndex<?> propertyIndex,
+                      Set<SleeperProperty> invalidProperties) {
+        out.println("Found changes to properties:");
+        out.println();
+
+        // Print known properties
+        propertyIndex.getUserDefined().stream()
+                .filter(property -> changes.containsKey(property.getPropertyName()))
+                .map(property -> changes.get(property.getPropertyName()))
+                .forEach(diff -> diff.print(out, propertyIndex, invalidProperties));
+
+        // Print unknown properties
+        List<String> unknownPropertyNames = changes.keySet().stream()
+                .filter(property -> propertyIndex.getByName(property).isEmpty())
+                .sorted().collect(Collectors.toList());
+        for (String propertyName : unknownPropertyNames) {
+            changes.get(propertyName).print(out, propertyIndex, invalidProperties);
+        }
+
+        if (!invalidProperties.isEmpty()) {
+            out.println("Found invalid properties:");
+            for (SleeperProperty property : invalidProperties) {
+                out.println(property.getPropertyName());
+            }
+            out.println();
+        }
     }
 
     public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
-        return getChanges().stream()
+        return changes.values().stream()
                 .flatMap(diff -> diff.getProperty(propertyIndex).stream())
                 .filter(SleeperProperty::isRunCDKDeployWhenChanged)
                 .collect(Collectors.toList());
     }
 
-    private static List<PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {
+    private static Map<String, PropertyDiff> calculateChanges(Map<String, String> before, Map<String, String> after) {
         return getAllSetPropertyNames(before, after)
                 .flatMap(propertyName -> PropertyDiff.forProperty(propertyName, before, after).stream())
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(PropertyDiff::getPropertyName, diff -> diff));
     }
 
     private static Stream<String> getAllSetPropertyNames(Map<String, String> before, Map<String, String> after) {
@@ -59,5 +103,58 @@ public class PropertiesDiff {
         propertyNames.addAll(before.keySet());
         propertyNames.addAll(after.keySet());
         return propertyNames.stream();
+    }
+
+    public PropertiesDiff andThen(PropertiesDiff diff) {
+        return new PropertiesDiff(combine(changes, diff.changes));
+    }
+
+    private static Map<String, PropertyDiff> combine(
+            Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+
+        return Stream.concat(firstMap.keySet().stream(), secondMap.keySet().stream())
+                .distinct()
+                .flatMap(propertyName -> combineProperty(propertyName, firstMap, secondMap).stream())
+                .collect(Collectors.toMap(PropertyDiff::getPropertyName, diff -> diff));
+    }
+
+    private static Optional<PropertyDiff> combineProperty(
+            String propertyName, Map<String, PropertyDiff> firstMap, Map<String, PropertyDiff> secondMap) {
+
+        PropertyDiff first = firstMap.get(propertyName);
+        PropertyDiff second = secondMap.get(propertyName);
+
+        if (first == null) {
+            return Optional.of(second);
+        } else if (second == null) {
+            return Optional.of(first);
+        } else {
+            return first.andThen(second);
+        }
+    }
+
+    public List<PropertyDiff> getChanges() {
+        return new ArrayList<>(changes.values());
+    }
+
+    public boolean isChanged() {
+        return !changes.isEmpty();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PropertiesDiff that = (PropertiesDiff) o;
+        return Objects.equals(changes, that.changes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(changes);
     }
 }

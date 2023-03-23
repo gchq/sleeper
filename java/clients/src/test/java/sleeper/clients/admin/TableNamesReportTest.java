@@ -32,7 +32,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class TableNamesReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintTableNamesReportWhenChosen() {
+    public void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         setInstanceTables(createValidInstanceProperties(), "test-table-1", "test-table-2");
         in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, EXIT_OPTION);
@@ -42,8 +42,8 @@ public class TableNamesReportTest extends AdminClientMockStoreBase {
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
-                " Table Names Report \n" +
-                " -------------------------\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
                 "test-table-1\n" +
                 "test-table-2\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);

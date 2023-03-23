@@ -21,11 +21,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
-import sleeper.clients.admin.InstancePropertyReport;
+import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
-import sleeper.clients.admin.TablePropertyReportScreen;
-import sleeper.clients.admin.UpdatePropertyScreen;
+import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
@@ -37,16 +36,18 @@ import java.nio.file.Path;
 public class AdminClient {
 
     private final AdminConfigStore store;
+    private final UpdatePropertiesWithNano editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
 
-    public AdminClient(AdminConfigStore store, ConsoleOutput out, ConsoleInput in) {
+    public AdminClient(AdminConfigStore store, UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in) {
         this.store = store;
+        this.editor = editor;
         this.out = out;
         this.in = in;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id>");
         }
@@ -65,28 +66,26 @@ public class AdminClient {
                         AmazonS3ClientBuilder.defaultClient(),
                         AmazonDynamoDBClientBuilder.defaultClient(),
                         cdk, generatedDir),
+                new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console())).start(instanceId);
     }
 
-    public void start(String instanceId) {
-        new AdminMainScreen(out, in).mainLoop(this, instanceId);
+    public void start(String instanceId) throws InterruptedException {
+        try {
+            store.loadInstanceProperties(instanceId);
+            new AdminMainScreen(out, in).mainLoop(this, instanceId);
+        } catch (AdminConfigStore.CouldNotLoadInstanceProperties e) {
+            e.print(out);
+        }
     }
 
-    public InstancePropertyReport instancePropertyReport() {
-        return new InstancePropertyReport(out, in, store);
+    public InstanceConfigurationScreen instanceConfigurationScreen() {
+        return new InstanceConfigurationScreen(out, in, store, editor);
     }
 
     public TableNamesReport tableNamesReport() {
         return new TableNamesReport(out, in, store);
-    }
-
-    public TablePropertyReportScreen tablePropertyReportScreen() {
-        return new TablePropertyReportScreen(out, in, store);
-    }
-
-    public UpdatePropertyScreen updatePropertyScreen() {
-        return new UpdatePropertyScreen(out, in, store);
     }
 
     public PartitionsStatusReportScreen partitionsStatusReportScreen() {

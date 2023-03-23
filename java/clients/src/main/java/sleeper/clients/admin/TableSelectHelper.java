@@ -24,6 +24,7 @@ import sleeper.console.menu.ChooseOne;
 import sleeper.console.menu.Chosen;
 import sleeper.console.menu.ConsoleChoice;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
@@ -43,20 +44,26 @@ public class TableSelectHelper {
     }
 
     public void chooseTableIfExistsThen(String instanceId, Consumer<TableProperties> callback) throws UserExitedException {
+        chooseTableOrReturnToMain(instanceId).ifPresent(callback);
+    }
+
+    public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
         Chosen<ConsoleChoice> chosen = chooseTable("")
                 .chooseUntilSomethingEntered(() ->
                         chooseTable("\nYou did not enter anything please try again\n"));
-        if (chosen.getChoice().isEmpty()) {
-            String tableName = chosen.getEntered();
-            TableProperties tableProperties = store.loadTableProperties(instanceId, tableName);
-            out.println();
-            if (tableProperties == null) {
-                out.printf("Error: Properties for table \"%s\" could not be found", tableName);
-                confirmReturnToMainScreen(out, in);
-            } else {
-                callback.accept(tableProperties);
-            }
+        if (chosen.getChoice().isPresent()) {
+            // Return to main screen
+            return Optional.empty();
         }
+        String tableName = chosen.getEntered();
+        try {
+            return Optional.of(store.loadTableProperties(instanceId, tableName));
+        } catch (AdminConfigStore.CouldNotLoadProperties e) {
+            out.println();
+            e.print(out);
+        }
+        confirmReturnToMainScreen(out, in);
+        return Optional.empty();
     }
 
     private Chosen<ConsoleChoice> chooseTable(String message) {

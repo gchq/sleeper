@@ -137,16 +137,20 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private static String formatDescription(SleeperProperty property) {
-        return formatString(property.getDescription());
+        return formatDescription(property.getDescription());
     }
 
     private static String formatDescription(PropertyGroup group) {
-        return formatString(group.getDescription());
+        return formatDescription(group.getDescription());
     }
 
-    private static String formatString(String str) {
-        return Arrays.stream(str.split("\n")).
-                map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
+    private static String formatDescription(String description) {
+        return formatDescription("# ", description);
+    }
+
+    public static String formatDescription(String lineStart, String description) {
+        return Arrays.stream(description.split("\n")).
+                map(line -> lineStart + WordUtils.wrap(line, 100).replace("\n", "\n" + lineStart))
                 .collect(Collectors.joining("\n"));
     }
 }

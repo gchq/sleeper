@@ -26,11 +26,11 @@ import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.console.ConsoleOutput;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
@@ -74,7 +74,11 @@ public class AdminConfigStore {
     }
 
     private TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
-        return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
+        try {
+            return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
+        } catch (AmazonS3Exception e) {
+            throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
+        }
     }
 
     public List<String> listTables(String instanceId) {
@@ -88,13 +92,6 @@ public class AdminConfigStore {
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
         return listTables(instanceProperties).stream()
                 .map(tableName -> loadTableProperties(instanceProperties, tableName));
-    }
-
-    public void updateInstanceProperty(String instanceId, UserDefinedInstanceProperty property, String propertyValue) {
-        InstanceProperties properties = loadInstanceProperties(instanceId);
-        String valueBefore = properties.get(property);
-        properties.set(property, propertyValue);
-        saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, propertyValue));
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
@@ -125,19 +122,11 @@ public class AdminConfigStore {
         }
     }
 
-    public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        TableProperties properties = loadTableProperties(instanceProperties, tableName);
-        String valueBefore = properties.get(property);
-        properties.set(property, propertyValue);
-        saveTableProperties(instanceProperties, properties, new PropertiesDiff(property, valueBefore, propertyValue));
-    }
-
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
         saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
     }
 
-    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
+    private void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
         String instanceId = instanceProperties.get(ID);
         String tableName = properties.get(TABLE_NAME);
         try {
@@ -175,21 +164,50 @@ public class AdminConfigStore {
         return stateStoreProvider.getStateStore(tableProperties);
     }
 
-    public static class CouldNotLoadInstanceProperties extends RuntimeException {
-        public CouldNotLoadInstanceProperties(String instanceId, Throwable e) {
-            super("Could not load properties for instance " + instanceId, e);
+    public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {
+        public CouldNotLoadInstanceProperties(String instanceId, Throwable cause) {
+            super("Could not load properties for instance " + instanceId, cause);
         }
     }
 
-    public static class CouldNotSaveInstanceProperties extends RuntimeException {
-        public CouldNotSaveInstanceProperties(String instanceId, Throwable e) {
-            super("Could not save properties for instance " + instanceId, e);
+    public static class CouldNotSaveInstanceProperties extends CouldNotSaveProperties {
+        public CouldNotSaveInstanceProperties(String instanceId, Throwable cause) {
+            super("Could not save properties for instance " + instanceId, cause);
         }
     }
 
-    public static class CouldNotSaveTableProperties extends RuntimeException {
-        public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable e) {
-            super("Could not save properties for table " + tableName + " in instance " + instanceId, e);
+    public static class CouldNotLoadTableProperties extends CouldNotLoadProperties {
+        public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable cause) {
+            super("Could not load properties for table " + tableName + " in instance " + instanceId, cause);
+        }
+    }
+
+    public static class CouldNotSaveTableProperties extends CouldNotSaveProperties {
+        public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable cause) {
+            super("Could not save properties for table " + tableName + " in instance " + instanceId, cause);
+        }
+    }
+
+    public static class CouldNotLoadProperties extends ConfigStoreException {
+        public CouldNotLoadProperties(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class CouldNotSaveProperties extends ConfigStoreException {
+        public CouldNotSaveProperties(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class ConfigStoreException extends RuntimeException {
+        public ConfigStoreException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public void print(ConsoleOutput out) {
+            out.println(getMessage());
+            out.println("Cause: " + getCause().getMessage());
         }
     }
 }

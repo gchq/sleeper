@@ -39,7 +39,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 
-public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
+class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     private final StateStore stateStore = StateStoreTestBuilder.from(createPartitionsBuilder()
                     .leavesWithSplits(Arrays.asList("A", "B"), List.of("aaa"))
                     .parentJoining("parent", "A", "B"))
@@ -47,7 +47,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
             .buildStateStore();
 
     @Test
-    void shouldRunFilesStatusReportWithDefaultArgs() {
+    void shouldRunFilesStatusReportWithDefaultArgs() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
@@ -66,7 +66,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldRunFilesStatusReportWithVerboseOption() {
+    void shouldRunFilesStatusReportWithVerboseOption() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
@@ -88,7 +88,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldRunFilesStatusReportWithCustomMaxGC() {
+    void shouldRunFilesStatusReportWithCustomMaxGC() throws Exception {
         // Given
         setStateStoreForTable("test-table", stateStore);
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION,
@@ -110,24 +110,7 @@ public class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldNotRunFilesStatusReportIfTableDoesNotExist() {
-        // Given
-        in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, "unknown-table", EXIT_OPTION);
-
-        // When/Then
-        String output = runClientGetOutput();
-        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
-                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                .contains("Error: Properties for table \"unknown-table\" could not be found");
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(2)).promptLine(any());
-        order.verify(in.mock).waitForLine();
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
-    }
-
-    @Test
-    void shouldReturnToMenuWhenOnTableNameScreen() {
+    void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 

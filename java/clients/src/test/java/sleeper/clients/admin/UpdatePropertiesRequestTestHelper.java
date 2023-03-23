@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console.menu;
 
-import sleeper.console.UserExitedException;
+package sleeper.clients.admin;
 
-public class MenuOption implements ConsoleChoice {
+import sleeper.configuration.properties.SleeperProperties;
 
-    private final String description;
-    private final MenuOperation operation;
-
-    public MenuOption(String description, MenuOperation operation) {
-        this.description = description;
-        this.operation = operation;
+public class UpdatePropertiesRequestTestHelper {
+    private UpdatePropertiesRequestTestHelper() {
     }
 
-    @Override
-    public String getDescription() {
-        return description;
+    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> noChanges(T properties) {
+        return new UpdatePropertiesRequest<>(PropertiesDiff.noChanges(), properties);
     }
 
-    public void run() throws UserExitedException, InterruptedException {
-        operation.run();
+    public static <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> withChanges(T before, T after) {
+        return new UpdatePropertiesRequest<>(new PropertiesDiff(before, after), after);
     }
 }

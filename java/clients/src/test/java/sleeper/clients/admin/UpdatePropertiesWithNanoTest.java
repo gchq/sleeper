@@ -20,36 +20,30 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.RunCommand;
 
-import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 class UpdatePropertiesWithNanoTest {
 
     @TempDir
     private Path tempDir;
-
-    private Path expectedInstancePropertiesFile;
+    private UpdatePropertiesWithNanoTestHelper helper;
 
     @BeforeEach
     void setUp() {
-        expectedInstancePropertiesFile = tempDir.resolve("sleeper/admin/temp.properties");
+        helper = new UpdatePropertiesWithNanoTestHelper(tempDir);
     }
 
     @Test
@@ -58,8 +52,8 @@ class UpdatePropertiesWithNanoTest {
         InstanceProperties properties = generateTestInstanceProperties();
 
         // When / Then
-        assertThat(updateInstancePropertiesGetCommandRun(properties))
-                .containsExactly("nano", expectedInstancePropertiesFile.toString());
+        assertThat(helper.updateInstancePropertiesGetCommandRun(properties))
+                .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
     }
 
     @Test
@@ -68,7 +62,7 @@ class UpdatePropertiesWithNanoTest {
         InstanceProperties properties = generateTestInstanceProperties();
 
         // When / Then
-        assertThat(updateInstancePropertiesGetPropertiesWritten(properties))
+        assertThat(helper.updateInstancePropertiesGetPropertiesWritten(properties))
                 .isEqualTo(properties);
     }
 
@@ -81,7 +75,7 @@ class UpdatePropertiesWithNanoTest {
         after.set(INGEST_SOURCE_BUCKET, "bucket-after");
 
         // When / Then
-        assertThat(updateProperties(before, after).getDiff())
+        assertThat(helper.updateProperties(before, after).getDiff())
                 .extracting(PropertiesDiff::getChanges).asList()
                 .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
     }
@@ -94,10 +88,10 @@ class UpdatePropertiesWithNanoTest {
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
         // When
-        Properties properties = updateProperties(before, after).getUpdatedProperties();
+        InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
 
         // Then
-        assertThat(new InstanceProperties(properties)).isEqualTo(after);
+        assertThat(properties).isEqualTo(after);
     }
 
     @Test
@@ -108,36 +102,40 @@ class UpdatePropertiesWithNanoTest {
         TableProperties after = generateTestTableProperties();
         after.set(ROW_GROUP_SIZE, "456");
 
-        // When / Then
-        assertThat(updateProperties(before, after).getDiff())
+        // When
+        PropertiesDiff diff = helper.updateProperties(before, after).getDiff();
+
+        // Then
+        assertThat(diff)
                 .extracting(PropertiesDiff::getChanges).asList()
                 .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
     }
 
-    private String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
-        return commandRunOn(runCommand ->
-                updateProperties(properties, runCommand));
+    @Test
+    void shouldRetrieveTablePropertiesAfterChange() throws Exception {
+        // Given
+        TableProperties before = generateTestTableProperties();
+        TableProperties after = generateTestTableProperties();
+        after.set(ROW_GROUP_SIZE, "456");
+
+        // When
+        TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+
+        // Then
+        assertThat(properties).isEqualTo(after);
     }
 
-    private InstanceProperties updateInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
-        AtomicReference<InstanceProperties> foundProperties = new AtomicReference<>();
-        updateProperties(properties, command -> {
-            foundProperties.set(new InstanceProperties(loadProperties(expectedInstancePropertiesFile)));
-            return 0;
-        });
-        return foundProperties.get();
-    }
+    @Test
+    void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
+        // Given
+        InstanceProperties properties = generateTestInstanceProperties();
 
-    private <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
-            SleeperProperties<T> before, SleeperProperties<T> after) throws IOException, InterruptedException {
-        return updateProperties(before, command -> {
-            after.save(expectedInstancePropertiesFile);
-            return 0;
-        });
-    }
+        // When
+        String tempFileString = Files.readString(helper.updateInstancePropertiesGetPathToFile(properties));
 
-    private <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
-            SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
-        return new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
+        // Then
+        StringWriter writer = new StringWriter();
+        properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+        assertThat(tempFileString).isEqualTo(writer.toString());
     }
 }
