@@ -27,11 +27,6 @@ public class MenuOption implements ConsoleChoice {
         this.operation = operation;
     }
 
-    public static MenuOption none() {
-        return new MenuOption("No option chosen", () -> {
-        });
-    }
-
     @Override
     public String getDescription() {
         return description;
