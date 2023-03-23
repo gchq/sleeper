@@ -134,6 +134,35 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
+
+        @ParameterizedTest(name = "With return to editor option \"{0}\"")
+        @ValueSource(strings = {ValidateChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
+        void shouldMakeInvalidChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When
+            String output = editInstanceConfiguration(before, after) // Apply changes
+                    .enterPrompt(returnToEditorOption)
+                    .editAgain(after, before) // Revert changes
+                    .exitGetOutput();
+
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .doesNotContain(PROPERTY_SAVE_CHANGES_SCREEN)
+                    .containsOnlyOnce(PROPERTY_VALIDATION_SCREEN)
+                    .endsWith(PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(after);
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
     }
 
     @DisplayName("Display changes to edited properties")
