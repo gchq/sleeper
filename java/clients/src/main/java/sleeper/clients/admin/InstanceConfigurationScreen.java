@@ -63,22 +63,23 @@ public class InstanceConfigurationScreen {
         }
     }
 
-    public void choosePropertyGroup(String instanceId) throws InterruptedException {
-        Optional<PropertyGroupWithCategory> groupOpt = selectGroup.selectPropertyGroup();
-        if (groupOpt.isEmpty()) {
-            return;
+    public void viewAndEditPropertyGroup(String instanceId) throws InterruptedException {
+        Optional<WithProperties<?>> withProperties = selectGroup.selectPropertyGroup()
+                .flatMap(group -> withPropertyGroup(instanceId, group));
+        if (withProperties.isPresent()) {
+            withProperties.get().viewAndEditProperties();
         }
-        PropertyGroupWithCategory group = groupOpt.get();
+    }
+
+    private Optional<WithProperties<?>> withPropertyGroup(String instanceId, PropertyGroupWithCategory group) {
         if (group.isInstancePropertyGroup()) {
-            withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), group.getGroup())
-                    .viewAndEditProperties();
+            return Optional.of(withGroupedInstanceProperties(
+                    store.loadInstanceProperties(instanceId), group.getGroup()));
         } else if (group.isTablePropertyGroup()) {
-            Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
-            if (tableOpt.isPresent()) {
-                withGroupedTableProperties(instanceId, tableOpt.get(), group.getGroup())
-                        .viewAndEditProperties();
-            }
+            return selectTable.chooseTableOrReturnToMain(instanceId)
+                    .map(table -> withGroupedTableProperties(instanceId, table, group.getGroup()));
         }
+        return Optional.empty();
     }
 
     private WithProperties<InstanceProperties> withInstanceProperties(InstanceProperties properties) {
