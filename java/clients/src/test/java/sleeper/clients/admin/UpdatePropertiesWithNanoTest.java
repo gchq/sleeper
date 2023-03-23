@@ -298,5 +298,25 @@ class UpdatePropertiesWithNanoTest {
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
         }
+
+        @Test
+        void shouldLeaveUnknownPropertyUnchangedWhenEditingAnotherProperty() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.loadFromString("unknown.property=test-value");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.loadFromString("unknown.property=test-value");
+            after.set(LOGGING_LEVEL, "TRACE");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.logging.level=TRACE", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
     }
 }
