@@ -17,6 +17,7 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,6 +45,8 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Input: \n";
     private static final List<PropertyGroup> INSTANCE_PROPERTY_GROUPS = InstancePropertyGroup.getAll();
+    private static final List<PropertyGroup> TABLE_PROPERTY_GROUPS = TablePropertyGroup.getAll();
+    private static final int TABLE_START_INDEX = INSTANCE_PROPERTY_GROUPS.size() + 2;
     public static final String GROUP_SELECT_SCREEN = "\n" +
             "Please select a group from the below options and hit return:\n" +
             "[0] Exit program\n" +
@@ -52,11 +55,19 @@ public class ExpectedAdminConsoleValues {
                     .mapToObj(index -> String.format("[%d] %s - %s%n", index + 2, "Instance Properties",
                             INSTANCE_PROPERTY_GROUPS.get(index).getName()))
                     .collect(Collectors.joining()) +
+            IntStream.range(0, TABLE_PROPERTY_GROUPS.size())
+                    .mapToObj(index -> String.format("[%d] %s - %s%n", index + TABLE_START_INDEX, "Table Properties",
+                            TABLE_PROPERTY_GROUPS.get(index).getName()))
+                    .collect(Collectors.joining()) +
             "\n" +
             "Input: \n";
 
-    public static String groupSelectScreenOption(PropertyGroup group) {
+    public static String instancePropertyGroupOption(PropertyGroup group) {
         return "" + (InstancePropertyGroup.getAll().indexOf(group) + 2);
+    }
+
+    public static String tablePropertyGroupOption(PropertyGroup group) {
+        return "" + (TablePropertyGroup.getAll().indexOf(group) + TABLE_START_INDEX);
     }
 
     public static final String TABLE_SELECT_SCREEN = "\n" +

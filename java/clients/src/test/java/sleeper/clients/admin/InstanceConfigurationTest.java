@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,7 +43,8 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERT
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.groupSelectScreenOption;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.instancePropertyGroupOption;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePropertyGroupOption;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -599,7 +599,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // When
             String output = runClient()
                     .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                            groupSelectScreenOption(InstancePropertyGroup.COMMON))
+                            instancePropertyGroupOption(InstancePropertyGroup.COMMON))
                     .viewInEditorFromStore(properties, InstancePropertyGroup.COMMON)
                     .exitGetOutput();
 
@@ -625,7 +625,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // When
             String output = runClient()
                     .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                            groupSelectScreenOption(InstancePropertyGroup.COMMON))
+                            instancePropertyGroupOption(InstancePropertyGroup.COMMON))
                     .editFromStore(before, after, InstancePropertyGroup.COMMON)
                     .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
@@ -646,7 +646,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldEditTablePropertiesThatBelongToSpecificGroup() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
@@ -658,7 +657,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // When
             String output = runClient()
                     .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
-                            groupSelectScreenOption(TablePropertyGroup.METADATA),
+                            tablePropertyGroupOption(TablePropertyGroup.METADATA),
                             before.get(TABLE_NAME))
                     .editFromStore(properties, before, after, TablePropertyGroup.METADATA)
                     .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
@@ -666,14 +665,14 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
 
             // Then
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
-                            GROUP_SELECT_SCREEN + TABLE_SELECT_SCREEN)
+                            GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
                             PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                             DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock, times(3)).promptLine(any());
-            order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
+            order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
