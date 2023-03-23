@@ -56,6 +56,7 @@ public class IngestJobStatusReportArguments {
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +
+                "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
                 "-u (Unfinished jobs)");
     }
 
