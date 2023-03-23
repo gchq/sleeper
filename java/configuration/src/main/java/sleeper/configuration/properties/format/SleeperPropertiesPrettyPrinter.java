@@ -40,19 +40,40 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final List<T> sortedProperties;
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
+    private final boolean hideUnknownProperties;
 
     private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+        this(properties, groups, writer, false);
+    }
+
+    private SleeperPropertiesPrettyPrinter(
+            List<T> properties, List<PropertyGroup> groups, PrintWriter writer, boolean hideUnknownProperties) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
         this.writer = writer;
         this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
+        this.hideUnknownProperties = hideUnknownProperties;
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), writer);
     }
 
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstancePropertiesWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll().stream()
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()), List.of(group), writer, true);
+    }
+
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
+    }
+
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll().stream()
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()), List.of(group), writer, true);
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -81,14 +102,16 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printProperty(property.getPropertyName(), "");
             }
         }
-        Map<String, String> unknownProperties = properties.getUnknownProperties()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!hideUnknownProperties) {
+            Map<String, String> unknownProperties = properties.getUnknownProperties()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (!unknownProperties.isEmpty()) {
-            println();
-            println("# The following properties are not recognised by Sleeper.");
-            unknownProperties.keySet().stream().sorted().forEach(name ->
-                    printProperty(name, unknownProperties.get(name)));
+            if (!unknownProperties.isEmpty()) {
+                println();
+                println("# The following properties are not recognised by Sleeper.");
+                unknownProperties.keySet().stream().sorted().forEach(name ->
+                        printProperty(name, unknownProperties.get(name)));
+            }
         }
         writer.flush();
     }
