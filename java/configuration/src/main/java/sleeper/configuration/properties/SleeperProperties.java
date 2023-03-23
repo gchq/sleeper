@@ -133,7 +133,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.containsKey(property.getPropertyName());
     }
 
-    protected Properties getProperties() {
+    public Properties getProperties() {
         return properties;
     }
 

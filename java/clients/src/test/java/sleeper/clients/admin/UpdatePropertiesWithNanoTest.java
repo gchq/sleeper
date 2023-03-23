@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.PrintWriter;
@@ -33,7 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
@@ -58,7 +62,7 @@ class UpdatePropertiesWithNanoTest {
             InstanceProperties properties = generateTestInstanceProperties();
 
             // When / Then
-            assertThat(helper.updateInstancePropertiesGetCommandRun(properties))
+            assertThat(helper.openInstancePropertiesGetCommandRun(properties))
                     .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
         }
 
@@ -68,7 +72,7 @@ class UpdatePropertiesWithNanoTest {
             InstanceProperties properties = generateTestInstanceProperties();
 
             // When / Then
-            assertThat(helper.updateInstancePropertiesGetPropertiesWritten(properties))
+            assertThat(helper.openInstancePropertiesGetPropertiesWritten(properties))
                     .isEqualTo(properties);
         }
 
@@ -106,7 +110,7 @@ class UpdatePropertiesWithNanoTest {
             InstanceProperties properties = generateTestInstanceProperties();
 
             // When
-            String tempFileString = Files.readString(helper.updateInstancePropertiesGetPathToFile(properties));
+            String tempFileString = Files.readString(helper.openInstancePropertiesGetPathToFile(properties));
 
             // Then
             StringWriter writer = new StringWriter();
@@ -114,7 +118,6 @@ class UpdatePropertiesWithNanoTest {
             assertThat(tempFileString).isEqualTo(writer.toString());
         }
     }
-
 
     @Nested
     @DisplayName("Open table properties file")
@@ -149,6 +152,42 @@ class UpdatePropertiesWithNanoTest {
 
             // Then
             assertThat(properties).isEqualTo(after);
+        }
+    }
+
+    @Nested
+    @DisplayName("Filter by property group")
+    class FilterByGroup {
+
+        @Test
+        void shouldWriteSingleInstancePropertyGroupToFile() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+            properties.set(LOGGING_LEVEL, "ERROR");
+
+            // When / Then
+            assertThat(helper.openFileGetPropertiesWritten(updater ->
+                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+                    .isEqualTo(loadProperties("" +
+                            "sleeper.logging.level=ERROR"));
+        }
+
+        @Test
+        void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+            properties.set(LOGGING_LEVEL, "ERROR");
+
+            // When
+            String tempFileString = Files.readString(helper.openFileGetPathToFile(updater ->
+                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)));
+
+            // Then
+            StringWriter writer = new StringWriter();
+            SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(
+                            new PrintWriter(writer), InstancePropertyGroup.LOGGING)
+                    .print(properties);
+            assertThat(tempFileString).isEqualTo(writer.toString());
         }
     }
 }
