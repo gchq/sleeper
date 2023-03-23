@@ -17,34 +17,25 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.ConsoleChoice;
 import sleeper.console.menu.MenuOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
+    private final PropertyGroupSelectHelper selectGroup;
     private final TableSelectHelper selectTable;
     private final AdminConfigStore store;
     private final UpdatePropertiesWithNano editor;
@@ -53,6 +44,7 @@ public class InstanceConfigurationScreen {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
+        this.selectGroup = new PropertyGroupSelectHelper(out, in);
         this.selectTable = new TableSelectHelper(out, in, store);
         this.store = store;
         this.editor = editor;
@@ -72,30 +64,19 @@ public class InstanceConfigurationScreen {
     }
 
     public void choosePropertyGroup(String instanceId) throws InterruptedException {
-        out.clearScreen("");
-        Map<ConsoleChoice, PropertyGroup> choiceToInstanceGroup = new LinkedHashMap<>();
-        Map<ConsoleChoice, PropertyGroup> choiceToTableGroup = new LinkedHashMap<>();
-        InstancePropertyGroup.getAll().forEach(group ->
-                choiceToInstanceGroup.put(ConsoleChoice.describedAs("Instance Properties - " + group.getName()), group));
-        TablePropertyGroup.getAll().forEach(group ->
-                choiceToTableGroup.put(ConsoleChoice.describedAs("Table Properties - " + group.getName()), group));
-        List<ConsoleChoice> choices = new ArrayList<>();
-        choices.add(RETURN_TO_MAIN_MENU);
-        choices.addAll(choiceToInstanceGroup.keySet());
-        choices.addAll(choiceToTableGroup.keySet());
-        Chosen<ConsoleChoice> chosen = chooseOne.chooseWithMessageFrom(
-                "Please select a group from the below options and hit return:",
-                choices);
-        Optional<PropertyGroup> instanceGroupOpt = chosen.getChoice().map(choiceToInstanceGroup::get);
-        if (instanceGroupOpt.isPresent()) {
-            withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), instanceGroupOpt.get())
+        Optional<PropertyGroupWithCategory> groupOpt = selectGroup.selectPropertyGroup();
+        if (groupOpt.isEmpty()) {
+            return;
+        }
+        PropertyGroupWithCategory group = groupOpt.get();
+        if (group.isInstancePropertyGroup()) {
+            withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), group.getGroup())
                     .viewAndEditProperties();
         }
-        Optional<PropertyGroup> tableGroupOpt = chosen.getChoice().map(choiceToTableGroup::get);
-        if (tableGroupOpt.isPresent()) {
+        if (group.isTablePropertyGroup()) {
             Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
             if (tableOpt.isPresent()) {
-                withGroupedTableProperties(instanceId, tableOpt.get(), tableGroupOpt.get())
+                withGroupedTableProperties(instanceId, tableOpt.get(), group.getGroup())
                         .viewAndEditProperties();
             }
         }
