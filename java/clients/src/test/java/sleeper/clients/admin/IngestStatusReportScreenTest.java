@@ -54,6 +54,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUE
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
@@ -219,6 +220,28 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total tasks: 1\n" +
                             "Total tasks in progress: 1\n" +
                             "Total tasks finished: 0");
+
+            verifyWithNumberOfInvocations(3);
+        }
+
+        @Test
+        void shouldRunIngestTaskStatusReportWithQueryTypeUnfinished() throws Exception {
+            // Given
+            createIngestTaskStatusStore();
+            when(ingestTaskStatusStore.getTasksInProgress())
+                    .thenReturn(exampleTaskStatuses());
+
+            // When/Then
+            String output = runIngestTaskStatusReport()
+                    .enterPrompts(TASK_QUERY_UNFINISHED_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("" +
+                            "Ingest Task Status Report\n" +
+                            "-------------------------\n" +
+                            "Total tasks in progress: 1\n");
 
             verifyWithNumberOfInvocations(3);
         }

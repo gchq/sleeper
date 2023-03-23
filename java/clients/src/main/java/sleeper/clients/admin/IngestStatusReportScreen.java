@@ -85,7 +85,9 @@ public class IngestStatusReportScreen {
     private void chooseArgsForIngestTaskStatusReport(String instanceId) throws InterruptedException {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                 new MenuOption("All", () ->
-                        runIngestTaskStatusReport(instanceId, IngestTaskQuery.ALL))
+                        runIngestTaskStatusReport(instanceId, IngestTaskQuery.ALL)),
+                new MenuOption("Unfinished", () ->
+                        runIngestTaskStatusReport(instanceId, IngestTaskQuery.UNFINISHED))
         ).run();
     }
 
