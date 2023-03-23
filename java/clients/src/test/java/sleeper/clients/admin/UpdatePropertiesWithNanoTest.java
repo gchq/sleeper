@@ -16,6 +16,7 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -193,7 +194,7 @@ class UpdatePropertiesWithNanoTest {
         }
 
         @Test
-        void shouldCreateUpdateRequestWithInstancePropertiesInGroup() throws Exception {
+        void shouldCreateUpdateRequestWithInstanceProperties() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
             before.set(LOGGING_LEVEL, "ERROR");
@@ -212,7 +213,7 @@ class UpdatePropertiesWithNanoTest {
         }
 
         @Test
-        void shouldCreateUpdateRequestWithTablePropertiesInGroup() throws Exception {
+        void shouldCreateUpdateRequestWithTableProperties() throws Exception {
             // Given
             TableProperties before = generateTestTableProperties();
             before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
@@ -222,6 +223,26 @@ class UpdatePropertiesWithNanoTest {
             // When
             UpdatePropertiesRequest<TableProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
                     before, "sleeper.table.metadata.dynamo.consistent.reads=true", TablePropertyGroup.METADATA);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldUnsetPropertyWhenRemovedInEditor() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(LOGGING_LEVEL, "ERROR");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.unset(LOGGING_LEVEL);
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "", InstancePropertyGroup.LOGGING);
 
             // Then
             assertThat(updatePropertiesRequest.getUpdatedProperties())
