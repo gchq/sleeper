@@ -24,8 +24,11 @@ import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.MenuOption;
 import sleeper.status.report.IngestJobStatusReport;
+import sleeper.status.report.IngestTaskStatusReport;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.status.report.ingest.task.IngestTaskQuery;
+import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
 
 import java.util.Optional;
@@ -54,7 +57,9 @@ public class IngestStatusReportScreen {
         out.clearScreen("");
         consoleHelper.chooseOptionUntilValid("Which ingest report would you like to run",
                 new MenuOption("Ingest Job Status Report", () ->
-                        chooseArgsForIngestJobStatusReport(instanceId))
+                        chooseArgsForIngestJobStatusReport(instanceId)),
+                new MenuOption("Ingest Task Status Report", () ->
+                        chooseArgsForIngestTaskStatusReport(instanceId))
         ).run();
     }
 
@@ -77,6 +82,13 @@ public class IngestStatusReportScreen {
         }
     }
 
+    private void chooseArgsForIngestTaskStatusReport(String instanceId) throws InterruptedException {
+        consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
+                new MenuOption("All", () ->
+                        runIngestTaskStatusReport(instanceId, IngestTaskQuery.ALL))
+        ).run();
+    }
+
     private IngestJobStatusReportArguments.Builder argsBuilder(String instanceId, String tableName, JobQuery.Type queryType) {
         return IngestJobStatusReportArguments.builder()
                 .instanceId(instanceId).tableName(tableName)
@@ -97,6 +109,12 @@ public class IngestStatusReportScreen {
         InstanceProperties instanceProperties = store.loadInstanceProperties(instanceId);
         new IngestJobStatusReport(store.loadIngestJobStatusStore(instanceId), args,
                 store.getSqsClient(), instanceProperties.get(INGEST_JOB_QUEUE_URL)).run();
+        confirmReturnToMainScreen(out, in);
+    }
+
+    private void runIngestTaskStatusReport(String instanceId, IngestTaskQuery queryType) {
+        new IngestTaskStatusReport(store.loadIngestTaskStatusStore(instanceId),
+                new StandardIngestTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }
 }

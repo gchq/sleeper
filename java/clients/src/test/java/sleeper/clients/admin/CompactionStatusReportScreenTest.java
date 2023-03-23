@@ -24,11 +24,11 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
@@ -63,7 +63,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
         private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        private final DynamoDBCompactionJobStatusStore compactionJobStatusStore = mock(DynamoDBCompactionJobStatusStore.class);
+        private final CompactionJobStatusStore compactionJobStatusStore = mock(CompactionJobStatusStore.class);
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() throws Exception {
@@ -180,7 +180,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
-        private final DynamoDBCompactionTaskStatusStore compactionTaskStatusStore = mock(DynamoDBCompactionTaskStatusStore.class);
+        private final CompactionTaskStatusStore compactionTaskStatusStore = mock(CompactionTaskStatusStore.class);
 
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {

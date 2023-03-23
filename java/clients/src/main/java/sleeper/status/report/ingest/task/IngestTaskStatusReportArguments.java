@@ -33,6 +33,12 @@ public class IngestTaskStatusReportArguments {
         this.query = query;
     }
 
+    private IngestTaskStatusReportArguments(Builder builder) {
+        instanceId = builder.instanceId;
+        reporter = builder.reporter;
+        query = builder.query;
+    }
+
     public static IngestTaskStatusReportArguments fromArgs(String... args) {
         if (args.length < 1 || args.length > 3) {
             throw new IllegalArgumentException("Wrong number of arguments");
@@ -63,5 +69,37 @@ public class IngestTaskStatusReportArguments {
 
     public IngestTaskQuery getQuery() {
         return query;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String instanceId;
+        private IngestTaskStatusReporter reporter;
+        private IngestTaskQuery query;
+
+        private Builder() {
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder reporter(IngestTaskStatusReporter reporter) {
+            this.reporter = reporter;
+            return this;
+        }
+
+        public Builder query(IngestTaskQuery query) {
+            this.query = query;
+            return this;
+        }
+
+        public IngestTaskStatusReportArguments build() {
+            return new IngestTaskStatusReportArguments(this);
+        }
     }
 }

@@ -29,7 +29,10 @@ import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 
 import java.time.Instant;
 import java.util.List;
@@ -43,12 +46,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_TASK_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
@@ -58,7 +63,7 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
     @Nested
     class IngestJobStatusReport {
-        private final DynamoDBIngestJobStatusStore ingestJobStatusStore = mock(DynamoDBIngestJobStatusStore.class);
+        private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
 
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {
@@ -186,6 +191,53 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             return List.of(
                     startedIngestJob(IngestJob.builder().id("test-job").files("test.parquet").build(),
                             "test-task", Instant.parse("2023-03-15T17:52:12.001Z")));
+        }
+    }
+
+    @DisplayName("Ingest task status report")
+    @Nested
+    class IngestTaskStatusReport {
+        private final IngestTaskStatusStore ingestTaskStatusStore = mock(IngestTaskStatusStore.class);
+
+        @Test
+        void shouldRunIngestTaskStatusReportWithQueryTypeAll() throws Exception {
+            // Given
+            createIngestTaskStatusStore();
+            when(ingestTaskStatusStore.getAllTasks())
+                    .thenReturn(exampleTaskStatuses());
+
+            // When/Then
+            String output = runIngestTaskStatusReport()
+                    .enterPrompts(TASK_QUERY_ALL_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("" +
+                            "Ingest Task Status Report\n" +
+                            "-------------------------\n" +
+                            "Total tasks: 1\n" +
+                            "Total tasks in progress: 1\n" +
+                            "Total tasks finished: 0");
+
+            verifyWithNumberOfInvocations(3);
+        }
+
+        private RunAdminClient runIngestTaskStatusReport() {
+            return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
+                    INGEST_TASK_STATUS_REPORT_OPTION);
+        }
+
+        private void createIngestTaskStatusStore() {
+            InstanceProperties properties = createValidInstanceProperties();
+            setInstanceProperties(properties);
+            when(store.loadIngestTaskStatusStore(properties.get(ID)))
+                    .thenReturn(ingestTaskStatusStore);
+        }
+
+        private List<IngestTaskStatus> exampleTaskStatuses() {
+            return List.of(
+                    IngestTaskStatusReportTestHelper.startedTask("test-task", "2023-03-15T17:52:12.001Z"));
         }
     }
 
