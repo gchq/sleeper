@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleHelper;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
@@ -52,13 +54,19 @@ public class CompactionStatusReportScreen {
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
-        out.clearScreen("");
-        consoleHelper.chooseOptionUntilValid("Which compaction report would you like to run",
-                new MenuOption("Compaction Job Status Report", () ->
-                        chooseArgsForCompactionJobStatusReport(instanceId)),
-                new MenuOption("Compaction Task Status Report", () ->
-                        chooseArgsForCompactionTaskStatusReport(instanceId))
-        ).run();
+        InstanceProperties properties = store.loadInstanceProperties(instanceId);
+        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
+            confirmReturnToMainScreen(out, in);
+        } else {
+            out.clearScreen("");
+            consoleHelper.chooseOptionUntilValid("Which compaction report would you like to run",
+                    new MenuOption("Compaction Job Status Report", () ->
+                            chooseArgsForCompactionJobStatusReport(instanceId)),
+                    new MenuOption("Compaction Task Status Report", () ->
+                            chooseArgsForCompactionTaskStatusReport(instanceId))
+            ).run();
+        }
     }
 
     private void chooseArgsForCompactionJobStatusReport(String instanceId) throws InterruptedException {

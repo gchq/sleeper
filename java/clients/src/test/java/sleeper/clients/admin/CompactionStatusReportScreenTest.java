@@ -42,7 +42,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_TASK_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
@@ -53,6 +55,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
@@ -240,6 +243,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
 
         private void createCompactionTaskStatusStore() {
             InstanceProperties properties = createValidInstanceProperties();
+            setInstanceProperties(properties);
             when(store.loadCompactionTaskStatusStore(properties.get(ID)))
                     .thenReturn(compactionTaskStatusStore);
         }
@@ -247,6 +251,26 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private List<CompactionTaskStatus> exampleTaskStatuses() {
             return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
         }
+    }
+
+    @Test
+    void shouldReturnToMainMenuIfCompactionStatusStoreNotEnabled() throws Exception {
+        // Given
+        InstanceProperties properties = createValidInstanceProperties();
+        properties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
+        setInstanceProperties(properties);
+
+        // When
+        String output = runClient()
+                .enterPrompts(COMPACTION_STATUS_REPORT_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
+        assertThat(output)
+                .isEqualTo(DISPLAY_MAIN_SCREEN +
+                        COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE +
+                        PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
+        verifyWithNumberOfInvocations(1);
     }
 
     private void verifyWithNumberOfInvocations(int numberOfInvocations) {

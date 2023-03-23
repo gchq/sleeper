@@ -63,6 +63,8 @@ public class ExpectedAdminConsoleValues {
 
     public static final String NO_INSTANCE_SCREEN = "" +
             "Could not load properties for instance test-instance\n";
+    public static final String COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE = "" +
+            "Compaction status store not enabled. Please enable in instance properties to access this screen\n";
 
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
