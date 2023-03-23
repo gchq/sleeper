@@ -16,7 +16,6 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -232,7 +231,6 @@ class UpdatePropertiesWithNanoTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldUnsetPropertyWhenRemovedInEditor() throws Exception {
             // Given
             InstanceProperties before = generateTestInstanceProperties();
@@ -243,6 +241,56 @@ class UpdatePropertiesWithNanoTest {
             // When
             UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
                     before, "", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldNotShowUnknownProperties() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+            properties.loadFromString("unknown.property=some-value");
+
+            // When
+            assertThat(helper.openFileGetPropertiesWritten(updater ->
+                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldUpdateAnUnknownProperty() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.loadFromString("unknown.property=value-before");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.loadFromString("unknown.property=value-after");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "unknown.property=value-after", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldUpdateAPropertyOutsideTheSpecifiedGroup() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(INGEST_SOURCE_BUCKET, "bucket-before");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.ingest.source.bucket=bucket-after", InstancePropertyGroup.LOGGING);
 
             // Then
             assertThat(updatePropertiesRequest.getUpdatedProperties())

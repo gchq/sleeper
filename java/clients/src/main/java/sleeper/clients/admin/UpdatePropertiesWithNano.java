@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.function.Function;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithNano {
@@ -62,14 +63,14 @@ public class UpdatePropertiesWithNano {
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(
             InstanceProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, writer ->
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer ->
                 SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, propertyGroup));
         return buildRequest(properties, new InstanceProperties(after));
     }
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
             TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
-        Properties after = editPropertiesAndMerge(properties, writer ->
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer ->
                 SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
         return buildRequest(properties, TableProperties.reinitialise(properties, after));
     }
@@ -87,12 +88,19 @@ public class UpdatePropertiesWithNano {
     }
 
     private <T extends SleeperProperty> Properties editPropertiesAndMerge(
-            SleeperProperties<T> properties,
+            SleeperProperties<T> properties, PropertyGroup propertyGroup,
             Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer) throws IOException, InterruptedException {
+
         Properties after = new Properties();
         after.putAll(properties.getProperties());
+
         Properties edited = editProperties(properties, printer);
         after.putAll(edited);
+
+        properties.getPropertiesIndex().getAllInGroup(propertyGroup)
+                .stream().map(SleeperProperty::getPropertyName)
+                .filter(not(edited::containsKey))
+                .forEach(after::remove);
         return after;
     }
 
