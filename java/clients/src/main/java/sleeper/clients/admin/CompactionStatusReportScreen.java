@@ -56,6 +56,7 @@ public class CompactionStatusReportScreen {
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
         InstanceProperties properties = store.loadInstanceProperties(instanceId);
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            out.println("");
             out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
             confirmReturnToMainScreen(out, in);
         } else {

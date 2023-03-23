@@ -44,8 +44,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_TASK_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
@@ -56,6 +58,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
@@ -262,6 +265,26 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             return List.of(
                     IngestTaskStatusReportTestHelper.startedTask("test-task", "2023-03-15T17:52:12.001Z"));
         }
+    }
+
+    @Test
+    void shouldReturnToMainMenuIfCompactionStatusStoreNotEnabled() throws Exception {
+        // Given
+        InstanceProperties properties = createValidInstanceProperties();
+        properties.set(INGEST_STATUS_STORE_ENABLED, "false");
+        setInstanceProperties(properties);
+
+        // When
+        String output = runClient()
+                .enterPrompts(INGEST_STATUS_REPORT_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
+
+        // Then
+        assertThat(output)
+                .isEqualTo(DISPLAY_MAIN_SCREEN +
+                        INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE +
+                        PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
+        verifyWithNumberOfInvocations(1);
     }
 
     private void verifyWithNumberOfInvocations(int numberOfInvocations) {

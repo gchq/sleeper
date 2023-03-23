@@ -37,6 +37,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestStatusReportScreen {
     private final ConsoleOutput out;
@@ -54,13 +55,20 @@ public class IngestStatusReportScreen {
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
-        out.clearScreen("");
-        consoleHelper.chooseOptionUntilValid("Which ingest report would you like to run",
-                new MenuOption("Ingest Job Status Report", () ->
-                        chooseArgsForIngestJobStatusReport(instanceId)),
-                new MenuOption("Ingest Task Status Report", () ->
-                        chooseArgsForIngestTaskStatusReport(instanceId))
-        ).run();
+        InstanceProperties properties = store.loadInstanceProperties(instanceId);
+        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+            out.println("");
+            out.println("Ingest status store not enabled. Please enable in instance properties to access this screen");
+            confirmReturnToMainScreen(out, in);
+        } else {
+            out.clearScreen("");
+            consoleHelper.chooseOptionUntilValid("Which ingest report would you like to run",
+                    new MenuOption("Ingest Job Status Report", () ->
+                            chooseArgsForIngestJobStatusReport(instanceId)),
+                    new MenuOption("Ingest Task Status Report", () ->
+                            chooseArgsForIngestTaskStatusReport(instanceId))
+            ).run();
+        }
     }
 
     private void chooseArgsForIngestJobStatusReport(String instanceId) throws InterruptedException {
