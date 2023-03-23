@@ -16,6 +16,8 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -46,96 +48,107 @@ class UpdatePropertiesWithNanoTest {
         helper = new UpdatePropertiesWithNanoTestHelper(tempDir);
     }
 
-    @Test
-    void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
-        // Given
-        InstanceProperties properties = generateTestInstanceProperties();
+    @Nested
+    @DisplayName("Open instance properties file")
+    class OpenInstanceProperties {
 
-        // When / Then
-        assertThat(helper.updateInstancePropertiesGetCommandRun(properties))
-                .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
+        @Test
+        void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When / Then
+            assertThat(helper.updateInstancePropertiesGetCommandRun(properties))
+                    .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
+        }
+
+        @Test
+        void shouldWriteInstancePropertiesFile() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When / Then
+            assertThat(helper.updateInstancePropertiesGetPropertiesWritten(properties))
+                    .isEqualTo(properties);
+        }
+
+        @Test
+        void shouldGetDiffAfterPropertiesChanged() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(INGEST_SOURCE_BUCKET, "bucket-before");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+
+            // When / Then
+            assertThat(helper.updateProperties(before, after).getDiff())
+                    .extracting(PropertiesDiff::getChanges).asList()
+                    .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
+        }
+
+        @Test
+        void shouldRetrievePropertiesAfterChange() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When
+            InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+
+            // Then
+            assertThat(properties).isEqualTo(after);
+        }
+
+        @Test
+        void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When
+            String tempFileString = Files.readString(helper.updateInstancePropertiesGetPathToFile(properties));
+
+            // Then
+            StringWriter writer = new StringWriter();
+            properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+            assertThat(tempFileString).isEqualTo(writer.toString());
+        }
     }
 
-    @Test
-    void shouldWriteInstancePropertiesFile() throws Exception {
-        // Given
-        InstanceProperties properties = generateTestInstanceProperties();
 
-        // When / Then
-        assertThat(helper.updateInstancePropertiesGetPropertiesWritten(properties))
-                .isEqualTo(properties);
-    }
+    @Nested
+    @DisplayName("Open table properties file")
+    class OpenTableProperties {
 
-    @Test
-    void shouldGetDiffAfterPropertiesChanged() throws Exception {
-        // Given
-        InstanceProperties before = generateTestInstanceProperties();
-        before.set(INGEST_SOURCE_BUCKET, "bucket-before");
-        InstanceProperties after = generateTestInstanceProperties();
-        after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+        @Test
+        void shouldUpdateTableProperties() throws Exception {
+            // Given
+            TableProperties before = generateTestTableProperties();
+            before.set(ROW_GROUP_SIZE, "123");
+            TableProperties after = generateTestTableProperties();
+            after.set(ROW_GROUP_SIZE, "456");
 
-        // When / Then
-        assertThat(helper.updateProperties(before, after).getDiff())
-                .extracting(PropertiesDiff::getChanges).asList()
-                .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
-    }
+            // When
+            PropertiesDiff diff = helper.updateProperties(before, after).getDiff();
 
-    @Test
-    void shouldRetrievePropertiesAfterChange() throws Exception {
-        // Given
-        InstanceProperties before = generateTestInstanceProperties();
-        InstanceProperties after = generateTestInstanceProperties();
-        after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            // Then
+            assertThat(diff)
+                    .extracting(PropertiesDiff::getChanges).asList()
+                    .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
+        }
 
-        // When
-        InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+        @Test
+        void shouldRetrieveTablePropertiesAfterChange() throws Exception {
+            // Given
+            TableProperties before = generateTestTableProperties();
+            TableProperties after = generateTestTableProperties();
+            after.set(ROW_GROUP_SIZE, "456");
 
-        // Then
-        assertThat(properties).isEqualTo(after);
-    }
+            // When
+            TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
 
-    @Test
-    void shouldUpdateTableProperties() throws Exception {
-        // Given
-        TableProperties before = generateTestTableProperties();
-        before.set(ROW_GROUP_SIZE, "123");
-        TableProperties after = generateTestTableProperties();
-        after.set(ROW_GROUP_SIZE, "456");
-
-        // When
-        PropertiesDiff diff = helper.updateProperties(before, after).getDiff();
-
-        // Then
-        assertThat(diff)
-                .extracting(PropertiesDiff::getChanges).asList()
-                .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
-    }
-
-    @Test
-    void shouldRetrieveTablePropertiesAfterChange() throws Exception {
-        // Given
-        TableProperties before = generateTestTableProperties();
-        TableProperties after = generateTestTableProperties();
-        after.set(ROW_GROUP_SIZE, "456");
-
-        // When
-        TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
-
-        // Then
-        assertThat(properties).isEqualTo(after);
-    }
-
-    @Test
-    void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
-        // Given
-        InstanceProperties properties = generateTestInstanceProperties();
-
-        // When
-        String tempFileString = Files.readString(helper.updateInstancePropertiesGetPathToFile(properties));
-
-        // Then
-        StringWriter writer = new StringWriter();
-        properties.saveUsingPrettyPrinter(new PrintWriter(writer));
-        assertThat(tempFileString).isEqualTo(writer.toString());
+            // Then
+            assertThat(properties).isEqualTo(after);
+        }
     }
 }
