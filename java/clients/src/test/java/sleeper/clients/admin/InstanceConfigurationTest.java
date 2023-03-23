@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -586,7 +585,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
     @Nested
     class FilterByGroup {
         @Test
-        @Disabled("TODO")
         void shouldViewPropertiesThatBelongToSpecificGroup() throws Exception {
             // Given
             InstanceProperties properties = createValidInstanceProperties();

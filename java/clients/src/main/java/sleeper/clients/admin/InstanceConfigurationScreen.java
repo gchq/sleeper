@@ -17,18 +17,28 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ChooseOne;
+import sleeper.console.menu.Chosen;
+import sleeper.console.menu.ConsoleChoice;
 import sleeper.console.menu.MenuOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
@@ -52,6 +62,28 @@ public class InstanceConfigurationScreen {
                 .viewAndEditProperties();
     }
 
+    public void choosePropertyGroup(String instanceId) throws InterruptedException {
+        Map<ConsoleChoice, PropertyGroup> choiceMap = new LinkedHashMap<>();
+        InstancePropertyGroup.getAll().forEach(group ->
+                choiceMap.put(ConsoleChoice.describedAs("Instance Properties - " + group.getName()), group));
+        List<ConsoleChoice> choices = new ArrayList<>();
+        choices.add(RETURN_TO_MAIN_MENU);
+        choices.addAll(choiceMap.keySet());
+        out.println();
+        Chosen<ConsoleChoice> chosen = chooseOne.chooseWithMessageFrom(
+                "Please select a group from the below options and hit return:",
+                choices);
+        Optional<PropertyGroup> groupOpt = chosen.getChoice().map(choiceMap::get);
+        if (groupOpt.isPresent()) {
+            viewAndEditPropertiesWithGroup(instanceId, groupOpt.get());
+        }
+    }
+
+    public void viewAndEditPropertiesWithGroup(String instanceId, PropertyGroup group) throws InterruptedException {
+        withGroupedInstanceProperties(store.loadInstanceProperties(instanceId), group)
+                .viewAndEditProperties();
+    }
+
     public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
         Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
         if (tableOpt.isPresent()) {
@@ -62,6 +94,10 @@ public class InstanceConfigurationScreen {
 
     private WithProperties<InstanceProperties> withInstanceProperties(InstanceProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile, store::saveInstanceProperties);
+    }
+
+    private WithProperties<InstanceProperties> withGroupedInstanceProperties(InstanceProperties properties, PropertyGroup group) {
+        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group), store::saveInstanceProperties);
     }
 
     private WithProperties<TableProperties> withTableProperties(String instanceId, TableProperties properties) {
