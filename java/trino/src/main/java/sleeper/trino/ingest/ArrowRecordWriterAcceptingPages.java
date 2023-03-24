@@ -51,10 +51,11 @@ public class ArrowRecordWriterAcceptingPages implements ArrowRecordWriter<Page> 
      * @param vectorSchemaRoot   The Arrow store to write into
      * @param page               The {@link Page} of data to write
      * @param startInsertAtRowNo The index of the first row to write
+     * @return The row number to use when this method is next called
      * @throws OutOfMemoryException When the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
      *                              provide enough memory
      */
-    public void insert(List<Field> allFields,
+    public int insert(List<Field> allFields,
                        VectorSchemaRoot vectorSchemaRoot,
                        Page page,
                        int startInsertAtRowNo) throws OutOfMemoryException {
@@ -86,7 +87,9 @@ public class ArrowRecordWriterAcceptingPages implements ArrowRecordWriter<Page> 
                 }
             }
         }
-        vectorSchemaRoot.setRowCount(startInsertAtRowNo + page.getPositionCount());
+        int finalRowCount = startInsertAtRowNo + noOfPositions;
+        vectorSchemaRoot.setRowCount(finalRowCount);
+        return finalRowCount;
     }
 
 }
