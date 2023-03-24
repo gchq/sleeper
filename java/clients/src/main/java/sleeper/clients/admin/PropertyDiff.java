@@ -16,9 +16,16 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.console.ConsoleOutput;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+
+import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.formatDescription;
 
 public class PropertyDiff {
     private final String propertyName;
@@ -39,6 +46,57 @@ public class PropertyDiff {
         } else {
             return Optional.of(new PropertyDiff(propertyName, oldValue, newValue));
         }
+    }
+
+    public void print(ConsoleOutput out,
+                      SleeperPropertyIndex<?> propertyIndex,
+                      Set<SleeperProperty> invalidProperties) {
+        out.println(propertyName);
+        var propertyOpt = propertyIndex.getByName(propertyName);
+        String description = propertyOpt.map(SleeperProperty::getDescription)
+                .orElse("Unknown property, no description available");
+        out.println(formatDescription("", description));
+        if (oldValue == null) {
+            String defaultValue = propertyOpt.map(SleeperProperty::getDefaultValue).orElse(null);
+            if (defaultValue != null) {
+                out.printf("Unset before, default value: %s%n", defaultValue);
+            } else {
+                out.println("Unset before");
+            }
+        } else {
+            out.printf("Before: %s%n", oldValue);
+        }
+        out.printf("After%s: %s%n", invalidNote(propertyOpt.orElse(null), invalidProperties), newValue);
+        out.println();
+    }
+
+    private String invalidNote(SleeperProperty property, Set<SleeperProperty> invalidProperties) {
+        if (property == null) {
+            return "";
+        }
+        if (!property.isEditable()) {
+            return " (cannot be changed, please undo)";
+        }
+        if (invalidProperties.contains(property)) {
+            return " (not valid, please change)";
+        }
+        return "";
+    }
+
+    public Optional<PropertyDiff> andThen(PropertyDiff then) {
+        if (Objects.equals(oldValue, then.newValue)) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new PropertyDiff(propertyName, oldValue, then.newValue));
+        }
+    }
+
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
+        return propertyIndex.getByName(propertyName);
     }
 
     @Override

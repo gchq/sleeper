@@ -35,6 +35,10 @@ public interface SleeperProperty {
         return false;
     }
 
+    default boolean isEditable() {
+        return !isSystemDefined();
+    }
+
     default Predicate<String> validationPredicate() {
         return s -> true;
     }

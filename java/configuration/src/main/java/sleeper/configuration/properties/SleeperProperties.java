@@ -23,6 +23,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -31,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -73,7 +76,13 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
                 property.validate(get(property), reporter));
     }
 
-    protected abstract SleeperPropertyIndex<T> getPropertiesIndex();
+    public abstract SleeperPropertyIndex<T> getPropertiesIndex();
+
+    protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
+
+    public void saveUsingPrettyPrinter(PrintWriter writer) {
+        this.getPrettyPrinter(writer).print(this);
+    }
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
@@ -124,7 +133,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.containsKey(property.getPropertyName());
     }
 
-    protected Properties getProperties() {
+    public Properties getProperties() {
         return properties;
     }
 

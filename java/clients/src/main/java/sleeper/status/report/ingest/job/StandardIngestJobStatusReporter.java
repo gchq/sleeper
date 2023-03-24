@@ -77,6 +77,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             printAllSummary(statusList, numberInQueue);
         } else if (queryType.equals(JobQuery.Type.UNFINISHED)) {
             printUnfinishedSummary(statusList, numberInQueue);
+        } else if (queryType.equals(JobQuery.Type.RANGE)) {
+            printRangeSummary(statusList, numberInQueue);
         }
     }
 
@@ -114,6 +116,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
+    }
+
+    private void printRangeSummary(List<IngestJobStatus> statusList, int numberInQueue) {
+        out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
+        out.printf("Total jobs in defined range: %d%n", statusList.size());
+        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
     private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {

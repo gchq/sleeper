@@ -18,27 +18,16 @@ package sleeper.console.menu;
 import sleeper.console.UserExitedException;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Chosen<T extends ConsoleChoice> {
 
     private final String entered;
     private final T choice;
-    private final boolean exit;
 
     public Chosen(String entered, T choice) {
-        this(entered, choice, false);
-    }
-
-    private Chosen(String entered, T choice, boolean exit) {
         this.entered = entered;
         this.choice = choice;
-        this.exit = exit;
-    }
-
-    public static <T extends ConsoleChoice> Chosen<T> exit(String entered) {
-        return new Chosen<>(entered, null, true);
     }
 
     public static <T extends ConsoleChoice> Chosen<T> nothing(String entered) {
@@ -53,14 +42,8 @@ public class Chosen<T extends ConsoleChoice> {
         return Optional.ofNullable(choice);
     }
 
-    public boolean isExit() {
-        return exit;
-    }
-
     public T chooseUntilChoiceFound(Supplier<Chosen<T>> chooseAgain) throws UserExitedException {
-        if (exit) {
-            throw new UserExitedException();
-        } else if (choice != null) {
+        if (choice != null) {
             return choice;
         } else {
             return chooseAgain.get().chooseUntilChoiceFound(chooseAgain);
@@ -68,18 +51,10 @@ public class Chosen<T extends ConsoleChoice> {
     }
 
     public Chosen<T> chooseUntilSomethingEntered(Supplier<Chosen<T>> chooseAgain) throws UserExitedException {
-        if (exit) {
-            throw new UserExitedException();
-        } else if ("".equals(entered)) {
+        if ("".equals(entered)) {
             return chooseAgain.get().chooseUntilSomethingEntered(chooseAgain);
         } else {
             return this;
-        }
-    }
-
-    public void ifEnteredNonChoiceValue(Consumer<String> doWithEnteredValue) {
-        if (!exit && choice == null) {
-            doWithEnteredValue.accept(entered);
         }
     }
 }

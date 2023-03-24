@@ -17,6 +17,7 @@ package sleeper.console.menu;
 
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.UserExitedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,20 +33,20 @@ public class ChooseOne {
     }
 
     @SafeVarargs
-    public final <T extends ConsoleChoice> Chosen<T> chooseFrom(T... choices) {
+    public final <T extends ConsoleChoice> Chosen<T> chooseFrom(T... choices) throws UserExitedException {
         return chooseFrom(Arrays.asList(choices));
     }
 
     @SafeVarargs
-    public final <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, T... choices) {
+    public final <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, T... choices) throws UserExitedException {
         return chooseWithMessageFrom(message, Arrays.asList(choices));
     }
 
-    public <T extends ConsoleChoice> Chosen<T> chooseFrom(List<T> choices) {
+    public <T extends ConsoleChoice> Chosen<T> chooseFrom(List<T> choices) throws UserExitedException {
         return chooseWithMessageFrom("Please select from the below options and hit return:", choices);
     }
 
-    public <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) {
+    public <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) throws UserExitedException {
         out.println(message);
         out.println("[0] Exit program");
         for (int i = 0; i < choices.size(); i++) {
@@ -56,7 +57,7 @@ public class ChooseOne {
         try {
             int entered = Integer.parseInt(enteredStr);
             if (entered == 0) {
-                return Chosen.exit(enteredStr);
+                throw new UserExitedException();
             }
             return new Chosen<>(enteredStr, choices.get(entered - 1));
         } catch (NumberFormatException | IndexOutOfBoundsException e) {

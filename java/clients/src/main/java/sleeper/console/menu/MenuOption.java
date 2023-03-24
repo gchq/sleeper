@@ -32,7 +32,7 @@ public class MenuOption implements ConsoleChoice {
         return description;
     }
 
-    public void run() throws UserExitedException {
+    public void run() throws UserExitedException, InterruptedException {
         operation.run();
     }
 }

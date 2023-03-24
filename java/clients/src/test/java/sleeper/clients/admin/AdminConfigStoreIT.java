@@ -24,7 +24,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,7 +68,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInS3() {
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(store().loadInstanceProperties(INSTANCE_ID).get(FARGATE_VERSION))
@@ -76,7 +78,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInLocalDirectory() {
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadInstancePropertiesFromDirectory(tempDir).get(FARGATE_VERSION))
@@ -89,7 +91,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -101,12 +103,12 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() throws IOException {
             // Given
             createTableInS3("old-test-table");
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -125,7 +127,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(store().loadTableProperties(INSTANCE_ID, "test-table").getInt(ROW_GROUP_SIZE))
@@ -138,7 +140,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -153,7 +155,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table-2");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -165,12 +167,12 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() throws IOException {
             // Given
             createTableInS3("old-test-table");
-            store().updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
+            updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -191,7 +193,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+            updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
 
             // Then
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
@@ -206,7 +208,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
         @Test
         void shouldNotRunCdkDeployWhenUnflaggedInstancePropertyUpdated() {
             // When
-            store().updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
             // Then
             verifyNoInteractions(cdk);
@@ -219,7 +221,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             instanceProperties.saveToS3(s3);
 
             // When
-            store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+            updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
 
             // Then
             verifyAnyPropertiesDeployedWithCdk();
@@ -233,10 +235,9 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // Given
             IOException thrown = new IOException("CDK failed");
             doThrowWhenPropertiesDeployedWithCdk(thrown);
-            AdminConfigStore store = store();
 
             // When / Then
-            assertThatThrownBy(() -> store.updateInstanceProperty(
+            assertThatThrownBy(() -> updateInstanceProperty(
                     INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminConfigStore.CouldNotSaveInstanceProperties.class)
                     .hasCauseReference(thrown);
@@ -251,7 +252,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
 
             // When / Then
             try {
-                store().updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+                updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
                 fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
@@ -274,7 +275,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+            updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
 
             // Then
             verifyPropertiesDeployedWithCdk();
@@ -290,7 +291,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             verifyNoInteractions(cdk);
@@ -302,7 +303,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
 
             // When
-            store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+            updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
 
             // Then
             verifyPropertiesDeployedWithCdk();
@@ -317,10 +318,9 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
             IOException thrown = new IOException("CDK failed");
             doThrowWhenPropertiesDeployedWithCdk(thrown);
-            AdminConfigStore store = store();
 
             // When / Then
-            assertThatThrownBy(() -> store.updateTableProperty(
+            assertThatThrownBy(() -> updateTableProperty(
                     INSTANCE_ID, "test-table", ENCRYPTED, "false"))
                     .isInstanceOf(AdminConfigStore.CouldNotSaveTableProperties.class)
                     .hasCauseReference(thrown);
@@ -334,7 +334,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
 
             // When / Then
             try {
-                store().updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
+                updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
                 fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -342,6 +342,20 @@ public class AdminConfigStoreIT extends AdminClientITBase {
                         .containsExactly(true);
             }
         }
+    }
+
+    private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
+        InstanceProperties properties = store().loadInstanceProperties(instanceId);
+        String valueBefore = properties.get(property);
+        properties.set(property, value);
+        store().saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
+    }
+
+    private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
+        TableProperties properties = store().loadTableProperties(instanceId, tableName);
+        String valueBefore = properties.get(property);
+        properties.set(property, value);
+        store().saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(

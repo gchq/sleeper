@@ -16,19 +16,21 @@
 package sleeper.clients.admin;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.RunCommand;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
-import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
@@ -36,108 +38,285 @@ import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestIn
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 class UpdatePropertiesWithNanoTest {
 
     @TempDir
     private Path tempDir;
-
-    private Path expectedInstancePropertiesFile;
+    private UpdatePropertiesWithNanoTestHelper helper;
 
     @BeforeEach
     void setUp() {
-        expectedInstancePropertiesFile = tempDir.resolve("sleeper/admin/temp.properties");
+        helper = new UpdatePropertiesWithNanoTestHelper(tempDir);
     }
 
-    @Test
-    void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
-        // Given
-        InstanceProperties properties = generateTestInstanceProperties();
+    @Nested
+    @DisplayName("Open instance properties file")
+    class OpenInstanceProperties {
 
-        // When / Then
-        assertThat(updateInstancePropertiesGetCommandRun(properties))
-                .containsExactly("nano", expectedInstancePropertiesFile.toString());
+        @Test
+        void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When / Then
+            assertThat(helper.openInstancePropertiesGetCommandRun(properties))
+                    .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
+        }
+
+        @Test
+        void shouldWriteInstancePropertiesFile() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When / Then
+            assertThat(helper.openInstancePropertiesGetPropertiesWritten(properties))
+                    .isEqualTo(properties);
+        }
+
+        @Test
+        void shouldGetDiffAfterPropertiesChanged() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(INGEST_SOURCE_BUCKET, "bucket-before");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+
+            // When / Then
+            assertThat(helper.updateProperties(before, after).getDiff())
+                    .extracting(PropertiesDiff::getChanges).asList()
+                    .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
+        }
+
+        @Test
+        void shouldRetrievePropertiesAfterChange() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When
+            InstanceProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+
+            // Then
+            assertThat(properties).isEqualTo(after);
+        }
+
+        @Test
+        void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When
+            String tempFileString = Files.readString(helper.openInstancePropertiesGetPathToFile(properties));
+
+            // Then
+            StringWriter writer = new StringWriter();
+            properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+            assertThat(tempFileString).isEqualTo(writer.toString());
+        }
     }
 
-    @Test
-    void shouldWriteInstancePropertiesFile() throws Exception {
-        // Given
-        InstanceProperties properties = generateTestInstanceProperties();
+    @Nested
+    @DisplayName("Open table properties file")
+    class OpenTableProperties {
 
-        // When / Then
-        assertThat(updateInstancePropertiesGetPropertiesWritten(properties))
-                .isEqualTo(properties);
+        @Test
+        void shouldUpdateTableProperties() throws Exception {
+            // Given
+            TableProperties before = generateTestTableProperties();
+            before.set(ROW_GROUP_SIZE, "123");
+            TableProperties after = generateTestTableProperties();
+            after.set(ROW_GROUP_SIZE, "456");
+
+            // When
+            PropertiesDiff diff = helper.updateProperties(before, after).getDiff();
+
+            // Then
+            assertThat(diff)
+                    .extracting(PropertiesDiff::getChanges).asList()
+                    .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
+        }
+
+        @Test
+        void shouldRetrieveTablePropertiesAfterChange() throws Exception {
+            // Given
+            TableProperties before = generateTestTableProperties();
+            TableProperties after = generateTestTableProperties();
+            after.set(ROW_GROUP_SIZE, "456");
+
+            // When
+            TableProperties properties = helper.updateProperties(before, after).getUpdatedProperties();
+
+            // Then
+            assertThat(properties).isEqualTo(after);
+        }
     }
 
-    @Test
-    void shouldGetDiffAfterPropertiesChanged() throws Exception {
-        // Given
-        InstanceProperties before = generateTestInstanceProperties();
-        before.set(INGEST_SOURCE_BUCKET, "bucket-before");
-        InstanceProperties after = generateTestInstanceProperties();
-        after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+    @Nested
+    @DisplayName("Filter by property group")
+    class FilterByGroup {
 
-        // When / Then
-        assertThat(updateProperties(before, after).getDiff())
-                .extracting(PropertiesDiff::getChanges).asList()
-                .containsExactly(valueChanged(INGEST_SOURCE_BUCKET, "bucket-before", "bucket-after"));
-    }
+        @Test
+        void shouldWriteSingleInstancePropertyGroupToFile() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+            properties.set(LOGGING_LEVEL, "ERROR");
 
-    @Test
-    void shouldRetrievePropertiesAfterChange() throws Exception {
-        // Given
-        InstanceProperties before = generateTestInstanceProperties();
-        InstanceProperties after = generateTestInstanceProperties();
-        after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            // When / Then
+            assertThat(helper.openFileGetPropertiesWritten(updater ->
+                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+                    .isEqualTo(loadProperties("" +
+                            "sleeper.logging.level=ERROR"));
+        }
 
-        // When
-        Properties properties = updateProperties(before, after).getUpdatedProperties();
+        @Test
+        void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+            properties.set(LOGGING_LEVEL, "ERROR");
 
-        // Then
-        assertThat(new InstanceProperties(properties)).isEqualTo(after);
-    }
+            // When
+            String tempFileString = Files.readString(helper.openFileGetPathToFile(updater ->
+                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)));
 
-    @Test
-    void shouldUpdateTableProperties() throws Exception {
-        // Given
-        TableProperties before = generateTestTableProperties();
-        before.set(ROW_GROUP_SIZE, "123");
-        TableProperties after = generateTestTableProperties();
-        after.set(ROW_GROUP_SIZE, "456");
+            // Then
+            StringWriter writer = new StringWriter();
+            SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(
+                            new PrintWriter(writer), InstancePropertyGroup.LOGGING)
+                    .print(properties);
+            assertThat(tempFileString).isEqualTo(writer.toString());
+        }
 
-        // When / Then
-        assertThat(updateProperties(before, after).getDiff())
-                .extracting(PropertiesDiff::getChanges).asList()
-                .containsExactly(valueChanged(ROW_GROUP_SIZE, "123", "456"));
-    }
+        @Test
+        void shouldCreateUpdateRequestWithInstanceProperties() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(LOGGING_LEVEL, "ERROR");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(LOGGING_LEVEL, "INFO");
 
-    private String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
-        return commandRunOn(runCommand ->
-                updateProperties(properties, runCommand));
-    }
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.logging.level=INFO", InstancePropertyGroup.LOGGING);
 
-    private InstanceProperties updateInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
-        AtomicReference<InstanceProperties> foundProperties = new AtomicReference<>();
-        updateProperties(properties, command -> {
-            foundProperties.set(new InstanceProperties(loadProperties(expectedInstancePropertiesFile)));
-            return 0;
-        });
-        return foundProperties.get();
-    }
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
 
-    private <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
-            SleeperProperties<T> before, SleeperProperties<T> after) throws IOException, InterruptedException {
-        return updateProperties(before, command -> {
-            after.save(expectedInstancePropertiesFile);
-            return 0;
-        });
-    }
+        @Test
+        void shouldCreateUpdateRequestWithTableProperties() throws Exception {
+            // Given
+            TableProperties before = generateTestTableProperties();
+            before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
+            TableProperties after = generateTestTableProperties();
+            after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
 
-    private <T extends SleeperProperty> UpdatePropertiesRequest updateProperties(
-            SleeperProperties<T> properties, RunCommand runCommand) throws IOException, InterruptedException {
-        return new UpdatePropertiesWithNano(tempDir).updateProperties(properties, runCommand);
+            // When
+            UpdatePropertiesRequest<TableProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.table.metadata.dynamo.consistent.reads=true", TablePropertyGroup.METADATA);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldUnsetPropertyWhenRemovedInEditor() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(LOGGING_LEVEL, "ERROR");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.unset(LOGGING_LEVEL);
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldNotShowUnknownProperties() throws Exception {
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+            properties.loadFromString("unknown.property=some-value");
+
+            // When
+            assertThat(helper.openFileGetPropertiesWritten(updater ->
+                    updater.openPropertiesFile(properties, InstancePropertyGroup.LOGGING)))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldUpdateAnUnknownProperty() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.loadFromString("unknown.property=value-before");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.loadFromString("unknown.property=value-after");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "unknown.property=value-after", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldUpdateAPropertyOutsideTheSpecifiedGroup() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(INGEST_SOURCE_BUCKET, "bucket-before");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(INGEST_SOURCE_BUCKET, "bucket-after");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.ingest.source.bucket=bucket-after", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
+
+        @Test
+        void shouldLeaveUnknownPropertyUnchangedWhenEditingAnotherProperty() throws Exception {
+            // Given
+            InstanceProperties before = generateTestInstanceProperties();
+            before.loadFromString("unknown.property=test-value");
+            InstanceProperties after = generateTestInstanceProperties();
+            after.loadFromString("unknown.property=test-value");
+            after.set(LOGGING_LEVEL, "TRACE");
+
+            // When
+            UpdatePropertiesRequest<InstanceProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
+                    before, "sleeper.logging.level=TRACE", InstancePropertyGroup.LOGGING);
+
+            // Then
+            assertThat(updatePropertiesRequest.getUpdatedProperties())
+                    .isEqualTo(after);
+            assertThat(updatePropertiesRequest.getDiff())
+                    .isEqualTo(new PropertiesDiff(before, after));
+        }
     }
 }

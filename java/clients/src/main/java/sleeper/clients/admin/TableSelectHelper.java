@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
@@ -22,38 +24,51 @@ import sleeper.console.menu.ChooseOne;
 import sleeper.console.menu.Chosen;
 import sleeper.console.menu.ConsoleChoice;
 
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
-public class TablePropertyReportScreen {
-
+public class TableSelectHelper {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
     private final AdminConfigStore store;
 
-    public TablePropertyReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
     }
 
-    public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        Chosen<ConsoleChoice> chosen = chooseTable();
-        if (!chosen.getChoice().isPresent()) {
-            new TablePropertyReport(out, in, store).print(instanceId, chosen.getEntered());
-        }
+    public void chooseTableIfExistsThen(String instanceId, Consumer<TableProperties> callback) throws UserExitedException {
+        chooseTableOrReturnToMain(instanceId).ifPresent(callback);
     }
 
-    private Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
-        return chooseTable("")
+    public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
+        Chosen<ConsoleChoice> chosen = chooseTable("")
                 .chooseUntilSomethingEntered(() ->
                         chooseTable("\nYou did not enter anything please try again\n"));
+        if (chosen.getChoice().isPresent()) {
+            // Return to main screen
+            return Optional.empty();
+        }
+        String tableName = chosen.getEntered();
+        try {
+            return Optional.of(store.loadTableProperties(instanceId, tableName));
+        } catch (AdminConfigStore.CouldNotLoadProperties e) {
+            out.println();
+            e.print(out);
+        }
+        confirmReturnToMainScreen(out, in);
+        return Optional.empty();
     }
 
     private Chosen<ConsoleChoice> chooseTable(String message) {
         out.clearScreen(message);
-        out.println("Which TABLE do you want to check?\n");
+        out.println("Which TABLE do you want to select?\n");
         return chooseOne.chooseWithMessageFrom(
                 "Please enter the TABLE NAME now or use the following options:",
                 RETURN_TO_MAIN_MENU);

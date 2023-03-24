@@ -20,10 +20,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TestConsoleInput {
+
+    public static final String CONFIRM_PROMPT = "";
 
     public final ConsoleInput mock = mock(ConsoleInput.class);
     private final Queue<String> nextPrompts = new LinkedList<>();
@@ -32,8 +35,17 @@ public class TestConsoleInput {
         when(mock.promptLine(any())).thenAnswer(invocation -> {
             String prompt = invocation.getArgument(0);
             out.println(prompt);
+            if (nextPrompts.isEmpty()) {
+                throw new IllegalStateException("User was prompted when all specified prompts were exhausted");
+            }
             return nextPrompts.poll();
         });
+        doAnswer(invocation -> {
+            if (!CONFIRM_PROMPT.equals(nextPrompts.poll())) {
+                throw new IllegalStateException("User was prompted to continue with no confirmation specified, remaining specified prompts: " + nextPrompts);
+            }
+            return null;
+        }).when(mock).waitForLine();
     }
 
     public ConsoleInput consoleIn() {

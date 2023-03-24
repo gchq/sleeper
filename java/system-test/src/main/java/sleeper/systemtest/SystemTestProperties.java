@@ -25,7 +25,7 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
  */
 public class SystemTestProperties extends InstanceProperties {
     @Override
-    protected SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
+    public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
         return SystemTestProperty.Index.INSTANCE;
     }
 }

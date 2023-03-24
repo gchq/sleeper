@@ -15,10 +15,10 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStore;
 
 import java.util.Arrays;
 
@@ -31,15 +31,18 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
     protected final AdminConfigStore store = mock(AdminConfigStore.class);
 
-    protected String runClientGetOutput() {
-        return runClientGetOutput(new AdminClient(store, out.consoleOut(), in.consoleIn()));
+    @Override
+    protected RunAdminClient runClient() {
+        return runClient(store);
     }
 
-    protected void setInstanceProperties(InstanceProperties instanceProperties) {
+    @Override
+    public void setInstanceProperties(InstanceProperties instanceProperties) {
         when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
     }
 
-    protected void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    @Override
+    public void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         setInstanceProperties(instanceProperties);
         when(store.loadTableProperties(instanceProperties.get(ID), tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
@@ -48,5 +51,21 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
         setInstanceProperties(instanceProperties);
         when(store.listTables(instanceProperties.get(ID))).thenReturn(Arrays.asList(tableNames));
+    }
+
+    protected void setTableProperties(String tableName) {
+        InstanceProperties properties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(properties, tableName);
+        setInstanceProperties(properties, tableProperties);
+    }
+
+    protected void setStateStoreForTable(String tableName, StateStore stateStore) {
+        InstanceProperties properties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(properties, tableName);
+        setInstanceProperties(properties);
+        when(store.loadTableProperties(properties.get(ID), tableName))
+                .thenReturn(tableProperties);
+        when(store.loadStateStore(properties.get(ID), tableProperties))
+                .thenReturn(stateStore);
     }
 }

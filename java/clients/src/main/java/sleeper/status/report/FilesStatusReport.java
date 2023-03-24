@@ -64,17 +64,29 @@ public class FilesStatusReport {
         this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
+
     public FilesStatusReport(StateStore stateStore,
                              int maxNumberOfReadyForGCFilesToCount,
                              boolean verbose,
                              String outputType) {
+        this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, getReporter(outputType));
+    }
+
+    public FilesStatusReport(StateStore stateStore,
+                             int maxNumberOfReadyForGCFilesToCount,
+                             boolean verbose,
+                             FileStatusReporter fileStatusReporter) {
         this.maxNumberOfReadyForGCFilesToCount = maxNumberOfReadyForGCFilesToCount;
         this.verbose = verbose;
+        this.fileStatusReporter = fileStatusReporter;
+        this.fileStatusCollector = new FileStatusCollector(stateStore);
+    }
+
+    private static FileStatusReporter getReporter(String outputType) {
         if (!FILE_STATUS_REPORTERS.containsKey(outputType)) {
             throw new IllegalArgumentException("Output type not supported " + outputType);
         }
-        this.fileStatusReporter = FILE_STATUS_REPORTERS.get(outputType);
-        this.fileStatusCollector = new FileStatusCollector(stateStore);
+        return FILE_STATUS_REPORTERS.get(outputType);
     }
 
     public void run() throws StateStoreException {

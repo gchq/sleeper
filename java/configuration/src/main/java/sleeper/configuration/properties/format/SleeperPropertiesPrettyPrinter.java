@@ -40,19 +40,40 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final List<T> sortedProperties;
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
+    private final boolean hideUnknownProperties;
 
     private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+        this(properties, groups, writer, false);
+    }
+
+    private SleeperPropertiesPrettyPrinter(
+            List<T> properties, List<PropertyGroup> groups, PrintWriter writer, boolean hideUnknownProperties) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
         this.writer = writer;
         this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
+        this.hideUnknownProperties = hideUnknownProperties;
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), writer);
     }
 
+    public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstancePropertiesWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll().stream()
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()), List.of(group), writer, true);
+    }
+
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
+    }
+
+    public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
+            PrintWriter writer, PropertyGroup group) {
+        return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll().stream()
+                .filter(property -> property.getPropertyGroup().equals(group))
+                .collect(Collectors.toList()), List.of(group), writer, true);
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -65,6 +86,9 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             }
             println();
             println(formatDescription(property));
+            if (property.isSystemDefined()) {
+                println("# (this property is system-defined and may not be edited)");
+            }
             String value = properties.get(property);
             if (value != null) {
                 if (!properties.isSet(property)) {
@@ -78,14 +102,16 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printProperty(property.getPropertyName(), "");
             }
         }
-        Map<String, String> unknownProperties = properties.getUnknownProperties()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (!hideUnknownProperties) {
+            Map<String, String> unknownProperties = properties.getUnknownProperties()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (!unknownProperties.isEmpty()) {
-            println();
-            println("# The following properties are not recognised by Sleeper.");
-            unknownProperties.keySet().stream().sorted().forEach(name ->
-                    printProperty(name, unknownProperties.get(name)));
+            if (!unknownProperties.isEmpty()) {
+                println();
+                println("# The following properties are not recognised by Sleeper.");
+                unknownProperties.keySet().stream().sorted().forEach(name ->
+                        printProperty(name, unknownProperties.get(name)));
+            }
         }
         writer.flush();
     }
@@ -111,16 +137,20 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private static String formatDescription(SleeperProperty property) {
-        return formatString(property.getDescription());
+        return formatDescription(property.getDescription());
     }
 
     private static String formatDescription(PropertyGroup group) {
-        return formatString(group.getDescription());
+        return formatDescription(group.getDescription());
     }
 
-    private static String formatString(String str) {
-        return Arrays.stream(str.split("\n")).
-                map(line -> "# " + WordUtils.wrap(line, 100).replace("\n", "\n# "))
+    private static String formatDescription(String description) {
+        return formatDescription("# ", description);
+    }
+
+    public static String formatDescription(String lineStart, String description) {
+        return Arrays.stream(description.split("\n")).
+                map(line -> lineStart + WordUtils.wrap(line, 100).replace("\n", "\n" + lineStart))
                 .collect(Collectors.joining("\n"));
     }
 }

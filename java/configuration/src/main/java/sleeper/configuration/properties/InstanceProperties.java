@@ -19,7 +19,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Locale;
@@ -104,8 +107,13 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     @Override
-    protected SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
+    public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
         return InstanceProperty.Index.INSTANCE;
+    }
+
+    @Override
+    protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.forInstanceProperties(writer);
     }
 
     public static Map<String, String> csvTagsToMap(String csvTags) {

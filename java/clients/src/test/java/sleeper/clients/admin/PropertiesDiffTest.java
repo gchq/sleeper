@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -35,6 +36,7 @@ import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestIn
 import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -187,7 +189,62 @@ public class PropertiesDiffTest {
         }
     }
 
+    @DisplayName("Combine multiple diffs")
+    @Nested
+    class CombineDiffs {
+        @Test
+        void shouldCombineTwoDiffsIntoOne() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
+
+            assertThat(diff1.andThen(diff2).getChanges())
+                    .containsExactly(valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "123", "789"));
+        }
+
+        @Test
+        void shouldCancelOutDiffsWhenChangesHaveBeenReverted() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "123");
+
+            assertThat(diff1.andThen(diff2).getChanges())
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldCancelOutDiffsWhenChangesHaveBeenRevertedAfterMultipleChanges() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "456", "789");
+            PropertiesDiff diff3 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "789", "123");
+
+            assertThat(diff1.andThen(diff2).andThen(diff3).getChanges())
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldNotCombineDiffsWhenPropertyIsDifferent() {
+            // Given
+            PropertiesDiff diff1 = generateSingleDiff(MAXIMUM_CONNECTIONS_TO_S3, "123", "456");
+            PropertiesDiff diff2 = generateSingleDiff(LOG_RETENTION_IN_DAYS, "456", "123");
+
+            assertThat(diff1.andThen(diff2).getChanges())
+                    .containsExactly(
+                            valueChanged(MAXIMUM_CONNECTIONS_TO_S3, "123", "456"),
+                            valueChanged(LOG_RETENTION_IN_DAYS, "456", "123"));
+        }
+
+        private PropertiesDiff generateSingleDiff(InstanceProperty property, String oldValue, String newValue) {
+            InstanceProperties before = generateTestInstanceProperties();
+            before.set(property, oldValue);
+            InstanceProperties after = generateTestInstanceProperties();
+            after.set(property, newValue);
+            return new PropertiesDiff(before, after);
+        }
+    }
+
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {
-        return new PropertiesDiff(before.toMap(), after.toMap()).getChanges();
+        return new PropertiesDiff(before, after).getChanges();
     }
 }

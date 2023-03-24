@@ -15,14 +15,22 @@
  */
 package sleeper.clients.admin;
 
-import java.util.Properties;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
+import sleeper.configuration.properties.SleeperProperty;
 
-public class UpdatePropertiesRequest {
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
+
+public class UpdatePropertiesRequest<T extends SleeperProperties<?>> {
 
     private final PropertiesDiff diff;
-    private final Properties updatedProperties;
+    private final T updatedProperties;
 
-    public UpdatePropertiesRequest(PropertiesDiff diff, Properties updatedProperties) {
+    public UpdatePropertiesRequest(PropertiesDiff diff, T updatedProperties) {
         this.diff = diff;
         this.updatedProperties = updatedProperties;
     }
@@ -31,7 +39,24 @@ public class UpdatePropertiesRequest {
         return diff;
     }
 
-    public Properties getUpdatedProperties() {
+    public T getUpdatedProperties() {
         return updatedProperties;
+    }
+
+    public Set<SleeperProperty> getInvalidProperties() {
+        try {
+            updatedProperties.validate();
+            return getUneditableChangedProperties()
+                    .collect(Collectors.toSet());
+        } catch (SleeperPropertiesInvalidException e) {
+            return Stream.concat(getUneditableChangedProperties(), e.getInvalidValues().keySet().stream())
+                    .collect(Collectors.toSet());
+        }
+    }
+
+    private Stream<? extends SleeperProperty> getUneditableChangedProperties() {
+        return diff.getChanges().stream()
+                .flatMap(d -> d.getProperty(updatedProperties.getPropertiesIndex()).stream())
+                .filter(not(SleeperProperty::isEditable));
     }
 }
