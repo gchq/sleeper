@@ -25,6 +25,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
+import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
@@ -44,7 +45,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
             .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = IngestStatusStoreTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskStatusStore store = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
+    protected final IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {

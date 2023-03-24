@@ -38,7 +38,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
@@ -210,7 +210,7 @@ public class AdminConfigStore {
 
     public IngestTaskStatusStore loadIngestTaskStatusStore(String instanceId) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBIngestTaskStatusStore.from(dynamoDB, instanceProperties);
+        return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     }
 
     public AmazonSQS getSqsClient() {
