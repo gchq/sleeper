@@ -18,7 +18,6 @@ package sleeper.compaction.job.status;
 import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
@@ -59,15 +58,13 @@ public class CompactionJobStatus {
     }
 
     private static Optional<CompactionJobStatus> from(JobStatusUpdates updates) {
-        ProcessStatusUpdate firstUpdate = updates.getFirstRecord().getStatusUpdate();
-        if (!(firstUpdate instanceof CompactionJobCreatedStatus)) {
-            return Optional.empty();
-        }
-        return Optional.of(builder().jobId(updates.getJobId())
-                .createdStatus((CompactionJobCreatedStatus) firstUpdate)
-                .jobRuns(updates.getRuns())
-                .expiryDate(updates.getFirstRecord().getExpiryDate())
-                .build());
+        return updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class)
+                .map(createdStatus -> builder()
+                        .jobId(updates.getJobId())
+                        .createdStatus(createdStatus)
+                        .jobRuns(updates.getRuns())
+                        .expiryDate(updates.getFirstRecord().getExpiryDate())
+                        .build());
     }
 
     public Instant getCreateUpdateTime() {

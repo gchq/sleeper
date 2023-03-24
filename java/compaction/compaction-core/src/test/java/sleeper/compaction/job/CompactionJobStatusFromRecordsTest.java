@@ -36,10 +36,10 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 
-public class CompactionJobStatusFromRecordsTest {
+class CompactionJobStatusFromRecordsTest {
 
     @Test
-    public void shouldBuildCompactionJobStatusFromIndividualUpdates() {
+    void shouldBuildCompactionJobStatusFromIndividualUpdates() {
         // Given
         CompactionJobCreatedStatus created1 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -72,7 +72,7 @@ public class CompactionJobStatusFromRecordsTest {
     }
 
     @Test
-    public void shouldIgnoreJobWithNoCreatedUpdate() {
+    void shouldIgnoreJobWithNoCreatedUpdate() {
         // Given
         CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
@@ -83,5 +83,27 @@ public class CompactionJobStatusFromRecordsTest {
 
         // Then
         assertThat(statuses).isEmpty();
+    }
+
+    @Test
+    void shouldBuildJobStatusWhenCreatedUpdateStoredAfterStartedUpdate() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1").childPartitionIds(null)
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2023-03-22T15:36:01Z"));
+        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
+
+        // When
+        List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
+                forJob("test-job", created, started, finished));
+
+        // Then
+        assertThat(statuses).containsExactly(
+                CompactionJobStatus.builder().jobId("test-job").createdStatus(created)
+                        .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started, finished))
+                        .expiryDate(DEFAULT_EXPIRY).build());
     }
 }
