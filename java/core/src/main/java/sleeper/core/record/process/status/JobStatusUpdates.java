@@ -17,6 +17,7 @@ package sleeper.core.record.process.status;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,6 +56,16 @@ public class JobStatusUpdates {
 
     public ProcessStatusUpdateRecord getLastRecord() {
         return recordsLatestFirst.get(0);
+    }
+
+    public <T extends ProcessStatusUpdate> Optional<T> getFirstStatusUpdateOfType(Class<T> updateType) {
+        for (int i = recordsLatestFirst.size() - 1; i >= 0; i--) {
+            ProcessStatusUpdate update = recordsLatestFirst.get(i).getStatusUpdate();
+            if (updateType.isInstance(update)) {
+                return Optional.of(updateType.cast(update));
+            }
+        }
+        return Optional.empty();
     }
 
     public ProcessRuns getRuns() {

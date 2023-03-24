@@ -101,16 +101,4 @@ public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
                 chosen.chooseUntilSomethingEntered(this::chooseTestOption))
                 .isInstanceOf(UserExitedException.class);
     }
-
-    @Test
-    public void shouldExitWhenChoosingFirstTimeRequiringSomethingEntered() {
-        // Given
-        in.enterNextPrompts("0");
-
-        // When / Then
-        Chosen<ConsoleChoice> chosen = chooseTestOption();
-        assertThatThrownBy(() ->
-                chosen.chooseUntilSomethingEntered(this::chooseTestOption))
-                .isInstanceOf(UserExitedException.class);
-    }
 }

@@ -25,19 +25,26 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.CONFIGURATION_BY_GROUP_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.GROUP_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_VALIDATION_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.instancePropertyGroupOption;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePropertyGroupOption;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
@@ -46,7 +53,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
@@ -116,6 +125,35 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
                     .containsOnlyOnce(PROPERTY_SAVE_CHANGES_SCREEN)
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(after);
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @ParameterizedTest(name = "With return to editor option \"{0}\"")
+        @ValueSource(strings = {ValidateChangesScreen.RETURN_TO_EDITOR_OPTION, ""})
+        void shouldMakeInvalidChangesThenReturnToEditorAndRevertChanges(String returnToEditorOption) throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When
+            String output = editInstanceConfiguration(before, after) // Apply changes
+                    .enterPrompt(returnToEditorOption)
+                    .editAgain(after, before) // Revert changes
+                    .exitGetOutput();
+
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN)
+                    .doesNotContain(PROPERTY_SAVE_CHANGES_SCREEN)
+                    .containsOnlyOnce(PROPERTY_VALIDATION_SCREEN)
+                    .endsWith(PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
             order.verify(in.mock).promptLine(any());
@@ -576,6 +614,113 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "sleeper.table.data.bucket\n" +
                     "\n" +
                     PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
+        }
+    }
+
+    @DisplayName("Filter by group")
+    @Nested
+    class FilterByGroup {
+        @Test
+        void shouldViewPropertiesThatBelongToSpecificGroup() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+
+            // When
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                            instancePropertyGroupOption(InstancePropertyGroup.COMMON))
+                    .viewInEditorFromStore(properties, InstancePropertyGroup.COMMON)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldEditPropertiesThatBelongToSpecificGroup() throws Exception {
+            // Given
+            InstanceProperties before = createValidInstanceProperties();
+            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            InstanceProperties after = createValidInstanceProperties();
+            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+
+            // When
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                            instancePropertyGroupOption(InstancePropertyGroup.COMMON))
+                    .editFromStore(before, after, InstancePropertyGroup.COMMON)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + GROUP_SELECT_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(editor).openPropertiesFile(before, InstancePropertyGroup.COMMON);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldEditTablePropertiesThatBelongToSpecificGroup() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
+            TableProperties after = createValidTableProperties(properties);
+            after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
+
+            // When
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION,
+                            tablePropertyGroupOption(TablePropertyGroup.METADATA),
+                            before.get(TABLE_NAME))
+                    .editFromStore(properties, before, after, TablePropertyGroup.METADATA)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN +
+                            CLEAR_CONSOLE + GROUP_SELECT_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN +
+                            PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
+                            DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(3)).promptLine(any());
+            order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
+        }
+
+        @Test
+        void shouldExitWhenOnGroupSelectScreen() throws Exception {
+            // When
+            String output = runClient()
+                    .enterPrompts(CONFIGURATION_BY_GROUP_OPTION, EXIT_OPTION)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN +
+                    CLEAR_CONSOLE + GROUP_SELECT_SCREEN);
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock, times(2)).promptLine(any());
+            order.verifyNoMoreInteractions();
         }
     }
 

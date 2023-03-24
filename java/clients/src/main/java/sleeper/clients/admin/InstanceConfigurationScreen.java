@@ -17,6 +17,7 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -34,6 +35,7 @@ public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
+    private final PropertyGroupSelectHelper selectGroup;
     private final TableSelectHelper selectTable;
     private final AdminConfigStore store;
     private final UpdatePropertiesWithNano editor;
@@ -42,6 +44,7 @@ public class InstanceConfigurationScreen {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
+        this.selectGroup = new PropertyGroupSelectHelper(out, in);
         this.selectTable = new TableSelectHelper(out, in, store);
         this.store = store;
         this.editor = editor;
@@ -60,12 +63,41 @@ public class InstanceConfigurationScreen {
         }
     }
 
+    public void viewAndEditPropertyGroup(String instanceId) throws InterruptedException {
+        Optional<WithProperties<?>> withProperties = selectGroup.selectPropertyGroup()
+                .flatMap(group -> withPropertyGroup(instanceId, group));
+        if (withProperties.isPresent()) {
+            withProperties.get().viewAndEditProperties();
+        }
+    }
+
+    private Optional<WithProperties<?>> withPropertyGroup(String instanceId, PropertyGroupWithCategory group) {
+        if (group.isInstancePropertyGroup()) {
+            return Optional.of(withGroupedInstanceProperties(
+                    store.loadInstanceProperties(instanceId), group.getGroup()));
+        } else if (group.isTablePropertyGroup()) {
+            return selectTable.chooseTableOrReturnToMain(instanceId)
+                    .map(table -> withGroupedTableProperties(instanceId, table, group.getGroup()));
+        }
+        return Optional.empty();
+    }
+
     private WithProperties<InstanceProperties> withInstanceProperties(InstanceProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile, store::saveInstanceProperties);
     }
 
+    private WithProperties<InstanceProperties> withGroupedInstanceProperties(InstanceProperties properties, PropertyGroup group) {
+        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group), store::saveInstanceProperties);
+    }
+
     private WithProperties<TableProperties> withTableProperties(String instanceId, TableProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile,
+                (tableProperties, diff) -> store.saveTableProperties(instanceId, tableProperties, diff));
+    }
+
+    private WithProperties<TableProperties> withGroupedTableProperties(
+            String instanceId, TableProperties properties, PropertyGroup group) {
+        return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group),
                 (tableProperties, diff) -> store.saveTableProperties(instanceId, tableProperties, diff));
     }
 

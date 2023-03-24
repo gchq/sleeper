@@ -17,12 +17,15 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.util.RunCommand;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
@@ -37,43 +40,72 @@ public class UpdatePropertiesWithNanoTestHelper {
         this.expectedPropertiesFile = tempDir.resolve("sleeper/admin/temp.properties");
     }
 
-    public String[] updateInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
+    public String[] openInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
         return commandRunOn(runCommand ->
-                updater(runCommand).openPropertiesFile(properties));
+                updaterWithCommandHandler(runCommand).openPropertiesFile(properties));
     }
 
-    public InstanceProperties updateInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
-        AtomicReference<InstanceProperties> foundProperties = new AtomicReference<>();
-        updater(command -> {
-            foundProperties.set(new InstanceProperties(loadProperties(expectedPropertiesFile)));
-            return 0;
-        }).openPropertiesFile(properties);
-        return foundProperties.get();
+    public InstanceProperties openInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {
+        return new InstanceProperties(openFileGetPropertiesWritten(updater -> updater.openPropertiesFile(properties)));
     }
 
-    public Path updateInstancePropertiesGetPathToFile(InstanceProperties properties) throws IOException, InterruptedException {
-        updater(command -> 0).openPropertiesFile(properties);
-        return expectedPropertiesFile;
+    public Path openInstancePropertiesGetPathToFile(InstanceProperties properties) throws Exception {
+        return openFileGetPathToFile(updater -> updater.openPropertiesFile(properties));
     }
 
     public UpdatePropertiesRequest<InstanceProperties> updateProperties(
-            InstanceProperties before, InstanceProperties after) throws IOException, InterruptedException {
+            InstanceProperties before, InstanceProperties after) throws Exception {
         return updaterSavingProperties(after).openPropertiesFile(before);
+    }
+
+    public UpdatePropertiesRequest<InstanceProperties> updatePropertiesWithGroup(
+            InstanceProperties before, String toWriteInEditor, PropertyGroup group) throws Exception {
+        return updaterWithCommandHandler(command -> {
+            Files.writeString(expectedPropertiesFile, toWriteInEditor);
+            return 0;
+        }).openPropertiesFile(before, group);
     }
 
     public UpdatePropertiesRequest<TableProperties> updateProperties(
-            TableProperties before, TableProperties after) throws IOException, InterruptedException {
+            TableProperties before, TableProperties after) throws Exception {
         return updaterSavingProperties(after).openPropertiesFile(before);
     }
 
+    public UpdatePropertiesRequest<TableProperties> updatePropertiesWithGroup(
+            TableProperties before, String toWriteInEditor, PropertyGroup group) throws Exception {
+        return updaterWithCommandHandler(command -> {
+            Files.writeString(expectedPropertiesFile, toWriteInEditor);
+            return 0;
+        }).openPropertiesFile(before, group);
+    }
+
+    @FunctionalInterface
+    public interface OpenFile<T extends SleeperProperties<?>> {
+        UpdatePropertiesRequest<T> open(UpdatePropertiesWithNano updater) throws IOException, InterruptedException;
+    }
+
+    public <T extends SleeperProperties<?>> Properties openFileGetPropertiesWritten(OpenFile<T> openFile) throws Exception {
+        AtomicReference<Properties> foundProperties = new AtomicReference<>();
+        openFile.open(updaterWithCommandHandler(command -> {
+            foundProperties.set(loadProperties(expectedPropertiesFile));
+            return 0;
+        }));
+        return foundProperties.get();
+    }
+
+    public <T extends SleeperProperties<?>> Path openFileGetPathToFile(OpenFile<T> openFile) throws Exception {
+        openFile.open(updaterWithCommandHandler(command -> 0));
+        return expectedPropertiesFile;
+    }
+
     private UpdatePropertiesWithNano updaterSavingProperties(SleeperProperties<?> after) {
-        return updater(command -> {
+        return updaterWithCommandHandler(command -> {
             after.save(expectedPropertiesFile);
             return 0;
         });
     }
 
-    private UpdatePropertiesWithNano updater(RunCommand runCommand) {
+    private UpdatePropertiesWithNano updaterWithCommandHandler(RunCommand runCommand) {
         return new UpdatePropertiesWithNano(tempDir, runCommand);
     }
 }

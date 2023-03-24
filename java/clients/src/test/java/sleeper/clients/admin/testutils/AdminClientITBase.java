@@ -85,7 +85,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     @Override
-    protected void setInstanceProperties(InstanceProperties instanceProperties) {
+    public void setInstanceProperties(InstanceProperties instanceProperties) {
         try {
             instanceProperties.saveToS3(s3);
         } catch (IOException e) {
@@ -94,7 +94,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     @Override
-    protected void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         setInstanceProperties(instanceProperties);
         try {
             tableProperties.saveToS3(s3);
