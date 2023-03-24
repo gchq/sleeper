@@ -29,9 +29,9 @@ public class PartitionsStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final TableSelectHelper tableSelectHelper;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
 
-    public PartitionsStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public PartitionsStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
         this.out = out;
         this.in = in;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);

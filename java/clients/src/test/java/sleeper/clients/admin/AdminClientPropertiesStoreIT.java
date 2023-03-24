@@ -52,7 +52,7 @@ import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class AdminConfigStoreIT extends AdminClientITBase {
+public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     private final InstanceProperties instanceProperties = createValidInstanceProperties();
 
@@ -239,7 +239,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // When / Then
             assertThatThrownBy(() -> updateInstanceProperty(
                     INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
-                    .isInstanceOf(AdminConfigStore.CouldNotSaveInstanceProperties.class)
+                    .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveInstanceProperties.class)
                     .hasCauseReference(thrown);
         }
 
@@ -322,7 +322,7 @@ public class AdminConfigStoreIT extends AdminClientITBase {
             // When / Then
             assertThatThrownBy(() -> updateTableProperty(
                     INSTANCE_ID, "test-table", ENCRYPTED, "false"))
-                    .isInstanceOf(AdminConfigStore.CouldNotSaveTableProperties.class)
+                    .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveTableProperties.class)
                     .hasCauseReference(thrown);
         }
 

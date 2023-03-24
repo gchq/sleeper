@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.clients.admin.AdminConfigStore;
+import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -67,8 +67,8 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         return runClient(store());
     }
 
-    protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, null, sqs, cdk, tempDir);
+    protected AdminClientPropertiesStore store() {
+        return new AdminClientPropertiesStore(s3, null, sqs, cdk, tempDir);
     }
 
     @BeforeEach

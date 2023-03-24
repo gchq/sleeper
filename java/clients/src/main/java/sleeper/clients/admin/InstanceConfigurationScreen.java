@@ -37,10 +37,10 @@ public class InstanceConfigurationScreen {
     private final ChooseOne chooseOne;
     private final PropertyGroupSelectHelper selectGroup;
     private final TableSelectHelper selectTable;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
     private final UpdatePropertiesWithNano editor;
 
-    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store, UpdatePropertiesWithNano editor) {
+    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithNano editor) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
@@ -148,7 +148,7 @@ public class InstanceConfigurationScreen {
                     out.println("\n\n----------------------------------");
                     out.println("Saved successfully, hit enter to return to main screen");
                     in.waitForLine();
-                } catch (AdminConfigStore.CouldNotSaveProperties e) {
+                } catch (AdminClientPropertiesStore.CouldNotSaveProperties e) {
                     out.println("\n\n----------------------------------\n");
                     e.print(out);
                     out.println();

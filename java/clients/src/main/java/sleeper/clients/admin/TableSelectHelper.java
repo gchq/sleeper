@@ -34,9 +34,9 @@ public class TableSelectHelper {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ChooseOne chooseOne;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
 
-    public TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public TableSelectHelper(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
@@ -58,7 +58,7 @@ public class TableSelectHelper {
         String tableName = chosen.getEntered();
         try {
             return Optional.of(store.loadTableProperties(instanceId, tableName));
-        } catch (AdminConfigStore.CouldNotLoadProperties e) {
+        } catch (AdminClientPropertiesStore.CouldNotLoadProperties e) {
             out.println();
             e.print(out);
         }

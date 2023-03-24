@@ -43,10 +43,10 @@ public class IngestStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
     private final TableSelectHelper tableSelectHelper;
 
-    public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);

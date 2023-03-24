@@ -42,10 +42,10 @@ public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
     private final TableSelectHelper tableSelectHelper;
 
-    public CompactionStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public CompactionStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
