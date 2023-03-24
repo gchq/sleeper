@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
@@ -191,11 +189,6 @@ public class AdminClientPropertiesStore {
         public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable cause) {
             super("Could not load properties for table " + tableName + " in instance " + instanceId, cause);
         }
-    }
-
-    public CompactionJobStatusStore loadCompactionJobStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     }
 
     public CompactionTaskStatusStore loadCompactionTaskStatusStore(String instanceId) {

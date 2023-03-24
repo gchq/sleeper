@@ -15,11 +15,13 @@
  */
 package sleeper.clients;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.admin.AdminClientPropertiesStore;
+import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.CompactionStatusReportScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
@@ -39,12 +41,15 @@ import java.nio.file.Path;
 public class AdminClient {
 
     private final AdminClientPropertiesStore store;
+    private final AdminClientStatusStoreFactory statusStores;
     private final UpdatePropertiesWithNano editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
 
-    public AdminClient(AdminClientPropertiesStore store, UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in) {
+    public AdminClient(AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
+                       UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in) {
         this.store = store;
+        this.statusStores = statusStores;
         this.editor = editor;
         this.out = out;
         this.in = in;
@@ -64,12 +69,14 @@ public class AdminClient {
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version).build();
 
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         new AdminClient(
                 new AdminClientPropertiesStore(
                         AmazonS3ClientBuilder.defaultClient(),
-                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        dynamoDB,
                         AmazonSQSClientBuilder.defaultClient(),
                         cdk, generatedDir),
+                new AdminClientStatusStoreFactory(dynamoDB),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console())).start(instanceId);
@@ -101,7 +108,7 @@ public class AdminClient {
     }
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {
-        return new CompactionStatusReportScreen(out, in, store);
+        return new CompactionStatusReportScreen(out, in, store, statusStores);
     }
 
     public IngestStatusReportScreen ingestStatusReportScreen() {

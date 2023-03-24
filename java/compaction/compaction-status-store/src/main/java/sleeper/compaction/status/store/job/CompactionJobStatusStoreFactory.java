@@ -31,10 +31,6 @@ public class CompactionJobStatusStoreFactory {
     }
 
     public static CompactionJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        return new CompactionJobStatusStoreFactory(dynamoDB).getStatusStore(properties);
-    }
-
-    public CompactionJobStatusStore getStatusStore(InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return new DynamoDBCompactionJobStatusStore(dynamoDB, properties);
         } else {

@@ -18,6 +18,7 @@ package sleeper.clients.admin.testutils;
 import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientPropertiesStore;
+import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -50,6 +51,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
+    protected final AdminClientStatusStoreFactory statusStores = mock(AdminClientStatusStoreFactory.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -64,7 +66,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected RunAdminClient runClient(AdminClientPropertiesStore store) {
         return new RunAdminClient(
-                new AdminClient(store, editor, out.consoleOut(), in.consoleIn()),
+                new AdminClient(store, statusStores, editor, out.consoleOut(), in.consoleIn()),
                 out, in, this, editor, INSTANCE_ID);
     }
 

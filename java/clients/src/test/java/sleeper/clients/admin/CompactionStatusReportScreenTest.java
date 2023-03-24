@@ -37,6 +37,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -168,7 +169,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private void createCompactionJobStatusStore() {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties, createValidTableProperties(properties, "test-table"));
-            when(store.loadCompactionJobStatusStore(properties.get(ID)))
+            when(statusStores.loadCompactionJobStatusStore(same(properties)))
                     .thenReturn(compactionJobStatusStore);
         }
 
