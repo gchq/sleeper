@@ -73,8 +73,7 @@ public final class SleeperQueryRunner {
         }
     }
 
-    public static void main(String[] args)
-            throws Exception {
+    public static void main(String[] args) throws Exception {
         Logging.initialize();
 
         String configBucket = System.getProperty("sleeper.configbucket");

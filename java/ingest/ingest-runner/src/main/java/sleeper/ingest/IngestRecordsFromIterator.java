@@ -15,6 +15,9 @@
  */
 package sleeper.ingest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -29,6 +32,8 @@ import java.util.Iterator;
  * This class is an adaptor to {@link sleeper.ingest.impl.IngestCoordinator}.
  */
 public class IngestRecordsFromIterator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecordsFromIterator.class);
+
     private final Iterator<Record> recordsIterator;
     private final IngestRecords ingestRecords;
 
@@ -39,9 +44,12 @@ public class IngestRecordsFromIterator {
 
     public IngestResult write() throws StateStoreException, IteratorException, IOException {
         ingestRecords.init();
+        long count = 0L;
         while (recordsIterator.hasNext()) {
             ingestRecords.write(recordsIterator.next());
+            count++;
         }
+        LOGGER.info("Ingested {} records", count);
         return ingestRecords.close();
     }
 }
