@@ -27,7 +27,7 @@ import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
@@ -200,7 +200,7 @@ public class AdminConfigStore {
 
     public CompactionTaskStatusStore loadCompactionTaskStatusStore(String instanceId) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
+        return CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     }
 
     public IngestJobStatusStore loadIngestJobStatusStore(String instanceId) {
