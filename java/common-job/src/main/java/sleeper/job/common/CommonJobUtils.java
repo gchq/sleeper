@@ -38,7 +38,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,11 +48,17 @@ import java.util.Optional;
  * messages from a queue.
  */
 public class CommonJobUtils {
-    /** Environment variable key for finding where this program is running. */
+    /**
+     * Environment variable key for finding where this program is running.
+     */
     public static final String EXECUTION_ENV = "AWS_EXECUTION_ENV";
-    /** Value if running on EC2. */
+    /**
+     * Value if running on EC2.
+     */
     public static final String ECS_EC2_ENV = "AWS_ECS_EC2";
-    /** Environment variable for location of container metadata. */
+    /**
+     * Environment variable for location of container metadata.
+     */
     public static final String ECS_CONTAINER_METADATA_FILE = "ECS_CONTAINER_METADATA_FILE";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonJobUtils.class);
@@ -112,7 +117,7 @@ public class CommonJobUtils {
             }
             ContainerMetadata other = (ContainerMetadata) obj;
             return Objects.equals(az, other.az) && Objects.equals(clusterName, other.clusterName) && Objects.equals(instanceARN, other.instanceARN) && Objects.equals(instanceID, other.instanceID)
-                            && Objects.equals(status, other.status);
+                    && Objects.equals(status, other.status);
         }
 
         @Override
@@ -136,7 +141,7 @@ public class CommonJobUtils {
 
                 if (instanceDetails.isPresent()) {
                     return Optional.of(new ContainerMetadata(metadata.get().getLeft(), metadata.get().getMiddle(),
-                                    instanceDetails.get().getEc2InstanceId(), metadata.get().getRight(), instanceDetails.get().getStatus()));
+                            instanceDetails.get().getEc2InstanceId(), metadata.get().getRight(), instanceDetails.get().getStatus()));
                 }
             }
         } else {
@@ -187,8 +192,8 @@ public class CommonJobUtils {
     /**
      * Get information about the EC2 instance named by ARN.
      *
-     * @param ecsClient API client
-     * @param ecsCluster cluster name
+     * @param ecsClient            API client
+     * @param ecsCluster           cluster name
      * @param containerInstanceARN EC2 instance ARN
      * @return container instance or an empty optional
      */
@@ -197,8 +202,8 @@ public class CommonJobUtils {
         Objects.requireNonNull(ecsCluster, "ecsCluster");
         Objects.requireNonNull(containerInstanceARN, "containerInstanceARN");
         DescribeContainerInstancesRequest req = new DescribeContainerInstancesRequest()
-                        .withCluster(ecsCluster)
-                        .withContainerInstances(containerInstanceARN);
+                .withCluster(ecsCluster)
+                .withContainerInstances(containerInstanceARN);
         DescribeContainerInstancesResult result = ecsClient.describeContainerInstances(req);
         if (result.getContainerInstances().isEmpty()) {
             LOGGER.warn("No EC2 instances returned in describeContainerInstance request!");
@@ -210,24 +215,21 @@ public class CommonJobUtils {
 
     public static Map<String, Integer> getNumberOfMessagesInQueue(String sqsJobQueueUrl, AmazonSQS sqsClient) {
         GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
-                        .withQueueUrl(sqsJobQueueUrl)
-                        .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
-                                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
+                .withQueueUrl(sqsJobQueueUrl)
+                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
+                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
         GetQueueAttributesResult sizeResult = sqsClient.getQueueAttributes(getQueueAttributesRequest);
         // See
         // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
-        int appoximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
+        int approximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
         int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
-        Map<String, Integer> results = new HashMap<>();
-        results.put(QueueAttributeName.ApproximateNumberOfMessages.toString(), appoximateNumberOfMessages);
-        results.put(QueueAttributeName.ApproximateNumberOfMessagesNotVisible.toString(), approximateNumberOfMessagesNotVisible);
-        return results;
+        return new QueueMessageCount(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible).getMap();
     }
 
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {
         DescribeClustersRequest describeClustersRequest = new DescribeClustersRequest().withClusters(clusterName);
         List<Cluster> clusters = ecsClient.describeClusters(describeClustersRequest).getClusters();
-        if (null == clusters || clusters.isEmpty() || clusters.size() > 1) {
+        if (null == clusters || clusters.size() != 1) {
             throw new DescribeClusterException("Unable to retrieve details of cluster " + clusterName);
         }
         return clusters.get(0).getPendingTasksCount() + clusters.get(0).getRunningTasksCount();
