@@ -20,9 +20,12 @@ import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 
 import static org.mockito.Mockito.when;
+import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 
@@ -30,14 +33,17 @@ public class RunAdminClient {
     private final AdminClient client;
     private final ToStringPrintStream out;
     private final TestConsoleInput in;
+    private final AdminConfigStoreTestHarness store;
     private final UpdatePropertiesWithNano editor;
     private final String instanceId;
 
     RunAdminClient(AdminClient client, ToStringPrintStream out, TestConsoleInput in,
+                   AdminConfigStoreTestHarness store,
                    UpdatePropertiesWithNano editor, String instanceId) {
         this.client = client;
         this.out = out;
         this.in = in;
+        this.store = store;
         this.editor = editor;
         this.instanceId = instanceId;
     }
@@ -52,9 +58,61 @@ public class RunAdminClient {
         return this;
     }
 
+    public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after) throws Exception {
+        store.setInstanceProperties(before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return this;
+    }
+
+    public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after, PropertyGroup group) throws Exception {
+        store.setInstanceProperties(before);
+        when(editor.openPropertiesFile(before, group))
+                .thenReturn(withChanges(before, after));
+        return this;
+    }
+
     public RunAdminClient editAgain(InstanceProperties before, InstanceProperties after) throws Exception {
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
+        return this;
+    }
+
+    public RunAdminClient editFromStore(InstanceProperties properties,
+                                        TableProperties before, TableProperties after) throws Exception {
+        store.setInstanceProperties(properties, before);
+        when(editor.openPropertiesFile(before))
+                .thenReturn(withChanges(before, after));
+        return this;
+    }
+
+    public RunAdminClient editFromStore(InstanceProperties properties,
+                                        TableProperties before, TableProperties after, PropertyGroup group)
+            throws Exception {
+        store.setInstanceProperties(properties, before);
+        when(editor.openPropertiesFile(before, group))
+                .thenReturn(withChanges(before, after));
+        return this;
+    }
+
+    public RunAdminClient viewInEditorFromStore(InstanceProperties properties) throws Exception {
+        store.setInstanceProperties(properties);
+        when(editor.openPropertiesFile(properties))
+                .thenReturn(noChanges(properties));
+        return this;
+    }
+
+    public RunAdminClient viewInEditorFromStore(InstanceProperties properties, PropertyGroup propertyGroup) throws Exception {
+        store.setInstanceProperties(properties);
+        when(editor.openPropertiesFile(properties, propertyGroup))
+                .thenReturn(noChanges(properties));
+        return this;
+    }
+
+    public RunAdminClient viewInEditorFromStore(InstanceProperties properties, TableProperties tableProperties) throws Exception {
+        store.setInstanceProperties(properties, tableProperties);
+        when(editor.openPropertiesFile(tableProperties))
+                .thenReturn(noChanges(tableProperties));
         return this;
     }
 

@@ -16,8 +16,10 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.util.ClientUtils;
 import sleeper.util.RunCommand;
@@ -28,7 +30,9 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.function.Function;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithNano {
@@ -46,23 +50,58 @@ public class UpdatePropertiesWithNano {
     }
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(InstanceProperties properties) throws IOException, InterruptedException {
-        InstanceProperties updatedProperties = new InstanceProperties(editProperties(properties));
+        InstanceProperties updatedProperties = new InstanceProperties(
+                editProperties(properties, SleeperPropertiesPrettyPrinter::forInstanceProperties));
         return buildRequest(properties, updatedProperties);
     }
 
     public UpdatePropertiesRequest<TableProperties> openPropertiesFile(TableProperties properties) throws IOException, InterruptedException {
-        TableProperties updatedProperties = TableProperties.reinitialise(properties, editProperties(properties));
+        TableProperties updatedProperties = TableProperties.reinitialise(properties,
+                editProperties(properties, SleeperPropertiesPrettyPrinter::forTableProperties));
         return buildRequest(properties, updatedProperties);
     }
 
-    private <T extends SleeperProperty> Properties editProperties(SleeperProperties<T> properties) throws IOException, InterruptedException {
+    public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(
+            InstanceProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer ->
+                SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup(writer, propertyGroup));
+        return buildRequest(properties, new InstanceProperties(after));
+    }
+
+    public UpdatePropertiesRequest<TableProperties> openPropertiesFile(
+            TableProperties properties, PropertyGroup propertyGroup) throws IOException, InterruptedException {
+        Properties after = editPropertiesAndMerge(properties, propertyGroup, writer ->
+                SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup(writer, propertyGroup));
+        return buildRequest(properties, TableProperties.reinitialise(properties, after));
+    }
+
+    private <T extends SleeperProperty> Properties editProperties(
+            SleeperProperties<T> properties,
+            Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer) throws IOException, InterruptedException {
         Files.createDirectories(tempDirectory.resolve("sleeper/admin"));
         Path propertiesFile = tempDirectory.resolve("sleeper/admin/temp.properties");
         try (BufferedWriter writer = Files.newBufferedWriter(propertiesFile)) {
-            properties.saveUsingPrettyPrinter(new PrintWriter(writer));
+            printer.apply(new PrintWriter(writer)).print(properties);
         }
         runCommand.run("nano", propertiesFile.toString());
         return loadProperties(propertiesFile);
+    }
+
+    private <T extends SleeperProperty> Properties editPropertiesAndMerge(
+            SleeperProperties<T> properties, PropertyGroup propertyGroup,
+            Function<PrintWriter, SleeperPropertiesPrettyPrinter<T>> printer) throws IOException, InterruptedException {
+
+        Properties after = new Properties();
+        after.putAll(properties.getProperties());
+
+        Properties edited = editProperties(properties, printer);
+        after.putAll(edited);
+
+        properties.getPropertiesIndex().getAllInGroup(propertyGroup)
+                .stream().map(SleeperProperty::getPropertyName)
+                .filter(not(edited::containsKey))
+                .forEach(after::remove);
+        return after;
     }
 
     private <T extends SleeperProperties<?>> UpdatePropertiesRequest<T> buildRequest(T before, T after) {
