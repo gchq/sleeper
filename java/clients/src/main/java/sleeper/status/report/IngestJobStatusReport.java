@@ -27,7 +27,7 @@ import com.amazonaws.services.sqs.model.QueueAttributeName;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
@@ -90,7 +90,7 @@ public class IngestJobStatusReport {
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
+        IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         String jobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         new IngestJobStatusReport(statusStore, arguments, sqsClient, jobQueueUrl).run();

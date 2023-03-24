@@ -37,7 +37,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStore;
@@ -205,7 +205,7 @@ public class AdminConfigStore {
 
     public IngestJobStatusStore loadIngestJobStatusStore(String instanceId) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBIngestJobStatusStore.from(dynamoDB, instanceProperties);
+        return IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     }
 
     public IngestTaskStatusStore loadIngestTaskStatusStore(String instanceId) {
