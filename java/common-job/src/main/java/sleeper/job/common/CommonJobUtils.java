@@ -22,9 +22,6 @@ import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.util.EC2MetadataUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -213,16 +210,7 @@ public class CommonJobUtils {
     }
 
     public static QueueMessageCount getQueueMessageCount(String sqsJobQueueUrl, AmazonSQS sqsClient) {
-        GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
-                .withQueueUrl(sqsJobQueueUrl)
-                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
-                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
-        GetQueueAttributesResult sizeResult = sqsClient.getQueueAttributes(getQueueAttributesRequest);
-        // See
-        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
-        int approximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
-        int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
-        return new QueueMessageCount(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
+        return QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl);
     }
 
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {

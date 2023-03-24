@@ -16,6 +16,11 @@
 
 package sleeper.job.common;
 
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
+import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
+import com.amazonaws.services.sqs.model.QueueAttributeName;
+
 import java.util.Map;
 
 import static com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessages;
@@ -30,9 +35,26 @@ public class QueueMessageCount {
         this.approximateNumberOfMessagesNotVisible = approximateNumberOfMessagesNotVisible;
     }
 
+    public static Client withSqsClient(AmazonSQS sqsClient) {
+        return sqsQueueUrl -> getQueueMessageCountFromSqs(sqsQueueUrl, sqsClient);
+    }
+
     public Map<String, Integer> getMap() {
         return Map.of(ApproximateNumberOfMessages.toString(), getApproximateNumberOfMessages(),
                 ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible());
+    }
+
+    private static QueueMessageCount getQueueMessageCountFromSqs(String sqsJobQueueUrl, AmazonSQS sqsClient) {
+        GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
+                .withQueueUrl(sqsJobQueueUrl)
+                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
+                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
+        GetQueueAttributesResult sizeResult = sqsClient.getQueueAttributes(getQueueAttributesRequest);
+        // See
+        // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
+        int approximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
+        int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
+        return new QueueMessageCount(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
     }
 
     public int getApproximateNumberOfMessages() {
@@ -46,5 +68,10 @@ public class QueueMessageCount {
     @Override
     public String toString() {
         return getMap().toString();
+    }
+
+    @FunctionalInterface
+    public interface Client {
+        QueueMessageCount getQueueMessageCount(String queueUrl);
     }
 }
