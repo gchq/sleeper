@@ -274,8 +274,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowRecordWriterAc
                             throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
                         }
                 }
-                vectorSchemaRoot.setRowCount(insertAtRowNo + 1);
             }
+            vectorSchemaRoot.setRowCount(insertAtRowNo + recordList.getRecords().size());
         }
     }
 }
