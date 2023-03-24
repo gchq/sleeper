@@ -114,7 +114,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         vectorSchemaRoot.setRowCount(insertAtRowNo + 1);
     }
 
-    private static void writeList(Type sleeperElementType,
+    public static void writeList(Type sleeperElementType,
                                   List<?> listOfValues,
                                   ListVector listVector,
                                   int insertAtRowNo) {
@@ -137,7 +137,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeMap(Type sleeperKeyType,
+    public static void writeMap(Type sleeperKeyType,
                                  Type sleeperValueType,
                                  Map<?, ?> mapOfValues,
                                  ListVector listOfMapEntryStructs,
@@ -169,7 +169,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeListElement(BufferAllocator bufferAllocator,
+    public static void writeListElement(BufferAllocator bufferAllocator,
                                          UnionListWriter unionListWriter,
                                          Type sleeperElementType,
                                          Object objectToWrite) {
@@ -194,7 +194,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
         }
     }
 
-    private static void writeStructElement(BufferAllocator bufferAllocator,
+    public static void writeStructElement(BufferAllocator bufferAllocator,
                                            BaseWriter.StructWriter structWriter,
                                            Type sleeperElementType,
                                            Object objectToWrite,
