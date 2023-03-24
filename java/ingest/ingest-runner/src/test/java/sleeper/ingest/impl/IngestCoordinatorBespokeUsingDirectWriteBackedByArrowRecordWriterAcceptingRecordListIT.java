@@ -224,7 +224,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowRecordWriterAc
         }
 
         public void addRecord(Record record) {
-            this.records.add(record);
+            records.add(record);
         }
 
         public List<Record> getRecords() {
@@ -235,47 +235,51 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowRecordWriterAc
     public static class ArrowRecordWriterAcceptingRecordList implements ArrowRecordWriter<RecordList> {
 
         @Override
-        public void insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RecordList recordList, int insertAtRowNo) {
+        public int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RecordList recordList, int startInsertAtRowNo) {
+            int i = 0;
             for (Record record : recordList.getRecords()) {
                 for (int fieldNo = 0; fieldNo < allFields.size(); fieldNo++) {
-                        Field sleeperField = allFields.get(fieldNo);
-                        String fieldName = sleeperField.getName();
-                        Type sleeperType = sleeperField.getType();
-                        if (sleeperType instanceof IntType) {
-                            IntVector intVector = (IntVector) vectorSchemaRoot.getVector(fieldNo);
-                            Integer value = (Integer) record.get(fieldName);
-                            intVector.setSafe(insertAtRowNo, value);
-                        } else if (sleeperType instanceof LongType) {
-                            BigIntVector bigIntVector = (BigIntVector) vectorSchemaRoot.getVector(fieldNo);
-                            Long value = (Long) record.get(fieldName);
-                            bigIntVector.setSafe(insertAtRowNo, value);
-                        } else if (sleeperType instanceof StringType) {
-                            VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(fieldNo);
-                            String value = (String) record.get(fieldName);
-                            varCharVector.setSafe(insertAtRowNo, value.getBytes(StandardCharsets.UTF_8));
-                        } else if (sleeperType instanceof ByteArrayType) {
-                            VarBinaryVector varBinaryVector = (VarBinaryVector) vectorSchemaRoot.getVector(fieldNo);
-                            byte[] value = (byte[]) record.get(fieldName);
-                            varBinaryVector.setSafe(insertAtRowNo, value);
-                        } else if (sleeperType instanceof ListType) {
-                            ArrowRecordWriterAcceptingRecords.writeList(
-                                ((ListType) sleeperType).getElementType(),
-                                (List<?>) record.get(fieldName),
-                                (ListVector) vectorSchemaRoot.getVector(fieldNo),
-                                insertAtRowNo);
-                        } else if (sleeperType instanceof MapType) {
-                            ArrowRecordWriterAcceptingRecords.writeMap(
-                                ((MapType) sleeperType).getKeyType(),
-                                ((MapType) sleeperType).getValueType(),
-                                (Map<?, ?>) record.get(fieldName),
-                                (ListVector) vectorSchemaRoot.getVector(fieldNo),
-                                insertAtRowNo);
-                        } else {
-                            throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
-                        }
+                    Field sleeperField = allFields.get(fieldNo);
+                    String fieldName = sleeperField.getName();
+                    Type sleeperType = sleeperField.getType();
+                    if (sleeperType instanceof IntType) {
+                        IntVector intVector = (IntVector) vectorSchemaRoot.getVector(fieldNo);
+                        Integer value = (Integer) record.get(fieldName);
+                        intVector.setSafe(startInsertAtRowNo + i, value);
+                    } else if (sleeperType instanceof LongType) {
+                        BigIntVector bigIntVector = (BigIntVector) vectorSchemaRoot.getVector(fieldNo);
+                        Long value = (Long) record.get(fieldName);
+                        bigIntVector.setSafe(startInsertAtRowNo + i, value);
+                    } else if (sleeperType instanceof StringType) {
+                        VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(fieldNo);
+                        String value = (String) record.get(fieldName);
+                        varCharVector.setSafe(startInsertAtRowNo + i, value.getBytes(StandardCharsets.UTF_8));
+                    } else if (sleeperType instanceof ByteArrayType) {
+                        VarBinaryVector varBinaryVector = (VarBinaryVector) vectorSchemaRoot.getVector(fieldNo);
+                        byte[] value = (byte[]) record.get(fieldName);
+                        varBinaryVector.setSafe(startInsertAtRowNo + i, value);
+                    } else if (sleeperType instanceof ListType) {
+                        ArrowRecordWriterAcceptingRecords.writeList(
+                            ((ListType) sleeperType).getElementType(),
+                            (List<?>) record.get(fieldName),
+                            (ListVector) vectorSchemaRoot.getVector(fieldNo),
+                            startInsertAtRowNo + i);
+                    } else if (sleeperType instanceof MapType) {
+                        ArrowRecordWriterAcceptingRecords.writeMap(
+                            ((MapType) sleeperType).getKeyType(),
+                            ((MapType) sleeperType).getValueType(),
+                            (Map<?, ?>) record.get(fieldName),
+                            (ListVector) vectorSchemaRoot.getVector(fieldNo),
+                            startInsertAtRowNo + i);
+                    } else {
+                        throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
+                    }
                 }
+                i++;
             }
-            vectorSchemaRoot.setRowCount(insertAtRowNo + recordList.getRecords().size());
+            int finalRowCount = startInsertAtRowNo + i;
+            vectorSchemaRoot.setRowCount(finalRowCount);
+            return finalRowCount;
         }
     }
 }

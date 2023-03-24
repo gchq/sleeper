@@ -66,7 +66,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
      *                              provide enough memory
      */
     @Override
-    public void insert(List<Field> allFields,
+    public int insert(List<Field> allFields,
                        VectorSchemaRoot vectorSchemaRoot,
                        Record record,
                        int insertAtRowNo) throws OutOfMemoryException {
@@ -111,7 +111,9 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
                 throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
             }
         }
-        vectorSchemaRoot.setRowCount(insertAtRowNo + 1);
+        int finalRowCount = insertAtRowNo + 1;
+        vectorSchemaRoot.setRowCount(finalRowCount);
+        return finalRowCount;
     }
 
     public static void writeList(Type sleeperElementType,

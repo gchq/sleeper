@@ -539,8 +539,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         boolean writeRequired = true;
         while (writeRequired) {
             try {
-                recordMapper.insert(allFields, vectorSchemaRoot, data, currentInsertIndex);
-                currentInsertIndex++;
+                currentInsertIndex = recordMapper.insert(allFields, vectorSchemaRoot, data, currentInsertIndex);
                 writeRequired = false;
             } catch (OutOfMemoryException e) {
                 LOGGER.debug("OutOfMemoryException occurred whilst writing a Record: flushing and retrying");
