@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
@@ -96,7 +96,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
         new WaitForCurrentSplitAddingMissingJobs(sqsClient, store, systemTestProperties, tableName)
                 .checkIfSplittingNeededAndWait();

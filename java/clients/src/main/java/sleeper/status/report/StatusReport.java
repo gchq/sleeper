@@ -24,7 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
@@ -118,7 +118,7 @@ public class StatusReport {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(args[1]);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactionJobStatusStore compactionStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         CompactionTaskStatusStore compactionTaskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
 
         boolean verbose = optionalArgument(args, 2)

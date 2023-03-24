@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
@@ -195,7 +195,7 @@ public class AdminConfigStore {
 
     public CompactionJobStatusStore loadCompactionJobStatusStore(String instanceId) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
+        return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     }
 
     public CompactionTaskStatusStore loadCompactionTaskStatusStore(String instanceId) {
