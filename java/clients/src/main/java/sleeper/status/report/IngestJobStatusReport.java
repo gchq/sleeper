@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
@@ -71,8 +70,8 @@ public class IngestJobStatusReport {
     }
 
     private int getNumberOfMessagesInQueue() {
-        return CommonJobUtils.getNumberOfMessagesInQueue(jobQueueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+        return CommonJobUtils.getQueueMessageCount(jobQueueUrl, sqsClient)
+                .getApproximateNumberOfMessages();
     }
 
     public static void main(String[] args) throws IOException {

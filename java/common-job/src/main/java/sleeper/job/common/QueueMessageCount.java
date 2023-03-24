@@ -42,4 +42,9 @@ public class QueueMessageCount {
     public int getApproximateNumberOfMessagesNotVisible() {
         return approximateNumberOfMessagesNotVisible;
     }
+
+    @Override
+    public String toString() {
+        return getMap().toString();
+    }
 }

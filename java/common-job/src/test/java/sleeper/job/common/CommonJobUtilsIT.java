@@ -18,7 +18,6 @@ package sleeper.job.common;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -57,8 +56,8 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            int numberOfMessages = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient)
+                    .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(0);
         } finally {
             sqsClient.deleteQueue(queueUrl);
@@ -79,8 +78,8 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            int numberOfMessages = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient)
+                    .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(10);
         } finally {
             sqsClient.deleteQueue(queueUrl);
@@ -104,8 +103,8 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            int numberOfMessages = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient)
+                    .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(7);
         } finally {
             sqsClient.deleteQueue(queueUrl);

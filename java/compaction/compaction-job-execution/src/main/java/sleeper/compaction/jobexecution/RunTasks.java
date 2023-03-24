@@ -30,7 +30,6 @@ import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +122,7 @@ public class RunTasks {
 
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                        instanceProperties);
+                instanceProperties);
 
         // Bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so we have to make sure to reduce
@@ -134,16 +133,16 @@ public class RunTasks {
         }
 
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
-                        requirements.getLeft(),
-                        requirements.getRight());
+                requirements.getLeft(),
+                requirements.getRight());
     }
 
     public void run() throws InterruptedException {
         long startTime = System.currentTimeMillis();
 
         // Find out number of messages in queue that are not being processed
-        int queueSize = CommonJobUtils.getNumberOfMessagesInQueue(sqsJobQueueUrl, sqsClient)
-                        .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+        int queueSize = CommonJobUtils.getQueueMessageCount(sqsJobQueueUrl, sqsClient)
+                .getApproximateNumberOfMessages();
         LOGGER.info("Queue size is {}", queueSize);
 
         // Find out number of pending and running tasks
@@ -178,26 +177,26 @@ public class RunTasks {
     /**
      * Attempts to launch some tasks on ECS.
      *
-     * @param startTime start time of Lambda
-     * @param queueSize length of SQS queue
-     * @param maxNumTasksToCreate number of tasks to attempt to launch
-     * @param override other container overrides
+     * @param startTime            start time of Lambda
+     * @param queueSize            length of SQS queue
+     * @param maxNumTasksToCreate  number of tasks to attempt to launch
+     * @param override             other container overrides
      * @param networkConfiguration container network configuration
      * @throws InterruptedException if error occurs during sleep
      */
     private void launchTasks(long startTime, int queueSize, int maxNumTasksToCreate,
-                    TaskOverride override, NetworkConfiguration networkConfiguration)
-                    throws InterruptedException {
+                             TaskOverride override, NetworkConfiguration networkConfiguration)
+            throws InterruptedException {
         int numTasksCreated = 0;
 
         for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
             String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
             RunTaskRequest runTaskRequest = createRunTaskRequest(clusterName, launchType, fargateVersion,
-                            override, networkConfiguration, defUsed);
+                    override, networkConfiguration, defUsed);
             try {
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
                 LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                                clusterName, launchType, containerName, defUsed);
+                        clusterName, launchType, containerName, defUsed);
 
                 if (checkFailure(runTaskResult)) {
                     break;
@@ -214,7 +213,7 @@ public class RunTasks {
                 maybeSleep(numTasksCreated);
             } catch (InvalidParameterException e) {
                 LOGGER.error("Couldn't launch tasks due to " + e.getErrorMessage() +
-                                ". This error is expected if there are no EC2 container instances in the cluster.");
+                        ". This error is expected if there are no EC2 container instances in the cluster.");
             } catch (AmazonClientException e) {
                 LOGGER.error("Couldn't launch tasks", e);
             }
@@ -232,7 +231,7 @@ public class RunTasks {
             LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
             for (Failure f : runTaskResult.getFailures()) {
                 LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
-                                f.getDetail());
+                        f.getDetail());
             }
             return true;
         }
@@ -247,27 +246,27 @@ public class RunTasks {
      */
     private static NetworkConfiguration networkConfig(String subnet) {
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                        .withSubnets(subnet);
+                .withSubnets(subnet);
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                        .withAwsvpcConfiguration(vpcConfiguration);
+                .withAwsvpcConfiguration(vpcConfiguration);
         return networkConfiguration;
     }
 
     /**
      * Create the container definition overrides for the task launch.
      *
-     * @param args container runtime args
+     * @param args          container runtime args
      * @param containerName name of container used for overriding
      * @return the container definition overrides
      */
     private static TaskOverride createOverride(List<String> args, String containerName) {
         ContainerOverride containerOverride = new ContainerOverride()
-                        .withName(containerName)
-                        .withCommand(args);
+                .withName(containerName)
+                .withCommand(args);
 
         TaskOverride override = new TaskOverride()
-                        .withContainerOverrides(containerOverride);
+                .withContainerOverrides(containerOverride);
         return override;
     }
 
@@ -290,32 +289,32 @@ public class RunTasks {
     /**
      * Creates a new task request that can be passed to ECS.
      *
-     * @param clusterName ECS cluster
-     * @param launchType either FARGATE or EC2
-     * @param fargateVersion version string if running on Fargate
-     * @param override specific container overrides
+     * @param clusterName          ECS cluster
+     * @param launchType           either FARGATE or EC2
+     * @param fargateVersion       version string if running on Fargate
+     * @param override             specific container overrides
      * @param networkConfiguration the networking configuration for the container
-     * @param defUsed which task definition to use
+     * @param defUsed              which task definition to use
      * @return the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
     private static RunTaskRequest createRunTaskRequest(String clusterName, String launchType, String fargateVersion,
-                    TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
+                                                       TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
         RunTaskRequest runTaskRequest = new RunTaskRequest()
-                        .withCluster(clusterName)
-                        .withOverrides(override)
-                        .withTaskDefinition(defUsed)
-                        .withPropagateTags(PropagateTags.TASK_DEFINITION);
+                .withCluster(clusterName)
+                .withOverrides(override)
+                .withTaskDefinition(defUsed)
+                .withPropagateTags(PropagateTags.TASK_DEFINITION);
 
         if (launchType.equals("FARGATE")) {
             Objects.requireNonNull(fargateVersion, "fargateVersion cannot be null");
             return runTaskRequest
-                            .withNetworkConfiguration(networkConfiguration)
-                            .withPlatformVersion(fargateVersion)
-                            .withLaunchType(LaunchType.FARGATE);
+                    .withNetworkConfiguration(networkConfiguration)
+                    .withPlatformVersion(fargateVersion)
+                    .withLaunchType(LaunchType.FARGATE);
         } else {
             return runTaskRequest
-                            .withLaunchType(LaunchType.EC2);
+                    .withLaunchType(LaunchType.EC2);
         }
     }
 }

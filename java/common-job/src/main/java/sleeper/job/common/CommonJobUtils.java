@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -213,7 +212,7 @@ public class CommonJobUtils {
         }
     }
 
-    public static Map<String, Integer> getNumberOfMessagesInQueue(String sqsJobQueueUrl, AmazonSQS sqsClient) {
+    public static QueueMessageCount getQueueMessageCount(String sqsJobQueueUrl, AmazonSQS sqsClient) {
         GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
                 .withQueueUrl(sqsJobQueueUrl)
                 .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages,
@@ -223,7 +222,7 @@ public class CommonJobUtils {
         // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
         int approximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
         int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
-        return new QueueMessageCount(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible).getMap();
+        return new QueueMessageCount(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
     }
 
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {
