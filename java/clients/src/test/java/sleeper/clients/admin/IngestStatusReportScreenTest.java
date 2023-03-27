@@ -69,6 +69,12 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     class IngestJobStatusReport {
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
 
+        private List<IngestJobStatus> exampleJobStatuses() {
+            return List.of(
+                    startedIngestJob(IngestJob.builder().id("test-job").files("test.parquet").build(),
+                            "test-task", Instant.parse("2023-03-15T17:52:12.001Z")));
+        }
+
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {
             // Given
@@ -190,18 +196,17 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                                     "ApproximateNumberOfMessages", "10",
                                     "ApproximateNumberOfMessagesNotVisible", "15")));
         }
-
-        private List<IngestJobStatus> exampleJobStatuses() {
-            return List.of(
-                    startedIngestJob(IngestJob.builder().id("test-job").files("test.parquet").build(),
-                            "test-task", Instant.parse("2023-03-15T17:52:12.001Z")));
-        }
     }
 
     @DisplayName("Ingest task status report")
     @Nested
     class IngestTaskStatusReport {
         private final IngestTaskStatusStore ingestTaskStatusStore = mock(IngestTaskStatusStore.class);
+
+        private List<IngestTaskStatus> exampleTaskStatuses() {
+            return List.of(
+                    IngestTaskStatusReportTestHelper.startedTask("test-task", "2023-03-15T17:52:12.001Z"));
+        }
 
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeAll() throws Exception {
@@ -259,11 +264,6 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(properties);
             when(store.loadIngestTaskStatusStore(properties.get(ID)))
                     .thenReturn(ingestTaskStatusStore);
-        }
-
-        private List<IngestTaskStatus> exampleTaskStatuses() {
-            return List.of(
-                    IngestTaskStatusReportTestHelper.startedTask("test-task", "2023-03-15T17:52:12.001Z"));
         }
     }
 

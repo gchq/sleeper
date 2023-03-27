@@ -68,6 +68,13 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
         private final CompactionJobStatusStore compactionJobStatusStore = mock(CompactionJobStatusStore.class);
 
+        private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
+            return List.of(
+                    jobCreated(dataHelper.singleFileCompaction(),
+                            Instant.parse("2023-03-15T17:52:12.001Z"),
+                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))));
+        }
+
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() throws Exception {
             // Given
@@ -171,19 +178,16 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             when(store.loadCompactionJobStatusStore(properties.get(ID)))
                     .thenReturn(compactionJobStatusStore);
         }
-
-        private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
-            return List.of(
-                    jobCreated(dataHelper.singleFileCompaction(),
-                            Instant.parse("2023-03-15T17:52:12.001Z"),
-                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))));
-        }
     }
 
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
         private final CompactionTaskStatusStore compactionTaskStatusStore = mock(CompactionTaskStatusStore.class);
+
+        private List<CompactionTaskStatus> exampleTaskStatuses() {
+            return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
+        }
 
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {
@@ -246,10 +250,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(properties);
             when(store.loadCompactionTaskStatusStore(properties.get(ID)))
                     .thenReturn(compactionTaskStatusStore);
-        }
-
-        private List<CompactionTaskStatus> exampleTaskStatuses() {
-            return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
         }
     }
 
