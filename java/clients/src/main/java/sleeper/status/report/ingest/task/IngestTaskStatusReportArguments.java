@@ -25,14 +25,6 @@ public class IngestTaskStatusReportArguments {
     private final IngestTaskStatusReporter reporter;
     private final IngestTaskQuery query;
 
-    private IngestTaskStatusReportArguments(String instanceId,
-                                            IngestTaskStatusReporter reporter,
-                                            IngestTaskQuery query) {
-        this.instanceId = instanceId;
-        this.reporter = reporter;
-        this.query = query;
-    }
-
     private IngestTaskStatusReportArguments(Builder builder) {
         instanceId = builder.instanceId;
         reporter = builder.reporter;
@@ -49,7 +41,7 @@ public class IngestTaskStatusReportArguments {
         IngestTaskQuery query = optionalArgument(args, 2)
                 .map(IngestTaskQuery::from)
                 .orElse(IngestTaskQuery.ALL);
-        return new IngestTaskStatusReportArguments(args[0], reporter, query);
+        return builder().instanceId(args[0]).reporter(reporter).query(query).build();
     }
 
     public static void printUsage(PrintStream out) {
