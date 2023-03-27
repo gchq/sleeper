@@ -69,7 +69,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class IngestJobRunnerIT {
+class IngestJobRunnerIT {
     @RegisterExtension
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3);
@@ -188,8 +188,7 @@ public class IngestJobRunnerIT {
                                   String partitionFileWriterType,
                                   Schema sleeperSchema,
                                   IngestJob job,
-                                  List<Record> expectedRecordList,
-                                  int expectedNoOfFiles) throws Exception {
+                                  List<Record> expectedRecordList) throws Exception {
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TableProperties tableProperties = createTable(sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType);
@@ -214,16 +213,16 @@ public class IngestJobRunnerIT {
                 sleeperSchema,
                 key -> 0,
                 expectedRecordList,
-                Collections.singletonMap(0, expectedNoOfFiles),
+                Collections.singletonMap(0, 1),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                 createTempDirectory(temporaryFolder, null).toString());
     }
 
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")
     @MethodSource("parametersForTests")
-    public void shouldIngestParquetFiles(String recordBatchType,
-                                         String partitionFileWriterType,
-                                         String fileSystemPrefix) throws Exception {
+    void shouldIngestParquetFiles(String recordBatchType,
+                                  String partitionFileWriterType,
+                                  String fileSystemPrefix) throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
@@ -235,14 +234,14 @@ public class IngestJobRunnerIT {
                 .collect(Collectors.toList());
         IngestJob ingestJob = createJobWithTableAndFiles("id", TEST_TABLE_NAME, files);
         consumeAndVerify(fileSystemPrefix, recordBatchType, partitionFileWriterType,
-                recordListAndSchema.sleeperSchema, ingestJob, doubledRecords, 1);
+                recordListAndSchema.sleeperSchema, ingestJob, doubledRecords);
     }
 
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem: {2}")
     @MethodSource("parametersForTests")
-    public void shouldBeAbleToHandleAllFileFormats(String recordBatchType,
-                                                   String partitionFileWriterType,
-                                                   String fileSystemPrefix) throws Exception {
+    void shouldBeAbleToHandleAllFileFormats(String recordBatchType,
+                                            String partitionFileWriterType,
+                                            String fileSystemPrefix) throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -259,14 +258,14 @@ public class IngestJobRunnerIT {
                 .tableName(TEST_TABLE_NAME).id("id").files(files)
                 .build();
         consumeAndVerify(fileSystemPrefix, recordBatchType, partitionFileWriterType,
-                recordListAndSchema.sleeperSchema, ingestJob, recordListAndSchema.recordList, 1);
+                recordListAndSchema.sleeperSchema, ingestJob, recordListAndSchema.recordList);
     }
 
     @ParameterizedTest(name = "backedBy: {0}, writeMode: {1}, fileSystem:{2}")
     @MethodSource("parametersForTests")
-    public void shouldIngestParquetFilesInNestedDirectories(String recordBatchType,
-                                                            String partitionFileWriterType,
-                                                            String fileSystemPrefix) throws Exception {
+    void shouldIngestParquetFilesInNestedDirectories(String recordBatchType,
+                                                     String partitionFileWriterType,
+                                                     String fileSystemPrefix) throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
@@ -293,7 +292,7 @@ public class IngestJobRunnerIT {
                 .tableName(TEST_TABLE_NAME).id("id").files(files)
                 .build();
         consumeAndVerify(fileSystemPrefix, recordBatchType, partitionFileWriterType,
-                recordListAndSchema.sleeperSchema, ingestJob, expectedRecords, 1);
+                recordListAndSchema.sleeperSchema, ingestJob, expectedRecords);
     }
 
     @Test
@@ -317,6 +316,6 @@ public class IngestJobRunnerIT {
         expectedRecords.addAll(records1.recordList);
         expectedRecords.addAll(records2.recordList);
         consumeAndVerify("s3a://", "arrow", "async",
-                records1.sleeperSchema, ingestJob, expectedRecords, 1);
+                records1.sleeperSchema, ingestJob, expectedRecords);
     }
 }
