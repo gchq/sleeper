@@ -51,7 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -133,8 +133,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         importBucket.grantReadWrite(role);
 
-        addIngestSourceBucketReference(scope, "IngestBucket", instanceProperties)
-                .ifPresent(ingestBucket -> ingestBucket.grantRead(role));
+        addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
+                .forEach(ingestBucket -> ingestBucket.grantRead(role));
         return role;
     }
 

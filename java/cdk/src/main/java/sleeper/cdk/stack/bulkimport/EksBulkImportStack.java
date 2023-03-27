@@ -79,7 +79,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 
@@ -102,8 +102,7 @@ public final class EksBulkImportStack extends NestedStack {
             TopicStack errorsTopicStack) {
         super(scope, id);
 
-        IBucket ingestBucket = addIngestSourceBucketReference(this, "IngestBucket", instanceProperties)
-                .orElse(null);
+        List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
 
         String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
 
@@ -162,9 +161,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
-        if (null != ingestBucket) {
-            ingestBucket.grantRead(bulkImportJobStarter);
-        }
+        ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(UserDefinedInstanceProperty.VPC_ID))
@@ -217,7 +214,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
-        grantAccessToResources(bulkImportJobStarter, ingestBucket);
+        ingestSourceBuckets.forEach(bucket -> grantAccessToResources(bulkImportJobStarter, bucket));
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
