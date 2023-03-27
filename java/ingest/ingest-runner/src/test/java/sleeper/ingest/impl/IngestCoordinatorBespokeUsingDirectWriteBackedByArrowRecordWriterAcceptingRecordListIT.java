@@ -107,7 +107,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowRecordWriterAc
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
                 16 * 1024 * 1024L,
-                4 * 1024 * 1024L,
+                16 * 1024 * 1024L,
                 128 * 1024 * 1024L);
     }
 
@@ -129,7 +129,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowRecordWriterAc
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
                 16 * 1024 * 1024L,
-                4 * 1024 * 1024L,
+                16 * 1024 * 1024L,
                 16 * 1024 * 1024L);
     }
 
