@@ -23,7 +23,7 @@ public class JobStatusScreenHelper {
     }
 
     static String promptForJobId(ConsoleInput in) {
-        return in.promptLine("Enter the jobId of the job you want to view the details for: ");
+        return in.promptLine("Enter the ID of the job you want to view the details for: ");
     }
 
     static String promptForRange(ConsoleInput in) {
