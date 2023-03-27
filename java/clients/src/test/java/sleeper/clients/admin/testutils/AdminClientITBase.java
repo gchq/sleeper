@@ -62,7 +62,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, null, cdk, tempDir);
+        return new AdminConfigStore(s3, null, null, cdk, tempDir);
     }
 
     @BeforeEach

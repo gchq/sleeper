@@ -49,15 +49,15 @@ public class IngestJobStatusReport {
             IngestJobStatusStore ingestJobStatusStore,
             IngestJobStatusReportArguments arguments,
             QueueMessageCount.Client queueClient,
-            String jobQueueUrl) {
+            InstanceProperties properties) {
         this.statusStore = ingestJobStatusStore;
         this.arguments = arguments;
         this.ingestJobStatusReporter = arguments.getReporter();
         this.queueClient = queueClient;
-        this.jobQueueUrl = jobQueueUrl;
+        this.jobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
     }
 
-    private void run() {
+    public void run() {
         JobQuery query = arguments.buildQuery(Clock.systemUTC(),
                 new ConsoleInput(System.console()));
         if (query == null) {
@@ -91,7 +91,6 @@ public class IngestJobStatusReport {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        String jobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
-        new IngestJobStatusReport(statusStore, arguments, QueueMessageCount.withSqsClient(sqsClient), jobQueueUrl).run();
+        new IngestJobStatusReport(statusStore, arguments, QueueMessageCount.withSqsClient(sqsClient), instanceProperties).run();
     }
 }
