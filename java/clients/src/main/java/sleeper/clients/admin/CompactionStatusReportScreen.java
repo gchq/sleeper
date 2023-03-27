@@ -74,17 +74,21 @@ public class CompactionStatusReportScreen {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(instanceId);
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
+            CompactionJobStatusReportArguments.Builder argsBuilder = CompactionJobStatusReportArguments.builder()
+                    .instanceId(instanceId).tableName(tableName)
+                    .reporter(new StandardCompactionJobStatusReporter(out.printStream()));
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
-                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
+                            runCompactionJobStatusReport(argsBuilder.queryType(JobQuery.Type.ALL).build())),
                     new MenuOption("Unfinished", () ->
-                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
+                            runCompactionJobStatusReport(argsBuilder.queryType(JobQuery.Type.UNFINISHED).build())),
                     new MenuOption("Detailed", () ->
-                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED,
-                                    promptForJobId(in))),
+                            runCompactionJobStatusReport(argsBuilder.queryType(JobQuery.Type.DETAILED)
+                                    .queryParameters(promptForJobId(in)).build())),
                     new MenuOption("Range", () ->
-                            runCompactionJobStatusReport(instanceId, tableName, JobQuery.Type.RANGE,
-                                    promptForRange(in)))).run();
+                            runCompactionJobStatusReport(argsBuilder.queryType(JobQuery.Type.RANGE)
+                                    .queryParameters(promptForRange(in)).build()))
+            ).run();
         }
     }
 
@@ -95,20 +99,6 @@ public class CompactionStatusReportScreen {
                 new MenuOption("Unfinished", () ->
                         runCompactionTaskStatusReport(instanceId, CompactionTaskQuery.UNFINISHED))
         ).run();
-    }
-
-    private CompactionJobStatusReportArguments.Builder argsBuilder(String instanceId, String tableName, JobQuery.Type queryType) {
-        return CompactionJobStatusReportArguments.builder()
-                .instanceId(instanceId).tableName(tableName)
-                .queryType(queryType).reporter(new StandardCompactionJobStatusReporter(out.printStream()));
-    }
-
-    private void runCompactionJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType, String queryParams) {
-        runCompactionJobStatusReport(argsBuilder(instanceId, tableName, queryType).queryParameters(queryParams).build());
-    }
-
-    private void runCompactionJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType) {
-        runCompactionJobStatusReport(argsBuilder(instanceId, tableName, queryType).build());
     }
 
     private void runCompactionJobStatusReport(CompactionJobStatusReportArguments args) {
