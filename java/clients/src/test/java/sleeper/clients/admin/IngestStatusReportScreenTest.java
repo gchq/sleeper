@@ -16,8 +16,6 @@
 
 package sleeper.clients.admin;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,11 +30,11 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +61,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 
-public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
+class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
     @Nested
     class IngestJobStatusReport {
@@ -190,13 +188,8 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private void createSqsClient() {
-            when(store.getSqsClient())
-                    .thenReturn(mock(AmazonSQS.class));
-            when(store.getSqsClient().getQueueAttributes(any()))
-                    .thenReturn(new GetQueueAttributesResult()
-                            .withAttributes(Map.of(
-                                    "ApproximateNumberOfMessages", "10",
-                                    "ApproximateNumberOfMessagesNotVisible", "15")));
+            when(queueClient.getQueueMessageCount(any())).thenReturn(
+                    new QueueMessageCount(10, 15));
         }
     }
 

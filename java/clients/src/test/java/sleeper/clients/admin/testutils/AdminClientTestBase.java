@@ -25,6 +25,7 @@ import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.job.common.QueueMessageCount;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +51,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
+    protected final QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -64,7 +66,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected RunAdminClient runClient(AdminConfigStore store) {
         return new RunAdminClient(
-                new AdminClient(store, editor, out.consoleOut(), in.consoleIn()),
+                new AdminClient(store, editor, out.consoleOut(), in.consoleIn(), queueClient),
                 out, in, this, editor, INSTANCE_ID);
     }
 
