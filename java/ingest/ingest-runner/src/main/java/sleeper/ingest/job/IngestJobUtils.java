@@ -40,8 +40,8 @@ public class IngestJobUtils {
 
         List<Path> paths = new ArrayList<>();
         for (String file : files) {
-            FileSystem fileSystem = new Path(fileSystemProperty + file).getFileSystem(conf);
             Path path = new Path(fileSystemProperty + file);
+            FileSystem fileSystem = path.getFileSystem(conf);
             paths.addAll(getAllPaths(fileSystem, path));
         }
         return paths;
