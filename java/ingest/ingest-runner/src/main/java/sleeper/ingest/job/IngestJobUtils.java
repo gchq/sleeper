@@ -38,9 +38,9 @@ public class IngestJobUtils {
             return Collections.EMPTY_LIST;
         }
 
-        FileSystem fileSystem = new Path(fileSystemProperty + files.get(0)).getFileSystem(conf);
         List<Path> paths = new ArrayList<>();
         for (String file : files) {
+            FileSystem fileSystem = new Path(fileSystemProperty + file).getFileSystem(conf);
             Path path = new Path(fileSystemProperty + file);
             paths.addAll(getAllPaths(fileSystem, path));
         }
