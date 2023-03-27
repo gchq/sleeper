@@ -89,8 +89,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
+                            "Total jobs: 1\n" +
+                            "\n" +
                             "Total standard jobs: 1\n" +
                             "Total standard jobs pending: 0\n" +
                             "Total standard jobs in progress: 1\n" +
@@ -113,8 +116,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
                             "Total unfinished jobs: 1\n" +
                             "Total unfinished jobs in progress: 1\n" +
                             "Total unfinished jobs not started: 0");
@@ -138,8 +142,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
                             "Details for job " + exampleJob.getJobId());
 
             verifyWithNumberOfInvocations(5);
@@ -160,8 +165,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
                             "Total jobs in defined range: 1");
 
             verifyWithNumberOfInvocations(6);
@@ -203,8 +209,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Task Status Report")
                     .contains("" +
+                            "Compaction Task Status Report\n" +
+                            "-----------------------------\n" +
                             "Total tasks: 1\n" +
                             "\n" +
                             "Total standard tasks: 1\n" +
@@ -232,8 +239,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Task Status Report")
                     .contains("" +
+                            "Compaction Task Status Report\n" +
+                            "-----------------------------\n" +
                             "Total tasks in progress: 1\n" +
                             "Total standard tasks in progress: 1\n" +
                             "Total splitting tasks in progress: 0\n");
