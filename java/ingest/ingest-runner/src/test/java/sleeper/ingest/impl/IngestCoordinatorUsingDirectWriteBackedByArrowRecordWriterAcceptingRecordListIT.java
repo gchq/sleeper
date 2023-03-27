@@ -130,7 +130,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
                 partitionNoToExpectedNoOfFilesMap,
                 16 * 1024 * 1024L,
                 16 * 1024 * 1024L,
-                16 * 1024 * 1024L);
+                2 * 1024 * 1024L);
     }
 
     @Test
@@ -152,7 +152,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
                         keyToPartitionNoMappingFn,
                         partitionNoToExpectedNoOfFilesMap,
                         32 * 1024L,
-                        1024 * 1024L,
+                        32 * 1024L,
                         64 * 1024 * 1024L))
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
