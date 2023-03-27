@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
@@ -30,8 +29,8 @@ class QueueMessageCountInMemoryClientTest {
     @Test
     void shouldRetrieveMessageCountsForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.from(
-                Map.of("test-queue", approximateNumberVisibleAndNotVisible(12, 34)));
+        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.singleQueueVisibleAndNotVisibleCounts(
+                "test-queue", 12, 34);
 
         // When / Then
         assertThat(client.getQueueMessageCount("test-queue"))
@@ -39,9 +38,31 @@ class QueueMessageCountInMemoryClientTest {
     }
 
     @Test
+    void shouldRetrieveVisibleMessageCountForSpecifiedQueue() {
+        // Given
+        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.singleQueueVisibleMessages("test-queue", 42);
+
+        // When / Then
+        assertThat(client.getQueueMessageCount("test-queue"))
+                .isEqualTo(approximateNumberVisibleAndNotVisible(42, 0));
+    }
+
+    @Test
+    void shouldRetrieveMessageCountsForSecondSpecifiedQueue() {
+        // Given
+        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.from(Map.of(
+                "test-queue-1", approximateNumberVisibleAndNotVisible(12, 34),
+                "test-queue-2", approximateNumberVisibleAndNotVisible(56, 78)));
+
+        // When / Then
+        assertThat(client.getQueueMessageCount("test-queue-2"))
+                .isEqualTo(approximateNumberVisibleAndNotVisible(56, 78));
+    }
+
+    @Test
     void shouldFailWhenMessageCountsNotSpecifiedForQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.from(emptyMap());
+        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.noQueues();
 
         // When / Then
         assertThatThrownBy(() -> client.getQueueMessageCount("test-queue"))

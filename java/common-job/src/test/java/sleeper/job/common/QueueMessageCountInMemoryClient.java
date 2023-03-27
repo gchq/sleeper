@@ -17,8 +17,11 @@ package sleeper.job.common;
 
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+
+import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class QueueMessageCountInMemoryClient implements QueueMessageCount.Client {
 
@@ -28,8 +31,21 @@ public class QueueMessageCountInMemoryClient implements QueueMessageCount.Client
         this.countByQueueName = countByQueueName;
     }
 
-    public static QueueMessageCountInMemoryClient from(Map<String, QueueMessageCount> countByQueueName) {
+    public static QueueMessageCount.Client from(Map<String, QueueMessageCount> countByQueueName) {
         return new QueueMessageCountInMemoryClient(countByQueueName);
+    }
+
+    public static QueueMessageCount.Client noQueues() {
+        return from(Collections.emptyMap());
+    }
+
+    public static QueueMessageCount.Client singleQueueVisibleAndNotVisibleCounts(
+            String queueName, int visible, int notVisible) {
+        return from(Map.of(queueName, approximateNumberVisibleAndNotVisible(visible, notVisible)));
+    }
+
+    public static QueueMessageCount.Client singleQueueVisibleMessages(String queueName, int visible) {
+        return singleQueueVisibleAndNotVisibleCounts(queueName, visible, 0);
     }
 
     @Override
