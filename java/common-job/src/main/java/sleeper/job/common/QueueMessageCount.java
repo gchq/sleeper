@@ -39,11 +39,6 @@ public class QueueMessageCount {
         return sqsQueueUrl -> getQueueMessageCountFromSqs(sqsQueueUrl, sqsClient);
     }
 
-    public Map<String, Integer> getMap() {
-        return Map.of(ApproximateNumberOfMessages.toString(), getApproximateNumberOfMessages(),
-                ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible());
-    }
-
     private static QueueMessageCount getQueueMessageCountFromSqs(String sqsJobQueueUrl, AmazonSQS sqsClient) {
         GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest()
                 .withQueueUrl(sqsJobQueueUrl)
@@ -67,7 +62,10 @@ public class QueueMessageCount {
 
     @Override
     public String toString() {
-        return getMap().toString();
+        return Map.of(
+                ApproximateNumberOfMessages.toString(), getApproximateNumberOfMessages(),
+                ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible()
+        ).toString();
     }
 
     @FunctionalInterface
