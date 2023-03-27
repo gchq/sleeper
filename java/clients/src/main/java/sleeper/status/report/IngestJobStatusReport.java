@@ -27,7 +27,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
-import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
@@ -70,7 +70,7 @@ public class IngestJobStatusReport {
     }
 
     private int getNumberOfMessagesInQueue() {
-        return CommonJobUtils.getQueueMessageCount(jobQueueUrl, sqsClient)
+        return QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(jobQueueUrl)
                 .getApproximateNumberOfMessages();
     }
 

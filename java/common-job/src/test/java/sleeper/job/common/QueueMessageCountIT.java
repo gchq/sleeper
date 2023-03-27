@@ -29,7 +29,7 @@ import sleeper.core.CommonTestConstants;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-public class CommonJobUtilsIT {
+class QueueMessageCountIT {
     private static final String TEST_QUEUE_NAME = "test-queue-url";
 
     @Container
@@ -49,16 +49,16 @@ public class CommonJobUtilsIT {
     }
 
     @Test
-    public void shouldReportNoMessagesWhenQueueIsEmpty() {
+    void shouldReportNoMessagesWhenQueueIsEmpty() {
         // Given / When
         AmazonSQS sqsClient = createSQSClient();
         String queueUrl = createQueue(sqsClient);
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient)
+            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
                     .getApproximateNumberOfMessages();
-            assertThat(numberOfMessages).isEqualTo(0);
+            assertThat(numberOfMessages).isZero();
         } finally {
             sqsClient.deleteQueue(queueUrl);
             sqsClient.shutdown();
@@ -66,7 +66,7 @@ public class CommonJobUtilsIT {
     }
 
     @Test
-    public void shouldReportNumberOfMessagesWhenQueueIsNotEmpty() {
+    void shouldReportNumberOfMessagesWhenQueueIsNotEmpty() {
         // Given
         AmazonSQS sqsClient = createSQSClient();
         String queueUrl = createQueue(sqsClient);
@@ -78,7 +78,7 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient)
+            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
                     .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(10);
         } finally {
@@ -88,7 +88,7 @@ public class CommonJobUtilsIT {
     }
 
     @Test
-    public void shouldReportNumberOfMessagesWhenSomeMessagesHasBeenProcessed() {
+    void shouldReportNumberOfMessagesWhenSomeMessagesHasBeenProcessed() {
         // Given
         AmazonSQS sqsClient = createSQSClient();
         String queueUrl = createQueue(sqsClient);
@@ -103,7 +103,7 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient)
+            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
                     .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(7);
         } finally {

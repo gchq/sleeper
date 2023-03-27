@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.QueueMessageCount;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +75,7 @@ public class RunTasks {
 
     public void run() throws InterruptedException {
         // Find out number of messages in queue that are not being processed
-        int queueSize = CommonJobUtils.getQueueMessageCount(sqsJobQueueUrl, sqsClient)
+        int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
                 .getApproximateNumberOfMessages();
         LOGGER.debug("Queue size is {}", queueSize);
         if (0 == queueSize) {

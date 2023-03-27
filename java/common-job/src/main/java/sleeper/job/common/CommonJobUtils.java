@@ -21,7 +21,6 @@ import com.amazonaws.services.ecs.model.ContainerInstance;
 import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
-import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.util.EC2MetadataUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -207,10 +206,6 @@ public class CommonJobUtils {
         } else {
             return Optional.of(result.getContainerInstances().get(0));
         }
-    }
-
-    public static QueueMessageCount getQueueMessageCount(String sqsJobQueueUrl, AmazonSQS sqsClient) {
-        return QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl);
     }
 
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {

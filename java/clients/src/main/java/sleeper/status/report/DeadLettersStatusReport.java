@@ -26,7 +26,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
@@ -86,7 +85,7 @@ public class DeadLettersStatusReport {
         if (queueUrl == null) {
             return;
         }
-        QueueMessageCount stats = CommonJobUtils.getQueueMessageCount(queueUrl, sqsClient);
+        QueueMessageCount stats = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl);
         System.out.println("Messages on the " + description + " queue:" + stats);
 
         if (stats.getApproximateNumberOfMessages() > 0) {
