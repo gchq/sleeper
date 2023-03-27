@@ -18,8 +18,6 @@ package sleeper.clients.admin.testutils;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,10 +51,6 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
             .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
             .build();
-    protected final AmazonSQS sqs = AmazonSQSClientBuilder.standard()
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-            .build();
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
 
     @TempDir
@@ -68,7 +62,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, null, sqs, cdk, tempDir);
+        return new AdminConfigStore(s3, null, null, cdk, tempDir);
     }
 
     @BeforeEach
