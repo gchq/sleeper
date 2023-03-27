@@ -70,9 +70,12 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
 
         private List<IngestJobStatus> exampleJobStatuses() {
-            return List.of(
-                    startedIngestJob(IngestJob.builder().id("test-job").files("test.parquet").build(),
-                            "test-task", Instant.parse("2023-03-15T17:52:12.001Z")));
+            return List.of(startedJobStatus("test-job"));
+        }
+
+        private IngestJobStatus startedJobStatus(String jobId) {
+            return startedIngestJob(IngestJob.builder().id(jobId).files("test.parquet").build(),
+                    "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
         }
 
         @Test
@@ -130,9 +133,8 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             // Given
             createIngestJobStatusStore();
             createSqsClient();
-            IngestJobStatus exampleJob = exampleJobStatuses().get(0);
             when(ingestJobStatusStore.getJob("test-job"))
-                    .thenReturn(Optional.of(exampleJob));
+                    .thenReturn(Optional.of(startedJobStatus("test-job")));
 
             // When/Then
             String output = runIngestJobStatusReport()
