@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -166,15 +167,20 @@ public class IngestJobRunnerIT {
                     getIngestBucket(fileSystemPrefix), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = ParquetRecordWriterFactory
-                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-            for (Record record : recordListAndSchema.recordList) {
-                writer.write(record);
-            }
-            writer.close();
+            writeParquetFileForIngest(path, recordListAndSchema);
         }
 
         return files;
+    }
+
+    private void writeParquetFileForIngest(
+            Path path, RecordGenerator.RecordListAndSchema recordListAndSchema) throws IOException {
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory
+                .createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+        for (Record record : recordListAndSchema.recordList) {
+            writer.write(record);
+        }
+        writer.close();
     }
 
     private void consumeAndVerify(String fileSystemPrefix,
@@ -288,5 +294,29 @@ public class IngestJobRunnerIT {
                 .build();
         consumeAndVerify(fileSystemPrefix, recordBatchType, partitionFileWriterType,
                 recordListAndSchema.sleeperSchema, ingestJob, expectedRecords, 1);
+    }
+
+    @Test
+    void shouldWriteRecordsFromTwoBuckets() throws Exception {
+        RecordGenerator.RecordListAndSchema records1 = RecordGenerator.genericKey1D(
+                new LongType(),
+                LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
+        RecordGenerator.RecordListAndSchema records2 = RecordGenerator.genericKey1D(
+                new LongType(),
+                LongStream.range(10, 20).boxed().collect(Collectors.toList()));
+
+        writeParquetFileForIngest(new Path("s3a://" + TABLE_DATA_BUCKET_NAME + "/ingest/file1.parquet"), records1);
+        writeParquetFileForIngest(new Path("s3a://" + INGEST_DATA_BUCKET_NAME + "/ingest/file2.parquet"), records2);
+
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName(TEST_TABLE_NAME).id("id").files(
+                        TABLE_DATA_BUCKET_NAME + "/ingest/file1.parquet",
+                        INGEST_DATA_BUCKET_NAME + "/ingest/file2.parquet")
+                .build();
+        List<Record> expectedRecords = new ArrayList<>();
+        expectedRecords.addAll(records1.recordList);
+        expectedRecords.addAll(records2.recordList);
+        consumeAndVerify("s3a://", "arrow", "async",
+                records1.sleeperSchema, ingestJob, expectedRecords, 1);
     }
 }
