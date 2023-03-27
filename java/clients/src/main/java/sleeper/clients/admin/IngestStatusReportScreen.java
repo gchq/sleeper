@@ -37,6 +37,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestStatusReportScreen {
@@ -64,28 +65,31 @@ public class IngestStatusReportScreen {
             out.clearScreen("");
             consoleHelper.chooseOptionUntilValid("Which ingest report would you like to run",
                     new MenuOption("Ingest Job Status Report", () ->
-                            chooseArgsForIngestJobStatusReport(instanceId)),
+                            chooseArgsForIngestJobStatusReport(properties)),
                     new MenuOption("Ingest Task Status Report", () ->
-                            chooseArgsForIngestTaskStatusReport(instanceId))
+                            chooseArgsForIngestTaskStatusReport(properties.get(ID)))
             ).run();
         }
     }
 
-    private void chooseArgsForIngestJobStatusReport(String instanceId) throws InterruptedException {
-        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(instanceId);
+    private void chooseArgsForIngestJobStatusReport(InstanceProperties properties) throws InterruptedException {
+        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties.get(ID));
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
+            IngestJobStatusReportArguments.Builder argsBuilder = IngestJobStatusReportArguments.builder()
+                    .instanceId(properties.get(ID)).tableName(tableName)
+                    .reporter(new StandardIngestJobStatusReporter(out.printStream()));
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
-                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.ALL)),
+                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.ALL).build())),
                     new MenuOption("Unfinished", () ->
-                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.UNFINISHED)),
+                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.UNFINISHED).build())),
                     new MenuOption("Detailed", () ->
-                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.DETAILED,
-                                    promptForJobId(in))),
+                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.DETAILED)
+                                    .queryParameters(promptForJobId(in)).build())),
                     new MenuOption("Range", () ->
-                            runIngestJobStatusReport(instanceId, tableName, JobQuery.Type.RANGE,
-                                    promptForRange(in)))
+                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.RANGE)
+                                    .queryParameters(promptForRange(in)).build()))
             ).run();
         }
     }
@@ -99,26 +103,9 @@ public class IngestStatusReportScreen {
         ).run();
     }
 
-    private IngestJobStatusReportArguments.Builder argsBuilder(String instanceId, String tableName, JobQuery.Type queryType) {
-        return IngestJobStatusReportArguments.builder()
-                .instanceId(instanceId).tableName(tableName)
-                .queryType(queryType)
-                .reporter(new StandardIngestJobStatusReporter(out.printStream()));
-    }
-
-    private void runIngestJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType, String queryArgs) {
-        runIngestJobStatusReport(instanceId, argsBuilder(instanceId, tableName, queryType)
-                .queryParameters(queryArgs).build());
-    }
-
-    private void runIngestJobStatusReport(String instanceId, String tableName, JobQuery.Type queryType) {
-        runIngestJobStatusReport(instanceId, argsBuilder(instanceId, tableName, queryType).build());
-    }
-
-    private void runIngestJobStatusReport(String instanceId, IngestJobStatusReportArguments args) {
-        InstanceProperties instanceProperties = store.loadInstanceProperties(instanceId);
-        new IngestJobStatusReport(store.loadIngestJobStatusStore(instanceId), args,
-                store.getSqsClient(), instanceProperties.get(INGEST_JOB_QUEUE_URL)).run();
+    private void runIngestJobStatusReport(InstanceProperties properties, IngestJobStatusReportArguments args) {
+        new IngestJobStatusReport(store.loadIngestJobStatusStore(properties.get(ID)), args,
+                store.getSqsClient(), properties.get(INGEST_JOB_QUEUE_URL)).run();
         confirmReturnToMainScreen(out, in);
     }
 
