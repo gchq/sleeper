@@ -50,12 +50,12 @@ public class IngestJobStatusReport {
             IngestJobStatusStore ingestJobStatusStore,
             IngestJobStatusReportArguments arguments,
             AmazonSQS sqsClient,
-            String jobQueueUrl) {
+            InstanceProperties properties) {
         this.statusStore = ingestJobStatusStore;
         this.arguments = arguments;
         this.ingestJobStatusReporter = arguments.getReporter();
         this.sqsClient = sqsClient;
-        this.jobQueueUrl = jobQueueUrl;
+        this.jobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
     }
 
     public void run() {
@@ -92,7 +92,6 @@ public class IngestJobStatusReport {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        String jobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
-        new IngestJobStatusReport(statusStore, arguments, sqsClient, jobQueueUrl).run();
+        new IngestJobStatusReport(statusStore, arguments, sqsClient, instanceProperties).run();
     }
 }

@@ -36,7 +36,6 @@ import java.util.Optional;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
@@ -105,7 +104,7 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, IngestJobStatusReportArguments args) {
         new IngestJobStatusReport(store.loadIngestJobStatusStore(properties.get(ID)), args,
-                store.getSqsClient(), properties.get(INGEST_JOB_QUEUE_URL)).run();
+                store.getSqsClient(), properties).run();
         confirmReturnToMainScreen(out, in);
     }
 
