@@ -25,12 +25,10 @@ public class IngestTaskStatusReportArguments {
     private final IngestTaskStatusReporter reporter;
     private final IngestTaskQuery query;
 
-    private IngestTaskStatusReportArguments(String instanceId,
-                                            IngestTaskStatusReporter reporter,
-                                            IngestTaskQuery query) {
-        this.instanceId = instanceId;
-        this.reporter = reporter;
-        this.query = query;
+    private IngestTaskStatusReportArguments(Builder builder) {
+        instanceId = builder.instanceId;
+        reporter = builder.reporter;
+        query = builder.query;
     }
 
     public static IngestTaskStatusReportArguments fromArgs(String... args) {
@@ -43,7 +41,7 @@ public class IngestTaskStatusReportArguments {
         IngestTaskQuery query = optionalArgument(args, 2)
                 .map(IngestTaskQuery::from)
                 .orElse(IngestTaskQuery.ALL);
-        return new IngestTaskStatusReportArguments(args[0], reporter, query);
+        return builder().instanceId(args[0]).reporter(reporter).query(query).build();
     }
 
     public static void printUsage(PrintStream out) {
@@ -63,5 +61,37 @@ public class IngestTaskStatusReportArguments {
 
     public IngestTaskQuery getQuery() {
         return query;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String instanceId;
+        private IngestTaskStatusReporter reporter;
+        private IngestTaskQuery query;
+
+        private Builder() {
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder reporter(IngestTaskStatusReporter reporter) {
+            this.reporter = reporter;
+            return this;
+        }
+
+        public Builder query(IngestTaskQuery query) {
+            this.query = query;
+            return this;
+        }
+
+        public IngestTaskStatusReportArguments build() {
+            return new IngestTaskStatusReportArguments(this);
+        }
     }
 }
