@@ -88,6 +88,11 @@ public class PartitionsBuilder {
         return this;
     }
 
+    public PartitionsBuilder splitToNewChildren(
+            String parentId, String leftId, String rightId, Object splitPoint) {
+        return splitToNewChildrenOnDimension(parentId, leftId, rightId, 0, splitPoint);
+    }
+
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition parent = partitionById(parentId);
