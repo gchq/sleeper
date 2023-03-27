@@ -34,27 +34,37 @@ import java.io.IOException;
 import java.time.Clock;
 
 public class CompactionJobStatusReport {
-    private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobStatusStore compactionJobStatusStore;
+    private final JobQuery.Type queryType;
+    private final JobQuery query;
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReportArguments arguments) {
-        this.arguments = arguments;
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.compactionJobStatusReporter = arguments.getReporter();
+        this.query = arguments.buildQuery(Clock.systemUTC(),
+                new ConsoleInput(System.console()));
+        this.queryType = arguments.getQueryType();
+    }
+
+    public CompactionJobStatusReport(
+            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobStatusReporter reporter,
+            String tableName, JobQuery.Type queryType) {
+        this.compactionJobStatusStore = compactionJobStatusStore;
+        this.compactionJobStatusReporter = reporter;
+        this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, "",
+                Clock.systemUTC(), new ConsoleInput(System.console()));
+        this.queryType = queryType;
     }
 
     public void run() {
-        JobQuery query = arguments.buildQuery(Clock.systemUTC(),
-                new ConsoleInput(System.console()));
         if (query == null) {
             return;
         }
-        compactionJobStatusReporter.report(
-                query.run(compactionJobStatusStore),
-                arguments.getQueryType());
+        compactionJobStatusReporter.report(query.run(compactionJobStatusStore), queryType);
     }
 
     public static void main(String[] args) throws IOException {
