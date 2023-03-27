@@ -18,6 +18,7 @@ package sleeper.job.common;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -27,6 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
 class QueueMessageCountIT {
@@ -110,5 +112,16 @@ class QueueMessageCountIT {
             sqsClient.deleteQueue(queueUrl);
             sqsClient.shutdown();
         }
+    }
+
+    @Test
+    void shouldFailWhenQueueDoesNotExist() {
+        // Given
+        AmazonSQS sqsClient = createSQSClient();
+        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClient);
+
+        // When / Then
+        assertThatThrownBy(() -> queueClient.getQueueMessageCount("non-existent-queue"))
+                .isInstanceOf(QueueDoesNotExistException.class);
     }
 }

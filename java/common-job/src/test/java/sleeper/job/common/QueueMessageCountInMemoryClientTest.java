@@ -15,26 +15,36 @@
  */
 package sleeper.job.common;
 
-import org.junit.jupiter.api.Disabled;
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 class QueueMessageCountInMemoryClientTest {
 
     @Test
-    @Disabled("TODO")
     void shouldRetrieveMessageCountsForSpecifiedQueue() {
         // Given
         QueueMessageCount.Client client = QueueMessageCountInMemoryClient.from(
-                Map.of("test-queue",
-                        approximateNumberVisibleAndNotVisible(12, 34)));
+                Map.of("test-queue", approximateNumberVisibleAndNotVisible(12, 34)));
 
         // When / Then
         assertThat(client.getQueueMessageCount("test-queue"))
                 .isEqualTo(approximateNumberVisibleAndNotVisible(12, 34));
+    }
+
+    @Test
+    void shouldFailWhenMessageCountsNotSpecifiedForQueue() {
+        // Given
+        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.from(emptyMap());
+
+        // When / Then
+        assertThatThrownBy(() -> client.getQueueMessageCount("test-queue"))
+                .isInstanceOf(QueueDoesNotExistException.class);
     }
 }

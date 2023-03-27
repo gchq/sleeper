@@ -15,19 +15,26 @@
  */
 package sleeper.job.common;
 
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
+
 import java.util.Map;
+import java.util.Optional;
 
 public class QueueMessageCountInMemoryClient implements QueueMessageCount.Client {
 
-    private QueueMessageCountInMemoryClient() {
+    private final Map<String, QueueMessageCount> countByQueueName;
+
+    private QueueMessageCountInMemoryClient(Map<String, QueueMessageCount> countByQueueName) {
+        this.countByQueueName = countByQueueName;
     }
 
-    public static QueueMessageCountInMemoryClient from(Map<String, QueueMessageCount> map) {
-        return null;
+    public static QueueMessageCountInMemoryClient from(Map<String, QueueMessageCount> countByQueueName) {
+        return new QueueMessageCountInMemoryClient(countByQueueName);
     }
 
     @Override
     public QueueMessageCount getQueueMessageCount(String queueUrl) {
-        return null;
+        return Optional.ofNullable(countByQueueName.get(queueUrl))
+                .orElseThrow(() -> new QueueDoesNotExistException("Queue does not exist: " + queueUrl));
     }
 }
