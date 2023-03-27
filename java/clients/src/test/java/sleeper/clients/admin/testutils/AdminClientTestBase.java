@@ -16,8 +16,6 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.ToStringPrintStream;
-import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -25,7 +23,6 @@ import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.job.common.QueueMessageCount;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +48,6 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
-    protected final QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -62,11 +58,8 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
-    protected abstract RunAdminClient runClient();
-
-    protected RunAdminClient runClient(AdminConfigStore store) {
+    protected RunAdminClient runClient() {
         return new RunAdminClient(
-                new AdminClient(store, editor, out.consoleOut(), in.consoleIn(), queueClient),
                 out, in, this, editor, INSTANCE_ID);
     }
 

@@ -66,6 +66,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     class IngestJobStatusReport {
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
+        private final QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
 
         private List<IngestJobStatus> exampleJobStatuses() {
             return List.of(startedJobStatus("test-job"));
@@ -159,7 +160,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                     .thenReturn(exampleJobStatuses());
 
             // When/Then
-            String output = runIngestJobStatusReport()
+            String output = runIngestJobStatusReport().queueClient(queueClient)
                     .enterPrompts(JOB_QUERY_RANGE_OPTION,
                             "20230315140000", "20230315180000", CONFIRM_PROMPT)
                     .exitGetOutput();
