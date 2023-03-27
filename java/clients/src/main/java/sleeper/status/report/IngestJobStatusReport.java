@@ -42,18 +42,18 @@ public class IngestJobStatusReport {
     private final IngestJobStatusStore statusStore;
     private final IngestJobStatusReportArguments arguments;
     private final IngestJobStatusReporter ingestJobStatusReporter;
-    private final AmazonSQS sqsClient;
+    private final QueueMessageCount.Client queueClient;
     private final String jobQueueUrl;
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
             IngestJobStatusReportArguments arguments,
-            AmazonSQS sqsClient,
+            QueueMessageCount.Client queueClient,
             String jobQueueUrl) {
         this.statusStore = ingestJobStatusStore;
         this.arguments = arguments;
         this.ingestJobStatusReporter = arguments.getReporter();
-        this.sqsClient = sqsClient;
+        this.queueClient = queueClient;
         this.jobQueueUrl = jobQueueUrl;
     }
 
@@ -70,7 +70,7 @@ public class IngestJobStatusReport {
     }
 
     private int getNumberOfMessagesInQueue() {
-        return QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(jobQueueUrl)
+        return queueClient.getQueueMessageCount(jobQueueUrl)
                 .getApproximateNumberOfMessages();
     }
 
@@ -92,6 +92,6 @@ public class IngestJobStatusReport {
         IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         String jobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
-        new IngestJobStatusReport(statusStore, arguments, sqsClient, jobQueueUrl).run();
+        new IngestJobStatusReport(statusStore, arguments, QueueMessageCount.withSqsClient(sqsClient), jobQueueUrl).run();
     }
 }
