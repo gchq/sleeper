@@ -22,6 +22,7 @@ import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessages;
 import static com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessagesNotVisible;
@@ -35,8 +36,17 @@ public class QueueMessageCount {
         this.approximateNumberOfMessagesNotVisible = approximateNumberOfMessagesNotVisible;
     }
 
+    public static QueueMessageCount approximateNumberVisibleAndNotVisible(int visible, int notVisible) {
+        return new QueueMessageCount(visible, notVisible);
+    }
+
     public static Client withSqsClient(AmazonSQS sqsClient) {
         return sqsQueueUrl -> getQueueMessageCountFromSqs(sqsQueueUrl, sqsClient);
+    }
+
+    @FunctionalInterface
+    public interface Client {
+        QueueMessageCount getQueueMessageCount(String queueUrl);
     }
 
     private static QueueMessageCount getQueueMessageCountFromSqs(String sqsJobQueueUrl, AmazonSQS sqsClient) {
@@ -49,7 +59,7 @@ public class QueueMessageCount {
         // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_GetQueueAttributes.html
         int approximateNumberOfMessages = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessages"));
         int approximateNumberOfMessagesNotVisible = Integer.parseInt(sizeResult.getAttributes().get("ApproximateNumberOfMessagesNotVisible"));
-        return new QueueMessageCount(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
+        return approximateNumberVisibleAndNotVisible(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
     }
 
     public int getApproximateNumberOfMessages() {
@@ -61,15 +71,27 @@ public class QueueMessageCount {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        QueueMessageCount that = (QueueMessageCount) o;
+        return approximateNumberOfMessages == that.approximateNumberOfMessages && approximateNumberOfMessagesNotVisible == that.approximateNumberOfMessagesNotVisible;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(approximateNumberOfMessages, approximateNumberOfMessagesNotVisible);
+    }
+
+    @Override
     public String toString() {
         return Map.of(
                 ApproximateNumberOfMessages.toString(), getApproximateNumberOfMessages(),
                 ApproximateNumberOfMessagesNotVisible.toString(), getApproximateNumberOfMessagesNotVisible()
         ).toString();
-    }
-
-    @FunctionalInterface
-    public interface Client {
-        QueueMessageCount getQueueMessageCount(String queueUrl);
     }
 }
