@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.job.common.QueueMessageCountInMemoryClient.noQueues;
+import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
 
 public class RunAdminClient {
     private final ToStringPrintStream out;

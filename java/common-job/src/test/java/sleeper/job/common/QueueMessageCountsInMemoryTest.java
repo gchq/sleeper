@@ -24,12 +24,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
-class QueueMessageCountInMemoryClientTest {
+class QueueMessageCountsInMemoryTest {
 
     @Test
     void shouldRetrieveMessageCountsForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.singleQueueVisibleAndNotVisibleCounts(
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.singleQueueVisibleAndNotVisibleCounts(
                 "test-queue", 12, 34);
 
         // When / Then
@@ -40,7 +40,7 @@ class QueueMessageCountInMemoryClientTest {
     @Test
     void shouldRetrieveVisibleMessageCountForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.singleQueueVisibleMessages("test-queue", 42);
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.singleQueueVisibleMessages("test-queue", 42);
 
         // When / Then
         assertThat(client.getQueueMessageCount("test-queue"))
@@ -50,7 +50,7 @@ class QueueMessageCountInMemoryClientTest {
     @Test
     void shouldRetrieveMessageCountsForSecondSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.from(Map.of(
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.from(Map.of(
                 "test-queue-1", approximateNumberVisibleAndNotVisible(12, 34),
                 "test-queue-2", approximateNumberVisibleAndNotVisible(56, 78)));
 
@@ -62,7 +62,7 @@ class QueueMessageCountInMemoryClientTest {
     @Test
     void shouldFailWhenMessageCountsNotSpecifiedForQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountInMemoryClient.noQueues();
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.noQueues();
 
         // When / Then
         assertThatThrownBy(() -> client.getQueueMessageCount("test-queue"))
