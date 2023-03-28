@@ -26,14 +26,11 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
-import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
+import sleeper.ingest.testutils.IngestBackedByArrowTestHelper;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
@@ -48,12 +45,9 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
-public class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
+class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
     @RegisterExtension
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
@@ -73,7 +67,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -95,7 +89,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -117,7 +111,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
+    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -153,35 +147,10 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(
-                recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
-                stateStore, recordListAndSchema.sleeperSchema,
-                ArrowRecordBatchFactory.builder()
-                        .schema(recordListAndSchema.sleeperSchema)
-                        .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                        .workingBufferAllocatorBytes(arrowWorkingBytes)
-                        .minBatchBufferAllocatorBytes(arrowBatchBytes)
-                        .maxBatchBufferAllocatorBytes(arrowBatchBytes)
-                        .maxNoOfBytesToWriteLocally(localStoreBytes)
-                        .localWorkingDirectory(ingestLocalWorkingDirectory)
-                        .buildAcceptingRecords(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))) {
-            for (Record record : recordListAndSchema.recordList) {
-                ingestCoordinator.write(record);
-            }
-        }
-
-        ResultVerifier.verify(
-                stateStore,
-                recordListAndSchema.sleeperSchema,
-                keyToPartitionNoMappingFn,
-                recordListAndSchema.recordList,
-                partitionNoToExpectedNoOfFilesMap,
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                ingestLocalWorkingDirectory);
+        IngestBackedByArrowTestHelper.ingestAndVerifyUsingDirectWriteBackedByArrow(
+                temporaryFolder, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
+                recordListAndSchema, stateStore,
+                keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap,
+                arrowWorkingBytes, arrowBatchBytes, localStoreBytes);
     }
 }

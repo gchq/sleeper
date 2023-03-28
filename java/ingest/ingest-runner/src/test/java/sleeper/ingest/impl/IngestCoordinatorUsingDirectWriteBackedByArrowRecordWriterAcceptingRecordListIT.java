@@ -17,7 +17,6 @@ package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,14 +25,11 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
+import sleeper.ingest.testutils.IngestBackedByArrowTestHelper;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
@@ -49,10 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT {
     @TempDir
@@ -139,53 +132,15 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
             long arrowWorkingBytes,
             long arrowBatchBytes,
             long localStoreBytes) throws IOException, StateStoreException, IteratorException {
-        String localWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Configuration hadoopConfiguration = new Configuration();
-
-        try (IngestCoordinator<RecordList> ingestCoordinator = buildIngestCoordinator(
-                stateStore, recordListAndSchema.sleeperSchema, hadoopConfiguration,
-                localWorkingDirectory, arrowWorkingBytes, arrowBatchBytes, localStoreBytes)) {
-
-            for (RecordList recordList : buildScrambledRecordLists(recordListAndSchema)) {
-                ingestCoordinator.write(recordList);
-            }
-        }
-
-        ResultVerifier.verify(
-                stateStore,
-                recordListAndSchema.sleeperSchema,
-                keyToPartitionNoMappingFn,
-                recordListAndSchema.recordList,
-                partitionNoToExpectedNoOfFilesMap,
-                hadoopConfiguration,
-                localWorkingDirectory);
+        IngestBackedByArrowTestHelper.ingestAndVerifyUsingDirectWriteBackedByArrow(
+                temporaryFolder, recordListAndSchema, stateStore,
+                keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap,
+                arrowWorkingBytes, arrowBatchBytes, localStoreBytes,
+                new ArrowRecordWriterAcceptingRecordList(),
+                buildScrambledRecordLists(recordListAndSchema));
     }
 
-    private IngestCoordinator<RecordList> buildIngestCoordinator(
-            StateStore stateStore, Schema schema, Configuration hadoopConfiguration,
-            String localWorkingDirectory,
-            long arrowWorkingBytes,
-            long arrowBatchBytes,
-            long localStoreBytes) throws IOException {
-        String ingestToDirectory = createTempDirectory(temporaryFolder, null).toString();
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, hadoopConfiguration);
-        return standardIngestCoordinator(
-                stateStore, schema,
-                ArrowRecordBatchFactory.builder()
-                        .schema(schema)
-                        .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                        .workingBufferAllocatorBytes(arrowWorkingBytes)
-                        .minBatchBufferAllocatorBytes(arrowBatchBytes)
-                        .maxBatchBufferAllocatorBytes(arrowBatchBytes)
-                        .maxNoOfBytesToWriteLocally(localStoreBytes)
-                        .localWorkingDirectory(localWorkingDirectory)
-                        .recordWriter(new ArrowRecordWriterAcceptingRecordList())
-                        .build(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration, ingestToDirectory));
-    }
-
-    private RecordList[] buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
+    private List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
         RecordList[] recordLists = new RecordList[5];
         for (int i = 0; i < recordLists.length; i++) {
             recordLists[i] = new RecordList();
@@ -198,7 +153,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 i = 0;
             }
         }
-        return recordLists;
+        return List.of(recordLists);
     }
 
     static class RecordList {
