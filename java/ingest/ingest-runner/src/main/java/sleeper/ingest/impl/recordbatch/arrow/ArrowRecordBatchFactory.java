@@ -158,6 +158,11 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
             return this;
         }
 
+        public Builder<T> batchBufferAllocatorBytes(long batchBufferAllocatorBytes) {
+            return minBatchBufferAllocatorBytes(batchBufferAllocatorBytes)
+                    .maxBatchBufferAllocatorBytes(batchBufferAllocatorBytes);
+        }
+
         public Builder<T> maxNoOfBytesToWriteLocally(long maxNoOfBytesToWriteLocally) {
             this.maxNoOfBytesToWriteLocally = maxNoOfBytesToWriteLocally;
             return this;

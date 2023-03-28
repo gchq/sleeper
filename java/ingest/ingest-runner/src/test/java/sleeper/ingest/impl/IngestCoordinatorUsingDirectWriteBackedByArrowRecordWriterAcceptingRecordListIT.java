@@ -17,29 +17,26 @@ package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
-import sleeper.ingest.testutils.IngestBackedByArrowTestHelper;
+import sleeper.ingest.testutils.IngestTestHelper;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -56,20 +53,16 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        StateStore stateStore = buildStateStoreWithSingleSplitPoint(recordListAndSchema, 0L);
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        ingestAndVerifyUsingDirectWriteBackedByArrow(
-                recordListAndSchema,
-                stateStore,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                16 * 1024 * 1024L,
-                16 * 1024 * 1024L,
-                128 * 1024 * 1024L);
+        test(recordListAndSchema, arrow -> arrow
+                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                .batchBufferAllocatorBytes(16 * 1024 * 1024L)
+                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
+        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     @Test
@@ -77,67 +70,47 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        StateStore stateStore = buildStateStoreWithSingleSplitPoint(recordListAndSchema, 0L);
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        ingestAndVerifyUsingDirectWriteBackedByArrow(
-                recordListAndSchema,
-                stateStore,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                16 * 1024 * 1024L,
-                16 * 1024 * 1024L,
-                2 * 1024 * 1024L);
+        test(recordListAndSchema, arrow -> arrow
+                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                .batchBufferAllocatorBytes(16 * 1024 * 1024L)
+                .maxNoOfBytesToWriteLocally(2 * 1024 * 1024L)
+        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     @Test
-    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
+    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        StateStore stateStore = buildStateStoreWithSingleSplitPoint(recordListAndSchema, 0L);
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        IngestTestHelper<RecordList> test = test(recordListAndSchema, arrow -> arrow
+                .workingBufferAllocatorBytes(32 * 1024L)
+                .batchBufferAllocatorBytes(32 * 1024L)
+                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
         assertThatThrownBy(() ->
-                ingestAndVerifyUsingDirectWriteBackedByArrow(
-                        recordListAndSchema,
-                        stateStore,
-                        keyToPartitionNoMappingFn,
-                        partitionNoToExpectedNoOfFilesMap,
-                        32 * 1024L,
-                        32 * 1024L,
-                        64 * 1024 * 1024L))
+                test.ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }
 
-    private StateStore buildStateStoreWithSingleSplitPoint(
-            RecordGenerator.RecordListAndSchema recordListAndSchema, Object splitPoint) {
-        return StateStoreTestBuilder.from(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                        .treeWithSingleSplitPoint(splitPoint))
-                .buildStateStore();
-    }
-
-    private void ingestAndVerifyUsingDirectWriteBackedByArrow(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            StateStore stateStore,
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
-            long arrowWorkingBytes,
-            long arrowBatchBytes,
-            long localStoreBytes) throws IOException, StateStoreException, IteratorException {
-        IngestBackedByArrowTestHelper.ingestAndVerifyUsingDirectWriteBackedByArrow(
-                temporaryFolder, recordListAndSchema, stateStore,
-                keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap,
-                arrowWorkingBytes, arrowBatchBytes, localStoreBytes,
-                new ArrowRecordWriterAcceptingRecordList(),
-                buildScrambledRecordLists(recordListAndSchema));
+    private IngestTestHelper<RecordList> test(RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                              Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) throws Exception {
+        return IngestTestHelper.from(temporaryFolder,
+                        new Configuration(),
+                        recordListAndSchema)
+                .stateStoreInMemory(partitions -> partitions.treeWithSingleSplitPoint(0L))
+                .directWrite()
+                .backedByArrowWithRecordWriter(new ArrowRecordWriterAcceptingRecordList(), arrowConfig)
+                .toWrite(buildScrambledRecordLists(recordListAndSchema));
     }
 
     private List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {

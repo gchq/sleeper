@@ -24,22 +24,20 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
+import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
-import sleeper.ingest.testutils.IngestBackedByArrowTestHelper;
-import sleeper.ingest.testutils.PartitionedTableCreator;
+import sleeper.ingest.testutils.IngestTestHelper;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -78,14 +76,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        ingestAndVerifyUsingDirectWriteBackedByArrow(
-                recordListAndSchema,
-                keyAndDimensionToSplitOnInOrder,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                16 * 1024 * 1024L,
-                4 * 1024 * 1024L,
-                128 * 1024 * 1024L);
+        test(recordListAndSchema, keyAndDimensionToSplitOnInOrder, arrow -> arrow
+                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                .batchBufferAllocatorBytes(4 * 1024 * 1024L)
+                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
+        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     @Test
@@ -100,18 +95,16 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        ingestAndVerifyUsingDirectWriteBackedByArrow(
-                recordListAndSchema,
-                keyAndDimensionToSplitOnInOrder,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                16 * 1024 * 1024L,
-                4 * 1024 * 1024L,
-                16 * 1024 * 1024L);
+
+        test(recordListAndSchema, keyAndDimensionToSplitOnInOrder, arrow -> arrow
+                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                .batchBufferAllocatorBytes(4 * 1024 * 1024L)
+                .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
+        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     @Test
-    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
+    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -122,35 +115,24 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        IngestTestHelper<Record> test = test(recordListAndSchema, keyAndDimensionToSplitOnInOrder, arrow -> arrow
+                .workingBufferAllocatorBytes(32 * 1024L)
+                .batchBufferAllocatorBytes(1024 * 1024L)
+                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
         assertThatThrownBy(() ->
-                ingestAndVerifyUsingDirectWriteBackedByArrow(
-                        recordListAndSchema,
-                        keyAndDimensionToSplitOnInOrder,
-                        keyToPartitionNoMappingFn,
-                        partitionNoToExpectedNoOfFilesMap,
-                        32 * 1024L,
-                        1024 * 1024L,
-                        64 * 1024 * 1024L))
+                test.ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }
 
-    private void ingestAndVerifyUsingDirectWriteBackedByArrow(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder,
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
-            long arrowWorkingBytes,
-            long arrowBatchBytes,
-            long localStoreBytes) throws IOException, StateStoreException, IteratorException {
-        StateStore stateStore = PartitionedTableCreator.createStateStore(
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
-                recordListAndSchema.sleeperSchema,
-                keyAndDimensionToSplitOnInOrder);
-        IngestBackedByArrowTestHelper.ingestAndVerifyUsingDirectWriteBackedByArrow(
-                temporaryFolder, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                recordListAndSchema, stateStore,
-                keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap,
-                arrowWorkingBytes, arrowBatchBytes, localStoreBytes);
+    private IngestTestHelper<Record> test(RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                          List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder,
+                                          Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
+        return IngestTestHelper.from(temporaryFolder,
+                        AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
+                        recordListAndSchema)
+                .createStateStore(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), keyAndDimensionToSplitOnInOrder)
+                .directWrite()
+                .backedByArrow(arrowConfig);
     }
 }
