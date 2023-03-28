@@ -238,4 +238,11 @@ public class PartitionTree {
     public int hashCode() {
         return Objects.hash(schema, idToPartition);
     }
+
+    @Override
+    public String toString() {
+        return "PartitionTree{" +
+                "idToPartition=" + idToPartition +
+                '}';
+    }
 }
