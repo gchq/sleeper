@@ -61,6 +61,10 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         return new AdminConfigStore(s3, null, cdk, tempDir);
     }
 
+    protected AdminConfigStore store() {
+        return getStore();
+    }
+
     @BeforeEach
     public void setUpITBase() {
         s3.createBucket(CONFIG_BUCKET_NAME);
