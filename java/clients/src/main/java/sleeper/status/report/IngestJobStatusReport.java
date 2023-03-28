@@ -38,35 +38,35 @@ import java.io.IOException;
 import java.time.Clock;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestJobStatusReport {
     private final IngestJobStatusStore statusStore;
-    private final IngestJobStatusReportArguments arguments;
     private final IngestJobStatusReporter ingestJobStatusReporter;
     private final AmazonSQS sqsClient;
     private final String jobQueueUrl;
+    private final JobQuery query;
+    private final JobQuery.Type queryType;
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
-            IngestJobStatusReportArguments arguments,
-            AmazonSQS sqsClient,
-            InstanceProperties properties) {
+            String tableName, JobQuery.Type queryType, String queryParameters,
+            IngestJobStatusReporter reporter, AmazonSQS sqsClient, InstanceProperties properties) {
         this.statusStore = ingestJobStatusStore;
-        this.arguments = arguments;
-        this.ingestJobStatusReporter = arguments.getReporter();
+        this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
+                Clock.systemUTC(), new ConsoleInput(System.console()));
+        this.queryType = queryType;
+        this.ingestJobStatusReporter = reporter;
         this.sqsClient = sqsClient;
         this.jobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
     }
 
     public void run() {
-        JobQuery query = arguments.buildQuery(Clock.systemUTC(),
-                new ConsoleInput(System.console()));
         if (query == null) {
             return;
         }
         ingestJobStatusReporter.report(
-                query.run(statusStore),
-                arguments.getQueryType(),
+                query.run(statusStore), queryType,
                 getNumberOfMessagesInQueue());
     }
 
@@ -85,6 +85,10 @@ public class IngestJobStatusReport {
             System.exit(1);
             return;
         }
+        String tableName = arguments.getTableName();
+        JobQuery.Type queryType = arguments.getQueryType();
+        String queryParameters = optionalArgument(args, 4).orElse(null);
+        IngestJobStatusReporter reporter = arguments.getReporter();
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
@@ -92,6 +96,6 @@ public class IngestJobStatusReport {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        new IngestJobStatusReport(statusStore, arguments, sqsClient, instanceProperties).run();
+        new IngestJobStatusReport(statusStore, tableName, queryType, queryParameters, reporter, sqsClient, instanceProperties).run();
     }
 }
