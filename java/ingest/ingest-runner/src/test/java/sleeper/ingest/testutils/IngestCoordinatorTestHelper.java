@@ -21,7 +21,6 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
@@ -45,15 +44,15 @@ public class IngestCoordinatorTestHelper {
                 .build();
     }
 
-    public static IngestCoordinator<Record> standardIngestCoordinator(
+    public static <T> IngestCoordinator<T> standardIngestCoordinator(
             StateStore stateStore, Schema schema,
-            RecordBatchFactory<Record> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
     }
 
-    public static IngestCoordinator.Builder<Record> standardIngestCoordinatorBuilder(
+    public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
             StateStore stateStore, Schema schema,
-            RecordBatchFactory<Record> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return IngestCoordinator.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
