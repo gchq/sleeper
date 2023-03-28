@@ -17,35 +17,31 @@ package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
-import sleeper.ingest.testutils.AwsExternalResource;
-import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -59,31 +55,15 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfig
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT {
-    @RegisterExtension
-    public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
-            LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.DYNAMODB);
-    private static final String DATA_BUCKET_NAME = "databucket";
     @TempDir
     public Path temporaryFolder;
-
-    @BeforeEach
-    public void before() {
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(DATA_BUCKET_NAME);
-    }
-
-    @AfterEach
-    public void after() {
-        AWS_EXTERNAL_RESOURCE.clear();
-    }
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
-                Pair.of(Key.create(0L), 0));
+        StateStore stateStore = buildStateStoreWithSingleSplitPoint(recordListAndSchema, 0L);
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
@@ -91,7 +71,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         ingestAndVerifyUsingDirectWriteBackedByArrow(
                 recordListAndSchema,
-                keyAndDimensionToSplitOnInOrder,
+                stateStore,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
                 16 * 1024 * 1024L,
@@ -104,8 +84,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
-                Pair.of(Key.create(0L), 0));
+        StateStore stateStore = buildStateStoreWithSingleSplitPoint(recordListAndSchema, 0L);
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 2),
@@ -113,7 +92,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         ingestAndVerifyUsingDirectWriteBackedByArrow(
                 recordListAndSchema,
-                keyAndDimensionToSplitOnInOrder,
+                stateStore,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
                 16 * 1024 * 1024L,
@@ -126,8 +105,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
-                Pair.of(Key.create(0L), 0));
+        StateStore stateStore = buildStateStoreWithSingleSplitPoint(recordListAndSchema, 0L);
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 2),
@@ -136,7 +114,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         assertThatThrownBy(() ->
                 ingestAndVerifyUsingDirectWriteBackedByArrow(
                         recordListAndSchema,
-                        keyAndDimensionToSplitOnInOrder,
+                        stateStore,
                         keyToPartitionNoMappingFn,
                         partitionNoToExpectedNoOfFilesMap,
                         32 * 1024L,
@@ -146,50 +124,29 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .hasNoSuppressedExceptions();
     }
 
+    private StateStore buildStateStoreWithSingleSplitPoint(
+            RecordGenerator.RecordListAndSchema recordListAndSchema, Object splitPoint) {
+        return StateStoreTestBuilder.from(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                        .treeWithSingleSplitPoint(splitPoint))
+                .buildStateStore();
+    }
+
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder,
+            StateStore stateStore,
             Function<Key, Integer> keyToPartitionNoMappingFn,
             Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             long arrowWorkingBytes,
             long arrowBatchBytes,
             long localStoreBytes) throws IOException, StateStoreException, IteratorException {
-        StateStore stateStore = PartitionedTableCreator.createStateStore(
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
-                recordListAndSchema.sleeperSchema,
-                keyAndDimensionToSplitOnInOrder);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        String localWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        Configuration hadoopConfiguration = new Configuration();
 
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(
-                recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        try (IngestCoordinator<RecordList> ingestCoordinator = standardIngestCoordinator(
-                stateStore, recordListAndSchema.sleeperSchema,
-                ArrowRecordBatchFactory.builder()
-                        .schema(recordListAndSchema.sleeperSchema)
-                        .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                        .workingBufferAllocatorBytes(arrowWorkingBytes)
-                        .minBatchBufferAllocatorBytes(arrowBatchBytes)
-                        .maxBatchBufferAllocatorBytes(arrowBatchBytes)
-                        .maxNoOfBytesToWriteLocally(localStoreBytes)
-                        .localWorkingDirectory(ingestLocalWorkingDirectory)
-                        .recordWriter(new ArrowRecordWriterAcceptingRecordList())
-                        .build(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))) {
+        try (IngestCoordinator<RecordList> ingestCoordinator = buildIngestCoordinator(
+                stateStore, recordListAndSchema.sleeperSchema, hadoopConfiguration,
+                localWorkingDirectory, arrowWorkingBytes, arrowBatchBytes, localStoreBytes)) {
 
-            RecordList[] recordLists = new RecordList[5];
-            for (int i = 0; i < recordLists.length; i++) {
-                recordLists[i] = new RecordList();
-            }
-            int i = 0;
-            for (Record record : recordListAndSchema.recordList) {
-                recordLists[i].addRecord(record);
-                i++;
-                if (i == 5) {
-                    i = 0;
-                }
-            }
-            for (RecordList recordList : recordLists) {
+            for (RecordList recordList : buildScrambledRecordLists(recordListAndSchema)) {
                 ingestCoordinator.write(recordList);
             }
         }
@@ -200,8 +157,48 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 keyToPartitionNoMappingFn,
                 recordListAndSchema.recordList,
                 partitionNoToExpectedNoOfFilesMap,
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                ingestLocalWorkingDirectory);
+                hadoopConfiguration,
+                localWorkingDirectory);
+    }
+
+    private IngestCoordinator<RecordList> buildIngestCoordinator(
+            StateStore stateStore, Schema schema, Configuration hadoopConfiguration,
+            String localWorkingDirectory,
+            long arrowWorkingBytes,
+            long arrowBatchBytes,
+            long localStoreBytes) throws IOException {
+        String ingestToDirectory = createTempDirectory(temporaryFolder, null).toString();
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, hadoopConfiguration);
+        return standardIngestCoordinator(
+                stateStore, schema,
+                ArrowRecordBatchFactory.builder()
+                        .schema(schema)
+                        .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
+                        .workingBufferAllocatorBytes(arrowWorkingBytes)
+                        .minBatchBufferAllocatorBytes(arrowBatchBytes)
+                        .maxBatchBufferAllocatorBytes(arrowBatchBytes)
+                        .maxNoOfBytesToWriteLocally(localStoreBytes)
+                        .localWorkingDirectory(localWorkingDirectory)
+                        .recordWriter(new ArrowRecordWriterAcceptingRecordList())
+                        .build(),
+                DirectPartitionFileWriterFactory.from(
+                        parquetConfiguration, ingestToDirectory));
+    }
+
+    private RecordList[] buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
+        RecordList[] recordLists = new RecordList[5];
+        for (int i = 0; i < recordLists.length; i++) {
+            recordLists[i] = new RecordList();
+        }
+        int i = 0;
+        for (Record record : recordListAndSchema.recordList) {
+            recordLists[i].addRecord(record);
+            i++;
+            if (i == 5) {
+                i = 0;
+            }
+        }
+        return recordLists;
     }
 
     static class RecordList {
