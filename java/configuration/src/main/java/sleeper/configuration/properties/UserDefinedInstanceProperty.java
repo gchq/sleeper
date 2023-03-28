@@ -191,9 +191,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("120")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_SOURCE_BUCKET = Index.propertyBuilder("sleeper.ingest.source.bucket")
-            .description("The name of a bucket that contains files to be ingested via ingest jobs. This bucket should already " +
-                    "exist, i.e. it will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
-                    "and bulk import stacks will be given read access to this bucket so that they can consume data from it.")
+            .description("A comma-separated list of buckets that contain files to be ingested via ingest jobs. The buckets should already " +
+                    "exist, i.e. they will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
+                    "and bulk import stacks will be given read access to these buckets so that they can consume data from them.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.ingest.record.batch.type")
