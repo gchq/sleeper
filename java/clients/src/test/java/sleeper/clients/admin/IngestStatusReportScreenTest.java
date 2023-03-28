@@ -16,8 +16,7 @@
 
 package sleeper.clients.admin;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,16 +26,18 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,29 +63,30 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGES
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
+import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
 
-public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
+class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
     @Nested
     class IngestJobStatusReport {
+        private static final String INGEST_JOB_QUEUE_URL = "test-ingest-queue";
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
+        private final InstanceProperties instanceProperties = createInstanceProperties();
+        private final TableProperties tableProperties = createValidTableProperties(instanceProperties, "test-table");
+        private final QueueMessageCount.Client queueCounts = singleQueueVisibleMessages(INGEST_JOB_QUEUE_URL, 10);
 
-        private List<IngestJobStatus> exampleJobStatuses() {
-            return List.of(startedJobStatus("test-job"));
-        }
-
-        private IngestJobStatus startedJobStatus(String jobId) {
-            return startedIngestJob(IngestJob.builder().id(jobId).files("test.parquet").build(),
-                    "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
+        @BeforeEach
+        void setUp() {
+            setInstanceProperties(instanceProperties, tableProperties);
+            when(store.loadIngestJobStatusStore(instanceProperties.get(ID)))
+                    .thenReturn(ingestJobStatusStore);
         }
 
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            createIngestJobStatusStore();
-            createSqsClient();
             when(ingestJobStatusStore.getAllJobs("test-table"))
-                    .thenReturn(exampleJobStatuses());
+                    .thenReturn(oneStartedJobStatus());
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -106,10 +108,8 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            createIngestJobStatusStore();
-            createSqsClient();
             when(ingestJobStatusStore.getUnfinishedJobs("test-table"))
-                    .thenReturn(exampleJobStatuses());
+                    .thenReturn(oneStartedJobStatus());
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -131,8 +131,6 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeDetailed() throws Exception {
             // Given
-            createIngestJobStatusStore();
-            createSqsClient();
             when(ingestJobStatusStore.getJob("test-job"))
                     .thenReturn(Optional.of(startedJobStatus("test-job")));
 
@@ -154,11 +152,9 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeRange() throws Exception {
             // Given
-            createIngestJobStatusStore();
-            createSqsClient();
             when(ingestJobStatusStore.getJobsInTimePeriod("test-table",
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
-                    .thenReturn(exampleJobStatuses());
+                    .thenReturn(oneStartedJobStatus());
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -179,24 +175,23 @@ public class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
 
         private RunAdminClient runIngestJobStatusReport() {
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                    INGEST_JOB_STATUS_REPORT_OPTION, "test-table");
+                            INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
+                    .queueClient(queueCounts);
         }
 
-        private void createIngestJobStatusStore() {
+        private List<IngestJobStatus> oneStartedJobStatus() {
+            return List.of(startedJobStatus("test-job"));
+        }
+
+        private IngestJobStatus startedJobStatus(String jobId) {
+            return startedIngestJob(IngestJob.builder().id(jobId).files("test.parquet").build(),
+                    "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
+        }
+
+        private InstanceProperties createInstanceProperties() {
             InstanceProperties properties = createValidInstanceProperties();
-            setInstanceProperties(properties, createValidTableProperties(properties, "test-table"));
-            when(store.loadIngestJobStatusStore(properties.get(ID)))
-                    .thenReturn(ingestJobStatusStore);
-        }
-
-        private void createSqsClient() {
-            when(store.getSqsClient())
-                    .thenReturn(mock(AmazonSQS.class));
-            when(store.getSqsClient().getQueueAttributes(any()))
-                    .thenReturn(new GetQueueAttributesResult()
-                            .withAttributes(Map.of(
-                                    "ApproximateNumberOfMessages", "10",
-                                    "ApproximateNumberOfMessagesNotVisible", "15")));
+            properties.set(SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL, INGEST_JOB_QUEUE_URL);
+            return properties;
         }
     }
 

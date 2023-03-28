@@ -57,12 +57,12 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected Path tempDir;
 
     @Override
-    protected RunAdminClient runClient() {
-        return runClient(store());
+    public AdminConfigStore getStore() {
+        return new AdminConfigStore(s3, null, cdk, tempDir);
     }
 
     protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, null, null, cdk, tempDir);
+        return getStore();
     }
 
     @BeforeEach
