@@ -69,13 +69,10 @@ public class CompactionJobStatusReport {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2 || args.length > 5) {
-            System.err.println("Wrong number of arguments");
-            CompactionJobStatusReportArgumentHelper.printUsage(System.err);
-            System.exit(1);
-            return;
-        }
         try {
+            if (args.length < 2 || args.length > 5) {
+                throw new IllegalArgumentException("Wrong number of arguments");
+            }
             String instanceId = args[0];
             String tableName = args[1];
             CompactionJobStatusReporter reporter = getReporter(args, 2);
