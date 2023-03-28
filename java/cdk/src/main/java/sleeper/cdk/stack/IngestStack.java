@@ -62,7 +62,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
@@ -134,10 +137,13 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    public static Optional<IBucket> addIngestSourceBucketReference(Construct scope, String id, InstanceProperties instanceProperties) {
-        return Optional.ofNullable(instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
-                .filter(bucketName -> !bucketName.isEmpty())
-                .map(bucketName -> Bucket.fromBucketName(scope, id, bucketName));
+    public static List<IBucket> addIngestSourceBucketReferences(Construct scope, String id, InstanceProperties instanceProperties) {
+        AtomicInteger index = new AtomicInteger(1);
+        return Optional.ofNullable(instanceProperties.getList(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
+                .orElse(List.of()).stream()
+                .filter(not(String::isEmpty))
+                .map(bucketName -> Bucket.fromBucketName(scope, id + index.getAndIncrement(), bucketName))
+                .collect(Collectors.toList());
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -253,8 +259,8 @@ public class IngestStack extends NestedStack {
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.
-        addIngestSourceBucketReference(this, "SourceBucket", instanceProperties)
-                .ifPresent(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
+        addIngestSourceBucketReferences(this, "SourceBucket", instanceProperties)
+                .forEach(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
