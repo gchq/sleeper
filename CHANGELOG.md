@@ -6,62 +6,68 @@ are available [here](docs/12-performance-test.md)
 
 ## Version 0.15.0
 
-This contains the following improvements
+This contains the following improvements:
 
 Standard ingest:
 - Added ability to define multiple source buckets.
 
 Tables:
-- Added ability to export partition information to a file
+- Added ability to export partition information to a file.
 
 Scripts:
-- Added a script to add a new table to an existing instance of Sleeper (`scripts/deploy/addTable.sh`)
-- Added a script to bring an existing instance of Sleeper up to date (`scripts/deploy/deployExisting.sh`)
-- Replace the deployment scripts with Java
+- Added a script to add a new table to an existing instance of Sleeper (`scripts/deploy/addTable.sh`).
+- Added a script to bring an existing instance of Sleeper up to date (`scripts/deploy/deployExisting.sh`).
+- Replace the deployment scripts with Java.
 
 Docker CLI:
-- Added a builder docker image, to be used inside EC2 to run scripts and Sleeper CLI commands (`sleeper builder`)
-- Added deployment docker image to Sleeper CLI for deploying a pre-built version of Sleeper (`sleeper deployment`)
-- Added a command to bring the Sleeper CLI up to date (`sleeper cli upgrade`)
+- Added a builder docker image, to be used inside EC2 to run scripts and Sleeper CLI commands (`sleeper builder`).
+- Added deployment docker image to Sleeper CLI for deploying a pre-built version of Sleeper (`sleeper deployment`).
+- Added a command to bring the Sleeper CLI up to date (`sleeper cli upgrade`).
 - Added support for Apple M1 and other ARM-based processors.
 
 CDK:
-- Added a way to run `cdk deploy` from Java
-- Added a way to run `cdk destroy` from Java
-- Add validation for Sleeper version on `cdk deploy` by default
-- Add the Sleeper CLI to the cdk-environment EC2
-- Add versioning for Lambdas, update when code is changed on `cdk deploy`
+- Added a way to run `cdk deploy` from Java.
+- Added a way to run `cdk destroy` from Java.
+- Add validation for Sleeper version on `cdk deploy` by default.
+- Add the Sleeper CLI to the cdk-environment EC2.
+- Add versioning for Lambdas, update when code is changed on `cdk deploy`.
 
 Clients:
-- Added a "shopping basket" view to the admin client
-    - Viewing and editing properties now brings you to a text editor where you can make changes and save them
-    - Upon saving and leaving the editor, you will be presented with a summary of your changes, and have the option to save these changes to S3, return to the editor, or discard the changes.
-    - Any validation issues will appear in the summary screen, and prevent you from saving until they are resolved
-- Properties that require a `cdk deploy` are now flagged, and the `cdk deploy` is performed after changing any of these properties
-- Properties are now grouped based on their context
-    - You can also filter properties by group in the admin client
-- Descriptions are now displayed above properties in the editor
-- Properties that cannot be changed (either they are system defined or they require redeploying the instance) are included in the validation checks when making changes in the editor
+- Added a "shopping basket" view to the admin client.
+    - Viewing and editing properties now brings you to a text editor where you can make changes and save them.
+    - Upon saving and leaving the editor, you will be presented with a summary of your changes, and have the 
+    option to save these changes to S3, return to the editor, or discard the changes.
+    - Any validation issues will appear in the summary screen, and prevent you from saving until they are resolved.
+- Properties that require a `cdk deploy` are now flagged, and the `cdk deploy` is performed after changing 
+any of these properties.
+- Properties are now grouped based on their context.
+    - You can also filter properties by group in the admin client.
+- Descriptions are now displayed above properties in the editor.
+- Properties that cannot be changed (either they are system defined or they require redeploying the instance) 
+are included in the validation checks when making changes in the editor.
 - Added the following status reports to the admin client main menu:
-    - Partitions
-    - Files
-    - Compaction jobs & tasks
-    - Ingest jobs & tasks
+    - Partitions.
+    - Files.
+    - Compaction jobs & tasks.
+    - Ingest jobs & tasks.
 
 Tests:
-- Upgrade LocalStack and DynamoDB in Testcontainers tests
+- Upgrade LocalStack and DynamoDB in Testcontainers tests.
 
-Bugfixes
-- You can now deploy an EC2 environment into an existing VPC
-- The deploy script no longer fails to find a bucket to upload jars to after creating it
-- All records are now loaded for the compaction and ingest reports - some records were missing  when there were too many records
-- The compaction performance test can now run with more than 100 data generation ECS tasks
-- Added transitive dependency declarations to built Maven artifacts
-- The partitions status report now displays the correct field name for the split field
-- CDK now references bulk import bucket correctly. Previously you could encounter deployment failures when switching bulk import stacks.
-- Running the `connectToTable.sh` script no longer clear the generated directory if you encounter an AWS auth failure (this has been moved to  `scripts/utility/downloadConfig.sh`).
-- The compaction performance test no longer fails if a job started before it was reported as created
-- The compaction performance test no longer fails if the partition splitting job queue size updates too slowly
+Bugfixes:
+- You can now deploy an EC2 environment into an existing VPC.
+- The deploy script no longer fails to find a bucket to upload jars to after creating it.
+- All records are now loaded for the compaction and ingest reports - some records were missing  when there were 
+too many records.
+- The compaction performance test can now run with more than 100 data generation ECS tasks.
+- Added transitive dependency declarations to built Maven artifacts.
+- The partitions status report now displays the correct field name for the split field.
+- CDK now references bulk import bucket correctly. Previously you could encounter deployment failures when
+switching bulk import stacks.
+- Running the `connectToTable.sh` script no longer clear the generated directory if you encounter an AWS auth 
+failure (this has been moved to  `scripts/utility/downloadConfig.sh`).
+- The compaction performance test no longer fails if a job started before it was reported as created.
+- The compaction performance test no longer fails if the partition splitting job queue size updates too slowly.
 
 ## Version 0.14.0
 
