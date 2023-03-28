@@ -29,20 +29,31 @@ import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.job.common.CommonJobUtils;
-import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
+import sleeper.status.report.ingest.job.JsonIngestJobStatusReporter;
+import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
 import sleeper.status.report.job.query.JobQueryArgument;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.status.report.ingest.job.IngestJobStatusReportArguments.getReporter;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestJobStatusReport {
+    private static final String DEFAULT_REPORTER = "STANDARD";
+    private static final Map<String, IngestJobStatusReporter> REPORTERS = new HashMap<>();
+
+    static {
+        REPORTERS.put(DEFAULT_REPORTER, new StandardIngestJobStatusReporter());
+        REPORTERS.put("JSON", new JsonIngestJobStatusReporter());
+    }
+
     private final IngestJobStatusStore statusStore;
     private final IngestJobStatusReporter ingestJobStatusReporter;
     private final AmazonSQS sqsClient;
@@ -84,7 +95,7 @@ public class IngestJobStatusReport {
             }
 
             String tableName = args[1];
-            IngestJobStatusReporter reporter = getReporter(args, 2);
+            IngestJobStatusReporter reporter = getReporter(args);
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
@@ -95,11 +106,32 @@ public class IngestJobStatusReport {
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
             IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
             AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-            new IngestJobStatusReport(statusStore, tableName, queryType, queryParameters, reporter, sqsClient, instanceProperties).run();
+            new IngestJobStatusReport(statusStore, tableName, queryType, queryParameters,
+                    reporter, sqsClient, instanceProperties).run();
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
-            IngestJobStatusReportArguments.printUsage(System.out);
+            printUsage();
             System.exit(1);
         }
+    }
+
+    private static void printUsage() {
+        System.out.println("" +
+                "Usage: <instance id> <table name> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
+                "Query types are:\n" +
+                "-a (Return all jobs)\n" +
+                "-d (Detailed, provide a jobId)\n" +
+                "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
+                "-u (Unfinished jobs)");
+    }
+
+    private static IngestJobStatusReporter getReporter(String[] args) {
+        String reporterType = optionalArgument(args, 2)
+                .map(str -> str.toUpperCase(Locale.ROOT))
+                .orElse(DEFAULT_REPORTER);
+        if (!REPORTERS.containsKey(reporterType)) {
+            throw new IllegalArgumentException("Output type not supported: " + reporterType);
+        }
+        return REPORTERS.get(reporterType);
     }
 }
