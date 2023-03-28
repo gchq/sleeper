@@ -32,12 +32,14 @@ import sleeper.job.common.CommonJobUtils;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
+import sleeper.status.report.job.query.JobQueryArgument;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.time.Clock;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.status.report.ingest.job.IngestJobStatusReportArguments.getReporter;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestJobStatusReport {
@@ -76,26 +78,28 @@ public class IngestJobStatusReport {
     }
 
     public static void main(String[] args) throws IOException {
-        IngestJobStatusReportArguments arguments;
         try {
-            arguments = IngestJobStatusReportArguments.from(args);
+            if (args.length < 2 || args.length > 5) {
+                throw new IllegalArgumentException("Wrong number of arguments");
+            }
+
+            String tableName = args[1];
+            IngestJobStatusReporter reporter = getReporter(args, 2);
+            JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
+            String queryParameters = optionalArgument(args, 4).orElse(null);
+
+
+            AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+
+            AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+            IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
+            AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+            new IngestJobStatusReport(statusStore, tableName, queryType, queryParameters, reporter, sqsClient, instanceProperties).run();
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             IngestJobStatusReportArguments.printUsage(System.out);
             System.exit(1);
-            return;
         }
-        String tableName = arguments.getTableName();
-        JobQuery.Type queryType = arguments.getQueryType();
-        String queryParameters = optionalArgument(args, 4).orElse(null);
-        IngestJobStatusReporter reporter = arguments.getReporter();
-
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
-
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        new IngestJobStatusReport(statusStore, tableName, queryType, queryParameters, reporter, sqsClient, instanceProperties).run();
     }
 }
