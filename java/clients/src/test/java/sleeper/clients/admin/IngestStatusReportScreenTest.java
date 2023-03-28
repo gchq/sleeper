@@ -160,7 +160,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                     .thenReturn(exampleJobStatuses());
 
             // When/Then
-            String output = runIngestJobStatusReport().queueClient(queueClient)
+            String output = runIngestJobStatusReport()
                     .enterPrompts(JOB_QUERY_RANGE_OPTION,
                             "20230315140000", "20230315180000", CONFIRM_PROMPT)
                     .exitGetOutput();
@@ -178,7 +178,8 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
 
         private RunAdminClient runIngestJobStatusReport() {
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                    INGEST_JOB_STATUS_REPORT_OPTION, "test-table");
+                            INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
+                    .queueClient(queueClient);
         }
 
         private void createIngestJobStatusStore() {
