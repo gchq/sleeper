@@ -16,12 +16,7 @@
 package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
-import org.apache.arrow.vector.BigIntVector;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.VarBinaryVector;
-import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.complex.ListVector;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,13 +29,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.MapType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
@@ -53,7 +42,6 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -70,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
-public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT {
+class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT {
     @RegisterExtension
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
@@ -90,7 +78,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -112,7 +100,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -134,7 +122,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
     }
 
     @Test
-    public void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
+    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -216,10 +204,10 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
                 ingestLocalWorkingDirectory);
     }
 
-    public static class RecordList {
+    static class RecordList {
         private final List<Record> records;
 
-        public RecordList() {
+        RecordList() {
             this.records = new ArrayList<>();
         }
 
@@ -232,49 +220,14 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAccepting
         }
     }
 
-    public static class ArrowRecordWriterAcceptingRecordList implements ArrowRecordWriter<RecordList> {
+    static class ArrowRecordWriterAcceptingRecordList implements ArrowRecordWriter<RecordList> {
 
         @Override
         public int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, RecordList recordList, int startInsertAtRowNo) {
             int i = 0;
             for (Record record : recordList.getRecords()) {
-                for (int fieldNo = 0; fieldNo < allFields.size(); fieldNo++) {
-                    Field sleeperField = allFields.get(fieldNo);
-                    String fieldName = sleeperField.getName();
-                    Type sleeperType = sleeperField.getType();
-                    if (sleeperType instanceof IntType) {
-                        IntVector intVector = (IntVector) vectorSchemaRoot.getVector(fieldNo);
-                        Integer value = (Integer) record.get(fieldName);
-                        intVector.setSafe(startInsertAtRowNo + i, value);
-                    } else if (sleeperType instanceof LongType) {
-                        BigIntVector bigIntVector = (BigIntVector) vectorSchemaRoot.getVector(fieldNo);
-                        Long value = (Long) record.get(fieldName);
-                        bigIntVector.setSafe(startInsertAtRowNo + i, value);
-                    } else if (sleeperType instanceof StringType) {
-                        VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(fieldNo);
-                        String value = (String) record.get(fieldName);
-                        varCharVector.setSafe(startInsertAtRowNo + i, value.getBytes(StandardCharsets.UTF_8));
-                    } else if (sleeperType instanceof ByteArrayType) {
-                        VarBinaryVector varBinaryVector = (VarBinaryVector) vectorSchemaRoot.getVector(fieldNo);
-                        byte[] value = (byte[]) record.get(fieldName);
-                        varBinaryVector.setSafe(startInsertAtRowNo + i, value);
-                    } else if (sleeperType instanceof ListType) {
-                        ArrowRecordWriterAcceptingRecords.writeList(
-                            ((ListType) sleeperType).getElementType(),
-                            (List<?>) record.get(fieldName),
-                            (ListVector) vectorSchemaRoot.getVector(fieldNo),
-                            startInsertAtRowNo + i);
-                    } else if (sleeperType instanceof MapType) {
-                        ArrowRecordWriterAcceptingRecords.writeMap(
-                            ((MapType) sleeperType).getKeyType(),
-                            ((MapType) sleeperType).getValueType(),
-                            (Map<?, ?>) record.get(fieldName),
-                            (ListVector) vectorSchemaRoot.getVector(fieldNo),
-                            startInsertAtRowNo + i);
-                    } else {
-                        throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
-                    }
-                }
+                ArrowRecordWriterAcceptingRecords.writeRecord(
+                        allFields, vectorSchemaRoot, record, startInsertAtRowNo + i);
                 i++;
             }
             int finalRowCount = startInsertAtRowNo + i;
