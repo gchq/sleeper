@@ -55,6 +55,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -71,6 +72,7 @@ public class TableStack extends NestedStack {
 
     private final List<StateStoreStack> stateStoreStacks = new ArrayList<>();
     private final List<IBucket> dataBuckets = new ArrayList<>();
+    private final boolean deployPaused;
 
     public TableStack(
             Construct scope,
@@ -78,7 +80,7 @@ public class TableStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars) {
         super(scope, id);
-
+        deployPaused = shouldDeployPaused(scope);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
@@ -216,6 +218,7 @@ public class TableStack extends NestedStack {
                                 .event(RuleTargetInput.fromText(configBucket.getBucketName() + "|" + tableName))
                                 .build()
                 ))
+                .enabled(!deployPaused)
                 .build();
         if (null == instanceProperties.get(TABLE_METRICS_RULES) || instanceProperties.get(TABLE_METRICS_RULES).isEmpty()) {
             instanceProperties.set(TABLE_METRICS_RULES, rule.getRuleName());

@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
@@ -98,7 +99,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .create(this, "GarbageCollectorPeriodicTrigger")
                 .ruleName(instanceProperties.get(ID) + "-GarbageCollectorPeriodicTrigger")
                 .description("A rule to periodically trigger the garbage collector")
-                .enabled(Boolean.TRUE)
+                .enabled(!shouldDeployPaused(scope))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();

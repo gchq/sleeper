@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
+import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
@@ -97,6 +98,7 @@ public class IngestStack extends NestedStack {
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreStack statusStore;
+    private final boolean deployPaused;
 
     public IngestStack(
             Construct scope,
@@ -109,6 +111,7 @@ public class IngestStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         this.statusStore = IngestStatusStoreStack.from(scope, instanceProperties);
+        this.deployPaused = shouldDeployPaused(scope);
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -317,7 +320,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestTasksCreationPeriodicTrigger")
                 .ruleName(ruleName)
                 .description("A rule to periodically trigger the ingest tasks lambda")
-                .enabled(Boolean.TRUE)
+                .enabled(!deployPaused)
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
