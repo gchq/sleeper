@@ -68,10 +68,12 @@ public class SplitPartitionsUntilNoMoreSplits {
         WaitForCurrentSplitAddingMissingJobs applySplit = new WaitForCurrentSplitAddingMissingJobs(
                 sqsClient, store, systemTestProperties, tableName);
 
+        int splittingRound = 1;
         do {
             WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
                     .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
-            LOGGER.info("Splitting partitions");
+            LOGGER.info("Splitting partitions, round {}", splittingRound);
+            splittingRound++;
             InvokeSystemTestLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
             waitForPartitionSplitting.pollUntilFinished(stateStore);
         } while (applySplit.checkIfSplittingCompactionNeededAndWait()); // Repeat until no more splitting is needed
