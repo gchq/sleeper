@@ -37,6 +37,9 @@ public interface JobQuery {
             case UNFINISHED:
                 return new UnfinishedJobsQuery(tableName);
             case DETAILED:
+                if (queryParameters == null) {
+                    throw new IllegalArgumentException("No parameters provided");
+                }
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
                 return RangeJobsQuery.fromParameters(tableName, queryParameters, clock);
@@ -58,10 +61,6 @@ public interface JobQuery {
         ALL,
         DETAILED,
         RANGE,
-        UNFINISHED;
-
-        public boolean isParametersRequired() {
-            return this == DETAILED;
-        }
+        UNFINISHED
     }
 }
