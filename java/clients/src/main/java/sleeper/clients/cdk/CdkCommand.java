@@ -24,15 +24,19 @@ public interface CdkCommand {
     Stream<String> getArguments();
 
     static CdkDeploy deployPropertiesChange() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).build();
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
     }
 
     static CdkDeploy deployExisting() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).build();
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).deployPaused(false).build();
     }
 
     static CdkDeploy deployNew() {
-        return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).build();
+        return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).deployPaused(false).build();
+    }
+
+    static CdkDeploy deployNewPaused() {
+        return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).deployPaused(true).build();
     }
 
     static CdkDestroy destroy() {

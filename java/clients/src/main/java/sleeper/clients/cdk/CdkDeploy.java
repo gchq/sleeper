@@ -21,10 +21,12 @@ import java.util.stream.Stream;
 public class CdkDeploy implements CdkCommand {
     private final boolean ensureNewInstance;
     private final boolean skipVersionCheck;
+    private final boolean deployPaused;
 
     private CdkDeploy(Builder builder) {
         ensureNewInstance = builder.ensureNewInstance;
         skipVersionCheck = builder.skipVersionCheck;
+        deployPaused = builder.deployPaused;
     }
 
     public static Builder builder() {
@@ -39,7 +41,9 @@ public class CdkDeploy implements CdkCommand {
 
     @Override
     public Stream<String> getArguments() {
-        return Stream.concat(getNewInstanceArguments(), getSkipVersionCheckArguments());
+        return Stream.concat(
+                Stream.concat(getNewInstanceArguments(), getSkipVersionCheckArguments()),
+                getDeployPausedArguments());
     }
 
     private Stream<String> getNewInstanceArguments() {
@@ -58,6 +62,14 @@ public class CdkDeploy implements CdkCommand {
         }
     }
 
+    private Stream<String> getDeployPausedArguments() {
+        if (deployPaused) {
+            return Stream.of("-c", "deployPaused=true");
+        } else {
+            return Stream.empty();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -68,12 +80,13 @@ public class CdkDeploy implements CdkCommand {
         }
         CdkDeploy cdkDeploy = (CdkDeploy) o;
         return ensureNewInstance == cdkDeploy.ensureNewInstance
-                && skipVersionCheck == cdkDeploy.skipVersionCheck;
+                && skipVersionCheck == cdkDeploy.skipVersionCheck
+                && deployPaused == cdkDeploy.deployPaused;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ensureNewInstance, skipVersionCheck);
+        return Objects.hash(ensureNewInstance, skipVersionCheck, deployPaused);
     }
 
     @Override
@@ -81,12 +94,14 @@ public class CdkDeploy implements CdkCommand {
         return "CdkDeploy{" +
                 "ensureNewInstance=" + ensureNewInstance +
                 ", skipVersionCheck=" + skipVersionCheck +
+                ", deployPaused=" + deployPaused +
                 '}';
     }
 
     public static final class Builder {
         private boolean ensureNewInstance;
         private boolean skipVersionCheck;
+        private boolean deployPaused;
 
         private Builder() {
         }
@@ -98,6 +113,11 @@ public class CdkDeploy implements CdkCommand {
 
         public Builder skipVersionCheck(boolean skipVersionCheck) {
             this.skipVersionCheck = skipVersionCheck;
+            return this;
+        }
+
+        public Builder deployPaused(boolean deployPaused) {
+            this.deployPaused = deployPaused;
             return this;
         }
 
