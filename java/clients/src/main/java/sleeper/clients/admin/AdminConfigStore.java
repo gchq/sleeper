@@ -18,7 +18,6 @@ package sleeper.clients.admin;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,14 +57,12 @@ public class AdminConfigStore {
 
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonSQS sqs;
     private final InvokeCdkForInstance cdk;
     private final Path generatedDirectory;
 
-    public AdminConfigStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminConfigStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
-        this.sqs = sqs;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
     }
@@ -211,10 +208,6 @@ public class AdminConfigStore {
     public IngestTaskStatusStore loadIngestTaskStatusStore(String instanceId) {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         return DynamoDBIngestTaskStatusStore.from(dynamoDB, instanceProperties);
-    }
-
-    public AmazonSQS getSqsClient() {
-        return sqs;
     }
 
     public static class CouldNotSaveTableProperties extends CouldNotSaveProperties {

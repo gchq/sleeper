@@ -23,6 +23,7 @@ import sleeper.console.ConsoleHelper;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.MenuOption;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.IngestJobStatusReport;
 import sleeper.status.report.IngestTaskStatusReport;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
@@ -44,13 +45,16 @@ public class IngestStatusReportScreen {
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
     private final AdminConfigStore store;
+    private final QueueMessageCount.Client queueClient;
     private final TableSelectHelper tableSelectHelper;
 
-    public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store,
+                                    QueueMessageCount.Client queueClient) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
+        this.queueClient = queueClient;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
     }
 
@@ -104,7 +108,7 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, IngestJobStatusReportArguments args) {
         new IngestJobStatusReport(store.loadIngestJobStatusStore(properties.get(ID)), args,
-                store.getSqsClient(), properties).run();
+                queueClient, properties).run();
         confirmReturnToMainScreen(out, in);
     }
 

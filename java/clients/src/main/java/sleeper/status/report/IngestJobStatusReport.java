@@ -22,13 +22,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
-import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
@@ -43,18 +42,18 @@ public class IngestJobStatusReport {
     private final IngestJobStatusStore statusStore;
     private final IngestJobStatusReportArguments arguments;
     private final IngestJobStatusReporter ingestJobStatusReporter;
-    private final AmazonSQS sqsClient;
+    private final QueueMessageCount.Client queueClient;
     private final String jobQueueUrl;
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
             IngestJobStatusReportArguments arguments,
-            AmazonSQS sqsClient,
+            QueueMessageCount.Client queueClient,
             InstanceProperties properties) {
         this.statusStore = ingestJobStatusStore;
         this.arguments = arguments;
         this.ingestJobStatusReporter = arguments.getReporter();
-        this.sqsClient = sqsClient;
+        this.queueClient = queueClient;
         this.jobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
     }
 
@@ -71,8 +70,8 @@ public class IngestJobStatusReport {
     }
 
     private int getNumberOfMessagesInQueue() {
-        return CommonJobUtils.getNumberOfMessagesInQueue(jobQueueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+        return queueClient.getQueueMessageCount(jobQueueUrl)
+                .getApproximateNumberOfMessages();
     }
 
     public static void main(String[] args) throws IOException {
@@ -92,6 +91,6 @@ public class IngestJobStatusReport {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        new IngestJobStatusReport(statusStore, arguments, sqsClient, instanceProperties).run();
+        new IngestJobStatusReport(statusStore, arguments, QueueMessageCount.withSqsClient(sqsClient), instanceProperties).run();
     }
 }
