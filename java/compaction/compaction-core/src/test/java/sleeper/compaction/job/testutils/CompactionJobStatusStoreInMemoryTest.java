@@ -108,9 +108,30 @@ class CompactionJobStatusStoreInMemoryTest {
         }
     }
 
-    @Test
-    void shouldGetNoJobs() {
-        assertThat(store.getAllJobs("no-jobs-table")).isEmpty();
+    @Nested
+    @DisplayName("Get all jobs")
+    class GetAllJobs {
+
+        @Test
+        void shouldGetMultipleJobs() {
+            Instant time1 = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
+            CompactionJob job1 = addCreatedJob();
+            Instant time2 = fixStoreTime(Instant.parse("2023-03-29T12:27:43Z"));
+            CompactionJob job2 = addCreatedJob();
+            Instant time3 = fixStoreTime(Instant.parse("2023-03-29T12:27:44Z"));
+            CompactionJob job3 = addCreatedJob();
+
+            assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
+                    .containsExactly(
+                            jobCreated(job3, time3),
+                            jobCreated(job2, time2),
+                            jobCreated(job1, time1));
+        }
+
+        @Test
+        void shouldGetNoJobs() {
+            assertThat(store.getAllJobs("no-jobs-table")).isEmpty();
+        }
     }
 
     private Instant fixStoreTime(Instant now) {
