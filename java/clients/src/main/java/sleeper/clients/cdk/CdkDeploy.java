@@ -41,9 +41,8 @@ public class CdkDeploy implements CdkCommand {
 
     @Override
     public Stream<String> getArguments() {
-        return Stream.concat(
-                Stream.concat(getNewInstanceArguments(), getSkipVersionCheckArguments()),
-                getDeployPausedArguments());
+        return Stream.of(getNewInstanceArguments(), getSkipVersionCheckArguments(), getDeployPausedArguments())
+                .flatMap(s -> s);
     }
 
     private Stream<String> getNewInstanceArguments() {
