@@ -53,6 +53,7 @@ public class DeployNewInstance {
     private final Path instancePropertiesTemplate;
     private final Consumer<Properties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
+    private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
         sts = builder.sts;
@@ -66,6 +67,7 @@ public class DeployNewInstance {
         instancePropertiesTemplate = builder.instancePropertiesTemplate;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
+        deployPaused = builder.deployPaused;
     }
 
     public static Builder builder() {
@@ -73,8 +75,8 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (5 != args.length) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name>");
+        if (args.length < 5 || args.length > 6) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> <optional-deploy-paused-flag>");
         }
         Path scriptsDirectory = Path.of(args[0]);
 
@@ -83,6 +85,7 @@ public class DeployNewInstance {
                 .vpcId(args[2])
                 .subnetId(args[3])
                 .tableName(args[4])
+                .deployPaused(args.length == 6 && "true".equalsIgnoreCase(args[5]))
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
@@ -137,10 +140,11 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
+        CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
         InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .build().invoke(instanceType, CdkCommand.deployNew());
+                .build().invoke(instanceType, cdkCommand);
         LOGGER.info("Finished deployment of new instance");
     }
 
@@ -163,6 +167,7 @@ public class DeployNewInstance {
         private Consumer<Properties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
+        private boolean deployPaused;
 
         private Builder() {
         }
@@ -219,6 +224,11 @@ public class DeployNewInstance {
 
         public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
             this.instanceType = instanceType;
+            return this;
+        }
+
+        public Builder deployPaused(boolean deployPaused) {
+            this.deployPaused = deployPaused;
             return this;
         }
 
