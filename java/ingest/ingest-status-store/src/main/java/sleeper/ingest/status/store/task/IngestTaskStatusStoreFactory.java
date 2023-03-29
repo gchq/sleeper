@@ -24,17 +24,11 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestTaskStatusStoreFactory {
-    private final AmazonDynamoDB dynamoDB;
 
-    public IngestTaskStatusStoreFactory(AmazonDynamoDB dynamoDB) {
-        this.dynamoDB = dynamoDB;
+    private IngestTaskStatusStoreFactory() {
     }
 
     public static IngestTaskStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        return new IngestTaskStatusStoreFactory(dynamoDB).getStatusStore(properties);
-    }
-
-    public IngestTaskStatusStore getStatusStore(InstanceProperties properties) {
         if (Boolean.TRUE.equals(properties.getBoolean(INGEST_STATUS_STORE_ENABLED))) {
             return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
         } else {

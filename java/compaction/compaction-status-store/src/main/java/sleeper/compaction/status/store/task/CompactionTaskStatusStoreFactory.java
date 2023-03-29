@@ -24,17 +24,11 @@ import sleeper.configuration.properties.InstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class CompactionTaskStatusStoreFactory {
-    private final AmazonDynamoDB dynamoDB;
 
-    public CompactionTaskStatusStoreFactory(AmazonDynamoDB dynamoDB) {
-        this.dynamoDB = dynamoDB;
+    private CompactionTaskStatusStoreFactory() {
     }
 
     public static CompactionTaskStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        return new CompactionTaskStatusStoreFactory(dynamoDB).getStatusStore(properties);
-    }
-
-    public CompactionTaskStatusStore getStatusStore(InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
         } else {
