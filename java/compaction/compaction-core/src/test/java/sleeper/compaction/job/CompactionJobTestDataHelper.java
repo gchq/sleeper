@@ -35,16 +35,32 @@ import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
 import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
 import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CompactionJobTestDataHelper {
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
     private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-    private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    private final TableProperties tableProperties;
+    private final CompactionJobFactory jobFactory;
     private List<Partition> partitions;
     private PartitionTree partitionTree;
     private FileInfoFactory fileFactory;
+
+    public CompactionJobTestDataHelper() {
+        InstanceProperties instanceProperties = createInstanceProperties();
+        tableProperties = createTableProperties(schema, instanceProperties);
+        jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    public CompactionJobTestDataHelper(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        tableProperties.setSchema(schema);
+        this.tableProperties = tableProperties;
+        this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    public String tableName() {
+        return tableProperties.get(TABLE_NAME);
+    }
 
     public Partition singlePartition() {
         return singlePartitionTree().getRootPartition();

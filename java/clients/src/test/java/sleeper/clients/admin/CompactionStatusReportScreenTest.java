@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,16 +25,16 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
-import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,8 +54,6 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
@@ -64,26 +63,29 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
-        private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        private final CompactionJobStatusStore compactionJobStatusStore = mock(CompactionJobStatusStore.class);
+        private final CompactionJobStatusStoreInMemory statusStore = new CompactionJobStatusStoreInMemory();
+        private CompactionJob exampleJob;
 
-        private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
-            return List.of(
-                    jobCreated(dataHelper.singleFileCompaction(),
-                            Instant.parse("2023-03-15T17:52:12.001Z"),
-                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))));
+        @BeforeEach
+        void setUp() {
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties tableProperties = createValidTableProperties(properties, "test-table");
+            setInstanceProperties(properties, tableProperties);
+            exampleJob = new CompactionJobTestDataHelper(properties, tableProperties).singleFileCompaction();
+            statusStore.fixTime(Instant.parse("2023-03-15T17:52:12.001Z"));
+            statusStore.jobCreated(exampleJob);
+            statusStore.fixTime(Instant.parse("2023-03-15T17:53:12.123Z"));
+            statusStore.jobStarted(exampleJob, Instant.parse("2023-03-15T17:53:12.001Z"), "test-task-1");
         }
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() throws Exception {
-            // Given
-            when(compactionJobStatusStore.getAllJobs("test-table"))
-                    .thenReturn(exampleJobStatuses(dataHelper));
-
-            // When/Then
+            // When
             String output = runCompactionJobStatusReport()
                     .enterPrompts(JOB_QUERY_ALL_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
+
+            // Then
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -102,14 +104,12 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeUnfinished() throws Exception {
-            // Given
-            when(compactionJobStatusStore.getUnfinishedJobs("test-table"))
-                    .thenReturn(exampleJobStatuses(dataHelper));
-
-            // When/Then
+            // When
             String output = runCompactionJobStatusReport()
                     .enterPrompts(JOB_QUERY_UNFINISHED_OPTION, CONFIRM_PROMPT)
                     .exitGetOutput();
+
+            // Then
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -125,38 +125,31 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeDetailed() throws Exception {
-            // Given
-            List<CompactionJobStatus> jobStatuses = exampleJobStatuses(dataHelper);
-            CompactionJobStatus exampleJob = jobStatuses.get(0);
-            when(compactionJobStatusStore.getJob(exampleJob.getJobId()))
-                    .thenReturn(Optional.of(exampleJob));
-
-            // When/Then
+            // When
             String output = runCompactionJobStatusReport()
-                    .enterPrompts(JOB_QUERY_DETAILED_OPTION, exampleJob.getJobId(), CONFIRM_PROMPT)
+                    .enterPrompts(JOB_QUERY_DETAILED_OPTION, exampleJob.getId(), CONFIRM_PROMPT)
                     .exitGetOutput();
+
+            // Then
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                     .contains("" +
                             "Compaction Job Status Report\n" +
                             "----------------------------\n" +
-                            "Details for job " + exampleJob.getJobId());
+                            "Details for job " + exampleJob.getId());
 
             verifyWithNumberOfInvocations(5);
         }
 
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeRange() throws Exception {
-            // Given
-            when(compactionJobStatusStore.getJobsInTimePeriod("test-table",
-                    Instant.parse("2023-03-10T17:52:12Z"), Instant.parse("2023-03-18T17:52:12Z")))
-                    .thenReturn(exampleJobStatuses(dataHelper));
-
-            // When/Then
+            // When
             String output = runCompactionJobStatusReport()
                     .enterPrompts(JOB_QUERY_RANGE_OPTION, "20230310175212", "20230318175212", CONFIRM_PROMPT)
                     .exitGetOutput();
+
+            // Then
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
@@ -169,11 +162,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private RunAdminClient runCompactionJobStatusReport() {
-            InstanceProperties properties = createValidInstanceProperties();
-            setInstanceProperties(properties, createValidTableProperties(properties, "test-table"));
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
                             COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table")
-                    .statusStore(compactionJobStatusStore);
+                    .statusStore(statusStore);
         }
     }
 

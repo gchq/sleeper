@@ -18,6 +18,7 @@ package sleeper.clients.admin.testutils;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -31,7 +32,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionJobStatusStore() {
         // Given
-        CompactionJobStatusStore store = mock(CompactionJobStatusStore.class);
+        CompactionJobStatusStore store = new CompactionJobStatusStoreInMemory();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
