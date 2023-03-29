@@ -86,7 +86,7 @@ public class CompactionJobStatusReport {
             }
             String instanceId = args[0];
             String tableName = args[1];
-            CompactionJobStatusReporter reporter = getReporter(args);
+            CompactionJobStatusReporter reporter = getReporter(args, 2);
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
@@ -113,8 +113,8 @@ public class CompactionJobStatusReport {
                 "-u (Unfinished jobs)");
     }
 
-    private static CompactionJobStatusReporter getReporter(String[] args) {
-        String reporterType = optionalArgument(args, 2)
+    private static CompactionJobStatusReporter getReporter(String[] args, int index) {
+        String reporterType = optionalArgument(args, index)
                 .map(str -> str.toUpperCase(Locale.ROOT))
                 .orElse(DEFAULT_REPORTER);
         if (!REPORTERS.containsKey(reporterType)) {

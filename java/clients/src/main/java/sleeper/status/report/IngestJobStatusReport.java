@@ -92,15 +92,14 @@ public class IngestJobStatusReport {
             if (args.length < 2 || args.length > 5) {
                 throw new IllegalArgumentException("Wrong number of arguments");
             }
-
+            String instanceId = args[0];
             String tableName = args[1];
-            IngestJobStatusReporter reporter = getReporter(args);
+            IngestJobStatusReporter reporter = getReporter(args, 2);
             JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
-
             AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
 
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
             IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
@@ -124,8 +123,8 @@ public class IngestJobStatusReport {
                 "-u (Unfinished jobs)");
     }
 
-    private static IngestJobStatusReporter getReporter(String[] args) {
-        String reporterType = optionalArgument(args, 2)
+    private static IngestJobStatusReporter getReporter(String[] args, int index) {
+        String reporterType = optionalArgument(args, index)
                 .map(str -> str.toUpperCase(Locale.ROOT))
                 .orElse(DEFAULT_REPORTER);
         if (!REPORTERS.containsKey(reporterType)) {
