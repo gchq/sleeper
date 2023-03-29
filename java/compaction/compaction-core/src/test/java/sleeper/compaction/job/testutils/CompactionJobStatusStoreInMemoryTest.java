@@ -65,7 +65,7 @@ class CompactionJobStatusStoreInMemoryTest {
             Instant storeTime = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
             CompactionJob job = addCreatedJob();
 
-            assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
+            assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobCreated(job, storeTime));
         }
 
@@ -79,7 +79,7 @@ class CompactionJobStatusStoreInMemoryTest {
             fixStoreTime(defaultUpdateTime(startedTime));
             store.jobStarted(job, startedTime, taskId);
 
-            assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
+            assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId, startedCompactionStatus(startedTime)))));
@@ -99,7 +99,7 @@ class CompactionJobStatusStoreInMemoryTest {
             fixStoreTime(defaultUpdateTime(finishedTime));
             store.jobFinished(job, summary(startedTime, finishedTime, 100, 100), taskId);
 
-            assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
+            assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
