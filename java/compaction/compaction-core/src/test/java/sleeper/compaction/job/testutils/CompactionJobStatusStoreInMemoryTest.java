@@ -128,6 +128,31 @@ class CompactionJobStatusStoreInMemoryTest {
         }
     }
 
+    @Nested
+    @DisplayName("Get unfinished jobs")
+    class GetUnfinishedJobs {
+        @Test
+        void shouldGetUnfinishedJobs() {
+            Instant createdTime1 = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime1 = Instant.parse("2023-03-29T12:27:43Z");
+            String taskId1 = "test-task-1";
+            CompactionJob job1 = addStartedJob(createdTime1, startedTime1, taskId1);
+
+            Instant createdTime2 = Instant.parse("2023-03-29T13:27:42Z");
+            Instant startedTime2 = Instant.parse("2023-03-29T13:27:43Z");
+            Instant finishedTime2 = Instant.parse("2023-03-29T13:27:44Z");
+            String taskId2 = "test-task-2";
+
+            addFinishedJob(createdTime2, summary(startedTime2, finishedTime2, 100, 100), taskId2);
+
+            assertThat(store.getUnfinishedJobs(tableProperties.get(TABLE_NAME)))
+                    .containsExactly(
+                            jobStatusFrom(records().fromUpdates(
+                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+        }
+    }
+
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = createCompactionJob();
         store.fixTime(createdTime);
