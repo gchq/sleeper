@@ -20,6 +20,8 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Clock;
@@ -51,6 +53,12 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
     public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
         add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
                 CompactionJobStartedStatus.startAndUpdateTime(startTime, clock.instant()), taskId));
+    }
+
+    @Override
+    public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
+        add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
+                ProcessFinishedStatus.updateTimeAndSummary(clock.instant(), summary), taskId));
     }
 
     @Override

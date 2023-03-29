@@ -32,12 +32,14 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
@@ -65,14 +67,38 @@ class CompactionJobStatusStoreInMemoryTest {
     void shouldGetStartedJob() {
         Instant createdTime = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
         CompactionJob job = addCreatedJob();
+
+        String taskId = "test-task";
         Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
         fixStoreTime(defaultUpdateTime(startedTime));
-        store.jobStarted(job, startedTime, "test-task");
+        store.jobStarted(job, startedTime, taskId);
 
         assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
                 .containsExactly(jobStatusFrom(records().fromUpdates(
                         forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
-                        forJobOnTask(job.getId(), "test-task", startedCompactionStatus(startedTime)))));
+                        forJobOnTask(job.getId(), taskId, startedCompactionStatus(startedTime)))));
+    }
+
+    @Test
+    void shouldGetFinishedJob() {
+        Instant createdTime = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
+        CompactionJob job = addCreatedJob();
+
+        String taskId = "test-task";
+        Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+        fixStoreTime(defaultUpdateTime(startedTime));
+        store.jobStarted(job, startedTime, taskId);
+
+        Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
+        fixStoreTime(defaultUpdateTime(finishedTime));
+        store.jobFinished(job, summary(startedTime, finishedTime, 100, 100), taskId);
+
+        assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
+                .containsExactly(jobStatusFrom(records().fromUpdates(
+                        forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                        forJobOnTask(job.getId(), taskId,
+                                startedCompactionStatus(startedTime),
+                                finishedCompactionStatus(summary(startedTime, finishedTime, 100, 100))))));
     }
 
     private Instant fixStoreTime(Instant now) {
