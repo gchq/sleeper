@@ -79,7 +79,7 @@ public class AdminClient {
                         AmazonS3ClientBuilder.defaultClient(),
                         dynamoDB,
                         cdk, generatedDir),
-                new AdminClientStatusStoreFactory(dynamoDB),
+                AdminClientStatusStoreFactory.from(dynamoDB),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console()),

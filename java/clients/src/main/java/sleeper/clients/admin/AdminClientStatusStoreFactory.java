@@ -27,27 +27,37 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
-public class AdminClientStatusStoreFactory {
+public interface AdminClientStatusStoreFactory {
 
-    private final AmazonDynamoDB dynamoDB;
+    CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties);
 
-    public AdminClientStatusStoreFactory(AmazonDynamoDB dynamoDB) {
-        this.dynamoDB = dynamoDB;
-    }
+    CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties);
 
-    public CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
-        return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
-    }
+    IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties);
 
-    public CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
-        return CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
-    }
+    IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties);
 
-    public IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties) {
-        return IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
-    }
+    static AdminClientStatusStoreFactory from(AmazonDynamoDB dynamoDB) {
+        return new AdminClientStatusStoreFactory() {
+            @Override
+            public CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
+                return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            }
 
-    public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
-        return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            @Override
+            public CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
+                return CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            }
+
+            @Override
+            public IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties) {
+                return IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            }
+
+            @Override
+            public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
+                return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            }
+        };
     }
 }
