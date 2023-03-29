@@ -57,7 +57,6 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
@@ -257,7 +256,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private void createCompactionTaskStatusStore() {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
-            when(store.loadCompactionTaskStatusStore(properties.get(ID)))
+            when(statusStores.loadCompactionTaskStatusStore(properties))
                     .thenReturn(compactionTaskStatusStore);
         }
     }

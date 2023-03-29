@@ -94,9 +94,9 @@ public class CompactionStatusReportScreen {
     private void chooseArgsForCompactionTaskStatusReport(InstanceProperties properties) throws InterruptedException {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use?",
                 new MenuOption("All", () ->
-                        runCompactionTaskStatusReport(properties.get(ID), CompactionTaskQuery.ALL)),
+                        runCompactionTaskStatusReport(properties, CompactionTaskQuery.ALL)),
                 new MenuOption("Unfinished", () ->
-                        runCompactionTaskStatusReport(properties.get(ID), CompactionTaskQuery.UNFINISHED))
+                        runCompactionTaskStatusReport(properties, CompactionTaskQuery.UNFINISHED))
         ).run();
     }
 
@@ -110,8 +110,8 @@ public class CompactionStatusReportScreen {
         confirmReturnToMainScreen(out, in);
     }
 
-    private void runCompactionTaskStatusReport(String instanceId, CompactionTaskQuery queryType) {
-        new CompactionTaskStatusReport(store.loadCompactionTaskStatusStore(instanceId),
+    private void runCompactionTaskStatusReport(InstanceProperties properties, CompactionTaskQuery queryType) {
+        new CompactionTaskStatusReport(statusStores.loadCompactionTaskStatusStore(properties),
                 new StandardCompactionTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }
