@@ -16,7 +16,6 @@
 
 package sleeper.clients.admin;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -70,16 +69,9 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     class IngestJobStatusReport {
         private static final String INGEST_JOB_QUEUE_URL = "test-ingest-queue";
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
-        private final InstanceProperties instanceProperties = createInstanceProperties();
+        private final InstanceProperties instanceProperties = createInstancePropertiesWithJobQueueUrl();
         private final TableProperties tableProperties = createValidTableProperties(instanceProperties, "test-table");
         private final QueueMessageCount.Client queueCounts = singleQueueVisibleMessages(INGEST_JOB_QUEUE_URL, 10);
-
-        @BeforeEach
-        void setUp() {
-            setInstanceProperties(instanceProperties, tableProperties);
-            when(statusStores.loadIngestJobStatusStore(instanceProperties))
-                    .thenReturn(ingestJobStatusStore);
-        }
 
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {
@@ -173,9 +165,10 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private RunAdminClient runIngestJobStatusReport() {
+            setInstanceProperties(instanceProperties, tableProperties);
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
                             INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
-                    .queueClient(queueCounts);
+                    .queueClient(queueCounts).statusStore(ingestJobStatusStore);
         }
 
         private List<IngestJobStatus> oneStartedJobStatus() {
@@ -187,7 +180,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                     "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
         }
 
-        private InstanceProperties createInstanceProperties() {
+        private InstanceProperties createInstancePropertiesWithJobQueueUrl() {
             InstanceProperties properties = createValidInstanceProperties();
             properties.set(SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL, INGEST_JOB_QUEUE_URL);
             return properties;
@@ -207,7 +200,6 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            createIngestTaskStatusStore();
             when(ingestTaskStatusStore.getAllTasks())
                     .thenReturn(exampleTaskStatuses());
 
@@ -231,7 +223,6 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            createIngestTaskStatusStore();
             when(ingestTaskStatusStore.getTasksInProgress())
                     .thenReturn(exampleTaskStatuses());
 
@@ -251,15 +242,10 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private RunAdminClient runIngestTaskStatusReport() {
+            setInstanceProperties(createValidInstanceProperties());
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
-                    INGEST_TASK_STATUS_REPORT_OPTION);
-        }
-
-        private void createIngestTaskStatusStore() {
-            InstanceProperties properties = createValidInstanceProperties();
-            setInstanceProperties(properties);
-            when(statusStores.loadIngestTaskStatusStore(properties))
-                    .thenReturn(ingestTaskStatusStore);
+                            INGEST_TASK_STATUS_REPORT_OPTION)
+                    .statusStore(ingestTaskStatusStore);
         }
     }
 

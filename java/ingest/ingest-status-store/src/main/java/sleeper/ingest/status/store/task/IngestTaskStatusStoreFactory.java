@@ -32,7 +32,7 @@ public class IngestTaskStatusStoreFactory {
         if (Boolean.TRUE.equals(properties.getBoolean(INGEST_STATUS_STORE_ENABLED))) {
             return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
         } else {
-            return IngestTaskStatusStore.none();
+            return IngestTaskStatusStore.NONE;
         }
     }
 }

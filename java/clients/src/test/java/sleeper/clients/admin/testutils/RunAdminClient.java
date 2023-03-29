@@ -20,10 +20,14 @@ import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
 
 import static org.mockito.Mockito.when;
@@ -36,20 +40,18 @@ public class RunAdminClient {
     private final ToStringPrintStream out;
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness store;
-    private final AdminClientStatusStoreFactory statusStores;
+    private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
     private final UpdatePropertiesWithNano editor;
     private QueueMessageCount.Client queueClient = noQueues();
     private final String instanceId;
 
     RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
                    AdminConfigStoreTestHarness store,
-                   AdminClientStatusStoreFactory statusStores,
                    UpdatePropertiesWithNano editor,
                    String instanceId) {
         this.out = out;
         this.in = in;
         this.store = store;
-        this.statusStores = statusStores;
         this.editor = editor;
         this.instanceId = instanceId;
     }
@@ -135,6 +137,30 @@ public class RunAdminClient {
     public RunAdminClient queueClient(QueueMessageCount.Client queueClient) {
         this.queueClient = queueClient;
         return this;
+    }
+
+    public RunAdminClient statusStore(CompactionJobStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(CompactionTaskStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(IngestJobStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(IngestTaskStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public AdminClientStatusStoreFactory statusStores() {
+        return statusStores;
     }
 
     private AdminClient client() {

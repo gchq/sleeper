@@ -32,7 +32,7 @@ public class IngestJobStatusStoreFactory {
         if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return new DynamoDBIngestJobStatusStore(dynamoDB, properties);
         } else {
-            return IngestJobStatusStore.none();
+            return IngestJobStatusStore.NONE;
         }
     }
 }

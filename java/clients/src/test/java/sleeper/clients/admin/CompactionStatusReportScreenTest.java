@@ -37,7 +37,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -78,7 +77,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            createCompactionJobStatusStore();
             when(compactionJobStatusStore.getAllJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
 
@@ -105,7 +103,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            createCompactionJobStatusStore();
             when(compactionJobStatusStore.getUnfinishedJobs("test-table"))
                     .thenReturn(exampleJobStatuses(dataHelper));
 
@@ -129,7 +126,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeDetailed() throws Exception {
             // Given
-            createCompactionJobStatusStore();
             List<CompactionJobStatus> jobStatuses = exampleJobStatuses(dataHelper);
             CompactionJobStatus exampleJob = jobStatuses.get(0);
             when(compactionJobStatusStore.getJob(exampleJob.getJobId()))
@@ -153,7 +149,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeRange() throws Exception {
             // Given
-            createCompactionJobStatusStore();
             when(compactionJobStatusStore.getJobsInTimePeriod("test-table",
                     Instant.parse("2023-03-10T17:52:12Z"), Instant.parse("2023-03-18T17:52:12Z")))
                     .thenReturn(exampleJobStatuses(dataHelper));
@@ -174,15 +169,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private RunAdminClient runCompactionJobStatusReport() {
-            return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
-                    COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table");
-        }
-
-        private void createCompactionJobStatusStore() {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties, createValidTableProperties(properties, "test-table"));
-            when(statusStores.loadCompactionJobStatusStore(same(properties)))
-                    .thenReturn(compactionJobStatusStore);
+            return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
+                            COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table")
+                    .statusStore(compactionJobStatusStore);
         }
     }
 
@@ -198,7 +189,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            createCompactionTaskStatusStore();
             when(compactionTaskStatusStore.getAllTasks())
                     .thenReturn(exampleTaskStatuses());
 
@@ -228,7 +218,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            createCompactionTaskStatusStore();
             when(compactionTaskStatusStore.getTasksInProgress())
                     .thenReturn(exampleTaskStatuses());
 
@@ -250,14 +239,10 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private RunAdminClient runCompactionTaskStatusReport() {
-            return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION);
-        }
-
-        private void createCompactionTaskStatusStore() {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
-            when(statusStores.loadCompactionTaskStatusStore(properties))
-                    .thenReturn(compactionTaskStatusStore);
+            return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION)
+                    .statusStore(compactionTaskStatusStore);
         }
     }
 
