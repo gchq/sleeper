@@ -25,6 +25,7 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfoFactory;
@@ -62,8 +63,8 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetCreatedJob() {
-            Instant storeTime = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
-            CompactionJob job = addCreatedJob();
+            Instant storeTime = Instant.parse("2023-03-29T12:27:42Z");
+            CompactionJob job = addCreatedJob(storeTime);
 
             assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobCreated(job, storeTime));
@@ -71,13 +72,10 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetStartedJob() {
-            Instant createdTime = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
-            CompactionJob job = addCreatedJob();
-
-            String taskId = "test-task";
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
-            fixStoreTime(defaultUpdateTime(startedTime));
-            store.jobStarted(job, startedTime, taskId);
+            String taskId = "test-task";
+            CompactionJob job = addStartedJob(createdTime, startedTime, taskId);
 
             assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
@@ -87,17 +85,13 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetFinishedJob() {
-            Instant createdTime = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
-            CompactionJob job = addCreatedJob();
-
-            String taskId = "test-task";
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
-            fixStoreTime(defaultUpdateTime(startedTime));
-            store.jobStarted(job, startedTime, taskId);
-
             Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
-            fixStoreTime(defaultUpdateTime(finishedTime));
-            store.jobFinished(job, summary(startedTime, finishedTime, 100, 100), taskId);
+            String taskId = "test-task";
+
+            CompactionJob job = addFinishedJob(createdTime,
+                    summary(startedTime, finishedTime, 100, 100), taskId);
 
             assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
@@ -114,12 +108,12 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetMultipleJobs() {
-            Instant time1 = fixStoreTime(Instant.parse("2023-03-29T12:27:42Z"));
-            CompactionJob job1 = addCreatedJob();
-            Instant time2 = fixStoreTime(Instant.parse("2023-03-29T12:27:43Z"));
-            CompactionJob job2 = addCreatedJob();
-            Instant time3 = fixStoreTime(Instant.parse("2023-03-29T12:27:44Z"));
-            CompactionJob job3 = addCreatedJob();
+            Instant time1 = Instant.parse("2023-03-29T12:27:42Z");
+            CompactionJob job1 = addCreatedJob(time1);
+            Instant time2 = Instant.parse("2023-03-29T12:27:43Z");
+            CompactionJob job2 = addCreatedJob(time2);
+            Instant time3 = Instant.parse("2023-03-29T12:27:44Z");
+            CompactionJob job3 = addCreatedJob(time3);
 
             assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(
@@ -134,14 +128,24 @@ class CompactionJobStatusStoreInMemoryTest {
         }
     }
 
-    private Instant fixStoreTime(Instant now) {
-        store.fixTime(now);
-        return now;
+    private CompactionJob addCreatedJob(Instant createdTime) {
+        CompactionJob job = createCompactionJob();
+        store.fixTime(createdTime);
+        store.jobCreated(job);
+        return job;
     }
 
-    private CompactionJob addCreatedJob() {
-        CompactionJob job = createCompactionJob();
-        store.jobCreated(job);
+    private CompactionJob addStartedJob(Instant createdTime, Instant startedTime, String taskId) {
+        CompactionJob job = addCreatedJob(createdTime);
+        store.fixTime(defaultUpdateTime(startedTime));
+        store.jobStarted(job, startedTime, taskId);
+        return job;
+    }
+
+    private CompactionJob addFinishedJob(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
+        CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
+        store.fixTime(defaultUpdateTime(summary.getFinishTime()));
+        store.jobFinished(job, summary, taskId);
         return job;
     }
 
