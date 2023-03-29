@@ -71,7 +71,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobStatus.listFrom(records().fromUpdates(updates).stream());
     }
 
-    private static CompactionJobStatus jobStatusFrom(TestProcessStatusUpdateRecords records) {
+    public static CompactionJobStatus jobStatusFrom(TestProcessStatusUpdateRecords records) {
         List<CompactionJobStatus> built = CompactionJobStatus.listFrom(records.stream());
         if (built.size() != 1) {
             throw new IllegalStateException("Expected single status");
