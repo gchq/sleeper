@@ -24,10 +24,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class CompactionJobStatusStoreFactory {
-    private final AmazonDynamoDB dynamoDB;
 
-    public CompactionJobStatusStoreFactory(AmazonDynamoDB dynamoDB) {
-        this.dynamoDB = dynamoDB;
+    private CompactionJobStatusStoreFactory() {
     }
 
     public static CompactionJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
