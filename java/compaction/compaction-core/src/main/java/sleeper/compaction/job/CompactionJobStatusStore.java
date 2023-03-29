@@ -50,12 +50,6 @@ public interface CompactionJobStatusStore {
         return streamAllJobs(tableName).collect(Collectors.toList());
     }
 
-    default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        return streamAllJobs(tableName)
-                .filter(job -> job.isInPeriod(startTime, endTime))
-                .collect(Collectors.toList());
-    }
-
     default List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
         return streamAllJobs(tableName)
                 .filter(job -> !job.isFinished())
@@ -65,6 +59,12 @@ public interface CompactionJobStatusStore {
     default List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
         return streamAllJobs(tableName)
                 .filter(job -> job.isTaskIdAssigned(taskId))
+                .collect(Collectors.toList());
+    }
+
+    default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+        return streamAllJobs(tableName)
+                .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
 

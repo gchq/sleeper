@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -58,6 +59,14 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
     public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
         add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
                 ProcessFinishedStatus.updateTimeAndSummary(clock.instant(), summary), taskId));
+    }
+
+    @Override
+    public Optional<CompactionJobStatus> getJob(String jobId) {
+        return CompactionJobStatus.streamFrom(tableNameToJobs.values().stream()
+                        .flatMap(TableJobs::streamAllRecords)
+                        .filter(record -> Objects.equals(jobId, record.getJobId())))
+                .findAny();
     }
 
     @Override

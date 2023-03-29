@@ -108,6 +108,35 @@ class CompactionJobStatusStoreInMemoryTest {
     }
 
     @Nested
+    @DisplayName("Get job by ID")
+    class GetJobById {
+        @Test
+        void shouldGetJobById() {
+            // Given
+            Instant storeTime = Instant.parse("2023-03-29T12:27:42Z");
+            CompactionJob job = addCreatedJob(storeTime);
+
+            // When / Then
+            assertThat(store.getJob(job.getId()))
+                    .contains(jobCreated(job, storeTime));
+        }
+
+        @Test
+        void shouldFailToFindJobWhenIdDoesNotMatch() {
+            // Given
+            addCreatedJob(Instant.parse("2023-03-29T12:27:42Z"));
+
+            // When / Then
+            assertThat(store.getJob("not-a-job")).isEmpty();
+        }
+
+        @Test
+        void shouldFailToFindJobWhenNonePresent() {
+            assertThat(store.getJob("not-a-job")).isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("Get all jobs")
     class GetAllJobs {
 
