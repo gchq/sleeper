@@ -21,6 +21,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface CompactionJobStatusStore {
 
@@ -36,16 +38,24 @@ public interface CompactionJobStatusStore {
     default void jobFinished(CompactionJob compactionJob, RecordsProcessedSummary summary, String taskId) {
     }
 
-    default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+    default Stream<CompactionJobStatus> streamAllJobs(String tableName) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
+    }
+
+    default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+        return streamAllJobs(tableName)
+                .filter(job -> job.isInPeriod(startTime, endTime))
+                .collect(Collectors.toList());
     }
 
     default List<CompactionJobStatus> getAllJobs(String tableName) {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
+        return streamAllJobs(tableName).collect(Collectors.toList());
     }
 
     default List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
+        return streamAllJobs(tableName)
+                .filter(job -> !job.isFinished())
+                .collect(Collectors.toList());
     }
 
     default Optional<CompactionJobStatus> getJob(String jobId) {
@@ -53,7 +63,9 @@ public interface CompactionJobStatusStore {
     }
 
     default List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
+        return streamAllJobs(tableName)
+                .filter(job -> job.isTaskIdAssigned(taskId))
+                .collect(Collectors.toList());
     }
 
 }

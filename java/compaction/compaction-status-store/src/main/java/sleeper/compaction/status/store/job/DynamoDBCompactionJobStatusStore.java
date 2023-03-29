@@ -37,11 +37,9 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -128,34 +126,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
+    public Stream<CompactionJobStatus> streamAllJobs(String tableName) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
-                .filter(job -> job.isTaskIdAssigned(taskId))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
-                .filter(job -> !job.isFinished())
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<CompactionJobStatus> getAllJobs(String tableName) {
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                        streamPagedItems(dynamoDB, createScanRequestByTable(tableName)))
-                .filter(job -> job.isInPeriod(startTime, endTime))
-                .collect(Collectors.toList());
+                streamPagedItems(dynamoDB, createScanRequestByTable(tableName)));
     }
 
     private ScanRequest createScanRequestByTable(String tableName) {
