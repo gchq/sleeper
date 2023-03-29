@@ -58,7 +58,6 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
@@ -78,7 +77,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @BeforeEach
         void setUp() {
             setInstanceProperties(instanceProperties, tableProperties);
-            when(store.loadIngestJobStatusStore(instanceProperties.get(ID)))
+            when(statusStores.loadIngestJobStatusStore(instanceProperties))
                     .thenReturn(ingestJobStatusStore);
         }
 
@@ -259,7 +258,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private void createIngestTaskStatusStore() {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
-            when(store.loadIngestTaskStatusStore(properties.get(ID)))
+            when(statusStores.loadIngestTaskStatusStore(properties))
                     .thenReturn(ingestTaskStatusStore);
         }
     }

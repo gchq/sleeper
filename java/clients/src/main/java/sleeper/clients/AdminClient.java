@@ -116,6 +116,6 @@ public class AdminClient {
     }
 
     public IngestStatusReportScreen ingestStatusReportScreen() {
-        return new IngestStatusReportScreen(out, in, store, queueClient);
+        return new IngestStatusReportScreen(out, in, store, statusStores, queueClient);
     }
 }
