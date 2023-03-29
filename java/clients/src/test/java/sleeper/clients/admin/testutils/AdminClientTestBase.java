@@ -62,7 +62,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected RunAdminClient runClient() {
         return new RunAdminClient(
-                out, in, this, editor, INSTANCE_ID);
+                out, in, this, statusStores, editor, INSTANCE_ID);
     }
 
     public abstract void setInstanceProperties(InstanceProperties properties);

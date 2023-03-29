@@ -32,7 +32,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     protected final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
 
     @Override
-    public AdminConfigStore getStore() {
+    public AdminClientPropertiesStore getStore() {
         return store;
     }
 
