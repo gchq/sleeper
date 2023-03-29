@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewTestInstance {
 
@@ -39,7 +40,7 @@ public class DeployNewTestInstance {
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetId(args[4])
-                .deployPaused(args.length == 6 && "true".equalsIgnoreCase(args[5]))
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();
