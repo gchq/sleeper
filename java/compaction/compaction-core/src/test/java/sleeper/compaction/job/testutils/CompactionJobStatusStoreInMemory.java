@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStore {
@@ -62,9 +61,8 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
     }
 
     @Override
-    public List<CompactionJobStatus> getAllJobs(String tableName) {
-        return CompactionJobStatus.streamFrom(streamTableRecords(tableName))
-                .collect(Collectors.toList());
+    public Stream<CompactionJobStatus> streamAllJobs(String tableName) {
+        return CompactionJobStatus.streamFrom(streamTableRecords(tableName));
     }
 
     private void add(String tableName, ProcessStatusUpdateRecord record) {
