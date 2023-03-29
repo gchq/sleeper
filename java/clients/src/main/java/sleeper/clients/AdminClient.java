@@ -33,6 +33,7 @@ import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,14 +46,17 @@ public class AdminClient {
     private final UpdatePropertiesWithNano editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
+    private final QueueMessageCount.Client queueClient;
 
     public AdminClient(AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
-                       UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in) {
+                       UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in,
+                       QueueMessageCount.Client queueClient) {
         this.store = store;
         this.statusStores = statusStores;
         this.editor = editor;
         this.out = out;
         this.in = in;
+        this.queueClient = queueClient;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -74,12 +78,12 @@ public class AdminClient {
                 new AdminClientPropertiesStore(
                         AmazonS3ClientBuilder.defaultClient(),
                         dynamoDB,
-                        AmazonSQSClientBuilder.defaultClient(),
                         cdk, generatedDir),
                 new AdminClientStatusStoreFactory(dynamoDB),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
-                new ConsoleInput(System.console())).start(instanceId);
+                new ConsoleInput(System.console()),
+                QueueMessageCount.withSqsClient(AmazonSQSClientBuilder.defaultClient())).start(instanceId);
     }
 
     public void start(String instanceId) throws InterruptedException {
@@ -112,6 +116,6 @@ public class AdminClient {
     }
 
     public IngestStatusReportScreen ingestStatusReportScreen() {
-        return new IngestStatusReportScreen(out, in, store);
+        return new IngestStatusReportScreen(out, in, store, queueClient);
     }
 }

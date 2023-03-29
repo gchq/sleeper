@@ -33,7 +33,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
@@ -43,7 +42,6 @@ import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.util.ClientUtils.optionalArgument;
 
@@ -88,12 +86,10 @@ public class StatusReport {
         new FilesStatusReport(stateStore, 1000, verbose).run();
 
         // Jobs
-        new CompactionJobStatusReport(compactionStatusStore, CompactionJobStatusReportArguments.builder()
-                .instanceId(instanceProperties.get(ID))
-                .tableName(tableProperties.get(TABLE_NAME))
-                .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(JobQuery.Type.UNFINISHED)
-                .build()).run();
+        new CompactionJobStatusReport(compactionStatusStore,
+                new StandardCompactionJobStatusReporter(),
+                tableProperties.get(TABLE_NAME),
+                JobQuery.Type.UNFINISHED).run();
 
         // Tasks
         new CompactionTaskStatusReport(compactionTaskStatusStore,

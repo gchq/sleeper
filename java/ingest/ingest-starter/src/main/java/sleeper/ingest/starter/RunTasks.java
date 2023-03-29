@@ -25,11 +25,11 @@ import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.QueueMessageCount;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,8 +75,8 @@ public class RunTasks {
 
     public void run() throws InterruptedException {
         // Find out number of messages in queue that are not being processed
-        int queueSize = CommonJobUtils.getNumberOfMessagesInQueue(sqsJobQueueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+        int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
+                .getApproximateNumberOfMessages();
         LOGGER.debug("Queue size is {}", queueSize);
         if (0 == queueSize) {
             LOGGER.info("Finishing as queue size is 0");

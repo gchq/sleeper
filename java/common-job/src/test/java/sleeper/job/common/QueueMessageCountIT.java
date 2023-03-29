@@ -18,7 +18,7 @@ package sleeper.job.common;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
+import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -28,9 +28,10 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
-public class CommonJobUtilsIT {
+class QueueMessageCountIT {
     private static final String TEST_QUEUE_NAME = "test-queue-url";
 
     @Container
@@ -50,16 +51,16 @@ public class CommonJobUtilsIT {
     }
 
     @Test
-    public void shouldReportNoMessagesWhenQueueIsEmpty() {
+    void shouldReportNoMessagesWhenQueueIsEmpty() {
         // Given / When
         AmazonSQS sqsClient = createSQSClient();
         String queueUrl = createQueue(sqsClient);
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
-            assertThat(numberOfMessages).isEqualTo(0);
+            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+                    .getApproximateNumberOfMessages();
+            assertThat(numberOfMessages).isZero();
         } finally {
             sqsClient.deleteQueue(queueUrl);
             sqsClient.shutdown();
@@ -67,7 +68,7 @@ public class CommonJobUtilsIT {
     }
 
     @Test
-    public void shouldReportNumberOfMessagesWhenQueueIsNotEmpty() {
+    void shouldReportNumberOfMessagesWhenQueueIsNotEmpty() {
         // Given
         AmazonSQS sqsClient = createSQSClient();
         String queueUrl = createQueue(sqsClient);
@@ -79,8 +80,8 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+                    .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(10);
         } finally {
             sqsClient.deleteQueue(queueUrl);
@@ -89,7 +90,7 @@ public class CommonJobUtilsIT {
     }
 
     @Test
-    public void shouldReportNumberOfMessagesWhenSomeMessagesHasBeenProcessed() {
+    void shouldReportNumberOfMessagesWhenSomeMessagesHasBeenProcessed() {
         // Given
         AmazonSQS sqsClient = createSQSClient();
         String queueUrl = createQueue(sqsClient);
@@ -104,12 +105,23 @@ public class CommonJobUtilsIT {
 
         // Then
         try {
-            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+                    .getApproximateNumberOfMessages();
             assertThat(numberOfMessages).isEqualTo(7);
         } finally {
             sqsClient.deleteQueue(queueUrl);
             sqsClient.shutdown();
         }
+    }
+
+    @Test
+    void shouldFailWhenQueueDoesNotExist() {
+        // Given
+        AmazonSQS sqsClient = createSQSClient();
+        QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClient);
+
+        // When / Then
+        assertThatThrownBy(() -> queueClient.getQueueMessageCount("non-existent-queue"))
+                .isInstanceOf(QueueDoesNotExistException.class);
     }
 }

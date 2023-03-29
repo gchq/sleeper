@@ -69,6 +69,13 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
         private final CompactionJobStatusStore compactionJobStatusStore = mock(CompactionJobStatusStore.class);
 
+        private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
+            return List.of(
+                    jobCreated(dataHelper.singleFileCompaction(),
+                            Instant.parse("2023-03-15T17:52:12.001Z"),
+                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))));
+        }
+
         @Test
         void shouldRunCompactionJobStatusReportWithQueryTypeAll() throws Exception {
             // Given
@@ -83,8 +90,11 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
+                            "Total jobs: 1\n" +
+                            "\n" +
                             "Total standard jobs: 1\n" +
                             "Total standard jobs pending: 0\n" +
                             "Total standard jobs in progress: 1\n" +
@@ -107,8 +117,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
                             "Total unfinished jobs: 1\n" +
                             "Total unfinished jobs in progress: 1\n" +
                             "Total unfinished jobs not started: 0");
@@ -132,8 +143,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
                             "Details for job " + exampleJob.getJobId());
 
             verifyWithNumberOfInvocations(5);
@@ -154,8 +166,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Job Status Report")
                     .contains("" +
+                            "Compaction Job Status Report\n" +
+                            "----------------------------\n" +
                             "Total jobs in defined range: 1");
 
             verifyWithNumberOfInvocations(6);
@@ -172,19 +185,16 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             when(statusStores.loadCompactionJobStatusStore(same(properties)))
                     .thenReturn(compactionJobStatusStore);
         }
-
-        private List<CompactionJobStatus> exampleJobStatuses(CompactionJobTestDataHelper dataHelper) {
-            return List.of(
-                    jobCreated(dataHelper.singleFileCompaction(),
-                            Instant.parse("2023-03-15T17:52:12.001Z"),
-                            startedCompactionRun("test-task-1", Instant.parse("2023-03-15T17:53:12.001Z"))));
-        }
     }
 
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
         private final CompactionTaskStatusStore compactionTaskStatusStore = mock(CompactionTaskStatusStore.class);
+
+        private List<CompactionTaskStatus> exampleTaskStatuses() {
+            return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
+        }
 
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {
@@ -200,8 +210,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Task Status Report")
                     .contains("" +
+                            "Compaction Task Status Report\n" +
+                            "-----------------------------\n" +
                             "Total tasks: 1\n" +
                             "\n" +
                             "Total standard tasks: 1\n" +
@@ -229,8 +240,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             assertThat(output)
                     .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
                     .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
-                    .contains("Compaction Task Status Report")
                     .contains("" +
+                            "Compaction Task Status Report\n" +
+                            "-----------------------------\n" +
                             "Total tasks in progress: 1\n" +
                             "Total standard tasks in progress: 1\n" +
                             "Total splitting tasks in progress: 0\n");
@@ -247,10 +259,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(properties);
             when(store.loadCompactionTaskStatusStore(properties.get(ID)))
                     .thenReturn(compactionTaskStatusStore);
-        }
-
-        private List<CompactionTaskStatus> exampleTaskStatuses() {
-            return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
         }
     }
 

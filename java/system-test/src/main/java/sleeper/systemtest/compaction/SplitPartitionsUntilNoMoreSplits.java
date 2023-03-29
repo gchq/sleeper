@@ -26,6 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
@@ -39,7 +43,7 @@ public class SplitPartitionsUntilNoMoreSplits {
     private SplitPartitionsUntilNoMoreSplits() {
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, StateStoreException {
         if (args.length != 2) {
             System.out.println("Usage: <instance id> <table name>");
             return;
@@ -56,12 +60,22 @@ public class SplitPartitionsUntilNoMoreSplits {
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
+        TableProperties tableProperties = new TableProperties(systemTestProperties);
+        tableProperties.loadFromS3(s3Client, tableName);
+        StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties)
+                .getStateStore(tableProperties);
+
         WaitForCurrentSplitAddingMissingJobs applySplit = new WaitForCurrentSplitAddingMissingJobs(
                 sqsClient, store, systemTestProperties, tableName);
 
+        int splittingRound = 1;
         do {
-            LOGGER.info("Splitting partitions");
+            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                    .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+            LOGGER.info("Splitting partitions, round {}", splittingRound);
+            splittingRound++;
             InvokeSystemTestLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
-        } while (applySplit.checkIfSplittingNeededAndWait()); // Repeat until no more splitting is needed
+            waitForPartitionSplitting.pollUntilFinished(stateStore);
+        } while (applySplit.checkIfSplittingCompactionNeededAndWait()); // Repeat until no more splitting is needed
     }
 }

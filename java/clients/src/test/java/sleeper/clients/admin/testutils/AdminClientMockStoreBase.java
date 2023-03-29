@@ -32,8 +32,8 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     protected final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
 
     @Override
-    protected RunAdminClient runClient() {
-        return runClient(store);
+    public AdminConfigStore getStore() {
+        return store;
     }
 
     @Override

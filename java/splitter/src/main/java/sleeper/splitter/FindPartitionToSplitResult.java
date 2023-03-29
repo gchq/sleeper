@@ -13,18 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.AdminConfigStore;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+package sleeper.splitter;
 
-public interface AdminConfigStoreTestHarness {
+import sleeper.core.partition.Partition;
+import sleeper.statestore.FileInfo;
 
-    void setInstanceProperties(InstanceProperties properties);
+import java.util.List;
 
-    void setInstanceProperties(
-            InstanceProperties instanceProperties, TableProperties tableProperties);
+public class FindPartitionToSplitResult {
+    private final Partition partition;
+    private final List<FileInfo> relevantFiles;
 
-    AdminConfigStore getStore();
+    public FindPartitionToSplitResult(Partition partition, List<FileInfo> relevantFiles) {
+        this.partition = partition;
+        this.relevantFiles = relevantFiles;
+    }
+
+    public Partition getPartition() {
+        return partition;
+    }
+
+    public List<FileInfo> getRelevantFiles() {
+        return relevantFiles;
+    }
 }
