@@ -29,7 +29,7 @@ public class IngestTaskStatusStoreFactory {
     }
 
     public static IngestTaskStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(INGEST_STATUS_STORE_ENABLED))) {
+        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
         } else {
             return IngestTaskStatusStore.NONE;
