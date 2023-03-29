@@ -99,7 +99,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .create(this, "GarbageCollectorPeriodicTrigger")
                 .ruleName(instanceProperties.get(ID) + "-GarbageCollectorPeriodicTrigger")
                 .description("A rule to periodically trigger the garbage collector")
-                .enabled(!shouldDeployPaused(scope))
+                .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
