@@ -63,20 +63,24 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetCreatedJob() {
+            // Given
             Instant storeTime = Instant.parse("2023-03-29T12:27:42Z");
             CompactionJob job = addCreatedJob(storeTime);
 
+            // When / Then
             assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobCreated(job, storeTime));
         }
 
         @Test
         void shouldGetStartedJob() {
+            // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
             String taskId = "test-task";
             CompactionJob job = addStartedJob(createdTime, startedTime, taskId);
 
+            // When / Then
             assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
@@ -85,14 +89,15 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetFinishedJob() {
+            // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
             Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
             String taskId = "test-task";
-
             CompactionJob job = addFinishedJob(createdTime,
                     summary(startedTime, finishedTime, 100, 100), taskId);
 
+            // When / Then
             assertThat(store.streamAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
@@ -108,6 +113,7 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetMultipleJobs() {
+            // Given
             Instant time1 = Instant.parse("2023-03-29T12:27:42Z");
             CompactionJob job1 = addCreatedJob(time1);
             Instant time2 = Instant.parse("2023-03-29T12:27:43Z");
@@ -115,6 +121,7 @@ class CompactionJobStatusStoreInMemoryTest {
             Instant time3 = Instant.parse("2023-03-29T12:27:44Z");
             CompactionJob job3 = addCreatedJob(time3);
 
+            // When / Then
             assertThat(store.getAllJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(
                             jobCreated(job3, time3),
@@ -133,6 +140,7 @@ class CompactionJobStatusStoreInMemoryTest {
     class GetUnfinishedJobs {
         @Test
         void shouldGetUnfinishedJobs() {
+            // Given
             Instant createdTime1 = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime1 = Instant.parse("2023-03-29T12:27:43Z");
             String taskId1 = "test-task-1";
@@ -142,14 +150,31 @@ class CompactionJobStatusStoreInMemoryTest {
             Instant startedTime2 = Instant.parse("2023-03-29T13:27:43Z");
             Instant finishedTime2 = Instant.parse("2023-03-29T13:27:44Z");
             String taskId2 = "test-task-2";
-
             addFinishedJob(createdTime2, summary(startedTime2, finishedTime2, 100, 100), taskId2);
 
+            // When / Then
             assertThat(store.getUnfinishedJobs(tableProperties.get(TABLE_NAME)))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
                                     forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+        }
+
+        @Test
+        void shouldGetNoJobsWhenNoneUnfinished() {
+            // Given
+            addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
+                    summary(Instant.parse("2023-03-29T15:11:12Z"),
+                            Instant.parse("2023-03-29T15:12:12Z"),
+                            100, 100), "test-task");
+
+            // When / Then
+            assertThat(store.getUnfinishedJobs(tableProperties.get(TABLE_NAME))).isEmpty();
+        }
+
+        @Test
+        void shouldGetNoJobsWhenNonePresent() {
+            assertThat(store.getUnfinishedJobs(tableProperties.get(TABLE_NAME))).isEmpty();
         }
     }
 
