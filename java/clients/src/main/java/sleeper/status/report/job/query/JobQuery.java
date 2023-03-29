@@ -31,15 +31,15 @@ public interface JobQuery {
     List<IngestJobStatus> run(IngestJobStatusStore statusStore);
 
     static JobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
+        if (queryType.isParametersRequired() && queryParameters == null) {
+            throw new IllegalArgumentException("No parameters provided");
+        }
         switch (queryType) {
             case ALL:
                 return new AllJobsQuery(tableName);
             case UNFINISHED:
                 return new UnfinishedJobsQuery(tableName);
             case DETAILED:
-                if (queryParameters == null) {
-                    throw new IllegalArgumentException("No parameters provided");
-                }
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
                 return RangeJobsQuery.fromParameters(tableName, queryParameters, clock);
@@ -61,6 +61,10 @@ public interface JobQuery {
         ALL,
         DETAILED,
         RANGE,
-        UNFINISHED
+        UNFINISHED;
+
+        public boolean isParametersRequired() {
+            return this == DETAILED;
+        }
     }
 }
