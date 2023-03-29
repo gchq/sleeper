@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -85,7 +86,7 @@ public class DeployNewInstance {
                 .vpcId(args[2])
                 .subnetId(args[3])
                 .tableName(args[4])
-                .deployPaused(args.length == 6 && "true".equalsIgnoreCase(args[5]))
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
