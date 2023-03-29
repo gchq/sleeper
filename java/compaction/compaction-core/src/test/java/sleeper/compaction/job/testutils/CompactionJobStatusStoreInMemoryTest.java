@@ -207,6 +207,48 @@ class CompactionJobStatusStoreInMemoryTest {
         }
     }
 
+    @Nested
+    @DisplayName("Get jobs by task ID")
+    class GetJobsByTaskId {
+        @Test
+        void shouldGetJobsByTaskId() {
+            // Given
+            Instant createdTime1 = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime1 = Instant.parse("2023-03-29T12:27:43Z");
+            String taskId1 = "test-task-1";
+            CompactionJob job1 = addStartedJob(createdTime1, startedTime1, taskId1);
+
+            Instant createdTime2 = Instant.parse("2023-03-29T13:27:42Z");
+            Instant startedTime2 = Instant.parse("2023-03-29T13:27:43Z");
+            String taskId2 = "test-task-2";
+            addStartedJob(createdTime2, startedTime2, taskId2);
+
+            // When / Then
+            assertThat(store.getJobsByTaskId(tableProperties.get(TABLE_NAME), taskId1))
+                    .containsExactly(
+                            jobStatusFrom(records().fromUpdates(
+                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJobOnTask(job1.getId(), taskId1, startedCompactionStatus(startedTime1)))));
+        }
+
+        @Test
+        void shouldGetNoJobsWhenNoneForGivenTask() {
+            // Given
+            addFinishedJob(Instant.parse("2023-03-29T15:10:12Z"),
+                    summary(Instant.parse("2023-03-29T15:11:12Z"),
+                            Instant.parse("2023-03-29T15:12:12Z"),
+                            100, 100), "test-task");
+
+            // When / Then
+            assertThat(store.getJobsByTaskId(tableProperties.get(TABLE_NAME), "other-task")).isEmpty();
+        }
+
+        @Test
+        void shouldGetNoJobsWhenNonePresent() {
+            assertThat(store.getJobsByTaskId(tableProperties.get(TABLE_NAME), "some-task")).isEmpty();
+        }
+    }
+
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = createCompactionJob();
         store.fixTime(createdTime);
