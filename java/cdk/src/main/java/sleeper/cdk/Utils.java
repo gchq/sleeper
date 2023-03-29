@@ -223,7 +223,7 @@ public class Utils {
     }
 
     public static boolean shouldDeployPaused(Construct scope) {
-        return "true".equalsIgnoreCase(scope.getNode().tryGetContext("deployPaused").toString());
+        return "true".equalsIgnoreCase((String) scope.getNode().tryGetContext("deployPaused"));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
