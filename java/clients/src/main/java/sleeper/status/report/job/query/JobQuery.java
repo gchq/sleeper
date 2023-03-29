@@ -32,7 +32,7 @@ public interface JobQuery {
 
     static JobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
-            throw new IllegalArgumentException("No parameters provided");
+            throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
         switch (queryType) {
             case ALL:
