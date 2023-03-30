@@ -22,7 +22,6 @@ import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
@@ -30,11 +29,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.job.common.RunECSTasks;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.
@@ -101,52 +99,32 @@ public class RunTasks {
 
         // Create 1 task per ingest jobs up to the maximum number of tasks to create
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
-        LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        for (int i = 0; i < numberOfTasksToCreate; i++) {
-            if (i > 0) {
-                // Rate limit for Fargate tasks is 100 burst, 20 sustained.
-                // Rate limit for ECS task creation API is 20 burst, 20 sustained.
-                // To stay below this limit we create 10 tasks once per second.
-                // See documentation:
-                // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
-                sleepForSustainedRatePerSecond(1);
-            }
-            int remainingTasksToCreate = maxNumTasksToCreate - i;
-            int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
 
-            List<String> args = new ArrayList<>();
-            args.add(bucketName);
+        List<String> args = new ArrayList<>();
+        args.add(bucketName);
 
-            ContainerOverride containerOverride = new ContainerOverride()
-                    .withName(containerName)
-                    .withCommand(args);
+        ContainerOverride containerOverride = new ContainerOverride()
+                .withName(containerName)
+                .withCommand(args);
 
-            TaskOverride override = new TaskOverride()
-                    .withContainerOverrides(containerOverride);
+        TaskOverride override = new TaskOverride()
+                .withContainerOverrides(containerOverride);
 
-            AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                    .withSubnets(subnet);
+        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
+                .withSubnets(subnet);
 
-            NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                    .withAwsvpcConfiguration(vpcConfiguration);
+        NetworkConfiguration networkConfiguration = new NetworkConfiguration()
+                .withAwsvpcConfiguration(vpcConfiguration);
 
-            RunTaskRequest runTaskRequest = new RunTaskRequest()
-                    .withCluster(clusterName)
-                    .withLaunchType(LaunchType.FARGATE)
-                    .withTaskDefinition(taskDefinition)
-                    .withNetworkConfiguration(networkConfiguration)
-                    .withOverrides(override)
-                    .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                    .withPlatformVersion(fargateVersion)
-                    .withCount(tasksToCreateThisRound);
+        RunTaskRequest runTaskRequest = new RunTaskRequest()
+                .withCluster(clusterName)
+                .withLaunchType(LaunchType.FARGATE)
+                .withTaskDefinition(taskDefinition)
+                .withNetworkConfiguration(networkConfiguration)
+                .withOverrides(override)
+                .withPropagateTags(PropagateTags.TASK_DEFINITION)
+                .withPlatformVersion(fargateVersion);
 
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {}",
-                    clusterName, containerName, taskDefinition);
-            if (runTaskResult.getFailures().size() > 0) {
-                LOGGER.error("Run task request has {} failures", runTaskResult.getFailures().size());
-                return;
-            }
-        }
+        RunECSTasks.runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate);
     }
 }
