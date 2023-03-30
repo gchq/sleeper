@@ -102,7 +102,7 @@ public class RunTasks {
         // Create 1 task per ingest jobs up to the maximum number of tasks to create
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        for (int i = 0; i < numberOfTasksToCreate; i++) {
+        for (int i = 0; i < numberOfTasksToCreate; i+=10) {
             if (i > 0) {
                 // Rate limit for Fargate tasks is 100 burst, 20 sustained.
                 // Rate limit for ECS task creation API is 20 burst, 20 sustained.
@@ -141,8 +141,8 @@ public class RunTasks {
                     .withCount(tasksToCreateThisRound);
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {}",
-                    clusterName, containerName, taskDefinition);
+            LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {}, number of tasks to create = {})",
+                    clusterName, containerName, taskDefinition, tasksToCreateThisRound);
             if (runTaskResult.getFailures().size() > 0) {
                 LOGGER.error("Run task request has {} failures", runTaskResult.getFailures().size());
                 return;
