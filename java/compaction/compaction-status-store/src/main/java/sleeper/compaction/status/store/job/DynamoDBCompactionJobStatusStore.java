@@ -44,7 +44,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
@@ -57,7 +56,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     private final String statusTableName;
     private final DynamoDBCompactionJobStatusFormat format;
 
-    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
@@ -67,14 +66,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         this.statusTableName = jobStatusTableName(properties.get(ID));
         int timeToLiveInSeconds = properties.getInt(UserDefinedInstanceProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS);
         format = new DynamoDBCompactionJobStatusFormat(timeToLiveInSeconds, getTimeNow);
-    }
-
-    public static CompactionJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new DynamoDBCompactionJobStatusStore(dynamoDB, properties);
-        } else {
-            return CompactionJobStatusStore.NONE;
-        }
     }
 
     public static String jobStatusTableName(String instanceId) {

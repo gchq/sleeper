@@ -22,7 +22,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
@@ -94,7 +94,7 @@ public class CompactionJobStatusReport {
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
 
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-            CompactionJobStatusStore statusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+            CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             new CompactionJobStatusReport(statusStore, reporter, tableName, queryType, queryParameters).run();
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());

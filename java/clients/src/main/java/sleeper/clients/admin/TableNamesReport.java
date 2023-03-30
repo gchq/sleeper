@@ -26,9 +26,9 @@ public class TableNamesReport {
 
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
 
-    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
         this.out = out;
         this.in = in;
         this.store = store;

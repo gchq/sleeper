@@ -24,10 +24,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IngestJobStatusStore {
-    static IngestJobStatusStore none() {
-        return new IngestJobStatusStore() {
-        };
-    }
+    IngestJobStatusStore NONE = new IngestJobStatusStore() {
+    };
 
     default void jobStarted(String taskId, IngestJob job, Instant startTime) {
     }

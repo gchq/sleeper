@@ -24,10 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.cdk.CdkCommand;
 import sleeper.clients.cdk.InvokeCdkForInstance;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
-import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -35,10 +31,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
@@ -52,15 +44,15 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class AdminConfigStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminConfigStore.class);
+public class AdminClientPropertiesStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
 
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
     private final Path generatedDirectory;
 
-    public AdminConfigStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.cdk = cdk;
@@ -188,26 +180,6 @@ public class AdminConfigStore {
         public CouldNotLoadTableProperties(String instanceId, String tableName, Throwable cause) {
             super("Could not load properties for table " + tableName + " in instance " + instanceId, cause);
         }
-    }
-
-    public CompactionJobStatusStore loadCompactionJobStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
-    }
-
-    public CompactionTaskStatusStore loadCompactionTaskStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBCompactionTaskStatusStore.from(dynamoDB, instanceProperties);
-    }
-
-    public IngestJobStatusStore loadIngestJobStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBIngestJobStatusStore.from(dynamoDB, instanceProperties);
-    }
-
-    public IngestTaskStatusStore loadIngestTaskStatusStore(String instanceId) {
-        InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
-        return DynamoDBIngestTaskStatusStore.from(dynamoDB, instanceProperties);
     }
 
     public static class CouldNotSaveTableProperties extends CouldNotSaveProperties {

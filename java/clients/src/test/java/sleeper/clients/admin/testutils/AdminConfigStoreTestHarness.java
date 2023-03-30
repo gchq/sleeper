@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.AdminConfigStore;
+import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -26,5 +26,5 @@ public interface AdminConfigStoreTestHarness {
     void setInstanceProperties(
             InstanceProperties instanceProperties, TableProperties tableProperties);
 
-    AdminConfigStore getStore();
+    AdminClientPropertiesStore getStore();
 }

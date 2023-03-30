@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -235,8 +235,8 @@ public class CompactSortedFilesRunner {
             throws InterruptedException, IOException, ObjectFactoryException, ActionException {
         if (2 != args.length) {
             System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
-                            + args.length
-                            + " arguments (" + StringUtils.join(args, ',') + ")");
+                    + args.length
+                    + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
 
@@ -252,9 +252,9 @@ public class CompactSortedFilesRunner {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient,
+        CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
-        CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient,
+        CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
 
         String sqsJobQueueUrl;

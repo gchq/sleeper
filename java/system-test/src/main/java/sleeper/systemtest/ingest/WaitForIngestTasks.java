@@ -27,7 +27,7 @@ import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.SystemTestProperties;
@@ -92,7 +92,7 @@ public class WaitForIngestTasks {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        IngestTaskStatusStore taskStatusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, systemTestProperties);
+        IngestTaskStatusStore taskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
         WaitForIngestTasks wait = new WaitForIngestTasks(systemTestProperties, sqsClient, taskStatusStore);
         wait.pollUntilFinished();

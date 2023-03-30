@@ -31,6 +31,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -58,7 +59,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
-    protected final IngestJobStatusStore store = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
+    protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {

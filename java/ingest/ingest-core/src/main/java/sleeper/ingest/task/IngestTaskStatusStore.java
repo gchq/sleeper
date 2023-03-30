@@ -21,10 +21,8 @@ import java.util.List;
 
 public interface IngestTaskStatusStore {
 
-    static IngestTaskStatusStore none() {
-        return new IngestTaskStatusStore() {
-        };
-    }
+    IngestTaskStatusStore NONE = new IngestTaskStatusStore() {
+    };
 
     default void taskStarted(IngestTaskStatus taskStatus) {
     }

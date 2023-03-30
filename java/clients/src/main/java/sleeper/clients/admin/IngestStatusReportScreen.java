@@ -43,16 +43,19 @@ public class IngestStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
+    private final AdminClientStatusStoreFactory statusStores;
     private final QueueMessageCount.Client queueClient;
     private final TableSelectHelper tableSelectHelper;
 
-    public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store,
+    public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store,
+                                    AdminClientStatusStoreFactory statusStores,
                                     QueueMessageCount.Client queueClient) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
+        this.statusStores = statusStores;
         this.queueClient = queueClient;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
     }
@@ -69,7 +72,7 @@ public class IngestStatusReportScreen {
                     new MenuOption("Ingest Job Status Report", () ->
                             chooseArgsForIngestJobStatusReport(properties)),
                     new MenuOption("Ingest Task Status Report", () ->
-                            chooseArgsForIngestTaskStatusReport(properties.get(ID)))
+                            chooseArgsForIngestTaskStatusReport(properties))
             ).run();
         }
     }
@@ -91,12 +94,12 @@ public class IngestStatusReportScreen {
         }
     }
 
-    private void chooseArgsForIngestTaskStatusReport(String instanceId) throws InterruptedException {
+    private void chooseArgsForIngestTaskStatusReport(InstanceProperties properties) throws InterruptedException {
         consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                 new MenuOption("All", () ->
-                        runIngestTaskStatusReport(instanceId, IngestTaskQuery.ALL)),
+                        runIngestTaskStatusReport(properties, IngestTaskQuery.ALL)),
                 new MenuOption("Unfinished", () ->
-                        runIngestTaskStatusReport(instanceId, IngestTaskQuery.UNFINISHED))
+                        runIngestTaskStatusReport(properties, IngestTaskQuery.UNFINISHED))
         ).run();
     }
 
@@ -107,14 +110,14 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, String tableName,
                                           JobQuery.Type queryType, String queryParameters) {
-        new IngestJobStatusReport(store.loadIngestJobStatusStore(properties.get(ID)), tableName, queryType, queryParameters,
+        new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), tableName, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties).run();
         confirmReturnToMainScreen(out, in);
     }
 
-    private void runIngestTaskStatusReport(String instanceId, IngestTaskQuery queryType) {
-        new IngestTaskStatusReport(store.loadIngestTaskStatusStore(instanceId),
+    private void runIngestTaskStatusReport(InstanceProperties properties, IngestTaskQuery queryType) {
+        new IngestTaskStatusReport(statusStores.loadIngestTaskStatusStore(properties),
                 new StandardIngestTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }
