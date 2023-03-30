@@ -80,12 +80,12 @@ public class RunECSTasks {
                     new ContainerNames(runTaskResult), new TaskDefinitionArns(runTaskResult));
 
             if (checkFailure(runTaskResult)) {
-                break;
+                return;
             }
 
             if (checkAbort.getAsBoolean()) {
                 LOGGER.info("Aborting running ECS tasks");
-                break;
+                return;
             }
         }
     }
