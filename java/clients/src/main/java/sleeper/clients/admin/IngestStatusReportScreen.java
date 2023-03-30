@@ -26,7 +26,6 @@ import sleeper.console.menu.MenuOption;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.IngestJobStatusReport;
 import sleeper.status.report.IngestTaskStatusReport;
-import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.status.report.ingest.task.IngestTaskQuery;
 import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
@@ -79,20 +78,15 @@ public class IngestStatusReportScreen {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties.get(ID));
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
-            IngestJobStatusReportArguments.Builder argsBuilder = IngestJobStatusReportArguments.builder()
-                    .instanceId(properties.get(ID)).tableName(tableName)
-                    .reporter(new StandardIngestJobStatusReporter(out.printStream()));
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
-                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.ALL).build())),
+                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.ALL)),
                     new MenuOption("Unfinished", () ->
-                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.UNFINISHED).build())),
+                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.UNFINISHED)),
                     new MenuOption("Detailed", () ->
-                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.DETAILED)
-                                    .queryParameters(promptForJobId(in)).build())),
+                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.DETAILED, promptForJobId(in))),
                     new MenuOption("Range", () ->
-                            runIngestJobStatusReport(properties, argsBuilder.queryType(JobQuery.Type.RANGE)
-                                    .queryParameters(promptForRange(in)).build()))
+                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.RANGE, promptForRange(in)))
             ).run();
         }
     }
@@ -106,8 +100,15 @@ public class IngestStatusReportScreen {
         ).run();
     }
 
-    private void runIngestJobStatusReport(InstanceProperties properties, IngestJobStatusReportArguments args) {
-        new IngestJobStatusReport(store.loadIngestJobStatusStore(properties.get(ID)), args,
+    private void runIngestJobStatusReport(InstanceProperties properties, String tableName,
+                                          JobQuery.Type queryType) {
+        runIngestJobStatusReport(properties, tableName, queryType, "");
+    }
+
+    private void runIngestJobStatusReport(InstanceProperties properties, String tableName,
+                                          JobQuery.Type queryType, String queryParameters) {
+        new IngestJobStatusReport(store.loadIngestJobStatusStore(properties.get(ID)), tableName, queryType, queryParameters,
+                new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties).run();
         confirmReturnToMainScreen(out, in);
     }
