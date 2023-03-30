@@ -107,7 +107,7 @@ public class CompactionTaskStatusStoreInMemoryTest {
                     .taskId("test-task-1").build();
             CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
                     Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
-            CompactionTaskStatus started2 = startedStatusBuilder(Instant.parse("2023-03-30T11:45:00Z"))
+            CompactionTaskStatus started2 = startedStatusBuilder(Instant.parse("2023-03-30T12:44:00Z"))
                     .taskId("test-task-2").build();
             CompactionTaskStatus finished2 = finishedStatusWithDefaultSummary("test-task-2",
                     Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
