@@ -27,9 +27,9 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 

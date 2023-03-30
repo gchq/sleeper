@@ -18,8 +18,8 @@ package sleeper.clients.admin.testutils;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
