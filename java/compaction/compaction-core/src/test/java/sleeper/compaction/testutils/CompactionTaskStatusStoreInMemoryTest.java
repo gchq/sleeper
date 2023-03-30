@@ -98,6 +98,37 @@ public class CompactionTaskStatusStoreInMemoryTest {
     }
 
     @Nested
+    @DisplayName("Get task by ID")
+    class GetTaskById {
+
+        @Test
+        void shouldGetTaskById() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults()
+                    .taskId("some-test-task-id").build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThat(store.getTask("some-test-task-id")).isEqualTo(started);
+        }
+
+        @Test
+        void shouldGetNoTaskById() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults()
+                    .taskId("some-test-task-id").build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThat(store.getTask("other-test-task-id")).isNull();
+        }
+    }
+
+    @Nested
     @DisplayName("Get all tasks")
     class GetAllTasks {
         @Test
@@ -130,40 +161,65 @@ public class CompactionTaskStatusStoreInMemoryTest {
         }
     }
 
+    @DisplayName("Get unfinished tasks")
     @Nested
-    @DisplayName("Get task by ID")
-    class GetTaskById {
-
+    class GetUnfinishedTasks {
         @Test
-        void shouldGetTaskById() {
+        void shouldGetUnfinishedTask() {
             // Given
-            CompactionTaskStatus started = startedStatusBuilderWithDefaults()
-                    .taskId("some-test-task-id").build();
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
 
             // When
             store.taskStarted(started);
 
             // Then
-            assertThat(store.getTask("some-test-task-id")).isEqualTo(started);
+            assertThat(store.getTasksInProgress())
+                    .containsExactly(started);
         }
 
         @Test
-        void shouldGetNoTaskById() {
+        void shouldGetMultipleTasks() {
             // Given
-            CompactionTaskStatus started = startedStatusBuilderWithDefaults()
-                    .taskId("some-test-task-id").build();
+            CompactionTaskStatus started1 = startedStatusBuilderWithDefaults()
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus started2 = startedStatusBuilderWithDefaults()
+                    .taskId("test-task-2").build();
 
             // When
-            store.taskStarted(started);
+            store.taskStarted(started1);
+            store.taskStarted(started2);
 
             // Then
-            assertThat(store.getTask("other-test-task-id")).isNull();
+            assertThat(store.getTasksInProgress())
+                    .containsExactly(started2, started1);
+        }
+
+        @Test
+        void shouldGetNoTasksWhenTasksAreFinished() {
+            // Given
+            CompactionTaskStatus started1 = startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"))
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
+                    Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
+
+            // When
+            store.taskStarted(started1);
+            store.taskFinished(finished1);
+
+            // Then
+            assertThat(store.getTasksInProgress()).isEmpty();
+        }
+
+        @Test
+        void shouldGetNoTasksWhenNoneInStore() {
+            // When/Then
+            assertThat(store.getTasksInProgress()).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("Get tasks in period")
-    class GetTasksInPeriod {
+    @DisplayName("Get tasks in time period")
+    class GetTasksInTimePeriod {
 
         @Test
         void shouldGetTaskInPeriod() {
@@ -230,62 +286,6 @@ public class CompactionTaskStatusStoreInMemoryTest {
                     Instant.parse("2023-03-30T12:30:00Z"),
                     Instant.parse("2023-03-30T13:30:00Z")))
                     .isEmpty();
-        }
-    }
-
-    @DisplayName("Get unfinished tasks")
-    @Nested
-    class GetUnfinishedTasks {
-        @Test
-        void shouldGetUnfinishedTask() {
-            // Given
-            CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
-
-            // When
-            store.taskStarted(started);
-
-            // Then
-            assertThat(store.getTasksInProgress())
-                    .containsExactly(started);
-        }
-
-        @Test
-        void shouldGetMultipleTasks() {
-            // Given
-            CompactionTaskStatus started1 = startedStatusBuilderWithDefaults()
-                    .taskId("test-task-1").build();
-            CompactionTaskStatus started2 = startedStatusBuilderWithDefaults()
-                    .taskId("test-task-2").build();
-
-            // When
-            store.taskStarted(started1);
-            store.taskStarted(started2);
-
-            // Then
-            assertThat(store.getTasksInProgress())
-                    .containsExactly(started2, started1);
-        }
-
-        @Test
-        void shouldGetNoTasksWhenTasksAreFinished() {
-            // Given
-            CompactionTaskStatus started1 = startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"))
-                    .taskId("test-task-1").build();
-            CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
-                    Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
-
-            // When
-            store.taskStarted(started1);
-            store.taskFinished(finished1);
-
-            // Then
-            assertThat(store.getTasksInProgress()).isEmpty();
-        }
-
-        @Test
-        void shouldGetNoTasksWhenNoneInStore() {
-            // When/Then
-            assertThat(store.getTasksInProgress()).isEmpty();
         }
     }
 }
