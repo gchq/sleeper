@@ -46,11 +46,11 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 import static sleeper.systemtest.cdk.SystemTestStack.SYSTEM_TEST_CONTAINER;
-import static sleeper.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 /**
  * Runs ECS tasks to write random data.

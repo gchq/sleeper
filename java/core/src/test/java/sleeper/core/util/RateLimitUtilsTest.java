@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.utils;
+package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.util.RateLimitUtils.calculateMillisSleepForSustainedRatePerSecond;
+import static sleeper.core.util.RateLimitUtils.calculateMillisSleepForSustainedRatePerSecond;
 
 class RateLimitUtilsTest {
 
