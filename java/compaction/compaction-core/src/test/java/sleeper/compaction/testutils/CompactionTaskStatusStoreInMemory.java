@@ -64,6 +64,12 @@ public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusSt
                 .filter(task -> task.isInPeriod(startTime, endTime)));
     }
 
+    @Override
+    public List<CompactionTaskStatus> getTasksInProgress() {
+        return reverse(statusByTaskId.values().stream()
+                .filter(task -> !task.isFinished()));
+    }
+
     private static List<CompactionTaskStatus> reverse(Stream<CompactionTaskStatus> tasks) {
         LinkedList<CompactionTaskStatus> list = new LinkedList<>();
         tasks.forEach(list::push);

@@ -232,4 +232,60 @@ public class CompactionTaskStatusStoreInMemoryTest {
                     .isEmpty();
         }
     }
+
+    @DisplayName("Get unfinished tasks")
+    @Nested
+    class GetUnfinishedTasks {
+        @Test
+        void shouldGetUnfinishedTask() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThat(store.getTasksInProgress())
+                    .containsExactly(started);
+        }
+
+        @Test
+        void shouldGetMultipleTasks() {
+            // Given
+            CompactionTaskStatus started1 = startedStatusBuilderWithDefaults()
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus started2 = startedStatusBuilderWithDefaults()
+                    .taskId("test-task-2").build();
+
+            // When
+            store.taskStarted(started1);
+            store.taskStarted(started2);
+
+            // Then
+            assertThat(store.getTasksInProgress())
+                    .containsExactly(started2, started1);
+        }
+
+        @Test
+        void shouldGetNoTasksWhenTasksAreFinished() {
+            // Given
+            CompactionTaskStatus started1 = startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"))
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
+                    Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
+
+            // When
+            store.taskStarted(started1);
+            store.taskFinished(finished1);
+
+            // Then
+            assertThat(store.getTasksInProgress()).isEmpty();
+        }
+
+        @Test
+        void shouldGetNoTasksWhenNoneInStore() {
+            // When/Then
+            assertThat(store.getTasksInProgress()).isEmpty();
+        }
+    }
 }
