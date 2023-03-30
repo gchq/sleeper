@@ -19,11 +19,12 @@ package sleeper.compaction.testutils;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusStore {
     private final Map<String, CompactionTaskStatus> statusByTaskId = new LinkedHashMap<>();
@@ -49,13 +50,23 @@ public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusSt
 
     @Override
     public List<CompactionTaskStatus> getAllTasks() {
-        List<CompactionTaskStatus> taskStatuses = new ArrayList<>(statusByTaskId.values());
-        Collections.reverse(taskStatuses);
-        return taskStatuses;
+        return reverse(statusByTaskId.values().stream());
     }
 
     @Override
     public CompactionTaskStatus getTask(String taskId) {
         return statusByTaskId.get(taskId);
+    }
+
+    @Override
+    public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
+        return reverse(statusByTaskId.values().stream()
+                .filter(task -> task.isInPeriod(startTime, endTime)));
+    }
+
+    private static List<CompactionTaskStatus> reverse(Stream<CompactionTaskStatus> tasks) {
+        LinkedList<CompactionTaskStatus> list = new LinkedList<>();
+        tasks.forEach(list::push);
+        return list;
     }
 }

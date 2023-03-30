@@ -160,4 +160,76 @@ public class CompactionTaskStatusStoreInMemoryTest {
             assertThat(store.getTask("other-test-task-id")).isNull();
         }
     }
+
+    @Nested
+    @DisplayName("Get tasks in period")
+    class GetTasksInPeriod {
+
+        @Test
+        void shouldGetTaskInPeriod() {
+            // Given
+            CompactionTaskStatus started1 = startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"))
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
+                    Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
+            CompactionTaskStatus started2 = startedStatusBuilder(Instant.parse("2023-03-30T12:44:00Z"))
+                    .taskId("test-task-2").build();
+            CompactionTaskStatus finished2 = finishedStatusWithDefaultSummary("test-task-2",
+                    Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
+
+            // When
+            store.taskStarted(started1);
+            store.taskFinished(finished1);
+            store.taskStarted(started2);
+            store.taskFinished(finished2);
+
+            // Then
+            assertThat(store.getTasksInTimePeriod(
+                    Instant.parse("2023-03-30T12:30:00Z"),
+                    Instant.parse("2023-03-30T13:30:00Z")))
+                    .containsExactly(finished2);
+        }
+
+        @Test
+        void shouldGetMultipleTasks() {
+            // Given
+            CompactionTaskStatus started1 = startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"))
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
+                    Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
+            CompactionTaskStatus started2 = startedStatusBuilder(Instant.parse("2023-03-30T12:44:00Z"))
+                    .taskId("test-task-2").build();
+            CompactionTaskStatus finished2 = finishedStatusWithDefaultSummary("test-task-2",
+                    Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
+
+            // When
+            store.taskStarted(started1);
+            store.taskFinished(finished1);
+            store.taskStarted(started2);
+            store.taskFinished(finished2);
+
+            // Then
+            assertThat(store.getTasksInTimePeriod(
+                    Instant.parse("2023-03-30T11:30:00Z"),
+                    Instant.parse("2023-03-30T13:30:00Z")))
+                    .containsExactly(finished2, finished1);
+        }
+
+        @Test
+        void shouldGetNoTasksInPeriod() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilder(
+                    Instant.parse("2023-03-30T11:44:00Z"))
+                    .taskId("test-task").build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThat(store.getTasksInTimePeriod(
+                    Instant.parse("2023-03-30T12:30:00Z"),
+                    Instant.parse("2023-03-30T13:30:00Z")))
+                    .isEmpty();
+        }
+    }
 }
