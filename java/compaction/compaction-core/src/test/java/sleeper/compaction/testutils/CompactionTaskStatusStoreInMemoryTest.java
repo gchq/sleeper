@@ -22,9 +22,13 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.task.CompactionTaskStatus;
 
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.task.CompactionTaskStatusTestData.finishedStatusWithDefaultSummary;
 import static sleeper.compaction.task.CompactionTaskStatusTestData.finishedStatusWithDefaults;
+import static sleeper.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
 import static sleeper.compaction.task.CompactionTaskStatusTestData.startedStatusBuilderWithDefaults;
 
 public class CompactionTaskStatusStoreInMemoryTest {
@@ -90,6 +94,39 @@ public class CompactionTaskStatusStoreInMemoryTest {
             // When/Then
             assertThatThrownBy(() -> store.taskStarted(finished))
                     .isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Get all tasks")
+    class GetAllTasks {
+        @Test
+        void shouldGetMultipleTasks() {
+            // Given
+            CompactionTaskStatus started1 = startedStatusBuilder(Instant.parse("2023-03-30T11:44:00Z"))
+                    .taskId("test-task-1").build();
+            CompactionTaskStatus finished1 = finishedStatusWithDefaultSummary("test-task-1",
+                    Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
+            CompactionTaskStatus started2 = startedStatusBuilder(Instant.parse("2023-03-30T11:45:00Z"))
+                    .taskId("test-task-2").build();
+            CompactionTaskStatus finished2 = finishedStatusWithDefaultSummary("test-task-2",
+                    Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
+
+            // When
+            store.taskStarted(started1);
+            store.taskFinished(finished1);
+            store.taskStarted(started2);
+            store.taskFinished(finished2);
+
+            // Then
+            assertThat(store.getAllTasks())
+                    .containsExactly(finished2, finished1);
+        }
+
+        @Test
+        void shouldGetNoTasks() {
+            // When/Then
+            assertThat(store.getAllTasks()).isEmpty();
         }
     }
 }

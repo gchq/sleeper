@@ -37,11 +37,22 @@ public class CompactionTaskStatusTestData {
     }
 
     public static CompactionTaskStatus finishedStatusWithDefaults() {
-        return startedStatusBuilderWithDefaults()
-                .finishedStatus(finishedStatusBuilder(
-                        summary(Instant.parse("2023-03-30T11:44:00Z"), Duration.ofMinutes(5),
-                                100L, 100L))
-                        .finish(Instant.parse("2023-03-30T12:00:00Z")).build())
+        return finishedStatus("test-task-id",
+                Instant.parse("2023-03-30T11:44:00Z"),
+                Instant.parse("2023-03-30T12:00:00Z"),
+                summary(Instant.parse("2023-03-30T11:44:00Z"), Duration.ofMinutes(5),
+                        100L, 100L));
+    }
+
+    public static CompactionTaskStatus finishedStatusWithDefaultSummary(
+            String taskId, Instant startTime, Instant finishTime) {
+        return finishedStatus(taskId, startTime, finishTime, summary(startTime, Duration.ofMinutes(5), 100L, 100L));
+    }
+
+    public static CompactionTaskStatus finishedStatus(
+            String taskId, Instant startTime, Instant finishTime, RecordsProcessedSummary... summary) {
+        return startedStatusBuilder(startTime).taskId(taskId)
+                .finishedStatus(finishedStatusBuilder(summary).finish(finishTime).build())
                 .build();
     }
 

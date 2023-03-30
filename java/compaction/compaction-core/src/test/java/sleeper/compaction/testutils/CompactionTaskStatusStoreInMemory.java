@@ -20,6 +20,7 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,8 @@ public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusSt
 
     @Override
     public List<CompactionTaskStatus> getAllTasks() {
-        return new ArrayList<>(statusByTaskId.values());
+        List<CompactionTaskStatus> taskStatuses = new ArrayList<>(statusByTaskId.values());
+        Collections.reverse(taskStatuses);
+        return taskStatuses;
     }
 }
