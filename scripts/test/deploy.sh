@@ -15,8 +15,8 @@
 
 set -e
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <properties-template> <instance-id> <vpc> <subnet>"
+if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+  echo "Usage: $0 <properties-template> <instance-id> <vpc> <subnet> <optional-deploy-paused-flag>"
   exit 1
 fi
 
@@ -24,8 +24,9 @@ PROPERTIES_TEMPLATE=$1
 INSTANCE_ID=$2
 VPC=$3
 SUBNET=$4
+DEPLOY_PAUSED=$5
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "${PROPERTIES_TEMPLATE}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}"
+java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "${PROPERTIES_TEMPLATE}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${DEPLOY_PAUSED}"
