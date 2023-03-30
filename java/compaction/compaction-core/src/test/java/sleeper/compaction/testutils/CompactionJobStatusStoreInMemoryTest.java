@@ -48,7 +48,7 @@ class CompactionJobStatusStoreInMemoryTest {
     class StoreStatusUpdates {
 
         @Test
-        void shouldGetCreatedJob() {
+        void shouldStoreCreatedJob() {
             // Given
             Instant storeTime = Instant.parse("2023-03-29T12:27:42Z");
             CompactionJob job = addCreatedJob(storeTime);
@@ -59,7 +59,7 @@ class CompactionJobStatusStoreInMemoryTest {
         }
 
         @Test
-        void shouldGetStartedJob() {
+        void shouldStoreStartedJob() {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
@@ -74,7 +74,7 @@ class CompactionJobStatusStoreInMemoryTest {
         }
 
         @Test
-        void shouldGetFinishedJob() {
+        void shouldStoreFinishedJob() {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
