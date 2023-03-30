@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.task.CompactionTaskStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.task.CompactionTaskStatusTestData.finishedStatusWithDefaults;
 import static sleeper.compaction.task.CompactionTaskStatusTestData.startedStatusBuilderWithDefaults;
 
 public class CompactionTaskStatusStoreInMemoryTest {
@@ -32,7 +34,7 @@ public class CompactionTaskStatusStoreInMemoryTest {
     @DisplayName("Store status updates")
     class StoreStatusUpdates {
         @Test
-        void shouldGetStartedTask() {
+        void shouldStoreStartedTask() {
             // Given
             CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
 
@@ -41,6 +43,53 @@ public class CompactionTaskStatusStoreInMemoryTest {
 
             // Then
             assertThat(store.getAllTasks()).containsExactly(started);
+        }
+
+        @Test
+        void shouldStoreFinishedTask() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
+            CompactionTaskStatus finished = finishedStatusWithDefaults();
+
+            // When
+            store.taskStarted(started);
+            store.taskFinished(finished);
+
+            // Then
+            assertThat(store.getAllTasks()).containsExactly(finished);
+        }
+
+        @Test
+        public void shouldRefuseSameTaskStartedMultipleTimes() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThatThrownBy(() -> store.taskStarted(started))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        public void shouldRefuseTaskFinishedButNotStarted() {
+            // Given
+            CompactionTaskStatus finished = finishedStatusWithDefaults();
+
+            // When/Then
+            assertThatThrownBy(() -> store.taskFinished(finished))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        public void shouldRefuseFinishedTaskReportedAsStarted() {
+            // Given
+            CompactionTaskStatus finished = finishedStatusWithDefaults();
+
+            // When/Then
+            assertThatThrownBy(() -> store.taskStarted(finished))
+                    .isInstanceOf(IllegalStateException.class);
         }
     }
 }

@@ -39,6 +39,14 @@ public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusSt
     }
 
     @Override
+    public void taskFinished(CompactionTaskStatus taskStatus) {
+        if (!statusByTaskId.containsKey(taskStatus.getTaskId())) {
+            throw new IllegalStateException("Task not started: " + taskStatus.getTaskId());
+        }
+        statusByTaskId.put(taskStatus.getTaskId(), taskStatus);
+    }
+
+    @Override
     public List<CompactionTaskStatus> getAllTasks() {
         return new ArrayList<>(statusByTaskId.values());
     }

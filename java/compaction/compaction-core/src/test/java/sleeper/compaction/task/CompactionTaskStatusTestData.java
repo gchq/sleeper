@@ -18,8 +18,11 @@ package sleeper.compaction.task;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
+
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskStatusTestData {
     private CompactionTaskStatusTestData() {
@@ -31,6 +34,15 @@ public class CompactionTaskStatusTestData {
 
     public static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
         return CompactionTaskStatus.builder().taskId("test-task-id").startTime(startTime);
+    }
+
+    public static CompactionTaskStatus finishedStatusWithDefaults() {
+        return startedStatusBuilderWithDefaults()
+                .finishedStatus(finishedStatusBuilder(
+                        summary(Instant.parse("2023-03-30T11:44:00Z"), Duration.ofMinutes(5),
+                                100L, 100L))
+                        .finish(Instant.parse("2023-03-30T12:00:00Z")).build())
+                .build();
     }
 
     public static CompactionTaskFinishedStatus.Builder finishedStatusBuilder(RecordsProcessedSummary... jobSummaries) {
