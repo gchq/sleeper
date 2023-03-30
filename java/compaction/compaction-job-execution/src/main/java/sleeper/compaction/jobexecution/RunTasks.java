@@ -15,18 +15,14 @@
  */
 package sleeper.compaction.jobexecution;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
-import com.amazonaws.services.ecs.model.Failure;
-import com.amazonaws.services.ecs.model.InvalidParameterException;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -38,6 +34,7 @@ import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.job.common.RunECSTasks;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,7 +59,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 /**
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
@@ -189,64 +185,21 @@ public class RunTasks {
                              TaskOverride override, NetworkConfiguration networkConfiguration) {
 
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
-        LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        for (int i = 0; i < numberOfTasksToCreate; i += 10) {
-            if (i > 0) {
-                // Rate limit for Fargate tasks is 100 burst, 20 sustained.
-                // Rate limit for ECS task creation API is 20 burst, 20 sustained.
-                // To stay below this limit we create 10 tasks once per second.
-                // See documentation:
-                // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
-                sleepForSustainedRatePerSecond(1);
+        String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
+        RunTaskRequest runTaskRequest = createRunTaskRequest(
+                clusterName, launchType, fargateVersion,
+                override, networkConfiguration, defUsed);
+
+        RunECSTasks.runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> {
+            // This lambda is triggered every minute so abort once get
+            // close to 1 minute
+            if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
+                return true;
+            } else {
+                return false;
             }
-            int remainingTasksToCreate = maxNumTasksToCreate - i;
-            int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
-
-            String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
-            RunTaskRequest runTaskRequest = createRunTaskRequest(
-                    clusterName, launchType, fargateVersion,
-                    override, networkConfiguration, defUsed)
-                    .withCount(tasksToCreateThisRound);
-            try {
-                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                        clusterName, launchType, containerName, defUsed);
-
-                if (checkFailure(runTaskResult)) {
-                    break;
-                }
-
-                // This lambda is triggered every minute so abort once get
-                // close to 1 minute
-                if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                    LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
-                    break;
-                }
-            } catch (InvalidParameterException e) {
-                LOGGER.error("Couldn't launch tasks due to " + e.getErrorMessage() +
-                        ". This error is expected if there are no EC2 container instances in the cluster.");
-            } catch (AmazonClientException e) {
-                LOGGER.error("Couldn't launch tasks", e);
-            }
-        }
-    }
-
-    /**
-     * Checks for failures in run task results.
-     *
-     * @param runTaskResult result from recent run_tasks API call.
-     * @return true if a task launch failure occurs
-     */
-    private static boolean checkFailure(RunTaskResult runTaskResult) {
-        if (runTaskResult.getFailures().size() > 0) {
-            LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
-            for (Failure f : runTaskResult.getFailures()) {
-                LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
-                        f.getDetail());
-            }
-            return true;
-        }
-        return false;
+        });
     }
 
     /**
