@@ -39,9 +39,9 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 
 class CompactionJobStatusStoreInMemoryTest {
 
-    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+    private final String tableName = "test-table";
+    private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(tableName);
     private final CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
-    private final String tableName = dataHelper.tableName();
 
     @Nested
     @DisplayName("Store status updates")
