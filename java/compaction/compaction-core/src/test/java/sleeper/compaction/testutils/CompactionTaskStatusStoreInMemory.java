@@ -53,4 +53,9 @@ public class CompactionTaskStatusStoreInMemory implements CompactionTaskStatusSt
         Collections.reverse(taskStatuses);
         return taskStatuses;
     }
+
+    @Override
+    public CompactionTaskStatus getTask(String taskId) {
+        return statusByTaskId.get(taskId);
+    }
 }

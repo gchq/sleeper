@@ -64,7 +64,7 @@ public class CompactionTaskStatusStoreInMemoryTest {
         }
 
         @Test
-        public void shouldRefuseSameTaskStartedMultipleTimes() {
+        void shouldRefuseSameTaskStartedMultipleTimes() {
             // Given
             CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
 
@@ -77,7 +77,7 @@ public class CompactionTaskStatusStoreInMemoryTest {
         }
 
         @Test
-        public void shouldRefuseTaskFinishedButNotStarted() {
+        void shouldRefuseTaskFinishedButNotStarted() {
             // Given
             CompactionTaskStatus finished = finishedStatusWithDefaults();
 
@@ -87,7 +87,7 @@ public class CompactionTaskStatusStoreInMemoryTest {
         }
 
         @Test
-        public void shouldRefuseFinishedTaskReportedAsStarted() {
+        void shouldRefuseFinishedTaskReportedAsStarted() {
             // Given
             CompactionTaskStatus finished = finishedStatusWithDefaults();
 
@@ -127,6 +127,37 @@ public class CompactionTaskStatusStoreInMemoryTest {
         void shouldGetNoTasks() {
             // When/Then
             assertThat(store.getAllTasks()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Get task by ID")
+    class GetTaskById {
+
+        @Test
+        void shouldGetTaskById() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults()
+                    .taskId("some-test-task-id").build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThat(store.getTask("some-test-task-id")).isEqualTo(started);
+        }
+
+        @Test
+        void shouldGetNoTaskById() {
+            // Given
+            CompactionTaskStatus started = startedStatusBuilderWithDefaults()
+                    .taskId("some-test-task-id").build();
+
+            // When
+            store.taskStarted(started);
+
+            // Then
+            assertThat(store.getTask("other-test-task-id")).isNull();
         }
     }
 }
