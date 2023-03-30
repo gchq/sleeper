@@ -80,6 +80,31 @@ class RunECSTasksIT {
         }
 
         @Test
+        void shouldRunTwoBatches(WireMockRuntimeInfo runtimeInfo) {
+
+            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+                    new RunTaskRequest()
+                            .withCluster("test-cluster"),
+                    20);
+
+            verify(2, anyRequest());
+            verify(2, runTasksRequestedFor("test-cluster", 10));
+        }
+
+        @Test
+        void shouldRunTwoBatchesAndTwoMoreTasks(WireMockRuntimeInfo runtimeInfo) {
+
+            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+                    new RunTaskRequest()
+                            .withCluster("test-cluster"),
+                    22);
+
+            verify(3, anyRequest());
+            verify(2, runTasksRequestedFor("test-cluster", 10));
+            verify(1, runTasksRequestedFor("test-cluster", 2));
+        }
+
+        @Test
         void shouldRunMoreTasksThanCanBeCreatedInOneRequest(WireMockRuntimeInfo runtimeInfo) {
 
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
