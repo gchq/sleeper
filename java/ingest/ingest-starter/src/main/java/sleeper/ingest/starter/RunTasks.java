@@ -34,6 +34,8 @@ import sleeper.job.common.QueueMessageCount;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
+
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.
  */
@@ -73,7 +75,7 @@ public class RunTasks {
         this.fargateVersion = fargateVersion;
     }
 
-    public void run() throws InterruptedException {
+    public void run() {
         // Find out number of messages in queue that are not being processed
         int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
                 .getApproximateNumberOfMessages();
@@ -100,8 +102,18 @@ public class RunTasks {
         // Create 1 task per ingest jobs up to the maximum number of tasks to create
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        int numTasksCreated = 0;
         for (int i = 0; i < numberOfTasksToCreate; i++) {
+            if (i > 0) {
+                // Rate limit for Fargate tasks is 100 burst, 20 sustained.
+                // Rate limit for ECS task creation API is 20 burst, 20 sustained.
+                // To stay below this limit we create 10 tasks once per second.
+                // See documentation:
+                // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
+                sleepForSustainedRatePerSecond(1);
+            }
+            int remainingTasksToCreate = maxNumTasksToCreate - i;
+            int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
+
             List<String> args = new ArrayList<>();
             args.add(bucketName);
 
@@ -125,7 +137,8 @@ public class RunTasks {
                     .withNetworkConfiguration(networkConfiguration)
                     .withOverrides(override)
                     .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                    .withPlatformVersion(fargateVersion);
+                    .withPlatformVersion(fargateVersion)
+                    .withCount(tasksToCreateThisRound);
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {}",
@@ -133,14 +146,6 @@ public class RunTasks {
             if (runTaskResult.getFailures().size() > 0) {
                 LOGGER.error("Run task request has {} failures", runTaskResult.getFailures().size());
                 return;
-            }
-            numTasksCreated++;
-
-            if (0 == numTasksCreated % 10) {
-                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in a second
-                // so run 10 every 11 seconds for safety
-                LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
-                Thread.sleep(11000L);
             }
         }
     }

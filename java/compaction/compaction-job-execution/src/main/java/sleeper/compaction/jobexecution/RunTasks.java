@@ -62,6 +62,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
+import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 /**
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
@@ -138,7 +139,7 @@ public class RunTasks {
                 requirements.getRight());
     }
 
-    public void run() throws InterruptedException {
+    public void run() {
         long startTime = System.currentTimeMillis();
 
         // Find out number of messages in queue that are not being processed
@@ -183,17 +184,29 @@ public class RunTasks {
      * @param maxNumTasksToCreate  number of tasks to attempt to launch
      * @param override             other container overrides
      * @param networkConfiguration container network configuration
-     * @throws InterruptedException if error occurs during sleep
      */
     private void launchTasks(long startTime, int queueSize, int maxNumTasksToCreate,
-                             TaskOverride override, NetworkConfiguration networkConfiguration)
-            throws InterruptedException {
-        int numTasksCreated = 0;
+                             TaskOverride override, NetworkConfiguration networkConfiguration) {
 
-        for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
+        int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
+        LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
+        for (int i = 0; i < numberOfTasksToCreate; i += 10) {
+            if (i > 0) {
+                // Rate limit for Fargate tasks is 100 burst, 20 sustained.
+                // Rate limit for ECS task creation API is 20 burst, 20 sustained.
+                // To stay below this limit we create 10 tasks once per second.
+                // See documentation:
+                // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
+                sleepForSustainedRatePerSecond(1);
+            }
+            int remainingTasksToCreate = maxNumTasksToCreate - i;
+            int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
+
             String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
-            RunTaskRequest runTaskRequest = createRunTaskRequest(clusterName, launchType, fargateVersion,
-                    override, networkConfiguration, defUsed);
+            RunTaskRequest runTaskRequest = createRunTaskRequest(
+                    clusterName, launchType, fargateVersion,
+                    override, networkConfiguration, defUsed)
+                    .withCount(tasksToCreateThisRound);
             try {
                 RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
                 LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
@@ -202,7 +215,6 @@ public class RunTasks {
                 if (checkFailure(runTaskResult)) {
                     break;
                 }
-                numTasksCreated++;
 
                 // This lambda is triggered every minute so abort once get
                 // close to 1 minute
@@ -210,8 +222,6 @@ public class RunTasks {
                     LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
                     break;
                 }
-
-                maybeSleep(numTasksCreated);
             } catch (InvalidParameterException e) {
                 LOGGER.error("Couldn't launch tasks due to " + e.getErrorMessage() +
                         ". This error is expected if there are no EC2 container instances in the cluster.");
@@ -269,22 +279,6 @@ public class RunTasks {
         TaskOverride override = new TaskOverride()
                 .withContainerOverrides(containerOverride);
         return override;
-    }
-
-    /**
-     * Sleep if the tasks created is divisible by 10.
-     *
-     * @param numTasksCreated tasks created this Lambda invocation
-     * @throws InterruptedException if sleep interrupted
-     */
-    private static void maybeSleep(int numTasksCreated) throws InterruptedException {
-        if (0 == numTasksCreated % 10) {
-            // Sleep for 10 seconds - API allows 1 job per second
-            // with a burst of 10 jobs in a second so run 10 every
-            // 11 seconds for safety
-            LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
-            Thread.sleep(11000L);
-        }
     }
 
     /**
