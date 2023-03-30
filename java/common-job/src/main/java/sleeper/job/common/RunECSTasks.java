@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
@@ -77,7 +76,7 @@ public class RunECSTasks {
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest.withCount(tasksToCreateThisRound));
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
-                    new ContainerNames(runTaskResult), new TaskDefinitionArns(runTaskResult));
+                    new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
 
             if (checkFailure(runTaskResult)) {
                 return;
@@ -90,10 +89,10 @@ public class RunECSTasks {
         }
     }
 
-    private static class ContainerNames {
+    private static class ContainerName {
         private final RunTaskResult runTaskResult;
 
-        private ContainerNames(RunTaskResult runTaskResult) {
+        private ContainerName(RunTaskResult runTaskResult) {
             this.runTaskResult = runTaskResult;
         }
 
@@ -101,23 +100,21 @@ public class RunECSTasks {
             return runTaskResult.getTasks().stream()
                     .flatMap(task -> task.getContainers().stream())
                     .map(Container::getName)
-                    .collect(Collectors.toList())
-                    .toString();
+                    .findFirst().orElse("none");
         }
     }
 
-    private static class TaskDefinitionArns {
+    private static class TaskDefinitionArn {
         private final RunTaskResult runTaskResult;
 
-        private TaskDefinitionArns(RunTaskResult runTaskResult) {
+        private TaskDefinitionArn(RunTaskResult runTaskResult) {
             this.runTaskResult = runTaskResult;
         }
 
         public String toString() {
             return runTaskResult.getTasks().stream()
                     .map(Task::getTaskDefinitionArn)
-                    .collect(Collectors.toList())
-                    .toString();
+                    .findFirst().orElse("none");
         }
     }
 
