@@ -69,7 +69,7 @@ class TableSelectHelperIT extends AdminClientITBase {
 
     private String runTableSelectHelperGetOutput() {
         new TableSelectHelper(out.consoleOut(), in.consoleIn(), store())
-                .chooseTableIfExistsThen(INSTANCE_ID, tableProperties ->
+                .chooseTableOrReturnToMain(INSTANCE_ID).ifPresent(tableProperties ->
                         out.consoleOut().println("\n" +
                                 "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();

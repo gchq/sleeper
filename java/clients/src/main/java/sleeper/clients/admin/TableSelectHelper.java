@@ -26,7 +26,6 @@ import sleeper.console.menu.Chosen;
 import sleeper.console.menu.ConsoleChoice;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
@@ -42,10 +41,6 @@ public class TableSelectHelper {
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
-    }
-
-    public void chooseTableIfExistsThen(String instanceId, Consumer<TableProperties> callback) throws UserExitedException {
-        chooseTableOrReturnToMain(instanceId).ifPresent(callback);
     }
 
     public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
