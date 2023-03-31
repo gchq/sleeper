@@ -53,39 +53,41 @@ public class InstanceConfigurationScreen {
     }
 
     public void viewAndEditProperties(String instanceId) throws InterruptedException {
-        withInstanceProperties(store.loadInstanceProperties(instanceId))
-                .viewAndEditProperties();
-    }
-
-    public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
-        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
-        if (tableOpt.isPresent()) {
-            withTableProperties(instanceId, tableOpt.get())
+        Optional<InstanceProperties> properties = tryLoadInstanceProperties(instanceId);
+        if (properties.isPresent()) {
+            withInstanceProperties(properties.get())
                     .viewAndEditProperties();
         }
     }
 
-    public void viewAndEditPropertyGroup(String instanceId) throws InterruptedException {
-        Optional<WithProperties<?>> withProperties = selectGroup.selectPropertyGroup()
-                .flatMap(group -> withPropertyGroup(instanceId, group));
-        if (withProperties.isPresent()) {
-            withProperties.get().viewAndEditProperties();
+    public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
+        Optional<InstanceProperties> properties = tryLoadInstanceProperties(instanceId);
+        if (properties.isPresent()) {
+            Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(properties.get());
+            if (tableOpt.isPresent()) {
+                withTableProperties(properties.get(), tableOpt.get())
+                        .viewAndEditProperties();
+            }
         }
     }
 
-    private Optional<WithProperties<?>> withPropertyGroup(String instanceId, PropertyGroupWithCategory group) {
-        try {
-            InstanceProperties properties = store.loadInstanceProperties(instanceId);
-            if (group.isInstancePropertyGroup()) {
-                return Optional.of(withGroupedInstanceProperties(properties, group.getGroup()));
-            } else if (group.isTablePropertyGroup()) {
-                return selectTable.chooseTableOrReturnToMain(instanceId)
-                        .map(table -> withGroupedTableProperties(properties, table, group.getGroup()));
+    public void viewAndEditPropertyGroup(String instanceId) throws InterruptedException {
+        Optional<InstanceProperties> properties = tryLoadInstanceProperties(instanceId);
+        if (properties.isPresent()) {
+            Optional<WithProperties<?>> withProperties = selectGroup.selectPropertyGroup()
+                    .flatMap(group -> withPropertyGroup(properties.get(), group));
+            if (withProperties.isPresent()) {
+                withProperties.get().viewAndEditProperties();
             }
-        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
-            out.println();
-            e.print(out);
-            confirmReturnToMainScreen(out, in);
+        }
+    }
+
+    private Optional<WithProperties<?>> withPropertyGroup(InstanceProperties properties, PropertyGroupWithCategory group) {
+        if (group.isInstancePropertyGroup()) {
+            return Optional.of(withGroupedInstanceProperties(properties, group.getGroup()));
+        } else if (group.isTablePropertyGroup()) {
+            return selectTable.chooseTableOrReturnToMain(properties)
+                    .map(table -> withGroupedTableProperties(properties, table, group.getGroup()));
         }
         return Optional.empty();
     }
@@ -98,15 +100,27 @@ public class InstanceConfigurationScreen {
         return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group), store::saveInstanceProperties);
     }
 
-    private WithProperties<TableProperties> withTableProperties(String instanceId, TableProperties properties) {
+    private WithProperties<TableProperties> withTableProperties(
+            InstanceProperties instanceProperties, TableProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile,
-                (tableProperties, diff) -> store.saveTableProperties(instanceId, tableProperties, diff));
+                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
     }
 
     private WithProperties<TableProperties> withGroupedTableProperties(
             InstanceProperties instanceProperties, TableProperties properties, PropertyGroup group) {
         return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group),
                 (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
+    }
+
+    private Optional<InstanceProperties> tryLoadInstanceProperties(String instanceId) {
+        try {
+            return Optional.of(store.loadInstanceProperties(instanceId));
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            out.println();
+            e.print(out);
+            confirmReturnToMainScreen(out, in);
+            return Optional.empty();
+        }
     }
 
     private interface OpenFile<T extends SleeperProperties<?>> {
