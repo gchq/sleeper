@@ -29,7 +29,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
-import sleeper.systemtest.util.WaitForQueueEstimateNotEmpty;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 
@@ -46,7 +46,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final CompactionJobStatusStore store;
     private final WaitForPartitionSplittingQueue waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
-    private final WaitForQueueEstimateNotEmpty waitForJobQueueEstimate;
+    private final WaitForQueueEstimate waitForJobQueueEstimate;
 
     public WaitForCurrentSplitAddingMissingJobs(
             AmazonSQS sqsClient, CompactionJobStatusStore store,
@@ -56,7 +56,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         this.store = store;
         waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
-        waitForJobQueueEstimate = new WaitForQueueEstimateNotEmpty(
+        waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
                 sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
     }
 
