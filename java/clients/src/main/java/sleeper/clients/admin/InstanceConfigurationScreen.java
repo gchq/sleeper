@@ -31,6 +31,8 @@ import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.Set;
 
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
@@ -72,12 +74,18 @@ public class InstanceConfigurationScreen {
     }
 
     private Optional<WithProperties<?>> withPropertyGroup(String instanceId, PropertyGroupWithCategory group) {
-        if (group.isInstancePropertyGroup()) {
-            return Optional.of(withGroupedInstanceProperties(
-                    store.loadInstanceProperties(instanceId), group.getGroup()));
-        } else if (group.isTablePropertyGroup()) {
-            return selectTable.chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId))
-                    .map(table -> withGroupedTableProperties(instanceId, table, group.getGroup()));
+        try {
+            InstanceProperties properties = store.loadInstanceProperties(instanceId);
+            if (group.isInstancePropertyGroup()) {
+                return Optional.of(withGroupedInstanceProperties(properties, group.getGroup()));
+            } else if (group.isTablePropertyGroup()) {
+                return selectTable.chooseTableOrReturnToMain(instanceId)
+                        .map(table -> withGroupedTableProperties(properties, table, group.getGroup()));
+            }
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            out.println();
+            e.print(out);
+            confirmReturnToMainScreen(out, in);
         }
         return Optional.empty();
     }
@@ -96,9 +104,9 @@ public class InstanceConfigurationScreen {
     }
 
     private WithProperties<TableProperties> withGroupedTableProperties(
-            String instanceId, TableProperties properties, PropertyGroup group) {
+            InstanceProperties instanceProperties, TableProperties properties, PropertyGroup group) {
         return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group),
-                (tableProperties, diff) -> store.saveTableProperties(instanceId, tableProperties, diff));
+                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
     }
 
     private interface OpenFile<T extends SleeperProperties<?>> {

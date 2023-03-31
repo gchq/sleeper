@@ -712,7 +712,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }

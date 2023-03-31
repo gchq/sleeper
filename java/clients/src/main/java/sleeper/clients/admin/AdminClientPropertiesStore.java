@@ -122,7 +122,7 @@ public class AdminClientPropertiesStore {
         saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
     }
 
-    private void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
+    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
         String instanceId = instanceProperties.get(ID);
         String tableName = properties.get(TABLE_NAME);
         try {
