@@ -73,7 +73,7 @@ public class AdminClientPropertiesStore {
         return loadTableProperties(loadInstanceProperties(instanceId), tableName);
     }
 
-    private TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
+    public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
             return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
         } catch (AmazonS3Exception e) {

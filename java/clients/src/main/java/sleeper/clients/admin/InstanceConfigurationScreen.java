@@ -56,7 +56,7 @@ public class InstanceConfigurationScreen {
     }
 
     public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
-        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
+        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId));
         if (tableOpt.isPresent()) {
             withTableProperties(instanceId, tableOpt.get())
                     .viewAndEditProperties();
@@ -76,7 +76,7 @@ public class InstanceConfigurationScreen {
             return Optional.of(withGroupedInstanceProperties(
                     store.loadInstanceProperties(instanceId), group.getGroup()));
         } else if (group.isTablePropertyGroup()) {
-            return selectTable.chooseTableOrReturnToMain(instanceId)
+            return selectTable.chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId))
                     .map(table -> withGroupedTableProperties(instanceId, table, group.getGroup()));
         }
         return Optional.empty();

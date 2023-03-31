@@ -34,14 +34,14 @@ class TableSelectHelperIT extends AdminClientITBase {
     @Test
     void shouldReturnToMenuIfInstanceDoesNotExist() {
         // Given
-        in.enterNextPrompts("test-table", CONFIRM_PROMPT);
+        in.enterNextPrompts(CONFIRM_PROMPT);
 
         // When
         String output = runTableSelectHelperGetOutput();
 
         // Then
         assertThat(output)
-                .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
+                .startsWith("\n" +
                         "Could not load properties for instance test-instance\n" +
                         "Cause: The specified key does not exist")
                 .contains("Amazon S3")
@@ -56,7 +56,7 @@ class TableSelectHelperIT extends AdminClientITBase {
         in.enterNextPrompts("test-table", CONFIRM_PROMPT);
 
         // When
-        String output = runTableSelectHelperGetOutput();
+        String output = runTableSelectHelperGetOutput(instanceProperties);
 
         // Then
         assertThat(output)
@@ -70,6 +70,14 @@ class TableSelectHelperIT extends AdminClientITBase {
     private String runTableSelectHelperGetOutput() {
         new TableSelectHelper(out.consoleOut(), in.consoleIn(), store())
                 .chooseTableIfExistsThen(INSTANCE_ID, tableProperties ->
+                        out.consoleOut().println("\n" +
+                                "Found table " + tableProperties.get(TABLE_NAME)));
+        return out.toString();
+    }
+
+    private String runTableSelectHelperGetOutput(InstanceProperties properties) {
+        new TableSelectHelper(out.consoleOut(), in.consoleIn(), store())
+                .chooseTableIfExistsThen(properties, tableProperties ->
                         out.consoleOut().println("\n" +
                                 "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();

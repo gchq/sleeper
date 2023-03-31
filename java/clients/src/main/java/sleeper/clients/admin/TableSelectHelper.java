@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
@@ -47,7 +48,22 @@ public class TableSelectHelper {
         chooseTableOrReturnToMain(instanceId).ifPresent(callback);
     }
 
+    public void chooseTableIfExistsThen(InstanceProperties properties, Consumer<TableProperties> callback) throws UserExitedException {
+        chooseTableOrReturnToMain(properties).ifPresent(callback);
+    }
+
     public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
+        try {
+            return chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId));
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            out.println();
+            e.print(out);
+            confirmReturnToMainScreen(out, in);
+            return Optional.empty();
+        }
+    }
+
+    public Optional<TableProperties> chooseTableOrReturnToMain(InstanceProperties properties) throws UserExitedException {
         Chosen<ConsoleChoice> chosen = chooseTable("")
                 .chooseUntilSomethingEntered(() ->
                         chooseTable("\nYou did not enter anything please try again\n"));
@@ -57,8 +73,8 @@ public class TableSelectHelper {
         }
         String tableName = chosen.getEntered();
         try {
-            return Optional.of(store.loadTableProperties(instanceId, tableName));
-        } catch (AdminClientPropertiesStore.CouldNotLoadProperties e) {
+            return Optional.of(store.loadTableProperties(properties, tableName));
+        } catch (AdminClientPropertiesStore.CouldNotLoadTableProperties e) {
             out.println();
             e.print(out);
         }
