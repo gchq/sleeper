@@ -542,7 +542,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
@@ -579,7 +582,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
@@ -700,7 +706,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(3)).promptLine(any());
+            order.verify(in.mock, times(2)).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
