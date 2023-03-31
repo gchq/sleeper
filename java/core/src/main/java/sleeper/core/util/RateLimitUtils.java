@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.util;
+package sleeper.core.util;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RateLimitUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitUtils.class);
 
     private RateLimitUtils() {
     }
 
     public static void sleepForSustainedRatePerSecond(long ratePerSecond) {
         try {
-            Thread.sleep(calculateMillisSleepForSustainedRatePerSecond(ratePerSecond));
+            long millisecondsToSleep = calculateMillisSleepForSustainedRatePerSecond(ratePerSecond);
+            LOGGER.info("Sleeping for {} ", millisecondsToSleep);
+            Thread.sleep(millisecondsToSleep);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

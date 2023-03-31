@@ -22,7 +22,6 @@ import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
-import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
@@ -30,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.job.common.RunECSTasks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +73,7 @@ public class RunTasks {
         this.fargateVersion = fargateVersion;
     }
 
-    public void run() throws InterruptedException {
+    public void run() {
         // Find out number of messages in queue that are not being processed
         int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
                 .getApproximateNumberOfMessages();
@@ -99,49 +99,32 @@ public class RunTasks {
 
         // Create 1 task per ingest jobs up to the maximum number of tasks to create
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
-        LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        int numTasksCreated = 0;
-        for (int i = 0; i < numberOfTasksToCreate; i++) {
-            List<String> args = new ArrayList<>();
-            args.add(bucketName);
 
-            ContainerOverride containerOverride = new ContainerOverride()
-                    .withName(containerName)
-                    .withCommand(args);
+        List<String> args = new ArrayList<>();
+        args.add(bucketName);
 
-            TaskOverride override = new TaskOverride()
-                    .withContainerOverrides(containerOverride);
+        ContainerOverride containerOverride = new ContainerOverride()
+                .withName(containerName)
+                .withCommand(args);
 
-            AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                    .withSubnets(subnet);
+        TaskOverride override = new TaskOverride()
+                .withContainerOverrides(containerOverride);
 
-            NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                    .withAwsvpcConfiguration(vpcConfiguration);
+        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
+                .withSubnets(subnet);
 
-            RunTaskRequest runTaskRequest = new RunTaskRequest()
-                    .withCluster(clusterName)
-                    .withLaunchType(LaunchType.FARGATE)
-                    .withTaskDefinition(taskDefinition)
-                    .withNetworkConfiguration(networkConfiguration)
-                    .withOverrides(override)
-                    .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                    .withPlatformVersion(fargateVersion);
+        NetworkConfiguration networkConfiguration = new NetworkConfiguration()
+                .withAwsvpcConfiguration(vpcConfiguration);
 
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {}",
-                    clusterName, containerName, taskDefinition);
-            if (runTaskResult.getFailures().size() > 0) {
-                LOGGER.error("Run task request has {} failures", runTaskResult.getFailures().size());
-                return;
-            }
-            numTasksCreated++;
+        RunTaskRequest runTaskRequest = new RunTaskRequest()
+                .withCluster(clusterName)
+                .withLaunchType(LaunchType.FARGATE)
+                .withTaskDefinition(taskDefinition)
+                .withNetworkConfiguration(networkConfiguration)
+                .withOverrides(override)
+                .withPropagateTags(PropagateTags.TASK_DEFINITION)
+                .withPlatformVersion(fargateVersion);
 
-            if (0 == numTasksCreated % 10) {
-                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in a second
-                // so run 10 every 11 seconds for safety
-                LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
-                Thread.sleep(11000L);
-            }
-        }
+        RunECSTasks.runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate);
     }
 }
