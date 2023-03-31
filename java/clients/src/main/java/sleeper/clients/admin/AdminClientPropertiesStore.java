@@ -69,10 +69,6 @@ public class AdminClientPropertiesStore {
         return instanceProperties;
     }
 
-    public TableProperties loadTableProperties(String instanceId, String tableName) {
-        return loadTableProperties(loadInstanceProperties(instanceId), tableName);
-    }
-
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
             return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
