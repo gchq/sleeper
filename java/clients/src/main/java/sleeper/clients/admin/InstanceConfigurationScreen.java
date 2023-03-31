@@ -56,7 +56,7 @@ public class InstanceConfigurationScreen {
     }
 
     public void viewAndEditTableProperties(String instanceId) throws InterruptedException {
-        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId));
+        Optional<TableProperties> tableOpt = selectTable.chooseTableOrReturnToMain(instanceId);
         if (tableOpt.isPresent()) {
             withTableProperties(instanceId, tableOpt.get())
                     .viewAndEditProperties();

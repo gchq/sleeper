@@ -36,7 +36,6 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
@@ -75,7 +74,7 @@ public class CompactionStatusReportScreen {
     }
 
     private void chooseArgsForCompactionJobStatusReport(InstanceProperties properties) throws InterruptedException {
-        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties.get(ID));
+        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",

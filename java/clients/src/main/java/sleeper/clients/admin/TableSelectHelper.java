@@ -48,10 +48,6 @@ public class TableSelectHelper {
         chooseTableOrReturnToMain(instanceId).ifPresent(callback);
     }
 
-    public void chooseTableIfExistsThen(InstanceProperties properties, Consumer<TableProperties> callback) throws UserExitedException {
-        chooseTableOrReturnToMain(properties).ifPresent(callback);
-    }
-
     public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
         try {
             return chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId));

@@ -36,7 +36,6 @@ import java.util.Optional;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestStatusReportScreen {
@@ -78,7 +77,7 @@ public class IngestStatusReportScreen {
     }
 
     private void chooseArgsForIngestJobStatusReport(InstanceProperties properties) throws InterruptedException {
-        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties.get(ID));
+        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
