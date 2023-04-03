@@ -27,7 +27,7 @@ public class RateLimitUtils {
     public static void sleepForSustainedRatePerSecond(long ratePerSecond) {
         try {
             long millisecondsToSleep = calculateMillisSleepForSustainedRatePerSecond(ratePerSecond);
-            LOGGER.info("Sleeping for {} ", millisecondsToSleep);
+            LOGGER.trace("Sleeping for {} ", millisecondsToSleep);
             Thread.sleep(millisecondsToSleep);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
