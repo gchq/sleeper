@@ -39,6 +39,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final TableField createTimeField;
     private final TableField jobIdField;
     private final TableField partitionIdField;
+    private final TableField inputFilesCount;
     private final TableField typeField;
     private final StandardProcessRunReporter runReporter;
     private final TableWriterFactory tableFactory;
@@ -56,6 +57,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         stateField = tableFactoryBuilder.addField("STATE");
         createTimeField = tableFactoryBuilder.addField("CREATE_TIME");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
+        inputFilesCount = tableFactoryBuilder.addNumericField("TOTAL_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
         typeField = tableFactoryBuilder.addField("TYPE");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
@@ -179,6 +181,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void writeJobFields(CompactionJobStatus job, TableRow.Builder builder) {
         builder.value(createTimeField, job.getCreateUpdateTime())
                 .value(jobIdField, job.getJobId())
+                .value(inputFilesCount, job.getInputFilesCount())
                 .value(partitionIdField, job.getPartitionId())
                 .value(typeField, job.isSplittingCompaction() ? "SPLIT" : "COMPACT");
     }
