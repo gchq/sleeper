@@ -18,6 +18,8 @@ package sleeper.status.update;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.file.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DownloadConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadConfig.class);
 
     private DownloadConfig() {
     }
@@ -38,7 +41,13 @@ public class DownloadConfig {
         String instanceId = args[0];
         Path basePath = Path.of(args[1]);
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
+        LOGGER.info("Downloading configuration from S3");
+        try {
+            SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
+            LOGGER.info("Download complete");
+        } catch (IOException e) {
+            LOGGER.error("Download failed. Cause: " + e.getMessage());
+        }
     }
 
     public static InstanceProperties overwriteTargetDirectoryIfDownloadSuccessful(AmazonS3 s3, String instanceId, Path targetDir, Path tempDir) throws IOException {
