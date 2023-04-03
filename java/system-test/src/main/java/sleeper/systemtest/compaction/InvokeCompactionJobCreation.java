@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
@@ -47,7 +47,7 @@ public class InvokeCompactionJobCreation {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(AmazonS3ClientBuilder.defaultClient(), instanceId);
-        CompactionJobStatusStore statusStore = DynamoDBCompactionJobStatusStore.from(
+        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
                 AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
 
         WaitForQueueEstimate.containsUnfinishedJobs(AmazonSQSClientBuilder.defaultClient(),
