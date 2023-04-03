@@ -54,6 +54,14 @@ public class BulkImportJob {
         this.platformSpec = builder.platformSpec;
     }
 
+    public BulkImportJob validate() {
+        if (id == null || id.isEmpty()) {
+            id = UUID.randomUUID().toString();
+            LOGGER.info("Null or empty id provided. Generated new id: {}", id);
+        }
+        return this;
+    }
+
     public String getTableName() {
         return tableName;
     }
