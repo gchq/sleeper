@@ -41,7 +41,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 @Testcontainers
-public class ExecutorTest {
+class ExecutorIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -57,7 +57,7 @@ public class ExecutorTest {
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
     @Test
-    public void shouldCallRunOnPlatformIfJobIsValid() {
+    void shouldCallRunOnPlatformIfJobIsValid() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -84,7 +84,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldFailIfFileListIsEmpty() {
+    void shouldFailIfFileListIsEmpty() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -107,7 +107,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldSucceedIfS3ObjectIsADirectoryContainingFiles() {
+    void shouldSucceedIfS3ObjectIsADirectoryContainingFiles() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -132,7 +132,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldFailIfJobPointsAtNonExistentTable() {
+    void shouldFailIfJobPointsAtNonExistentTable() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -155,7 +155,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfJobIdContainsMoreThan63Characters() {
+    void shouldThrowExceptionIfJobIdContainsMoreThan63Characters() {
         // Given
         String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
         BulkImportJob importJob = new BulkImportJob.Builder()
@@ -173,7 +173,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfTableNameIsNull() {
+    void shouldThrowExceptionIfTableNameIsNull() {
         // Given
         BulkImportJob importJob = new BulkImportJob.Builder()
                 .id("my-job")
@@ -189,7 +189,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfJobIdContainsUppercaseLetters() {
+    void shouldThrowExceptionIfJobIdContainsUppercaseLetters() {
         // Given
         BulkImportJob importJob = new BulkImportJob.Builder()
                 .tableName("myTable")
@@ -206,7 +206,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldDoNothingWhenJobIsNull() {
+    void shouldDoNothingWhenJobIsNull() {
         // Given
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), null, null);
 
