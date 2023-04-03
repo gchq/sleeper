@@ -46,7 +46,7 @@ public class DownloadConfig {
             SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
             LOGGER.info("Download complete");
         } catch (IOException e) {
-            LOGGER.error("Download failed. Cause: " + e.getMessage());
+            LOGGER.error("Download failed: " + e.getMessage());
         }
     }
 
