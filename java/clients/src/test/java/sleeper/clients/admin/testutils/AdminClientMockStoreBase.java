@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.AdminConfigStore;
+import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
@@ -29,11 +29,11 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
 
-    protected final AdminConfigStore store = mock(AdminConfigStore.class);
+    protected final AdminClientPropertiesStore store = mock(AdminClientPropertiesStore.class);
 
     @Override
-    protected RunAdminClient runClient() {
-        return runClient(store);
+    public AdminClientPropertiesStore getStore() {
+        return store;
     }
 
     @Override

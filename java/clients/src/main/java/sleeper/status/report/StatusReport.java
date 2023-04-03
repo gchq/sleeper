@@ -24,8 +24,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -33,7 +33,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
@@ -43,7 +42,6 @@ import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.util.ClientUtils.optionalArgument;
 
@@ -88,12 +86,10 @@ public class StatusReport {
         new FilesStatusReport(stateStore, 1000, verbose).run();
 
         // Jobs
-        new CompactionJobStatusReport(compactionStatusStore, CompactionJobStatusReportArguments.builder()
-                .instanceId(instanceProperties.get(ID))
-                .tableName(tableProperties.get(TABLE_NAME))
-                .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(JobQuery.Type.UNFINISHED)
-                .build()).run();
+        new CompactionJobStatusReport(compactionStatusStore,
+                new StandardCompactionJobStatusReporter(),
+                tableProperties.get(TABLE_NAME),
+                JobQuery.Type.UNFINISHED).run();
 
         // Tasks
         new CompactionTaskStatusReport(compactionTaskStatusStore,
@@ -118,8 +114,8 @@ public class StatusReport {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(args[1]);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactionJobStatusStore compactionStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
-        CompactionTaskStatusStore compactionTaskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         boolean verbose = optionalArgument(args, 2)
                 .map(Boolean::parseBoolean)

@@ -22,8 +22,6 @@ import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.TestConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
-import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
 import sleeper.status.report.job.query.JobQuery.Type;
 
@@ -69,11 +67,6 @@ public class JobQueryTestBase {
     }
 
     private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
-        return CompactionJobStatusReportArguments.builder()
-                .instanceId("test-instance").tableName(TABLE_NAME)
-                .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(queryType)
-                .queryParameters(queryParameters)
-                .build().buildQuery(clock, in.consoleIn());
+        return JobQuery.fromParametersOrPrompt(TABLE_NAME, queryType, queryParameters, clock, in.consoleIn());
     }
 }

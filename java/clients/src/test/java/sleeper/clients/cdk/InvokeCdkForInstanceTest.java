@@ -98,6 +98,21 @@ class InvokeCdkForInstanceTest {
         }
 
         @Test
+        void shouldSetDeployPausedFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
+            // When / Then
+            assertThat(commandRunOn(runner -> cdk.invoke(
+                    InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.deployNewPaused(), runner)))
+                    .containsExactly("cdk",
+                            "-a", "java -cp \"./system-test-1.0-utility.jar\" sleeper.systemtest.cdk.SystemTestApp",
+                            "deploy",
+                            "--require-approval", "never",
+                            "-c", "propertiesfile=instance.properties",
+                            "-c", "newinstance=true",
+                            "-c", "deployPaused=true",
+                            "*");
+        }
+
+        @Test
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
             CdkCommand cdkCommand = CdkCommand.deployExisting();

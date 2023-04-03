@@ -20,20 +20,18 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.job.common.CommonJobUtils;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.function.Function;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -76,9 +74,8 @@ public class DeadLettersStatusReport {
             }
         });
         printStats(instanceProperties.get(INGEST_JOB_DLQ_URL), "ingest jobs dead-letter", s -> s);
-        printStats(instanceProperties.get(PARTITION_SPLITTING_DLQ_URL), "partition splitting jobs dead-letter", s -> {
-            return new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).fromJson(s).toString();
-        });
+        printStats(instanceProperties.get(PARTITION_SPLITTING_DLQ_URL), "partition splitting jobs dead-letter", s ->
+                new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider).fromJson(s).toString());
 
         printStats(instanceProperties.get(QUERY_DLQ_URL), "queries dead-letter", s ->
                 new QuerySerDe(tablePropertiesProvider).fromJson(s).toString());
@@ -88,10 +85,10 @@ public class DeadLettersStatusReport {
         if (queueUrl == null) {
             return;
         }
-        Map<String, Integer> stats = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient);
+        QueueMessageCount stats = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl);
         System.out.println("Messages on the " + description + " queue:" + stats);
 
-        if (stats.get(QueueAttributeName.ApproximateNumberOfMessages.toString()) > 0) {
+        if (stats.getApproximateNumberOfMessages() > 0) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                     .withQueueUrl(queueUrl)
                     .withMaxNumberOfMessages(10)

@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.util;
 
-public class RateLimitUtils {
+package sleeper.console;
 
-    private RateLimitUtils() {
+import sleeper.console.menu.ChooseOne;
+import sleeper.console.menu.MenuOption;
+
+public class ConsoleHelper {
+    private final ChooseOne chooseOne;
+
+    public ConsoleHelper(ConsoleOutput out, ConsoleInput in) {
+        this.chooseOne = new ChooseOne(out, in);
     }
 
-    public static void sleepForSustainedRatePerSecond(long ratePerSecond) {
-        try {
-            Thread.sleep(calculateMillisSleepForSustainedRatePerSecond(ratePerSecond));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static long calculateMillisSleepForSustainedRatePerSecond(long ratePerSecond) {
-        return (long) Math.ceil(1000.0 / ratePerSecond);
+    public MenuOption chooseOptionUntilValid(String message, MenuOption... options) {
+        return chooseOne.chooseWithMessageFrom(message, options)
+                .chooseUntilChoiceFound(() -> chooseOne.chooseWithMessageFrom(
+                        "\nInput not recognised please try again\n", options));
     }
 }

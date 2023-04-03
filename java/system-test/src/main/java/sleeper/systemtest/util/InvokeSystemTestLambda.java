@@ -30,7 +30,6 @@ public class InvokeSystemTestLambda {
     }
 
     public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
-
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);

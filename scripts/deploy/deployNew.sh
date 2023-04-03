@@ -15,8 +15,8 @@
 
 set -e
 
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <subnet> <table-name>"
+if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+  echo "Usage: $0 <instance-id> <vpc> <subnet> <table-name> <optional-deploy-paused-flag>"
   exit 1
 fi
 
@@ -24,8 +24,9 @@ INSTANCE_ID=$1
 VPC=$2
 SUBNET=$3
 TABLE_NAME=$4
+DEPLOY_PAUSED=$5
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.DeployNewInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.DeployNewInstance "${SCRIPTS_DIR}" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}" "${DEPLOY_PAUSED}"

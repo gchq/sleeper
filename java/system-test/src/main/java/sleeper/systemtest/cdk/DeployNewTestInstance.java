@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewTestInstance {
 
@@ -29,8 +30,8 @@ public class DeployNewTestInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (5 != args.length) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
+        if (args.length < 5 || args.length > 6) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> <optional-deploy-paused-flag>");
         }
         DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
                 .instancePropertiesTemplate(Path.of(args[1]))
@@ -39,6 +40,7 @@ public class DeployNewTestInstance {
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetId(args[4])
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();

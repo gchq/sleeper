@@ -20,24 +20,14 @@ if [ "$#" -ne 3 ]; then
   exit 1
 fi
 
-INSTANCE_ID=$1
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@"
+"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@" "true"
 END_DEPLOY_TIME=$(record_time)
-
-echo "-------------------------------------------------------------------------------"
-echo "Pausing System"
-echo "-------------------------------------------------------------------------------"
-
-"$SCRIPTS_DIR/utility/pauseSystem.sh" "$INSTANCE_ID"
-
-END_PAUSE_SYSTEM=$(record_time)
 
 "$THIS_DIR/testAll.sh"
 
@@ -47,6 +37,5 @@ echo "Finished paused deploy & test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
-echo "Pausing system finished at $(recorded_time_str "$END_PAUSE_SYSTEM"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$END_PAUSE_SYSTEM")"
-echo "Tests finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_PAUSE_SYSTEM" "$FINISH_TIME")"
+echo "Tests finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$FINISH_TIME")"
 echo "Overall, deploy & paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

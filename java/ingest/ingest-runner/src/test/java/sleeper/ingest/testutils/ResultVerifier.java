@@ -81,7 +81,7 @@ public class ResultVerifier {
                         .map(java.nio.file.Path::toString)
                         .collect(Collectors.toList()) :
                 Collections.emptyList();
-        assertThat(filesLeftInWorkingDirectory.size()).as("Files left in working directory: " + String.join(", ", filesLeftInWorkingDirectory)).isEqualTo(0L);
+        assertThat(filesLeftInWorkingDirectory).isEmpty();
 
         PartitionTree partitionTree = new PartitionTree(sleeperSchema, stateStore.getAllPartitions());
 

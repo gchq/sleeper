@@ -25,11 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
-import sleeper.systemtest.util.WaitForQueueEstimateNotEmpty;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 
@@ -44,9 +44,9 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final String instanceId;
     private final String tableName;
     private final CompactionJobStatusStore store;
-    private final WaitForPartitionSplitting waitForSplitting;
+    private final WaitForPartitionSplittingQueue waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
-    private final WaitForQueueEstimateNotEmpty waitForJobQueueEstimate;
+    private final WaitForQueueEstimate waitForJobQueueEstimate;
 
     public WaitForCurrentSplitAddingMissingJobs(
             AmazonSQS sqsClient, CompactionJobStatusStore store,
@@ -54,18 +54,22 @@ public class WaitForCurrentSplitAddingMissingJobs {
         this.instanceId = instanceProperties.get(ID);
         this.tableName = tableName;
         this.store = store;
-        waitForSplitting = new WaitForPartitionSplitting(sqsClient, instanceProperties);
+        waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
-        waitForJobQueueEstimate = new WaitForQueueEstimateNotEmpty(
+        waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
                 sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
+    }
+
+    public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
+        LOGGER.info("Waiting for partition splits");
+        waitForSplitting.pollUntilFinished();
+        checkIfSplittingCompactionNeededAndWait();
     }
 
     /**
      * @return true if any splitting was done, false if none was needed
      */
-    public boolean checkIfSplittingNeededAndWait() throws InterruptedException, IOException {
-        LOGGER.info("Waiting for partition splits");
-        waitForSplitting.pollUntilFinished();
+    public boolean checkIfSplittingCompactionNeededAndWait() throws InterruptedException, IOException {
         LOGGER.info("Creating compaction jobs");
         InvokeSystemTestLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
         if (store.getUnfinishedJobs(tableName).isEmpty()) {
@@ -96,9 +100,9 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
         new WaitForCurrentSplitAddingMissingJobs(sqsClient, store, systemTestProperties, tableName)
-                .checkIfSplittingNeededAndWait();
+                .waitForSplittingAndCompaction();
     }
 }

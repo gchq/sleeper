@@ -49,7 +49,11 @@ public class AdminMainScreen {
                 new MenuOption("Run partition status report", () ->
                         client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
                 new MenuOption("Run files status report", () ->
-                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId))
+                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run compaction status report", () ->
+                        client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId)),
+                new MenuOption("Run ingest status report", () ->
+                        client.ingestStatusReportScreen().chooseArgsAndPrint(instanceId))
         );
         while (true) {
             try {

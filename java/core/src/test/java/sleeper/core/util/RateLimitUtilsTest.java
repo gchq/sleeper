@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job;
+package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.status.report.job.query.JobQuery.Type;
+import static sleeper.core.util.RateLimitUtils.calculateMillisSleepForSustainedRatePerSecond;
 
-public class CompactionJobStatusReportArgumentsTest {
+class RateLimitUtilsTest {
 
     @Test
-    public void shouldSetDefaultArguments() {
-        assertThat(CompactionJobStatusReportArguments.from("test-instance", "test-table"))
-                .usingRecursiveComparison()
-                .isEqualTo(CompactionJobStatusReportArguments.builder()
-                        .instanceId("test-instance").tableName("test-table")
-                        .queryType(Type.PROMPT)
-                        .reporter(new StandardCompactionJobStatusReporter(System.out))
-                        .build());
+    void shouldCalculateWholeNumberSleepFromTargetRequestsPerSecond() {
+        assertThat(calculateMillisSleepForSustainedRatePerSecond(40)).isEqualTo(25);
+    }
+
+    @Test
+    void shouldRoundUpForNonDivisibleTargetRequestsPerSecond() {
+        // Will result in 34 * 30 = 1020 milliseconds of sleep over 30 requests
+        assertThat(calculateMillisSleepForSustainedRatePerSecond(30)).isEqualTo(34);
     }
 }

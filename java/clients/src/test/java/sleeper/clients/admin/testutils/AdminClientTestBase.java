@@ -16,8 +16,6 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.ToStringPrintStream;
-import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -60,11 +58,8 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
-    protected abstract RunAdminClient runClient();
-
-    protected RunAdminClient runClient(AdminConfigStore store) {
+    protected RunAdminClient runClient() {
         return new RunAdminClient(
-                new AdminClient(store, editor, out.consoleOut(), in.consoleIn()),
                 out, in, this, editor, INSTANCE_ID);
     }
 

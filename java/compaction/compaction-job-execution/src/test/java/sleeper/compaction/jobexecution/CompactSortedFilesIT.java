@@ -31,7 +31,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
@@ -82,7 +82,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
     @AfterAll

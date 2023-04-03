@@ -51,11 +51,15 @@ public class CompactionJobStatusTestData {
     public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
                 startedCompactionStatus(summary.getStartTime()),
-                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
+                finishedCompactionStatus(summary));
     }
 
     public static CompactionJobStartedStatus startedCompactionStatus(Instant startTime) {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
+    }
+
+    public static ProcessFinishedStatus finishedCompactionStatus(RecordsProcessedSummary summary) {
+        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary);
     }
 
     public static Instant defaultUpdateTime(Instant time) {
@@ -71,7 +75,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobStatus.listFrom(records().fromUpdates(updates).stream());
     }
 
-    private static CompactionJobStatus jobStatusFrom(TestProcessStatusUpdateRecords records) {
+    public static CompactionJobStatus jobStatusFrom(TestProcessStatusUpdateRecords records) {
         List<CompactionJobStatus> built = CompactionJobStatus.listFrom(records.stream());
         if (built.size() != 1) {
             throw new IllegalStateException("Expected single status");

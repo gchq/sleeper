@@ -18,29 +18,37 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
+import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.job.common.QueueMessageCount;
 
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
 
 public class RunAdminClient {
-    private final AdminClient client;
     private final ToStringPrintStream out;
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness store;
+    private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
     private final UpdatePropertiesWithNano editor;
+    private QueueMessageCount.Client queueClient = noQueues();
     private final String instanceId;
 
-    RunAdminClient(AdminClient client, ToStringPrintStream out, TestConsoleInput in,
+    RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
                    AdminConfigStoreTestHarness store,
-                   UpdatePropertiesWithNano editor, String instanceId) {
-        this.client = client;
+                   UpdatePropertiesWithNano editor,
+                   String instanceId) {
         this.out = out;
         this.in = in;
         this.store = store;
@@ -122,7 +130,40 @@ public class RunAdminClient {
     }
 
     public String runGetOutput() throws Exception {
-        client.start(instanceId);
+        client().start(instanceId);
         return out.toString();
+    }
+
+    public RunAdminClient queueClient(QueueMessageCount.Client queueClient) {
+        this.queueClient = queueClient;
+        return this;
+    }
+
+    public RunAdminClient statusStore(CompactionJobStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(CompactionTaskStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(IngestJobStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(IngestTaskStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public AdminClientStatusStoreFactory statusStores() {
+        return statusStores;
+    }
+
+    private AdminClient client() {
+        return new AdminClient(store.getStore(), statusStores, editor, out.consoleOut(), in.consoleIn(), queueClient);
     }
 }

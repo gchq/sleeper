@@ -21,17 +21,15 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.PollWithRetries;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 import java.util.List;
@@ -43,33 +41,21 @@ public class WaitForIngestTasks {
     private static final long POLL_INTERVAL_MILLIS = 30000;
     private static final int MAX_POLLS = 30;
 
-    private final SystemTestProperties systemTestProperties;
-    private final AmazonSQS sqsClient;
     private final IngestTaskStatusStore taskStatusStore;
+    private final WaitForQueueEstimate waitForEmptyQueue;
     private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
     public WaitForIngestTasks(
             SystemTestProperties systemTestProperties,
             AmazonSQS sqsClient,
             IngestTaskStatusStore taskStatusStore) {
-        this.systemTestProperties = systemTestProperties;
-        this.sqsClient = sqsClient;
         this.taskStatusStore = taskStatusStore;
+        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL);
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        poll.pollUntil("ingest queue is empty", this::isIngestQueueEmpty);
+        waitForEmptyQueue.pollUntilFinished();
         poll.pollUntil("ingest tasks finished", this::isIngestTasksFinished);
-    }
-
-    private boolean isIngestQueueEmpty() {
-        GetQueueAttributesResult result = sqsClient.getQueueAttributes(new GetQueueAttributesRequest()
-                .withQueueUrl(systemTestProperties.get(INGEST_JOB_QUEUE_URL))
-                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages));
-        int numberOfMessages = Integer.parseInt(result.getAttributes()
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString()));
-        LOGGER.info("Jobs on ingest queue: {}", numberOfMessages);
-        return numberOfMessages == 0;
     }
 
     private boolean isIngestTasksFinished() {
@@ -92,7 +78,7 @@ public class WaitForIngestTasks {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        IngestTaskStatusStore taskStatusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, systemTestProperties);
+        IngestTaskStatusStore taskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
         WaitForIngestTasks wait = new WaitForIngestTasks(systemTestProperties, sqsClient, taskStatusStore);
         wait.pollUntilFinished();

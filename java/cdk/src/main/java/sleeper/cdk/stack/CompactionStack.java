@@ -91,6 +91,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -174,7 +175,6 @@ public class CompactionStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         eventStore = CompactionStatusStoreStack.from(this, instanceProperties);
-
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
         // - An SQS queue for the splitting compaction jobs.
@@ -373,7 +373,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "CompactionJobCreationPeriodicTrigger")
                 .ruleName(ruleName)
                 .description("A rule to periodically trigger the job creation lambda")
-                .enabled(Boolean.TRUE)
+                .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
@@ -765,7 +765,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "CompactionMergeTasksCreationPeriodicTrigger")
                 .ruleName(ruleName)
                 .description("A rule to periodically trigger the compaction tasks lambda")
-                .enabled(Boolean.TRUE)
+                .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
@@ -821,7 +821,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, "CompactionSplittingMergeTasksCreationPeriodicTrigger")
                 .ruleName(ruleName)
                 .description("A rule to periodically trigger the splitting compaction tasks lambda")
-                .enabled(Boolean.TRUE)
+                .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();

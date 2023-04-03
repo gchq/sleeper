@@ -44,15 +44,15 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class AdminConfigStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminConfigStore.class);
+public class AdminClientPropertiesStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientPropertiesStore.class);
 
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
     private final Path generatedDirectory;
 
-    public AdminConfigStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
         this.cdk = cdk;

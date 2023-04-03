@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.systemtest.util;
+package sleeper.systemtest.compaction;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
@@ -24,38 +23,42 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.systemtest.util.PollWithRetries;
 
-public class WaitForQueueEstimateNotEmpty {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueueEstimateNotEmpty.class);
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+
+public class WaitForPartitionSplittingQueue {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplittingQueue.class);
     private static final long POLL_INTERVAL_MILLIS = 5000;
     private static final int MAX_POLLS = 12;
 
     private final AmazonSQS sqsClient;
-    private final String queueUrl;
+    private final InstanceProperties instanceProperties;
     private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
-    public WaitForQueueEstimateNotEmpty(AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty) {
+    public WaitForPartitionSplittingQueue(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
         this.sqsClient = sqsClient;
-        this.queueUrl = instanceProperties.get(queueProperty);
+        this.instanceProperties = instanceProperties;
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        LOGGER.info("Waiting for messages on {}", queueUrl);
-        poll.pollUntil("queue estimated not empty", this::isEstimateNotEmpty);
+        poll.pollUntil("partition splits finished", this::isPartitionSplitsFinished);
     }
 
-    private boolean isEstimateNotEmpty() {
-        int approximateMessages = getApproximateMessages();
-        LOGGER.info("Approximate number of messages: {}", approximateMessages);
-        return approximateMessages > 0;
+    private boolean isPartitionSplitsFinished() {
+        int unconsumedMessages = getUnconsumedPartitionSplitMessages();
+        LOGGER.info("Unfinished partition splits: {}", unconsumedMessages);
+        return unconsumedMessages == 0;
     }
 
-    private int getApproximateMessages() {
+    private int getUnconsumedPartitionSplitMessages() {
         GetQueueAttributesResult result = sqsClient.getQueueAttributes(new GetQueueAttributesRequest()
-                .withQueueUrl(queueUrl)
-                .withAttributeNames(QueueAttributeName.ApproximateNumberOfMessages));
-        return getInt(result, QueueAttributeName.ApproximateNumberOfMessages);
+                .withQueueUrl(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL))
+                .withAttributeNames(
+                        QueueAttributeName.ApproximateNumberOfMessages,
+                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible));
+        return getInt(result, QueueAttributeName.ApproximateNumberOfMessages) +
+                getInt(result, QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
     }
 
     private static int getInt(GetQueueAttributesResult result, QueueAttributeName attribute) {

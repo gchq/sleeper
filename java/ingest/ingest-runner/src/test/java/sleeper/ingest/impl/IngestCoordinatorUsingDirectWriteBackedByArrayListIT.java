@@ -51,7 +51,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
-public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
+public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     @RegisterExtension
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,

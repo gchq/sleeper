@@ -42,6 +42,8 @@ public class ExpectedAdminConsoleValues {
             "[4] Print Sleeper table names\n" +
             "[5] Run partition status report\n" +
             "[6] Run files status report\n" +
+            "[7] Run compaction status report\n" +
+            "[8] Run ingest status report\n" +
             "\n" +
             "Input: \n";
     private static final List<PropertyGroup> INSTANCE_PROPERTY_GROUPS = InstancePropertyGroup.getAll();
@@ -97,6 +99,11 @@ public class ExpectedAdminConsoleValues {
     public static final String NO_INSTANCE_SCREEN = "" +
             "Could not load properties for instance test-instance\n";
 
+    public static final String COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE = "" +
+            "\nCompaction status store not enabled. Please enable in instance properties to access this screen\n";
+    public static final String INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE = "" +
+            "\nIngest status store not enabled. Please enable in instance properties to access this screen\n";
+
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
     public static final String INSTANCE_CONFIGURATION_OPTION = "1";
@@ -105,6 +112,20 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_NAMES_REPORT_OPTION = "4";
     public static final String PARTITION_STATUS_REPORT_OPTION = "5";
     public static final String FILES_STATUS_REPORT_OPTION = "6";
+    public static final String COMPACTION_STATUS_REPORT_OPTION = "7";
+    public static final String INGEST_STATUS_REPORT_OPTION = "8";
+    public static final String COMPACTION_JOB_STATUS_REPORT_OPTION = "1";
+    public static final String COMPACTION_TASK_STATUS_REPORT_OPTION = "2";
+
+    public static final String JOB_QUERY_ALL_OPTION = "1";
+    public static final String JOB_QUERY_UNFINISHED_OPTION = "2";
+    public static final String JOB_QUERY_DETAILED_OPTION = "3";
+    public static final String JOB_QUERY_RANGE_OPTION = "4";
+
+    public static final String TASK_QUERY_ALL_OPTION = "1";
+    public static final String TASK_QUERY_UNFINISHED_OPTION = "2";
+    public static final String INGEST_JOB_STATUS_REPORT_OPTION = "1";
+    public static final String INGEST_TASK_STATUS_REPORT_OPTION = "2";
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final class SaveChangesScreen {

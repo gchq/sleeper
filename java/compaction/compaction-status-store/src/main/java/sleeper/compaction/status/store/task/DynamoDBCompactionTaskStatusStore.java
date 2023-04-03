@@ -41,7 +41,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
@@ -53,7 +52,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     private final String statusTableName;
     private final DynamoDBCompactionTaskStatusFormat format;
 
-    private DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
@@ -127,14 +126,6 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
         return dynamoDB.putItem(putItemRequest);
-    }
-
-    public static CompactionTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
-        } else {
-            return CompactionTaskStatusStore.NONE;
-        }
     }
 
     public static String taskStatusTableName(String instanceId) {

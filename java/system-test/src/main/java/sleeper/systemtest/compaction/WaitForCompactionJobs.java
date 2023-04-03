@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.PollWithRetries;
 
@@ -72,7 +72,7 @@ public class WaitForCompactionJobs {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
         WaitForCompactionJobs wait = new WaitForCompactionJobs(store, tableName);
         wait.pollUntilFinished();
