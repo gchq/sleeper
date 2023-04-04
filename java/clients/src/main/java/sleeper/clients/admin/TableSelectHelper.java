@@ -28,8 +28,8 @@ import sleeper.console.menu.ConsoleChoice;
 import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
-import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
+import static sleeper.clients.admin.AdminCommonPrompts.tryLoadTableProperties;
 
 public class TableSelectHelper {
     private final ConsoleOutput out;
@@ -60,15 +60,7 @@ public class TableSelectHelper {
             // Return to main screen
             return Optional.empty();
         }
-        String tableName = chosen.getEntered();
-        try {
-            return Optional.of(store.loadTableProperties(properties, tableName));
-        } catch (AdminClientPropertiesStore.CouldNotLoadTableProperties e) {
-            out.println();
-            e.print(out);
-        }
-        confirmReturnToMainScreen(out, in);
-        return Optional.empty();
+        return tryLoadTableProperties(out, in, store, properties, chosen.getEntered());
     }
 
     private Chosen<ConsoleChoice> chooseTable(String message) {

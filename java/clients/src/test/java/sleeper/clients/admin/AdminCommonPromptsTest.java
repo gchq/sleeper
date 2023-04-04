@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 
 import java.util.Optional;
@@ -30,6 +31,7 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
+import static sleeper.clients.admin.AdminCommonPrompts.tryLoadTableProperties;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
@@ -67,6 +69,44 @@ public class AdminCommonPromptsTest {
         void shouldContinueWhenSuccessfullyLoadingInstanceProperties() {
             // Given / When
             Optional<InstanceProperties> properties = tryLoadInstanceProperties(out.consoleOut(), in.consoleIn(),
+                    successfullyLoadProperties);
+
+            // Then
+            assertThat(properties).isPresent();
+            assertThat(out.toString()).isEmpty();
+        }
+    }
+
+    @DisplayName("Try load table properties")
+    @Nested
+    class TryLoadTableProperties {
+        private final Supplier<TableProperties> failToLoadProperties = () -> {
+            throw new AdminClientPropertiesStore.CouldNotLoadTableProperties("test-instance", "test-table",
+                    new Exception("Source Exception"));
+        };
+        private final Supplier<TableProperties> successfullyLoadProperties = () -> new TableProperties(new InstanceProperties());
+
+        @Test
+        void shouldPromptReturnToMenuWhenFailingToLoadTableProperties() {
+            // Given
+            in.enterNextPrompt(CONFIRM_PROMPT);
+
+            // When
+            Optional<TableProperties> properties = tryLoadTableProperties(out.consoleOut(), in.consoleIn(),
+                    failToLoadProperties);
+
+            // Then
+            assertThat(properties).isEmpty();
+            assertThat(out.toString()).isEqualTo("\n" +
+                    "Could not load properties for table test-table in instance test-instance\n" +
+                    "Cause: Source Exception\n" +
+                    PROMPT_RETURN_TO_MAIN);
+        }
+
+        @Test
+        void shouldContinueWhenSuccessfullyLoadingTableProperties() {
+            // Given / When
+            Optional<TableProperties> properties = tryLoadTableProperties(out.consoleOut(), in.consoleIn(),
                     successfullyLoadProperties);
 
             // Then

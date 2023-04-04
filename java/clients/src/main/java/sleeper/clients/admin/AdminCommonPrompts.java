@@ -16,6 +16,7 @@
 package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ConsoleChoice;
@@ -50,5 +51,22 @@ public class AdminCommonPrompts {
             confirmReturnToMainScreen(out, in);
             return Optional.empty();
         }
+    }
+
+    public static Optional<TableProperties> tryLoadTableProperties(
+            ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, InstanceProperties properties, String tableName) {
+        return tryLoadTableProperties(out, in, () -> store.loadTableProperties(properties, tableName));
+    }
+
+    public static Optional<TableProperties> tryLoadTableProperties(
+            ConsoleOutput out, ConsoleInput in, Supplier<TableProperties> loadTableProperties) {
+        try {
+            return Optional.of(loadTableProperties.get());
+        } catch (AdminClientPropertiesStore.CouldNotLoadTableProperties e) {
+            out.println();
+            e.print(out);
+        }
+        confirmReturnToMainScreen(out, in);
+        return Optional.empty();
     }
 }
