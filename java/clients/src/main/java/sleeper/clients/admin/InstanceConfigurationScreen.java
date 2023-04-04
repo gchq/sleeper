@@ -111,7 +111,7 @@ public class InstanceConfigurationScreen {
     }
 
     private Optional<InstanceProperties> tryLoadInstanceProperties(String instanceId) {
-        return AdminCommonPrompts.tryLoadInstanceProperties(out, in, () -> store.loadInstanceProperties(instanceId));
+        return AdminCommonPrompts.tryLoadInstanceProperties(out, in, store, instanceId);
     }
 
     private interface OpenFile<T extends SleeperProperties<?>> {

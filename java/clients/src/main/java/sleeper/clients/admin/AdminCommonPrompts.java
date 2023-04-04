@@ -36,6 +36,11 @@ public class AdminCommonPrompts {
     }
 
     public static Optional<InstanceProperties> tryLoadInstanceProperties(
+            ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, String instanceId) {
+        return tryLoadInstanceProperties(out, in, () -> store.loadInstanceProperties(instanceId));
+    }
+
+    public static Optional<InstanceProperties> tryLoadInstanceProperties(
             ConsoleOutput out, ConsoleInput in, Supplier<InstanceProperties> loadInstanceProperties) {
         try {
             return Optional.of(loadInstanceProperties.get());

@@ -45,7 +45,7 @@ public class TableSelectHelper {
     }
 
     public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
-        Optional<InstanceProperties> properties = tryLoadInstanceProperties(out, in, () -> store.loadInstanceProperties(instanceId));
+        Optional<InstanceProperties> properties = tryLoadInstanceProperties(out, in, store, instanceId);
         if (properties.isPresent()) {
             return chooseTableOrReturnToMain(properties.get());
         }
