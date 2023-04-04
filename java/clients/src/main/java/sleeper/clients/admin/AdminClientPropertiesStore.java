@@ -51,6 +51,7 @@ public class AdminClientPropertiesStore {
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
     private final Path generatedDirectory;
+    private TablePropertiesProvider tablePropertiesProvider;
 
     public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
         this.s3 = s3;
@@ -71,7 +72,10 @@ public class AdminClientPropertiesStore {
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
+            if (tablePropertiesProvider == null) {
+                tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+            }
+            return tablePropertiesProvider.getTableProperties(tableName);
         } catch (AmazonS3Exception e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
