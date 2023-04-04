@@ -31,8 +31,6 @@ import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.Set;
 
-import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
-
 public class InstanceConfigurationScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
@@ -113,14 +111,7 @@ public class InstanceConfigurationScreen {
     }
 
     private Optional<InstanceProperties> tryLoadInstanceProperties(String instanceId) {
-        try {
-            return Optional.of(store.loadInstanceProperties(instanceId));
-        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
-            out.println();
-            e.print(out);
-            confirmReturnToMainScreen(out, in);
-            return Optional.empty();
-        }
+        return AdminCommonPrompts.tryLoadInstanceProperties(out, in, () -> store.loadInstanceProperties(instanceId));
     }
 
     private interface OpenFile<T extends SleeperProperties<?>> {

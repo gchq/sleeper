@@ -15,9 +15,13 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ConsoleChoice;
+
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class AdminCommonPrompts {
     private AdminCommonPrompts() {
@@ -29,5 +33,17 @@ public class AdminCommonPrompts {
         out.println("\n\n----------------------------------");
         out.println("Hit enter to return to main screen");
         in.waitForLine();
+    }
+
+    public static Optional<InstanceProperties> tryLoadInstanceProperties(
+            ConsoleOutput out, ConsoleInput in, Supplier<InstanceProperties> loadInstanceProperties) {
+        try {
+            return Optional.of(loadInstanceProperties.get());
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            out.println();
+            e.print(out);
+            confirmReturnToMainScreen(out, in);
+            return Optional.empty();
+        }
     }
 }
