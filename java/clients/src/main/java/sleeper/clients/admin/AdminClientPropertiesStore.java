@@ -28,7 +28,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
 import sleeper.statestore.StateStore;
@@ -51,7 +50,6 @@ public class AdminClientPropertiesStore {
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
     private final Path generatedDirectory;
-    private TablePropertiesProvider tablePropertiesProvider;
 
     public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
         this.s3 = s3;
@@ -72,11 +70,10 @@ public class AdminClientPropertiesStore {
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            if (tablePropertiesProvider == null) {
-                tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-            }
-            return tablePropertiesProvider.getTableProperties(tableName);
-        } catch (AmazonS3Exception e) {
+            TableProperties properties = new TableProperties(instanceProperties);
+            properties.loadFromS3(s3, tableName);
+            return properties;
+        } catch (AmazonS3Exception | IOException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
     }
