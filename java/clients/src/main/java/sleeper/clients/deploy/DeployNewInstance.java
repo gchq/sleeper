@@ -113,11 +113,12 @@ public class DeployNewInstance {
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
 
-
+        Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
+        tagsProperties.setProperty("Name", instanceId);
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
                 .properties(loadInstancePropertiesTemplate())
-                .tagsProperties(loadProperties(templatesDirectory.resolve("tags.template")))
+                .tagsProperties(tagsProperties)
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
                 .build().generate();
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
