@@ -28,7 +28,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 public class AdminCommonPromptsTest {
@@ -58,9 +60,7 @@ public class AdminCommonPromptsTest {
             assertThat(out.toString()).isEqualTo("\n" +
                     "Could not load properties for instance test-instance\n" +
                     "Cause: Source Exception\n" +
-                    "\n\n" +
-                    "----------------------------------\n" +
-                    "Hit enter to return to main screen\n");
+                    PROMPT_RETURN_TO_MAIN);
         }
 
         @Test
@@ -73,5 +73,15 @@ public class AdminCommonPromptsTest {
             assertThat(properties).isPresent();
             assertThat(out.toString()).isEmpty();
         }
+    }
+
+    @Test
+    void shouldPromptReturnToMain() {
+        // Given / When
+        in.enterNextPrompt(CONFIRM_PROMPT);
+        confirmReturnToMainScreen(out.consoleOut(), in.consoleIn());
+
+        // Then
+        assertThat(out.toString()).isEqualTo(PROMPT_RETURN_TO_MAIN);
     }
 }
