@@ -37,7 +37,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private final TableField stateField;
     private final TableField jobIdField;
-    private final TableField totalFilesField;
+    private final TableField inputFilesCount;
     private final TableWriterFactory tableFactory;
     private final StandardProcessRunReporter runReporter;
 
@@ -52,7 +52,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
-        totalFilesField = tableFactoryBuilder.addNumericField("TOTAL_FILES");
+        inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
@@ -140,6 +140,6 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void writeJobFields(IngestJobStatus job, TableRow.Builder builder) {
         builder.value(jobIdField, job.getJobId())
-                .value(totalFilesField, job.getInputFilesCount());
+                .value(inputFilesCount, job.getInputFilesCount());
     }
 }

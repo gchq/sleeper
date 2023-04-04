@@ -57,7 +57,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         stateField = tableFactoryBuilder.addField("STATE");
         createTimeField = tableFactoryBuilder.addField("CREATE_TIME");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
-        inputFilesCount = tableFactoryBuilder.addNumericField("TOTAL_FILES");
+        inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
         typeField = tableFactoryBuilder.addField("TYPE");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
