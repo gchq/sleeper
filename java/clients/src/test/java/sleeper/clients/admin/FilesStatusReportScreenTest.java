@@ -122,6 +122,7 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // Given
+        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(FILES_STATUS_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
 
         // When

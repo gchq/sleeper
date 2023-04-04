@@ -48,6 +48,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test
     void shouldReturnToMainMenuIfMenuOptionSelected() {
         // Given
+        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(RETURN_TO_MAIN_SCREEN_OPTION);
 
         // When
@@ -61,6 +62,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test
     void shouldExitIfMenuOptionSelected() {
         // Given
+        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(EXIT_OPTION);
 
         // When/Then

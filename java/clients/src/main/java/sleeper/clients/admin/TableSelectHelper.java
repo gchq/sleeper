@@ -29,6 +29,7 @@ import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 
 public class TableSelectHelper {
     private final ConsoleOutput out;
@@ -44,14 +45,11 @@ public class TableSelectHelper {
     }
 
     public Optional<TableProperties> chooseTableOrReturnToMain(String instanceId) throws UserExitedException {
-        try {
-            return chooseTableOrReturnToMain(store.loadInstanceProperties(instanceId));
-        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
-            out.println();
-            e.print(out);
-            confirmReturnToMainScreen(out, in);
-            return Optional.empty();
+        Optional<InstanceProperties> properties = tryLoadInstanceProperties(out, in, () -> store.loadInstanceProperties(instanceId));
+        if (properties.isPresent()) {
+            return chooseTableOrReturnToMain(properties.get());
         }
+        return Optional.empty();
     }
 
     public Optional<TableProperties> chooseTableOrReturnToMain(InstanceProperties properties) throws UserExitedException {
