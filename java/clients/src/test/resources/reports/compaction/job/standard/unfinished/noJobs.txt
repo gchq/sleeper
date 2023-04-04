@@ -4,6 +4,6 @@ Compaction Job Status Report
 Total unfinished jobs: 0
 Total unfinished jobs in progress: 0
 Total unfinished jobs not started: 0
------------------------------------------------------------------------------
-| STATE | CREATE_TIME | JOB_ID | PARTITION_ID | TYPE | TASK_ID | START_TIME |
------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+| STATE | CREATE_TIME | JOB_ID | INPUT_FILES | PARTITION_ID | TYPE | TASK_ID | START_TIME |
+-------------------------------------------------------------------------------------------
