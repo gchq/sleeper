@@ -22,10 +22,9 @@ import sleeper.bulkimport.job.runner.BulkImportJobRunner;
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
  * Sleeoer partition.
  */
-public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
+public class BulkImportDataframeLocalSortRunner {
 
-    public BulkImportDataframeLocalSortRunner() {
-        super(new BulkImportDataframeLocalSortPartitioner());
+    private BulkImportDataframeLocalSortRunner() {
     }
 
     public static void main(String[] args) throws Exception {

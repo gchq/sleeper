@@ -35,9 +35,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
-import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner;
-import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
+import sleeper.bulkimport.job.runner.dataframe.BulkImportDataframePartitioner;
+import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortPartitioner;
+import sleeper.bulkimport.job.runner.rdd.BulkImportRDDPartitioner;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -97,9 +97,9 @@ public class BulkImportJobRunnerIT {
 
     private static Stream<Arguments> getParameters() {
         return Stream.of(
-                Arguments.of(Named.of("BulkImportJobDataframeRunner", (BulkImportJobRunner) new BulkImportJobDataframeRunner())),
-                Arguments.of(Named.of("BulkImportJobRDDRunner", (BulkImportJobRunner) new BulkImportJobRDDRunner())),
-                Arguments.of(Named.of("BulkImportDataframeLocalSortRunner", (BulkImportJobRunner) new BulkImportDataframeLocalSortRunner()))
+                Arguments.of(Named.of("BulkImportDataframePartitioner", new BulkImportDataframePartitioner())),
+                Arguments.of(Named.of("BulkImportRDDPartitioner", new BulkImportRDDPartitioner())),
+                Arguments.of(Named.of("BulkImportDataframeLocalSortPartitioner", new BulkImportDataframeLocalSortPartitioner()))
         );
     }
 
@@ -297,7 +297,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    public void shouldImportDataSinglePartition(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -319,6 +319,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
@@ -348,7 +349,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -370,6 +371,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
@@ -399,7 +401,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    public void shouldImportDataMultiplePartitions(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -421,6 +423,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.singletonList(50));
 
         // When
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
@@ -443,7 +446,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    public void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -465,6 +468,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
         // When
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
@@ -518,7 +522,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -542,6 +546,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(Lists.newArrayList("/import/")).tableName(tableName).build());
 

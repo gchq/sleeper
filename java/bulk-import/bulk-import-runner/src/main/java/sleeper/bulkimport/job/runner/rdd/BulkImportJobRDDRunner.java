@@ -22,9 +22,8 @@ import sleeper.bulkimport.job.runner.BulkImportJobRunner;
  * uses the Spark RDD API to partition the data according to the Sleeper
  * partitions and for each partition, write a single sorted Parquet file.
  */
-public class BulkImportJobRDDRunner extends BulkImportJobRunner {
-    public BulkImportJobRDDRunner() {
-        super(new BulkImportRDDPartitioner());
+public class BulkImportJobRDDRunner {
+    private BulkImportJobRDDRunner() {
     }
 
     public static void main(String[] args) throws Exception {
