@@ -33,10 +33,10 @@ import sleeper.status.report.job.query.JobQuery;
 import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
@@ -58,24 +58,27 @@ public class CompactionStatusReportScreen {
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
-        InstanceProperties properties = store.loadInstanceProperties(instanceId);
-        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            out.println("");
-            out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
-            confirmReturnToMainScreen(out, in);
-        } else {
-            out.clearScreen("");
-            consoleHelper.chooseOptionUntilValid("Which compaction report would you like to run",
-                    new MenuOption("Compaction Job Status Report", () ->
-                            chooseArgsForCompactionJobStatusReport(properties)),
-                    new MenuOption("Compaction Task Status Report", () ->
-                            chooseArgsForCompactionTaskStatusReport(properties))
-            ).run();
+        Optional<InstanceProperties> propertiesOpt = tryLoadInstanceProperties(out, in, store, instanceId);
+        if (propertiesOpt.isPresent()) {
+            InstanceProperties properties = propertiesOpt.get();
+            if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+                out.println("");
+                out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
+                confirmReturnToMainScreen(out, in);
+            } else {
+                out.clearScreen("");
+                consoleHelper.chooseOptionUntilValid("Which compaction report would you like to run",
+                        new MenuOption("Compaction Job Status Report", () ->
+                                chooseArgsForCompactionJobStatusReport(properties)),
+                        new MenuOption("Compaction Task Status Report", () ->
+                                chooseArgsForCompactionTaskStatusReport(properties))
+                ).run();
+            }
         }
     }
 
     private void chooseArgsForCompactionJobStatusReport(InstanceProperties properties) throws InterruptedException {
-        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties.get(ID));
+        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",

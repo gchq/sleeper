@@ -39,7 +39,7 @@ public class PartitionsStatusReportScreen {
     }
 
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+        tableSelectHelper.chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> {
             try {
                 new PartitionsStatusReporter(out.printStream()).report(
                         PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, tableProperties)));

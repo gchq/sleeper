@@ -542,10 +542,13 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
@@ -559,7 +562,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             after.set(ROW_GROUP_SIZE, "123");
             doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(INSTANCE_ID, TABLE_NAME_VALUE,
                     new RuntimeException("Something went wrong")))
-                    .when(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+                    .when(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
 
             // When
             String output = editTableConfiguration(properties, before, after)
@@ -579,10 +582,13 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
@@ -637,7 +643,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     CLEAR_CONSOLE + GROUP_SELECT_SCREEN + DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(properties, InstancePropertyGroup.COMMON);
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
@@ -666,7 +675,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(2)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before, InstancePropertyGroup.COMMON);
             order.verify(in.mock).promptLine(any());
             order.verify(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
@@ -700,16 +712,22 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             DISPLAY_MAIN_SCREEN);
 
             InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock, times(3)).promptLine(any());
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock, times(2)).promptLine(any());
             order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(INSTANCE_ID, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
 
         @Test
         void shouldExitWhenOnGroupSelectScreen() throws Exception {
+            // Given
+            setInstanceProperties(createValidInstanceProperties());
+
             // When
             String output = runClient()
                     .enterPrompts(CONFIGURATION_BY_GROUP_OPTION, EXIT_OPTION)

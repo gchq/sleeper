@@ -70,6 +70,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
     @Test
     void shouldReturnToMenuWhenOnTableNameScreen() throws Exception {
         // When
+        setInstanceProperties(createValidInstanceProperties());
         String output = runClient()
                 .enterPrompts(PARTITION_STATUS_REPORT_OPTION,
                         RETURN_TO_MAIN_SCREEN_OPTION)
