@@ -37,7 +37,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportDataframePartitioner;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortPartitioner;
-import sleeper.bulkimport.job.runner.rdd.BulkImportRDDPartitioner;
+import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -63,6 +63,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -98,7 +99,7 @@ public class BulkImportJobRunnerIT {
     private static Stream<Arguments> getParameters() {
         return Stream.of(
                 Arguments.of(Named.of("BulkImportDataframePartitioner", new BulkImportDataframePartitioner())),
-                Arguments.of(Named.of("BulkImportRDDPartitioner", new BulkImportRDDPartitioner())),
+                Arguments.of(Named.of("BulkImportJobRDDRunner", (BulkImportPartitioner) BulkImportJobRDDRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportDataframeLocalSortPartitioner", new BulkImportDataframeLocalSortPartitioner()))
         );
     }
@@ -487,7 +488,7 @@ public class BulkImportJobRunnerIT {
             long totalRecords = relevantFiles.stream()
                     .map(FileInfo::getNumberOfRecords)
                     .reduce(Long::sum)
-                    .get();
+                    .orElseThrow();
 
             assertThat(totalRecords).isEqualTo(2000L);
 
@@ -514,9 +515,7 @@ public class BulkImportJobRunnerIT {
 
                         return recordsRead;
                     })
-                    .forEach(read -> {
-                        assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema()));
-                    });
+                    .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
     }
 
@@ -539,7 +538,7 @@ public class BulkImportJobRunnerIT {
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         //  - Write a dummy file
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(dataDir + "/import/b.txt"))) {
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(dataDir + "/import/b.txt", StandardCharsets.UTF_8))) {
             bufferedWriter.append("test");
         }
         //  - State store

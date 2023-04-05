@@ -15,7 +15,20 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
+import sleeper.bulkimport.job.runner.SparkPartitionRequest;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
+
+import java.io.IOException;
+
+import static sleeper.bulkimport.job.runner.BulkImportJobRunner.createFileInfoSchema;
 
 /**
  * The {@link BulkImportJobRDDRunner} is a {@link BulkImportJobRunner} which
@@ -27,6 +40,25 @@ public class BulkImportJobRDDRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobRunner.start(args, new BulkImportRDDPartitioner());
+        BulkImportJobRunner.start(args, BulkImportJobRDDRunner::createFileInfos);
+    }
+
+    public static Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
+        Schema schema = request.tableProperties().getSchema();
+        String schemaAsString = new SchemaSerDe().toJson(schema);
+        JavaRDD<Row> rdd = request.rows().javaRDD()
+                .mapToPair(new ExtractKeyFunction(
+                        schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
+                .repartitionAndSortWithinPartitions(
+                        new SleeperPartitioner(schemaAsString, request.broadcastedPartitions()),
+                        new WrappedKeyComparator(schemaAsString))
+                .map(tuple -> tuple._2)
+                .mapPartitions(new WriteParquetFile(
+                        request.instanceProperties().saveAsString(),
+                        request.tableProperties().saveAsString(),
+                        request.conf(), request.broadcastedPartitions()));
+
+        SparkSession session = SparkSession.builder().getOrCreate();
+        return session.createDataset(rdd.rdd(), RowEncoder.apply(createFileInfoSchema()));
     }
 }
