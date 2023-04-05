@@ -84,8 +84,8 @@ public class BulkImportJobRunner {
     private final BulkImportPartitioner partitioner;
 
     private InstanceProperties instanceProperties;
-    private AmazonS3 s3Client;
-    private AmazonDynamoDB dynamoClient;
+    private TablePropertiesProvider tablePropertiesProvider;
+    private StateStoreProvider stateStoreProvider;
 
     public BulkImportJobRunner(BulkImportPartitioner partitioner) {
         this.partitioner = partitioner;
@@ -93,8 +93,8 @@ public class BulkImportJobRunner {
 
     public void init(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
-        this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
+        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
     }
 
     public void run(BulkImportJob job) throws IOException {
@@ -116,13 +116,13 @@ public class BulkImportJobRunner {
 
         // Load table information
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
-        TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(job.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
 
         // Load statestore and partitions
         LOGGER.info("Loading statestore and partitions");
-        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties).getStateStore(tableProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> allPartitions;
         try {
             allPartitions = stateStore.getAllPartitions();
