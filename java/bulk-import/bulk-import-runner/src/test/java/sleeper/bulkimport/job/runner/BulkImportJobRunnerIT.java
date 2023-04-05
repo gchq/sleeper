@@ -300,7 +300,7 @@ public class BulkImportJobRunnerIT {
 
     private void runJob(SparkRecordPartitioner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, properties, s3Client, dynamoDBClient);
-        runner.run(job);
+        runner.run(job, "test-task");
     }
 
     @ParameterizedTest

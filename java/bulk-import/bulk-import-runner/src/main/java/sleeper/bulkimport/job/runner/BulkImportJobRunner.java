@@ -90,7 +90,7 @@ public class BulkImportJobRunner {
         this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
     }
 
-    public void run(BulkImportJob job) throws IOException {
+    public void run(BulkImportJob job, String taskId) throws IOException {
         Instant startTime = Instant.now();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
@@ -171,16 +171,18 @@ public class BulkImportJobRunner {
     }
 
     public static void start(String[] args, SparkRecordPartitioner partitioner) throws Exception {
-        if (args.length != 2) {
-            throw new IllegalArgumentException("Expected two arguments, the first with the id of the bulk import job," +
-                    " the second with the config bucket");
+        if (args.length != 3) {
+            throw new IllegalArgumentException("Expected 3 arguments: <config bucket name> <bulk import job ID> <bulk import task ID>");
         }
+        String configBucket = args[0];
+        String jobId = args[1];
+        String taskId = args[2];
 
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
 
         try {
-            instanceProperties.loadFromS3(amazonS3, args[1]);
+            instanceProperties.loadFromS3(amazonS3, configBucket);
         } catch (Exception e) {
             // This is a good indicator if something is wrong with the permissions
             LOGGER.error("Failed to load instance properties", e);
@@ -206,19 +208,19 @@ public class BulkImportJobRunner {
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String jsonJobKey = "bulk_import/" + args[0] + ".json";
+        String jsonJobKey = "bulk_import/" + jobId + ".json";
         LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", bulkImportBucket, jsonJobKey);
         String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
         BulkImportJob bulkImportJob;
         try {
             bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed: {}", args[0]);
+            LOGGER.error("Json job was malformed: {}", jobId);
             throw e;
         }
 
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        runner.run(bulkImportJob);
+        runner.run(bulkImportJob, taskId);
     }
 }

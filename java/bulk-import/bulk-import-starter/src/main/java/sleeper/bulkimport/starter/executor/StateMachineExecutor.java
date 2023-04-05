@@ -35,7 +35,6 @@ import java.util.Map;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
@@ -85,14 +84,15 @@ public class StateMachineExecutor extends Executor {
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+        String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         Map<String, Object> input = new HashMap<>();
-        List<String> args = constructArgs(bulkImportJob);
+        List<String> args = constructArgs(bulkImportJob, stateMachineArn);
         input.put("job", bulkImportJob);
         input.put("args", args);
 
         stepFunctions.startExecution(
                 new StartExecutionRequest()
-                        .withStateMachineArn(instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN))
+                        .withStateMachineArn(stateMachineArn)
                         .withName(String.join("-", "sleeper", instanceProperties.get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
                         .withInput(new Gson().toJson(input)));
     }
@@ -114,7 +114,7 @@ public class StateMachineExecutor extends Executor {
     }
 
     @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
+    protected List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
         Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
 
         // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
@@ -133,10 +133,7 @@ public class StateMachineExecutor extends Executor {
                 .platformSpec(bulkImportJob.getPlatformSpec())
                 .sparkConf(sparkProperties)
                 .build();
-        List<String> args = super.constructArgs(cloneWithUpdatedProps);
-        args.add(bulkImportJob.getId());
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        return args;
+        return super.constructArgs(cloneWithUpdatedProps, taskId);
     }
 
     @Override
