@@ -46,7 +46,11 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -61,6 +65,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -81,19 +86,32 @@ public class BulkImportJobRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final IngestJobStatusStore statusStore;
+    private final Supplier<Instant> getTime;
 
     public BulkImportJobRunner(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+        this(partitioner, instanceProperties, s3Client, dynamoClient,
+                IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
+    }
+
+    public BulkImportJobRunner(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
+                               AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
+                               IngestJobStatusStore statusStore,
+                               Supplier<Instant> getTime) {
         this.partitioner = partitioner;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
+        this.statusStore = statusStore;
+        this.getTime = getTime;
     }
 
     public void run(BulkImportJob job, String taskId) throws IOException {
-        Instant startTime = Instant.now();
+        Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
+        statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
         // Initialise Spark
         LOGGER.info("Initialising Spark");
@@ -160,14 +178,15 @@ public class BulkImportJobRunner {
                     + "be re-imported for clients to accesss data");
         }
         LOGGER.info("Added {} files to statestore", fileInfos.size());
-        Instant finishTime = Instant.now();
+        Instant finishTime = getTime.get();
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
         long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
         double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
+        statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+                new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
 
         sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
-
     }
 
     public static void start(String[] args, SparkRecordPartitioner partitioner) throws Exception {

@@ -52,6 +52,8 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
@@ -64,6 +66,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,6 +95,8 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 
 @Testcontainers
 public class BulkImportJobRunnerIT {
@@ -117,6 +122,10 @@ public class BulkImportJobRunnerIT {
     private final AmazonS3 s3Client = createS3Client();
     private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
     private final Schema schema = getSchema();
+    private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
+    private final String taskId = "test-bulk-import-spark-cluster";
+    private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
+    private final Instant endTime = Instant.parse("2023-04-05T16:01:11Z");
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -299,8 +308,10 @@ public class BulkImportJobRunnerIT {
     }
 
     private void runJob(SparkRecordPartitioner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, properties, s3Client, dynamoDBClient);
-        runner.run(job, "test-task");
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, properties,
+                s3Client, dynamoDBClient, statusStore,
+                List.of(startTime, endTime).iterator()::next);
+        runner.run(job, taskId);
     }
 
     @ParameterizedTest
@@ -320,8 +331,9 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build());
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+        runJob(partitioner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -345,6 +357,8 @@ public class BulkImportJobRunnerIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -364,8 +378,9 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build());
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+        runJob(partitioner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -389,6 +404,8 @@ public class BulkImportJobRunnerIT {
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -408,8 +425,9 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.singletonList(50));
 
         // When
-        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build());
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+        runJob(partitioner, instanceProperties, job);
 
         // Then
         List<Record> leftPartition = records.stream()
@@ -426,6 +444,8 @@ public class BulkImportJobRunnerIT {
                 .containsExactlyInAnyOrder(
                         tuple(100L, leftPartition),
                         tuple(100L, rightPartition));
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -445,8 +465,9 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
         // When
-        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
-                .tableName(tableProperties.get(TABLE_NAME)).build());
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+        runJob(partitioner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -492,6 +513,8 @@ public class BulkImportJobRunnerIT {
                     })
                     .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -513,9 +536,9 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job")
-                .files(Lists.newArrayList("/import/"))
-                .tableName(tableProperties.get(TABLE_NAME)).build());
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(Lists.newArrayList("/import/"))
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+        runJob(partitioner, instanceProperties, job);
 
         // Then
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
@@ -524,5 +547,7 @@ public class BulkImportJobRunnerIT {
                 .extracting(FileInfo::getNumberOfRecords, FileInfo::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
     }
 }
