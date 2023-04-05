@@ -28,6 +28,6 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobRunner.start(args, new BulkImportJobDataframeRunner());
+        BulkImportJobRunner.start(args, new BulkImportDataframePartitioner());
     }
 }

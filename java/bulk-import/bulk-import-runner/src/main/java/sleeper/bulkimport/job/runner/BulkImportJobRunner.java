@@ -197,7 +197,7 @@ public class BulkImportJobRunner {
                 .add(NUM_RECORDS_FIELD_NAME, DataTypes.LongType);
     }
 
-    public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
+    public static void start(String[] args, BulkImportPartitioner partitioner) throws Exception {
         if (args.length != 2) {
             throw new IllegalArgumentException("Expected two arguments, the first with the id of the bulk import job," +
                     " the second with the config bucket");
@@ -244,6 +244,7 @@ public class BulkImportJobRunner {
             throw e;
         }
 
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         runner.run(bulkImportJob);
     }

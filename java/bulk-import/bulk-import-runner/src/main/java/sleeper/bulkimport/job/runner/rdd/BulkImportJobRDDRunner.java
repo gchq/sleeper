@@ -28,6 +28,6 @@ public class BulkImportJobRDDRunner extends BulkImportJobRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobRunner.start(args, new BulkImportJobRDDRunner());
+        BulkImportJobRunner.start(args, new BulkImportRDDPartitioner());
     }
 }

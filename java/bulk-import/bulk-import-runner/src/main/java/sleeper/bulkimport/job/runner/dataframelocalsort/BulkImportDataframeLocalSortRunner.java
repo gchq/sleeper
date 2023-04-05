@@ -29,6 +29,6 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobRunner.start(args, new BulkImportDataframeLocalSortRunner());
+        BulkImportJobRunner.start(args, new BulkImportDataframeLocalSortPartitioner());
     }
 }
