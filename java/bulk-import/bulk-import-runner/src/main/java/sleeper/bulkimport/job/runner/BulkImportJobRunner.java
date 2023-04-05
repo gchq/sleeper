@@ -75,15 +75,21 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
  * the data to files in S3 and returns a list of the {@link FileInfo}s that
  * will then be used to update the {@link StateStore}.
  */
-public abstract class BulkImportJobRunner {
+public class BulkImportJobRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobRunner.class);
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILENAME_FIELD_NAME = "__fileName";
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
 
+    private final BulkImportPartitioner partitioner;
+
     private InstanceProperties instanceProperties;
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
+
+    public BulkImportJobRunner(BulkImportPartitioner partitioner) {
+        this.partitioner = partitioner;
+    }
 
     public void init(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
@@ -95,10 +101,12 @@ public abstract class BulkImportJobRunner {
         return instanceProperties;
     }
 
-    public abstract Dataset<Row> createFileInfos(
+    public Dataset<Row> createFileInfos(
             Dataset<Row> row, BulkImportJob job,
             TableProperties tableProperties, Broadcast<List<Partition>> broadcastedPartitions,
-            Configuration conf) throws IOException;
+            Configuration conf) throws IOException {
+        return partitioner.createFileInfos(row, job, instanceProperties, tableProperties, broadcastedPartitions, conf);
+    }
 
     public void run(BulkImportJob job) throws IOException {
         Instant startTime = Instant.now();

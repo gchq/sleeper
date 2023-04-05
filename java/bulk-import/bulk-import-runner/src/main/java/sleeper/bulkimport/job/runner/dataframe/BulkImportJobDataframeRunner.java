@@ -15,18 +15,7 @@
  */
 package sleeper.bulkimport.job.runner.dataframe;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * The {@link BulkImportJobDataframeRunner} is a {@link BulkImportJobRunner} which
@@ -34,16 +23,8 @@ import java.util.List;
  * Sleeoer partition.
  */
 public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
-
-    @Override
-    public Dataset<Row> createFileInfos(
-            Dataset<Row> rows,
-            BulkImportJob job,
-            TableProperties tableProperties,
-            Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-        BulkImportDataframePartitioner partitioner = new BulkImportDataframePartitioner();
-        return partitioner.createFileInfos(rows, job, getInstanceProperties(), tableProperties,
-                broadcastedPartitions, conf);
+    public BulkImportJobDataframeRunner() {
+        super(new BulkImportDataframePartitioner());
     }
 
     public static void main(String[] args) throws Exception {

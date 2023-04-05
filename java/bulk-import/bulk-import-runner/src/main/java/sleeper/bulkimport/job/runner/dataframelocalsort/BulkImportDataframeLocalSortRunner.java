@@ -35,6 +35,10 @@ import java.util.List;
  */
 public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
 
+    public BulkImportDataframeLocalSortRunner() {
+        super(new BulkImportDataframeLocalSortPartitioner());
+    }
+
     @Override
     public Dataset<Row> createFileInfos(
             Dataset<Row> rows,

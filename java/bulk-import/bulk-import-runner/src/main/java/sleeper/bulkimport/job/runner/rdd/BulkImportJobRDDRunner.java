@@ -15,18 +15,7 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * The {@link BulkImportJobRDDRunner} is a {@link BulkImportJobRunner} which
@@ -34,13 +23,8 @@ import java.util.List;
  * partitions and for each partition, write a single sorted Parquet file.
  */
 public class BulkImportJobRDDRunner extends BulkImportJobRunner {
-
-    @Override
-    public Dataset<Row> createFileInfos(
-            Dataset<Row> rows, BulkImportJob job, TableProperties tableProperties,
-            Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-        BulkImportRDDPartitioner partitioner = new BulkImportRDDPartitioner();
-        return partitioner.createFileInfos(rows, job, getInstanceProperties(), tableProperties, broadcastedPartitions, conf);
+    public BulkImportJobRDDRunner() {
+        super(new BulkImportRDDPartitioner());
     }
 
     public static void main(String[] args) throws Exception {
