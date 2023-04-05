@@ -180,25 +180,21 @@ public class BulkImportJobRunnerIT {
         return instanceProperties;
     }
 
-    public TableProperties createTable(AmazonS3 s3,
-                                       AmazonDynamoDB dynamoDB,
-                                       InstanceProperties instanceProperties,
-                                       String tableName,
-                                       String dataBucket,
-                                       Schema schema) throws IOException, StateStoreException {
+    public TableProperties createTable(InstanceProperties instanceProperties) throws IOException, StateStoreException {
+        String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
-        tableProperties.set(DATA_BUCKET, dataBucket);
+        tableProperties.set(DATA_BUCKET, UUID.randomUUID().toString());
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
-        s3.createBucket(tableProperties.get(DATA_BUCKET));
-        tableProperties.saveToS3(s3);
+        s3Client.createBucket(tableProperties.get(DATA_BUCKET));
+        tableProperties.saveToS3(s3Client);
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
-                tableProperties, dynamoDB);
+                tableProperties, dynamoDBClient);
         dynamoDBStateStoreCreator.create();
         return tableProperties;
     }
@@ -309,9 +305,7 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        String tableName = UUID.randomUUID().toString();
-        String localDir = UUID.randomUUID().toString();
-        TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
+        TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -323,7 +317,8 @@ public class BulkImportJobRunnerIT {
         // When
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
+        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -356,9 +351,7 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        String tableName = UUID.randomUUID().toString();
-        String localDir = UUID.randomUUID().toString();
-        TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
+        TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getRecordsIdenticalRowKey();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -370,7 +363,8 @@ public class BulkImportJobRunnerIT {
         // When
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
+        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -403,9 +397,7 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        String tableName = UUID.randomUUID().toString();
-        String localDir = UUID.randomUUID().toString();
-        TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
+        TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -417,7 +409,8 @@ public class BulkImportJobRunnerIT {
         // When
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
+        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
         List<Record> leftPartition = records.stream()
@@ -443,9 +436,7 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        String tableName = UUID.randomUUID().toString();
-        String localDir = UUID.randomUUID().toString();
-        TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
+        TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getLotsOfRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -457,7 +448,8 @@ public class BulkImportJobRunnerIT {
         // When
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
+        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -512,9 +504,7 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        String tableName = UUID.randomUUID().toString();
-        String localDir = UUID.randomUUID().toString();
-        TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
+        TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
@@ -528,7 +518,8 @@ public class BulkImportJobRunnerIT {
         // When
         BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
         runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(Lists.newArrayList("/import/")).tableName(tableName).build());
+        runner.run(new BulkImportJob.Builder().id("my-job").files(Lists.newArrayList("/import/"))
+                .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
