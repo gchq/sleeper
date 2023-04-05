@@ -97,10 +97,6 @@ public class BulkImportJobRunner {
         this.dynamoClient = dynamoClient;
     }
 
-    protected InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
-
     public Dataset<Row> createFileInfos(
             Dataset<Row> row, BulkImportJob job,
             TableProperties tableProperties, Broadcast<List<Partition>> broadcastedPartitions,
