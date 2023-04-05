@@ -29,6 +29,7 @@ import sleeper.core.partition.Partition;
 import java.io.IOException;
 import java.util.List;
 
+@FunctionalInterface
 public interface BulkImportPartitioner {
     Dataset<Row> createFileInfos(
             Dataset<Row> row, BulkImportJob job, InstanceProperties instanceProperties,
