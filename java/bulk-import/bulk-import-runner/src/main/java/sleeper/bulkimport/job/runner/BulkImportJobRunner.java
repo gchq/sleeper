@@ -148,8 +148,9 @@ public class BulkImportJobRunner {
                 .option("recursiveFileLookup", "true")
                 .parquet(pathsWithFs.toArray(new String[0]));
 
+        LOGGER.info("Running bulk import job with id {}", job.getId());
         List<FileInfo> fileInfos = partitioner.createFileInfos(
-                        dataWithPartition, job, instanceProperties, tableProperties, broadcastedPartitions, conf)
+                        dataWithPartition, instanceProperties, tableProperties, broadcastedPartitions, conf)
                 .collectAsList().stream()
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());

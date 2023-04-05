@@ -29,7 +29,6 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportPartitioner;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
@@ -54,11 +53,8 @@ public class BulkImportDataframeLocalSortPartitioner implements BulkImportPartit
 
     @Override
     public Dataset<Row> createFileInfos(
-            Dataset<Row> rows,
-            BulkImportJob job, InstanceProperties instanceProperties,
-            TableProperties tableProperties,
+            Dataset<Row> rows, InstanceProperties instanceProperties, TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-        LOGGER.info("Running bulk import job with id {}", job.getId());
 
         Schema schema = tableProperties.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);

@@ -21,7 +21,6 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -32,7 +31,7 @@ import java.util.List;
 @FunctionalInterface
 public interface BulkImportPartitioner {
     Dataset<Row> createFileInfos(
-            Dataset<Row> row, BulkImportJob job, InstanceProperties instanceProperties,
+            Dataset<Row> rows, InstanceProperties instanceProperties,
             TableProperties tableProperties, Broadcast<List<Partition>> broadcastedPartitions,
             Configuration conf) throws IOException;
 }

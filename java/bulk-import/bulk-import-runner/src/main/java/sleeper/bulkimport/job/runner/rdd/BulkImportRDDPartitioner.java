@@ -24,7 +24,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportPartitioner;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -40,7 +39,7 @@ import static sleeper.bulkimport.job.runner.BulkImportJobRunner.createFileInfoSc
 public class BulkImportRDDPartitioner implements BulkImportPartitioner {
     @Override
     public Dataset<Row> createFileInfos(
-            Dataset<Row> rows, BulkImportJob job, InstanceProperties instanceProperties, TableProperties tableProperties,
+            Dataset<Row> rows, InstanceProperties instanceProperties, TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
         Schema schema = tableProperties.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
