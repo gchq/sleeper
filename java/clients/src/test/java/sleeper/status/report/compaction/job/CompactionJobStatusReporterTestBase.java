@@ -19,6 +19,7 @@ package sleeper.status.report.compaction.job;
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.job.query.JobQuery.Type;
@@ -131,6 +132,19 @@ public abstract class CompactionJobStatusReporterTestBase {
                         summary(startedTime2, Duration.ofHours(2), 1000600, 500300))),
                 jobCreated(job1, creationTime1, finishedCompactionRun("task-id",
                         summary(startedTime1, Duration.ofMillis(123), 600, 300))));
+    }
+
+    protected List<CompactionJobStatus> jobWithMultipleInputFiles() {
+        Instant creationTime = Instant.parse("2022-10-13T12:00:00.001Z");
+        return List.of(CompactionJobStatus.builder().jobId("test-job")
+                .createdStatus(CompactionJobCreatedStatus.builder()
+                        .inputFilesCount(5)
+                        .updateTime(creationTime)
+                        .partitionId("test-partition")
+                        .childPartitionIds(List.of())
+                        .build())
+                .jobRunsLatestFirst(List.of())
+                .build());
     }
 
     public static String replaceStandardJobIds(List<CompactionJobStatus> job, String example) {
