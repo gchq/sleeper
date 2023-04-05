@@ -17,8 +17,6 @@
 package sleeper.bulkimport.job.runner.dataframelocalsort;
 
 import com.google.common.collect.Lists;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -30,10 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportPartitioner;
+import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
@@ -41,7 +38,6 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.bulkimport.job.runner.BulkImportJobRunner.PARTITION_FIELD_NAME;
@@ -52,20 +48,19 @@ public class BulkImportDataframeLocalSortPartitioner implements BulkImportPartit
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortPartitioner.class);
 
     @Override
-    public Dataset<Row> createFileInfos(
-            Dataset<Row> rows, InstanceProperties instanceProperties, TableProperties tableProperties,
-            Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
+    public Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
 
-        Schema schema = tableProperties.getSchema();
+        Schema schema = request.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
-        int numLeafPartitions = (int) broadcastedPartitions.value().stream().filter(Partition::isLeafPartition).count();
+        int numLeafPartitions = (int) request.broadcastedPartitions().value()
+                .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = rows.mapPartitions(
-                new AddPartitionAsIntFunction(schemaAsString, broadcastedPartitions),
+        Dataset<Row> dataWithPartition = request.rows().mapPartitions(
+                new AddPartitionAsIntFunction(schemaAsString, request.broadcastedPartitions()),
                 RowEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
@@ -86,8 +81,11 @@ public class BulkImportDataframeLocalSortPartitioner implements BulkImportPartit
         LOGGER.info("There are {} partitions in the sorted-within-partition Dataset", sortedRows.rdd().getNumPartitions());
 
         return sortedRows.mapPartitions(
-                new WriteParquetFile(instanceProperties.saveAsString(), tableProperties.saveAsString(),
-                        conf, broadcastedPartitions), RowEncoder.apply(createFileInfoSchema()));
+                new WriteParquetFile(
+                        request.instanceProperties().saveAsString(),
+                        request.tableProperties().saveAsString(),
+                        request.conf(), request.broadcastedPartitions()),
+                RowEncoder.apply(createFileInfoSchema()));
     }
 
     private StructType createEnhancedSchema(StructType convertedSchema) {

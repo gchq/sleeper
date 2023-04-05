@@ -16,38 +16,37 @@
 
 package sleeper.bulkimport.job.runner.rdd;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
 import sleeper.bulkimport.job.runner.BulkImportPartitioner;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
+import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
-import java.util.List;
 
 import static sleeper.bulkimport.job.runner.BulkImportJobRunner.createFileInfoSchema;
 
 public class BulkImportRDDPartitioner implements BulkImportPartitioner {
     @Override
-    public Dataset<Row> createFileInfos(
-            Dataset<Row> rows, InstanceProperties instanceProperties, TableProperties tableProperties,
-            Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-        Schema schema = tableProperties.getSchema();
+    public Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
+        Schema schema = request.tableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-        JavaRDD<Row> rdd = rows.javaRDD()
-                .mapToPair(new ExtractKeyFunction(schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
-                .repartitionAndSortWithinPartitions(new SleeperPartitioner(schemaAsString, broadcastedPartitions), new WrappedKeyComparator(schemaAsString))
+        JavaRDD<Row> rdd = request.rows().javaRDD()
+                .mapToPair(new ExtractKeyFunction(
+                        schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
+                .repartitionAndSortWithinPartitions(
+                        new SleeperPartitioner(schemaAsString, request.broadcastedPartitions()),
+                        new WrappedKeyComparator(schemaAsString))
                 .map(tuple -> tuple._2)
-                .mapPartitions(new WriteParquetFile(instanceProperties.saveAsString(), tableProperties.saveAsString(), conf, broadcastedPartitions));
+                .mapPartitions(new WriteParquetFile(
+                        request.instanceProperties().saveAsString(),
+                        request.tableProperties().saveAsString(),
+                        request.conf(), request.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
         return session.createDataset(rdd.rdd(), RowEncoder.apply(createFileInfoSchema()));
