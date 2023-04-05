@@ -97,13 +97,6 @@ public class BulkImportJobRunner {
         this.dynamoClient = dynamoClient;
     }
 
-    public Dataset<Row> createFileInfos(
-            Dataset<Row> row, BulkImportJob job,
-            TableProperties tableProperties, Broadcast<List<Partition>> broadcastedPartitions,
-            Configuration conf) throws IOException {
-        return partitioner.createFileInfos(row, job, instanceProperties, tableProperties, broadcastedPartitions, conf);
-    }
-
     public void run(BulkImportJob job) throws IOException {
         Instant startTime = Instant.now();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
@@ -155,8 +148,9 @@ public class BulkImportJobRunner {
                 .option("recursiveFileLookup", "true")
                 .parquet(pathsWithFs.toArray(new String[0]));
 
-        List<FileInfo> fileInfos = createFileInfos(dataWithPartition, job, tableProperties, broadcastedPartitions, conf).collectAsList()
-                .stream()
+        List<FileInfo> fileInfos = partitioner.createFileInfos(
+                        dataWithPartition, job, instanceProperties, tableProperties, broadcastedPartitions, conf)
+                .collectAsList().stream()
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());
 
