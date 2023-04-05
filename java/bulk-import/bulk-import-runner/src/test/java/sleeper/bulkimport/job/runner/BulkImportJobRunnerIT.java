@@ -36,7 +36,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
-import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortPartitioner;
+import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -102,7 +102,8 @@ public class BulkImportJobRunnerIT {
                         (BulkImportPartitioner) BulkImportJobDataframeRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportJobRDDRunner",
                         (BulkImportPartitioner) BulkImportJobRDDRunner::createFileInfos)),
-                Arguments.of(Named.of("BulkImportDataframeLocalSortPartitioner", new BulkImportDataframeLocalSortPartitioner()))
+                Arguments.of(Named.of("BulkImportDataframeLocalSortRunner",
+                        (BulkImportPartitioner) BulkImportDataframeLocalSortRunner::createFileInfos))
         );
     }
 
