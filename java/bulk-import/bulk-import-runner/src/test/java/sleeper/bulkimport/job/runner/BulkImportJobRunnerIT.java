@@ -298,6 +298,12 @@ public class BulkImportJobRunnerIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
+    private void runJob(SparkRecordPartitioner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
+        runner.init(properties, s3Client, dynamoDBClient);
+        runner.run(job);
+    }
+
     @ParameterizedTest
     @MethodSource("getParameters")
     public void shouldImportDataSinglePartition(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
@@ -315,9 +321,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
-        runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
@@ -361,9 +365,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
-        runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
@@ -407,9 +409,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.singletonList(50));
 
         // When
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
-        runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
@@ -446,9 +446,7 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
         // When
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
-        runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles)
+        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
@@ -516,9 +514,8 @@ public class BulkImportJobRunnerIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
-        runner.init(instanceProperties, s3Client, dynamoDBClient);
-        runner.run(new BulkImportJob.Builder().id("my-job").files(Lists.newArrayList("/import/"))
+        runJob(partitioner, instanceProperties, BulkImportJob.builder().id("my-job")
+                .files(Lists.newArrayList("/import/"))
                 .tableName(tableProperties.get(TABLE_NAME)).build());
 
         // Then
