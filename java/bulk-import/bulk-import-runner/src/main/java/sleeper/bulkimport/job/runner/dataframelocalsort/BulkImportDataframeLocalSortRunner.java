@@ -15,32 +15,18 @@
  */
 package sleeper.bulkimport.job.runner.dataframelocalsort;
 
-import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.StructTypeFactory;
-import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * The {@link BulkImportDataframeLocalSortRunner} is a {@link BulkImportJobRunner} which
@@ -48,7 +34,6 @@ import java.util.stream.Collectors;
  * Sleeoer partition.
  */
 public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortRunner.class);
 
     @Override
     public Dataset<Row> createFileInfos(
@@ -56,43 +41,11 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
             BulkImportJob job,
             TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-        LOGGER.info("Running bulk import job with id {}", job.getId());
-
-        Schema schema = tableProperties.getSchema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
-
-        int numLeafPartitions = (int) broadcastedPartitions.value().stream().filter(Partition::isLeafPartition).count();
-        LOGGER.info("There are {} leaf partitions", numLeafPartitions);
-
-        Dataset<Row> dataWithPartition = rows.mapPartitions(new AddPartitionAsIntFunction(schemaAsString, broadcastedPartitions), RowEncoder.apply(schemaWithPartitionField));
-        LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
-
-        Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition).explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
-        LOGGER.info("After repartitioning data, there are {} partitions", repartitionedData.rdd().getNumPartitions());
-
-        Column[] sortColumns = Lists.newArrayList(schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
-                .stream()
-                .flatMap(list -> ((List<String>) list).stream())
-                .map(Column::new)
-                .collect(Collectors.toList())
-                .toArray(new Column[0]);
-        LOGGER.info("Sorting by columns {}", String.join(",", Arrays.stream(sortColumns).map(c -> c.toString()).collect(Collectors.toList())));
-
-        Dataset<Row> sortedRows = repartitionedData.sortWithinPartitions(sortColumns);
-        LOGGER.info("There are {} partitions in the sorted-within-partition Dataset", sortedRows.rdd().getNumPartitions());
-
-        return sortedRows.mapPartitions(new WriteParquetFile(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf, broadcastedPartitions), RowEncoder.apply(createFileInfoSchema()));
+        BulkImportDataframeLocalSortPartitioner partitioner = new BulkImportDataframeLocalSortPartitioner();
+        return partitioner.createFileInfos(rows, job, getInstanceProperties(), tableProperties, broadcastedPartitions, conf);
     }
 
     public static void main(String[] args) throws Exception {
         BulkImportJobRunner.start(args, new BulkImportDataframeLocalSortRunner());
-    }
-
-    private StructType createEnhancedSchema(StructType convertedSchema) {
-        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
-        return structTypeWithPartition
-                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
     }
 }
