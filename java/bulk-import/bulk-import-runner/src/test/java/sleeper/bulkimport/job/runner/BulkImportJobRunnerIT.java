@@ -114,6 +114,9 @@ public class BulkImportJobRunnerIT {
 
     @TempDir
     public java.nio.file.Path folder;
+    private final AmazonS3 s3Client = createS3Client();
+    private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
+    private final Schema schema = getSchema();
 
     @BeforeAll
     public static void setSparkProperties() {
@@ -127,17 +130,17 @@ public class BulkImportJobRunnerIT {
         System.clearProperty("spark.app.name");
     }
 
-    private AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
-    }
-
     private static AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
+                .build();
+    }
+
+    private static AmazonDynamoDB createDynamoClient() {
+        return AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
                 .build();
     }
 
@@ -303,11 +306,6 @@ public class BulkImportJobRunnerIT {
     @MethodSource("getParameters")
     public void shouldImportDataSinglePartition(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
-        //  - AWS Clients
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
-        //  - Schema
-        Schema schema = getSchema();
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
@@ -355,11 +353,6 @@ public class BulkImportJobRunnerIT {
     @MethodSource("getParameters")
     public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
-        //  - AWS Clients
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
-        //  - Schema
-        Schema schema = getSchema();
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
@@ -407,11 +400,6 @@ public class BulkImportJobRunnerIT {
     @MethodSource("getParameters")
     public void shouldImportDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
-        //  - AWS Clients
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
-        //  - Schema
-        Schema schema = getSchema();
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
@@ -452,11 +440,6 @@ public class BulkImportJobRunnerIT {
     @MethodSource("getParameters")
     public void shouldImportLargeAmountOfDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
-        //  - AWS Clients
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
-        //  - Schema
-        Schema schema = getSchema();
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
@@ -526,11 +509,6 @@ public class BulkImportJobRunnerIT {
     @MethodSource("getParameters")
     public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
-        //  - AWS Clients
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
-        //  - Schema
-        Schema schema = getSchema();
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
