@@ -84,7 +84,6 @@ public abstract class BulkImportJobRunner {
     private InstanceProperties instanceProperties;
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
-    private Instant startTime;
 
     public void init(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
@@ -102,7 +101,7 @@ public abstract class BulkImportJobRunner {
             Configuration conf) throws IOException;
 
     public void run(BulkImportJob job) throws IOException {
-        startTime = Instant.now();
+        Instant startTime = Instant.now();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
 
@@ -142,9 +141,7 @@ public abstract class BulkImportJobRunner {
         List<String> pathsWithFs = new ArrayList<>();
         String fs = instanceProperties.get(FILE_SYSTEM);
         LOGGER.info("Using file system {}", fs);
-        job.getFiles().forEach(file -> {
-            pathsWithFs.add(fs + file);
-        });
+        job.getFiles().forEach(file -> pathsWithFs.add(fs + file));
         LOGGER.info("Paths to be read are {}", pathsWithFs);
 
         // Run bulk import
@@ -189,7 +186,7 @@ public abstract class BulkImportJobRunner {
                 .build();
     }
 
-    protected StructType createFileInfoSchema() {
+    public static StructType createFileInfoSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)

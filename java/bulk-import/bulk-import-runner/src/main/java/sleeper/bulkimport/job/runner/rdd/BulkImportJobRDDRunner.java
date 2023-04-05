@@ -16,19 +16,14 @@
 package sleeper.bulkimport.job.runner.rdd;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,16 +39,8 @@ public class BulkImportJobRDDRunner extends BulkImportJobRunner {
     public Dataset<Row> createFileInfos(
             Dataset<Row> rows, BulkImportJob job, TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
-        Schema schema = tableProperties.getSchema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-        JavaRDD<Row> rdd = rows.javaRDD()
-                .mapToPair(new ExtractKeyFunction(schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
-                .repartitionAndSortWithinPartitions(new SleeperPartitioner(schemaAsString, broadcastedPartitions), new WrappedKeyComparator(schemaAsString))
-                .map(tuple -> tuple._2)
-                .mapPartitions(new WriteParquetFile(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf, broadcastedPartitions));
-
-        SparkSession session = SparkSession.builder().getOrCreate();
-        return session.createDataset(rdd.rdd(), RowEncoder.apply(createFileInfoSchema()));
+        BulkImportRDDPartitioner partitioner = new BulkImportRDDPartitioner();
+        return partitioner.createFileInfos(rows, job, getInstanceProperties(), tableProperties, broadcastedPartitions, conf);
     }
 
     public static void main(String[] args) throws Exception {
