@@ -35,7 +35,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.runner.dataframe.BulkImportDataframePartitioner;
+import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortPartitioner;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
@@ -98,8 +98,10 @@ public class BulkImportJobRunnerIT {
 
     private static Stream<Arguments> getParameters() {
         return Stream.of(
-                Arguments.of(Named.of("BulkImportDataframePartitioner", new BulkImportDataframePartitioner())),
-                Arguments.of(Named.of("BulkImportJobRDDRunner", (BulkImportPartitioner) BulkImportJobRDDRunner::createFileInfos)),
+                Arguments.of(Named.of("BulkImportJobDataframeRunner",
+                        (BulkImportPartitioner) BulkImportJobDataframeRunner::createFileInfos)),
+                Arguments.of(Named.of("BulkImportJobRDDRunner",
+                        (BulkImportPartitioner) BulkImportJobRDDRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportDataframeLocalSortPartitioner", new BulkImportDataframeLocalSortPartitioner()))
         );
     }
