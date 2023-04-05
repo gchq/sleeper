@@ -114,7 +114,7 @@ public class DeployNewInstance {
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
 
         Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
-        tagsProperties.setProperty("Name", instanceId);
+        tagsProperties.setProperty("InstanceID", instanceId);
         InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
                 .properties(loadInstancePropertiesTemplate())
