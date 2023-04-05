@@ -99,11 +99,11 @@ public class BulkImportJobRunnerIT {
     private static Stream<Arguments> getParameters() {
         return Stream.of(
                 Arguments.of(Named.of("BulkImportJobDataframeRunner",
-                        (BulkImportPartitioner) BulkImportJobDataframeRunner::createFileInfos)),
+                        (SparkRecordPartitioner) BulkImportJobDataframeRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportJobRDDRunner",
-                        (BulkImportPartitioner) BulkImportJobRDDRunner::createFileInfos)),
+                        (SparkRecordPartitioner) BulkImportJobRDDRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportDataframeLocalSortRunner",
-                        (BulkImportPartitioner) BulkImportDataframeLocalSortRunner::createFileInfos))
+                        (SparkRecordPartitioner) BulkImportDataframeLocalSortRunner::createFileInfos))
         );
     }
 
@@ -301,7 +301,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataSinglePartition(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
+    public void shouldImportDataSinglePartition(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -353,7 +353,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
+    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -405,7 +405,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataMultiplePartitions(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
+    public void shouldImportDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -450,7 +450,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
+    public void shouldImportLargeAmountOfDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -524,7 +524,7 @@ public class BulkImportJobRunnerIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportPartitioner partitioner) throws IOException, StateStoreException {
+    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();

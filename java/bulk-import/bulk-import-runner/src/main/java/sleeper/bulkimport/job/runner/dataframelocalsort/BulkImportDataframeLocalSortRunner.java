@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
+import sleeper.bulkimport.job.runner.SparkFileInfoRow;
 import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
@@ -39,9 +40,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static sleeper.bulkimport.job.runner.BulkImportJobRunner.PARTITION_FIELD_NAME;
-import static sleeper.bulkimport.job.runner.BulkImportJobRunner.createFileInfoSchema;
-
 /**
  * The {@link BulkImportDataframeLocalSortRunner} is a {@link BulkImportJobRunner} which
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
@@ -49,6 +47,7 @@ import static sleeper.bulkimport.job.runner.BulkImportJobRunner.createFileInfoSc
  */
 public class BulkImportDataframeLocalSortRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortRunner.class);
+    private static final String PARTITION_FIELD_NAME = "__partition";
 
     private BulkImportDataframeLocalSortRunner() {
     }
@@ -93,7 +92,7 @@ public class BulkImportDataframeLocalSortRunner {
                         request.instanceProperties().saveAsString(),
                         request.tableProperties().saveAsString(),
                         request.conf(), request.broadcastedPartitions()),
-                RowEncoder.apply(createFileInfoSchema()));
+                RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {

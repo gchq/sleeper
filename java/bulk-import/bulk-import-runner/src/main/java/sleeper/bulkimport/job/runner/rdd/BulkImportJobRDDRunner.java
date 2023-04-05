@@ -22,13 +22,12 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
+import sleeper.bulkimport.job.runner.SparkFileInfoRow;
 import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
-
-import static sleeper.bulkimport.job.runner.BulkImportJobRunner.createFileInfoSchema;
 
 /**
  * The {@link BulkImportJobRDDRunner} is a {@link BulkImportJobRunner} which
@@ -59,6 +58,6 @@ public class BulkImportJobRDDRunner {
                         request.conf(), request.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
-        return session.createDataset(rdd.rdd(), RowEncoder.apply(createFileInfoSchema()));
+        return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
     }
 }
