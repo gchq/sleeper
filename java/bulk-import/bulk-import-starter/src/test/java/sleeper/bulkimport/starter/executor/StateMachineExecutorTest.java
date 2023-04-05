@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class StateMachineExecutorTest {
@@ -212,11 +213,12 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldPassConfigBucketToSparkArgs() {
+    public void shouldPassConfigBucketAndJobIdsToSparkArgs() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
+        instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "myStateMachine");
         StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
@@ -230,7 +232,7 @@ public class StateMachineExecutorTest {
         // Then
         assertThatJson(requested.get().getInput())
                 .inPath("$.args").isArray().extracting(Objects::toString)
-                .endsWith("myConfigBucket");
+                .endsWith("myConfigBucket", "my-job", "myStateMachine");
     }
 
     @Test
