@@ -56,15 +56,13 @@ public class BulkImportJobRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobRunner.class);
 
     private final SparkRecordPartitioner partitioner;
-    private InstanceProperties instanceProperties;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
 
-    public BulkImportJobRunner(SparkRecordPartitioner partitioner) {
+    public BulkImportJobRunner(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
+                               AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.partitioner = partitioner;
-    }
-
-    public void init(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
@@ -122,8 +120,8 @@ public class BulkImportJobRunner {
             throw e;
         }
 
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner);
-        runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
+        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, instanceProperties,
+                amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         runner.run(bulkImportJob);
     }
 }
