@@ -134,14 +134,16 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    topicStack);
+                    topicStack,
+                    ingestStatusStoreStack);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
                     instanceProperties, jars, bulkImportBucketStack,
-                    emrBulkImportCommonStack, topicStack
+                    emrBulkImportCommonStack, topicStack,
+                    ingestStatusStoreStack
             );
         }
 
