@@ -23,6 +23,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FileInfo;
@@ -40,8 +41,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.statestore.FileInfoTestData.defaultFileOnRootPartitionWithRecords;
 
-public class BulkImportJobReportingTest {
+class BulkImportJobReportingTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
@@ -51,22 +53,19 @@ public class BulkImportJobReportingTest {
     @Test
     void shouldReportJobFinished() throws Exception {
         // Given
-        String tableName = tableProperties.get(TABLE_NAME);
-        BulkImportJob job = BulkImportJob.builder()
-                .id("test-job")
-                .tableName(tableName)
-                .files(List.of("test.parquet")).build();
+        BulkImportJob job = singleFileImportJob();
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        List<FileInfo> fileInfos = List.of();
+        List<FileInfo> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
 
         // When
-        runJob(job, "test-task", startTime, finishTime, fileInfos);
+        runJob(job, "test-task", startTime, finishTime, outputFiles);
 
         // Then
-        assertThat(statusStore.getAllJobs(tableName))
+        assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
-                        summary(startTime, finishTime, 0L, 0L)));
+                        summary(startTime, finishTime, 100, 100)));
     }
 
     private void runJob(BulkImportJob job, String taskId,
@@ -78,5 +77,16 @@ public class BulkImportJobReportingTest {
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 statusStore, List.of(startTime, finishTime).iterator()::next);
         driver.run(job, taskId);
+    }
+
+    private BulkImportJob singleFileImportJob() {
+        return BulkImportJob.builder()
+                .id("test-job")
+                .tableName(tableProperties.get(TABLE_NAME))
+                .files(List.of("test.parquet")).build();
+    }
+
+    private List<IngestJobStatus> allJobsReported() {
+        return statusStore.getAllJobs(tableProperties.get(TABLE_NAME));
     }
 }
