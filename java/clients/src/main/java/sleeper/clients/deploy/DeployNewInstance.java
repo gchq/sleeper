@@ -33,6 +33,7 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -83,6 +84,11 @@ public class DeployNewInstance {
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
+        Path splitPointsPath = null;
+        Optional<String> splitPointsPathString = optionalArgument(args, 6);
+        if (splitPointsPathString.isPresent()) {
+            splitPointsPath = scriptsDirectory.resolve(splitPointsPathString.get());
+        }
 
         builder().scriptsDirectory(scriptsDirectory)
                 .instanceId(args[1])
@@ -90,7 +96,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 6).orElse(null))
+                .splitPointsFile(splitPointsPath)
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
@@ -234,10 +240,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder splitPointsFile(String splitPointsFile) {
-            if (null != splitPointsFile) {
-                this.splitPointsFile = scriptsDirectory.resolve(splitPointsFile);
-            }
+        public Builder splitPointsFile(Path splitPointsFile) {
+            this.splitPointsFile = splitPointsFile;
             return this;
         }
 
