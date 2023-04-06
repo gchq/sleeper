@@ -47,7 +47,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.statestore.FileInfoTestData.defaultFileOnRootPartitionWithRecords;
 
-class BulkImportJobReportingTest {
+class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
