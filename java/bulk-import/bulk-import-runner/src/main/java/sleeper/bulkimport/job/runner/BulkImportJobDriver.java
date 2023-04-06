@@ -57,22 +57,22 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
+    private final BulkImportSessionRunner sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
-    private final BulkImportSessionRunner sessionRunner;
 
     public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
                                TablePropertiesProvider tablePropertiesProvider,
                                StateStoreProvider stateStoreProvider,
                                IngestJobStatusStore statusStore,
                                Supplier<Instant> getTime) {
+        this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
         this.getTime = getTime;
-        this.sessionRunner = sessionRunner;
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
