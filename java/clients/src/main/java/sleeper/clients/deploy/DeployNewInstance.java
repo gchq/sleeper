@@ -54,6 +54,7 @@ public class DeployNewInstance {
     private final Path instancePropertiesTemplate;
     private final Consumer<Properties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
+    private final Path splitPointsFile;
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
@@ -68,6 +69,7 @@ public class DeployNewInstance {
         instancePropertiesTemplate = builder.instancePropertiesTemplate;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
+        splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
     }
 
@@ -76,8 +78,9 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 6) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> <optional-deploy-paused-flag>");
+        if (args.length < 5 || args.length > 7) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> " +
+                    "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
 
@@ -87,6 +90,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 6).orElse(null))
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
@@ -124,7 +128,7 @@ public class DeployNewInstance {
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
-                tableName);
+                tableName, splitPointsFile);
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
@@ -169,6 +173,7 @@ public class DeployNewInstance {
         private Consumer<Properties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
+        private Path splitPointsFile;
         private boolean deployPaused;
 
         private Builder() {
@@ -226,6 +231,13 @@ public class DeployNewInstance {
 
         public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
             this.instanceType = instanceType;
+            return this;
+        }
+
+        public Builder splitPointsFile(String splitPointsFile) {
+            if (null != splitPointsFile) {
+                this.splitPointsFile = scriptsDirectory.resolve(splitPointsFile);
+            }
             return this;
         }
 

@@ -30,8 +30,9 @@ public class DeployNewTestInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 6) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> <optional-deploy-paused-flag>");
+        if (args.length < 5 || args.length > 7) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
+                    "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
                 .instancePropertiesTemplate(Path.of(args[1]))
@@ -41,6 +42,7 @@ public class DeployNewTestInstance {
                 .vpcId(args[3])
                 .subnetId(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 6).orElse(null))
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();

@@ -20,12 +20,15 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GenerateTableProperties {
@@ -37,7 +40,16 @@ public class GenerateTableProperties {
         return from(instanceProperties, new SchemaSerDe().toJson(schema), new Properties(), tableName);
     }
 
-    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson, Properties properties, String tableName) {
+    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson,
+                                       Properties properties, String tableName, Path splitPointsFile) {
+        if (Files.exists(splitPointsFile)) {
+            properties.setProperty(SPLIT_POINTS_FILE.getPropertyName(), splitPointsFile.toString());
+        }
+        return from(instanceProperties, schemaJson, properties, tableName);
+    }
+
+    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson,
+                                       Properties properties, String tableName) {
         properties.setProperty(SCHEMA.getPropertyName(), schemaJson);
         properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
