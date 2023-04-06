@@ -22,14 +22,12 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.inmemory.StateStoreTestHelper;
 
 import java.time.Instant;
@@ -73,13 +71,12 @@ public class BulkImportJobReportingTest {
 
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
-        BulkImportJobDriver.BulkImportSessionRunner sessionRunner = bulkImportJob -> new BulkImportJobOutput(
-                outputFiles, () -> {
+        BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
         });
-        BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner, tablePropertiesProvider,
-                stateStoreProvider, statusStore, List.of(startTime, finishTime).iterator()::next);
+        BulkImportJobDriver driver = new BulkImportJobDriver(bulkImportJob -> output,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                statusStore, List.of(startTime, finishTime).iterator()::next);
         driver.run(job, taskId);
     }
 }
