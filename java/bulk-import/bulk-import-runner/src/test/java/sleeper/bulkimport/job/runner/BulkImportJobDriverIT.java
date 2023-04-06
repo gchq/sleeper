@@ -99,7 +99,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summar
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 
 @Testcontainers
-public class BulkImportJobDriverIT {
+class BulkImportJobDriverIT {
 
     private static Stream<Arguments> getParameters() {
         return Stream.of(
@@ -316,7 +316,7 @@ public class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataSinglePartition(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartition(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -363,7 +363,7 @@ public class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -410,7 +410,7 @@ public class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -450,7 +450,7 @@ public class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldImportLargeAmountOfDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportLargeAmountOfDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -519,7 +519,7 @@ public class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
