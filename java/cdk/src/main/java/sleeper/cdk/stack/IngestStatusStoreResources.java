@@ -23,7 +23,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
-public interface IngestStatusStoreStack {
+public interface IngestStatusStoreResources {
 
     default void grantWriteJobEvent(IGrantable grantee) {
     }
@@ -31,16 +31,16 @@ public interface IngestStatusStoreStack {
     default void grantWriteTaskEvent(IGrantable grantee) {
     }
 
-    static IngestStatusStoreStack from(Construct scope, InstanceProperties properties) {
+    static IngestStatusStoreResources from(Construct scope, InstanceProperties properties) {
         if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            return new DynamoDBIngestStatusStoreStack(scope, properties);
+            return new DynamoDBIngestStatusStoreResources(scope, properties);
         } else {
             return none();
         }
     }
 
-    static IngestStatusStoreStack none() {
-        return new IngestStatusStoreStack() {
+    static IngestStatusStoreResources none() {
+        return new IngestStatusStoreResources() {
         };
     }
 }
