@@ -1,4 +1,4 @@
-Name=changeme
+InstanceID=changeme
 Description=Sleeper Instance
 Project=myproject
 Environment=DEV
