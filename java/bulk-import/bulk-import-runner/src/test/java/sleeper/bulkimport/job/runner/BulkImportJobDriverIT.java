@@ -104,11 +104,11 @@ class BulkImportJobDriverIT {
     private static Stream<Arguments> getParameters() {
         return Stream.of(
                 Arguments.of(Named.of("BulkImportJobDataframeRunner",
-                        (SparkRecordPartitioner) BulkImportJobDataframeRunner::createFileInfos)),
+                        (BulkImportJobRunner) BulkImportJobDataframeRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportJobRDDRunner",
-                        (SparkRecordPartitioner) BulkImportJobRDDRunner::createFileInfos)),
+                        (BulkImportJobRunner) BulkImportJobRDDRunner::createFileInfos)),
                 Arguments.of(Named.of("BulkImportDataframeLocalSortRunner",
-                        (SparkRecordPartitioner) BulkImportDataframeLocalSortRunner::createFileInfos))
+                        (BulkImportJobRunner) BulkImportDataframeLocalSortRunner::createFileInfos))
         );
     }
 
@@ -307,7 +307,7 @@ class BulkImportJobDriverIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    private void runJob(SparkRecordPartitioner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
+    private void runJob(BulkImportJobRunner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
         BulkImportJobDriver driver = new BulkImportJobDriver(partitioner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
@@ -316,7 +316,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartition(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartition(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -363,7 +363,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -410,7 +410,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataMultiplePartitions(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -450,7 +450,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportLargeAmountOfDataMultiplePartitions(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -519,7 +519,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(SparkRecordPartitioner partitioner) throws IOException, StateStoreException {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();

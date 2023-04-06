@@ -22,6 +22,6 @@ import org.apache.spark.sql.Row;
 import java.io.IOException;
 
 @FunctionalInterface
-public interface SparkRecordPartitioner {
+public interface BulkImportJobRunner {
     Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException;
 }

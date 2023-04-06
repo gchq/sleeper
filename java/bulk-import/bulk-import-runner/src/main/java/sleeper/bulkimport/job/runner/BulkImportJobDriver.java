@@ -82,20 +82,20 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
-    private final SparkRecordPartitioner partitioner;
+    private final BulkImportJobRunner partitioner;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobDriver(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
+    public BulkImportJobDriver(BulkImportJobRunner partitioner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this(partitioner, instanceProperties, s3Client, dynamoClient,
                 IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
     }
 
-    public BulkImportJobDriver(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
+    public BulkImportJobDriver(BulkImportJobRunner partitioner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
                                IngestJobStatusStore statusStore,
                                Supplier<Instant> getTime) {
@@ -189,7 +189,7 @@ public class BulkImportJobDriver {
         sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
     }
 
-    public static void start(String[] args, SparkRecordPartitioner partitioner) throws Exception {
+    public static void start(String[] args, BulkImportJobRunner partitioner) throws Exception {
         if (args.length != 3) {
             throw new IllegalArgumentException("Expected 3 arguments: <config bucket name> <bulk import job ID> <bulk import task ID>");
         }
