@@ -316,7 +316,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartition(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -333,7 +333,7 @@ class BulkImportJobDriverIT {
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build();
-        runJob(partitioner, instanceProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -363,7 +363,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -380,7 +380,7 @@ class BulkImportJobDriverIT {
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build();
-        runJob(partitioner, instanceProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -410,7 +410,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataMultiplePartitions(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
+    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -427,7 +427,7 @@ class BulkImportJobDriverIT {
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build();
-        runJob(partitioner, instanceProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<Record> leftPartition = records.stream()
@@ -450,7 +450,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
+    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -467,7 +467,7 @@ class BulkImportJobDriverIT {
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
                 .tableName(tableProperties.get(TABLE_NAME)).build();
-        runJob(partitioner, instanceProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
@@ -519,7 +519,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner partitioner) throws IOException, StateStoreException {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -538,7 +538,7 @@ class BulkImportJobDriverIT {
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(Lists.newArrayList("/import/"))
                 .tableName(tableProperties.get(TABLE_NAME)).build();
-        runJob(partitioner, instanceProperties, job);
+        runJob(runner, instanceProperties, job);
 
         // Then
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
