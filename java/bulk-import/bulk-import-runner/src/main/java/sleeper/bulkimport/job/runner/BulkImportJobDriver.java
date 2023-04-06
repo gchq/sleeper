@@ -79,8 +79,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
  * the data to files in S3 and returns a list of the {@link FileInfo}s that
  * will then be used to update the {@link StateStore}.
  */
-public class BulkImportJobRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobRunner.class);
+public class BulkImportJobDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
     private final SparkRecordPartitioner partitioner;
     private final InstanceProperties instanceProperties;
@@ -89,13 +89,13 @@ public class BulkImportJobRunner {
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobRunner(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
+    public BulkImportJobDriver(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this(partitioner, instanceProperties, s3Client, dynamoClient,
                 IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
     }
 
-    public BulkImportJobRunner(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
+    public BulkImportJobDriver(SparkRecordPartitioner partitioner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
                                IngestJobStatusStore statusStore,
                                Supplier<Instant> getTime) {
@@ -238,8 +238,8 @@ public class BulkImportJobRunner {
             throw e;
         }
 
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, instanceProperties,
+        BulkImportJobDriver driver = new BulkImportJobDriver(partitioner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        runner.run(bulkImportJob, taskId);
+        driver.run(bulkImportJob, taskId);
     }
 }

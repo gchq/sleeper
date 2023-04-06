@@ -99,7 +99,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summar
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 
 @Testcontainers
-public class BulkImportJobRunnerIT {
+public class BulkImportJobDriverIT {
 
     private static Stream<Arguments> getParameters() {
         return Stream.of(
@@ -308,10 +308,10 @@ public class BulkImportJobRunnerIT {
     }
 
     private void runJob(SparkRecordPartitioner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        BulkImportJobRunner runner = new BulkImportJobRunner(partitioner, properties,
+        BulkImportJobDriver driver = new BulkImportJobDriver(partitioner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
-        runner.run(job, taskId);
+        driver.run(job, taskId);
     }
 
     @ParameterizedTest

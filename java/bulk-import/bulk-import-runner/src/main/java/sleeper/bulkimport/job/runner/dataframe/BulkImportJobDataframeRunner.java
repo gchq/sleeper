@@ -26,7 +26,7 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
+import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.SparkFileInfoRow;
 import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * The {@link BulkImportJobDataframeRunner} is a {@link BulkImportJobRunner} which
+ * The {@link BulkImportJobDataframeRunner} is a {@link BulkImportJobDriver} which
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
  * Sleeoer partition.
  */
@@ -52,7 +52,7 @@ public class BulkImportJobDataframeRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobRunner.start(args, BulkImportJobDataframeRunner::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportJobDataframeRunner::createFileInfos);
     }
 
     public static Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {

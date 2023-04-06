@@ -21,7 +21,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
-import sleeper.bulkimport.job.runner.BulkImportJobRunner;
+import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.SparkFileInfoRow;
 import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.core.schema.Schema;
@@ -30,7 +30,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.IOException;
 
 /**
- * The {@link BulkImportJobRDDRunner} is a {@link BulkImportJobRunner} which
+ * The {@link BulkImportJobRDDRunner} is a {@link BulkImportJobDriver} which
  * uses the Spark RDD API to partition the data according to the Sleeper
  * partitions and for each partition, write a single sorted Parquet file.
  */
@@ -39,7 +39,7 @@ public class BulkImportJobRDDRunner {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobRunner.start(args, BulkImportJobRDDRunner::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportJobRDDRunner::createFileInfos);
     }
 
     public static Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
