@@ -189,7 +189,7 @@ public class BulkImportJobDriver {
         sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
     }
 
-    public static void start(String[] args, BulkImportJobRunner partitioner) throws Exception {
+    public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
         if (args.length != 3) {
             throw new IllegalArgumentException("Expected 3 arguments: <config bucket name> <bulk import job ID> <bulk import task ID>");
         }
@@ -238,7 +238,7 @@ public class BulkImportJobDriver {
             throw e;
         }
 
-        BulkImportJobDriver driver = new BulkImportJobDriver(partitioner, instanceProperties,
+        BulkImportJobDriver driver = new BulkImportJobDriver(runner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         driver.run(bulkImportJob, taskId);
     }
