@@ -29,6 +29,7 @@ import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.StateStoreTestHelper;
 
 import java.time.Instant;
@@ -36,6 +37,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -67,10 +70,11 @@ class BulkImportJobReportingTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
                         summary(startTime, finishTime, 100, 100)));
+        assertThat(stateStore.getActiveFiles()).isEqualTo(outputFiles);
     }
 
     @Test
-    void shouldReportJobFinishedWithNoRecordsWhenJobFailed() {
+    void shouldReportJobFinishedWithNoRecordsWhenJobFailed() throws Exception {
         // Given
         BulkImportJob job = singleFileImportJob();
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
@@ -88,18 +92,84 @@ class BulkImportJobReportingTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
                         summary(startTime, finishTime, 0, 0)));
+        assertThat(stateStore.getActiveFiles()).isEmpty();
+    }
+
+    @Test
+    void shouldReportJobFinishedWithNoRecordsWhenStateStoreUpdateFailed() throws Exception {
+        // Given
+        BulkImportJob job = singleFileImportJob();
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        StateStoreException jobFailure = new StateStoreException("Failed updating files");
+        List<FileInfo> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+
+        // When
+        assertThatThrownBy(() -> runJobFailStateStoreUpdate(job, "test-task",
+                startTime, finishTime, outputFiles, jobFailure)
+        ).isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+
+        // Then
+        assertThat(allJobsReported())
+                .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
+                        summary(startTime, finishTime, 0, 0)));
+        assertThat(stateStore.getActiveFiles()).isEmpty();
+    }
+
+    @Test
+    void shouldReportJobFinishedWithNoRecordsWhenStateStoreUpdateHadUnexpectedFailure() throws Exception {
+        // Given
+        BulkImportJob job = singleFileImportJob();
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        RuntimeException jobFailure = new RuntimeException("Failed updating files");
+        List<FileInfo> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+
+        // When
+        assertThatThrownBy(() -> runJobFailStateStoreUpdate(job, "test-task",
+                startTime, finishTime, outputFiles, jobFailure)
+        ).isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+
+        // Then
+        assertThat(allJobsReported())
+                .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
+                        summary(startTime, finishTime, 0, 0)));
+        assertThat(stateStore.getActiveFiles()).isEmpty();
     }
 
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
+        runJob(job, taskId, startTime, finishTime, outputFiles, stateStore);
+    }
+
+    private void runJobFailStateStoreUpdate(BulkImportJob job, String taskId,
+                                            Instant startTime, Instant finishTime, List<FileInfo> outputFiles,
+                                            Exception failure) throws Exception {
+        StateStore stateStore = mock(StateStore.class);
+        doThrow(failure).when(stateStore).addFiles(outputFiles);
+        runJob(job, taskId, startTime, finishTime, outputFiles, stateStore);
+    }
+
+    private void runJob(BulkImportJob job, String taskId,
+                        Instant startTime, Instant finishTime, List<FileInfo> outputFiles,
+                        StateStore stateStore) throws Exception {
         BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
         });
-        runJob(job, taskId, startTime, finishTime, bulkImportJob -> output);
+        runJob(job, taskId, startTime, finishTime, bulkImportJob -> output, stateStore);
     }
 
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime,
                         BulkImportJobDriver.BulkImportSessionRunner sessionRunner) throws Exception {
+        runJob(job, taskId, startTime, finishTime, sessionRunner, stateStore);
+    }
+
+    private void runJob(BulkImportJob job, String taskId,
+                        Instant startTime, Instant finishTime,
+                        BulkImportJobDriver.BulkImportSessionRunner sessionRunner,
+                        StateStore stateStore) throws Exception {
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),

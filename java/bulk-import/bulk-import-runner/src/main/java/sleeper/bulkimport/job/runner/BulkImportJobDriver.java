@@ -36,7 +36,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -122,7 +121,9 @@ public class BulkImportJobDriver {
             stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
                     .addFiles(output.fileInfos());
             LOGGER.info("Added {} files to statestore", output.numFiles());
-        } catch (StateStoreException e) {
+        } catch (Exception e) {
+            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()));
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
