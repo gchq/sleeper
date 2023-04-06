@@ -186,7 +186,10 @@ public class BulkImportJobDriver {
                 .collect(Collectors.toList());
 
         applyCompletedJob(job, taskId, startTime, stateStore, fileInfos);
-        sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
+
+        // Calling this manually stops it potentially timing out after 10 seconds.
+        // Note that we stop the Spark context after we've applied the changes in Sleeper.
+        sparkContext.stop();
     }
 
     private void applyCompletedJob(
