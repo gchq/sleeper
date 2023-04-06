@@ -153,7 +153,8 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     tableStack,
-                    topicStack);
+                    topicStack,
+                    ingestStatusStoreStack);
         }
 
         // Stack to garbage collect old files
