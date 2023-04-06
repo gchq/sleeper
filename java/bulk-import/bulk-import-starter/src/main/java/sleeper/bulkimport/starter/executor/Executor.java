@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
 
 public abstract class Executor {
@@ -43,7 +44,7 @@ public abstract class Executor {
     protected final TablePropertiesProvider tablePropertiesProvider;
     protected final AmazonS3 s3Client;
 
-    public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
+    protected Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.s3Client = amazonS3Client;
@@ -67,7 +68,7 @@ public abstract class Executor {
 
     protected abstract String getJarLocation();
 
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
+    protected List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         LOGGER.info("Using Spark config {}", userConfig);
 
@@ -83,6 +84,10 @@ public abstract class Executor {
         }
 
         args.add(getJarLocation());
+
+        args.add(instanceProperties.get(CONFIG_BUCKET));
+        args.add(bulkImportJob.getId());
+        args.add(taskId);
 
         return args;
     }

@@ -54,6 +54,10 @@ public class BulkImportJob {
         this.platformSpec = builder.platformSpec;
     }
 
+    public static BulkImportJob.Builder builder() {
+        return new Builder();
+    }
+
     public BulkImportJob validate() {
         if (id == null || id.isEmpty()) {
             id = UUID.randomUUID().toString();
