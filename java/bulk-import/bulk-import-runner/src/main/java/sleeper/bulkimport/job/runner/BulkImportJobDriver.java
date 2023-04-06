@@ -113,6 +113,23 @@ public class BulkImportJobDriver {
         LOGGER.info("Job is {}", job);
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
+        runInSpark(job, taskId, startTime);
+    }
+
+    public void runNoSpark(BulkImportJob job, String taskId, List<FileInfo> outputFiles) {
+        Instant startTime = getTime.get();
+        LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
+        LOGGER.info("Job is {}", job);
+        statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
+
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+
+        applyCompletedJob(job, taskId, startTime, stateStore, outputFiles);
+    }
+
+    private void runInSpark(BulkImportJob job, String taskId, Instant startTime) throws IOException {
+
         // Initialise Spark
         LOGGER.info("Initialising Spark");
         SparkConf sparkConf = new SparkConf();
@@ -168,6 +185,13 @@ public class BulkImportJobDriver {
                 .map(SparkFileInfoRow::createFileInfo)
                 .collect(Collectors.toList());
 
+        applyCompletedJob(job, taskId, startTime, stateStore, fileInfos);
+        sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
+    }
+
+    private void applyCompletedJob(
+            BulkImportJob job, String taskId, Instant startTime, StateStore stateStore, List<FileInfo> fileInfos) {
+
         long numRecords = fileInfos.stream()
                 .mapToLong(FileInfo::getNumberOfRecords)
                 .sum();
@@ -185,8 +209,6 @@ public class BulkImportJobDriver {
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
         statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
                 new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
-
-        sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
     }
 
     public static void start(String[] args, BulkImportJobRunner partitioner) throws Exception {
