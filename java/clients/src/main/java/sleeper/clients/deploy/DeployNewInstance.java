@@ -87,7 +87,7 @@ public class DeployNewInstance {
         Path splitPointsPath = null;
         Optional<String> splitPointsPathString = optionalArgument(args, 6);
         if (splitPointsPathString.isPresent()) {
-            splitPointsPath = scriptsDirectory.resolve(splitPointsPathString.get());
+            splitPointsPath = Path.of(splitPointsPathString.get());
         }
 
         builder().scriptsDirectory(scriptsDirectory)

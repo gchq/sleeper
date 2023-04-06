@@ -39,10 +39,10 @@ public class DeployNewTestInstance {
         Path splitPointsPath = null;
         Optional<String> splitPointsPathString = optionalArgument(args, 6);
         if (splitPointsPathString.isPresent()) {
-            splitPointsPath = scriptsDirectory.resolve(splitPointsPathString.get());
+            splitPointsPath = Path.of(splitPointsPathString.get());
         }
 
-        DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
+        DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
                 .instancePropertiesTemplate(Path.of(args[1]))
                 .extraInstanceProperties(properties ->
                         properties.setProperty(SYSTEM_TEST_REPO.getPropertyName(), args[2] + "/system-test"))
