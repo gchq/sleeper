@@ -26,6 +26,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -38,10 +39,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers
-public class ExecutorTest {
+class ExecutorIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -57,7 +58,7 @@ public class ExecutorTest {
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
     @Test
-    public void shouldCallRunOnPlatformIfJobIsValid() {
+    void shouldCallRunOnPlatformIfJobIsValid() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -70,10 +71,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList(bucketName + "/file1.parquet", bucketName + "/file2.parquet", bucketName + "/directory/file3.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
-        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
+        ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3);
 
         // When
         executorMock.runJob(importJob);
@@ -84,7 +82,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldFailIfFileListIsEmpty() {
+    void shouldFailIfFileListIsEmpty() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -94,10 +92,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList())
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
-        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
+        ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3);
 
         // When
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -107,7 +102,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldSucceedIfS3ObjectIsADirectoryContainingFiles() {
+    void shouldSucceedIfS3ObjectIsADirectoryContainingFiles() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -118,10 +113,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
-        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
+        ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3);
 
         // When
         executorMock.runJob(importJob);
@@ -132,7 +124,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldFailIfJobPointsAtNonExistentTable() {
+    void shouldFailIfJobPointsAtNonExistentTable() {
         // Given
         AmazonS3 s3 = createS3Client();
         String bucketName = UUID.randomUUID().toString();
@@ -142,10 +134,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
-        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
+        ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3);
 
         // When / Then
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -155,7 +144,7 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfJobIdContainsMoreThan63Characters() {
+    void shouldThrowExceptionIfJobIdContainsMoreThan63Characters() {
         // Given
         String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
         BulkImportJob importJob = new BulkImportJob.Builder()
@@ -163,8 +152,7 @@ public class ExecutorTest {
                 .files(Lists.newArrayList("file1.parquet"))
                 .id(invalidId)
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
+        ExecutorMock executorMock = buildExecutorWithTable("myTable");
 
         // When / Then
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -173,14 +161,13 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfTableNameIsNull() {
+    void shouldThrowExceptionIfTableNameIsNull() {
         // Given
         BulkImportJob importJob = new BulkImportJob.Builder()
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
+        ExecutorMock executorMock = buildExecutorWithTable("myTable");
 
         // When / Then
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -189,15 +176,14 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionIfJobIdContainsUppercaseLetters() {
+    void shouldThrowExceptionIfJobIdContainsUppercaseLetters() {
         // Given
         BulkImportJob importJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("importJob")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
+        ExecutorMock executorMock = buildExecutorWithTable("myTable");
 
         // When / Then
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -206,9 +192,9 @@ public class ExecutorTest {
     }
 
     @Test
-    public void shouldDoNothingWhenJobIsNull() {
+    void shouldDoNothingWhenJobIsNull() {
         // Given
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), null, null);
+        ExecutorMock executorMock = buildExecutorWithTable("myTable");
 
         // When
         executorMock.runJob(null);
@@ -220,6 +206,25 @@ public class ExecutorTest {
     private String getExpectedErrorMessage(String message) {
         return "The bulk import job failed validation with the following checks failing: \n"
                 + message;
+    }
+
+    private ExecutorMock buildExecutorWithBulkImportBucketAndTable(String bucketName, String tableName, AmazonS3 s3) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.setSchema(SCHEMA);
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        return new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
+    }
+
+    private ExecutorMock buildExecutorWithTable(String tableName) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.setSchema(SCHEMA);
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        return new ExecutorMock(instanceProperties, tablePropertiesProvider, null);
     }
 
     private static class ExecutorMock extends Executor {
@@ -246,29 +251,4 @@ public class ExecutorTest {
         }
     }
 
-    private static class TestTablePropertiesProvider extends TablePropertiesProvider {
-        private final Schema schema;
-        private final long splitThreshold;
-
-        TestTablePropertiesProvider(Schema schema, long splitThreshold) {
-            super(null, null);
-            this.schema = schema;
-            this.splitThreshold = splitThreshold;
-        }
-
-        TestTablePropertiesProvider(Schema schema) {
-            this(schema, 1_000_000_000L);
-        }
-
-        @Override
-        public TableProperties getTableProperties(String tableName) {
-            if (tableName.equals("table-that-does-not-exist")) {
-                return null;
-            }
-            TableProperties tableProperties = new TableProperties(new InstanceProperties());
-            tableProperties.setSchema(schema);
-            tableProperties.set(PARTITION_SPLIT_THRESHOLD, "" + splitThreshold);
-            return tableProperties;
-        }
-    }
 }
