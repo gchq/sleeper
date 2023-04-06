@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
 import sleeper.bulkimport.job.runner.BulkImportJobInput;
+import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.SparkFileInfoRow;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
@@ -41,19 +42,19 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 /**
- * The {@link BulkImportDataframeLocalSortRunner} is a {@link BulkImportJobDriver} which
+ * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
  * Sleeoer partition.
  */
-public class BulkImportDataframeLocalSortRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortRunner.class);
+public class BulkImportDataframeLocalSortDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortDriver.class);
     private static final String PARTITION_FIELD_NAME = "__partition";
 
-    private BulkImportDataframeLocalSortRunner() {
+    private BulkImportDataframeLocalSortDriver() {
     }
 
     public static void main(String[] args) throws Exception {
-        BulkImportJobDriver.start(args, BulkImportDataframeLocalSortRunner::createFileInfos);
+        BulkImportJobDriver.start(args, BulkImportDataframeLocalSortDriver::createFileInfos);
     }
 
     public static Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException {
