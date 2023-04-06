@@ -82,24 +82,24 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
-    private final BulkImportJobRunner partitioner;
+    private final BulkImportJobRunner jobRunner;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobDriver(BulkImportJobRunner partitioner, InstanceProperties instanceProperties,
+    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        this(partitioner, instanceProperties, s3Client, dynamoClient,
+        this(jobRunner, instanceProperties, s3Client, dynamoClient,
                 IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
     }
 
-    public BulkImportJobDriver(BulkImportJobRunner partitioner, InstanceProperties instanceProperties,
+    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
                                IngestJobStatusStore statusStore,
                                Supplier<Instant> getTime) {
-        this.partitioner = partitioner;
+        this.jobRunner = jobRunner;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
@@ -160,7 +160,7 @@ public class BulkImportJobDriver {
                 .parquet(pathsWithFs.toArray(new String[0]));
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        List<FileInfo> fileInfos = partitioner.createFileInfos(
+        List<FileInfo> fileInfos = jobRunner.createFileInfos(
                         BulkImportJobInput.builder().rows(dataWithPartition)
                                 .instanceProperties(instanceProperties).tableProperties(tableProperties)
                                 .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
