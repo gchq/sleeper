@@ -63,33 +63,6 @@ public class BulkImportJobDriver {
     private final Supplier<Instant> getTime;
     private final BulkImportSessionRunner sessionRunner;
 
-    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                               AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        this(jobRunner, instanceProperties, s3Client, dynamoClient,
-                IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
-    }
-
-    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                               AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
-                               IngestJobStatusStore statusStore,
-                               Supplier<Instant> getTime) {
-        this(jobRunner, instanceProperties, new TablePropertiesProvider(s3Client, instanceProperties),
-                new StateStoreProvider(dynamoClient, instanceProperties), statusStore, getTime);
-    }
-
-    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                               TablePropertiesProvider tablePropertiesProvider,
-                               StateStoreProvider stateStoreProvider,
-                               IngestJobStatusStore statusStore,
-                               Supplier<Instant> getTime) {
-        this(new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
-                        tablePropertiesProvider, stateStoreProvider)::run,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                statusStore,
-                getTime);
-    }
-
     public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
                                TablePropertiesProvider tablePropertiesProvider,
                                StateStoreProvider stateStoreProvider,
@@ -100,6 +73,26 @@ public class BulkImportJobDriver {
         this.statusStore = statusStore;
         this.getTime = getTime;
         this.sessionRunner = sessionRunner;
+    }
+
+    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+        return from(jobRunner, instanceProperties, s3Client, dynamoClient,
+                IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
+    }
+
+    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
+                                           IngestJobStatusStore statusStore,
+                                           Supplier<Instant> getTime) {
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
+        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
+                tablePropertiesProvider, stateStoreProvider)::run,
+                tablePropertiesProvider,
+                stateStoreProvider,
+                statusStore,
+                getTime);
     }
 
     public void run(BulkImportJob job, String taskId) throws IOException {
@@ -196,7 +189,7 @@ public class BulkImportJobDriver {
             throw e;
         }
 
-        BulkImportJobDriver driver = new BulkImportJobDriver(runner, instanceProperties,
+        BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         driver.run(bulkImportJob, taskId);
     }
