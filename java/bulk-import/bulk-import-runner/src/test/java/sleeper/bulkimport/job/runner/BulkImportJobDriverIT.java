@@ -35,9 +35,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
-import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner;
-import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
+import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeDriver;
+import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
+import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -103,12 +103,12 @@ class BulkImportJobDriverIT {
 
     private static Stream<Arguments> getParameters() {
         return Stream.of(
-                Arguments.of(Named.of("BulkImportJobDataframeRunner",
-                        (BulkImportJobRunner) BulkImportJobDataframeRunner::createFileInfos)),
-                Arguments.of(Named.of("BulkImportJobRDDRunner",
-                        (BulkImportJobRunner) BulkImportJobRDDRunner::createFileInfos)),
-                Arguments.of(Named.of("BulkImportDataframeLocalSortRunner",
-                        (BulkImportJobRunner) BulkImportDataframeLocalSortRunner::createFileInfos))
+                Arguments.of(Named.of("BulkImportJobDataframeDriver",
+                        (BulkImportJobRunner) BulkImportJobDataframeDriver::createFileInfos)),
+                Arguments.of(Named.of("BulkImportJobRDDDriver",
+                        (BulkImportJobRunner) BulkImportJobRDDDriver::createFileInfos)),
+                Arguments.of(Named.of("BulkImportDataframeLocalSortDriver",
+                        (BulkImportJobRunner) BulkImportDataframeLocalSortDriver::createFileInfos))
         );
     }
 
