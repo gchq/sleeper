@@ -108,27 +108,45 @@ public class BulkImportJobDriver {
     }
 
     public void run(BulkImportJob job, String taskId) throws IOException {
+        run(job, taskId, this::runInSpark);
+    }
+
+    public void run(BulkImportJob job, String taskId, RunInSpark spark) throws IOException {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
-        runInSpark(job, taskId, startTime);
+        BulkImportJobOutput output = spark.run(job);
+
+        long numRecords = output.numRecords();
+        try {
+            stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
+                    .addFiles(output.fileInfos());
+        } catch (StateStoreException e) {
+            throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
+                    + "be re-imported for clients to accesss data");
+        }
+        LOGGER.info("Added {} files to statestore", output.numFiles());
+        Instant finishTime = getTime.get();
+        LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
+        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        double rate = numRecords / (double) durationInSeconds;
+        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
+        statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+                new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
+
+        // Calling this manually stops it potentially timing out after 10 seconds.
+        // Note that we stop the Spark context after we've applied the changes in Sleeper.
+        output.stopSparkContext();
     }
 
-    public void runNoSpark(BulkImportJob job, String taskId, List<FileInfo> outputFiles) {
-        Instant startTime = getTime.get();
-        LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
-        LOGGER.info("Job is {}", job);
-        statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
-
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-
-        applyCompletedJob(job, taskId, startTime, stateStore, outputFiles);
+    @FunctionalInterface
+    public interface RunInSpark {
+        BulkImportJobOutput run(BulkImportJob job) throws IOException;
     }
 
-    private void runInSpark(BulkImportJob job, String taskId, Instant startTime) throws IOException {
+    private BulkImportJobOutput runInSpark(BulkImportJob job) throws IOException {
 
         // Initialise Spark
         LOGGER.info("Initialising Spark");
@@ -185,33 +203,7 @@ public class BulkImportJobDriver {
                 .map(SparkFileInfoRow::createFileInfo)
                 .collect(Collectors.toList());
 
-        applyCompletedJob(job, taskId, startTime, stateStore, fileInfos);
-
-        // Calling this manually stops it potentially timing out after 10 seconds.
-        // Note that we stop the Spark context after we've applied the changes in Sleeper.
-        sparkContext.stop();
-    }
-
-    private void applyCompletedJob(
-            BulkImportJob job, String taskId, Instant startTime, StateStore stateStore, List<FileInfo> fileInfos) {
-
-        long numRecords = fileInfos.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
-        try {
-            stateStore.addFiles(fileInfos);
-        } catch (StateStoreException e) {
-            throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
-                    + "be re-imported for clients to accesss data");
-        }
-        LOGGER.info("Added {} files to statestore", fileInfos.size());
-        Instant finishTime = getTime.get();
-        LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
-        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
-        double rate = numRecords / (double) durationInSeconds;
-        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
-        statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
+        return new BulkImportJobOutput(fileInfos, sparkContext::stop);
     }
 
     public static void start(String[] args, BulkImportJobRunner partitioner) throws Exception {
