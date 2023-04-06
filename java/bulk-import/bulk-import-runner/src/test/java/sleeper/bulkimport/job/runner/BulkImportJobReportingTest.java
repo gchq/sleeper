@@ -16,24 +16,70 @@
 
 package sleeper.bulkimport.job.runner;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.schema.Schema;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
+import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.inmemory.StateStoreTestHelper;
 
+import java.time.Instant;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+
 public class BulkImportJobReportingTest {
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final Schema schema = schemaWithKey("key");
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
     private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
 
     @Test
-    @Disabled("TODO")
-    void shouldReportJobFinished() {
+    void shouldReportJobFinished() throws Exception {
+        // Given
+        String tableName = tableProperties.get(TABLE_NAME);
         BulkImportJob job = BulkImportJob.builder()
                 .id("test-job")
-                .tableName("test-table")
+                .tableName(tableName)
                 .files(List.of("test.parquet")).build();
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        List<FileInfo> fileInfos = List.of();
+
+        // When
+        runJob(job, "test-task", startTime, finishTime, fileInfos);
+
+        // Then
+        assertThat(statusStore.getAllJobs(tableName))
+                .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
+                        summary(startTime, finishTime, 0L, 0L)));
+    }
+
+    private void runJob(BulkImportJob job, String taskId,
+                        Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
+        BulkImportJobDriver.BulkImportSessionRunner sessionRunner = bulkImportJob -> new BulkImportJobOutput(
+                outputFiles, () -> {
+        });
+        BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner, tablePropertiesProvider,
+                stateStoreProvider, statusStore, List.of(startTime, finishTime).iterator()::next);
+        driver.run(job, taskId);
     }
 }

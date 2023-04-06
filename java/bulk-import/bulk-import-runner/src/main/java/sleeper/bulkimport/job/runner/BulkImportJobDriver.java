@@ -74,12 +74,33 @@ public class BulkImportJobDriver {
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
                                IngestJobStatusStore statusStore,
                                Supplier<Instant> getTime) {
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
+        this(jobRunner, instanceProperties, new TablePropertiesProvider(s3Client, instanceProperties),
+                new StateStoreProvider(dynamoClient, instanceProperties), statusStore, getTime);
+    }
+
+    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+                               TablePropertiesProvider tablePropertiesProvider,
+                               StateStoreProvider stateStoreProvider,
+                               IngestJobStatusStore statusStore,
+                               Supplier<Instant> getTime) {
+        this(new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
+                        tablePropertiesProvider, stateStoreProvider)::run,
+                tablePropertiesProvider,
+                stateStoreProvider,
+                statusStore,
+                getTime);
+    }
+
+    public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
+                               TablePropertiesProvider tablePropertiesProvider,
+                               StateStoreProvider stateStoreProvider,
+                               IngestJobStatusStore statusStore,
+                               Supplier<Instant> getTime) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
         this.getTime = getTime;
-        this.sessionRunner = new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider)::run;
+        this.sessionRunner = sessionRunner;
     }
 
     public void run(BulkImportJob job, String taskId) throws IOException {
