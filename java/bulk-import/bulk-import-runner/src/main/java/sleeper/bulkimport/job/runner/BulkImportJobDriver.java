@@ -53,12 +53,10 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 
 /**
- * This abstract class executes a Spark job that reads in input Parquet files and writes
- * out files of {@link sleeper.core.record.Record}s. Concrete subclasses of this class must implement
- * a method which takes in a {@link Dataset} of {@link Row}s where a field has
- * been added that contains the Sleeper partition that the row is in and writes
- * the data to files in S3 and returns a list of the {@link FileInfo}s that
- * will then be used to update the {@link StateStore}.
+ * This class executes a Spark job that reads in input Parquet files and writes
+ * out files of {@link sleeper.core.record.Record}s. This takes a {@link BulkImportJobRunner} implementation,
+ * which takes rows from the input files and outputs a file for each Sleeper partition.
+ * These will then be used to update the {@link StateStore}.
  */
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);

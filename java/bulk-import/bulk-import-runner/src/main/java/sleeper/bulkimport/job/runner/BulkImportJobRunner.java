@@ -19,8 +19,18 @@ package sleeper.bulkimport.job.runner;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
+import sleeper.statestore.StateStore;
+
 import java.io.IOException;
 
+/**
+ * An interface for splitting Sleeper records across partitions and writing the data to files.
+ * <p>
+ * This takes in a {@link Dataset} of {@link Row}s which each contain a Sleeper record. It should split the records
+ * into partitions, write each partition's data to a file in S3, and return a {@link Dataset} of {@link Row}s
+ * containing metadata for each file. Those rows must contain fields as specified in {@link SparkFileInfoRow}.
+ * These will then be used to update the {@link StateStore}.
+ */
 @FunctionalInterface
 public interface BulkImportJobRunner {
     Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException;

@@ -307,8 +307,8 @@ class BulkImportJobDriverIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    private void runJob(BulkImportJobRunner partitioner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        BulkImportJobDriver driver = new BulkImportJobDriver(partitioner, properties,
+    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
+        BulkImportJobDriver driver = new BulkImportJobDriver(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
         driver.run(job, taskId);
