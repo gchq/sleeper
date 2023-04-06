@@ -27,7 +27,7 @@ import sleeper.core.schema.Schema;
 
 import java.util.List;
 
-public class SparkPartitionRequest {
+public class BulkImportJobInput {
 
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
@@ -35,7 +35,7 @@ public class SparkPartitionRequest {
     private final Broadcast<List<Partition>> broadcastedPartitions;
     private final Configuration conf;
 
-    private SparkPartitionRequest(Builder builder) {
+    private BulkImportJobInput(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
         rows = builder.rows;
@@ -106,8 +106,8 @@ public class SparkPartitionRequest {
             return this;
         }
 
-        public SparkPartitionRequest build() {
-            return new SparkPartitionRequest(this);
+        public BulkImportJobInput build() {
+            return new BulkImportJobInput(this);
         }
     }
 }

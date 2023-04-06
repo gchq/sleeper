@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
+import sleeper.bulkimport.job.runner.BulkImportJobInput;
 import sleeper.bulkimport.job.runner.SparkFileInfoRow;
-import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -55,18 +55,18 @@ public class BulkImportJobDataframeRunner {
         BulkImportJobDriver.start(args, BulkImportJobDataframeRunner::createFileInfos);
     }
 
-    public static Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
-        Schema schema = request.schema();
+    public static Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException {
+        Schema schema = input.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
-        int numLeafPartitions = (int) request.broadcastedPartitions().value()
+        int numLeafPartitions = (int) input.broadcastedPartitions().value()
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = request.rows().mapPartitions(
-                new AddPartitionFunction(schemaAsString, request.broadcastedPartitions()),
+        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
+                new AddPartitionFunction(schemaAsString, input.broadcastedPartitions()),
                 RowEncoder.apply(schemaWithPartitionField));
 
         Column[] sortColumns = Lists.newArrayList(
@@ -83,9 +83,9 @@ public class BulkImportJobDataframeRunner {
 
         return sortedRows.mapPartitions(
                 new WriteParquetFiles(
-                        request.instanceProperties().saveAsString(),
-                        request.tableProperties().saveAsString(),
-                        request.conf()),
+                        input.instanceProperties().saveAsString(),
+                        input.tableProperties().saveAsString(),
+                        input.conf()),
                 RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
     }
 

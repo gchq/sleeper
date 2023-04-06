@@ -23,5 +23,5 @@ import java.io.IOException;
 
 @FunctionalInterface
 public interface BulkImportJobRunner {
-    Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException;
+    Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException;
 }

@@ -22,8 +22,8 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
+import sleeper.bulkimport.job.runner.BulkImportJobInput;
 import sleeper.bulkimport.job.runner.SparkFileInfoRow;
-import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
@@ -42,20 +42,20 @@ public class BulkImportJobRDDRunner {
         BulkImportJobDriver.start(args, BulkImportJobRDDRunner::createFileInfos);
     }
 
-    public static Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
-        Schema schema = request.tableProperties().getSchema();
+    public static Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException {
+        Schema schema = input.tableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-        JavaRDD<Row> rdd = request.rows().javaRDD()
+        JavaRDD<Row> rdd = input.rows().javaRDD()
                 .mapToPair(new ExtractKeyFunction(
                         schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
                 .repartitionAndSortWithinPartitions(
-                        new SleeperPartitioner(schemaAsString, request.broadcastedPartitions()),
+                        new SleeperPartitioner(schemaAsString, input.broadcastedPartitions()),
                         new WrappedKeyComparator(schemaAsString))
                 .map(tuple -> tuple._2)
                 .mapPartitions(new WriteParquetFile(
-                        request.instanceProperties().saveAsString(),
-                        request.tableProperties().saveAsString(),
-                        request.conf(), request.broadcastedPartitions()));
+                        input.instanceProperties().saveAsString(),
+                        input.tableProperties().saveAsString(),
+                        input.conf(), input.broadcastedPartitions()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
         return session.createDataset(rdd.rdd(), RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));

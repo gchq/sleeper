@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.runner.BulkImportJobDriver;
+import sleeper.bulkimport.job.runner.BulkImportJobInput;
 import sleeper.bulkimport.job.runner.SparkFileInfoRow;
-import sleeper.bulkimport.job.runner.SparkPartitionRequest;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
 import sleeper.core.partition.Partition;
@@ -56,18 +56,18 @@ public class BulkImportDataframeLocalSortRunner {
         BulkImportJobDriver.start(args, BulkImportDataframeLocalSortRunner::createFileInfos);
     }
 
-    public static Dataset<Row> createFileInfos(SparkPartitionRequest request) throws IOException {
-        Schema schema = request.schema();
+    public static Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException {
+        Schema schema = input.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
-        int numLeafPartitions = (int) request.broadcastedPartitions().value()
+        int numLeafPartitions = (int) input.broadcastedPartitions().value()
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = request.rows().mapPartitions(
-                new AddPartitionAsIntFunction(schemaAsString, request.broadcastedPartitions()),
+        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
+                new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
                 RowEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
@@ -89,9 +89,9 @@ public class BulkImportDataframeLocalSortRunner {
 
         return sortedRows.mapPartitions(
                 new WriteParquetFile(
-                        request.instanceProperties().saveAsString(),
-                        request.tableProperties().saveAsString(),
-                        request.conf(), request.broadcastedPartitions()),
+                        input.instanceProperties().saveAsString(),
+                        input.tableProperties().saveAsString(),
+                        input.conf(), input.broadcastedPartitions()),
                 RowEncoder.apply(SparkFileInfoRow.createFileInfoSchema()));
     }
 

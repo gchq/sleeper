@@ -161,7 +161,7 @@ public class BulkImportJobDriver {
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
         List<FileInfo> fileInfos = partitioner.createFileInfos(
-                        SparkPartitionRequest.builder().rows(dataWithPartition)
+                        BulkImportJobInput.builder().rows(dataWithPartition)
                                 .instanceProperties(instanceProperties).tableProperties(tableProperties)
                                 .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
                 .collectAsList().stream()
