@@ -67,7 +67,7 @@ public class BulkImportJobDriver {
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
-    private final BulkImportJobSessionRunner jobSessionRunner;
+    private final BulkImportSessionRunner sessionRunner;
 
     public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
                                AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
@@ -83,8 +83,8 @@ public class BulkImportJobDriver {
         this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
         this.statusStore = statusStore;
         this.getTime = getTime;
-        this.jobSessionRunner = new BulkImportJobSparkSessionRunner(jobRunner, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider);
+        this.sessionRunner = new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
+                tablePropertiesProvider, stateStoreProvider)::run;
     }
 
     public void run(BulkImportJob job, String taskId) throws IOException {
@@ -93,7 +93,7 @@ public class BulkImportJobDriver {
         LOGGER.info("Job is {}", job);
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
-        BulkImportJobOutput output = jobSessionRunner.run(job);
+        BulkImportJobOutput output = sessionRunner.run(job);
 
         long numRecords = output.numRecords();
         try {
@@ -118,7 +118,7 @@ public class BulkImportJobDriver {
     }
 
     @FunctionalInterface
-    public interface BulkImportJobSessionRunner {
+    public interface BulkImportSessionRunner {
         BulkImportJobOutput run(BulkImportJob job) throws IOException;
     }
 
