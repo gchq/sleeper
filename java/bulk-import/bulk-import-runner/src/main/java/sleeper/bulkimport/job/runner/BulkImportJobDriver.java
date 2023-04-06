@@ -109,7 +109,14 @@ public class BulkImportJobDriver {
         LOGGER.info("Job is {}", job);
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
-        BulkImportJobOutput output = sessionRunner.run(job);
+        BulkImportJobOutput output;
+        try {
+            output = sessionRunner.run(job);
+        } catch (RuntimeException e) {
+            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()));
+            throw e;
+        }
 
         long numRecords = output.numRecords();
         try {
@@ -117,7 +124,7 @@ public class BulkImportJobDriver {
                     .addFiles(output.fileInfos());
         } catch (StateStoreException e) {
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
-                    + "be re-imported for clients to accesss data");
+                    + "be re-imported for clients to access data", e);
         }
         LOGGER.info("Added {} files to statestore", output.numFiles());
         Instant finishTime = getTime.get();

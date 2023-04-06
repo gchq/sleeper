@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -68,11 +69,38 @@ class BulkImportJobReportingTest {
                         summary(startTime, finishTime, 100, 100)));
     }
 
+    @Test
+    void shouldReportJobFinishedWithNoRecordsWhenJobFailed() {
+        // Given
+        BulkImportJob job = singleFileImportJob();
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        RuntimeException jobFailure = new RuntimeException("Failed running job");
+
+        // When
+        assertThatThrownBy(() -> runJob(job, "test-task", startTime, finishTime,
+                foundJob -> {
+                    throw jobFailure;
+                })
+        ).isSameAs(jobFailure);
+
+        // Then
+        assertThat(allJobsReported())
+                .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
+                        summary(startTime, finishTime, 0, 0)));
+    }
+
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
         BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
         });
-        BulkImportJobDriver driver = new BulkImportJobDriver(bulkImportJob -> output,
+        runJob(job, taskId, startTime, finishTime, bulkImportJob -> output);
+    }
+
+    private void runJob(BulkImportJob job, String taskId,
+                        Instant startTime, Instant finishTime,
+                        BulkImportJobDriver.BulkImportSessionRunner sessionRunner) throws Exception {
+        BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 statusStore, List.of(startTime, finishTime).iterator()::next);
