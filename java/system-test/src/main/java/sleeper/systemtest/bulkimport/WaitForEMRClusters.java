@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.ingest;
+package sleeper.systemtest.bulkimport;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;

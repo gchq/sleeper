@@ -42,7 +42,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for EMR clusters"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForEMRClusters "${INSTANCE_ID}"
+sleeper.systemtest.bulkimport.WaitForEMRClusters "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
