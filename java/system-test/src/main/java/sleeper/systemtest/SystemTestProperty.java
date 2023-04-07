@@ -18,6 +18,7 @@ package sleeper.systemtest;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.Utils;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.systemtest.ingest.IngestMode;
@@ -40,6 +41,11 @@ public interface SystemTestProperty extends InstanceProperty {
                     "'Queue' means that the data is written to a Parquet file and an ingest job is created " +
                     "and posted to the ingest queue.")
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
+    SystemTestProperty NUMBER_OF_BULK_IMPORT_JOBS = Index.propertyBuilder("sleeper.systemtest.bulkimport.jobs")
+            .description("The number of jobs that should be sent to the bulk import queue.\n" +
+                    "Only applies to ingest mode BULK_IMPORT_QUEUE.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
             .description("The name of the cluster to use when performing system tests").build();
     SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
