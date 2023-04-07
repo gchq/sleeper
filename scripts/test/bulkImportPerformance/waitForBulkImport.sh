@@ -46,6 +46,12 @@ sleeper.systemtest.bulkimport.WaitForEMRClusters "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
+echo "Checking all records have been written"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.bulkimport.CheckBulkImportRecords "${INSTANCE_ID}"
+
+echo "-------------------------------------------------------------------------------"
 echo "Finished waiting for bulk import"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
