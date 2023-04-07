@@ -45,7 +45,7 @@ echo "Starting ingest tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASK
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished ingest"
+echo "Finished bulk import"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Starting ingest tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"

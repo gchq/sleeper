@@ -39,15 +39,6 @@ END_GENERATE_DATA_TIME=$(record_time)
 echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
 
 echo "-------------------------------------------------------------------------------"
-echo "Invoking ingest task creation"
-echo "-------------------------------------------------------------------------------"
-java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.InvokeIngestTaskCreation "${INSTANCE_ID}"
-
-END_CREATE_INGEST_TASKS_TIME=$(record_time)
-echo "Creating ingest tasks finished at $(recorded_time_str "$END_CREATE_INGEST_TASKS_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_CREATE_INGEST_TASKS_TIME")"
-
-echo "-------------------------------------------------------------------------------"
 echo "Waiting for EMR clusters"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
@@ -55,10 +46,9 @@ sleeper.systemtest.ingest.WaitForEMRClusters "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished waiting for ingest"
+echo "Finished waiting for bulk import"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
-echo "Creating ingest tasks finished at $(recorded_time_str "$END_CREATE_INGEST_TASKS_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_CREATE_INGEST_TASKS_TIME")"
-echo "EMR clusters terminated at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CREATE_INGEST_TASKS_TIME" "$FINISH_TIME")"
+echo "EMR clusters terminated at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$FINISH_TIME")"
 echo "Overall, waited for $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
