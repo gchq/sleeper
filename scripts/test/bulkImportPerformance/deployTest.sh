@@ -21,7 +21,7 @@ if [ "$#" -ne 3 ]; then
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-TEST_DIR=$(cd "$THIS_DIR)" && cd .. && pwd)
+TEST_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
