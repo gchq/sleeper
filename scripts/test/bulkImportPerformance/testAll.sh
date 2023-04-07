@@ -28,5 +28,4 @@ echo "--------------------------------------------------------------------------
 echo "Finished bulk import performance test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Ingest finished at $(recorded_time_str "$END_INGEST"), took $(elapsed_time_str "$START_TIME" "$END_INGEST")"
 echo "Overall, tests took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

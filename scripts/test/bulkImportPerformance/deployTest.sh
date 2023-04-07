@@ -21,12 +21,13 @@ if [ "$#" -ne 3 ]; then
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+TEST_DIR=$(cd "$THIS_DIR)" && cd .. && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@" "true"
+"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@" "$TEST_DIR/splitpoints/string/512-partitions.txt" "true"
 END_DEPLOY_TIME=$(record_time)
 
 "$THIS_DIR/testAll.sh"
