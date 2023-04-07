@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.elasticmapreduce.model.ClusterState;
@@ -76,7 +74,6 @@ public class WaitForEMRClusters {
         String instanceId = args[0];
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
@@ -85,6 +82,6 @@ public class WaitForEMRClusters {
         WaitForEMRClusters wait = new WaitForEMRClusters(emrClient, systemTestProperties);
         wait.pollUntilFinished();
         s3Client.shutdown();
-        dynamoDBClient.shutdown();
+        emrClient.shutdown();
     }
 }
