@@ -32,18 +32,21 @@ import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class WaitForEMRClusters {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForEMRClusters.class);
+    private static final long POLL_INTERVAL_MILLIS = 60000;
     private static final int MAX_POLLS = 30;
 
     private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
     private final AmazonElasticMapReduce emrClient;
     private final String clusterPrefix;
+    private static final List<String> STARTING_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name());
+    private static final List<String> RUNNING_STATES = List.of(ClusterState.RUNNING.name(), ClusterState.WAITING.name());
     private static final List<String> ACTIVE_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
             ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
 
@@ -58,11 +61,17 @@ public class WaitForEMRClusters {
 
     public boolean allClustersFinished() {
         List<ClusterSummary> clusters = emrClient.listClusters(new ListClustersRequest()
-                .withClusterStates(ACTIVE_STATES)).getClusters();
-        long clustersStillRunning = clusters.stream()
-                .filter(cluster -> cluster.getName().startsWith(clusterPrefix)).count();
-        LOGGER.info("{} clusters are running for instance", clustersStillRunning);
-        return clustersStillRunning == 0;
+                        .withClusterStates(ACTIVE_STATES)).getClusters().stream()
+                .filter(cluster -> cluster.getName().startsWith(clusterPrefix))
+                .collect(Collectors.toList());
+        long clustersStarting = clusters.stream()
+                .filter(cluster -> STARTING_STATES.contains(cluster.getStatus().getState())).count();
+        long clustersRunning = clusters.stream()
+                .filter(cluster -> RUNNING_STATES.contains(cluster.getStatus().getState())).count();
+        long clustersTerminating = clusters.size() - clustersRunning - clustersStarting;
+        LOGGER.info("Waiting for {} clusters ({} starting, {} running, {} terminating)",
+                clusters.size(), clustersStarting, clustersRunning, clustersTerminating);
+        return clusters.size() == 0;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
