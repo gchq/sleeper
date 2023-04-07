@@ -164,8 +164,8 @@ public final class EksBulkImportStack extends NestedStack {
         configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
-        statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter);
-        statusStoreStack.getResources().grantWriteTaskEvent(bulkImportJobStarter);
+        statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
+        statusStoreStack.getResources().grantWriteTaskEvent(bulkImportJobStarter.getRole());
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(UserDefinedInstanceProperty.VPC_ID))
