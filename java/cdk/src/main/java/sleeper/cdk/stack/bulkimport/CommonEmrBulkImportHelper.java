@@ -133,8 +133,10 @@ public class CommonEmrBulkImportHelper {
         importBucket.grantReadWrite(function);
         addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
                 .forEach(ingestBucket -> ingestBucket.grantRead(function));
-        statusStore.grantWriteJobEvent(function);
-        statusStore.grantWriteTaskEvent(function);
+        statusStore.grantWriteJobEvent(commonEmrStack.getEmrRole());
+        statusStore.grantWriteJobEvent(commonEmrStack.getEc2Role());
+        statusStore.grantWriteTaskEvent(commonEmrStack.getEmrRole());
+        statusStore.grantWriteTaskEvent(commonEmrStack.getEc2Role());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
