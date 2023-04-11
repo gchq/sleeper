@@ -136,7 +136,7 @@ public class DeployNewInstance {
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
-        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile.toString(), null));
+        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
