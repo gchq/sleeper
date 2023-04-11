@@ -33,6 +33,7 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -134,9 +135,7 @@ public class DeployNewInstance {
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
-        if (splitPointsFile != null) {
-            tableProperties.set(SPLIT_POINTS_FILE, splitPointsFile.toString());
-        }
+        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile.toString(), null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
