@@ -40,23 +40,23 @@ import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 public class CheckBulkImportRecords {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckBulkImportRecords.class);
     private final StateStore stateStore;
-    private final InstanceProperties properties;
+    private final long numberOfWriters;
+    private final long numberOfRecordsPerWriter;
+    private final long numberOfBulkImportJobs;
 
     public CheckBulkImportRecords(StateStore stateStore, InstanceProperties properties) {
         this.stateStore = stateStore;
-        this.properties = properties;
+        this.numberOfWriters = properties.getLong(NUMBER_OF_WRITERS);
+        this.numberOfRecordsPerWriter = properties.getLong(NUMBER_OF_RECORDS_PER_WRITER);
+        this.numberOfBulkImportJobs = properties.getLong(NUMBER_OF_BULK_IMPORT_JOBS);
     }
 
     public void checkRecords() throws StateStoreException {
-        long expectedRecords = properties.getLong(NUMBER_OF_WRITERS) *
-                properties.getLong(NUMBER_OF_RECORDS_PER_WRITER) *
-                properties.getLong(NUMBER_OF_BULK_IMPORT_JOBS);
+        long expectedRecords = numberOfWriters * numberOfRecordsPerWriter * numberOfBulkImportJobs;
+        LOGGER.info("Excepting {} records ({} records per writer, {} writers, {} total jobs)",
+                expectedRecords, numberOfWriters, numberOfRecordsPerWriter, numberOfBulkImportJobs);
         long recordsInStateStore = stateStore.getActiveFiles().stream()
                 .mapToLong(FileInfo::getNumberOfRecords).sum();
-        LOGGER.info("Excepting {} records ({} records per writer, {} writers, {} total jobs)",
-                expectedRecords, properties.getLong(NUMBER_OF_WRITERS),
-                properties.getLong(NUMBER_OF_RECORDS_PER_WRITER),
-                properties.getLong(NUMBER_OF_BULK_IMPORT_JOBS));
         LOGGER.info("Found {} records across all files in table", recordsInStateStore);
     }
 
