@@ -39,6 +39,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewInstance {
@@ -88,6 +89,9 @@ public class DeployNewInstance {
         Optional<String> splitPointsPathString = optionalArgument(args, 6);
         if (splitPointsPathString.isPresent()) {
             splitPointsPath = Path.of(splitPointsPathString.get());
+            if (!Files.exists(splitPointsPath)) {
+                throw new IllegalArgumentException("Split points file not found: " + splitPointsPath);
+            }
         }
 
         builder().scriptsDirectory(scriptsDirectory)
@@ -122,6 +126,9 @@ public class DeployNewInstance {
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
+        if (splitPointsFile != null) {
+            LOGGER.info("splitPointsFile: {}", splitPointsFile);
+        }
 
         Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
         tagsProperties.setProperty("InstanceID", instanceId);
@@ -134,7 +141,10 @@ public class DeployNewInstance {
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
-                tableName, splitPointsFile);
+                tableName);
+        if (splitPointsFile != null) {
+            tableProperties.set(SPLIT_POINTS_FILE, splitPointsFile.toString());
+        }
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
