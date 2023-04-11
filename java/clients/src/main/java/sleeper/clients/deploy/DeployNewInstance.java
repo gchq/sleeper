@@ -120,9 +120,7 @@ public class DeployNewInstance {
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
-        if (splitPointsFile != null) {
-            LOGGER.info("splitPointsFile: {}", splitPointsFile);
-        }
+        LOGGER.info("splitPointsFile: {}", splitPointsFile);
 
         Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
         tagsProperties.setProperty("InstanceID", instanceId);
