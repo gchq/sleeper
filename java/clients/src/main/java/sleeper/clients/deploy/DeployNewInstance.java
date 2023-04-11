@@ -73,6 +73,9 @@ public class DeployNewInstance {
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
+        if (!Files.exists(splitPointsFile)) {
+            throw new IllegalArgumentException("Split points file not found: " + splitPointsFile);
+        }
     }
 
     public static Builder builder() {
@@ -89,9 +92,6 @@ public class DeployNewInstance {
         Optional<String> splitPointsPathString = optionalArgument(args, 6);
         if (splitPointsPathString.isPresent()) {
             splitPointsPath = Path.of(splitPointsPathString.get());
-            if (!Files.exists(splitPointsPath)) {
-                throw new IllegalArgumentException("Split points file not found: " + splitPointsPath);
-            }
         }
 
         builder().scriptsDirectory(scriptsDirectory)
