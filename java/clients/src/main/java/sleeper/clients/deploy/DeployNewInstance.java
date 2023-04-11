@@ -73,7 +73,7 @@ public class DeployNewInstance {
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
-        if (!Files.exists(splitPointsFile)) {
+        if (splitPointsFile != null && !Files.exists(splitPointsFile)) {
             throw new IllegalArgumentException("Split points file not found: " + splitPointsFile);
         }
     }
