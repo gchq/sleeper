@@ -53,7 +53,7 @@ public class CheckBulkImportRecords {
 
     public void checkRecords() throws StateStoreException {
         long expectedRecords = numberOfWriters * numberOfRecordsPerWriter * numberOfBulkImportJobs;
-        LOGGER.info("Excepting {} records ({} records per writer, {} writers, {} total jobs)",
+        LOGGER.info("Excepting {} records ({} writers, {} records per writer, {} total jobs)",
                 expectedRecords, numberOfWriters, numberOfRecordsPerWriter, numberOfBulkImportJobs);
         long recordsInStateStore = stateStore.getActiveFiles().stream()
                 .mapToLong(FileInfo::getNumberOfRecords).sum();
