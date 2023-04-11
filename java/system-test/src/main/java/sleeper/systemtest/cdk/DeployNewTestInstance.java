@@ -34,9 +34,8 @@ public class DeployNewTestInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
-        Path scriptsDirectory = Path.of(args[0]);
 
-        DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
+        DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
                 .instancePropertiesTemplate(Path.of(args[1]))
                 .extraInstanceProperties(properties ->
                         properties.setProperty(SYSTEM_TEST_REPO.getPropertyName(), args[2] + "/system-test"))
