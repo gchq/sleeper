@@ -52,7 +52,7 @@ public class CheckBulkImportRecords {
                 properties.getLong(NUMBER_OF_RECORDS_PER_WRITER) *
                 properties.getLong(NUMBER_OF_BULK_IMPORT_JOBS);
         long recordsInStateStore = stateStore.getActiveFiles().stream()
-                .mapToLong(FileInfo::getNumberOfRecords).count();
+                .mapToLong(FileInfo::getNumberOfRecords).sum();
         LOGGER.info("Excepting {} records ({} records per writer, {} writers, {} total jobs)",
                 expectedRecords, properties.getLong(NUMBER_OF_WRITERS),
                 properties.getLong(NUMBER_OF_RECORDS_PER_WRITER),
