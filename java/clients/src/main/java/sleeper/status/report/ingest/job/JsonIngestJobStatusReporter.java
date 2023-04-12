@@ -47,13 +47,13 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, int numberInQueue) {
-        out.println(gson.toJson(createJsonReport(statusList, numberInQueue)));
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages) {
+        out.println(gson.toJson(createJsonReport(statusList, queueMessages)));
     }
 
-    private JsonObject createJsonReport(List<IngestJobStatus> statusList, int numberInQueue) {
+    private JsonObject createJsonReport(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("numberInQueue", numberInQueue);
+        jsonObject.addProperty("numberInQueue", queueMessages.getTotalMessages());
         jsonObject.add("jobList", gson.toJsonTree(statusList));
         return jsonObject;
     }

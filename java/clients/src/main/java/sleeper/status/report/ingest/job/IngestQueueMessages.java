@@ -68,6 +68,10 @@ public class IngestQueueMessages {
         out.printf("Total jobs waiting in queue (excluded from report): %s%n", ingestMessages);
     }
 
+    public int getTotalMessages() {
+        return ingestMessages + emrMessages + persistentEmrMessages + eksMessages;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
