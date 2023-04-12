@@ -32,6 +32,7 @@ import software.amazon.awscdk.services.ec2.SubnetType;
 import software.amazon.awscdk.services.ec2.UserData;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
@@ -71,6 +72,7 @@ public class BuildEC2Stack extends Stack {
                 .keyName(key.getKeyName())
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();
+        instance.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess"));
         instance.getInstance().addDependency(key);
 
         CfnOutput.Builder.create(this, "ConnectCommand")
