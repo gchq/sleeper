@@ -19,19 +19,22 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.stream.Stream;
 
 import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.ClientWiremockTestHelper.wiremockCloudFormationClient;
 import static sleeper.ClientWiremockTestHelper.wiremockLogsClient;
 
@@ -48,10 +51,13 @@ class CleanUpLogGroupsIT {
                         "\"storedBytes\": 0," +
                         "\"retentionInDays\": 1" +
                         "}]}")));
+        stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
 
-        // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo))
-                .containsExactly("test-log-group");
+        // When
+        cleanUpLogGroups(runtimeInfo);
+
+        // Then
+        verify(1, deleteLogGroupRequestedWithName("test-log-group"));
     }
 
     @Test
@@ -65,9 +71,11 @@ class CleanUpLogGroupsIT {
                         "\"retentionInDays\": 1" +
                         "}]}")));
 
-        // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo))
-                .isEmpty();
+        // When
+        cleanUpLogGroups(runtimeInfo);
+
+        // Then
+        verify(0, deleteLogGroupRequested());
     }
 
     @Test
@@ -81,9 +89,11 @@ class CleanUpLogGroupsIT {
                         "\"retentionInDays\": 1" +
                         "}]}")));
 
-        // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo))
-                .isEmpty();
+        // When
+        cleanUpLogGroups(runtimeInfo);
+
+        // Then
+        verify(0, deleteLogGroupRequested());
     }
 
     @Test
@@ -98,10 +108,13 @@ class CleanUpLogGroupsIT {
                         "\"storedBytes\": 1," +
                         "\"creationTime\": " + createdTime.toEpochMilli() +
                         "}]}")));
+        stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
 
-        // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo, queryTime))
-                .containsExactly("test-log-group");
+        // When
+        cleanUpLogGroups(runtimeInfo, queryTime);
+
+        // Then
+        verify(1, deleteLogGroupRequestedWithName("test-log-group"));
     }
 
     @Test
@@ -117,9 +130,11 @@ class CleanUpLogGroupsIT {
                         "\"creationTime\": " + createdTime.toEpochMilli() +
                         "}]}")));
 
-        // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo, queryTime))
-                .isEmpty();
+        // When
+        cleanUpLogGroups(runtimeInfo, queryTime);
+
+        // Then
+        verify(0, deleteLogGroupRequested());
     }
 
     @Test
@@ -135,19 +150,21 @@ class CleanUpLogGroupsIT {
                         "\"creationTime\": " + createdTime.toEpochMilli() +
                         "}]}")));
 
-        // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo, queryTime))
-                .isEmpty();
+        // When
+        cleanUpLogGroups(runtimeInfo, queryTime);
+
+        // Then
+        verify(0, deleteLogGroupRequested());
     }
 
-    private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
-        return streamLogGroupNamesToDelete(runtimeInfo, Instant.now());
+    private static void cleanUpLogGroups(WireMockRuntimeInfo runtimeInfo) {
+        cleanUpLogGroups(runtimeInfo, Instant.now());
     }
 
-    private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo, Instant queryTime) {
-        return CleanUpLogGroups.streamLogGroupNamesToDelete(
-                wiremockLogsClient(runtimeInfo),
-                wiremockCloudFormationClient(runtimeInfo), queryTime);
+    private static void cleanUpLogGroups(WireMockRuntimeInfo runtimeInfo, Instant queryTime) {
+        CleanUpLogGroups.run(wiremockLogsClient(runtimeInfo), wiremockCloudFormationClient(runtimeInfo),
+                queryTime, () -> {
+                });
     }
 
     private static MappingBuilder listActiveStacksRequest() {
@@ -169,5 +186,23 @@ class CleanUpLogGroupsIT {
         return post("/")
                 .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
                 .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DescribeLogGroups$"));
+    }
+
+    private static MappingBuilder deleteLogGroupRequestWithName(String logGroupName) {
+        return post("/")
+                .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
+                .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DeleteLogGroup$"))
+                .withRequestBody(equalToJson("{\"logGroupName\": \"" + logGroupName + "\"}"));
+    }
+
+    private static RequestPatternBuilder deleteLogGroupRequestedWithName(String logGroupName) {
+        return deleteLogGroupRequested()
+                .withRequestBody(equalToJson("{\"logGroupName\": \"" + logGroupName + "\"}"));
+    }
+
+    private static RequestPatternBuilder deleteLogGroupRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
+                .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DeleteLogGroup$"));
     }
 }

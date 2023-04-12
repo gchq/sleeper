@@ -84,7 +84,15 @@ public class CleanUpLogGroups {
         LOGGER.info("Finished deleting {} empty log groups not in stacks", numToDelete);
     }
 
-    public static Stream<String> streamLogGroupNamesToDelete(
+    public static void run(CloudWatchLogsClient logs, CloudFormationClient cloudFormation, Instant queryTime, Runnable sleepForRateLimit) {
+        streamLogGroupNamesToDelete(logs, cloudFormation, queryTime)
+                .forEach(name -> {
+                    sleepForRateLimit.run();
+                    logs.deleteLogGroup(builder -> builder.logGroupName(name));
+                });
+    }
+
+    private static Stream<String> streamLogGroupNamesToDelete(
             CloudWatchLogsClient logs, CloudFormationClient cloudFormation, Instant queryTime) {
         Instant maxCreationTime = queryTime.minus(Duration.ofDays(30));
         Stacks stacks = new Stacks(cloudFormation);
