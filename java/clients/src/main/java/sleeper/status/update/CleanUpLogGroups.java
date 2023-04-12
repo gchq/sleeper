@@ -85,29 +85,16 @@ public class CleanUpLogGroups {
     }
 
     public static void run(CloudWatchLogsClient logs, CloudFormationClient cloudFormation, Instant queryTime, Runnable sleepForRateLimit) {
-        streamLogGroupNamesToDelete(logs, cloudFormation, queryTime)
-                .forEach(name -> {
-                    sleepForRateLimit.run();
-                    logs.deleteLogGroup(builder -> builder.logGroupName(name));
-                });
+        planDeletions(logs, cloudFormation, queryTime).delete(logs, sleepForRateLimit);
     }
 
-    private static Stream<String> streamLogGroupNamesToDelete(
+    private static DeletionPlan planDeletions(
             CloudWatchLogsClient logs, CloudFormationClient cloudFormation, Instant queryTime) {
         Instant maxCreationTime = queryTime.minus(Duration.ofDays(30));
         Stacks stacks = new Stacks(cloudFormation);
-        return logs.describeLogGroupsPaginator().logGroups().stream()
-                .filter(logGroup -> isEmptyOrOld(logGroup, maxCreationTime))
-                .map(LogGroup::logGroupName)
-                .filter(name -> !stacks.anyIn(name));
-    }
-
-    private static boolean isEmptyOrOld(LogGroup logGroup, Instant maxCreationTime) {
-        if (logGroup.storedBytes() == 0) {
-            return true;
-        }
-        return logGroup.retentionInDays() == null &&
-                Instant.ofEpochMilli(logGroup.creationTime()).isBefore(maxCreationTime);
+        DeletionPlan plan = new DeletionPlan(stacks, maxCreationTime);
+        logs.describeLogGroupsPaginator().logGroups().forEach(plan::add);
+        return plan;
     }
 
     public static class Stacks {
@@ -150,6 +137,53 @@ public class CleanUpLogGroups {
 
         public int countNotEmpty() {
             return notEmpty.size();
+        }
+    }
+
+    public static class DeletionPlan {
+        private final List<String> empty = new ArrayList<>();
+        private final List<String> oldest = new ArrayList<>();
+        private final List<String> toKeep = new ArrayList<>();
+        private final Stacks stacks;
+        private final Instant maxCreationTime;
+
+        public DeletionPlan(Stacks stacks, Instant maxCreationTime) {
+            this.stacks = stacks;
+            this.maxCreationTime = maxCreationTime;
+        }
+
+        public void add(LogGroup logGroup) {
+            if (stacks.anyIn(logGroup.logGroupName())) {
+                toKeep.add(logGroup.logGroupName());
+                return;
+            }
+            if (logGroup.storedBytes() == 0) {
+                empty.add(logGroup.logGroupName());
+            } else if (isOld(logGroup, maxCreationTime)) {
+                oldest.add(logGroup.logGroupName());
+            } else {
+                toKeep.add(logGroup.logGroupName());
+            }
+        }
+
+        public void delete(CloudWatchLogsClient logsClient, Runnable sleepForRateLimit) {
+            logTotals();
+            Stream.concat(empty.stream(), oldest.stream()).forEach(name -> {
+                sleepForRateLimit.run();
+                logsClient.deleteLogGroup(builder -> builder.logGroupName(name));
+            });
+        }
+
+        private void logTotals() {
+            LOGGER.info("Groups to delete: {}", empty.size() + oldest.size());
+            LOGGER.info("Empty groups to delete: {}", empty.size());
+            LOGGER.info("Old groups to delete: {}", oldest.size());
+            LOGGER.info("Groups to keep: {}", toKeep.size());
+        }
+
+        private static boolean isOld(LogGroup logGroup, Instant maxCreationTime) {
+            return logGroup.retentionInDays() == null &&
+                    Instant.ofEpochMilli(logGroup.creationTime()).isBefore(maxCreationTime);
         }
     }
 }
