@@ -29,7 +29,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
-public class IngestQueueMessagesTest {
+class IngestQueueMessagesTest {
     @Test
     void shouldCountMessagesOnIngestQueue() {
         // Given
@@ -38,11 +38,10 @@ public class IngestQueueMessagesTest {
         QueueMessageCount.Client client = QueueMessageCountsInMemory.from(
                 Map.of("ingest-queue", approximateNumberVisibleAndNotVisible(1, 2)));
 
-        // When
-        IngestQueueMessages ingestQueueMessages = IngestQueueMessages.from(instanceProperties, client);
-
-        // Then
-        assertThat(ingestQueueMessages.getIngestJobMessageCount())
-                .isEqualTo(1);
+        // When / Then
+        assertThat(IngestQueueMessages.from(instanceProperties, client))
+                .isEqualTo(IngestQueueMessages.builder()
+                        .ingestMessages(1)
+                        .build());
     }
 }

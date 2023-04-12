@@ -19,22 +19,64 @@ package sleeper.status.report.ingest.job;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 
+import java.util.Objects;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestQueueMessages {
-    private final int ingestJobMessageCount;
+    private final int ingestMessages;
 
-    private IngestQueueMessages(int ingestJobMessageCount) {
-        this.ingestJobMessageCount = ingestJobMessageCount;
+    private IngestQueueMessages(Builder builder) {
+        ingestMessages = builder.ingestMessages;
     }
 
     public static IngestQueueMessages from(InstanceProperties properties, QueueMessageCount.Client client) {
         int ingestJobMessageCount = client.getQueueMessageCount(properties.get(INGEST_JOB_QUEUE_URL))
                 .getApproximateNumberOfMessages();
-        return new IngestQueueMessages(ingestJobMessageCount);
+        return builder().ingestMessages(ingestJobMessageCount).build();
     }
 
-    public int getIngestJobMessageCount() {
-        return ingestJobMessageCount;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IngestQueueMessages that = (IngestQueueMessages) o;
+        return ingestMessages == that.ingestMessages;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ingestMessages);
+    }
+
+    @Override
+    public String toString() {
+        return "IngestQueueMessages{" +
+                "ingestMessages=" + ingestMessages +
+                '}';
+    }
+
+    public static final class Builder {
+        private int ingestMessages;
+
+        private Builder() {
+        }
+
+        public Builder ingestMessages(int ingestMessages) {
+            this.ingestMessages = ingestMessages;
+            return this;
+        }
+
+        public IngestQueueMessages build() {
+            return new IngestQueueMessages(this);
+        }
     }
 }
