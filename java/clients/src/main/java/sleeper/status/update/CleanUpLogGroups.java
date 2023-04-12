@@ -86,6 +86,7 @@ public class CleanUpLogGroups {
             CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
         Stacks stacks = new Stacks(cloudFormation);
         return logs.describeLogGroupsPaginator().logGroups().stream()
+                .filter(logGroup -> logGroup.storedBytes() == 0)
                 .map(LogGroup::logGroupName)
                 .filter(name -> !stacks.anyIn(name));
     }

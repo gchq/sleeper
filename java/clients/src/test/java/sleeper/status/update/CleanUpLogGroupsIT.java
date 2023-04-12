@@ -67,6 +67,21 @@ class CleanUpLogGroupsIT {
                 .isEmpty();
     }
 
+    @Test
+    void shouldNotDeleteALogGroupThatIsNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"logGroups\": [{" +
+                        "\"logGroupName\": \"test-log-group\"," +
+                        "\"storedBytes\": 1" +
+                        "}]}")));
+
+        // When / Then
+        assertThat(streamLogGroupNamesToDelete(runtimeInfo))
+                .isEmpty();
+    }
+
     private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
         return CleanUpLogGroups.streamLogGroupNamesToDelete(
                 wiremockLogsClient(runtimeInfo),
