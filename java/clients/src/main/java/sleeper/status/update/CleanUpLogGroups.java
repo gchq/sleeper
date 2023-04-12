@@ -46,41 +46,9 @@ public class CleanUpLogGroups {
     }
 
     public static void run(CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
-        Stacks stacks = new Stacks(cloudFormation);
-        LogGroups all = new LogGroups();
-        LogGroups inStacks = new LogGroups();
-        LogGroups notInStacks = new LogGroups();
-        for (LogGroup group : logs.describeLogGroupsPaginator().logGroups()) {
-            LOGGER.info("Group {} has size {}, retention {} days", group.logGroupName(), group.storedBytes(), group.retentionInDays());
-            if (stacks.anyIn(group.logGroupName())) {
-                inStacks.add(group);
-            } else {
-                notInStacks.add(group);
-            }
-            all.add(group);
-        }
-        LOGGER.info("Compared against stack names: {}", stacks.stackNames);
-        LOGGER.info("Found {} groups, {} empty, {} non-empty",
-                all.count(), all.countEmpty(), all.countNotEmpty());
-        LOGGER.info("Groups not containing a stack name: {}, {} empty, {} non-empty",
-                notInStacks.count(), notInStacks.countEmpty(), notInStacks.countNotEmpty());
-        LOGGER.info("Groups containing a stack name: {}, {} empty, {} non-empty",
-                inStacks.count(), inStacks.countEmpty(), inStacks.countNotEmpty());
-
-        int numToDelete = notInStacks.countEmpty();
-        LOGGER.info("Groups to delete: {}", numToDelete);
-        for (int i = 0; i < numToDelete; i++) {
-            String name = notInStacks.empty.get(i);
-            if (i % 50 == 0) {
-                LOGGER.info("Deleting, done {} of {}", i, numToDelete);
-            }
-
-            // See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html
-            sleepForSustainedRatePerSecond(4);
-
-            logs.deleteLogGroup(builder -> builder.logGroupName(name));
-        }
-        LOGGER.info("Finished deleting {} empty log groups not in stacks", numToDelete);
+        run(logs, cloudFormation, Instant.now(), () ->
+                // See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html
+                sleepForSustainedRatePerSecond(4));
     }
 
     public static void run(CloudWatchLogsClient logsClient, CloudFormationClient cloudFormation, Instant queryTime, Runnable sleepForRateLimit) {
@@ -110,33 +78,6 @@ public class CleanUpLogGroups {
 
         public boolean anyIn(String string) {
             return stackNames.stream().anyMatch(string::contains);
-        }
-    }
-
-    public static class LogGroups {
-        private final List<String> names = new ArrayList<>();
-        private final List<String> empty = new ArrayList<>();
-        private final List<String> notEmpty = new ArrayList<>();
-
-        public void add(LogGroup logGroup) {
-            names.add(logGroup.logGroupName());
-            if (logGroup.storedBytes() > 0) {
-                notEmpty.add(logGroup.logGroupName());
-            } else {
-                empty.add(logGroup.logGroupName());
-            }
-        }
-
-        public int count() {
-            return names.size();
-        }
-
-        public int countEmpty() {
-            return empty.size();
-        }
-
-        public int countNotEmpty() {
-            return notEmpty.size();
         }
     }
 
