@@ -32,14 +32,16 @@ import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNo
 public class IngestQueueMessagesTest {
     @Test
     void shouldCountMessagesOnIngestQueue() {
+        // Given
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-queue");
-
-
         QueueMessageCount.Client client = QueueMessageCountsInMemory.from(
                 Map.of("ingest-queue", approximateNumberVisibleAndNotVisible(1, 2)));
 
+        // When
         IngestQueueMessages ingestQueueMessages = IngestQueueMessages.from(instanceProperties, client);
+
+        // Then
         assertThat(ingestQueueMessages.getIngestJobMessageCount())
                 .isEqualTo(1);
     }
