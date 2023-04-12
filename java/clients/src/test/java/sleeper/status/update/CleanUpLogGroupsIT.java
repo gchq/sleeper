@@ -42,10 +42,15 @@ class CleanUpLogGroupsIT {
         stubFor(listActiveStacksRequest()
                 .willReturn(aResponse().withStatus(200)));
         stubFor(describeLogGroupsRequest()
-                .willReturn(aResponse().withStatus(200)));
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"logGroups\": [{" +
+                                "\"logGroupName\": \"test-log-group\"," +
+                                "\"storedBytes\": 0" +
+                                "}]}")));
 
         // When / Then
-        assertThat(streamLogGroupNamesToDelete(runtimeInfo)).containsExactly();
+        assertThat(streamLogGroupNamesToDelete(runtimeInfo))
+                .containsExactly("test-log-group");
     }
 
     private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
@@ -65,6 +70,6 @@ class CleanUpLogGroupsIT {
     private static MappingBuilder describeLogGroupsRequest() {
         return post("/")
                 .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
-                .withHeader("X-Amz-Target", matching("Logs_\\d+\\.DescribeLogGroups"));
+                .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DescribeLogGroups$"));
     }
 }
