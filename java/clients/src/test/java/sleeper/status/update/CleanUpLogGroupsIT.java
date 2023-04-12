@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
@@ -44,7 +45,8 @@ class CleanUpLogGroupsIT {
         stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"logGroups\": [{" +
                         "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 0" +
+                        "\"storedBytes\": 0," +
+                        "\"retentionInDays\": 1" +
                         "}]}")));
 
         // When / Then
@@ -59,7 +61,8 @@ class CleanUpLogGroupsIT {
         stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"logGroups\": [{" +
                         "\"logGroupName\": \"test-stack-log-group\"," +
-                        "\"storedBytes\": 0" +
+                        "\"storedBytes\": 0," +
+                        "\"retentionInDays\": 1" +
                         "}]}")));
 
         // When / Then
@@ -74,7 +77,8 @@ class CleanUpLogGroupsIT {
         stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"logGroups\": [{" +
                         "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 1" +
+                        "\"storedBytes\": 1," +
+                        "\"retentionInDays\": 1" +
                         "}]}")));
 
         // When / Then
@@ -82,10 +86,32 @@ class CleanUpLogGroupsIT {
                 .isEmpty();
     }
 
+    @Test
+    void shouldDeleteALogGroupWithoutARetentionPeriodAfterAMonthWhenNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
+        Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
+        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"logGroups\": [{" +
+                        "\"logGroupName\": \"test-log-group\"," +
+                        "\"storedBytes\": 1," +
+                        "\"creationTime\": " + createdTime.toEpochMilli() +
+                        "}]}")));
+
+        // When / Then
+        assertThat(streamLogGroupNamesToDelete(runtimeInfo, queryTime))
+                .containsExactly("test-log-group");
+    }
+
     private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
+        return streamLogGroupNamesToDelete(runtimeInfo, Instant.now());
+    }
+
+    private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo, Instant queryTime) {
         return CleanUpLogGroups.streamLogGroupNamesToDelete(
                 wiremockLogsClient(runtimeInfo),
-                wiremockCloudFormationClient(runtimeInfo));
+                wiremockCloudFormationClient(runtimeInfo), queryTime);
     }
 
     private static MappingBuilder listActiveStacksRequest() {

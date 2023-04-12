@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.cloudformation.model.StackSummary;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -83,12 +85,21 @@ public class CleanUpLogGroups {
     }
 
     public static Stream<String> streamLogGroupNamesToDelete(
-            CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
+            CloudWatchLogsClient logs, CloudFormationClient cloudFormation, Instant queryTime) {
+        Instant maxCreationTime = queryTime.minus(Duration.ofDays(30));
         Stacks stacks = new Stacks(cloudFormation);
         return logs.describeLogGroupsPaginator().logGroups().stream()
-                .filter(logGroup -> logGroup.storedBytes() == 0)
+                .filter(logGroup -> isEmptyOrOld(logGroup, maxCreationTime))
                 .map(LogGroup::logGroupName)
                 .filter(name -> !stacks.anyIn(name));
+    }
+
+    private static boolean isEmptyOrOld(LogGroup logGroup, Instant maxCreationTime) {
+        if (logGroup.storedBytes() == 0) {
+            return true;
+        }
+        return logGroup.retentionInDays() == null &&
+                Instant.ofEpochMilli(logGroup.creationTime()).isBefore(maxCreationTime);
     }
 
     public static class Stacks {
