@@ -85,7 +85,8 @@ public class CleanUpLogGroups {
     public static Stream<String> streamLogGroupNamesToDelete(
             CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
         new Stacks(cloudFormation);
-        return Stream.of();
+        return logs.describeLogGroupsPaginator().logGroups().stream()
+                .map(LogGroup::logGroupName);
     }
 
     public static class Stacks {
