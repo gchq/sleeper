@@ -24,6 +24,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 
@@ -67,6 +68,7 @@ public class ClientWiremockTestHelper {
         return builder
                 .endpointOverride(wiremockEndpointOverride(runtimeInfo))
                 .credentialsProvider(wiremockCredentialsProviderV2())
+                .region(Region.AWS_GLOBAL)
                 .build();
     }
 
