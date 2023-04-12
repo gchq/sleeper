@@ -17,14 +17,21 @@ package sleeper.status.update;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.ClientWiremockTestHelper.wiremockCloudFormationClient;
 import static sleeper.ClientWiremockTestHelper.wiremockLogsClient;
 
@@ -42,6 +49,15 @@ class CleanUpLogGroupsIT {
 
         // When
         streamLogGroupNamesToDelete(runtimeInfo);
+        verify(1, listStacksRequested());
+    }
+
+    private static RequestPatternBuilder listStacksRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(CONTENT_TYPE, equalTo("application/x-www-form-urlencoded; charset=UTF-8"))
+                .withRequestBody(containing("Action=ListStacks")
+                        .and(containing("StackStatusFilter.member.1=CREATE_COMPLETE" +
+                                "&StackStatusFilter.member.2=UPDATE_COMPLETE")));
     }
 
     private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
