@@ -138,6 +138,7 @@ class InvokeCdkForInstanceTest {
                             "destroy", "--force",
                             "-c", "propertiesfile=instance.properties",
                             "-c", "validate=false",
+                            "-c", "skipVersionCheck=true",
                             "*");
         }
 
@@ -151,6 +152,7 @@ class InvokeCdkForInstanceTest {
                             "destroy", "--force",
                             "-c", "propertiesfile=instance.properties",
                             "-c", "validate=false",
+                            "-c", "skipVersionCheck=true",
                             "*");
         }
 

@@ -26,6 +26,6 @@ public class CdkDestroy implements CdkCommand {
 
     @Override
     public Stream<String> getArguments() {
-        return Stream.of("-c", "validate=false");
+        return Stream.of("-c", "validate=false", "-c", "skipVersionCheck=true");
     }
 }
