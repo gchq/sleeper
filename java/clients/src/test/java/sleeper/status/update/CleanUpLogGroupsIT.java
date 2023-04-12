@@ -79,6 +79,25 @@ class CleanUpLogGroupsIT {
     }
 
     @Test
+    void shouldDeleteAnEmptyLogGroupWhenItsNameContainsANestedStackName(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(listActiveStacksRequest().willReturn(aResponseWithNestedStackName("test-stack")));
+        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"logGroups\": [{" +
+                        "\"logGroupName\": \"test-log-group\"," +
+                        "\"storedBytes\": 0," +
+                        "\"retentionInDays\": 1" +
+                        "}]}")));
+        stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
+
+        // When
+        cleanUpLogGroups(runtimeInfo);
+
+        // Then
+        verify(1, deleteLogGroupRequestedWithName("test-log-group"));
+    }
+
+    @Test
     void shouldNotDeleteALogGroupThatIsNotEmpty(WireMockRuntimeInfo runtimeInfo) {
         // Given
         stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
@@ -179,6 +198,14 @@ class CleanUpLogGroupsIT {
         return aResponse().withStatus(200)
                 .withBody("<ListStacksResponse xmlns=\"http://cloudformation.amazonaws.com/doc/2010-05-15/\"><ListStacksResult><StackSummaries><member>" +
                         "<StackName>" + stackName + "</StackName>" +
+                        "</member></StackSummaries></ListStacksResult></ListStacksResponse>");
+    }
+
+    private static ResponseDefinitionBuilder aResponseWithNestedStackName(String stackName) {
+        return aResponse().withStatus(200)
+                .withBody("<ListStacksResponse xmlns=\"http://cloudformation.amazonaws.com/doc/2010-05-15/\"><ListStacksResult><StackSummaries><member>" +
+                        "<StackName>" + stackName + "</StackName>" +
+                        "<ParentId>some-parent-stack</ParentId>" +
                         "</member></StackSummaries></ListStacksResult></ListStacksResponse>");
     }
 
