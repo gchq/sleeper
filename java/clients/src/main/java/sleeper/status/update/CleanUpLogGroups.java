@@ -51,11 +51,11 @@ public class CleanUpLogGroups {
         for (LogGroup group : logs.describeLogGroupsPaginator().logGroups()) {
             LOGGER.info("Group {} has size {}, retention {} days", group.logGroupName(), group.storedBytes(), group.retentionInDays());
             if (stacks.anyIn(group.logGroupName())) {
-                inStacks.logGroup(group);
+                inStacks.add(group);
             } else {
-                notInStacks.logGroup(group);
+                notInStacks.add(group);
             }
-            all.logGroup(group);
+            all.add(group);
         }
         LOGGER.info("Compared against stack names: {}", stacks.stackNames);
         LOGGER.info("Found {} groups, {} empty, {} non-empty",
@@ -102,7 +102,7 @@ public class CleanUpLogGroups {
         private final List<String> empty = new ArrayList<>();
         private final List<String> notEmpty = new ArrayList<>();
 
-        public void logGroup(LogGroup logGroup) {
+        public void add(LogGroup logGroup) {
             names.add(logGroup.logGroupName());
             if (logGroup.storedBytes() > 0) {
                 notEmpty.add(logGroup.logGroupName());
