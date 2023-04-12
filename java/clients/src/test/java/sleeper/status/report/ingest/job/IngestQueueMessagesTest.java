@@ -26,6 +26,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
@@ -42,6 +45,30 @@ class IngestQueueMessagesTest {
         assertThat(IngestQueueMessages.from(instanceProperties, client))
                 .isEqualTo(IngestQueueMessages.builder()
                         .ingestMessages(1)
+                        .build());
+    }
+
+    @Test
+    void shouldCountMessagesOnAllQueues() {
+        // Given
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-queue");
+        instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "emr-queue");
+        instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, "persistent-emr-queue");
+        instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, "eks-queue");
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.from(Map.of(
+                "ingest-queue", approximateNumberVisibleAndNotVisible(1, 2),
+                "emr-queue", approximateNumberVisibleAndNotVisible(3, 4),
+                "persistent-emr-queue", approximateNumberVisibleAndNotVisible(5, 6),
+                "eks-queue", approximateNumberVisibleAndNotVisible(7, 8)));
+
+        // When / Then
+        assertThat(IngestQueueMessages.from(instanceProperties, client))
+                .isEqualTo(IngestQueueMessages.builder()
+                        .ingestMessages(1)
+                        .emrMessages(3)
+                        .persistentEmrMessages(5)
+                        .eksMessages(7)
                         .build());
     }
 }
