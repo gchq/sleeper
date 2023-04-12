@@ -31,7 +31,7 @@ public class QueueMessageCount {
     private final int approximateNumberOfMessages;
     private final int approximateNumberOfMessagesNotVisible;
 
-    public QueueMessageCount(int approximateNumberOfMessages, int approximateNumberOfMessagesNotVisible) {
+    private QueueMessageCount(int approximateNumberOfMessages, int approximateNumberOfMessagesNotVisible) {
         this.approximateNumberOfMessages = approximateNumberOfMessages;
         this.approximateNumberOfMessagesNotVisible = approximateNumberOfMessagesNotVisible;
     }
