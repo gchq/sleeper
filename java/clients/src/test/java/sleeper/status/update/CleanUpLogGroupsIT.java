@@ -87,7 +87,7 @@ class CleanUpLogGroupsIT {
     }
 
     @Test
-    void shouldDeleteALogGroupWithoutARetentionPeriodAfterAMonthWhenNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+    void shouldDeleteALogGroupWithoutARetentionPeriodWhenOlderThanAMonthAndNotEmpty(WireMockRuntimeInfo runtimeInfo) {
         // Given
         Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
         Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
@@ -102,6 +102,24 @@ class CleanUpLogGroupsIT {
         // When / Then
         assertThat(streamLogGroupNamesToDelete(runtimeInfo, queryTime))
                 .containsExactly("test-log-group");
+    }
+
+    @Test
+    void shouldNotDeleteALogGroupWithoutARetentionPeriodWhenYoungerThanAMonthAndNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
+        Instant createdTime = Instant.parse("2023-04-11T11:26:00Z");
+        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"logGroups\": [{" +
+                        "\"logGroupName\": \"test-log-group\"," +
+                        "\"storedBytes\": 1," +
+                        "\"creationTime\": " + createdTime.toEpochMilli() +
+                        "}]}")));
+
+        // When / Then
+        assertThat(streamLogGroupNamesToDelete(runtimeInfo, queryTime))
+                .isEmpty();
     }
 
     private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
