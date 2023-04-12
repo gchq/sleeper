@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
@@ -79,6 +80,12 @@ public class CleanUpLogGroups {
             logs.deleteLogGroup(builder -> builder.logGroupName(name));
         }
         LOGGER.info("Finished deleting {} empty log groups not in stacks", numToDelete);
+    }
+
+    public static Stream<String> streamLogGroupNamesToDelete(
+            CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
+        new Stacks(cloudFormation);
+        return Stream.of();
     }
 
     public static class Stacks {
