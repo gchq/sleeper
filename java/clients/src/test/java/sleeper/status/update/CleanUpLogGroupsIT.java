@@ -16,6 +16,7 @@
 package sleeper.status.update;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
@@ -37,20 +38,33 @@ import static sleeper.ClientWiremockTestHelper.wiremockLogsClient;
 class CleanUpLogGroupsIT {
 
     @Test
-    void shouldDeleteAnEmptyLogGroupWhenNotInAStack(WireMockRuntimeInfo runtimeInfo) {
+    void shouldDeleteAnEmptyLogGroupWhenNoStacksArePresent(WireMockRuntimeInfo runtimeInfo) {
         // Given
-        stubFor(listActiveStacksRequest()
-                .willReturn(aResponse().withStatus(200)));
-        stubFor(describeLogGroupsRequest()
-                .willReturn(aResponse().withStatus(200)
-                        .withBody("{\"logGroups\": [{" +
-                                "\"logGroupName\": \"test-log-group\"," +
-                                "\"storedBytes\": 0" +
-                                "}]}")));
+        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"logGroups\": [{" +
+                        "\"logGroupName\": \"test-log-group\"," +
+                        "\"storedBytes\": 0" +
+                        "}]}")));
 
         // When / Then
         assertThat(streamLogGroupNamesToDelete(runtimeInfo))
                 .containsExactly("test-log-group");
+    }
+
+    @Test
+    void shouldNotDeleteAnEmptyLogGroupWhenItsNameContainsAStackName(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(listActiveStacksRequest().willReturn(aResponseWithStackName("test-stack")));
+        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"logGroups\": [{" +
+                        "\"logGroupName\": \"test-stack-log-group\"," +
+                        "\"storedBytes\": 0" +
+                        "}]}")));
+
+        // When / Then
+        assertThat(streamLogGroupNamesToDelete(runtimeInfo))
+                .isEmpty();
     }
 
     private static Stream<String> streamLogGroupNamesToDelete(WireMockRuntimeInfo runtimeInfo) {
@@ -65,6 +79,13 @@ class CleanUpLogGroupsIT {
                 .withRequestBody(containing("Action=ListStacks")
                         .and(containing("StackStatusFilter.member.1=CREATE_COMPLETE" +
                                 "&StackStatusFilter.member.2=UPDATE_COMPLETE")));
+    }
+
+    private static ResponseDefinitionBuilder aResponseWithStackName(String stackName) {
+        return aResponse().withStatus(200)
+                .withBody("<ListStacksResponse xmlns=\"http://cloudformation.amazonaws.com/doc/2010-05-15/\"><ListStacksResult><StackSummaries><member>" +
+                        "<StackName>" + stackName + "</StackName>" +
+                        "</member></StackSummaries></ListStacksResult></ListStacksResponse>");
     }
 
     private static MappingBuilder describeLogGroupsRequest() {
