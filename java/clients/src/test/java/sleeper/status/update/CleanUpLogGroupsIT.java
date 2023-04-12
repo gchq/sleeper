@@ -20,6 +20,8 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -38,142 +40,153 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.ClientWiremockTestHelper.wiremockCloudFormationClient;
 import static sleeper.ClientWiremockTestHelper.wiremockLogsClient;
 
-@WireMockTest
 class CleanUpLogGroupsIT {
 
-    @Test
-    void shouldDeleteAnEmptyLogGroupWhenNoStacksArePresent(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 0," +
-                        "\"retentionInDays\": 1" +
-                        "}]}")));
-        stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
+    @Nested
+    @DisplayName("Delete empty groups not matching a deployed CloudFormation stack")
+    @WireMockTest
+    class DeleteEmptyLogGroups {
 
-        // When
-        cleanUpLogGroups(runtimeInfo);
+        @Test
+        void shouldDeleteAnEmptyLogGroupWhenNoStacksArePresent(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-log-group\"," +
+                            "\"storedBytes\": 0," +
+                            "\"retentionInDays\": 1" +
+                            "}]}")));
+            stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
 
-        // Then
-        verify(1, deleteLogGroupRequestedWithName("test-log-group"));
+            // When
+            cleanUpLogGroups(runtimeInfo);
+
+            // Then
+            verify(1, deleteLogGroupRequestedWithName("test-log-group"));
+        }
+
+        @Test
+        void shouldNotDeleteAnEmptyLogGroupWhenItsNameContainsAStackName(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            stubFor(listActiveStacksRequest().willReturn(aResponseWithStackName("test-stack")));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-stack-log-group\"," +
+                            "\"storedBytes\": 0," +
+                            "\"retentionInDays\": 1" +
+                            "}]}")));
+
+            // When
+            cleanUpLogGroups(runtimeInfo);
+
+            // Then
+            verify(0, deleteLogGroupRequested());
+        }
+
+        @Test
+        void shouldDeleteAnEmptyLogGroupWhenItsNameContainsANestedStackName(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            stubFor(listActiveStacksRequest().willReturn(aResponseWithNestedStackName("test-stack")));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-log-group\"," +
+                            "\"storedBytes\": 0," +
+                            "\"retentionInDays\": 1" +
+                            "}]}")));
+            stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
+
+            // When
+            cleanUpLogGroups(runtimeInfo);
+
+            // Then
+            verify(1, deleteLogGroupRequestedWithName("test-log-group"));
+        }
+
+        @Test
+        void shouldNotDeleteALogGroupThatIsNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-log-group\"," +
+                            "\"storedBytes\": 1," +
+                            "\"retentionInDays\": 1" +
+                            "}]}")));
+
+            // When
+            cleanUpLogGroups(runtimeInfo);
+
+            // Then
+            verify(0, deleteLogGroupRequested());
+        }
     }
 
-    @Test
-    void shouldNotDeleteAnEmptyLogGroupWhenItsNameContainsAStackName(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        stubFor(listActiveStacksRequest().willReturn(aResponseWithStackName("test-stack")));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-stack-log-group\"," +
-                        "\"storedBytes\": 0," +
-                        "\"retentionInDays\": 1" +
-                        "}]}")));
+    @Nested
+    @DisplayName("Delete old groups with no retention period not matching a deployed CloudFormation stack")
+    @WireMockTest
+    class DeleteOldGroupsWithNoRetentionPeriod {
 
-        // When
-        cleanUpLogGroups(runtimeInfo);
+        @Test
+        void shouldDeleteALogGroupWithoutARetentionPeriodWhenOlderThanAMonthAndNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
+            Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
+            stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-log-group\"," +
+                            "\"storedBytes\": 1," +
+                            "\"creationTime\": " + createdTime.toEpochMilli() +
+                            "}]}")));
+            stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
 
-        // Then
-        verify(0, deleteLogGroupRequested());
-    }
+            // When
+            cleanUpLogGroups(runtimeInfo, queryTime);
 
-    @Test
-    void shouldDeleteAnEmptyLogGroupWhenItsNameContainsANestedStackName(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        stubFor(listActiveStacksRequest().willReturn(aResponseWithNestedStackName("test-stack")));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 0," +
-                        "\"retentionInDays\": 1" +
-                        "}]}")));
-        stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
+            // Then
+            verify(1, deleteLogGroupRequestedWithName("test-log-group"));
+        }
 
-        // When
-        cleanUpLogGroups(runtimeInfo);
+        @Test
+        void shouldNotDeleteALogGroupWithoutARetentionPeriodWhenYoungerThanAMonthAndNotEmpty(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
+            Instant createdTime = Instant.parse("2023-04-11T11:26:00Z");
+            stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-log-group\"," +
+                            "\"storedBytes\": 1," +
+                            "\"creationTime\": " + createdTime.toEpochMilli() +
+                            "}]}")));
 
-        // Then
-        verify(1, deleteLogGroupRequestedWithName("test-log-group"));
-    }
+            // When
+            cleanUpLogGroups(runtimeInfo, queryTime);
 
-    @Test
-    void shouldNotDeleteALogGroupThatIsNotEmpty(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 1," +
-                        "\"retentionInDays\": 1" +
-                        "}]}")));
+            // Then
+            verify(0, deleteLogGroupRequested());
+        }
 
-        // When
-        cleanUpLogGroups(runtimeInfo);
+        @Test
+        void shouldNotDeleteALogGroupWithoutARetentionPeriodWhenOlderThanAMonthAndContainsStackName(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
+            Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
+            stubFor(listActiveStacksRequest().willReturn(aResponseWithStackName("test-stack")));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"test-stack-log-group\"," +
+                            "\"storedBytes\": 1," +
+                            "\"creationTime\": " + createdTime.toEpochMilli() +
+                            "}]}")));
 
-        // Then
-        verify(0, deleteLogGroupRequested());
-    }
+            // When
+            cleanUpLogGroups(runtimeInfo, queryTime);
 
-    @Test
-    void shouldDeleteALogGroupWithoutARetentionPeriodWhenOlderThanAMonthAndNotEmpty(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
-        Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
-        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 1," +
-                        "\"creationTime\": " + createdTime.toEpochMilli() +
-                        "}]}")));
-        stubFor(deleteLogGroupRequestWithName("test-log-group").willReturn(aResponse().withStatus(200)));
-
-        // When
-        cleanUpLogGroups(runtimeInfo, queryTime);
-
-        // Then
-        verify(1, deleteLogGroupRequestedWithName("test-log-group"));
-    }
-
-    @Test
-    void shouldNotDeleteALogGroupWithoutARetentionPeriodWhenYoungerThanAMonthAndNotEmpty(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
-        Instant createdTime = Instant.parse("2023-04-11T11:26:00Z");
-        stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-log-group\"," +
-                        "\"storedBytes\": 1," +
-                        "\"creationTime\": " + createdTime.toEpochMilli() +
-                        "}]}")));
-
-        // When
-        cleanUpLogGroups(runtimeInfo, queryTime);
-
-        // Then
-        verify(0, deleteLogGroupRequested());
-    }
-
-    @Test
-    void shouldNotDeleteALogGroupWithoutARetentionPeriodWhenOlderThanAMonthAndContainsStackName(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
-        Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
-        stubFor(listActiveStacksRequest().willReturn(aResponseWithStackName("test-stack")));
-        stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
-                .withBody("{\"logGroups\": [{" +
-                        "\"logGroupName\": \"test-stack-log-group\"," +
-                        "\"storedBytes\": 1," +
-                        "\"creationTime\": " + createdTime.toEpochMilli() +
-                        "}]}")));
-
-        // When
-        cleanUpLogGroups(runtimeInfo, queryTime);
-
-        // Then
-        verify(0, deleteLogGroupRequested());
+            // Then
+            verify(0, deleteLogGroupRequested());
+        }
     }
 
     private static void cleanUpLogGroups(WireMockRuntimeInfo runtimeInfo) {
