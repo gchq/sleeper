@@ -20,7 +20,6 @@ import sleeper.clients.deploy.DeployNewInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.util.ClientUtils.optionalArgument;
@@ -35,14 +34,8 @@ public class DeployNewTestInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
-        Path scriptsDirectory = Path.of(args[0]);
-        Path splitPointsPath = null;
-        Optional<String> splitPointsPathString = optionalArgument(args, 6);
-        if (splitPointsPathString.isPresent()) {
-            splitPointsPath = Path.of(splitPointsPathString.get());
-        }
 
-        DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
+        DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
                 .instancePropertiesTemplate(Path.of(args[1]))
                 .extraInstanceProperties(properties ->
                         properties.setProperty(SYSTEM_TEST_REPO.getPropertyName(), args[2] + "/system-test"))
@@ -50,7 +43,7 @@ public class DeployNewTestInstance {
                 .vpcId(args[3])
                 .subnetId(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(splitPointsPath)
+                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();

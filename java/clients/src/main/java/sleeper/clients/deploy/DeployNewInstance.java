@@ -33,7 +33,7 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -73,6 +73,9 @@ public class DeployNewInstance {
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
+        if (splitPointsFile != null && !Files.exists(splitPointsFile)) {
+            throw new IllegalArgumentException("Split points file not found: " + splitPointsFile);
+        }
     }
 
     public static Builder builder() {
@@ -85,14 +88,6 @@ public class DeployNewInstance {
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
-        Path splitPointsPath = null;
-        Optional<String> splitPointsPathString = optionalArgument(args, 6);
-        if (splitPointsPathString.isPresent()) {
-            splitPointsPath = Path.of(splitPointsPathString.get());
-            if (!Files.exists(splitPointsPath)) {
-                throw new IllegalArgumentException("Split points file not found: " + splitPointsPath);
-            }
-        }
 
         builder().scriptsDirectory(scriptsDirectory)
                 .instanceId(args[1])
@@ -100,7 +95,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(splitPointsPath)
+                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
@@ -126,9 +121,8 @@ public class DeployNewInstance {
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
-        if (splitPointsFile != null) {
-            LOGGER.info("splitPointsFile: {}", splitPointsFile);
-        }
+        LOGGER.info("splitPointsFile: {}", splitPointsFile);
+        LOGGER.info("deployPaused: {}", deployPaused);
 
         Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
         tagsProperties.setProperty("InstanceID", instanceId);
@@ -142,9 +136,7 @@ public class DeployNewInstance {
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
-        if (splitPointsFile != null) {
-            tableProperties.set(SPLIT_POINTS_FILE, splitPointsFile.toString());
-        }
+        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
