@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -189,6 +191,39 @@ class CleanUpLogGroupsIT {
         }
     }
 
+    @Nested
+    @DisplayName("Delete multiple log groups")
+    @WireMockTest
+    class DeleteMultipleGroups {
+
+        @Test
+        void shouldDeleteEmptyLogGroupAndOldLogGroupWithNoRetentionPeriod(WireMockRuntimeInfo runtimeInfo) {
+            // Given
+            Instant queryTime = Instant.parse("2023-04-12T11:26:00Z");
+            Instant createdTime = Instant.parse("2023-01-12T11:26:00Z");
+            stubFor(listActiveStacksRequest().willReturn(aResponse().withStatus(200)));
+            stubFor(describeLogGroupsRequest().willReturn(aResponse().withStatus(200)
+                    .withBody("{\"logGroups\": [{" +
+                            "\"logGroupName\": \"empty-log-group\"," +
+                            "\"storedBytes\": 0," +
+                            "\"retentionInDays\": 1" +
+                            "},{" +
+                            "\"logGroupName\": \"old-log-group\"," +
+                            "\"storedBytes\": 1," +
+                            "\"creationTime\": " + createdTime.toEpochMilli() +
+                            "}]}")));
+            stubFor(deleteLogGroupRequestWithName(equalTo("empty-log-group").or(equalTo("old-log-group")))
+                    .willReturn(aResponse().withStatus(200)));
+
+            // When
+            cleanUpLogGroups(runtimeInfo, queryTime);
+
+            // Then
+            verify(1, deleteLogGroupRequestedWithName("empty-log-group"));
+            verify(1, deleteLogGroupRequestedWithName("old-log-group"));
+        }
+    }
+
     private static void cleanUpLogGroups(WireMockRuntimeInfo runtimeInfo) {
         cleanUpLogGroups(runtimeInfo, Instant.now());
     }
@@ -229,10 +264,14 @@ class CleanUpLogGroupsIT {
     }
 
     private static MappingBuilder deleteLogGroupRequestWithName(String logGroupName) {
+        return deleteLogGroupRequestWithName(equalTo(logGroupName));
+    }
+
+    private static MappingBuilder deleteLogGroupRequestWithName(StringValuePattern pattern) {
         return post("/")
                 .withHeader(CONTENT_TYPE, equalTo("application/x-amz-json-1.1"))
                 .withHeader("X-Amz-Target", matching("^Logs_\\d+\\.DeleteLogGroup$"))
-                .withRequestBody(equalToJson("{\"logGroupName\": \"" + logGroupName + "\"}"));
+                .withRequestBody(matchingJsonPath("$.logGroupName", pattern));
     }
 
     private static RequestPatternBuilder deleteLogGroupRequestedWithName(String logGroupName) {
