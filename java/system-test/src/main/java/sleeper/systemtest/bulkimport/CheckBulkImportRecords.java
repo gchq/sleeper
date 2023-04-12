@@ -58,6 +58,9 @@ public class CheckBulkImportRecords {
         long recordsInStateStore = stateStore.getActiveFiles().stream()
                 .mapToLong(FileInfo::getNumberOfRecords).sum();
         LOGGER.info("Found {} records across all files in table", recordsInStateStore);
+        if (expectedRecords != recordsInStateStore) {
+            throw new IllegalStateException("Some records failed to ingest successfully");
+        }
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {
