@@ -20,6 +20,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
 
+import java.io.PrintStream;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
@@ -61,6 +62,10 @@ public class IngestQueueMessages {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public void print(PrintStream out) {
+        out.printf("Total jobs waiting in queue (excluded from report): %s%n", ingestMessages);
     }
 
     @Override

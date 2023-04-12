@@ -18,6 +18,7 @@ package sleeper.status.report.ingest.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.QueueMessageCountsInMemory;
@@ -31,6 +32,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.ingestMessageCount;
 
 class IngestQueueMessagesTest {
     @Test
@@ -70,5 +72,18 @@ class IngestQueueMessagesTest {
                         .persistentEmrMessages(5)
                         .eksMessages(7)
                         .build());
+    }
+
+    @Test
+    void shouldReportMessagesWhenOnlyIngestQueueIsDeployed() {
+        // Given
+        IngestQueueMessages messages = ingestMessageCount(10);
+
+        // When
+        ToStringPrintStream out = new ToStringPrintStream();
+        messages.print(out.getPrintStream());
+
+        // Then
+        assertThat(out).hasToString("Total jobs waiting in queue (excluded from report): 10\n");
     }
 }
