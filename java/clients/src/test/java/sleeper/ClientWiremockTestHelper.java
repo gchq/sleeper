@@ -20,7 +20,19 @@ import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static sleeper.job.common.WiremockTestHelper.WIREMOCK_ACCESS_KEY;
+import static sleeper.job.common.WiremockTestHelper.WIREMOCK_SECRET_KEY;
 import static sleeper.job.common.WiremockTestHelper.wiremockCredentialsProvider;
 import static sleeper.job.common.WiremockTestHelper.wiremockEndpointConfiguration;
 
@@ -41,5 +53,34 @@ public class ClientWiremockTestHelper {
                 .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
                 .withCredentials(wiremockCredentialsProvider())
                 .build();
+    }
+
+    public static CloudWatchLogsClient wiremockLogsClient(WireMockRuntimeInfo runtimeInfo) {
+        return callWiremock(CloudWatchLogsClient.builder(), runtimeInfo);
+    }
+
+    public static CloudFormationClient wiremockCloudFormationClient(WireMockRuntimeInfo runtimeInfo) {
+        return callWiremock(CloudFormationClient.builder(), runtimeInfo);
+    }
+
+    public static <B extends AwsClientBuilder<B, T>, T> T callWiremock(
+            B builder, WireMockRuntimeInfo runtimeInfo) {
+        return builder
+                .endpointOverride(wiremockEndpointOverride(runtimeInfo))
+                .credentialsProvider(wiremockCredentialsProviderV2())
+                .region(Region.AWS_GLOBAL)
+                .build();
+    }
+
+    public static URI wiremockEndpointOverride(WireMockRuntimeInfo runtimeInfo) {
+        try {
+            return new URI(runtimeInfo.getHttpBaseUrl());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static AwsCredentialsProvider wiremockCredentialsProviderV2() {
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY));
     }
 }
