@@ -53,7 +53,7 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
 
     private JsonObject createJsonReport(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("numberInQueue", queueMessages.getTotalMessages());
+        jsonObject.add("queueMessages", gson.toJsonTree(queueMessages));
         jsonObject.add("jobList", gson.toJsonTree(statusList));
         return jsonObject;
     }
