@@ -70,7 +70,7 @@ public class IngestQueueMessages {
             out.printf("Jobs waiting in ingest queue (excluded from report): %s%n", ingestMessages);
         }
         if (emrMessages != null) {
-            out.printf("Total jobs waiting in queue (excluded from report): %s%n", emrMessages);
+            out.printf("Jobs waiting in EMR queue (excluded from report): %s%n", emrMessages);
         }
     }
 

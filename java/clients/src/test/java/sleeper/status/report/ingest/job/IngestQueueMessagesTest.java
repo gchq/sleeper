@@ -97,6 +97,6 @@ class IngestQueueMessagesTest {
         messages.print(out.getPrintStream());
 
         // Then
-        assertThat(out).hasToString("Total jobs waiting in queue (excluded from report): 10\n");
+        assertThat(out).hasToString("Jobs waiting in EMR queue (excluded from report): 10\n");
     }
 }
