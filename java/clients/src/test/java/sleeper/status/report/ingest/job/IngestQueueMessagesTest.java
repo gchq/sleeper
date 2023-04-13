@@ -16,6 +16,8 @@
 
 package sleeper.status.report.ingest.job;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ToStringPrintStream;
@@ -74,55 +76,59 @@ class IngestQueueMessagesTest {
                         .build());
     }
 
-    @Test
-    void shouldReportMessagesWhenOnlyIngestQueueIsDeployed() {
-        // Given
-        IngestQueueMessages messages = ingestMessageCount(10);
+    @Nested
+    @DisplayName("Report message count")
+    class ReportMessageCount {
+        @Test
+        void shouldReportMessagesWhenOnlyIngestQueueIsDeployed() {
+            // Given
+            IngestQueueMessages messages = ingestMessageCount(10);
 
-        // When
-        ToStringPrintStream out = new ToStringPrintStream();
-        messages.print(out.getPrintStream());
+            // When
+            ToStringPrintStream out = new ToStringPrintStream();
+            messages.print(out.getPrintStream());
 
-        // Then
-        assertThat(out).hasToString("Jobs waiting in ingest queue (excluded from report): 10\n");
-    }
+            // Then
+            assertThat(out).hasToString("Jobs waiting in ingest queue (excluded from report): 10\n");
+        }
 
-    @Test
-    void shouldReportMessagesWhenOnlyBulkImportEmrQueueIsDeployed() {
-        // Given
-        IngestQueueMessages messages = IngestQueueMessages.builder().emrMessages(10).build();
+        @Test
+        void shouldReportMessagesWhenOnlyBulkImportEmrQueueIsDeployed() {
+            // Given
+            IngestQueueMessages messages = IngestQueueMessages.builder().emrMessages(10).build();
 
-        // When
-        ToStringPrintStream out = new ToStringPrintStream();
-        messages.print(out.getPrintStream());
+            // When
+            ToStringPrintStream out = new ToStringPrintStream();
+            messages.print(out.getPrintStream());
 
-        // Then
-        assertThat(out).hasToString("Jobs waiting in EMR queue (excluded from report): 10\n");
-    }
+            // Then
+            assertThat(out).hasToString("Jobs waiting in EMR queue (excluded from report): 10\n");
+        }
 
-    @Test
-    void shouldReportMessagesWhenOnlyBulkImportPersistentEmrQueueIsDeployed() {
-        // Given
-        IngestQueueMessages messages = IngestQueueMessages.builder().persistentEmrMessages(10).build();
+        @Test
+        void shouldReportMessagesWhenOnlyBulkImportPersistentEmrQueueIsDeployed() {
+            // Given
+            IngestQueueMessages messages = IngestQueueMessages.builder().persistentEmrMessages(10).build();
 
-        // When
-        ToStringPrintStream out = new ToStringPrintStream();
-        messages.print(out.getPrintStream());
+            // When
+            ToStringPrintStream out = new ToStringPrintStream();
+            messages.print(out.getPrintStream());
 
-        // Then
-        assertThat(out).hasToString("Jobs waiting in persistent EMR queue (excluded from report): 10\n");
-    }
+            // Then
+            assertThat(out).hasToString("Jobs waiting in persistent EMR queue (excluded from report): 10\n");
+        }
 
-    @Test
-    void shouldReportMessagesWhenOnlyBulkImportEksQueueIsDeployed() {
-        // Given
-        IngestQueueMessages messages = IngestQueueMessages.builder().eksMessages(10).build();
+        @Test
+        void shouldReportMessagesWhenOnlyBulkImportEksQueueIsDeployed() {
+            // Given
+            IngestQueueMessages messages = IngestQueueMessages.builder().eksMessages(10).build();
 
-        // When
-        ToStringPrintStream out = new ToStringPrintStream();
-        messages.print(out.getPrintStream());
+            // When
+            ToStringPrintStream out = new ToStringPrintStream();
+            messages.print(out.getPrintStream());
 
-        // Then
-        assertThat(out).hasToString("Jobs waiting in EKS queue (excluded from report): 10\n");
+            // Then
+            assertThat(out).hasToString("Jobs waiting in EKS queue (excluded from report): 10\n");
+        }
     }
 }
