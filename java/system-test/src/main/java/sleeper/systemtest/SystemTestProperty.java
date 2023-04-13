@@ -42,8 +42,10 @@ public interface SystemTestProperty extends InstanceProperty {
                     "and posted to the ingest queue.")
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
     SystemTestProperty NUMBER_OF_BULK_IMPORT_JOBS = Index.propertyBuilder("sleeper.systemtest.bulkimport.jobs")
-            .description("The number of jobs that should be sent to the bulk import queue.\n" +
-                    "Only applies when sending bulk import jobs outside of a specified ingest mode.")
+            .description("The number of jobs that should be sent to the bulk import queue. " +
+                    "Only applies when sending bulk import jobs with the SendBulkImportJobs class.\n" +
+                    "When using the ingest mode 'generate_only', this will take all generated data files, and send a " +
+                    "number of bulk import jobs that each import all of those files.")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
