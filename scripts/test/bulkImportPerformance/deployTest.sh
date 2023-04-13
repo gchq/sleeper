@@ -30,7 +30,7 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@" "true" "$TEST_DIR/splitpoints/string/512-partitions.txt"
 END_DEPLOY_TIME=$(record_time)
 
-"$THIS_DIR/testAll.sh"
+"$THIS_DIR/testBulkImport.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

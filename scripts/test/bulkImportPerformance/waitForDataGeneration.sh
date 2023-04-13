@@ -15,44 +15,38 @@
 
 set -e
 
-TABLE_NAME="system-test"
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 JARS_DIR="$SCRIPTS_DIR/jars"
-TEMPLATE_DIR="$SCRIPTS_DIR/templates"
 GENERATED_DIR="$SCRIPTS_DIR/generated"
 
-VERSION=$(cat "$TEMPLATE_DIR/version.txt")
-SYSTEM_TEST_JAR="${JARS_DIR}/system-test-${VERSION}-utility.jar"
+SYSTEM_TEST_JAR="$JARS_DIR/system-test-$VERSION-utility.jar"
 WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
-
-INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
-INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Writing Random Data"
+echo "Waiting for tasks to generate data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
-
-END_RUN_TASKS=$(record_time)
-echo "Starting data generation tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"
-
-"$THIS_DIR/waitForDataGeneration.sh"
+sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
 
 END_DATA_GENERATION=$(record_time)
+echo "Waiting for data generation finished at $(recorded_time_str "$END_DATA_GENERATION"), took $(elapsed_time_str "$START_TIME" "$END_DATA_GENERATION")"
 
-"$THIS_DIR/waitForBulkImport.sh"
+echo "-------------------------------------------------------------------------------"
+echo "Sending bulk import jobs"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.bulkimport.SendBulkImportJobs "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
+
 echo "-------------------------------------------------------------------------------"
-echo "Finished bulk import"
+echo "Finished generating data and sending bulk import jos"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Starting data generation tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"
-echo "Waiting for data generation took $(elapsed_time_str "$END_RUN_TASKS" "$END_DATA_GENERATION")"
-echo "Bulk import finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DATA_GENERATION" "$FINISH_TIME")"
-echo "Overall, test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Waiting for data generation finished at $(recorded_time_str "$END_DATA_GENERATION"), took $(elapsed_time_str "$START_TIME" "$END_DATA_GENERATION")"
+echo "Sending bulk import jobs finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DATA_GENERATION" "$FINISH_TIME")"
+echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
