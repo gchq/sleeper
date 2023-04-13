@@ -33,11 +33,11 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
-public class DynamoDBIngestStatusStoreStack implements IngestStatusStoreStack {
+public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public DynamoDBIngestStatusStoreStack(Construct scope, InstanceProperties instanceProperties) {
+    public DynamoDBIngestStatusStoreResources(Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
