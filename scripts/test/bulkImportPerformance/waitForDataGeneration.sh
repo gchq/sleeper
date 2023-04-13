@@ -15,6 +15,7 @@
 
 set -e
 
+TABLE_NAME="system-test"
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 JARS_DIR="$SCRIPTS_DIR/jars"
@@ -39,7 +40,7 @@ echo "--------------------------------------------------------------------------
 echo "Sending bulk import jobs"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.bulkimport.SendBulkImportJobs "${INSTANCE_ID}"
+sleeper.systemtest.bulkimport.SendBulkImportJobs "${INSTANCE_ID}" "${TABLE_NAME}"
 
 FINISH_TIME=$(record_time)
 
