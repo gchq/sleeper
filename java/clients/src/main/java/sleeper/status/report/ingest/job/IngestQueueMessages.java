@@ -72,6 +72,12 @@ public class IngestQueueMessages {
         if (emrMessages != null) {
             out.printf("Jobs waiting in EMR queue (excluded from report): %s%n", emrMessages);
         }
+        if (persistentEmrMessages != null) {
+            out.printf("Jobs waiting in persistent EMR queue (excluded from report): %s%n", persistentEmrMessages);
+        }
+        if (eksMessages != null) {
+            out.printf("Jobs waiting in EKS queue (excluded from report): %s%n", eksMessages);
+        }
     }
 
     public int getTotalMessages() {
