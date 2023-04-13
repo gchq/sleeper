@@ -184,7 +184,8 @@ class IngestQueueMessagesTest {
                     "Jobs waiting in ingest queue (excluded from report): 1\n" +
                     "Jobs waiting in EMR queue (excluded from report): 2\n" +
                     "Jobs waiting in persistent EMR queue (excluded from report): 3\n" +
-                    "Jobs waiting in EKS queue (excluded from report): 4\n");
+                    "Jobs waiting in EKS queue (excluded from report): 4\n" +
+                    "Total jobs waiting across all queues: 10\n");
         }
 
         @Test
