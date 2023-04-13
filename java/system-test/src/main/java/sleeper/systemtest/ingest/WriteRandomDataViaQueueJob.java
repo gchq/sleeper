@@ -36,17 +36,15 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
 
 public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataViaQueueJob.class);
@@ -100,7 +98,7 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
-        List<SendMessageRequest> sendMessageRequests = new ArrayList<>();
+        SendMessageRequest sendMessageRequest;
         if (ingestMode.equalsIgnoreCase(IngestMode.QUEUE.name())) {
             IngestJob ingestJob = IngestJob.builder()
                     .tableName(getTableProperties().get(TABLE_NAME))
@@ -109,28 +107,25 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
                     .build();
             String jsonJob = new IngestJobSerDe().toJson(ingestJob);
             LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
-            sendMessageRequests.add(new SendMessageRequest()
+            sendMessageRequest = new SendMessageRequest()
                     .withQueueUrl(getSystemTestProperties().get(INGEST_JOB_QUEUE_URL))
-                    .withMessageBody(jsonJob));
+                    .withMessageBody(jsonJob);
         } else if (ingestMode.equalsIgnoreCase(IngestMode.BULK_IMPORT_QUEUE.name())) {
-            int totalBulkImportJobs = getSystemTestProperties().getInt(NUMBER_OF_BULK_IMPORT_JOBS);
-            for (int i = 0; i < totalBulkImportJobs; i++) {
-                BulkImportJob bulkImportJob = new BulkImportJob.Builder()
-                        .tableName(getTableProperties().get(TABLE_NAME))
-                        .id(UUID.randomUUID().toString())
-                        .files(List.of(dir))
-                        .build();
-                String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
-                LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
-                sendMessageRequests.add(new SendMessageRequest()
-                        .withQueueUrl(getSystemTestProperties().get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
-                        .withMessageBody(jsonJob));
-            }
+            BulkImportJob bulkImportJob = new BulkImportJob.Builder()
+                    .tableName(getTableProperties().get(TABLE_NAME))
+                    .id(UUID.randomUUID().toString())
+                    .files(Arrays.asList(dir))
+                    .build();
+            String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
+            LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
+            sendMessageRequest = new SendMessageRequest()
+                    .withQueueUrl(getSystemTestProperties().get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
+                    .withMessageBody(jsonJob);
         } else {
             throw new IllegalArgumentException("Unknown ingest mode of " + ingestMode);
         }
 
-        sendMessageRequests.forEach(sqsClient::sendMessage);
+        sqsClient.sendMessage(sendMessageRequest);
         sqsClient.shutdown();
     }
 }
