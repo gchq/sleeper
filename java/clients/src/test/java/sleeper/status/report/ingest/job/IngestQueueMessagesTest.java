@@ -76,6 +76,40 @@ class IngestQueueMessagesTest {
                         .build());
     }
 
+    @Test
+    void shouldGetTotalMessagesWhenAllQueuesAreEnabled() {
+        // Given
+        IngestQueueMessages messages = IngestQueueMessages.builder().ingestMessages(1)
+                .emrMessages(2)
+                .persistentEmrMessages(3)
+                .eksMessages(4)
+                .build();
+
+        // When / Then
+        assertThat(messages.getTotalMessages())
+                .isEqualTo(10);
+    }
+
+    @Test
+    void shouldGetTotalMessagesWhenSomeQueuesAreNotEnabled() {
+        // Given
+        IngestQueueMessages messages = IngestQueueMessages.builder().ingestMessages(1).emrMessages(2).build();
+
+        // When / Then
+        assertThat(messages.getTotalMessages())
+                .isEqualTo(3);
+    }
+
+    @Test
+    void shouldGetTotalMessagesWhenNoQueuesAreEnabled() {
+        // Given
+        IngestQueueMessages messages = IngestQueueMessages.builder().build();
+
+        // When / Then
+        assertThat(messages.getTotalMessages())
+                .isEqualTo(0);
+    }
+
     @Nested
     @DisplayName("Report message count")
     class ReportMessageCount {
