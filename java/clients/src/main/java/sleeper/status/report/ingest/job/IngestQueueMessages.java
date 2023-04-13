@@ -29,10 +29,10 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestQueueMessages {
-    private final int ingestMessages;
-    private final int emrMessages;
-    private final int persistentEmrMessages;
-    private final int eksMessages;
+    private final Integer ingestMessages;
+    private final Integer emrMessages;
+    private final Integer persistentEmrMessages;
+    private final Integer eksMessages;
 
     private IngestQueueMessages(Builder builder) {
         ingestMessages = builder.ingestMessages;
@@ -50,11 +50,11 @@ public class IngestQueueMessages {
                 .build();
     }
 
-    private static int getMessages(
+    private static Integer getMessages(
             InstanceProperties properties, QueueMessageCount.Client client, InstanceProperty property) {
         String queueUrl = properties.get(property);
         if (queueUrl == null) {
-            return 0;
+            return null;
         } else {
             return client.getQueueMessageCount(queueUrl).getApproximateNumberOfMessages();
         }
@@ -65,7 +65,12 @@ public class IngestQueueMessages {
     }
 
     public void print(PrintStream out) {
-        out.printf("Total jobs waiting in queue (excluded from report): %s%n", ingestMessages);
+        if (ingestMessages != null) {
+            out.printf("Total jobs waiting in queue (excluded from report): %s%n", ingestMessages);
+        }
+        if (emrMessages != null) {
+            out.printf("Total jobs waiting in queue (excluded from report): %s%n", emrMessages);
+        }
     }
 
     public int getTotalMessages() {
@@ -81,7 +86,10 @@ public class IngestQueueMessages {
             return false;
         }
         IngestQueueMessages that = (IngestQueueMessages) o;
-        return ingestMessages == that.ingestMessages && emrMessages == that.emrMessages && persistentEmrMessages == that.persistentEmrMessages && eksMessages == that.eksMessages;
+        return Objects.equals(ingestMessages, that.ingestMessages)
+                && Objects.equals(emrMessages, that.emrMessages)
+                && Objects.equals(persistentEmrMessages, that.persistentEmrMessages)
+                && Objects.equals(eksMessages, that.eksMessages);
     }
 
     @Override
@@ -100,30 +108,30 @@ public class IngestQueueMessages {
     }
 
     public static final class Builder {
-        private int ingestMessages;
-        private int emrMessages;
-        private int persistentEmrMessages;
-        private int eksMessages;
+        private Integer ingestMessages;
+        private Integer emrMessages;
+        private Integer persistentEmrMessages;
+        private Integer eksMessages;
 
         private Builder() {
         }
 
-        public Builder ingestMessages(int ingestMessages) {
+        public Builder ingestMessages(Integer ingestMessages) {
             this.ingestMessages = ingestMessages;
             return this;
         }
 
-        public Builder emrMessages(int emrMessages) {
+        public Builder emrMessages(Integer emrMessages) {
             this.emrMessages = emrMessages;
             return this;
         }
 
-        public Builder persistentEmrMessages(int persistentEmrMessages) {
+        public Builder persistentEmrMessages(Integer persistentEmrMessages) {
             this.persistentEmrMessages = persistentEmrMessages;
             return this;
         }
 
-        public Builder eksMessages(int eksMessages) {
+        public Builder eksMessages(Integer eksMessages) {
             this.eksMessages = eksMessages;
             return this;
         }

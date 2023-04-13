@@ -86,4 +86,17 @@ class IngestQueueMessagesTest {
         // Then
         assertThat(out).hasToString("Total jobs waiting in queue (excluded from report): 10\n");
     }
+
+    @Test
+    void shouldReportMessagesWhenOnlyBulkImportEmrQueueIsDeployed() {
+        // Given
+        IngestQueueMessages messages = IngestQueueMessages.builder().emrMessages(10).build();
+
+        // When
+        ToStringPrintStream out = new ToStringPrintStream();
+        messages.print(out.getPrintStream());
+
+        // Then
+        assertThat(out).hasToString("Total jobs waiting in queue (excluded from report): 10\n");
+    }
 }
