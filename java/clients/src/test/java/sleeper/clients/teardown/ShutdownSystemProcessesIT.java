@@ -165,10 +165,10 @@ class ShutdownSystemProcessesIT {
     }
 
     @Nested
-    @DisplayName("Stop running EMR clusters")
-    class StopEMRClusters {
+    @DisplayName("Terminate running EMR clusters")
+    class TerminateEMRClusters {
         @Test
-        void shouldStopEMRClusterWhenOneClusterIsRunning() throws Exception {
+        void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
@@ -193,7 +193,43 @@ class ShutdownSystemProcessesIT {
             // Then
             verify(3, postRequestedFor(urlEqualTo("/")));
             verify(2, listActiveClustersRequested());
-            verify(1, terminateClusterRequestedFor("test-cluster-id"));
+            verify(1, terminateJobFlowsRequestedFor("test-cluster-id"));
+        }
+
+        @Test
+        void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClusterRequest()
+                    .willReturn(aResponse().withStatus(200).withBody("" +
+                            "{\"Clusters\": []}")));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
+        }
+
+        @Test
+        void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClusterRequest()
+                    .willReturn(aResponse().withStatus(200).withBody("" +
+                            "{\"Clusters\": [{" +
+                            "   \"Name\": \"sleeper-another-instance-test-cluster\"," +
+                            "   \"Id\": \"test-cluster-id\"," +
+                            "   \"Status\": {\"State\": \"RUNNING\"}" +
+                            "}]}")));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
         }
 
         private MappingBuilder listActiveClusterRequest() {
@@ -216,7 +252,7 @@ class ShutdownSystemProcessesIT {
                             "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
         }
 
-        private RequestPatternBuilder terminateClusterRequestedFor(String clusterId) {
+        private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
             return postRequestedFor(urlEqualTo("/"))
                     .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
                     .withRequestBody(matchingJsonPath("$.JobFlowIds",
