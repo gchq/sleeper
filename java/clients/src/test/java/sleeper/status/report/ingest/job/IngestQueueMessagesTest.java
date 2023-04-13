@@ -130,5 +130,40 @@ class IngestQueueMessagesTest {
             // Then
             assertThat(out).hasToString("Jobs waiting in EKS queue (excluded from report): 10\n");
         }
+
+        @Test
+        void shouldReportMessagesWhenAllQueuesAreDeployed() {
+            // Given
+            IngestQueueMessages messages = IngestQueueMessages.builder()
+                    .ingestMessages(1)
+                    .emrMessages(2)
+                    .persistentEmrMessages(3)
+                    .eksMessages(4)
+                    .build();
+
+            // When
+            ToStringPrintStream out = new ToStringPrintStream();
+            messages.print(out.getPrintStream());
+
+            // Then
+            assertThat(out).hasToString("" +
+                    "Jobs waiting in ingest queue (excluded from report): 1\n" +
+                    "Jobs waiting in EMR queue (excluded from report): 2\n" +
+                    "Jobs waiting in persistent EMR queue (excluded from report): 3\n" +
+                    "Jobs waiting in EKS queue (excluded from report): 4\n");
+        }
+
+        @Test
+        void shouldNotReportMessagesWhenNoQueuesAreDeployed() {
+            // Given
+            IngestQueueMessages messages = IngestQueueMessages.builder().build();
+
+            // When
+            ToStringPrintStream out = new ToStringPrintStream();
+            messages.print(out.getPrintStream());
+
+            // Then
+            assertThat(out).hasToString("");
+        }
     }
 }
