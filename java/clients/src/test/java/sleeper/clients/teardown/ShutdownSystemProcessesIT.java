@@ -232,6 +232,18 @@ class ShutdownSystemProcessesIT {
             verify(1, listActiveClustersRequested());
         }
 
+        @Test
+        void shouldSkipTerminatingEMRClustersWhenEMRStackNotEnabled() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(0, postRequestedFor(urlEqualTo("/")));
+        }
+
         private MappingBuilder listActiveClusterRequest() {
             return post("/")
                     .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
