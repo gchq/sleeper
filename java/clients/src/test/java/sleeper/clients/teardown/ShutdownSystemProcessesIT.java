@@ -15,11 +15,14 @@
  */
 package sleeper.clients.teardown;
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.DummyInstanceProperty;
@@ -30,6 +33,7 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -37,7 +41,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.ClientWiremockTestHelper.wiremockCloudWatchClient;
+import static sleeper.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -49,6 +55,8 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
@@ -58,26 +66,29 @@ class ShutdownSystemProcessesIT {
     private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
     private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
+    private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
+    private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
 
     private ShutdownSystemProcesses shutdown;
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo));
+        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
+                wiremockEmrClient(runtimeInfo));
     }
 
-    private void shutdown(InstanceProperties instanceProperties) {
+    private void shutdown(InstanceProperties instanceProperties) throws Exception {
         shutdown.shutdown(instanceProperties, List.of());
     }
 
-    private void shutdown(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) {
+    private void shutdown(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) throws Exception {
         shutdown.shutdown(instanceProperties, extraClusters);
     }
 
     @Test
-    void shouldShutDownCloudWatchRulesWhenSet() {
+    void shouldShutDownCloudWatchRulesWhenSet() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstanceProperties();
+        InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
         properties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-compaction-job-creation-rule");
         properties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-compaction-task-creation-rule");
         properties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-splitting-compaction-task-creation-rule");
@@ -106,9 +117,9 @@ class ShutdownSystemProcessesIT {
     }
 
     @Test
-    void shouldLookForECSTasksWhenClustersSet() {
+    void shouldLookForECSTasksWhenClustersSet() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstanceProperties();
+        InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
         properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
         properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
@@ -132,9 +143,9 @@ class ShutdownSystemProcessesIT {
     }
 
     @Test
-    void shouldStopECSTaskWhenOneIsFound() {
+    void shouldStopECSTaskWhenOneIsFound() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstanceProperties();
+        InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
 
         stubFor(post("/")
@@ -151,6 +162,72 @@ class ShutdownSystemProcessesIT {
         verify(2, postRequestedFor(urlEqualTo("/")));
         verify(1, listTasksRequestedFor("test-ingest-cluster"));
         verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
+    }
+
+    @Nested
+    @DisplayName("Stop running EMR clusters")
+    class StopEMRClusters {
+        @Test
+        void shouldStopEMRClusterWhenOneClusterIsRunning() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody("" +
+                            "{\"Clusters\": [{" +
+                            "   \"Name\": \"sleeper-test-instance-test-cluster\"," +
+                            "   \"Id\": \"test-cluster-id\"," +
+                            "   \"Status\": {\"State\": \"RUNNING\"}" +
+                            "}]}"))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(terminateJobFlowsRequest().inScenario("TerminateEMRClusters")
+                    .whenScenarioStateIs(STARTED)
+                    .willSetStateTo("TERMINATED"));
+            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody(
+                            "{\"Clusters\": []}"))
+                    .whenScenarioStateIs("TERMINATED"));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(3, postRequestedFor(urlEqualTo("/")));
+            verify(2, listActiveClustersRequested());
+            verify(1, terminateClusterRequestedFor("test-cluster-id"));
+        }
+
+        private MappingBuilder listActiveClusterRequest() {
+            return post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                    .withRequestBody(equalToJson("{\"ClusterStates\":[" +
+                            "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+        }
+
+        private MappingBuilder terminateJobFlowsRequest() {
+            return post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                    .willReturn(aResponse().withStatus(200));
+        }
+
+        private RequestPatternBuilder listActiveClustersRequested() {
+            return postRequestedFor(urlEqualTo("/"))
+                    .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                    .withRequestBody(equalToJson("{\"ClusterStates\":[" +
+                            "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+        }
+
+        private RequestPatternBuilder terminateClusterRequestedFor(String clusterId) {
+            return postRequestedFor(urlEqualTo("/"))
+                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                    .withRequestBody(matchingJsonPath("$.JobFlowIds",
+                            equalTo(clusterId)));
+        }
+
+        private InstanceProperties createTestInstancePropertiesWithEmrStack() {
+            InstanceProperties properties = createTestInstanceProperties();
+            properties.set(ID, "test-instance");
+            return properties;
+        }
     }
 
     private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
@@ -172,4 +249,9 @@ class ShutdownSystemProcessesIT {
                         .and(matchingJsonPath("$.task", equalTo(taskArn))));
     }
 
+    private InstanceProperties createTestInstancePropertiesWithoutEmrStack() {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "");
+        return properties;
+    }
 }
