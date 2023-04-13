@@ -56,7 +56,7 @@ public class SendBulkImportJobs {
 
         List<String> files = new ArrayList<>();
         for (S3ObjectSummary object : S3Objects.withPrefix(
-                s3Client, tableProperties.get(DATA_BUCKET), "/ingest/")) {
+                s3Client, tableProperties.get(DATA_BUCKET), "ingest/")) {
             files.add("s3a://" + object.getBucketName() + "/" + object.getKey());
         }
         BulkImportJob bulkImportJob = new BulkImportJob.Builder()
