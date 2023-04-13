@@ -1,7 +1,7 @@
 
 Ingest Job Status Report
 ------------------------
-Total jobs waiting in queue (excluded from report): 2
+Jobs waiting in ingest queue (excluded from report): 2
 Total jobs in defined range: 4
 Average ingest rate: 10.00 read/s, 5.00 write/s
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

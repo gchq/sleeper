@@ -22,6 +22,7 @@ import sleeper.job.common.QueueMessageCount;
 
 import java.io.PrintStream;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
@@ -66,7 +67,7 @@ public class IngestQueueMessages {
 
     public void print(PrintStream out) {
         if (ingestMessages != null) {
-            out.printf("Total jobs waiting in queue (excluded from report): %s%n", ingestMessages);
+            out.printf("Jobs waiting in ingest queue (excluded from report): %s%n", ingestMessages);
         }
         if (emrMessages != null) {
             out.printf("Total jobs waiting in queue (excluded from report): %s%n", emrMessages);
@@ -74,7 +75,10 @@ public class IngestQueueMessages {
     }
 
     public int getTotalMessages() {
-        return ingestMessages + emrMessages + persistentEmrMessages + eksMessages;
+        return Optional.ofNullable(ingestMessages).orElse(0) +
+                Optional.ofNullable(emrMessages).orElse(0) +
+                Optional.ofNullable(persistentEmrMessages).orElse(0) +
+                Optional.ofNullable(eksMessages).orElse(0);
     }
 
     @Override
