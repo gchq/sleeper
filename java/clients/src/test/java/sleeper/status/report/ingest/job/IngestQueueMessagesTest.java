@@ -123,7 +123,8 @@ class IngestQueueMessagesTest {
             messages.print(out.getPrintStream());
 
             // Then
-            assertThat(out).hasToString("Jobs waiting in ingest queue (excluded from report): 10\n");
+            assertThat(out).hasToString("" +
+                    "Jobs waiting in ingest queue (excluded from report): 10\n");
         }
 
         @Test
@@ -136,7 +137,8 @@ class IngestQueueMessagesTest {
             messages.print(out.getPrintStream());
 
             // Then
-            assertThat(out).hasToString("Jobs waiting in EMR queue (excluded from report): 10\n");
+            assertThat(out).hasToString("" +
+                    "Jobs waiting in EMR queue (excluded from report): 10\n");
         }
 
         @Test
@@ -149,7 +151,8 @@ class IngestQueueMessagesTest {
             messages.print(out.getPrintStream());
 
             // Then
-            assertThat(out).hasToString("Jobs waiting in persistent EMR queue (excluded from report): 10\n");
+            assertThat(out).hasToString("" +
+                    "Jobs waiting in persistent EMR queue (excluded from report): 10\n");
         }
 
         @Test
@@ -162,7 +165,8 @@ class IngestQueueMessagesTest {
             messages.print(out.getPrintStream());
 
             // Then
-            assertThat(out).hasToString("Jobs waiting in EKS queue (excluded from report): 10\n");
+            assertThat(out).hasToString("" +
+                    "Jobs waiting in EKS queue (excluded from report): 10\n");
         }
 
         @Test
