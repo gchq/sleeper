@@ -24,36 +24,18 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.google.gson.JsonSyntaxException;
-import com.joom.spark.ExplicitRepartitionStrategy$;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.serializer.KryoSerializer;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.execution.SparkStrategy;
-import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.JavaConverters;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.schema.Schema;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -62,14 +44,9 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
 /**
  * This class executes a Spark job that reads in input Parquet files and writes
@@ -80,29 +57,42 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
-    private final BulkImportJobRunner jobRunner;
-    private final InstanceProperties instanceProperties;
+    private final BulkImportSessionRunner sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                               AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        this(jobRunner, instanceProperties, s3Client, dynamoClient,
+    public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
+                               TablePropertiesProvider tablePropertiesProvider,
+                               StateStoreProvider stateStoreProvider,
+                               IngestJobStatusStore statusStore,
+                               Supplier<Instant> getTime) {
+        this.sessionRunner = sessionRunner;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
+        this.statusStore = statusStore;
+        this.getTime = getTime;
+    }
+
+    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
+        return from(jobRunner, instanceProperties, s3Client, dynamoClient,
                 IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
     }
 
-    public BulkImportJobDriver(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                               AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
-                               IngestJobStatusStore statusStore,
-                               Supplier<Instant> getTime) {
-        this.jobRunner = jobRunner;
-        this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
-        this.statusStore = statusStore;
-        this.getTime = getTime;
+    public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
+                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
+                                           IngestJobStatusStore statusStore,
+                                           Supplier<Instant> getTime) {
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
+        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
+                tablePropertiesProvider, stateStoreProvider)::run,
+                tablePropertiesProvider,
+                stateStoreProvider,
+                statusStore,
+                getTime);
     }
 
     public void run(BulkImportJob job, String taskId) throws IOException {
@@ -111,80 +101,43 @@ public class BulkImportJobDriver {
         LOGGER.info("Job is {}", job);
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
-        // Initialise Spark
-        LOGGER.info("Initialising Spark");
-        SparkConf sparkConf = new SparkConf();
-        sparkConf.set("spark.serializer", KryoSerializer.class.getName());
-        sparkConf.registerKryoClasses(new Class[]{Partition.class});
-        SparkSession session = new SparkSession.Builder().config(sparkConf).getOrCreate();
-        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters.collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
-        session.experimental().extraStrategies_$eq(strategies);
-        SparkContext sparkContext = session.sparkContext();
-        JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
-        LOGGER.info("Spark initialised");
-
-        // Load table information
-        LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
-        Schema schema = tableProperties.getSchema();
-        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-
-        // Load statestore and partitions
-        LOGGER.info("Loading statestore and partitions");
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        List<Partition> allPartitions;
+        BulkImportJobOutput output;
         try {
-            allPartitions = stateStore.getAllPartitions();
-        } catch (StateStoreException e) {
-            throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?");
+            output = sessionRunner.run(job);
+        } catch (RuntimeException e) {
+            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()));
+            throw e;
         }
 
-        Configuration conf = sparkContext.hadoopConfiguration();
-        Broadcast<List<Partition>> broadcastedPartitions = javaSparkContext.broadcast(allPartitions);
-        LOGGER.info("Starting data processing");
-
-        // Create paths to be read
-        List<String> pathsWithFs = new ArrayList<>();
-        String fs = instanceProperties.get(FILE_SYSTEM);
-        LOGGER.info("Using file system {}", fs);
-        job.getFiles().forEach(file -> pathsWithFs.add(fs + file));
-        LOGGER.info("Paths to be read are {}", pathsWithFs);
-
-        // Run bulk import
-        Dataset<Row> dataWithPartition = session.read()
-                .schema(convertedSchema)
-                .option("pathGlobFilter", "*.parquet")
-                .option("recursiveFileLookup", "true")
-                .parquet(pathsWithFs.toArray(new String[0]));
-
-        LOGGER.info("Running bulk import job with id {}", job.getId());
-        List<FileInfo> fileInfos = jobRunner.createFileInfos(
-                        BulkImportJobInput.builder().rows(dataWithPartition)
-                                .instanceProperties(instanceProperties).tableProperties(tableProperties)
-                                .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
-                .collectAsList().stream()
-                .map(SparkFileInfoRow::createFileInfo)
-                .collect(Collectors.toList());
-
-        long numRecords = fileInfos.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
         try {
-            stateStore.addFiles(fileInfos);
-        } catch (StateStoreException e) {
+            stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
+                    .addFiles(output.fileInfos());
+            LOGGER.info("Added {} files to statestore", output.numFiles());
+        } catch (Exception e) {
+            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()));
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
-                    + "be re-imported for clients to accesss data");
+                    + "be re-imported for clients to access data", e);
         }
-        LOGGER.info("Added {} files to statestore", fileInfos.size());
+
         Instant finishTime = getTime.get();
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
         long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        long numRecords = output.numRecords();
         double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
         statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
                 new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
 
-        sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
+        // Calling this manually stops it potentially timing out after 10 seconds.
+        // Note that we stop the Spark context after we've applied the changes in Sleeper.
+        output.stopSparkContext();
+    }
+
+    @FunctionalInterface
+    public interface BulkImportSessionRunner {
+        BulkImportJobOutput run(BulkImportJob job) throws IOException;
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
@@ -236,7 +189,7 @@ public class BulkImportJobDriver {
             throw e;
         }
 
-        BulkImportJobDriver driver = new BulkImportJobDriver(runner, instanceProperties,
+        BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         driver.run(bulkImportJob, taskId);
     }
