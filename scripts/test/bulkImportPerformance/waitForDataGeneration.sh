@@ -24,6 +24,9 @@ GENERATED_DIR="$SCRIPTS_DIR/generated"
 SYSTEM_TEST_JAR="$JARS_DIR/system-test-$VERSION-utility.jar"
 WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 
+INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
+INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
+
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
