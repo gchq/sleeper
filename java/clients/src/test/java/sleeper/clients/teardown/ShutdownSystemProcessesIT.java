@@ -197,6 +197,30 @@ class ShutdownSystemProcessesIT {
         }
 
         @Test
+        void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubForListingRunningClusters(11);
+            stubFor(terminateJobFlowsRequestWithJobIdCount(10));
+            stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
+                    .willSetStateTo("TERMINATED"));
+            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody(
+                            "{\"Clusters\": []}"))
+                    .whenScenarioStateIs("TERMINATED"));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(4, postRequestedFor(urlEqualTo("/")));
+            verify(2, listActiveClustersRequested());
+
+            verify(terminateJobFlowsRequestedWithJobIdsCount(10));
+            verify(terminateJobFlowsRequestedWithJobIdsCount(1));
+        }
+
+        @Test
         void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
@@ -244,6 +268,24 @@ class ShutdownSystemProcessesIT {
             verify(0, postRequestedFor(urlEqualTo("/")));
         }
 
+        private void stubForListingRunningClusters(int numRunningClusters) {
+            StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
+            for (int i = 1; i <= numRunningClusters; i++) {
+                clustersBody.append("{" +
+                        "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
+                        "\"Id\": \"test-cluster-id-" + i + "\"," +
+                        "\"Status\": {\"State\": \"RUNNING\"}" +
+                        "}");
+                if (i != numRunningClusters) {
+                    clustersBody.append(",");
+                }
+            }
+            clustersBody.append("]}");
+            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
+                    .whenScenarioStateIs(STARTED));
+        }
+
         private MappingBuilder listActiveClusterRequest() {
             return post("/")
                     .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
@@ -257,6 +299,14 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponse().withStatus(200));
         }
 
+        private MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
+            return post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                    .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
+                            equalTo(jobIdsCount + "")))
+                    .willReturn(aResponse().withStatus(200));
+        }
+
         private RequestPatternBuilder listActiveClustersRequested() {
             return postRequestedFor(urlEqualTo("/"))
                     .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
@@ -264,11 +314,21 @@ class ShutdownSystemProcessesIT {
                             "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
         }
 
-        private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
+        private RequestPatternBuilder terminateJobFlowsRequested() {
             return postRequestedFor(urlEqualTo("/"))
-                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
+        }
+
+        private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
+            return terminateJobFlowsRequested()
                     .withRequestBody(matchingJsonPath("$.JobFlowIds",
                             equalTo(clusterId)));
+        }
+
+        private RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
+            return terminateJobFlowsRequested()
+                    .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
+                            equalTo(jobIdsCount + "")));
         }
 
         private InstanceProperties createTestInstancePropertiesWithEmrStack() {
