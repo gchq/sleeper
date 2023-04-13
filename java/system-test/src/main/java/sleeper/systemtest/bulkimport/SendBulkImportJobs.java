@@ -65,14 +65,14 @@ public class SendBulkImportJobs {
                 .files(files)
                 .build();
         String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
-        LOGGER.debug("Sending message to bulk import queue ({})", jsonJob);
+        LOGGER.info("Sending message to bulk import queue ({})", jsonJob);
 
         SendMessageRequest request = new SendMessageRequest()
                 .withQueueUrl(systemTestProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
                 .withMessageBody(jsonJob);
 
         int sendCopies = systemTestProperties.getInt(NUMBER_OF_BULK_IMPORT_JOBS);
-        LOGGER.debug("Sending {} copies", sendCopies);
+        LOGGER.info("Sending {} copies", sendCopies);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         for (int i = 0; i < sendCopies; i++) {
