@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.compaction;
 
+import java.util.Objects;
+
 public class CompactionPerformanceResults {
     private final int numOfJobs;
     private final int numOfRecordsInRoot;
@@ -47,6 +49,33 @@ public class CompactionPerformanceResults {
 
     public double getWriteRate() {
         return writeRate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CompactionPerformanceResults results = (CompactionPerformanceResults) o;
+        return numOfJobs == results.numOfJobs && numOfRecordsInRoot == results.numOfRecordsInRoot && Double.compare(results.readRate, readRate) == 0 && Double.compare(results.writeRate, writeRate) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(numOfJobs, numOfRecordsInRoot, readRate, writeRate);
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionPerformanceResults{" +
+                "numOfJobs=" + numOfJobs +
+                ", numOfRecordsInRoot=" + numOfRecordsInRoot +
+                ", readRate=" + readRate +
+                ", writeRate=" + writeRate +
+                '}';
     }
 
     public static final class Builder {
