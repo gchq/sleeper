@@ -20,7 +20,7 @@ import java.util.Objects;
 
 public class CompactionPerformanceResults {
     private final int numOfJobs;
-    private final int numOfRecordsInRoot;
+    private final long numOfRecordsInRoot;
     private final double readRate;
     private final double writeRate;
 
@@ -39,7 +39,7 @@ public class CompactionPerformanceResults {
         return numOfJobs;
     }
 
-    public int getNumOfRecordsInRoot() {
+    public long getNumOfRecordsInRoot() {
         return numOfRecordsInRoot;
     }
 
@@ -80,7 +80,7 @@ public class CompactionPerformanceResults {
 
     public static final class Builder {
         private int numOfJobs;
-        private int numOfRecordsInRoot;
+        private long numOfRecordsInRoot;
         private double readRate;
         private double writeRate;
 
@@ -92,7 +92,7 @@ public class CompactionPerformanceResults {
             return this;
         }
 
-        public Builder numOfRecordsInRoot(int numOfRecordsInRoot) {
+        public Builder numOfRecordsInRoot(long numOfRecordsInRoot) {
             this.numOfRecordsInRoot = numOfRecordsInRoot;
             return this;
         }

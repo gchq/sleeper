@@ -18,12 +18,22 @@ package sleeper.systemtest.compaction;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.statestore.DelegatingStateStore;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.inmemory.FixedPartitionStore;
+import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -32,6 +42,10 @@ import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.loadFr
 import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
 public class RunCompactionPerformanceCheckTest {
+    private final StateStore stateStore = new DelegatingStateStore(
+            new InMemoryFileInfoStore(), new FixedPartitionStore(schemaWithKey("key")));
+    private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
+    private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable("system-test");
 
     @Test
     void shouldLoadExpectedResultsCorrectlyFromInstanceProperties() throws Exception {
@@ -39,7 +53,7 @@ public class RunCompactionPerformanceCheckTest {
         SystemTestProperties properties = validProperties();
 
         // When
-        RunCompactionPerformanceCheck runCheck = loadFrom(properties);
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
 
         // Then
         assertThat(runCheck)
@@ -47,6 +61,28 @@ public class RunCompactionPerformanceCheckTest {
                 .isEqualTo(CompactionPerformanceResults.builder()
                         .numOfJobs(1)
                         .numOfRecordsInRoot(8).build());
+    }
+
+    @Test
+    void shouldLoadResultsCorrectlyFromJobStatusStore() throws Exception {
+        // Given
+        SystemTestProperties properties = validProperties();
+        startSingleJob(Instant.parse("2023-04-14T16:57:00Z"));
+        startSingleJob(Instant.parse("2023-04-14T16:59:00Z"));
+
+        // When
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+
+        // Then
+        assertThat(runCheck)
+                .extracting("results.numOfJobs")
+                .isEqualTo(2);
+    }
+
+    private void startSingleJob(Instant startTime) {
+        CompactionJob job = dataHelper.singleFileCompaction();
+        jobStatusStore.jobCreated(job);
+        jobStatusStore.jobStarted(job, startTime, "test-task");
     }
 
     private SystemTestProperties validProperties() throws IOException {

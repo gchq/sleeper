@@ -27,7 +27,7 @@ public class CompactionPerformanceChecker {
     }
 
     public static void check(CompactionPerformanceResults results,
-                             int expectedNumOfCompactionJobs, int expectedNumOfRecordsinRoot,
+                             int expectedNumOfCompactionJobs, long expectedNumOfRecordsinRoot,
                              double previousReadRate, double previousWriteRate) throws CheckFailedException {
         if (results.getNumOfJobs() != expectedNumOfCompactionJobs) {
             throw new CheckFailedException("Actual number of compaction jobs " + results.getNumOfJobs() +
