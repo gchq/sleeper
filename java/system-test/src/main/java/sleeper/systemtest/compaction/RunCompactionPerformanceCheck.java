@@ -19,22 +19,21 @@ package sleeper.systemtest.compaction;
 public class RunCompactionPerformanceCheck {
     private final int expectedNumOfJobs;
     private final int expectedNumOfRecordsInRoot;
-    private final double previousReadPerformance;
-    private final double previousWritePerformance;
+    private final double previousReadRate;
+    private final double previousWriteRate;
     private final CompactionPerformanceChecker checker;
 
     private RunCompactionPerformanceCheck(Builder builder) {
         expectedNumOfJobs = builder.expectedNumOfJobs;
         expectedNumOfRecordsInRoot = builder.expectedNumOfRecordsInRoot;
-        previousReadPerformance = builder.previousReadPerformance;
-        previousWritePerformance = builder.previousWritePerformance;
+        previousReadRate = builder.previousReadRate;
+        previousWriteRate = builder.previousWriteRate;
         checker = builder.checker;
     }
 
 
     public void run() throws CompactionPerformanceChecker.CheckFailedException {
-        checker.check(expectedNumOfJobs, expectedNumOfRecordsInRoot,
-                previousReadPerformance, previousWritePerformance);
+        checker.check(expectedNumOfJobs, expectedNumOfRecordsInRoot, previousReadRate, previousWriteRate);
     }
 
     public static Builder builder() {
@@ -44,8 +43,8 @@ public class RunCompactionPerformanceCheck {
     public static final class Builder {
         private int expectedNumOfJobs;
         private int expectedNumOfRecordsInRoot;
-        private double previousReadPerformance = 0;
-        private double previousWritePerformance = 0;
+        private double previousReadRate;
+        private double previousWriteRate;
         private CompactionPerformanceChecker checker;
 
         private Builder() {
@@ -58,6 +57,16 @@ public class RunCompactionPerformanceCheck {
 
         public Builder expectedNumOfRecordsInRoot(int expectedNumOfRecordsInRoot) {
             this.expectedNumOfRecordsInRoot = expectedNumOfRecordsInRoot;
+            return this;
+        }
+
+        public Builder previousReadRate(double previousReadRate) {
+            this.previousReadRate = previousReadRate;
+            return this;
+        }
+
+        public Builder previousWriteRate(double previousWriteRate) {
+            this.previousWriteRate = previousWriteRate;
             return this;
         }
 

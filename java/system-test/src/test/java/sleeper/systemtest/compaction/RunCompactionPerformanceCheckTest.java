@@ -33,7 +33,11 @@ public class RunCompactionPerformanceCheckTest {
         void shouldNotThrowExceptionWhenCompactionJobCountWasExpected() {
             // Given
             RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1).build();
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.1)
+                    .build();
 
             // When/Then
             assertThatCode(runCheck::run)
@@ -44,7 +48,11 @@ public class RunCompactionPerformanceCheckTest {
         void shouldThrowExceptionWhenCompactionJobCountWasNotExpected() {
             // Given
             RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(2).build();
+                    .expectedNumOfJobs(2)
+                    .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.1)
+                    .build();
 
             // When/Then
             assertThatThrownBy(runCheck::run)
@@ -62,6 +70,8 @@ public class RunCompactionPerformanceCheckTest {
             RunCompactionPerformanceCheck runCheck = runCheckBuilder()
                     .expectedNumOfJobs(1)
                     .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.1)
                     .build();
 
             // When/Then
@@ -75,6 +85,8 @@ public class RunCompactionPerformanceCheckTest {
             RunCompactionPerformanceCheck runCheck = runCheckBuilder()
                     .expectedNumOfJobs(1)
                     .expectedNumOfRecordsInRoot(101)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.1)
                     .build();
 
             // When/Then
@@ -84,10 +96,78 @@ public class RunCompactionPerformanceCheckTest {
         }
     }
 
+    @DisplayName("Average read/write rate assertions")
+    @Nested
+    class CheckAverageRates {
+        @Test
+        void shouldNotThrowExceptionWhenReadRateIsBetterThanPreviousRate() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.1)
+                    .build();
+
+            // When/Then
+            assertThatCode(runCheck::run)
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenReadRateIsWorseThanPreviousRate() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.5)
+                    .previousWriteRate(0.1)
+                    .build();
+
+            // When/Then
+            assertThatThrownBy(runCheck::run)
+                    .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
+                    .hasMessageContaining("Read rate");
+        }
+
+        @Test
+        void shouldNotThrowExceptionWhenWriteRateIsBetterThanPreviousRate() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.1)
+                    .build();
+
+            // When/Then
+            assertThatCode(runCheck::run)
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenWriteRateIsWorseThanPreviousRate() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(100)
+                    .previousReadRate(0.1)
+                    .previousWriteRate(0.5)
+                    .build();
+
+            // When/Then
+            assertThatThrownBy(runCheck::run)
+                    .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
+                    .hasMessageContaining("Write rate");
+        }
+    }
+
     private CompactionPerformanceChecker createCheckerInMemory() {
         return CompactionPerformanceCheckerInMemory.builder()
                 .actualNumOfJobs(1)
                 .actualNumOfRecordsInRoot(100)
+                .actualReadRate(0.2)
+                .actualWriteRate(0.2)
                 .build();
     }
 

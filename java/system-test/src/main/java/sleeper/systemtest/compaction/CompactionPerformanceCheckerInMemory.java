@@ -19,15 +19,19 @@ package sleeper.systemtest.compaction;
 public class CompactionPerformanceCheckerInMemory implements CompactionPerformanceChecker {
     private final int actualNumOfJobs;
     private final int actualNumOfRecordsInRoot;
+    private final double actualReadRate;
+    private final double actualWriteRate;
 
     private CompactionPerformanceCheckerInMemory(Builder builder) {
         actualNumOfJobs = builder.actualNumOfJobs;
         actualNumOfRecordsInRoot = builder.actualNumOfRecordsInRoot;
+        actualReadRate = builder.actualReadRate;
+        actualWriteRate = builder.actualWriteRate;
     }
 
 
     @Override
-    public void check(int expectedNumOfCompactionJobs, int expectedNumOfRecordsinRoot, double previousReadPerformance, double previousWritePerformance) throws CheckFailedException {
+    public void check(int expectedNumOfCompactionJobs, int expectedNumOfRecordsinRoot, double previousReadRate, double previousWriteRate) throws CheckFailedException {
         if (actualNumOfJobs != expectedNumOfCompactionJobs) {
             throw new CheckFailedException("Actual number of compaction jobs " + actualNumOfJobs +
                     " does not match expected number of jobs " + expectedNumOfCompactionJobs);
@@ -35,6 +39,14 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
         if (actualNumOfRecordsInRoot != expectedNumOfRecordsinRoot) {
             throw new CheckFailedException("Actual number of records in root partition " + actualNumOfRecordsInRoot +
                     " does not match expected number of records in root partition " + expectedNumOfRecordsinRoot);
+        }
+        if (actualReadRate < previousReadRate) {
+            throw new CheckFailedException("Read rate " + actualReadRate +
+                    " is worse than read rate from previous performance test " + previousReadRate);
+        }
+        if (actualWriteRate < previousWriteRate) {
+            throw new CheckFailedException("Write rate " + actualWriteRate +
+                    " is worse than write rate from previous performance test " + previousWriteRate);
         }
     }
 
@@ -46,6 +58,8 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
     public static final class Builder {
         private int actualNumOfJobs;
         private int actualNumOfRecordsInRoot;
+        private double actualReadRate;
+        private double actualWriteRate;
 
         private Builder() {
         }
@@ -61,6 +75,16 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
 
         public Builder actualNumOfRecordsInRoot(int actualNumOfRecordsInRoot) {
             this.actualNumOfRecordsInRoot = actualNumOfRecordsInRoot;
+            return this;
+        }
+
+        public Builder actualReadRate(double actualReadRate) {
+            this.actualReadRate = actualReadRate;
+            return this;
+        }
+
+        public Builder actualWriteRate(double actualWriteRate) {
+            this.actualWriteRate = actualWriteRate;
             return this;
         }
 
