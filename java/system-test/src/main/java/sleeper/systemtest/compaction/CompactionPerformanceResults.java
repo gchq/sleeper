@@ -17,64 +17,64 @@
 package sleeper.systemtest.compaction;
 
 public class CompactionPerformanceResults {
-    private final int actualNumOfJobs;
-    private final int actualNumOfRecordsInRoot;
-    private final double actualReadRate;
-    private final double actualWriteRate;
+    private final int numOfJobs;
+    private final int numOfRecordsInRoot;
+    private final double readRate;
+    private final double writeRate;
 
     private CompactionPerformanceResults(Builder builder) {
-        actualNumOfJobs = builder.actualNumOfJobs;
-        actualNumOfRecordsInRoot = builder.actualNumOfRecordsInRoot;
-        actualReadRate = builder.actualReadRate;
-        actualWriteRate = builder.actualWriteRate;
+        numOfJobs = builder.numOfJobs;
+        numOfRecordsInRoot = builder.numOfRecordsInRoot;
+        readRate = builder.readRate;
+        writeRate = builder.writeRate;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public int getActualNumOfJobs() {
-        return actualNumOfJobs;
+    public int getNumOfJobs() {
+        return numOfJobs;
     }
 
-    public int getActualNumOfRecordsInRoot() {
-        return actualNumOfRecordsInRoot;
+    public int getNumOfRecordsInRoot() {
+        return numOfRecordsInRoot;
     }
 
-    public double getActualReadRate() {
-        return actualReadRate;
+    public double getReadRate() {
+        return readRate;
     }
 
-    public double getActualWriteRate() {
-        return actualWriteRate;
+    public double getWriteRate() {
+        return writeRate;
     }
 
     public static final class Builder {
-        private int actualNumOfJobs;
-        private int actualNumOfRecordsInRoot;
-        private double actualReadRate;
-        private double actualWriteRate;
+        private int numOfJobs;
+        private int numOfRecordsInRoot;
+        private double readRate;
+        private double writeRate;
 
         public Builder() {
         }
 
-        public Builder actualNumOfJobs(int actualNumOfJobs) {
-            this.actualNumOfJobs = actualNumOfJobs;
+        public Builder numOfJobs(int numOfJobs) {
+            this.numOfJobs = numOfJobs;
             return this;
         }
 
-        public Builder actualNumOfRecordsInRoot(int actualNumOfRecordsInRoot) {
-            this.actualNumOfRecordsInRoot = actualNumOfRecordsInRoot;
+        public Builder numOfRecordsInRoot(int numOfRecordsInRoot) {
+            this.numOfRecordsInRoot = numOfRecordsInRoot;
             return this;
         }
 
-        public Builder actualReadRate(double actualReadRate) {
-            this.actualReadRate = actualReadRate;
+        public Builder readRate(double readRate) {
+            this.readRate = readRate;
             return this;
         }
 
-        public Builder actualWriteRate(double actualWriteRate) {
-            this.actualWriteRate = actualWriteRate;
+        public Builder writeRate(double writeRate) {
+            this.writeRate = writeRate;
             return this;
         }
 

@@ -17,57 +17,33 @@
 package sleeper.systemtest.compaction;
 
 public class RunCompactionPerformanceCheck {
-    private final int expectedNumOfJobs;
-    private final int expectedNumOfRecordsInRoot;
-    private final double previousReadRate;
-    private final double previousWriteRate;
+    private final CompactionPerformanceResults expectedResults;
     private final CompactionPerformanceResults results;
 
     private RunCompactionPerformanceCheck(Builder builder) {
-        expectedNumOfJobs = builder.expectedNumOfJobs;
-        expectedNumOfRecordsInRoot = builder.expectedNumOfRecordsInRoot;
-        previousReadRate = builder.previousReadRate;
-        previousWriteRate = builder.previousWriteRate;
+        expectedResults = builder.expectedResults;
         results = builder.results;
     }
 
 
     public void run() throws CompactionPerformanceChecker.CheckFailedException {
-        CompactionPerformanceChecker.check(results, expectedNumOfJobs, expectedNumOfRecordsInRoot,
-                previousReadRate, previousWriteRate);
+        CompactionPerformanceChecker.check(results, expectedResults);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
+
     public static final class Builder {
-        private int expectedNumOfJobs;
-        private int expectedNumOfRecordsInRoot;
-        private double previousReadRate;
-        private double previousWriteRate;
+        private CompactionPerformanceResults expectedResults;
         private CompactionPerformanceResults results;
 
-        private Builder() {
+        public Builder() {
         }
 
-        public Builder expectedNumOfJobs(int expectedNumOfJobs) {
-            this.expectedNumOfJobs = expectedNumOfJobs;
-            return this;
-        }
-
-        public Builder expectedNumOfRecordsInRoot(int expectedNumOfRecordsInRoot) {
-            this.expectedNumOfRecordsInRoot = expectedNumOfRecordsInRoot;
-            return this;
-        }
-
-        public Builder previousReadRate(double previousReadRate) {
-            this.previousReadRate = previousReadRate;
-            return this;
-        }
-
-        public Builder previousWriteRate(double previousWriteRate) {
-            this.previousWriteRate = previousWriteRate;
+        public Builder expectedResults(CompactionPerformanceResults expectedResults) {
+            this.expectedResults = expectedResults;
             return this;
         }
 

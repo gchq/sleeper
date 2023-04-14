@@ -124,33 +124,33 @@ public class CompactionPerformanceCheckerTest {
 
     private CompactionPerformanceResults.Builder withValidDefaults() {
         return CompactionPerformanceResults.builder()
-                .actualNumOfJobs(1)
-                .actualNumOfRecordsInRoot(100)
-                .actualReadRate(0.5)
-                .actualWriteRate(0.5);
+                .numOfJobs(1)
+                .numOfRecordsInRoot(100)
+                .readRate(0.5)
+                .writeRate(0.5);
     }
 
     private CompactionPerformanceResults withActualNumberOfJobs(int actualNumberOfJobs) {
         return withValidDefaults()
-                .actualNumOfJobs(actualNumberOfJobs)
+                .numOfJobs(actualNumberOfJobs)
                 .build();
     }
 
     private CompactionPerformanceResults withActualRecordsInRoot(int actualRecordsInRoot) {
         return withValidDefaults()
-                .actualNumOfRecordsInRoot(actualRecordsInRoot)
+                .numOfRecordsInRoot(actualRecordsInRoot)
                 .build();
     }
 
     private CompactionPerformanceResults withActualReadRate(double actualReadRate) {
         return withValidDefaults()
-                .actualReadRate(actualReadRate)
+                .readRate(actualReadRate)
                 .build();
     }
 
     private CompactionPerformanceResults withActualWriteRate(double actualWriteRate) {
         return withValidDefaults()
-                .actualWriteRate(actualWriteRate)
+                .writeRate(actualWriteRate)
                 .build();
     }
 
