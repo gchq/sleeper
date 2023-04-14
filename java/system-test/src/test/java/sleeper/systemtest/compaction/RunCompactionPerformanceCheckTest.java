@@ -24,7 +24,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class RunCompactionPerformanceCheckTest {
-    private final CompactionPerformanceChecker checker = createCheckerInMemory();
 
     @DisplayName("Compaction job count assertions")
     @Nested
@@ -32,12 +31,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenCompactionJobCountWasExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.5)
+                            .actualWriteRate(0.5)
+                            .build());
 
             // When/Then
             assertThatCode(runCheck::run)
@@ -47,12 +47,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldThrowExceptionWhenCompactionJobCountWasNotExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(2)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(2)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.5)
+                            .actualWriteRate(0.5)
+                            .build());
 
             // When/Then
             assertThatThrownBy(runCheck::run)
@@ -67,12 +68,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenRecordsInRootPartitionIsExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.5)
+                            .actualWriteRate(0.5)
+                            .build());
 
             // When/Then
             assertThatCode(runCheck::run)
@@ -82,12 +84,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldThrowExceptionWhenRecordsInRootPartitionIsNotExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(101)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(101)
+                            .actualReadRate(0.5)
+                            .actualWriteRate(0.5)
+                            .build());
 
             // When/Then
             assertThatThrownBy(runCheck::run)
@@ -102,12 +105,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenReadRateIsBetterThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.6)
+                            .actualWriteRate(0.5)
+                            .build());
 
             // When/Then
             assertThatCode(runCheck::run)
@@ -117,12 +121,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldThrowExceptionWhenReadRateIsWorseThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.5)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.4)
+                            .actualWriteRate(0.5)
+                            .build());
 
             // When/Then
             assertThatThrownBy(runCheck::run)
@@ -133,12 +138,13 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenWriteRateIsBetterThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.1)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.5)
+                            .actualWriteRate(0.6)
+                            .build());
 
             // When/Then
             assertThatCode(runCheck::run)
@@ -148,12 +154,14 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldThrowExceptionWhenWriteRateIsWorseThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
-                    .expectedNumOfJobs(1)
-                    .expectedNumOfRecordsInRoot(100)
-                    .previousReadRate(0.1)
-                    .previousWriteRate(0.5)
-                    .build();
+            RunCompactionPerformanceCheck runCheck = createRunCheck(
+                    CompactionPerformanceCheckerInMemory.builder()
+                            .actualNumOfJobs(1)
+                            .actualNumOfRecordsInRoot(100)
+                            .actualReadRate(0.5)
+                            .actualWriteRate(0.4)
+                            .build());
+
 
             // When/Then
             assertThatThrownBy(runCheck::run)
@@ -162,17 +170,17 @@ public class RunCompactionPerformanceCheckTest {
         }
     }
 
-    private CompactionPerformanceChecker createCheckerInMemory() {
-        return CompactionPerformanceCheckerInMemory.builder()
-                .actualNumOfJobs(1)
-                .actualNumOfRecordsInRoot(100)
-                .actualReadRate(0.2)
-                .actualWriteRate(0.2)
+    private RunCompactionPerformanceCheck createRunCheck(CompactionPerformanceChecker checker) {
+        return runCheckBuilder()
+                .checker(checker)
                 .build();
     }
 
     private RunCompactionPerformanceCheck.Builder runCheckBuilder() {
         return RunCompactionPerformanceCheck.builder()
-                .checker(checker);
+                .expectedNumOfJobs(1)
+                .expectedNumOfRecordsInRoot(100)
+                .previousReadRate(0.5)
+                .previousWriteRate(0.5);
     }
 }
