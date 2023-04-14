@@ -16,13 +16,11 @@
 
 package sleeper.systemtest.compaction;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -34,7 +32,6 @@ import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.loadFr
 import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
 public class RunCompactionPerformanceCheckTest {
-    private final Supplier<Pair<Double, Double>> getPreviousRates = () -> Pair.of(0.2, 0.4);
 
     @Test
     void shouldLoadExpectedResultsCorrectlyFromInstanceProperties() throws Exception {
@@ -42,16 +39,14 @@ public class RunCompactionPerformanceCheckTest {
         SystemTestProperties properties = validProperties();
 
         // When
-        RunCompactionPerformanceCheck runCheck = loadFrom(properties, getPreviousRates);
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties);
 
         // Then
         assertThat(runCheck)
                 .extracting("expectedResults")
                 .isEqualTo(CompactionPerformanceResults.builder()
                         .numOfJobs(1)
-                        .numOfRecordsInRoot(8)
-                        .readRate(0.2)
-                        .writeRate(0.4).build());
+                        .numOfRecordsInRoot(8).build());
     }
 
     private SystemTestProperties validProperties() throws IOException {

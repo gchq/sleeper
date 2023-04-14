@@ -16,11 +16,7 @@
 
 package sleeper.systemtest.compaction;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import sleeper.systemtest.SystemTestProperties;
-
-import java.util.function.Supplier;
 
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -34,16 +30,12 @@ public class RunCompactionPerformanceCheck {
         results = builder.results;
     }
 
-    public static RunCompactionPerformanceCheck loadFrom(SystemTestProperties properties,
-                                                         Supplier<Pair<Double, Double>> loadPreviousRates) {
+    public static RunCompactionPerformanceCheck loadFrom(SystemTestProperties properties) {
         int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
                 * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
-        Pair<Double, Double> previousRates = loadPreviousRates.get();
         CompactionPerformanceResults expectedResults = CompactionPerformanceResults.builder()
                 .numOfJobs(1)
                 .numOfRecordsInRoot(expectedRecordsInRoot)
-                .readRate(previousRates.getLeft())
-                .writeRate(previousRates.getRight())
                 .build();
         return RunCompactionPerformanceCheck.builder()
                 .expectedResults(expectedResults)
