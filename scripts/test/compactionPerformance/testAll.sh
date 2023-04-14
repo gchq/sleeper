@@ -16,16 +16,17 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+COMMON_DIR=$(cd "$THIS_DIR" && cd ../common && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$THIS_DIR/testIngest.sh"
+"$COMMON_DIR/testIngest.sh"
 
 END_INGEST=$(record_time)
 
-"$THIS_DIR/testCompaction.sh"
+"$COMMON_DIR/testCompaction.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
