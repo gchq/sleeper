@@ -21,7 +21,6 @@ if [ "$#" -ne 3 ]; then
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-COMMON_DIR=$(cd "$THIS_DIR" && cd ../common && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
@@ -30,7 +29,7 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@" "true"
 END_DEPLOY_TIME=$(record_time)
 
-"$COMMON_DIR/testAll.sh"
+"$THIS_DIR/testAll.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
