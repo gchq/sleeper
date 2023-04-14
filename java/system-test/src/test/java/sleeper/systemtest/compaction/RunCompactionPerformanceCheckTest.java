@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class RunCompactionPerformanceCheckTest {
     private final CompactionPerformanceChecker checker = createCheckerInMemory();
@@ -37,6 +38,17 @@ public class RunCompactionPerformanceCheckTest {
             // When/Then
             assertThatCode(runCheck::run)
                     .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenCompactionJobCountWasNotExpected() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(2).build();
+
+            // When/Then
+            assertThatThrownBy(runCheck::run)
+                    .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class);
         }
     }
 
