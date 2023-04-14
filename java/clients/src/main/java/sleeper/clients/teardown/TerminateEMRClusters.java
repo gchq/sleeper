@@ -70,8 +70,8 @@ public class TerminateEMRClusters {
     private void terminateClusters(List<String> clusters) {
         // Can only terminate 10 clusters at a time
         // See https://docs.aws.amazon.com/emr/latest/APIReference/API_TerminateJobFlows.html
-        for (int i = 0; i < clusters.size(); i += 9) {
-            List<String> clusterBatch = clusters.subList(i, min(i + 10, clusters.size() - 1));
+        for (int i = 0; i < clusters.size(); i += 10) {
+            List<String> clusterBatch = clusters.subList(i, min(i + 10, clusters.size()));
             emrClient.terminateJobFlows(new TerminateJobFlowsRequest().withJobFlowIds(clusterBatch));
             LOGGER.info("Terminated {} clusters out of {}", min(i + 10, clusters.size()), clusters.size());
         }
