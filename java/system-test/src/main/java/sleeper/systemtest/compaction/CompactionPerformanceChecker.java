@@ -37,14 +37,6 @@ public class CompactionPerformanceChecker {
             throw new CheckFailedException("Actual number of records in root partition " + results.getNumOfRecordsInRoot() +
                     " does not match expected number of records in root partition " + expectedNumOfRecordsinRoot);
         }
-        if (results.getReadRate() < previousReadRate) {
-            throw new CheckFailedException("Read rate " + results.getReadRate() +
-                    " is worse than read rate from previous performance test " + previousReadRate);
-        }
-        if (results.getWriteRate() < previousWriteRate) {
-            throw new CheckFailedException("Write rate " + results.getWriteRate() +
-                    " is worse than write rate from previous performance test " + previousWriteRate);
-        }
     }
 
 

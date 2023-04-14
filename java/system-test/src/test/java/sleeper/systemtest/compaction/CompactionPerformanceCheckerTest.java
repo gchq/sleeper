@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.compaction;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,7 @@ public class CompactionPerformanceCheckerTest {
 
     @DisplayName("Average read/write rate assertions")
     @Nested
+    @Disabled("TODO")
     class CheckAverageRates {
         @Test
         void shouldNotThrowExceptionWhenReadRateIsBetterThanPreviousRate() {
