@@ -16,44 +16,38 @@
 
 package sleeper.systemtest.compaction;
 
-public class CompactionPerformanceCheckerInMemory implements CompactionPerformanceChecker {
+public class CompactionPerformanceResults {
     private final int actualNumOfJobs;
     private final int actualNumOfRecordsInRoot;
     private final double actualReadRate;
     private final double actualWriteRate;
 
-    private CompactionPerformanceCheckerInMemory(Builder builder) {
+    private CompactionPerformanceResults(Builder builder) {
         actualNumOfJobs = builder.actualNumOfJobs;
         actualNumOfRecordsInRoot = builder.actualNumOfRecordsInRoot;
         actualReadRate = builder.actualReadRate;
         actualWriteRate = builder.actualWriteRate;
     }
 
-
-    @Override
-    public void check(int expectedNumOfCompactionJobs, int expectedNumOfRecordsinRoot, double previousReadRate, double previousWriteRate) throws CheckFailedException {
-        if (actualNumOfJobs != expectedNumOfCompactionJobs) {
-            throw new CheckFailedException("Actual number of compaction jobs " + actualNumOfJobs +
-                    " does not match expected number of jobs " + expectedNumOfCompactionJobs);
-        }
-        if (actualNumOfRecordsInRoot != expectedNumOfRecordsinRoot) {
-            throw new CheckFailedException("Actual number of records in root partition " + actualNumOfRecordsInRoot +
-                    " does not match expected number of records in root partition " + expectedNumOfRecordsinRoot);
-        }
-        if (actualReadRate < previousReadRate) {
-            throw new CheckFailedException("Read rate " + actualReadRate +
-                    " is worse than read rate from previous performance test " + previousReadRate);
-        }
-        if (actualWriteRate < previousWriteRate) {
-            throw new CheckFailedException("Write rate " + actualWriteRate +
-                    " is worse than write rate from previous performance test " + previousWriteRate);
-        }
-    }
-
     public static Builder builder() {
         return new Builder();
     }
 
+    public int getActualNumOfJobs() {
+        return actualNumOfJobs;
+    }
+
+    public int getActualNumOfRecordsInRoot() {
+        return actualNumOfRecordsInRoot;
+    }
+
+    public double getActualReadRate() {
+        return actualReadRate;
+    }
+
+    public double getActualWriteRate() {
+        return actualWriteRate;
+    }
 
     public static final class Builder {
         private int actualNumOfJobs;
@@ -61,11 +55,7 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
         private double actualReadRate;
         private double actualWriteRate;
 
-        private Builder() {
-        }
-
-        public static Builder builder() {
-            return new Builder();
+        public Builder() {
         }
 
         public Builder actualNumOfJobs(int actualNumOfJobs) {
@@ -88,8 +78,8 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
             return this;
         }
 
-        public CompactionPerformanceCheckerInMemory build() {
-            return new CompactionPerformanceCheckerInMemory(this);
+        public CompactionPerformanceResults build() {
+            return new CompactionPerformanceResults(this);
         }
     }
 }

@@ -122,41 +122,41 @@ public class RunCompactionPerformanceCheckTest {
         }
     }
 
-    private CompactionPerformanceCheckerInMemory.Builder withValidDefaults() {
-        return CompactionPerformanceCheckerInMemory.builder()
+    private CompactionPerformanceResults.Builder withValidDefaults() {
+        return CompactionPerformanceResults.builder()
                 .actualNumOfJobs(1)
                 .actualNumOfRecordsInRoot(100)
                 .actualReadRate(0.5)
                 .actualWriteRate(0.5);
     }
 
-    private CompactionPerformanceChecker withActualNumberOfJobs(int actualNumberOfJobs) {
+    private CompactionPerformanceResults withActualNumberOfJobs(int actualNumberOfJobs) {
         return withValidDefaults()
                 .actualNumOfJobs(actualNumberOfJobs)
                 .build();
     }
 
-    private CompactionPerformanceChecker withActualRecordsInRoot(int actualRecordsInRoot) {
+    private CompactionPerformanceResults withActualRecordsInRoot(int actualRecordsInRoot) {
         return withValidDefaults()
                 .actualNumOfRecordsInRoot(actualRecordsInRoot)
                 .build();
     }
 
-    private CompactionPerformanceChecker withActualReadRate(double actualReadRate) {
+    private CompactionPerformanceResults withActualReadRate(double actualReadRate) {
         return withValidDefaults()
                 .actualReadRate(actualReadRate)
                 .build();
     }
 
-    private CompactionPerformanceChecker withActualWriteRate(double actualWriteRate) {
+    private CompactionPerformanceResults withActualWriteRate(double actualWriteRate) {
         return withValidDefaults()
                 .actualWriteRate(actualWriteRate)
                 .build();
     }
 
-    private RunCompactionPerformanceCheck createRunCheck(CompactionPerformanceChecker checker) {
+    private RunCompactionPerformanceCheck createRunCheck(CompactionPerformanceResults results) {
         return runCheckBuilder()
-                .checker(checker)
+                .results(results)
                 .build();
     }
 

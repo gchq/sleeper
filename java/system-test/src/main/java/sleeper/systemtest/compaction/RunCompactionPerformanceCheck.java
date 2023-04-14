@@ -21,19 +21,20 @@ public class RunCompactionPerformanceCheck {
     private final int expectedNumOfRecordsInRoot;
     private final double previousReadRate;
     private final double previousWriteRate;
-    private final CompactionPerformanceChecker checker;
+    private final CompactionPerformanceResults results;
 
     private RunCompactionPerformanceCheck(Builder builder) {
         expectedNumOfJobs = builder.expectedNumOfJobs;
         expectedNumOfRecordsInRoot = builder.expectedNumOfRecordsInRoot;
         previousReadRate = builder.previousReadRate;
         previousWriteRate = builder.previousWriteRate;
-        checker = builder.checker;
+        results = builder.results;
     }
 
 
     public void run() throws CompactionPerformanceChecker.CheckFailedException {
-        checker.check(expectedNumOfJobs, expectedNumOfRecordsInRoot, previousReadRate, previousWriteRate);
+        CompactionPerformanceChecker.check(results, expectedNumOfJobs, expectedNumOfRecordsInRoot,
+                previousReadRate, previousWriteRate);
     }
 
     public static Builder builder() {
@@ -45,7 +46,7 @@ public class RunCompactionPerformanceCheck {
         private int expectedNumOfRecordsInRoot;
         private double previousReadRate;
         private double previousWriteRate;
-        private CompactionPerformanceChecker checker;
+        private CompactionPerformanceResults results;
 
         private Builder() {
         }
@@ -70,8 +71,8 @@ public class RunCompactionPerformanceCheck {
             return this;
         }
 
-        public Builder checker(CompactionPerformanceChecker checker) {
-            this.checker = checker;
+        public Builder results(CompactionPerformanceResults results) {
+            this.results = results;
             return this;
         }
 
