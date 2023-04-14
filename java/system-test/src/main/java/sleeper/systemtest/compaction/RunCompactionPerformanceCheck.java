@@ -25,9 +25,9 @@ public class RunCompactionPerformanceCheck {
 
     private RunCompactionPerformanceCheck(Builder builder) {
         expectedNumOfJobs = builder.expectedNumOfJobs;
-        expectedNumOfRecordsInRoot = 0;
-        previousReadPerformance = 0;
-        previousWritePerformance = 0;
+        expectedNumOfRecordsInRoot = builder.expectedNumOfRecordsInRoot;
+        previousReadPerformance = builder.previousReadPerformance;
+        previousWritePerformance = builder.previousWritePerformance;
         checker = builder.checker;
     }
 
@@ -43,6 +43,9 @@ public class RunCompactionPerformanceCheck {
 
     public static final class Builder {
         private int expectedNumOfJobs;
+        private int expectedNumOfRecordsInRoot;
+        private double previousReadPerformance = 0;
+        private double previousWritePerformance = 0;
         private CompactionPerformanceChecker checker;
 
         private Builder() {
@@ -50,6 +53,11 @@ public class RunCompactionPerformanceCheck {
 
         public Builder expectedNumOfJobs(int expectedNumOfJobs) {
             this.expectedNumOfJobs = expectedNumOfJobs;
+            return this;
+        }
+
+        public Builder expectedNumOfRecordsInRoot(int expectedNumOfRecordsInRoot) {
+            this.expectedNumOfRecordsInRoot = expectedNumOfRecordsInRoot;
             return this;
         }
 

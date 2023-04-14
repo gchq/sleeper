@@ -28,7 +28,7 @@ public class RunCompactionPerformanceCheckTest {
 
     @DisplayName("Compaction job count assertions")
     @Nested
-    class AssertCompactionJobCount {
+    class CheckCompactionJobCount {
         @Test
         void shouldNotThrowExceptionWhenCompactionJobCountWasExpected() {
             // Given
@@ -48,13 +48,46 @@ public class RunCompactionPerformanceCheckTest {
 
             // When/Then
             assertThatThrownBy(runCheck::run)
-                    .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class);
+                    .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
+                    .hasMessageContaining("Actual number of compaction jobs");
+        }
+    }
+
+    @DisplayName("Records in root partition assertions")
+    @Nested
+    class CheckRecordsInRootPartition {
+        @Test
+        void shouldNotThrowExceptionWhenRecordsInRootPartitionIsExpected() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(100)
+                    .build();
+
+            // When/Then
+            assertThatCode(runCheck::run)
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldThrowExceptionWhenRecordsInRootPartitionIsNotExpected() {
+            // Given
+            RunCompactionPerformanceCheck runCheck = runCheckBuilder()
+                    .expectedNumOfJobs(1)
+                    .expectedNumOfRecordsInRoot(101)
+                    .build();
+
+            // When/Then
+            assertThatThrownBy(runCheck::run)
+                    .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
+                    .hasMessageContaining("Actual number of records in root partition");
         }
     }
 
     private CompactionPerformanceChecker createCheckerInMemory() {
         return CompactionPerformanceCheckerInMemory.builder()
                 .actualNumOfJobs(1)
+                .actualNumOfRecordsInRoot(100)
                 .build();
     }
 

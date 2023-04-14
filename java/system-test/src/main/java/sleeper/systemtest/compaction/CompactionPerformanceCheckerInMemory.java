@@ -18,9 +18,11 @@ package sleeper.systemtest.compaction;
 
 public class CompactionPerformanceCheckerInMemory implements CompactionPerformanceChecker {
     private final int actualNumOfJobs;
+    private final int actualNumOfRecordsInRoot;
 
     private CompactionPerformanceCheckerInMemory(Builder builder) {
         actualNumOfJobs = builder.actualNumOfJobs;
+        actualNumOfRecordsInRoot = builder.actualNumOfRecordsInRoot;
     }
 
 
@@ -29,6 +31,10 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
         if (actualNumOfJobs != expectedNumOfCompactionJobs) {
             throw new CheckFailedException("Actual number of compaction jobs " + actualNumOfJobs +
                     " does not match expected number of jobs " + expectedNumOfCompactionJobs);
+        }
+        if (actualNumOfRecordsInRoot != expectedNumOfRecordsinRoot) {
+            throw new CheckFailedException("Actual number of records in root partition " + actualNumOfRecordsInRoot +
+                    " does not match expected number of records in root partition " + expectedNumOfRecordsinRoot);
         }
     }
 
@@ -39,6 +45,7 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
 
     public static final class Builder {
         private int actualNumOfJobs;
+        private int actualNumOfRecordsInRoot;
 
         private Builder() {
         }
@@ -49,6 +56,11 @@ public class CompactionPerformanceCheckerInMemory implements CompactionPerforman
 
         public Builder actualNumOfJobs(int actualNumOfJobs) {
             this.actualNumOfJobs = actualNumOfJobs;
+            return this;
+        }
+
+        public Builder actualNumOfRecordsInRoot(int actualNumOfRecordsInRoot) {
+            this.actualNumOfRecordsInRoot = actualNumOfRecordsInRoot;
             return this;
         }
 
