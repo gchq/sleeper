@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-public class RunCompactionPerformanceCheckTest {
+public class CompactionPerformanceCheckerTest {
 
     @DisplayName("Compaction job count assertions")
     @Nested
@@ -31,20 +31,20 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenCompactionJobCountWasExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualNumberOfJobs(1));
+            CompactionPerformanceResults results = withActualNumberOfJobs(1);
 
             // When/Then
-            assertThatCode(runCheck::run)
+            assertThatCode(() -> runCheck(results))
                     .doesNotThrowAnyException();
         }
 
         @Test
         void shouldThrowExceptionWhenCompactionJobCountWasNotExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualNumberOfJobs(2));
+            CompactionPerformanceResults results = withActualNumberOfJobs(2);
 
             // When/Then
-            assertThatThrownBy(runCheck::run)
+            assertThatThrownBy(() -> runCheck(results))
                     .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
                     .hasMessageContaining("Actual number of compaction jobs");
         }
@@ -56,20 +56,20 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenRecordsInRootPartitionIsExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualRecordsInRoot(100));
+            CompactionPerformanceResults results = withActualRecordsInRoot(100);
 
             // When/Then
-            assertThatCode(runCheck::run)
+            assertThatCode(() -> runCheck(results))
                     .doesNotThrowAnyException();
         }
 
         @Test
         void shouldThrowExceptionWhenRecordsInRootPartitionIsNotExpected() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualRecordsInRoot(101));
+            CompactionPerformanceResults results = withActualRecordsInRoot(101);
 
             // When/Then
-            assertThatThrownBy(runCheck::run)
+            assertThatThrownBy(() -> runCheck(results))
                     .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
                     .hasMessageContaining("Actual number of records in root partition");
         }
@@ -81,20 +81,20 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenReadRateIsBetterThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualReadRate(0.6));
+            CompactionPerformanceResults results = withActualReadRate(0.6);
 
             // When/Then
-            assertThatCode(runCheck::run)
+            assertThatCode(() -> runCheck(results))
                     .doesNotThrowAnyException();
         }
 
         @Test
         void shouldThrowExceptionWhenReadRateIsWorseThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualReadRate(0.4));
+            CompactionPerformanceResults results = withActualReadRate(0.4);
 
             // When/Then
-            assertThatThrownBy(runCheck::run)
+            assertThatThrownBy(() -> runCheck(results))
                     .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
                     .hasMessageContaining("Read rate");
         }
@@ -102,21 +102,21 @@ public class RunCompactionPerformanceCheckTest {
         @Test
         void shouldNotThrowExceptionWhenWriteRateIsBetterThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualWriteRate(0.6));
+            CompactionPerformanceResults results = withActualWriteRate(0.6);
 
             // When/Then
-            assertThatCode(runCheck::run)
+            assertThatCode(() -> runCheck(results))
                     .doesNotThrowAnyException();
         }
 
         @Test
         void shouldThrowExceptionWhenWriteRateIsWorseThanPreviousRate() {
             // Given
-            RunCompactionPerformanceCheck runCheck = createRunCheck(withActualWriteRate(0.4));
+            CompactionPerformanceResults results = withActualWriteRate(0.4);
 
 
             // When/Then
-            assertThatThrownBy(runCheck::run)
+            assertThatThrownBy(() -> runCheck(results))
                     .isInstanceOf(CompactionPerformanceChecker.CheckFailedException.class)
                     .hasMessageContaining("Write rate");
         }
@@ -154,17 +154,8 @@ public class RunCompactionPerformanceCheckTest {
                 .build();
     }
 
-    private RunCompactionPerformanceCheck createRunCheck(CompactionPerformanceResults results) {
-        return runCheckBuilder()
-                .results(results)
-                .build();
-    }
-
-    private RunCompactionPerformanceCheck.Builder runCheckBuilder() {
-        return RunCompactionPerformanceCheck.builder()
-                .expectedNumOfJobs(1)
-                .expectedNumOfRecordsInRoot(100)
-                .previousReadRate(0.5)
-                .previousWriteRate(0.5);
+    private void runCheck(CompactionPerformanceResults results) throws CompactionPerformanceChecker.CheckFailedException {
+        CompactionPerformanceChecker.check(results,
+                1, 100, 0.5, 0.5);
     }
 }
