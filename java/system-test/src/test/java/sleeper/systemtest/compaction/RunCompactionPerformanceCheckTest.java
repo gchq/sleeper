@@ -22,8 +22,12 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.DelegatingStateStore;
+import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.FixedPartitionStore;
 import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 import sleeper.systemtest.SystemTestProperties;
@@ -42,8 +46,11 @@ import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.loadFr
 import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
 public class RunCompactionPerformanceCheckTest {
+    private final Schema schema = schemaWithKey("key", new StringType());
     private final StateStore stateStore = new DelegatingStateStore(
-            new InMemoryFileInfoStore(), new FixedPartitionStore(schemaWithKey("key")));
+            new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
+
+    private final FileInfoFactory fileInfoFactory = createFileInfoFactory();
     private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable("system-test");
 
@@ -64,7 +71,7 @@ public class RunCompactionPerformanceCheckTest {
     }
 
     @Test
-    void shouldLoadResultsCorrectlyFromJobStatusStore() throws Exception {
+    void shouldLoadNumberOfJobsCorrectlyFromJobStatusStore() throws Exception {
         // Given
         SystemTestProperties properties = validProperties();
         startSingleJob(Instant.parse("2023-04-14T16:57:00Z"));
@@ -77,6 +84,22 @@ public class RunCompactionPerformanceCheckTest {
         assertThat(runCheck)
                 .extracting("results.numOfJobs")
                 .isEqualTo(2);
+    }
+
+    @Test
+    void shouldLoadNumberOfRecordsFromStateStore() throws Exception {
+        // Given
+        SystemTestProperties properties = validProperties();
+        stateStore.addFile(fileInfoFactory.rootFile("test1.parquet", 4, "abc", "def"));
+        stateStore.addFile(fileInfoFactory.rootFile("test2.parquet", 4, "aaa", "bbb"));
+
+        // When
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+
+        // Then
+        assertThat(runCheck)
+                .extracting("results.numOfRecordsInRoot")
+                .isEqualTo(8L);
     }
 
     private void startSingleJob(Instant startTime) {
@@ -93,5 +116,13 @@ public class RunCompactionPerformanceCheckTest {
         properties.set(SYSTEM_TEST_REPO, "test-repo");
         properties.loadFromString(createTestInstanceProperties().saveAsString());
         return properties;
+    }
+
+    private FileInfoFactory createFileInfoFactory() {
+        try {
+            return new FileInfoFactory(schema, stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

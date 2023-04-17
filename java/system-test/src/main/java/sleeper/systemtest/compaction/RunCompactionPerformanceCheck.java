@@ -25,6 +25,7 @@ import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 
 public class RunCompactionPerformanceCheck {
+    public static final double TARGET_RECORDS_PER_SECOND = 330000;
     private final CompactionPerformanceResults expectedResults;
     private final CompactionPerformanceResults results;
 
@@ -40,6 +41,7 @@ public class RunCompactionPerformanceCheck {
         CompactionPerformanceResults expectedResults = CompactionPerformanceResults.builder()
                 .numOfJobs(1)
                 .numOfRecordsInRoot(expectedRecordsInRoot)
+                .writeRate(TARGET_RECORDS_PER_SECOND)
                 .build();
         CompactionPerformanceResults results = loadResults(stateStore, jobStatusStore);
         return RunCompactionPerformanceCheck.builder()
