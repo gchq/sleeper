@@ -94,6 +94,23 @@ class CompactionPerformanceValidatorTest {
             assertThat(validator.getNumberOfJobsExpected())
                     .isEqualTo(2);
         }
+
+        @Test
+        void shouldCalculateNumberOfRecordsExpected() throws Exception {
+            // Given
+            SystemTestProperties properties = createTestSystemTestProperties();
+            properties.set(NUMBER_OF_WRITERS, "3");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+            TableProperties tableProperties = new TableProperties(properties);
+
+            // When
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+
+            // Then
+            assertThat(validator.getNumberOfRecordsExpected())
+                    .isEqualTo(30);
+        }
     }
 
     @Nested

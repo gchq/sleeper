@@ -24,24 +24,32 @@ import sleeper.systemtest.SystemTestProperties;
 
 import java.math.RoundingMode;
 
+import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 
 public class CompactionPerformanceValidator {
     private final int numberOfJobsExpected;
+    private final int numberOfRecordsExpected;
 
-    public CompactionPerformanceValidator(int numberOfJobsExpected) {
+    public CompactionPerformanceValidator(int numberOfJobsExpected, int numberOfRecordsExpected) {
         this.numberOfJobsExpected = numberOfJobsExpected;
+        this.numberOfRecordsExpected = numberOfRecordsExpected;
     }
 
     public static CompactionPerformanceValidator from(
             SystemTestProperties instanceProperties, TableProperties tableProperties) {
         int numberOfJobs = calculateNumberOfJobsExpected(instanceProperties, tableProperties);
-        return new CompactionPerformanceValidator(numberOfJobs);
+        int numberOfRecords = calculateNumberOfRecordsExpected(instanceProperties);
+        return new CompactionPerformanceValidator(numberOfJobs, numberOfRecords);
     }
 
     private static int calculateNumberOfJobsExpected(InstanceProperties properties, TableProperties tableProperties) {
         return IntMath.divide(properties.getInt(NUMBER_OF_WRITERS),
                 tableProperties.getInt(TableProperty.COMPACTION_FILES_BATCH_SIZE), RoundingMode.CEILING);
+    }
+
+    private static int calculateNumberOfRecordsExpected(InstanceProperties properties) {
+        return properties.getInt(NUMBER_OF_WRITERS) * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
     }
 
     public void test(CompactionPerformanceResults results) {
@@ -53,5 +61,9 @@ public class CompactionPerformanceValidator {
 
     public int getNumberOfJobsExpected() {
         return numberOfJobsExpected;
+    }
+
+    public int getNumberOfRecordsExpected() {
+        return numberOfRecordsExpected;
     }
 }
