@@ -33,13 +33,11 @@ public class CompactionPerformanceResults {
 
     private final int numOfJobs;
     private final long numOfRecordsInRoot;
-    private final double readRate;
     private final double writeRate;
 
     private CompactionPerformanceResults(Builder builder) {
         numOfJobs = builder.numOfJobs;
         numOfRecordsInRoot = builder.numOfRecordsInRoot;
-        readRate = builder.readRate;
         writeRate = builder.writeRate;
     }
 
@@ -66,22 +64,6 @@ public class CompactionPerformanceResults {
                 .build();
     }
 
-    public int getNumOfJobs() {
-        return numOfJobs;
-    }
-
-    public long getNumOfRecordsInRoot() {
-        return numOfRecordsInRoot;
-    }
-
-    public double getReadRate() {
-        return readRate;
-    }
-
-    public double getWriteRate() {
-        return writeRate;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -91,12 +73,12 @@ public class CompactionPerformanceResults {
             return false;
         }
         CompactionPerformanceResults results = (CompactionPerformanceResults) o;
-        return numOfJobs == results.numOfJobs && numOfRecordsInRoot == results.numOfRecordsInRoot && Double.compare(results.readRate, readRate) == 0 && Double.compare(results.writeRate, writeRate) == 0;
+        return numOfJobs == results.numOfJobs && numOfRecordsInRoot == results.numOfRecordsInRoot && Double.compare(results.writeRate, writeRate) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(numOfJobs, numOfRecordsInRoot, readRate, writeRate);
+        return Objects.hash(numOfJobs, numOfRecordsInRoot, writeRate);
     }
 
     @Override
@@ -104,7 +86,6 @@ public class CompactionPerformanceResults {
         return "CompactionPerformanceResults{" +
                 "numOfJobs=" + numOfJobs +
                 ", numOfRecordsInRoot=" + numOfRecordsInRoot +
-                ", readRate=" + readRate +
                 ", writeRate=" + writeRate +
                 '}';
     }
@@ -112,10 +93,9 @@ public class CompactionPerformanceResults {
     public static final class Builder {
         private int numOfJobs;
         private long numOfRecordsInRoot;
-        private double readRate;
         private double writeRate;
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder numOfJobs(int numOfJobs) {
@@ -125,11 +105,6 @@ public class CompactionPerformanceResults {
 
         public Builder numOfRecordsInRoot(long numOfRecordsInRoot) {
             this.numOfRecordsInRoot = numOfRecordsInRoot;
-            return this;
-        }
-
-        public Builder readRate(double readRate) {
-            this.readRate = readRate;
             return this;
         }
 
