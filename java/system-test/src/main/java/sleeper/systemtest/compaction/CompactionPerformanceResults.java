@@ -17,6 +17,8 @@
 package sleeper.systemtest.compaction;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.AverageRecordRate;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -61,6 +63,9 @@ public class CompactionPerformanceResults {
                 .numOfJobs(jobStatusStore.getAllJobs("system-test").size())
                 .numOfRecordsInRoot(stateStore.getActiveFiles().stream()
                         .mapToLong(FileInfo::getNumberOfRecords).sum())
+                .writeRate(AverageRecordRate.of(jobStatusStore.streamAllJobs("system-test")
+                        .filter(CompactionJobStatus::isFinished)
+                        .flatMap(job -> job.getJobRuns().stream())).getRecordsWrittenPerSecond())
                 .build();
     }
 
@@ -73,7 +78,9 @@ public class CompactionPerformanceResults {
             return false;
         }
         CompactionPerformanceResults results = (CompactionPerformanceResults) o;
-        return numOfJobs == results.numOfJobs && numOfRecordsInRoot == results.numOfRecordsInRoot && Double.compare(results.writeRate, writeRate) == 0;
+        return numOfJobs == results.numOfJobs
+                && numOfRecordsInRoot == results.numOfRecordsInRoot
+                && Double.compare(results.writeRate, writeRate) == 0;
     }
 
     @Override

@@ -22,6 +22,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.DelegatingStateStore;
@@ -33,10 +34,12 @@ import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
@@ -104,10 +107,35 @@ class RunCompactionPerformanceCheckTest {
                 .isEqualTo(8L);
     }
 
+    @Test
+    void shouldLoadWriteRateFromJobStatusStore() throws Exception {
+        // Given
+        SystemTestProperties properties = validProperties();
+        finishSingleJob(summary(Instant.parse("2023-04-14T16:57:00Z"),
+                Duration.ofSeconds(10), 100L, 100L));
+        finishSingleJob(summary(Instant.parse("2023-04-14T16:59:00Z"),
+                Duration.ofSeconds(10), 100L, 100L));
+
+        // When
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+
+        // Then
+        assertThat(runCheck)
+                .extracting("results.writeRate")
+                .isEqualTo(10.0);
+    }
+
     private void startSingleJob(Instant startTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
         jobStatusStore.jobCreated(job);
         jobStatusStore.jobStarted(job, startTime, "test-task");
+    }
+
+    private void finishSingleJob(RecordsProcessedSummary summary) {
+        CompactionJob job = dataHelper.singleFileCompaction();
+        jobStatusStore.jobCreated(job);
+        jobStatusStore.jobStarted(job, summary.getStartTime(), "test-task");
+        jobStatusStore.jobFinished(job, summary, "test-task");
     }
 
     private SystemTestProperties validProperties() throws IOException {
