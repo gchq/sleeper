@@ -80,6 +80,10 @@ public class CompactionPerformanceResults {
         return numOfJobs;
     }
 
+    public long getNumberOfRecords() {
+        return numOfRecordsInRoot;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

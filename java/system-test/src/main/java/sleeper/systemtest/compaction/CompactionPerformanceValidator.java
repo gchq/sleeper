@@ -57,6 +57,10 @@ public class CompactionPerformanceValidator {
             throw new IllegalStateException("Actual number of compaction jobs " + results.getNumberOfJobs() +
                     " did not match expected value " + numberOfJobsExpected);
         }
+        if (results.getNumberOfRecords() != numberOfRecordsExpected) {
+            throw new IllegalStateException("Actual number of records " + results.getNumberOfRecords() +
+                    " did not match expected value " + numberOfRecordsExpected);
+        }
     }
 
     public int getNumberOfJobsExpected() {
