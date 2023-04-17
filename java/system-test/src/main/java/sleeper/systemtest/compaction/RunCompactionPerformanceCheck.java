@@ -19,6 +19,7 @@ package sleeper.systemtest.compaction;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.SystemTestProperties;
 
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
@@ -34,15 +35,10 @@ public class RunCompactionPerformanceCheck {
         results = builder.results;
     }
 
-    public static RunCompactionPerformanceCheck loadFrom(SystemTestProperties properties, StateStore stateStore,
-                                                         CompactionJobStatusStore jobStatusStore) throws Exception {
-        int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
-                * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
-        CompactionPerformanceResults expectedResults = CompactionPerformanceResults.builder()
-                .numOfJobs(1)
-                .numOfRecordsInRoot(expectedRecordsInRoot)
-                .writeRate(TARGET_RECORDS_PER_SECOND)
-                .build();
+    public static RunCompactionPerformanceCheck loadFrom(
+            SystemTestProperties properties, StateStore stateStore,
+            CompactionJobStatusStore jobStatusStore) throws StateStoreException {
+        CompactionPerformanceResults expectedResults = loadExpectedResults(properties);
         CompactionPerformanceResults results = loadResults(stateStore, jobStatusStore);
         return RunCompactionPerformanceCheck.builder()
                 .expectedResults(expectedResults)
@@ -50,8 +46,18 @@ public class RunCompactionPerformanceCheck {
                 .build();
     }
 
-    private static CompactionPerformanceResults loadResults(StateStore stateStore,
-                                                            CompactionJobStatusStore jobStatusStore) throws Exception {
+    private static CompactionPerformanceResults loadExpectedResults(SystemTestProperties properties) {
+        int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
+                * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
+        return CompactionPerformanceResults.builder()
+                .numOfJobs(1)
+                .numOfRecordsInRoot(expectedRecordsInRoot)
+                .writeRate(TARGET_RECORDS_PER_SECOND)
+                .build();
+    }
+
+    private static CompactionPerformanceResults loadResults(
+            StateStore stateStore, CompactionJobStatusStore jobStatusStore) throws StateStoreException {
         return CompactionPerformanceResults.builder()
                 .numOfJobs(jobStatusStore.getAllJobs("system-test").size())
                 .numOfRecordsInRoot(stateStore.getActiveFiles().stream()
