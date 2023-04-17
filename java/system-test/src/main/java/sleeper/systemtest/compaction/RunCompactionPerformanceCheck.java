@@ -40,6 +40,14 @@ public class RunCompactionPerformanceCheck {
                 .build();
     }
 
+    @Override
+    public String toString() {
+        return "RunCompactionPerformanceCheck{" +
+                "expectedResults=" + expectedResults +
+                ", results=" + results +
+                '}';
+    }
+
     public static Builder builder() {
         return new Builder();
     }
