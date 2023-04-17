@@ -68,7 +68,7 @@ public class RunCompactionPerformanceCheckTest {
                 .isEqualTo(CompactionPerformanceResults.builder()
                         .numOfJobs(1)
                         .numOfRecordsInRoot(8)
-                        .writeRate(RunCompactionPerformanceCheck.TARGET_RECORDS_PER_SECOND)
+                        .writeRate(CompactionPerformanceResults.TARGET_RECORDS_PER_SECOND)
                         .build());
     }
 

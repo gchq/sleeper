@@ -22,7 +22,6 @@ import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.SystemTestProperties;
 
 public class RunCompactionPerformanceCheck {
-    public static final double TARGET_RECORDS_PER_SECOND = 330000;
     private final CompactionPerformanceResults expectedResults;
     private final CompactionPerformanceResults results;
 

@@ -26,9 +26,11 @@ import java.util.Objects;
 
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.TARGET_RECORDS_PER_SECOND;
 
 public class CompactionPerformanceResults {
+
+    public static final double TARGET_RECORDS_PER_SECOND = 330000;
+
     private final int numOfJobs;
     private final long numOfRecordsInRoot;
     private final double readRate;
