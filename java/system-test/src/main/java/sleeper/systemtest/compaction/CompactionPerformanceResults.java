@@ -16,7 +16,17 @@
 
 package sleeper.systemtest.compaction;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.statestore.FileInfo;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.systemtest.SystemTestProperties;
+
 import java.util.Objects;
+
+import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.TARGET_RECORDS_PER_SECOND;
 
 public class CompactionPerformanceResults {
     private final int numOfJobs;
@@ -33,6 +43,25 @@ public class CompactionPerformanceResults {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static CompactionPerformanceResults loadExpected(SystemTestProperties properties) {
+        int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
+                * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
+        return builder()
+                .numOfJobs(1)
+                .numOfRecordsInRoot(expectedRecordsInRoot)
+                .writeRate(TARGET_RECORDS_PER_SECOND)
+                .build();
+    }
+
+    public static CompactionPerformanceResults loadActual(
+            StateStore stateStore, CompactionJobStatusStore jobStatusStore) throws StateStoreException {
+        return builder()
+                .numOfJobs(jobStatusStore.getAllJobs("system-test").size())
+                .numOfRecordsInRoot(stateStore.getActiveFiles().stream()
+                        .mapToLong(FileInfo::getNumberOfRecords).sum())
+                .build();
     }
 
     public int getNumOfJobs() {

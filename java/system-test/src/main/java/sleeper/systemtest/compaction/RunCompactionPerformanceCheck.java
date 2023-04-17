@@ -17,13 +17,9 @@
 package sleeper.systemtest.compaction;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.SystemTestProperties;
-
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 
 public class RunCompactionPerformanceCheck {
     public static final double TARGET_RECORDS_PER_SECOND = 330000;
@@ -38,33 +34,11 @@ public class RunCompactionPerformanceCheck {
     public static RunCompactionPerformanceCheck loadFrom(
             SystemTestProperties properties, StateStore stateStore,
             CompactionJobStatusStore jobStatusStore) throws StateStoreException {
-        CompactionPerformanceResults expectedResults = loadExpectedResults(properties);
-        CompactionPerformanceResults results = loadResults(stateStore, jobStatusStore);
         return RunCompactionPerformanceCheck.builder()
-                .expectedResults(expectedResults)
-                .results(results)
+                .expectedResults(CompactionPerformanceResults.loadExpected(properties))
+                .results(CompactionPerformanceResults.loadActual(stateStore, jobStatusStore))
                 .build();
     }
-
-    private static CompactionPerformanceResults loadExpectedResults(SystemTestProperties properties) {
-        int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
-                * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
-        return CompactionPerformanceResults.builder()
-                .numOfJobs(1)
-                .numOfRecordsInRoot(expectedRecordsInRoot)
-                .writeRate(TARGET_RECORDS_PER_SECOND)
-                .build();
-    }
-
-    private static CompactionPerformanceResults loadResults(
-            StateStore stateStore, CompactionJobStatusStore jobStatusStore) throws StateStoreException {
-        return CompactionPerformanceResults.builder()
-                .numOfJobs(jobStatusStore.getAllJobs("system-test").size())
-                .numOfRecordsInRoot(stateStore.getActiveFiles().stream()
-                        .mapToLong(FileInfo::getNumberOfRecords).sum())
-                .build();
-    }
-
 
     public void run() throws CompactionPerformanceChecker.CheckFailedException {
         CompactionPerformanceChecker.check(results, expectedResults);
