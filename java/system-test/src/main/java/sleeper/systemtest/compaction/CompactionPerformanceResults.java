@@ -76,6 +76,10 @@ public class CompactionPerformanceResults {
                 .build();
     }
 
+    public int getNumberOfJobs() {
+        return numOfJobs;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

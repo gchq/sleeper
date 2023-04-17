@@ -15,17 +15,39 @@
  */
 package sleeper.systemtest.compaction;
 
+import com.google.common.math.IntMath;
+
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.SystemTestProperties;
 
+import java.math.RoundingMode;
+
+import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
+
 public class CompactionPerformanceValidator {
+    private final int numberOfJobsExpected;
+
+    public CompactionPerformanceValidator(int numberOfJobsExpected) {
+        this.numberOfJobsExpected = numberOfJobsExpected;
+    }
 
     public static CompactionPerformanceValidator from(
             SystemTestProperties instanceProperties, TableProperties tableProperties) {
-        return new CompactionPerformanceValidator();
+        int numberOfJobs = calculateNumberOfJobsExpected(instanceProperties, tableProperties);
+        return new CompactionPerformanceValidator(numberOfJobs);
+    }
+
+    private static int calculateNumberOfJobsExpected(InstanceProperties properties, TableProperties tableProperties) {
+        return IntMath.divide(properties.getInt(NUMBER_OF_WRITERS),
+                tableProperties.getInt(TableProperty.COMPACTION_FILES_BATCH_SIZE), RoundingMode.CEILING);
     }
 
     public void test(CompactionPerformanceResults results) {
-
+        if (results.getNumberOfJobs() != numberOfJobsExpected) {
+            throw new IllegalStateException("Actual number of compaction jobs " + results.getNumberOfJobs() +
+                    " did not match expected value " + numberOfJobsExpected);
+        }
     }
 }

@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.systemtest.SystemTestPropertiesTestHelper.createTestSystemTestProperties;
@@ -74,6 +75,32 @@ class CompactionPerformanceValidatorTest {
 
         // Then
         assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldFailWhenMultipleJobsWereRunButOneJobWasExpected() throws Exception {
+        // Given
+        SystemTestProperties properties = createTestSystemTestProperties();
+        properties.set(NUMBER_OF_WRITERS, "1");
+        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+        TableProperties tableProperties = new TableProperties(properties);
+        tableProperties.set(TableProperty.TABLE_NAME, "test-table");
+        tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+        stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
+        reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
+        reportFinishedJob(summary(Instant.parse("2023-04-17T16:25:42Z"), Duration.ofMinutes(1), 5, 5));
+
+
+        // When
+        CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+
+        // Then
+        assertThatThrownBy(() -> validator.test(results))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Actual number of compaction jobs 2 did not match expected value 1");
     }
 
     private FileInfoFactory createFileInfoFactory() {
