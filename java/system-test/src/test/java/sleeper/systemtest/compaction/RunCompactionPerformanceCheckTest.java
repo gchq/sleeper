@@ -52,13 +52,14 @@ import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.loadFr
 import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
 class RunCompactionPerformanceCheckTest {
+    private static final String TEST_TABLE_NAME = "test-table";
     private final Schema schema = schemaWithKey("key", new StringType());
     private final StateStore stateStore = new DelegatingStateStore(
             new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
 
     private final FileInfoFactory fileInfoFactory = createFileInfoFactory();
     private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
-    private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable("system-test");
+    private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(TEST_TABLE_NAME);
 
     @Test
     void shouldLoadExpectedResultsCorrectlyFromInstanceProperties() throws Exception {
@@ -159,7 +160,7 @@ class RunCompactionPerformanceCheckTest {
 
     private TableProperties validTableProperties(InstanceProperties properties) {
         TableProperties tableProperties = new TableProperties(properties);
-        tableProperties.set(TableProperty.TABLE_NAME, "test-table");
+        tableProperties.set(TableProperty.TABLE_NAME, TEST_TABLE_NAME);
         tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
         return tableProperties;
     }
