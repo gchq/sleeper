@@ -50,4 +50,8 @@ public class CompactionPerformanceValidator {
                     " did not match expected value " + numberOfJobsExpected);
         }
     }
+
+    public int getNumberOfJobsExpected() {
+        return numberOfJobsExpected;
+    }
 }

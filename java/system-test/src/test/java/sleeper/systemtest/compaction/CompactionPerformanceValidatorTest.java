@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.compaction;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -36,6 +38,7 @@ import sleeper.systemtest.SystemTestProperties;
 import java.time.Duration;
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -55,52 +58,93 @@ class CompactionPerformanceValidatorTest {
     private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(TEST_TABLE_NAME);
 
-    @Test
-    void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
-        // Given
-        SystemTestProperties properties = createTestSystemTestProperties();
-        properties.set(NUMBER_OF_WRITERS, "1");
-        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+    @Nested
+    @DisplayName("Calculate expected results")
+    class CalculateExpectedResults {
+        @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() throws Exception {
+            // Given
+            SystemTestProperties properties = createTestSystemTestProperties();
+            properties.set(NUMBER_OF_WRITERS, "1");
 
-        TableProperties tableProperties = new TableProperties(properties);
-        tableProperties.set(TableProperty.TABLE_NAME, "test-table");
-        tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+            TableProperties tableProperties = new TableProperties(properties);
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
 
-        stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
-        reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 10, 10));
+            // When
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
 
-        // When
-        CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
-        CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isOne();
+        }
 
-        // Then
-        assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
+        @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() throws Exception {
+            // Given
+            SystemTestProperties properties = createTestSystemTestProperties();
+            properties.set(NUMBER_OF_WRITERS, "6");
+
+            TableProperties tableProperties = new TableProperties(properties);
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            // When
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isEqualTo(2);
+        }
     }
 
-    @Test
-    void shouldFailWhenMultipleJobsWereRunButOneJobWasExpected() throws Exception {
-        // Given
-        SystemTestProperties properties = createTestSystemTestProperties();
-        properties.set(NUMBER_OF_WRITERS, "1");
-        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+    @Nested
+    @DisplayName("Validate actual results")
+    class ValidateActualResults {
+        @Test
+        void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
+            // Given
+            SystemTestProperties properties = createTestSystemTestProperties();
+            properties.set(NUMBER_OF_WRITERS, "1");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
-        TableProperties tableProperties = new TableProperties(properties);
-        tableProperties.set(TableProperty.TABLE_NAME, "test-table");
-        tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+            TableProperties tableProperties = new TableProperties(properties);
+            tableProperties.set(TableProperty.TABLE_NAME, "test-table");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
 
-        stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
-        reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
-        reportFinishedJob(summary(Instant.parse("2023-04-17T16:25:42Z"), Duration.ofMinutes(1), 5, 5));
+            stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
+            reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 10, 10));
 
+            // When
+            CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
 
-        // When
-        CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
-        CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            // Then
+            assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
+        }
 
-        // Then
-        assertThatThrownBy(() -> validator.test(results))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Actual number of compaction jobs 2 did not match expected value 1");
+        @Test
+        void shouldFailWhenMultipleJobsWereRunButOneJobWasExpected() throws Exception {
+            // Given
+            SystemTestProperties properties = createTestSystemTestProperties();
+            properties.set(NUMBER_OF_WRITERS, "1");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+            TableProperties tableProperties = new TableProperties(properties);
+            tableProperties.set(TableProperty.TABLE_NAME, "test-table");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
+            reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
+            reportFinishedJob(summary(Instant.parse("2023-04-17T16:25:42Z"), Duration.ofMinutes(1), 5, 5));
+
+            // When
+            CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+
+            // Then
+            assertThatThrownBy(() -> validator.test(results))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Actual number of compaction jobs 2 did not match expected value 1");
+        }
     }
 
     private FileInfoFactory createFileInfoFactory() {
@@ -114,4 +158,5 @@ class CompactionPerformanceValidatorTest {
     private void reportFinishedJob(RecordsProcessedSummary summary) {
         dataHelper.reportFinishedJob(summary, jobStatusStore);
     }
+
 }
