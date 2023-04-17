@@ -22,6 +22,9 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -61,16 +64,17 @@ class RunCompactionPerformanceCheckTest {
     void shouldLoadExpectedResultsCorrectlyFromInstanceProperties() throws Exception {
         // Given
         SystemTestProperties properties = validProperties();
+        TableProperties tableProperties = validTableProperties(properties);
 
         // When
-        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, tableProperties, stateStore, jobStatusStore);
 
         // Then
         assertThat(runCheck)
                 .extracting("expectedResults")
                 .isEqualTo(CompactionPerformanceResults.builder()
-                        .numOfJobs(1)
-                        .numOfRecordsInRoot(8)
+                        .numOfJobs(2)
+                        .numOfRecordsInRoot(50)
                         .writeRate(CompactionPerformanceResults.TARGET_RECORDS_PER_SECOND)
                         .build());
     }
@@ -79,11 +83,12 @@ class RunCompactionPerformanceCheckTest {
     void shouldLoadNumberOfJobsCorrectlyFromJobStatusStore() throws Exception {
         // Given
         SystemTestProperties properties = validProperties();
+        TableProperties tableProperties = validTableProperties(properties);
         startSingleJob(Instant.parse("2023-04-14T16:57:00Z"));
         startSingleJob(Instant.parse("2023-04-14T16:59:00Z"));
 
         // When
-        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, tableProperties, stateStore, jobStatusStore);
 
         // Then
         assertThat(runCheck)
@@ -95,11 +100,12 @@ class RunCompactionPerformanceCheckTest {
     void shouldLoadNumberOfRecordsFromStateStore() throws Exception {
         // Given
         SystemTestProperties properties = validProperties();
+        TableProperties tableProperties = validTableProperties(properties);
         stateStore.addFile(fileInfoFactory.rootFile("test1.parquet", 4, "abc", "def"));
         stateStore.addFile(fileInfoFactory.rootFile("test2.parquet", 4, "aaa", "bbb"));
 
         // When
-        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, tableProperties, stateStore, jobStatusStore);
 
         // Then
         assertThat(runCheck)
@@ -111,13 +117,14 @@ class RunCompactionPerformanceCheckTest {
     void shouldLoadWriteRateFromJobStatusStore() throws Exception {
         // Given
         SystemTestProperties properties = validProperties();
+        TableProperties tableProperties = validTableProperties(properties);
         finishSingleJob(summary(Instant.parse("2023-04-14T16:57:00Z"),
                 Duration.ofSeconds(10), 100L, 100L));
         finishSingleJob(summary(Instant.parse("2023-04-14T16:59:00Z"),
                 Duration.ofSeconds(10), 100L, 100L));
 
         // When
-        RunCompactionPerformanceCheck runCheck = loadFrom(properties, stateStore, jobStatusStore);
+        RunCompactionPerformanceCheck runCheck = loadFrom(properties, tableProperties, stateStore, jobStatusStore);
 
         // Then
         assertThat(runCheck)
@@ -140,12 +147,19 @@ class RunCompactionPerformanceCheckTest {
 
     private SystemTestProperties validProperties() throws IOException {
         SystemTestProperties properties = new SystemTestProperties();
-        properties.set(NUMBER_OF_WRITERS, "2");
-        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "4");
+        properties.set(NUMBER_OF_WRITERS, "10");
+        properties.set(NUMBER_OF_RECORDS_PER_WRITER, "5");
         properties.set(INGEST_MODE, DIRECT.name());
         properties.set(SYSTEM_TEST_REPO, "test-repo");
         properties.loadFromString(createTestInstanceProperties().saveAsString());
         return properties;
+    }
+
+    private TableProperties validTableProperties(InstanceProperties properties) {
+        TableProperties tableProperties = new TableProperties(properties);
+        tableProperties.set(TableProperty.TABLE_NAME, "test-table");
+        tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+        return tableProperties;
     }
 
     private FileInfoFactory createFileInfoFactory() {

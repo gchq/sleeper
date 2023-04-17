@@ -18,6 +18,8 @@ package sleeper.systemtest.compaction;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -47,23 +49,28 @@ public class CompactionPerformanceResults {
         return new Builder();
     }
 
-    public static CompactionPerformanceResults loadExpected(SystemTestProperties properties) {
+    public static CompactionPerformanceResults loadExpected(
+            SystemTestProperties properties, TableProperties tableProperties) {
+        int expectedJobCount = (int) Math.ceil(properties.getDouble(NUMBER_OF_WRITERS) /
+                tableProperties.getDouble(TableProperty.COMPACTION_FILES_BATCH_SIZE));
         int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
                 * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
         return builder()
-                .numOfJobs(1)
+                .numOfJobs(expectedJobCount)
                 .numOfRecordsInRoot(expectedRecordsInRoot)
                 .writeRate(TARGET_RECORDS_PER_SECOND)
                 .build();
     }
 
     public static CompactionPerformanceResults loadActual(
-            StateStore stateStore, CompactionJobStatusStore jobStatusStore) throws StateStoreException {
+            TableProperties tableProperties, StateStore stateStore, CompactionJobStatusStore jobStatusStore)
+            throws StateStoreException {
+        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
         return builder()
-                .numOfJobs(jobStatusStore.getAllJobs("system-test").size())
+                .numOfJobs(jobStatusStore.getAllJobs(tableName).size())
                 .numOfRecordsInRoot(stateStore.getActiveFiles().stream()
                         .mapToLong(FileInfo::getNumberOfRecords).sum())
-                .writeRate(AverageRecordRate.of(jobStatusStore.streamAllJobs("system-test")
+                .writeRate(AverageRecordRate.of(jobStatusStore.streamAllJobs(tableName)
                         .filter(CompactionJobStatus::isFinished)
                         .flatMap(job -> job.getJobRuns().stream())).getRecordsWrittenPerSecond())
                 .build();

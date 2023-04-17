@@ -17,6 +17,7 @@
 package sleeper.systemtest.compaction;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.SystemTestProperties;
@@ -31,11 +32,11 @@ public class RunCompactionPerformanceCheck {
     }
 
     public static RunCompactionPerformanceCheck loadFrom(
-            SystemTestProperties properties, StateStore stateStore,
-            CompactionJobStatusStore jobStatusStore) throws StateStoreException {
+            SystemTestProperties properties, TableProperties tableProperties,
+            StateStore stateStore, CompactionJobStatusStore jobStatusStore) throws StateStoreException {
         return RunCompactionPerformanceCheck.builder()
-                .expectedResults(CompactionPerformanceResults.loadExpected(properties))
-                .results(CompactionPerformanceResults.loadActual(stateStore, jobStatusStore))
+                .expectedResults(CompactionPerformanceResults.loadExpected(properties, tableProperties))
+                .results(CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore))
                 .build();
     }
 
