@@ -56,7 +56,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
@@ -88,7 +87,7 @@ class ShutdownSystemProcessesIT {
     @Test
     void shouldShutDownCloudWatchRulesWhenSet() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
+        InstanceProperties properties = createTestInstanceProperties();
         properties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-compaction-job-creation-rule");
         properties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-compaction-task-creation-rule");
         properties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-splitting-compaction-task-creation-rule");
@@ -100,12 +99,14 @@ class ShutdownSystemProcessesIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
+        stubForListingRunningClusters(0);
 
         // When
         shutdown(properties);
 
         // Then
-        verify(8, postRequestedFor(urlEqualTo("/")));
+        verify(9, postRequestedFor(urlEqualTo("/")));
+        verify(1, listActiveClustersRequested());
         verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
         verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
         verify(1, disableRuleRequestedFor("test-splitting-compaction-task-creation-rule"));
@@ -119,7 +120,7 @@ class ShutdownSystemProcessesIT {
     @Test
     void shouldLookForECSTasksWhenClustersSet() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
+        InstanceProperties properties = createTestInstanceProperties();
         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
         properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
         properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
@@ -130,12 +131,14 @@ class ShutdownSystemProcessesIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
+        stubForListingRunningClusters(0);
 
         // When
         shutdown(properties, List.of(extraClusterProperty));
 
         // Then
-        verify(4, postRequestedFor(urlEqualTo("/")));
+        verify(5, postRequestedFor(urlEqualTo("/")));
+        verify(1, listActiveClustersRequested());
         verify(1, listTasksRequestedFor("test-ingest-cluster"));
         verify(1, listTasksRequestedFor("test-compaction-cluster"));
         verify(1, listTasksRequestedFor("test-splitting-compaction-cluster"));
@@ -145,7 +148,7 @@ class ShutdownSystemProcessesIT {
     @Test
     void shouldStopECSTaskWhenOneIsFound() throws Exception {
         // Given
-        InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
+        InstanceProperties properties = createTestInstanceProperties();
         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
 
         stubFor(post("/")
@@ -154,12 +157,14 @@ class ShutdownSystemProcessesIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
+        stubForListingRunningClusters(0);
 
         // When
         shutdown(properties);
 
         // Then
-        verify(2, postRequestedFor(urlEqualTo("/")));
+        verify(3, postRequestedFor(urlEqualTo("/")));
+        verify(1, listActiveClustersRequested());
         verify(1, listTasksRequestedFor("test-ingest-cluster"));
         verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
     }
@@ -255,87 +260,75 @@ class ShutdownSystemProcessesIT {
             verify(1, postRequestedFor(urlEqualTo("/")));
             verify(1, listActiveClustersRequested());
         }
+    }
 
-        @Test
-        void shouldSkipTerminatingEMRClustersWhenEMRStackNotEnabled() throws Exception {
-            // Given
-            InstanceProperties properties = createTestInstancePropertiesWithoutEmrStack();
-
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(0, postRequestedFor(urlEqualTo("/")));
-        }
-
-        private void stubForListingRunningClusters(int numRunningClusters) {
-            StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
-            for (int i = 1; i <= numRunningClusters; i++) {
-                clustersBody.append("{" +
-                        "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
-                        "\"Id\": \"test-cluster-id-" + i + "\"," +
-                        "\"Status\": {\"State\": \"RUNNING\"}" +
-                        "}");
-                if (i != numRunningClusters) {
-                    clustersBody.append(",");
-                }
+    private void stubForListingRunningClusters(int numRunningClusters) {
+        StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
+        for (int i = 1; i <= numRunningClusters; i++) {
+            clustersBody.append("{" +
+                    "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
+                    "\"Id\": \"test-cluster-id-" + i + "\"," +
+                    "\"Status\": {\"State\": \"RUNNING\"}" +
+                    "}");
+            if (i != numRunningClusters) {
+                clustersBody.append(",");
             }
-            clustersBody.append("]}");
-            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
-                    .whenScenarioStateIs(STARTED));
         }
+        clustersBody.append("]}");
+        stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+                .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
+                .whenScenarioStateIs(STARTED));
+    }
 
-        private MappingBuilder listActiveClusterRequest() {
-            return post("/")
-                    .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
-                    .withRequestBody(equalToJson("{\"ClusterStates\":[" +
-                            "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
-        }
+    private MappingBuilder listActiveClusterRequest() {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                .withRequestBody(equalToJson("{\"ClusterStates\":[" +
+                        "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
 
-        private MappingBuilder terminateJobFlowsRequest() {
-            return post("/")
-                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
-                    .willReturn(aResponse().withStatus(200));
-        }
+    private MappingBuilder terminateJobFlowsRequest() {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                .willReturn(aResponse().withStatus(200));
+    }
 
-        private MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
-            return post("/")
-                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
-                    .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
-                            equalTo(jobIdsCount + "")))
-                    .willReturn(aResponse().withStatus(200));
-        }
+    private MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
+                        equalTo(jobIdsCount + "")))
+                .willReturn(aResponse().withStatus(200));
+    }
 
-        private RequestPatternBuilder listActiveClustersRequested() {
-            return postRequestedFor(urlEqualTo("/"))
-                    .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
-                    .withRequestBody(equalToJson("{\"ClusterStates\":[" +
-                            "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
-        }
+    private RequestPatternBuilder listActiveClustersRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                .withRequestBody(equalToJson("{\"ClusterStates\":[" +
+                        "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
 
-        private RequestPatternBuilder terminateJobFlowsRequested() {
-            return postRequestedFor(urlEqualTo("/"))
-                    .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
-        }
+    private RequestPatternBuilder terminateJobFlowsRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
+    }
 
-        private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
-            return terminateJobFlowsRequested()
-                    .withRequestBody(matchingJsonPath("$.JobFlowIds",
-                            equalTo(clusterId)));
-        }
+    private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
+        return terminateJobFlowsRequested()
+                .withRequestBody(matchingJsonPath("$.JobFlowIds",
+                        equalTo(clusterId)));
+    }
 
-        private RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
-            return terminateJobFlowsRequested()
-                    .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
-                            equalTo(jobIdsCount + "")));
-        }
+    private RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
+        return terminateJobFlowsRequested()
+                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
+                        equalTo(jobIdsCount + "")));
+    }
 
-        private InstanceProperties createTestInstancePropertiesWithEmrStack() {
-            InstanceProperties properties = createTestInstanceProperties();
-            properties.set(ID, "test-instance");
-            return properties;
-        }
+    private InstanceProperties createTestInstancePropertiesWithEmrStack() {
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.set(ID, "test-instance");
+        return properties;
     }
 
     private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
@@ -355,11 +348,5 @@ class ShutdownSystemProcessesIT {
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
                         .and(matchingJsonPath("$.task", equalTo(taskArn))));
-    }
-
-    private InstanceProperties createTestInstancePropertiesWithoutEmrStack() {
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(OPTIONAL_STACKS, "");
-        return properties;
     }
 }

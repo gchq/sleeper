@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
@@ -68,9 +67,7 @@ public class ShutdownSystemProcesses {
     }
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
-        if (properties.getList(OPTIONAL_STACKS).contains("EmrBulkImportStack")) {
-            new TerminateEMRClusters(emrClient, properties).run();
-        }
+        new TerminateEMRClusters(emrClient, properties).run();
     }
 
     private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
