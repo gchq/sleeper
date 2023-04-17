@@ -45,7 +45,7 @@ import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.compaction.RunCompactionPerformanceCheck.loadFrom;
 import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
-public class RunCompactionPerformanceCheckTest {
+class RunCompactionPerformanceCheckTest {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final StateStore stateStore = new DelegatingStateStore(
             new InMemoryFileInfoStore(), new FixedPartitionStore(schema));

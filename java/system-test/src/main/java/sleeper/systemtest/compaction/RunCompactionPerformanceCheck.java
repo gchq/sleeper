@@ -39,10 +39,6 @@ public class RunCompactionPerformanceCheck {
                 .build();
     }
 
-    public void run() throws CompactionPerformanceChecker.CheckFailedException {
-        CompactionPerformanceChecker.check(results, expectedResults);
-    }
-
     public static Builder builder() {
         return new Builder();
     }
