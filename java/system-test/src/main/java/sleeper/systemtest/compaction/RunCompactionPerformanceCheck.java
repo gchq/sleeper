@@ -22,13 +22,15 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.SystemTestProperties;
 
+import java.util.Objects;
+
 public class RunCompactionPerformanceCheck {
     private final CompactionPerformanceResults expectedResults;
     private final CompactionPerformanceResults results;
 
     private RunCompactionPerformanceCheck(Builder builder) {
-        expectedResults = builder.expectedResults;
-        results = builder.results;
+        expectedResults = Objects.requireNonNull(builder.expectedResults, "expectedResults must not be null");
+        results = Objects.requireNonNull(builder.results, "results must not be null");
     }
 
     public static RunCompactionPerformanceCheck loadFrom(
@@ -38,6 +40,23 @@ public class RunCompactionPerformanceCheck {
                 .expectedResults(CompactionPerformanceResults.loadExpected(properties, tableProperties))
                 .results(CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore))
                 .build();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RunCompactionPerformanceCheck that = (RunCompactionPerformanceCheck) o;
+        return expectedResults.equals(that.expectedResults) && results.equals(that.results);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expectedResults, results);
     }
 
     @Override

@@ -71,11 +71,13 @@ class RunCompactionPerformanceCheckTest {
 
         // Then
         assertThat(runCheck)
-                .extracting("expectedResults")
-                .isEqualTo(CompactionPerformanceResults.builder()
-                        .numOfJobs(2)
-                        .numOfRecordsInRoot(50)
-                        .writeRate(CompactionPerformanceResults.TARGET_RECORDS_PER_SECOND)
+                .isEqualTo(RunCompactionPerformanceCheck.builder()
+                        .expectedResults(CompactionPerformanceResults.builder()
+                                .numOfJobs(2)
+                                .numOfRecordsInRoot(50)
+                                .writeRate(CompactionPerformanceResults.TARGET_RECORDS_PER_SECOND)
+                                .build())
+                        .results(emptyResults())
                         .build());
     }
 
@@ -168,5 +170,13 @@ class RunCompactionPerformanceCheckTest {
         } catch (StateStoreException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private CompactionPerformanceResults emptyResults() {
+        return CompactionPerformanceResults.builder()
+                .numOfJobs(0)
+                .numOfRecordsInRoot(0)
+                .writeRate(Double.NaN)
+                .build();
     }
 }
