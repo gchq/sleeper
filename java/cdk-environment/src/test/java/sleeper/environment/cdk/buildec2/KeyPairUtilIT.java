@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,10 +31,10 @@ import java.security.KeyPair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class KeyPairUtilTest {
+class KeyPairUtilIT {
 
     @Test
-    public void canGenerateKeyPairAndReconstructFromPem() throws Exception {
+    void shouldGenerateKeyPairAndReconstructFromPem() throws Exception {
         KeyPair pair = KeyPairUtil.generate();
         String pem = KeyPairUtil.privatePem(pair);
         KeyPair found = KeyPairUtil.readPrivatePem(pem);
@@ -43,19 +43,19 @@ public class KeyPairUtilTest {
     }
 
     @Test
-    public void canGetPublicKeyInBase64() throws Exception {
+    void shouldGetPublicKeyInBase64() throws Exception {
         assertThat(KeyPairUtil.publicBase64(exampleKeyPair("examples/private.pem")))
                 .isEqualTo(exampleString("examples/public.base64"));
     }
 
     @Test
-    public void canBuildPemStringFromKeyPair() throws Exception {
+    void shouldBuildPemStringFromKeyPair() throws Exception {
         assertThat(KeyPairUtil.privatePem(exampleKeyPair("examples/private.pem")))
                 .isEqualTo(exampleString("examples/private.pem"));
     }
 
     @Test
-    public void canWritePrivateKeyFile() throws Exception {
+    void shouldWritePrivateKeyFile() throws Exception {
         Path expectedPath = pathWithNoFile("WriteKey.pem");
         try {
             KeyPairUtil.writePrivateToFile(exampleKeyPair("examples/private.pem"),
@@ -68,7 +68,7 @@ public class KeyPairUtilTest {
     }
 
     @Test
-    public void canOverwritePrivateKeyFile() throws Exception {
+    void shouldOverwritePrivateKeyFile() throws Exception {
         Path path = pathWithNoFile("OverwriteKey.pem");
         Files.createFile(path);
         try {
@@ -89,15 +89,15 @@ public class KeyPairUtilTest {
 
     private static KeyPair exampleKeyPair(String path) throws IOException {
         try (InputStream is = exampleResource(path).openStream()) {
-            return KeyPairUtil.readPrivatePem(new InputStreamReader(is));
+            return KeyPairUtil.readPrivatePem(new InputStreamReader(is, StandardCharsets.UTF_8));
         }
     }
 
     private static String exampleString(String path) throws IOException {
-        return IOUtils.toString(exampleResource(path), Charset.forName("UTF-8"));
+        return IOUtils.toString(exampleResource(path), StandardCharsets.UTF_8);
     }
 
     private static URL exampleResource(String path) {
-        return KeyPairUtilTest.class.getClassLoader().getResource(path);
+        return KeyPairUtilIT.class.getClassLoader().getResource(path);
     }
 }
