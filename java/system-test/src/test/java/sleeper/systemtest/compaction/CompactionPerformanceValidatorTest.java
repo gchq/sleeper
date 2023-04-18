@@ -65,6 +65,34 @@ class CompactionPerformanceValidatorTest {
     class ValidateNumberOfJobs {
 
         @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "1");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isOne();
+        }
+
+        @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "6");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isEqualTo(2);
+        }
+
+        @Test
         void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
             // Given
             testProperties.set(NUMBER_OF_WRITERS, "1");
@@ -100,39 +128,25 @@ class CompactionPerformanceValidatorTest {
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Actual number of compaction jobs 2 did not match expected value 1");
         }
-
-        @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "1");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isOne();
-        }
-
-        @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "6");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isEqualTo(2);
-        }
     }
 
     @Nested
     @DisplayName("Validate number of records that were output")
     class ValidateNumberOfRecords {
+
+        @Test
+        void shouldCalculateNumberOfRecordsExpectedWhenMultipleWritersGenerateMultipleRecords() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "3");
+            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfRecordsExpected())
+                    .isEqualTo(30);
+        }
 
         @Test
         void shouldFailWhenWhenSingleJobWasRunWithLessRecordsThanExpected() throws Exception {
@@ -151,20 +165,6 @@ class CompactionPerformanceValidatorTest {
             assertThatThrownBy(() -> validator.test(results))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Actual number of records 5 did not match expected value 10");
-        }
-
-        @Test
-        void shouldCalculateNumberOfRecordsExpected() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "3");
-            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfRecordsExpected())
-                    .isEqualTo(30);
         }
     }
 
