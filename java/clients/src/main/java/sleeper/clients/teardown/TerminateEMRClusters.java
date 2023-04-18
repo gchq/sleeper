@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import static java.lang.Math.min;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
+import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class TerminateEMRClusters {
     private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRClusters.class);
@@ -80,6 +81,9 @@ public class TerminateEMRClusters {
             List<String> clusterBatch = clusters.subList(i, endIndex);
             emrClient.terminateJobFlows(new TerminateJobFlowsRequest().withJobFlowIds(clusterBatch));
             LOGGER.info("Terminated {} clusters out of {}", endIndex, clusters.size());
+            // Sustained limit of 0.5 calls per second
+            // See https://docs.aws.amazon.com/general/latest/gr/emr.html
+            sleepForSustainedRatePerSecond(0.2);
         }
     }
 
