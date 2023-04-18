@@ -57,10 +57,8 @@ public class TestProjectStructure {
             return relativeDir;
         } else if (workingDir.endsWith("java")) {
             return Paths.get("build").resolve(relativeDir);
-        } else if (workingDir.endsWith("sleeper")) {
-            return Paths.get("java/build").resolve(relativeDir);
         } else {
-            throw new IllegalStateException("Unexpected working directory: " + workingDir);
+            return Paths.get("java/build").resolve(relativeDir);
         }
     }
 }
