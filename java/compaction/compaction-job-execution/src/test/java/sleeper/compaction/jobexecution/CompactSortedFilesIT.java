@@ -45,10 +45,10 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
+class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
     @Test
-    public void filesShouldMergeCorrectlyAndStateStoreUpdatedLongKey() throws Exception {
+    void filesShouldMergeCorrectlyAndStateStoreUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
@@ -84,7 +84,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void shouldGenerateTestData200EvenAndOddStrings() {
+    void shouldGenerateTestData200EvenAndOddStrings() {
         // When
         List<Record> evens = keyAndTwoValuesSortedEvenStrings();
         List<Record> odds = keyAndTwoValuesSortedOddStrings();
@@ -101,7 +101,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyAndStateStoreUpdatedStringKey() throws Exception {
+    void filesShouldMergeCorrectlyAndStateStoreUpdatedStringKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
@@ -137,7 +137,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void shouldGenerateTestData200EvenAndOddByteArrays() {
+    void shouldGenerateTestData200EvenAndOddByteArrays() {
         // When
         List<Record> evens = keyAndTwoValuesSortedEvenByteArrays();
         List<Record> odds = keyAndTwoValuesSortedOddByteArrays();
@@ -159,7 +159,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyAndStateStoreUpdatedByteArrayKey() throws Exception {
+    void filesShouldMergeCorrectlyAndStateStoreUpdatedByteArrayKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
