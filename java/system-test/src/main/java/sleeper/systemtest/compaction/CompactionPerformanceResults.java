@@ -24,16 +24,10 @@ import sleeper.core.record.process.AverageRecordRate;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.systemtest.SystemTestProperties;
 
 import java.util.Objects;
 
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
-
 public class CompactionPerformanceResults {
-
-    public static final double TARGET_RECORDS_PER_SECOND = 330000;
 
     private final int numOfJobs;
     private final long numOfRecordsInRoot;
@@ -47,19 +41,6 @@ public class CompactionPerformanceResults {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static CompactionPerformanceResults loadExpected(
-            SystemTestProperties properties, TableProperties tableProperties) {
-        int expectedJobCount = (int) Math.ceil(properties.getDouble(NUMBER_OF_WRITERS) /
-                tableProperties.getDouble(TableProperty.COMPACTION_FILES_BATCH_SIZE));
-        int expectedRecordsInRoot = properties.getInt(NUMBER_OF_WRITERS)
-                * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
-        return builder()
-                .numOfJobs(expectedJobCount)
-                .numOfRecordsInRoot(expectedRecordsInRoot)
-                .writeRate(TARGET_RECORDS_PER_SECOND)
-                .build();
     }
 
     public static CompactionPerformanceResults loadActual(
