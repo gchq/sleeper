@@ -61,54 +61,9 @@ class CompactionPerformanceValidatorTest {
     private final TableProperties tableProperties = createTableProperties(testProperties);
 
     @Nested
-    @DisplayName("Calculate expected results")
-    class CalculateExpectedResults {
-        @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "1");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+    @DisplayName("Validate number of jobs that were run")
+    class ValidateNumberOfJobs {
 
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isOne();
-        }
-
-        @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "6");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isEqualTo(2);
-        }
-
-        @Test
-        void shouldCalculateNumberOfRecordsExpected() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "3");
-            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfRecordsExpected())
-                    .isEqualTo(30);
-        }
-    }
-
-    @Nested
-    @DisplayName("Validate actual results")
-    class ValidateActualResults {
         @Test
         void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
             // Given
@@ -147,6 +102,39 @@ class CompactionPerformanceValidatorTest {
         }
 
         @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "1");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isOne();
+        }
+
+        @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "6");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isEqualTo(2);
+        }
+    }
+
+    @Nested
+    @DisplayName("Validate number of records that were output")
+    class ValidateNumberOfRecords {
+
+        @Test
         void shouldFailWhenWhenSingleJobWasRunWithLessRecordsThanExpected() throws Exception {
             // Given
             testProperties.set(NUMBER_OF_WRITERS, "1");
@@ -163,6 +151,20 @@ class CompactionPerformanceValidatorTest {
             assertThatThrownBy(() -> validator.test(results))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Actual number of records 5 did not match expected value 10");
+        }
+
+        @Test
+        void shouldCalculateNumberOfRecordsExpected() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "3");
+            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfRecordsExpected())
+                    .isEqualTo(30);
         }
     }
 
