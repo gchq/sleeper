@@ -15,9 +15,25 @@
  */
 package sleeper.systemtest.compaction;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
+
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreFactory;
+import sleeper.systemtest.SystemTestProperties;
+
+import java.io.IOException;
+
 public class CompactionPerformanceValidator {
     private final int numberOfJobsExpected;
-    private final int numberOfRecordsExpected;
+    private final long numberOfRecordsExpected;
     private final double minRecordsPerSecond;
 
     private CompactionPerformanceValidator(Builder builder) {
@@ -28,6 +44,39 @@ public class CompactionPerformanceValidator {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static void main(String[] args) throws IOException, StateStoreException {
+        if (args.length != 5) {
+            throw new IllegalArgumentException("Usage: " +
+                    "<instance ID> <table name> <expected jobs> <expected records> <min records per second>");
+        }
+
+        String instanceId = args[0];
+        String tableName = args[1];
+        CompactionPerformanceValidator validator = builder()
+                .numberOfJobsExpected(Integer.parseInt(args[2]))
+                .numberOfRecordsExpected(Long.parseLong(args[3]))
+                .minRecordsPerSecond(Double.parseDouble(args[4]))
+                .build();
+
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        SystemTestProperties systemTestProperties = new SystemTestProperties();
+        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+        TableProperties tableProperties = new TableProperties(systemTestProperties);
+        tableProperties.loadFromS3(s3Client, tableName);
+        s3Client.shutdown();
+
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        StateStore stateStore = new StateStoreFactory(dynamoDB, systemTestProperties, new Configuration())
+                .getStateStore(tableProperties);
+        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory
+                .getStatusStore(dynamoDB, systemTestProperties);
+        CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(
+                tableProperties, stateStore, statusStore);
+        dynamoDB.shutdown();
+
+        validator.test(results);
     }
 
     public void test(CompactionPerformanceResults results) {
@@ -48,7 +97,7 @@ public class CompactionPerformanceValidator {
 
     public static final class Builder {
         private int numberOfJobsExpected;
-        private int numberOfRecordsExpected;
+        private long numberOfRecordsExpected;
         private double minRecordsPerSecond;
 
         private Builder() {
@@ -59,7 +108,7 @@ public class CompactionPerformanceValidator {
             return this;
         }
 
-        public Builder numberOfRecordsExpected(int numberOfRecordsExpected) {
+        public Builder numberOfRecordsExpected(long numberOfRecordsExpected) {
             this.numberOfRecordsExpected = numberOfRecordsExpected;
             return this;
         }
