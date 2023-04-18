@@ -159,7 +159,7 @@ class CompactionPerformanceValidatorTest {
         // Then
         assertThatThrownBy(() -> validator.test(results))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Records per second rate of 1.0 was slower than expected 2.0");
+                .hasMessageContaining("Records per second rate of 1.00 was slower than expected 2.00");
     }
 
     @Test
