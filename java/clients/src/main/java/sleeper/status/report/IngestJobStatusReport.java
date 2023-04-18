@@ -29,6 +29,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
+import sleeper.status.report.ingest.job.IngestQueueMessages;
 import sleeper.status.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.status.report.job.query.JobQuery;
@@ -41,7 +42,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestJobStatusReport {
@@ -56,7 +56,7 @@ public class IngestJobStatusReport {
     private final IngestJobStatusStore statusStore;
     private final IngestJobStatusReporter ingestJobStatusReporter;
     private final QueueMessageCount.Client queueClient;
-    private final String jobQueueUrl;
+    private final InstanceProperties properties;
     private final JobQuery query;
     private final JobQuery.Type queryType;
 
@@ -70,7 +70,7 @@ public class IngestJobStatusReport {
         this.queryType = queryType;
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;
-        this.jobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
+        this.properties = properties;
     }
 
     public void run() {
@@ -79,12 +79,7 @@ public class IngestJobStatusReport {
         }
         ingestJobStatusReporter.report(
                 query.run(statusStore), queryType,
-                getNumberOfMessagesInQueue());
-    }
-
-    private int getNumberOfMessagesInQueue() {
-        return queueClient.getQueueMessageCount(jobQueueUrl)
-                .getApproximateNumberOfMessages();
+                IngestQueueMessages.from(properties, queueClient));
     }
 
     public static void main(String[] args) throws IOException {
