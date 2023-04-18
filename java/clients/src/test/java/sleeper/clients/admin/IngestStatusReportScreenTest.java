@@ -90,6 +90,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
                             "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in progress: 1\n" +
                             "Total jobs finished: 0");
 
@@ -113,6 +114,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
                             "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in progress: 1\n" +
                             "-");
 
@@ -159,6 +161,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
                             "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in defined range: 1\n");
 
             verifyWithNumberOfInvocations(6);

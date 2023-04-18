@@ -107,7 +107,7 @@ class IngestQueueMessagesTest {
 
         // When / Then
         assertThat(messages.getTotalMessages())
-                .isEqualTo(0);
+                .isZero();
     }
 
     @Nested
@@ -124,7 +124,8 @@ class IngestQueueMessagesTest {
 
             // Then
             assertThat(out).hasToString("" +
-                    "Jobs waiting in ingest queue (excluded from report): 10\n");
+                    "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                    "Total jobs waiting across all queues: 10\n");
         }
 
         @Test
@@ -138,7 +139,8 @@ class IngestQueueMessagesTest {
 
             // Then
             assertThat(out).hasToString("" +
-                    "Jobs waiting in EMR queue (excluded from report): 10\n");
+                    "Jobs waiting in EMR queue (excluded from report): 10\n" +
+                    "Total jobs waiting across all queues: 10\n");
         }
 
         @Test
@@ -152,7 +154,8 @@ class IngestQueueMessagesTest {
 
             // Then
             assertThat(out).hasToString("" +
-                    "Jobs waiting in persistent EMR queue (excluded from report): 10\n");
+                    "Jobs waiting in persistent EMR queue (excluded from report): 10\n" +
+                    "Total jobs waiting across all queues: 10\n");
         }
 
         @Test
@@ -166,7 +169,8 @@ class IngestQueueMessagesTest {
 
             // Then
             assertThat(out).hasToString("" +
-                    "Jobs waiting in EKS queue (excluded from report): 10\n");
+                    "Jobs waiting in EKS queue (excluded from report): 10\n" +
+                    "Total jobs waiting across all queues: 10\n");
         }
 
         @Test
@@ -193,7 +197,7 @@ class IngestQueueMessagesTest {
         }
 
         @Test
-        void shouldNotReportMessagesWhenNoQueuesAreDeployed() {
+        void shouldReportZeroMessagesWhenNoQueuesAreDeployed() {
             // Given
             IngestQueueMessages messages = IngestQueueMessages.builder().build();
 
@@ -202,7 +206,7 @@ class IngestQueueMessagesTest {
             messages.print(out.getPrintStream());
 
             // Then
-            assertThat(out).hasToString("");
+            assertThat(out).hasToString("Total jobs waiting across all queues: 0\n");
         }
     }
 }
