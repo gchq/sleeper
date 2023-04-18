@@ -43,7 +43,6 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCre
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -54,7 +53,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.job.common.action.ActionException;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -143,7 +141,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     public java.nio.file.Path folder;
 
     @Test
-    public void shouldDeleteMessages() throws IOException, StateStoreException, ObjectFactoryException, InterruptedException, ActionException {
+    void shouldDeleteMessages() throws Exception {
         // Given
         // - Clients
         AmazonS3 s3 = createS3Client();
