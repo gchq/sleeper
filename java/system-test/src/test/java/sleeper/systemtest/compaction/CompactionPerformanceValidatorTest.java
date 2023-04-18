@@ -94,7 +94,7 @@ class CompactionPerformanceValidatorTest {
         }
 
         @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsMultipleOfBatchSize() {
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsDivisibleByBatchSize() {
             // Given
             testProperties.set(NUMBER_OF_WRITERS, "10");
             tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
