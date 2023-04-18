@@ -77,11 +77,12 @@ public class CompactionJobTestDataHelper {
         statusStore.jobStarted(job, startTime, DEFAULT_TASK_ID);
     }
 
-    public void reportFinishedJob(RecordsProcessedSummary summary, CompactionJobStatusStore statusStore) {
+    public CompactionJob reportFinishedJob(RecordsProcessedSummary summary, CompactionJobStatusStore statusStore) {
         CompactionJob job = singleFileCompaction();
         statusStore.jobCreated(job);
         statusStore.jobStarted(job, summary.getStartTime(), DEFAULT_TASK_ID);
         statusStore.jobFinished(job, summary, DEFAULT_TASK_ID);
+        return job;
     }
 
     public CompactionJob singleFileCompaction() {

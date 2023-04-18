@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
@@ -98,9 +99,7 @@ class CompactionPerformanceValidatorTest {
             testProperties.set(NUMBER_OF_WRITERS, "1");
             testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
-            stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
-            reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 10, 10));
-
+            jobFinishedWithNumberOfRecords(10);
             // When
             CompactionPerformanceResults results = loadResults();
             CompactionPerformanceValidator validator = createValidator();
@@ -115,10 +114,8 @@ class CompactionPerformanceValidatorTest {
             testProperties.set(NUMBER_OF_WRITERS, "1");
             testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
-            stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
-            reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
-            reportFinishedJob(summary(Instant.parse("2023-04-17T16:25:42Z"), Duration.ofMinutes(1), 5, 5));
-
+            jobFinishedWithNumberOfRecords(5);
+            jobFinishedWithNumberOfRecords(5);
             // When
             CompactionPerformanceResults results = loadResults();
             CompactionPerformanceValidator validator = createValidator();
@@ -154,8 +151,7 @@ class CompactionPerformanceValidatorTest {
             testProperties.set(NUMBER_OF_WRITERS, "1");
             testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
-            stateStore.addFile(fileInfoFactory.rootFile(5, "aaa", "zzz"));
-            reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
+            jobFinishedWithNumberOfRecords(5);
 
             // When
             CompactionPerformanceResults results = loadResults();
@@ -166,6 +162,11 @@ class CompactionPerformanceValidatorTest {
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Actual number of records 5 did not match expected value 10");
         }
+    }
+
+    private void jobFinishedWithNumberOfRecords(int numberOfRecords) throws StateStoreException {
+        CompactionJob job = reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), numberOfRecords, numberOfRecords));
+        stateStore.addFile(fileInfoFactory.rootFile(job.getId(), numberOfRecords, "aaa", "zzz"));
     }
 
     private FileInfoFactory createFileInfoFactory() {
@@ -191,8 +192,8 @@ class CompactionPerformanceValidatorTest {
         return CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
     }
 
-    private void reportFinishedJob(RecordsProcessedSummary summary) {
-        dataHelper.reportFinishedJob(summary, jobStatusStore);
+    private CompactionJob reportFinishedJob(RecordsProcessedSummary summary) {
+        return dataHelper.reportFinishedJob(summary, jobStatusStore);
     }
 
 }
