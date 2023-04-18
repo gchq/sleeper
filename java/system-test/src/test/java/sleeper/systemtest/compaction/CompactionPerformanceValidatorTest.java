@@ -39,7 +39,6 @@ import sleeper.systemtest.SystemTestProperties;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -66,48 +65,6 @@ class CompactionPerformanceValidatorTest {
     class ValidateNumberOfJobs {
 
         @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "1");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isOne();
-        }
-
-        @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsIndivisibleByBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "6");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isEqualTo(2);
-        }
-
-        @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsDivisibleByBatchSize() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "10");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfJobsExpected())
-                    .isEqualTo(2);
-        }
-
-        @Test
         void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
             // Given
             testProperties.set(NUMBER_OF_WRITERS, "1");
@@ -116,7 +73,10 @@ class CompactionPerformanceValidatorTest {
             jobFinishedWithNumberOfRecords(10);
             // When
             CompactionPerformanceResults results = loadResults();
-            CompactionPerformanceValidator validator = createValidator();
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                    .numberOfJobsExpected(1)
+                    .numberOfRecordsExpected(10)
+                    .build();
 
             // Then
             assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
@@ -132,7 +92,10 @@ class CompactionPerformanceValidatorTest {
             jobFinishedWithNumberOfRecords(5);
             // When
             CompactionPerformanceResults results = loadResults();
-            CompactionPerformanceValidator validator = createValidator();
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                    .numberOfJobsExpected(1)
+                    .numberOfRecordsExpected(10)
+                    .build();
 
             // Then
             assertThatThrownBy(() -> validator.test(results))
@@ -144,21 +107,6 @@ class CompactionPerformanceValidatorTest {
     @Nested
     @DisplayName("Validate number of records that were output")
     class ValidateNumberOfRecords {
-
-        @Test
-        void shouldCalculateNumberOfRecordsExpectedWhenMultipleWritersGenerateMultipleRecords() {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "3");
-            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            // When
-            CompactionPerformanceValidator validator = createValidator();
-
-            // Then
-            assertThat(validator.getNumberOfRecordsExpected())
-                    .isEqualTo(30);
-        }
-
         @Test
         void shouldFailWhenWhenSingleJobWasRunWithLessRecordsThanExpected() throws Exception {
             // Given
@@ -169,7 +117,10 @@ class CompactionPerformanceValidatorTest {
 
             // When
             CompactionPerformanceResults results = loadResults();
-            CompactionPerformanceValidator validator = createValidator();
+            CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                    .numberOfJobsExpected(1)
+                    .numberOfRecordsExpected(10)
+                    .build();
 
             // Then
             assertThatThrownBy(() -> validator.test(results))
@@ -196,10 +147,6 @@ class CompactionPerformanceValidatorTest {
         tableProperties.set(TableProperty.TABLE_NAME, TEST_TABLE_NAME);
         tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "1");
         return tableProperties;
-    }
-
-    private CompactionPerformanceValidator createValidator() {
-        return CompactionPerformanceValidator.from(testProperties, tableProperties);
     }
 
     private CompactionPerformanceResults loadResults() throws Exception {

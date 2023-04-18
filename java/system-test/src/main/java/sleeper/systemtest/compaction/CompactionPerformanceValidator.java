@@ -15,41 +15,17 @@
  */
 package sleeper.systemtest.compaction;
 
-import com.google.common.math.IntMath;
-
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.systemtest.SystemTestProperties;
-
-import java.math.RoundingMode;
-
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
-
 public class CompactionPerformanceValidator {
     private final int numberOfJobsExpected;
     private final int numberOfRecordsExpected;
 
-    public CompactionPerformanceValidator(int numberOfJobsExpected, int numberOfRecordsExpected) {
-        this.numberOfJobsExpected = numberOfJobsExpected;
-        this.numberOfRecordsExpected = numberOfRecordsExpected;
+    private CompactionPerformanceValidator(Builder builder) {
+        numberOfJobsExpected = builder.numberOfJobsExpected;
+        numberOfRecordsExpected = builder.numberOfRecordsExpected;
     }
 
-    public static CompactionPerformanceValidator from(
-            SystemTestProperties instanceProperties, TableProperties tableProperties) {
-        int numberOfJobs = calculateNumberOfJobsExpected(instanceProperties, tableProperties);
-        int numberOfRecords = calculateNumberOfRecordsExpected(instanceProperties);
-        return new CompactionPerformanceValidator(numberOfJobs, numberOfRecords);
-    }
-
-    private static int calculateNumberOfJobsExpected(InstanceProperties properties, TableProperties tableProperties) {
-        return IntMath.divide(properties.getInt(NUMBER_OF_WRITERS),
-                tableProperties.getInt(TableProperty.COMPACTION_FILES_BATCH_SIZE), RoundingMode.CEILING);
-    }
-
-    private static int calculateNumberOfRecordsExpected(InstanceProperties properties) {
-        return properties.getInt(NUMBER_OF_WRITERS) * properties.getInt(NUMBER_OF_RECORDS_PER_WRITER);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public void test(CompactionPerformanceResults results) {
@@ -63,11 +39,25 @@ public class CompactionPerformanceValidator {
         }
     }
 
-    public int getNumberOfJobsExpected() {
-        return numberOfJobsExpected;
-    }
+    public static final class Builder {
+        private int numberOfJobsExpected;
+        private int numberOfRecordsExpected;
 
-    public int getNumberOfRecordsExpected() {
-        return numberOfRecordsExpected;
+        public Builder() {
+        }
+
+        public Builder numberOfJobsExpected(int numberOfJobsExpected) {
+            this.numberOfJobsExpected = numberOfJobsExpected;
+            return this;
+        }
+
+        public Builder numberOfRecordsExpected(int numberOfRecordsExpected) {
+            this.numberOfRecordsExpected = numberOfRecordsExpected;
+            return this;
+        }
+
+        public CompactionPerformanceValidator build() {
+            return new CompactionPerformanceValidator(this);
+        }
     }
 }
