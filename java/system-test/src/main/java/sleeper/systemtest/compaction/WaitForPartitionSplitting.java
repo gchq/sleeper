@@ -22,7 +22,7 @@ import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.systemtest.util.PollWithRetries;
+import sleeper.util.PollWithRetries;
 
 import java.util.List;
 import java.util.Set;

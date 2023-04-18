@@ -20,6 +20,7 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.ecs.model.StopTaskRequest;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,18 +42,21 @@ public class ShutdownSystemProcesses {
 
     private final AmazonCloudWatchEvents cloudWatch;
     private final AmazonECS ecs;
+    private final AmazonElasticMapReduce emrClient;
 
-    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs) {
+    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs, AmazonElasticMapReduce emrClient) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
+        this.emrClient = emrClient;
     }
 
     public void shutdown(
             InstanceProperties instanceProperties,
-            List<InstanceProperty> extraECSClusters) {
+            List<InstanceProperty> extraECSClusters) throws InterruptedException {
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
+        stopEMRClusters(instanceProperties);
     }
 
     private void stopECSTasks(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) {
@@ -60,6 +64,10 @@ public class ShutdownSystemProcesses {
         stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
         stopTasks(ecs, instanceProperties, SPLITTING_COMPACTION_CLUSTER);
         extraClusters.forEach(clusterName -> stopTasks(ecs, instanceProperties, clusterName));
+    }
+
+    private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
+        new TerminateEMRClusters(emrClient, properties).run();
     }
 
     private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
