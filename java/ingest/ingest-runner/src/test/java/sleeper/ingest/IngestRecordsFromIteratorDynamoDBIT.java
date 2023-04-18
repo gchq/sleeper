@@ -24,7 +24,6 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,14 +31,14 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
-public class IngestRecordsIT extends IngestRecordsITBase {
+public class IngestRecordsFromIteratorDynamoDBIT extends IngestRecordsDynamoDBITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -54,34 +53,16 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(inputFolderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)
                 .quantile(0.4, 1L).quantile(0.5, 3L)
                 .quantile(0.6, 3L).quantile(0.7, 3L)
                 .quantile(0.8, 3L).quantile(0.9, 3L).verify();
-    }
-
-    @Test
-    public void shouldWriteNoRecordsSuccessfully() throws Exception {
-        // Given
-        DynamoDBStateStore stateStore = getStateStore(schema);
-
-        // When
-        long numWritten = ingestRecords(schema, stateStore, Collections.emptyList()).getRecordsWritten();
-
-        // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isZero();
-        //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).isEmpty();
     }
 }
