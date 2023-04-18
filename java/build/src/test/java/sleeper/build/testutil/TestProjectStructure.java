@@ -27,7 +27,7 @@ public class TestProjectStructure {
     private TestProjectStructure() {
     }
 
-    private static final Path BASE_PATH = Paths.get("src/test/resources/examples");
+    private static final Path BASE_PATH = basePath();
 
     public static ProjectStructure example() {
         return exampleBuilder().build();
@@ -48,5 +48,19 @@ public class TestProjectStructure {
         return CheckGitHubStatusConfig.fromGitHubAndChunks(
                 BASE_PATH.resolve("config/github.properties"),
                 BASE_PATH.resolve("config/chunks.yaml"));
+    }
+
+    private static Path basePath() {
+        Path relativeDir = Paths.get("src/test/resources/examples");
+        Path workingDir = Paths.get("").toAbsolutePath();
+        if (workingDir.endsWith("build")) {
+            return relativeDir;
+        } else if (workingDir.endsWith("java")) {
+            return Paths.get("build").resolve(relativeDir);
+        } else if (workingDir.endsWith("sleeper")) {
+            return Paths.get("java/build").resolve(relativeDir);
+        } else {
+            throw new IllegalStateException("Unexpected working directory: " + workingDir);
+        }
     }
 }
