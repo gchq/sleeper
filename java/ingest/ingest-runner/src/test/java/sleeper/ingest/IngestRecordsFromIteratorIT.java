@@ -42,10 +42,10 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFr
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
+class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
 
     @Test
-    public void shouldWriteMultipleRecords() throws Exception {
+    void shouldWriteMultipleRecords() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -104,7 +104,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteSingleRecord() throws Exception {
+    void shouldWriteSingleRecord() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -150,7 +150,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
+    void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
