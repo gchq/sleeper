@@ -80,9 +80,23 @@ class CompactionPerformanceValidatorTest {
         }
 
         @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() {
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsIndivisibleByBatchSize() {
             // Given
             testProperties.set(NUMBER_OF_WRITERS, "6");
+            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+
+            // When
+            CompactionPerformanceValidator validator = createValidator();
+
+            // Then
+            assertThat(validator.getNumberOfJobsExpected())
+                    .isEqualTo(2);
+        }
+
+        @Test
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsMultipleOfBatchSize() {
+            // Given
+            testProperties.set(NUMBER_OF_WRITERS, "10");
             tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
 
             // When
