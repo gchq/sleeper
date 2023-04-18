@@ -37,7 +37,6 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -55,14 +54,11 @@ public class CommonEmrBulkImportHelper {
     private final Construct scope;
     private final String shortId;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreResources statusStore;
 
-    public CommonEmrBulkImportHelper(Construct scope, String shortId, InstanceProperties instanceProperties,
-                                     IngestStatusStoreResources statusStore) {
+    public CommonEmrBulkImportHelper(Construct scope, String shortId, InstanceProperties instanceProperties) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
-        this.statusStore = statusStore;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -133,10 +129,6 @@ public class CommonEmrBulkImportHelper {
         importBucket.grantReadWrite(function);
         addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
                 .forEach(ingestBucket -> ingestBucket.grantRead(function));
-        statusStore.grantWriteJobEvent(commonEmrStack.getEmrRole());
-        statusStore.grantWriteJobEvent(commonEmrStack.getEc2Role());
-        statusStore.grantWriteTaskEvent(commonEmrStack.getEmrRole());
-        statusStore.grantWriteTaskEvent(commonEmrStack.getEc2Role());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
