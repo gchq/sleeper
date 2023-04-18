@@ -75,9 +75,9 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRow
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class IngestRecordsTest extends IngestRecordsTestBase {
+class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
-    public void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
+    void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -138,7 +138,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
+    void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
@@ -204,7 +204,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
+    void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
         // Given
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
@@ -290,7 +290,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
+    void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
         // Given
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
@@ -352,12 +352,12 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(2);
         // Find file that corresponds to partition 1
-        FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals(partition1.getId())).findFirst().get();
+        FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals(partition1.getId())).findFirst().orElseThrow();
         assertThat(fileInfo1.getMinRowKey().get(0)).isEqualTo(0);
         assertThat(fileInfo1.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo1.getNumberOfRecords().longValue()).isEqualTo(2L);
         // Find file that corresponds to partition 2
-        FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals(partition2.getId())).findFirst().get();
+        FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals(partition2.getId())).findFirst().orElseThrow();
         assertThat(fileInfo2.getMinRowKey().get(0)).isEqualTo(0);
         assertThat(fileInfo2.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo2.getNumberOfRecords().longValue()).isEqualTo(2L);
@@ -402,7 +402,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
+    void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -446,7 +446,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteDuplicateRecords() throws Exception {
+    void shouldWriteDuplicateRecords() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
@@ -457,7 +457,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(2 * getRecords().size());
+        assertThat(numWritten).isEqualTo(2L * getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
@@ -484,7 +484,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -526,14 +526,14 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         long minLeftFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .min(Comparator.comparing(r -> ((Long) r.get("key"))))
-                .get()
+                .orElseThrow()
                 .get("key");
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(minLeftFile);
 
         long maxLeftFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .max(Comparator.comparing(r -> ((Long) r.get("key"))))
-                .get()
+                .orElseThrow()
                 .get("key");
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(maxLeftFile);
 
@@ -549,14 +549,14 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         long minRightFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .min(Comparator.comparing(r -> ((Long) r.get("key"))))
-                .get()
+                .orElseThrow()
                 .get("key");
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(minRightFile);
 
         long maxRightFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .max(Comparator.comparing(r -> ((Long) r.get("key"))))
-                .get()
+                .orElseThrow()
                 .get("key");
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(maxRightFile);
 
@@ -569,14 +569,14 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         //  - Read files and check they have the correct records
         List<Record> readRecords1 = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
-        assertThat(readRecords1.size()).isEqualTo(recordsInLeftFile);
+        assertThat(readRecords1).hasSize((int) recordsInLeftFile);
         List<Record> expectedRecords1 = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
         assertThat(readRecords1).isEqualTo(expectedRecords1);
         List<Record> readRecords2 = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
-        assertThat(readRecords2.size()).isEqualTo(recordsInRightFile);
+        assertThat(readRecords2).hasSize((int) recordsInRightFile);
         List<Record> expectedRecords2 = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
@@ -600,7 +600,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -700,7 +700,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldSortRecords() throws Exception {
+    void shouldSortRecords() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
@@ -720,7 +720,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords.size()).isEqualTo(20L);
+        assertThat(readRecords).hasSize(20);
         List<Record> sortedRecords = new ArrayList<>(getUnsortedRecords());
         sortedRecords.sort(Comparator.comparing(o -> ((Long) o.get("key"))));
         int i = 0;
@@ -739,7 +739,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldApplyIterator() throws Exception {
+    void shouldApplyIterator() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
@@ -766,7 +766,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords.size()).isEqualTo(2L);
+        assertThat(readRecords).hasSize(2);
 
         Record expectedRecord1 = new Record();
         expectedRecord1.put("key", new byte[]{1, 1});
