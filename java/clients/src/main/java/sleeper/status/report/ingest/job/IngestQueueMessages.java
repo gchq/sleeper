@@ -66,26 +66,19 @@ public class IngestQueueMessages {
     }
 
     public void print(PrintStream out) {
-        int queuesEnabled = 0;
         if (ingestMessages != null) {
-            queuesEnabled++;
             out.printf("Jobs waiting in ingest queue (excluded from report): %s%n", ingestMessages);
         }
         if (emrMessages != null) {
-            queuesEnabled++;
             out.printf("Jobs waiting in EMR queue (excluded from report): %s%n", emrMessages);
         }
         if (persistentEmrMessages != null) {
-            queuesEnabled++;
             out.printf("Jobs waiting in persistent EMR queue (excluded from report): %s%n", persistentEmrMessages);
         }
         if (eksMessages != null) {
-            queuesEnabled++;
             out.printf("Jobs waiting in EKS queue (excluded from report): %s%n", eksMessages);
         }
-        if (queuesEnabled > 1) {
-            out.printf("Total jobs waiting across all queues: %s%n", getTotalMessages());
-        }
+        out.printf("Total jobs waiting across all queues: %s%n", getTotalMessages());
     }
 
     public int getTotalMessages() {
