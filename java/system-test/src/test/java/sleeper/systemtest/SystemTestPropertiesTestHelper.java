@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest;
 
+import java.io.IOException;
+
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
@@ -27,13 +29,17 @@ public class SystemTestPropertiesTestHelper {
     private SystemTestPropertiesTestHelper() {
     }
 
-    public static SystemTestProperties createTestSystemTestProperties() throws Exception {
+    public static SystemTestProperties createTestSystemTestProperties() {
         SystemTestProperties properties = new SystemTestProperties();
-        properties.set(NUMBER_OF_WRITERS, "10");
+        properties.set(NUMBER_OF_WRITERS, "1");
         properties.set(NUMBER_OF_RECORDS_PER_WRITER, "5");
         properties.set(INGEST_MODE, DIRECT.name());
         properties.set(SYSTEM_TEST_REPO, "test-repo");
-        properties.loadFromString(createTestInstanceProperties().saveAsString());
+        try {
+            properties.loadFromString(createTestInstanceProperties().saveAsString());
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed setting instance properties", e);
+        }
         return properties;
     }
 }

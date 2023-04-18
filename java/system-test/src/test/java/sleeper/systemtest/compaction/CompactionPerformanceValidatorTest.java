@@ -57,21 +57,20 @@ class CompactionPerformanceValidatorTest {
     private final FileInfoFactory fileInfoFactory = createFileInfoFactory();
     private final CompactionJobStatusStore jobStatusStore = new CompactionJobStatusStoreInMemory();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(TEST_TABLE_NAME);
+    private final SystemTestProperties testProperties = createTestSystemTestProperties();
+    private final TableProperties tableProperties = createTableProperties(testProperties);
 
     @Nested
     @DisplayName("Calculate expected results")
     class CalculateExpectedResults {
         @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() throws Exception {
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsSmallerThanBatchSize() {
             // Given
-            SystemTestProperties properties = createTestSystemTestProperties();
-            properties.set(NUMBER_OF_WRITERS, "1");
-
-            TableProperties tableProperties = new TableProperties(properties);
+            testProperties.set(NUMBER_OF_WRITERS, "1");
             tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
 
             // When
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            CompactionPerformanceValidator validator = createValidator();
 
             // Then
             assertThat(validator.getNumberOfJobsExpected())
@@ -79,16 +78,13 @@ class CompactionPerformanceValidatorTest {
         }
 
         @Test
-        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() throws Exception {
+        void shouldCalculateNumberOfJobsWhenNumberOfWritersIsLargerThanBatchSize() {
             // Given
-            SystemTestProperties properties = createTestSystemTestProperties();
-            properties.set(NUMBER_OF_WRITERS, "6");
-
-            TableProperties tableProperties = new TableProperties(properties);
+            testProperties.set(NUMBER_OF_WRITERS, "6");
             tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
 
             // When
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            CompactionPerformanceValidator validator = createValidator();
 
             // Then
             assertThat(validator.getNumberOfJobsExpected())
@@ -96,16 +92,13 @@ class CompactionPerformanceValidatorTest {
         }
 
         @Test
-        void shouldCalculateNumberOfRecordsExpected() throws Exception {
+        void shouldCalculateNumberOfRecordsExpected() {
             // Given
-            SystemTestProperties properties = createTestSystemTestProperties();
-            properties.set(NUMBER_OF_WRITERS, "3");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            TableProperties tableProperties = new TableProperties(properties);
+            testProperties.set(NUMBER_OF_WRITERS, "3");
+            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
             // When
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            CompactionPerformanceValidator validator = createValidator();
 
             // Then
             assertThat(validator.getNumberOfRecordsExpected())
@@ -119,20 +112,15 @@ class CompactionPerformanceValidatorTest {
         @Test
         void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
             // Given
-            SystemTestProperties properties = createTestSystemTestProperties();
-            properties.set(NUMBER_OF_WRITERS, "1");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            TableProperties tableProperties = new TableProperties(properties);
-            tableProperties.set(TableProperty.TABLE_NAME, "test-table");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+            testProperties.set(NUMBER_OF_WRITERS, "1");
+            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
             stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
             reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 10, 10));
 
             // When
-            CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            CompactionPerformanceResults results = loadResults();
+            CompactionPerformanceValidator validator = createValidator();
 
             // Then
             assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
@@ -141,21 +129,16 @@ class CompactionPerformanceValidatorTest {
         @Test
         void shouldFailWhenMultipleJobsWereRunButOneJobWasExpected() throws Exception {
             // Given
-            SystemTestProperties properties = createTestSystemTestProperties();
-            properties.set(NUMBER_OF_WRITERS, "1");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            TableProperties tableProperties = new TableProperties(properties);
-            tableProperties.set(TableProperty.TABLE_NAME, "test-table");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+            testProperties.set(NUMBER_OF_WRITERS, "1");
+            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
             stateStore.addFile(fileInfoFactory.rootFile(10, "aaa", "zzz"));
             reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
             reportFinishedJob(summary(Instant.parse("2023-04-17T16:25:42Z"), Duration.ofMinutes(1), 5, 5));
 
             // When
-            CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            CompactionPerformanceResults results = loadResults();
+            CompactionPerformanceValidator validator = createValidator();
 
             // Then
             assertThatThrownBy(() -> validator.test(results))
@@ -166,20 +149,15 @@ class CompactionPerformanceValidatorTest {
         @Test
         void shouldFailWhenWhenSingleJobWasRunWithLessRecordsThanExpected() throws Exception {
             // Given
-            SystemTestProperties properties = createTestSystemTestProperties();
-            properties.set(NUMBER_OF_WRITERS, "1");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            TableProperties tableProperties = new TableProperties(properties);
-            tableProperties.set(TableProperty.TABLE_NAME, "test-table");
-            tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "5");
+            testProperties.set(NUMBER_OF_WRITERS, "1");
+            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
             stateStore.addFile(fileInfoFactory.rootFile(5, "aaa", "zzz"));
             reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), 5, 5));
 
             // When
-            CompactionPerformanceResults results = CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.from(properties, tableProperties);
+            CompactionPerformanceResults results = loadResults();
+            CompactionPerformanceValidator validator = createValidator();
 
             // Then
             assertThatThrownBy(() -> validator.test(results))
@@ -194,6 +172,21 @@ class CompactionPerformanceValidatorTest {
         } catch (StateStoreException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private static TableProperties createTableProperties(SystemTestProperties properties) {
+        TableProperties tableProperties = new TableProperties(properties);
+        tableProperties.set(TableProperty.TABLE_NAME, TEST_TABLE_NAME);
+        tableProperties.set(TableProperty.COMPACTION_FILES_BATCH_SIZE, "1");
+        return tableProperties;
+    }
+
+    private CompactionPerformanceValidator createValidator() {
+        return CompactionPerformanceValidator.from(testProperties, tableProperties);
+    }
+
+    private CompactionPerformanceResults loadResults() throws Exception {
+        return CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
     }
 
     private void reportFinishedJob(RecordsProcessedSummary summary) {
