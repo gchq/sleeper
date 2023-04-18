@@ -44,7 +44,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
-public class FileWritingIteratorTest {
+class FileWritingIteratorIT {
 
     @TempDir
     public java.nio.file.Path tempFolder;
@@ -76,7 +76,7 @@ public class FileWritingIteratorTest {
     }
 
     @Test
-    public void shouldReturnFalseForHasNextWithEmptyIterator() {
+    void shouldReturnFalseForHasNextWithEmptyIterator() {
         // Given
         Iterator<Row> empty = new ArrayList<Row>().iterator();
 
@@ -90,7 +90,7 @@ public class FileWritingIteratorTest {
     }
 
     @Test
-    public void shouldReturnTrueForHasNextWithPopulatedIterator() {
+    void shouldReturnTrueForHasNextWithPopulatedIterator() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -109,7 +109,7 @@ public class FileWritingIteratorTest {
     }
 
     @Test
-    public void shouldGroupRecordsByFinalColumn() {
+    void shouldGroupRecordsByFinalColumn() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -134,7 +134,7 @@ public class FileWritingIteratorTest {
     }
 
     @Test
-    public void shouldWriteAllRecordsToParquetFiles() {
+    void shouldWriteAllRecordsToParquetFiles() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -161,7 +161,7 @@ public class FileWritingIteratorTest {
     }
 
     @Test
-    public void shouldHandleExamplesWhereTheLastRecordBelongsToADifferentPartition() {
+    void shouldHandleExamplesWhereTheLastRecordBelongsToADifferentPartition() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -180,13 +180,13 @@ public class FileWritingIteratorTest {
         assertThat(fileWritingIterator).toIterable()
                 .extracting(row -> readRecords(row.getString(1)))
                 .containsExactly(
-                        Arrays.asList(
+                        List.of(
                                 createRecord("a", 1, 2, "a"),
                                 createRecord("b", 1, 2, "a")),
-                        Arrays.asList(
+                        List.of(
                                 createRecord("c", 1, 2, "b"),
                                 createRecord("d", 1, 2, "b")),
-                        Arrays.asList(
+                        List.of(
                                 createRecord("e", 1, 2, "c")));
     }
 
