@@ -117,15 +117,15 @@ public class SleeperCdkApp extends Stack {
             new AthenaStack(this, "Athena", instanceProperties, jars, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
         }
 
+        if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+            ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties);
+        }
         if (BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties);
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, bulkImportBucketStack, tableStack);
-        }
-        if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            ingestStatusStoreStack = new IngestStatusStoreStack(this, "IngestStatusStore", instanceProperties);
+                    instanceProperties, bulkImportBucketStack, tableStack, ingestStatusStoreStack);
         }
 
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
@@ -134,16 +134,14 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    topicStack,
-                    ingestStatusStoreStack);
+                    topicStack);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
                     instanceProperties, jars, bulkImportBucketStack,
-                    emrBulkImportCommonStack, topicStack,
-                    ingestStatusStoreStack
+                    emrBulkImportCommonStack, topicStack
             );
         }
 
