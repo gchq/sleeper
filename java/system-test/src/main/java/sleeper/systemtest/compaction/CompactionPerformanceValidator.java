@@ -18,10 +18,12 @@ package sleeper.systemtest.compaction;
 public class CompactionPerformanceValidator {
     private final int numberOfJobsExpected;
     private final int numberOfRecordsExpected;
+    private final double minRecordsPerSecond;
 
     private CompactionPerformanceValidator(Builder builder) {
         numberOfJobsExpected = builder.numberOfJobsExpected;
         numberOfRecordsExpected = builder.numberOfRecordsExpected;
+        minRecordsPerSecond = builder.minRecordsPerSecond;
     }
 
     public static Builder builder() {
@@ -37,13 +39,17 @@ public class CompactionPerformanceValidator {
             throw new IllegalStateException("Actual number of records " + results.getNumberOfRecords() +
                     " did not match expected value " + numberOfRecordsExpected);
         }
+        if (results.getWriteRate() < minRecordsPerSecond) {
+            throw new IllegalStateException("Records per second rate of " + results.getWriteRate() + " was slower than expected " + minRecordsPerSecond);
+        }
     }
 
     public static final class Builder {
         private int numberOfJobsExpected;
         private int numberOfRecordsExpected;
+        private double minRecordsPerSecond;
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder numberOfJobsExpected(int numberOfJobsExpected) {
@@ -53,6 +59,11 @@ public class CompactionPerformanceValidator {
 
         public Builder numberOfRecordsExpected(int numberOfRecordsExpected) {
             this.numberOfRecordsExpected = numberOfRecordsExpected;
+            return this;
+        }
+
+        public Builder minRecordsPerSecond(double minRecordsPerSecond) {
+            this.minRecordsPerSecond = minRecordsPerSecond;
             return this;
         }
 

@@ -65,6 +65,10 @@ public class CompactionPerformanceResults {
         return numOfRecordsInRoot;
     }
 
+    public double getWriteRate() {
+        return writeRate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

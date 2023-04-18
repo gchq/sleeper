@@ -120,7 +120,7 @@ class CompactionPerformanceValidatorTest {
     }
 
     @Test
-    void shouldFailWhenWhenSingleJobWasRunWithFewerRecordsThanExpected() throws Exception {
+    void shouldFailWhenSingleJobWasRunWithFewerRecordsThanExpected() throws Exception {
         // Given
         testProperties.set(NUMBER_OF_WRITERS, "1");
         testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
@@ -138,6 +138,28 @@ class CompactionPerformanceValidatorTest {
         assertThatThrownBy(() -> validator.test(results))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Actual number of records 5 did not match expected value 10");
+    }
+
+    @Test
+    void shouldFailWhenRecordRateIsSlowerThanExpected() throws Exception {
+        // Given
+        testProperties.set(NUMBER_OF_WRITERS, "1");
+        testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+        jobFinishedWithNumberOfRecords(Duration.ofSeconds(10), 10);
+
+        // When
+        CompactionPerformanceResults results = loadResults();
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                .numberOfJobsExpected(1)
+                .numberOfRecordsExpected(10)
+                .minRecordsPerSecond(2)
+                .build();
+
+        // Then
+        assertThatThrownBy(() -> validator.test(results))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Records per second rate of 1.0 was slower than expected 2.0");
     }
 
     private FileInfoFactory createFileInfoFactory() {
@@ -160,8 +182,12 @@ class CompactionPerformanceValidatorTest {
     }
 
     private void jobFinishedWithNumberOfRecords(int numberOfRecords) throws StateStoreException {
+        jobFinishedWithNumberOfRecords(Duration.ofMinutes(1), numberOfRecords);
+    }
+
+    private void jobFinishedWithNumberOfRecords(Duration duration, int numberOfRecords) throws StateStoreException {
         CompactionJob job = reportFinishedJob(summary(
-                Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), numberOfRecords, numberOfRecords));
+                Instant.parse("2023-04-17T16:15:42Z"), duration, numberOfRecords, numberOfRecords));
         stateStore.addFile(fileInfoFactory.rootFile(
                 job.getId() + ".parquet", numberOfRecords, "aaa", "zzz"));
     }
