@@ -162,6 +162,28 @@ class CompactionPerformanceValidatorTest {
                 .hasMessageContaining("Records per second rate of 1.0 was slower than expected 2.0");
     }
 
+    @Test
+    void shouldRoundRecordRateTo2dpWhenTooSlow() throws Exception {
+        // Given
+        testProperties.set(NUMBER_OF_WRITERS, "1");
+        testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+        jobFinishedWithNumberOfRecords(Duration.ofSeconds(11), 10);
+
+        // When
+        CompactionPerformanceResults results = loadResults();
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                .numberOfJobsExpected(1)
+                .numberOfRecordsExpected(10)
+                .minRecordsPerSecond(4.0 / 3.0)
+                .build();
+
+        // Then
+        assertThatThrownBy(() -> validator.test(results))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Records per second rate of 0.91 was slower than expected 1.33");
+    }
+
     private FileInfoFactory createFileInfoFactory() {
         try {
             return new FileInfoFactory(schema, stateStore.getAllPartitions());

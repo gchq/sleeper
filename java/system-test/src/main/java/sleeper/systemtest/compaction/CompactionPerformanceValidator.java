@@ -40,7 +40,9 @@ public class CompactionPerformanceValidator {
                     " did not match expected value " + numberOfRecordsExpected);
         }
         if (results.getWriteRate() < minRecordsPerSecond) {
-            throw new IllegalStateException("Records per second rate of " + results.getWriteRate() + " was slower than expected " + minRecordsPerSecond);
+            throw new IllegalStateException(String.format(
+                    "Records per second rate of %.2f was slower than expected %.2f",
+                    results.getWriteRate(), minRecordsPerSecond));
         }
     }
 
