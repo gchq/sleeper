@@ -60,7 +60,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 @Testcontainers
-public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
+public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     private static final int DYNAMO_PORT = 8000;
 
     @Container
