@@ -33,11 +33,13 @@ import sleeper.util.ClientUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewInstance {
@@ -54,6 +56,7 @@ public class DeployNewInstance {
     private final Path instancePropertiesTemplate;
     private final Consumer<Properties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
+    private final Path splitPointsFile;
     private final boolean deployPaused;
 
     private DeployNewInstance(Builder builder) {
@@ -68,7 +71,11 @@ public class DeployNewInstance {
         instancePropertiesTemplate = builder.instancePropertiesTemplate;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
+        splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
+        if (splitPointsFile != null && !Files.exists(splitPointsFile)) {
+            throw new IllegalArgumentException("Split points file not found: " + splitPointsFile);
+        }
     }
 
     public static Builder builder() {
@@ -76,8 +83,9 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 6) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> <optional-deploy-paused-flag>");
+        if (args.length < 5 || args.length > 7) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> " +
+                    "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
 
@@ -87,6 +95,7 @@ public class DeployNewInstance {
                 .subnetId(args[3])
                 .tableName(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
@@ -112,6 +121,8 @@ public class DeployNewInstance {
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
+        LOGGER.info("splitPointsFile: {}", splitPointsFile);
+        LOGGER.info("deployPaused: {}", deployPaused);
 
         Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
         tagsProperties.setProperty("InstanceID", instanceId);
@@ -125,6 +136,7 @@ public class DeployNewInstance {
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
                 tableName);
+        tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
@@ -169,6 +181,7 @@ public class DeployNewInstance {
         private Consumer<Properties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
+        private Path splitPointsFile;
         private boolean deployPaused;
 
         private Builder() {
@@ -226,6 +239,11 @@ public class DeployNewInstance {
 
         public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
             this.instanceType = instanceType;
+            return this;
+        }
+
+        public Builder splitPointsFile(Path splitPointsFile) {
+            this.splitPointsFile = splitPointsFile;
             return this;
         }
 
