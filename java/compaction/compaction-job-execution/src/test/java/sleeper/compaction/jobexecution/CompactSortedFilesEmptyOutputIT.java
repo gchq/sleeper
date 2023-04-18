@@ -42,10 +42,10 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBase {
+class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
     @Test
-    public void filesShouldMergeCorrectlyWhenSomeAreEmpty() throws Exception {
+    void filesShouldMergeCorrectlyWhenSomeAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
@@ -79,7 +79,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
     }
 
     @Test
-    public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws Exception {
+    void filesShouldMergeCorrectlyWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
@@ -112,7 +112,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
     }
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws Exception {
+    void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
