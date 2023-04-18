@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.PollWithRetries;
+import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
