@@ -97,7 +97,7 @@ public class IngestStack extends NestedStack {
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreStack statusStore;
+    private final IngestStatusStoreResources statusStore;
 
     public IngestStack(
             Construct scope,
@@ -106,10 +106,11 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets,
-            Topic topic) {
+            Topic topic,
+            IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = IngestStatusStoreStack.from(scope, instanceProperties);
+        this.statusStore = statusStoreStack.getResources();
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
