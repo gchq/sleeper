@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.util.PollWithRetries;
 
 import java.util.function.Predicate;
 
