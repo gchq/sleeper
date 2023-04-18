@@ -71,6 +71,7 @@ class CompactionPerformanceValidatorTest {
             testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
             jobFinishedWithNumberOfRecords(10);
+
             // When
             CompactionPerformanceResults results = loadResults();
             CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
@@ -90,6 +91,7 @@ class CompactionPerformanceValidatorTest {
 
             jobFinishedWithNumberOfRecords(5);
             jobFinishedWithNumberOfRecords(5);
+
             // When
             CompactionPerformanceResults results = loadResults();
             CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
@@ -129,11 +131,6 @@ class CompactionPerformanceValidatorTest {
         }
     }
 
-    private void jobFinishedWithNumberOfRecords(int numberOfRecords) throws StateStoreException {
-        CompactionJob job = reportFinishedJob(summary(Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), numberOfRecords, numberOfRecords));
-        stateStore.addFile(fileInfoFactory.rootFile(job.getId(), numberOfRecords, "aaa", "zzz"));
-    }
-
     private FileInfoFactory createFileInfoFactory() {
         try {
             return new FileInfoFactory(schema, stateStore.getAllPartitions());
@@ -151,6 +148,13 @@ class CompactionPerformanceValidatorTest {
 
     private CompactionPerformanceResults loadResults() throws Exception {
         return CompactionPerformanceResults.loadActual(tableProperties, stateStore, jobStatusStore);
+    }
+
+    private void jobFinishedWithNumberOfRecords(int numberOfRecords) throws StateStoreException {
+        CompactionJob job = reportFinishedJob(summary(
+                Instant.parse("2023-04-17T16:15:42Z"), Duration.ofMinutes(1), numberOfRecords, numberOfRecords));
+        stateStore.addFile(fileInfoFactory.rootFile(
+                job.getId() + ".parquet", numberOfRecords, "aaa", "zzz"));
     }
 
     private CompactionJob reportFinishedJob(RecordsProcessedSummary summary) {
