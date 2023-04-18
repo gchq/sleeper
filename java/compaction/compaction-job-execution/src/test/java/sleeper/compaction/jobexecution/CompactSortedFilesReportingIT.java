@@ -42,12 +42,12 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase {
+class CompactSortedFilesReportingIT extends CompactSortedFilesTestBase {
 
     private final CompactionJobStatusStore jobStatusStore = mock(CompactionJobStatusStore.class);
 
     @Test
-    public void shouldReportJobStatusUpdatesWhenCompacting() throws Exception {
+    void shouldReportJobStatusUpdatesWhenCompacting() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
