@@ -607,7 +607,7 @@ public class FilterTranslatorIT {
     }
 
     @Test
-    void shouldReturnNullIfPredicateIsAll() throws IOException {
+    void shouldReturnNullIfPredicateIsAll() {
         // Given
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
 
