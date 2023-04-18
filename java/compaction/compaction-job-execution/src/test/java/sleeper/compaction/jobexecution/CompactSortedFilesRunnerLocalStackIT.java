@@ -76,7 +76,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers
-public class CompactSortedFilesRunnerIT {
+public class CompactSortedFilesRunnerLocalStackIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
