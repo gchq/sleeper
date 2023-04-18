@@ -21,10 +21,10 @@ import sleeper.job.common.action.Action;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PeriodicActionRunnableTest {
+class PeriodicActionRunnableIT {
 
     @Test
-    public void shouldRunInBackground() throws InterruptedException {
+    void shouldRunInBackground() throws InterruptedException {
         // Given
         KeepAlive keepAlive = new KeepAlive();
         PeriodicActionRunnable runnable = new PeriodicActionRunnable(keepAlive, 1);
@@ -39,7 +39,7 @@ public class PeriodicActionRunnableTest {
     }
 
     @Test
-    public void shouldStopActionImmediately() throws InterruptedException {
+    void shouldStopActionImmediately() throws InterruptedException {
         // Given
         KeepAlive keepAlive = new KeepAlive();
         PeriodicActionRunnable runnable = new PeriodicActionRunnable(keepAlive, 5);
