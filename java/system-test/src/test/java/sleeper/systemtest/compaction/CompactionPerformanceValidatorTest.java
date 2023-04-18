@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.compaction;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -60,75 +58,86 @@ class CompactionPerformanceValidatorTest {
     private final SystemTestProperties testProperties = createTestSystemTestProperties();
     private final TableProperties tableProperties = createTableProperties(testProperties);
 
-    @Nested
-    @DisplayName("Validate number of jobs that were run")
-    class ValidateNumberOfJobs {
+    @Test
+    void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
+        // Given
+        testProperties.set(NUMBER_OF_WRITERS, "1");
+        testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
-        @Test
-        void shouldPassWhenSingleJobWasRunWithAllRecords() throws Exception {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "1");
-            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+        jobFinishedWithNumberOfRecords(10);
 
-            jobFinishedWithNumberOfRecords(10);
+        // When
+        CompactionPerformanceResults results = loadResults();
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                .numberOfJobsExpected(1)
+                .numberOfRecordsExpected(10)
+                .build();
 
-            // When
-            CompactionPerformanceResults results = loadResults();
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
-                    .numberOfJobsExpected(1)
-                    .numberOfRecordsExpected(10)
-                    .build();
-
-            // Then
-            assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
-        }
-
-        @Test
-        void shouldFailWhenMultipleJobsWereRunButOneJobWasExpected() throws Exception {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "1");
-            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
-
-            jobFinishedWithNumberOfRecords(5);
-            jobFinishedWithNumberOfRecords(5);
-
-            // When
-            CompactionPerformanceResults results = loadResults();
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
-                    .numberOfJobsExpected(1)
-                    .numberOfRecordsExpected(10)
-                    .build();
-
-            // Then
-            assertThatThrownBy(() -> validator.test(results))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Actual number of compaction jobs 2 did not match expected value 1");
-        }
+        // Then
+        assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
     }
 
-    @Nested
-    @DisplayName("Validate number of records that were output")
-    class ValidateNumberOfRecords {
-        @Test
-        void shouldFailWhenWhenSingleJobWasRunWithLessRecordsThanExpected() throws Exception {
-            // Given
-            testProperties.set(NUMBER_OF_WRITERS, "1");
-            testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+    @Test
+    void shouldPassWhenMultipleJobsWereRun() throws Exception {
+        // Given
+        testProperties.set(NUMBER_OF_WRITERS, "1");
+        testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
 
-            jobFinishedWithNumberOfRecords(5);
+        jobFinishedWithNumberOfRecords(5);
+        jobFinishedWithNumberOfRecords(5);
 
-            // When
-            CompactionPerformanceResults results = loadResults();
-            CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
-                    .numberOfJobsExpected(1)
-                    .numberOfRecordsExpected(10)
-                    .build();
+        // When
+        CompactionPerformanceResults results = loadResults();
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                .numberOfJobsExpected(2)
+                .numberOfRecordsExpected(10)
+                .build();
 
-            // Then
-            assertThatThrownBy(() -> validator.test(results))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Actual number of records 5 did not match expected value 10");
-        }
+        // Then
+        assertThatCode(() -> validator.test(results)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldFailWhenMultipleJobsWereRunButOneJobWasExpected() throws Exception {
+        // Given
+        testProperties.set(NUMBER_OF_WRITERS, "1");
+        testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+        jobFinishedWithNumberOfRecords(5);
+        jobFinishedWithNumberOfRecords(5);
+
+        // When
+        CompactionPerformanceResults results = loadResults();
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                .numberOfJobsExpected(1)
+                .numberOfRecordsExpected(10)
+                .build();
+
+        // Then
+        assertThatThrownBy(() -> validator.test(results))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Actual number of compaction jobs 2 did not match expected value 1");
+    }
+
+    @Test
+    void shouldFailWhenWhenSingleJobWasRunWithFewerRecordsThanExpected() throws Exception {
+        // Given
+        testProperties.set(NUMBER_OF_WRITERS, "1");
+        testProperties.set(NUMBER_OF_RECORDS_PER_WRITER, "10");
+
+        jobFinishedWithNumberOfRecords(5);
+
+        // When
+        CompactionPerformanceResults results = loadResults();
+        CompactionPerformanceValidator validator = CompactionPerformanceValidator.builder()
+                .numberOfJobsExpected(1)
+                .numberOfRecordsExpected(10)
+                .build();
+
+        // Then
+        assertThatThrownBy(() -> validator.test(results))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Actual number of records 5 did not match expected value 10");
     }
 
     private FileInfoFactory createFileInfoFactory() {
