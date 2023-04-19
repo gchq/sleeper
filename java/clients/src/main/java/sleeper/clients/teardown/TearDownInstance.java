@@ -21,6 +21,8 @@ import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
@@ -55,6 +57,7 @@ public class TearDownInstance {
     private final AmazonCloudWatchEvents cloudWatch;
     private final AmazonECS ecs;
     private final AmazonECR ecr;
+    private final AmazonElasticMapReduce emr;
     private final Path scriptsDir;
     private final Path generatedDir;
     private final String instanceIdArg;
@@ -67,6 +70,7 @@ public class TearDownInstance {
         cloudWatch = Objects.requireNonNull(builder.cloudWatch, "cloudWatch must not be null");
         ecs = Objects.requireNonNull(builder.ecs, "ecs must not be null");
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
+        emr = Objects.requireNonNull(builder.emr, "emr must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         extraEcsClusters = Objects.requireNonNull(builder.extraEcsClusters, "extraEcsClusters must not be null");
         extraEcrRepositories = Objects.requireNonNull(builder.extraEcrRepositories, "extraEcrRepositories must not be null");
@@ -95,7 +99,7 @@ public class TearDownInstance {
         LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
         LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
 
-        new ShutdownSystemProcesses(cloudWatch, ecs).shutdown(instanceProperties, extraEcsClusters);
+        new ShutdownSystemProcesses(cloudWatch, ecs, emr).shutdown(instanceProperties, extraEcsClusters);
 
         LOGGER.info("Running cdk destroy to remove the system");
         InvokeCdkForInstance.builder()
@@ -137,6 +141,7 @@ public class TearDownInstance {
         private AmazonCloudWatchEvents cloudWatch;
         private AmazonECS ecs;
         private AmazonECR ecr;
+        private AmazonElasticMapReduce emr;
         private Path scriptsDir;
         private String instanceId;
         private List<InstanceProperty> extraEcsClusters = List.of();
@@ -167,6 +172,11 @@ public class TearDownInstance {
 
         public Builder ecr(AmazonECR ecr) {
             this.ecr = ecr;
+            return this;
+        }
+
+        public Builder emr(AmazonElasticMapReduce emr) {
+            this.emr = emr;
             return this;
         }
 
@@ -201,6 +211,7 @@ public class TearDownInstance {
                 cloudWatch(AmazonCloudWatchEventsClientBuilder.defaultClient());
                 ecs(AmazonECSClientBuilder.defaultClient());
                 ecr(AmazonECRClientBuilder.defaultClient());
+                emr(AmazonElasticMapReduceClientBuilder.defaultClient());
                 build().tearDown();
             }
         }

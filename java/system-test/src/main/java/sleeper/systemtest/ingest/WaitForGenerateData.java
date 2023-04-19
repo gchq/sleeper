@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.systemtest.ingest.json.TaskStatusJson;
 import sleeper.systemtest.ingest.json.TasksJson;
-import sleeper.systemtest.util.PollWithRetries;
+import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 import java.nio.file.Paths;

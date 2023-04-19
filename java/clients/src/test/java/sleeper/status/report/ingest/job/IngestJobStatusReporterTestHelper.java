@@ -24,6 +24,8 @@ import sleeper.status.report.job.query.JobQuery;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.ingestMessageCount;
+
 public class IngestJobStatusReporterTestHelper {
     private IngestJobStatusReporterTestHelper() {
     }
@@ -36,13 +38,13 @@ public class IngestJobStatusReporterTestHelper {
 
     public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
+        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, ingestMessageCount(numberInQueue));
         return output.toString();
     }
 
     public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
+        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, ingestMessageCount(numberInQueue));
         return output.toString();
     }
 }

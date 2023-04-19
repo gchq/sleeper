@@ -23,6 +23,6 @@ import java.util.List;
 
 public interface IngestJobStatusReporter {
 
-    void report(List<IngestJobStatus> jobStatusList, JobQuery.Type queryType, int numberInQueue);
+    void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages);
 
 }
