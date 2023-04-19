@@ -83,7 +83,7 @@ public class WaitForGenerateData {
         List<DescribeTasksRequest> tasksRequests = new ArrayList<>();
         for (int i = 0; i < tasks.size(); i += 100) {
             tasksRequests.add(new DescribeTasksRequest().withCluster(cluster).withTasks(
-                    tasks.subList(i, min(i + 100, tasks.size() - 1))
+                    tasks.subList(i, min(i + 100, tasks.size()))
                             .stream().map(Task::getTaskArn).collect(Collectors.toList())));
         }
         return tasksRequests.stream()
