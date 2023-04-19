@@ -31,7 +31,9 @@ import sleeper.systemtest.SystemTestProperties;
 import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -40,15 +42,14 @@ public class WaitForEMRClusters {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForEMRClusters.class);
     private static final long POLL_INTERVAL_MILLIS = 60000;
     private static final int MAX_POLLS = 30;
+    private static final List<String> ACTIVE_STATES = List.of(
+            ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
+            ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
 
     private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
     private final AmazonElasticMapReduce emrClient;
     private final String clusterPrefix;
-    private static final List<String> STARTING_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name());
-    private static final List<String> RUNNING_STATES = List.of(ClusterState.RUNNING.name(), ClusterState.WAITING.name());
-    private static final List<String> ACTIVE_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
-            ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
 
     public WaitForEMRClusters(AmazonElasticMapReduce emrClient, InstanceProperties properties) {
         this.emrClient = emrClient;
@@ -60,18 +61,29 @@ public class WaitForEMRClusters {
     }
 
     public boolean allClustersFinished() {
-        List<ClusterSummary> clusters = emrClient.listClusters(new ListClustersRequest()
-                        .withClusterStates(ACTIVE_STATES)).getClusters().stream()
+        List<ClusterSummary> clusters = emrClient.listClusters(new ListClustersRequest())
+                .getClusters().stream()
                 .filter(cluster -> cluster.getName().startsWith(clusterPrefix))
                 .collect(Collectors.toList());
-        long clustersStarting = clusters.stream()
-                .filter(cluster -> STARTING_STATES.contains(cluster.getStatus().getState())).count();
-        long clustersRunning = clusters.stream()
-                .filter(cluster -> RUNNING_STATES.contains(cluster.getStatus().getState())).count();
-        long clustersTerminating = clusters.size() - clustersRunning - clustersStarting;
-        LOGGER.info("Waiting for {} clusters ({} starting, {} running, {} terminating)",
-                clusters.size(), clustersStarting, clustersRunning, clustersTerminating);
-        return clusters.size() == 0;
+        long active = countClustersWithState(clusters, ACTIVE_STATES);
+        LOGGER.info("Found {} clusters, {} active, states: {}",
+                clusters.size(), active, countClustersByState(clusters));
+        return !clusters.isEmpty() && active == 0;
+    }
+
+    private static long countClustersWithState(List<ClusterSummary> clusters, List<String> states) {
+        return clusters.stream()
+                .filter(cluster -> states.contains(cluster.getStatus().getState()))
+                .count();
+    }
+
+    private static Map<String, Long> countClustersByState(List<ClusterSummary> clusters) {
+        Map<String, Long> counts = new HashMap<>();
+        for (ClusterSummary cluster : clusters) {
+            counts.compute(cluster.getStatus().getState(),
+                    (state, count) -> count == null ? 1 : count + 1);
+        }
+        return counts;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
