@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -32,6 +34,7 @@ import sleeper.systemtest.SystemTestProperties;
 import java.io.IOException;
 
 public class CompactionPerformanceValidator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionPerformanceValidator.class);
     private final int numberOfJobsExpected;
     private final long numberOfRecordsExpected;
     private final double minRecordsPerSecond;
@@ -77,6 +80,7 @@ public class CompactionPerformanceValidator {
         dynamoDB.shutdown();
 
         validator.test(results);
+        LOGGER.info("Compaction performance validation passed");
     }
 
     public void test(CompactionPerformanceResults results) {
