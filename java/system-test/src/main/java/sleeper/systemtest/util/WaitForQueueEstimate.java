@@ -29,10 +29,6 @@ import java.util.function.Predicate;
 
 public class WaitForQueueEstimate {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueueEstimate.class);
-    private static final long POLL_INTERVAL_MILLIS = 5000;
-    private static final int MAX_POLLS = 12;
-    private static final PollWithRetries DEFAULT_POLL = PollWithRetries.intervalAndMaxPolls(
-            POLL_INTERVAL_MILLIS, MAX_POLLS);
 
     private final QueueMessageCount.Client queueClient;
     private final Predicate<QueueMessageCount> isFinished;
@@ -60,10 +56,10 @@ public class WaitForQueueEstimate {
 
     public static WaitForQueueEstimate containsUnfinishedJobs(
             AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            CompactionJobStatusStore statusStore, String tableName) {
+            CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
         int unfinished = statusStore.getUnfinishedJobs(tableName).size();
         LOGGER.info("Found {} unfinished compaction jobs", unfinished);
-        return new WaitForQueueEstimate(sqsClient, instanceProperties, queueProperty, DEFAULT_POLL,
+        return new WaitForQueueEstimate(sqsClient, instanceProperties, queueProperty, poll,
                 estimate -> estimate.getApproximateNumberOfMessages() >= unfinished,
                 "queue estimate matching unfinished compaction jobs");
     }
