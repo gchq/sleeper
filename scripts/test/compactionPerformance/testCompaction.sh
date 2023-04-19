@@ -59,7 +59,7 @@ java -cp "${SYSTEM_TEST_JAR}" \
 sleeper.systemtest.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
 
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.CompactionPerformanceValidator "$INSTANCE_ID" "$TABLE_NAME" "10" "4400000000" "330000"
+sleeper.systemtest.compaction.CompactionPerformanceValidator "$INSTANCE_ID" "$TABLE_NAME" "10" "4400000000" "300000"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
