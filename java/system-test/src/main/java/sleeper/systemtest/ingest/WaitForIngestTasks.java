@@ -38,8 +38,8 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 
 public class WaitForIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
-    private static final long TASKS_FINISHED_POLL_INTERVAL_MILLIS = 30000;
-    private static final int TASKS_FINISHED_MAX_POLLS = 30;
+    private static final long TASKS_FINISHED_POLL_INTERVAL_MILLIS = 10000;
+    private static final int TASKS_FINISHED_MAX_POLLS = 12;
     private static final long QUEUE_EMPTY_POLL_INTERVAL_MILLIS = 30000;
     private static final int QUEUE_EMPTY_MAX_POLLS = 30;
 
