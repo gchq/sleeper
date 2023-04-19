@@ -40,6 +40,10 @@ public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {
     }
 
+    public static IngestQueueMessages ingestMessageCount(int messages) {
+        return IngestQueueMessages.builder().ingestMessages(messages).build();
+    }
+
     public static List<IngestJobStatus> mixedUnfinishedJobStatuses() {
         return mixedJobStatuses().stream()
                 .filter(status -> !status.isFinished())
