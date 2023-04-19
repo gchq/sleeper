@@ -1,3 +1,4 @@
+
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-docker run --name cloudbeaver -d -p 3000:8978 \
-  -v "$HOME/.cloudbeaver/workspace:/opt/cloudbeaver/workspace" \
-  dbeaver/cloudbeaver
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+
+TRINO_VERSION=390
+TRINO_JAR="trino-jdbc-$TRINO_VERSION.jar"
+
+curl https://repo1.maven.org/maven2/io/trino/trino-jdbc/$TRINO_VERSION/$TRINO_JAR \
+  --output "$THIS_DIR/jars/$TRINO_JAR"
