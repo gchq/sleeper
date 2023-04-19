@@ -18,6 +18,7 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 JARS_DIR="$THIS_DIR/jars"
 ETC_DIR="$THIS_DIR/etc"
+HOME_IN_IMAGE=/home/trino
 
 docker run --name trino -d -p 8080:8080 \
   -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
