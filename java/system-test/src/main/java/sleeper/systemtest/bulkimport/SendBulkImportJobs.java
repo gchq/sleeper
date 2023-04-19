@@ -59,24 +59,22 @@ public class SendBulkImportJobs {
                 s3Client, tableProperties.get(DATA_BUCKET), "ingest/")) {
             files.add(object.getBucketName() + "/" + object.getKey());
         }
-        BulkImportJob bulkImportJob = new BulkImportJob.Builder()
-                .tableName(tableProperties.get(TABLE_NAME))
-                .id(UUID.randomUUID().toString())
-                .files(files)
-                .build();
-        String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
-        LOGGER.info("Sending message to bulk import queue ({})", jsonJob);
-
-        SendMessageRequest request = new SendMessageRequest()
-                .withQueueUrl(systemTestProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
-                .withMessageBody(jsonJob);
 
         int sendCopies = systemTestProperties.getInt(NUMBER_OF_BULK_IMPORT_JOBS);
         LOGGER.info("Sending {} copies", sendCopies);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         for (int i = 0; i < sendCopies; i++) {
-            sqsClient.sendMessage(request);
+            BulkImportJob bulkImportJob = new BulkImportJob.Builder()
+                    .tableName(tableProperties.get(TABLE_NAME))
+                    .id(UUID.randomUUID().toString())
+                    .files(files)
+                    .build();
+            String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
+            LOGGER.info("Sending message to bulk import queue ({})", jsonJob);
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(systemTestProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
+                    .withMessageBody(jsonJob));
         }
         sqsClient.shutdown();
     }
