@@ -29,6 +29,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
+import sleeper.systemtest.util.PollWithRetries;
 import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
@@ -40,6 +41,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class WaitForCurrentSplitAddingMissingJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
+    private static final long JOBS_ESTIMATE_POLL_INTERVAL_MILLIS = 5000;
+    private static final int JOBS_ESTIMATE_MAX_POLLS = 12;
 
     private final String instanceId;
     private final String tableName;
@@ -57,7 +60,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
         waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
-                sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
+                sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
+                PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
     }
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
