@@ -28,7 +28,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
 import sleeper.statestore.StateStore;
@@ -69,14 +68,12 @@ public class AdminClientPropertiesStore {
         return instanceProperties;
     }
 
-    public TableProperties loadTableProperties(String instanceId, String tableName) {
-        return loadTableProperties(loadInstanceProperties(instanceId), tableName);
-    }
-
-    private TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
+    public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            return new TablePropertiesProvider(s3, instanceProperties).getTableProperties(tableName);
-        } catch (AmazonS3Exception e) {
+            TableProperties properties = new TableProperties(instanceProperties);
+            properties.loadFromS3(s3, tableName);
+            return properties;
+        } catch (AmazonS3Exception | IOException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
     }
@@ -126,7 +123,7 @@ public class AdminClientPropertiesStore {
         saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
     }
 
-    private void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
+    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
         String instanceId = instanceProperties.get(ID);
         String tableName = properties.get(TABLE_NAME);
         try {

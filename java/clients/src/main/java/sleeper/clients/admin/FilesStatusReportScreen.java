@@ -39,7 +39,7 @@ public class FilesStatusReportScreen {
     }
 
     public void chooseTableAndPrint(String instanceId) {
-        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+        tableSelectHelper.chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> {
             chooseOptionalArgsAndPrint(instanceId, tableProperties);
             confirmReturnToMainScreen(out, in);
         });

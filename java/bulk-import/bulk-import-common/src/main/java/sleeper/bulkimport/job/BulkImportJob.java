@@ -18,15 +18,21 @@ package sleeper.bulkimport.job;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.ingest.job.IngestJob;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * POJO containing information needed to run a bulk import job.
  */
 public class BulkImportJob {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJob.class);
     private String className;
     private List<String> files;
     private String id;
@@ -35,12 +41,29 @@ public class BulkImportJob {
     private Map<String, String> platformSpec;
 
     private BulkImportJob(Builder builder) {
-        this.id = builder.id;
+        if (builder.id == null || builder.id.isEmpty()) {
+            id = UUID.randomUUID().toString();
+            LOGGER.info("Null or empty id provided. Generated new id: {}", id);
+        } else {
+            id = builder.id;
+        }
         this.className = builder.className;
         this.files = builder.files;
         this.sparkConf = builder.sparkConf;
         this.tableName = builder.tableName;
         this.platformSpec = builder.platformSpec;
+    }
+
+    public static BulkImportJob.Builder builder() {
+        return new Builder();
+    }
+
+    public BulkImportJob validate() {
+        if (id == null || id.isEmpty()) {
+            id = UUID.randomUUID().toString();
+            LOGGER.info("Null or empty id provided. Generated new id: {}", id);
+        }
+        return this;
     }
 
     public String getTableName() {
@@ -89,6 +112,10 @@ public class BulkImportJob {
 
     public void setPlatformSpec(Map<String, String> platformSpec) {
         this.platformSpec = platformSpec;
+    }
+
+    public IngestJob toIngestJob() {
+        return IngestJob.builder().files(files).id(id).tableName(tableName).build();
     }
 
     @Override

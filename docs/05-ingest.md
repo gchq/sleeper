@@ -106,7 +106,7 @@ aim for at least 10s of millions of records per job.
 The id field will be used in logging so that users can see the progress of particular ingest jobs by viewing the
 logs. The URL of the SQS queue that the message should be sent to can be found from the `sleeper.ingest.job.queue.url`
 property. This will be populated in the config object in the `sleeper-<instance-id>-config` S3 bucket. It can also
-be found using the [admininstration client](06-status.md#Sleeper Administration Client).
+be found using the [admininstration client](06-status.md#sleeper-administration-client).
 
 You will need to ensure that the role with the ARN given by the `IngestContainerRoleARN` property has read access
 to the files you wish to ingest. This ARN is exported as a named export from CloudFormation with name
@@ -131,7 +131,7 @@ With the standard approach, if we create one ingest job per file and send it to 
 the bulk import method, there will only be 100 writes to S3 (assuming that the 1000 files are all imported in the same bulk
 import job).
 
-Note that it is vital that a table is pre-split before data is bulk import ([see here](06-status.md#Reinitialise a Table)).
+Note that it is vital that a table is pre-split before data is bulk import ([see here](06-status.md#reinitialise-a-table)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
@@ -212,8 +212,7 @@ by properties in the job specification.
 
 ```properties
 sleeper.table.bulk.import.emr.release.label=emr-6.9.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
-sleeper.table.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster. This value 
-overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
+sleeper.table.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.initial.instances=2 # The initial number of EC2 instances to be used as executors in the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.max.instances=10 # The maximum number of EC2 instances to be used as executors in the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
@@ -254,41 +253,41 @@ EMR properties, and it does not make sense to change the cluster properties on a
 The following options are based on https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
 
 ```properties
-// spark.driver options
+# spark.driver options
 sleeper.bulk.import.emr.spark.driver.cores=5 # The number of cores allocated to the Spark driver. Used to set spark.driver.cores.
 sleeper.bulk.import.emr.spark.driver.memory=16g # The memory allocated to the Spark driver. Used to set spark.driver.memory.
 sleeper.bulk.import.emr.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p' # Used to set spark.driver.extraJavaOptions.
 
-// spark.executor options
+# spark.executor options
 sleeper.bulk.import.emr.spark.executor.cores=5 # The number of cores allocated to the Spark executor. Used to set spark.executor.cores.
 sleeper.bulk.import.emr.spark.executor.memory=16g # The memory allocated to a Spark executor. Used to set spark.executor.memory.
 sleeper.bulk.import.emr.spark.executor.heartbeat.interval=60s # Used to set spark.executor.heartbeatInterval.
 sleeper.bulk.import.emr.spark.executor.instances=29 # The number of Spark executors. Used to set spark.executor.instances.
 sleeper.bulk.import.emr.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p' # Used to set spark.executor.extraJavaOptions.
 
-// spark.yarn options
+# spark.yarn options
 sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead=2g # Used to set spark.yarn.executor.memoryOverhead
 sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead=2g # Used to set spark.yarn.driver.memoryOverhead
 sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures=5 # Used to set spark.yarn.scheduler.reporterThread.maxFailures
 
-// spark.dynamicAllocation option
+# spark.dynamicAllocation option
 sleeper.bulk.import.emr.spark.dynamic.allocation.enabled=false # Used to set spark.dynamicAllocation.enabled
 
-// spark.default.parallelism option
+# spark.default.parallelism option
 sleeper.bulk.import.emr.spark.default.parallelism=290 # Used to set spark.default.parallelism
 
-// spark.memory options
+# spark.memory options
 sleeper.bulk.import.emr.spark.memory.fraction=0.80 # Used to set spark.memory.fraction
 sleeper.bulk.import.emr.spark.memory.storage.fraction=0.30 # Used to set spark.memory.storageFraction
 
-// spark.network options
+# spark.network options
 sleeper.bulk.import.emr.spark.network.timeout=800s # Used to set spark.network.timeout
 sleeper.bulk.import.emr.spark.storage.level=MEMORY_AND_DISK_SER # Used to set spark.storage.level
 sleeper.bulk.import.emr.spark.rdd.compress=true # Used to set spark.rdd.compress
 sleeper.bulk.import.emr.spark.shuffle.compress=true # Used to set spark.shuffle.compress
 sleeper.bulk.import.emr.spark.shuffle.spill.compress=true # Used to set spark.shuffle.spill.compress
 
-// spark.sql options
+# spark.sql options
 sleeper.bulk.import.emr.spark.sql.shuffle.partitions=290 # Used to set spark.sql.shuffle.partitions
 ```
 
@@ -299,8 +298,7 @@ need to set the following instance properties:
 
 ```properties
 sleeper.bulk.import.emr.keypair.name=my-key # An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes in the cluster while it's running.
-sleeper.bulk.import.emr.master.additional.security.group=my-group # An EC2 Security Group. This will be added to the list of security groups that are allowed to access the
-servers in the cluster.
+sleeper.bulk.import.emr.master.additional.security.group=my-group # An EC2 Security Group. This will be added to the list of security groups that are allowed to access the servers in the cluster.
 ```
 
 You can then use the instructions [here](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-web-interfaces.html) to access the pages.
@@ -382,18 +380,20 @@ The Spark properties for a job can be overridden by specifying the `sparkConf` s
 Sleeper contains three different Spark algorithms for performing the bulk import. There are two approaches that use Dataframes and one
 that uses RDDs (recall that algorithms expressed using Spark's Dataframe API are normally more efficient than RDD-based algorithms).
 
-The default algorithm is the `BulkImportDataframeLocalSortRunner`. This partitions the data according to Sleeper's leaf partitions and
-then sorts within partitions. In general this is more efficient than the `BulkImportJobDataframeRunner` algorithm which globally sorts
+The default algorithm is the `BulkImportDataframeLocalSortDriver`. This partitions the data according to Sleeper's leaf partitions and
+then sorts within partitions. In general this is more efficient than the `BulkImportJobDataframeDriver` algorithm which globally sorts
 the data before ingesting data. This will result in more files than there are Sleeper partitions. However, if the number of Sleeper leaf
-partitions is small then this allow more parallelism than the `BulkImportDataframeLocalSortRunner` approach.
+partitions is small then this allows more parallelism than the `BulkImportDataframeLocalSortDriver` approach.
 
 The RDD-based approach uses the `repartitionAndSortWithinPartitions` method on an RDD formed from the input data. This is generally
 significantly less efficient than the Dataframe-based methods.
 
-To change the algorithm usedon a per-job basis, set the `className` field on the JSON for the job, e.g.:
+To change the algorithm used on a per-job basis, set the `className` field on the JSON for the job, e.g.:
 
 ```JSON
-"className": "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner"
+{
+  "className": "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver"
+}
 ```
 
 The instance property `sleeper.bulk.import.class.name` can be used to set the default algorithm.
@@ -418,7 +418,7 @@ You can submit a job in a similar way to the methods above, e.g.
         "spark.driver.memory": "7g",
         "spark.driver.memoryOverhead": "1g",
         "spark.executor.memory": "7g",
-        "spark.executor.memoryOverhead": "1g"
+        "spark.executor.memoryOverhead": "1g",
         "spark.driver.cores": "1",
         "spark.executor.cores": "1"
     }

@@ -121,12 +121,13 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
-                        .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar").withArgs(constructArgs(bulkImportJob))))
+                        .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
+                                .withArgs(constructArgs(bulkImportJob, clusterName + "-EMR"))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));
 
-        LOGGER.info("Cluster created with ARN " + response.getClusterArn());
+        LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {

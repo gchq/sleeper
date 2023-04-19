@@ -1,5 +1,7 @@
 {
-  "numberInQueue": 0,
+  "queueMessages": {
+    "ingestMessages": 0
+  },
   "jobList": [
     {
       "jobId": "$(jobId1)",

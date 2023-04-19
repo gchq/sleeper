@@ -16,31 +16,20 @@
 
 package sleeper.cdk.stack;
 
-import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.NestedStack;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
+public class IngestStatusStoreStack extends NestedStack {
+    private final IngestStatusStoreResources resources;
 
-public interface IngestStatusStoreStack {
-
-    default void grantWriteJobEvent(IGrantable grantee) {
+    public IngestStatusStoreStack(Construct scope, String id, InstanceProperties instanceProperties) {
+        super(scope, id);
+        resources = IngestStatusStoreResources.from(this, instanceProperties);
     }
 
-    default void grantWriteTaskEvent(IGrantable grantee) {
-    }
-
-    static IngestStatusStoreStack from(Construct scope, InstanceProperties properties) {
-        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            return new DynamoDBIngestStatusStoreStack(scope, properties);
-        } else {
-            return none();
-        }
-    }
-
-    static IngestStatusStoreStack none() {
-        return new IngestStatusStoreStack() {
-        };
+    public IngestStatusStoreResources getResources() {
+        return resources;
     }
 }
