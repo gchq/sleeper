@@ -23,8 +23,8 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
-import sleeper.systemtest.util.PollWithRetries;
 import sleeper.systemtest.util.WaitForQueueEstimate;
+import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 
