@@ -29,6 +29,7 @@ docker run --name trino -d -p 8080:8080 \
   -e AWS_REGION \
   -e AWS_DEFAULT_REGION \
   -v "$ETC_DIR/catalog:/etc/trino/catalog" \
+  -v "$ETC_DIR/jvm.config:/etc/trino/jvm.config" \
   -v "$ETC_DIR/log.properties:/etc/trino/log.properties" \
   -v "$JARS_DIR:/usr/lib/trino/plugin/sleeper" \
   trinodb/trino
