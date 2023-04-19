@@ -19,6 +19,8 @@ import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClient;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClient;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -50,6 +52,13 @@ public class ClientWiremockTestHelper {
 
     public static AmazonCloudWatchEvents wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
         return AmazonCloudWatchEventsClient.builder()
+                .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
+                .withCredentials(wiremockCredentialsProvider())
+                .build();
+    }
+
+    public static AmazonElasticMapReduce wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
+        return AmazonElasticMapReduceClient.builder()
                 .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
                 .withCredentials(wiremockCredentialsProvider())
                 .build();

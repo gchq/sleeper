@@ -57,11 +57,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         tableFactory = tableFactoryBuilder.build();
     }
 
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, int numberInQueue) {
+    @Override
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages) {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
-        printSummary(statusList, query, numberInQueue);
+        printSummary(statusList, query, queueMessages);
         if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
                     .showFields(query != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
@@ -70,15 +71,15 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType, int numberInQueue) {
+    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages) {
         if (queryType.equals(JobQuery.Type.DETAILED)) {
             printDetailedSummary(statusList);
         } else if (queryType.equals(JobQuery.Type.ALL)) {
-            printAllSummary(statusList, numberInQueue);
+            printAllSummary(statusList, queueMessages);
         } else if (queryType.equals(JobQuery.Type.UNFINISHED)) {
-            printUnfinishedSummary(statusList, numberInQueue);
+            printUnfinishedSummary(statusList, queueMessages);
         } else if (queryType.equals(JobQuery.Type.RANGE)) {
-            printRangeSummary(statusList, numberInQueue);
+            printRangeSummary(statusList, queueMessages);
         }
     }
 
@@ -107,19 +108,19 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printAllSummary(List<IngestJobStatus> statusList, int numberInQueue) {
-        printUnfinishedSummary(statusList, numberInQueue);
+    private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
+        printUnfinishedSummary(statusList, queueMessages);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
-    private void printUnfinishedSummary(List<IngestJobStatus> statusList, int numberInQueue) {
-        out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
+    private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
+        queueMessages.print(out);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
     }
 
-    private void printRangeSummary(List<IngestJobStatus> statusList, int numberInQueue) {
-        out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
+    private void printRangeSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
+        queueMessages.print(out);
         out.printf("Total jobs in defined range: %d%n", statusList.size());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
