@@ -12,4 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-docker run --name cloudbeaver -d -p 3000:8978 dbeaver/cloudbeaver
+docker run --name cloudbeaver -d -p 3000:8978 \
+  -v "$HOME/.cloudbeaver/workspace:/opt/cloudbeaver/workspace" \
+  dbeaver/cloudbeaver
