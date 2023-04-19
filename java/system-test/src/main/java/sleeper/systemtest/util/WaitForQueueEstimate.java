@@ -50,9 +50,10 @@ public class WaitForQueueEstimate {
     }
 
     public static WaitForQueueEstimate isEmpty(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty) {
+            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
+            PollWithRetries poll) {
         String queueUrl = instanceProperties.get(queueProperty);
-        return new WaitForQueueEstimate(sqsClient, queueUrl, DEFAULT_POLL,
+        return new WaitForQueueEstimate(sqsClient, queueUrl, poll,
                 estimate -> estimate.getApproximateNumberOfMessages() == 0,
                 "estimate empty for queue " + queueUrl);
     }
