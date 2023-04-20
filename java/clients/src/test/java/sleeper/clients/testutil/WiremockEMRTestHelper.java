@@ -1,0 +1,70 @@
+/*
+ * Copyright 2022-2023 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.clients.testutil;
+
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+
+public class WiremockEMRTestHelper {
+    private WiremockEMRTestHelper() {
+    }
+
+    private static final String OPERATION_HEADER = "X-Amz-Target";
+    private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
+
+    public static void stubForListingRunningClusters(int numRunningClusters) {
+        StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
+        for (int i = 1; i <= numRunningClusters; i++) {
+            clustersBody.append("{" +
+                    "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
+                    "\"Id\": \"test-cluster-id-" + i + "\"," +
+                    "\"Status\": {\"State\": \"RUNNING\"}" +
+                    "}");
+            if (i != numRunningClusters) {
+                clustersBody.append(",");
+            }
+        }
+        clustersBody.append("]}");
+        stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+                .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
+                .whenScenarioStateIs(STARTED));
+    }
+
+    public static MappingBuilder listActiveClusterRequest() {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                .withRequestBody(equalToJson("{\"ClusterStates\":[" +
+                        "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
+
+    public static RequestPatternBuilder listActiveClustersRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                .withRequestBody(equalToJson("{\"ClusterStates\":[" +
+                        "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
+}

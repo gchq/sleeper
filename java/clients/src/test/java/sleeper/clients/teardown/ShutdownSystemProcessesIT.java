@@ -33,7 +33,6 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -44,6 +43,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClusterRequest;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.stubForListingRunningClusters;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -262,31 +264,6 @@ class ShutdownSystemProcessesIT {
         }
     }
 
-    private void stubForListingRunningClusters(int numRunningClusters) {
-        StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
-        for (int i = 1; i <= numRunningClusters; i++) {
-            clustersBody.append("{" +
-                    "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
-                    "\"Id\": \"test-cluster-id-" + i + "\"," +
-                    "\"Status\": {\"State\": \"RUNNING\"}" +
-                    "}");
-            if (i != numRunningClusters) {
-                clustersBody.append(",");
-            }
-        }
-        clustersBody.append("]}");
-        stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
-                .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
-                .whenScenarioStateIs(STARTED));
-    }
-
-    private MappingBuilder listActiveClusterRequest() {
-        return post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
-                .withRequestBody(equalToJson("{\"ClusterStates\":[" +
-                        "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
-    }
-
     private MappingBuilder terminateJobFlowsRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
@@ -301,12 +278,6 @@ class ShutdownSystemProcessesIT {
                 .willReturn(aResponse().withStatus(200));
     }
 
-    private RequestPatternBuilder listActiveClustersRequested() {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
-                .withRequestBody(equalToJson("{\"ClusterStates\":[" +
-                        "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
-    }
 
     private RequestPatternBuilder terminateJobFlowsRequested() {
         return postRequestedFor(urlEqualTo("/"))
