@@ -20,6 +20,7 @@ JARS_DIR="$THIS_DIR/jars"
 ETC_DIR="$THIS_DIR/etc"
 HOME_IN_IMAGE=/home/trino
 
+docker build "$THIS_DIR" -t sleeper-trino:current
 docker run --name trino -d -p 8080:8080 \
   -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
   -e AWS_ACCESS_KEY_ID \
@@ -32,4 +33,4 @@ docker run --name trino -d -p 8080:8080 \
   -v "$ETC_DIR/jvm.config:/etc/trino/jvm.config" \
   -v "$ETC_DIR/log.properties:/etc/trino/log.properties" \
   -v "$JARS_DIR:/usr/lib/trino/plugin/sleeper" \
-  trinodb/trino:390
+  sleeper-trino:current
