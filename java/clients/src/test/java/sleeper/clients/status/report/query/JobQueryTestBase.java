@@ -16,14 +16,14 @@
 
 package sleeper.clients.status.report.query;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQuery.Type;
+import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.util.console.TestConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.console.TestConsoleInput;
 
 import java.time.Clock;
 import java.time.Instant;

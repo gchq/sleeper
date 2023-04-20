@@ -17,10 +17,10 @@ package sleeper.clients.status.report.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringPrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ClientTestUtils.example;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class TableWriterFieldAlignmentTest {
 

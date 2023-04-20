@@ -16,9 +16,9 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.List;

@@ -16,9 +16,9 @@
 
 package sleeper.clients.status.report.compaction.job;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.clients.status.report.job.query.JobQuery.Type;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static sleeper.ClientTestUtils.exampleUUID;
+import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;

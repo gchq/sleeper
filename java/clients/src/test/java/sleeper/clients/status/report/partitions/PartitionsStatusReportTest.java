@@ -33,12 +33,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ClientTestUtils.example;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 class PartitionsStatusReportTest {

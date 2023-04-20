@@ -15,8 +15,8 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.clients.console.ConsoleInput;
-import sleeper.clients.console.ConsoleOutput;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 
 import java.util.List;
 

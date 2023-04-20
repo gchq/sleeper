@@ -16,10 +16,10 @@
 
 package sleeper.clients.admin;
 
-import sleeper.clients.console.ConsoleInput;
-import sleeper.clients.console.ConsoleOutput;
-import sleeper.clients.console.menu.ChooseOne;
-import sleeper.clients.console.menu.MenuOption;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.menu.ChooseOne;
+import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;

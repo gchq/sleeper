@@ -25,9 +25,9 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.ClientTestUtils.example;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedUnfinishedJobStatuses;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 
 class StandardIngestJobStatusReporterRangeQueryTest {
     @Test

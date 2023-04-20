@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report.job.query;
 
-import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleInput;
 
 import java.time.Clock;
 

@@ -26,7 +26,7 @@ import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ClientTestUtils.example;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJobStatusReporterTestBase {
 

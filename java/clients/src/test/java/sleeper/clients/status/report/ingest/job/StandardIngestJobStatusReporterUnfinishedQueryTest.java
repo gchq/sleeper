@@ -25,7 +25,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import java.util.Collections;
 import java.util.List;
 
-import static sleeper.ClientTestUtils.example;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardIngestJobStatusReporterUnfinishedQueryTest {
     @Test

@@ -26,7 +26,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -37,8 +37,8 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ClientTestUtils.example;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;

@@ -39,8 +39,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static sleeper.ClientWiremockTestHelper.wiremockCloudFormationClient;
-import static sleeper.ClientWiremockTestHelper.wiremockLogsClient;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudFormationClient;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockLogsClient;
 
 class CleanUpLogGroupsIT {
 

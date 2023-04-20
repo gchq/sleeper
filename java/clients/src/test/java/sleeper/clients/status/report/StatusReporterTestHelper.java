@@ -19,7 +19,7 @@ package sleeper.clients.status.report;
 import java.util.List;
 import java.util.function.Function;
 
-import static sleeper.ClientTestUtils.exampleUUID;
+import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
 
 public class StatusReporterTestHelper {
     private StatusReporterTestHelper() {

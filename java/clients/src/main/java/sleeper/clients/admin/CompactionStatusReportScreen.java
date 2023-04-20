@@ -16,16 +16,16 @@
 
 package sleeper.clients.admin;
 
-import sleeper.clients.console.ConsoleHelper;
-import sleeper.clients.console.ConsoleInput;
-import sleeper.clients.console.ConsoleOutput;
-import sleeper.clients.console.menu.MenuOption;
 import sleeper.clients.status.report.CompactionJobStatusReport;
 import sleeper.clients.status.report.CompactionTaskStatusReport;
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.util.console.ConsoleHelper;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;

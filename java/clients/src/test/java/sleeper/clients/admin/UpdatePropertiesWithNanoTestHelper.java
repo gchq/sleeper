@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static sleeper.clients.util.RunCommandTestHelper.commandRunOn;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 public class UpdatePropertiesWithNanoTestHelper {
     private final Path tempDir;

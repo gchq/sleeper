@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.QueueMessageCountsInMemory;

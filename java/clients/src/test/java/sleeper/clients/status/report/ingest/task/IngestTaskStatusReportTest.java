@@ -17,8 +17,8 @@ package sleeper.clients.status.report.ingest.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.status.report.IngestTaskStatusReport;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
@@ -31,7 +31,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.ClientTestUtils.example;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class IngestTaskStatusReportTest {

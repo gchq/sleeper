@@ -25,10 +25,10 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import java.util.Collections;
 import java.util.List;
 
-import static sleeper.ClientTestUtils.example;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardIngestJobStatusReporterAllQueryTest {
     @Test

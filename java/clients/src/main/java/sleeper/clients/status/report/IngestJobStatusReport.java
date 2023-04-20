@@ -23,7 +23,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.clients.console.ConsoleInput;
 import sleeper.clients.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.status.report.ingest.job.JsonIngestJobStatusReporter;
@@ -31,6 +30,7 @@ import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;

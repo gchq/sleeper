@@ -16,10 +16,10 @@
 
 package sleeper.clients.admin;
 
-import sleeper.clients.console.ConsoleInput;
-import sleeper.clients.console.ConsoleOutput;
 import sleeper.clients.status.report.FilesStatusReport;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStoreException;
 

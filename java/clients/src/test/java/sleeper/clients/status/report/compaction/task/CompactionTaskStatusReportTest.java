@@ -17,8 +17,8 @@ package sleeper.clients.status.report.compaction.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.status.report.CompactionTaskStatusReport;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.testutils.CompactionTaskStatusStoreInMemory;
 
@@ -28,11 +28,11 @@ import java.time.Instant;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ClientTestUtils.example;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedSplittingTask;
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
+import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskStatusReportTest {

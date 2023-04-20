@@ -20,10 +20,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.ToStringPrintStream;
+import sleeper.clients.testutil.ToStringPrintStream;
+import sleeper.clients.util.console.TestConsoleInput;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.TestConsoleInput;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -33,7 +33,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadTableProperties;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
-import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.TestConsoleInput.CONFIRM_PROMPT;
 
 public class AdminCommonPromptsTest {
     private final ToStringPrintStream out = new ToStringPrintStream();

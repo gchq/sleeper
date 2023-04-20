@@ -21,13 +21,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.clients.console.ConsoleInput;
 import sleeper.clients.status.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.job.JsonCompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
