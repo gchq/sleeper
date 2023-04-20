@@ -31,7 +31,7 @@ import static sleeper.build.github.api.GitHubApiTestHelper.returnWithGitHubApi;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-class GitHubRateLimitsTest {
+class GitHubRateLimitsIT {
 
     @Test
     void shouldGetExampleRateLimits(WireMockRuntimeInfo runtimeInfo) {

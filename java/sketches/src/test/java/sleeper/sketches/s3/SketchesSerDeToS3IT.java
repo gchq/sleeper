@@ -39,12 +39,12 @@ import java.util.Map;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SketchesSerDeToS3Test {
+class SketchesSerDeToS3IT {
     @TempDir
     public java.nio.file.Path folder;
 
     @Test
-    public void shouldSerDeToFile() throws IOException {
+    void shouldSerDeToFile() throws IOException {
         // Given
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());

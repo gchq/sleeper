@@ -49,7 +49,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class SingleFileWritingIteratorTest {
+class SingleFileWritingIteratorIT {
 
     @TempDir
     public java.nio.file.Path tempFolder;
@@ -137,7 +137,7 @@ class SingleFileWritingIteratorTest {
         void shouldInferPartitionIdFromFirstRecordWhenSomeRecordsAreInDifferentPartitions() {
             // Then
             assertThat(fileWritingIterator).toIterable()
-                    .extracting(SingleFileWritingIteratorTest.this::readPartitionIdFromOutputFileMetadata)
+                    .extracting(SingleFileWritingIteratorIT.this::readPartitionIdFromOutputFileMetadata)
                     .containsExactly("left");
         }
 

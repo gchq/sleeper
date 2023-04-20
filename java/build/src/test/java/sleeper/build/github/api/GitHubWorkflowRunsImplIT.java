@@ -35,7 +35,7 @@ import static sleeper.build.github.api.GitHubApiTestHelper.returnWithGitHubApi;
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-class GitHubWorkflowRunsImplTest {
+class GitHubWorkflowRunsImplIT {
 
     private static final GitHubHead GITHUB_EXAMPLE_HEAD = TestGitHubHead.exampleBuilder()
             .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
