@@ -49,7 +49,7 @@ any one Sleeper partition is written by a single Trino writer, and this means th
 generated within S3. Different Sleeper partitions may be written to by different Trino writers and so writing can take
 place in parallel across multiple servers.
 
-## Installation
+## Deployment
 
 ### Build the plugin
 
@@ -71,12 +71,10 @@ This makes it easy to modify, rebuild and test any changes to the plugin during 
 Note that the trino module requires Java 17 whereas other parts of Sleeper require Java 8. The Maven POM explicitly
 states that the trino module is different. Maven handles this need for multiple JDKs successfully.
 
-### Install trino
+### Run Trino server
 
 The standard Trino installation instructions are available
 here: https://trino.io/docs/current/installation/deployment.html
-
-Read through the instructions and then download trino-server-YYY.tar.gz and unpack it.
 
 Trino requires some configuration. The standard Trino instructions provide a great deal of detail about how to do this,
 and the instructions below should be sufficient to get you started.
@@ -106,17 +104,6 @@ If this fails, look in the error messages for the following:
 - AmazonS3Exception: The specified bucket does not exist - the config bucket named in etc/catalog/sleeper.properties is
   incorrect.
 
-### Important JVM flags
-
-There is a conflict between Apache Arrow 8.0.0 and Java 17, which causes errors such as "module java.base does not "opens java.nio" to unnamed module."
-To avoid these errors, add the following flag to the JVM command line:
-
-```
---add-opens=java.base/java.nio=ALL-UNNAMED
-```
-
-This flag has already been added to the example `etc/jvm.config` file.
-
 ### Install a SQL client and connect to the Trino server
 
 Trino uses a standard JDBC connection and there are several suitable sophisticated SQL clients available for free.
@@ -142,6 +129,17 @@ SHOW SCHEMAS FROM SLEEPER;
 
 SHOW TABLES FROM SLEEPER.DEFAULT;
 ```
+
+### Important JVM flags
+
+There is a conflict between Apache Arrow 8.0.0 and Java 17, which causes errors such as "module java.base does not "opens java.nio" to unnamed module."
+To avoid these errors, add the following flag to the JVM command line:
+
+```
+--add-opens=java.base/java.nio=ALL-UNNAMED
+```
+
+This flag has already been added to the example `etc/jvm.config` file.
 
 ## Setting up example Sleeper tables
 
