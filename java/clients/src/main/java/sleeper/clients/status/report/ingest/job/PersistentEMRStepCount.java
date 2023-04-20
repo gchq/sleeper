@@ -27,7 +27,7 @@ public class PersistentEMRStepCount {
     private PersistentEMRStepCount() {
     }
 
-    public static Map<String, Integer> from(AmazonElasticMapReduce emrClient) {
+    public static Map<String, Integer> byStatus(AmazonElasticMapReduce emrClient) {
         return new HashMap<>();
     }
 

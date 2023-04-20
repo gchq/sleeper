@@ -22,21 +22,39 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.Collections;
 import java.util.Map;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listStepsRequestWithClusterId;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 @WireMockTest
-public class PersistentEMRStepCountIT {
+class PersistentEMRStepCountIT {
     private final InstanceProperties properties = createTestInstanceProperties();
 
     @Test
-    void shouldFindNoStepsForCluster() {
-        // TODO
+    void shouldFindNoStepsForCluster(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
+        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"Clusters\": [{" +
+                        "\"Name\":\"test-emr-cluster\"," +
+                        "\"Id\":\"test-cluster-id\"" +
+                        "}]}")));
+        stubFor(listStepsRequestWithClusterId("test-cluster-id").willReturn(aResponse().withStatus(200)
+                .withBody("{\"Steps\": []}")));
+
+        // When / Then
+        assertThat(getStepCountByStatus(runtimeInfo)).isEqualTo(Collections.emptyMap());
     }
 
-    private Map<String, Integer> getStepCount(WireMockRuntimeInfo runtimeInfo) {
-        return PersistentEMRStepCount.from(wiremockEmrClient(runtimeInfo));
+    private Map<String, Integer> getStepCountByStatus(WireMockRuntimeInfo runtimeInfo) {
+        return PersistentEMRStepCount.byStatus(wiremockEmrClient(runtimeInfo));
     }
 }

@@ -33,8 +33,9 @@ public class WiremockEMRTestHelper {
     private WiremockEMRTestHelper() {
     }
 
-    private static final String OPERATION_HEADER = "X-Amz-Target";
+    public static final String OPERATION_HEADER = "X-Amz-Target";
     private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
+    private static final StringValuePattern MATCHING_LIST_STEPS_OPERATION = matching("ElasticMapReduce.ListSteps");
 
     public static void stubForListingRunningClusters(int numRunningClusters) {
         StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
@@ -49,16 +50,22 @@ public class WiremockEMRTestHelper {
             }
         }
         clustersBody.append("]}");
-        stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+        stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
                 .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
                 .whenScenarioStateIs(STARTED));
     }
 
-    public static MappingBuilder listActiveClusterRequest() {
+    public static MappingBuilder listActiveClustersRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterStates\":[" +
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
+
+    public static MappingBuilder listStepsRequestWithClusterId(String clusterId) {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_STEPS_OPERATION)
+                .withRequestBody(equalToJson("{\"ClusterId\":\"" + clusterId + "\"}"));
     }
 
     public static RequestPatternBuilder listActiveClustersRequested() {

@@ -43,7 +43,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClusterRequest;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.stubForListingRunningClusters;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -63,11 +64,9 @@ import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 @WireMockTest
 class ShutdownSystemProcessesIT {
 
-    private static final String OPERATION_HEADER = "X-Amz-Target";
     private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
     private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
-    private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
     private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
 
     private ShutdownSystemProcesses shutdown;
@@ -178,7 +177,7 @@ class ShutdownSystemProcessesIT {
         void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +
                             "   \"Name\": \"sleeper-test-instance-test-cluster\"," +
@@ -189,7 +188,7 @@ class ShutdownSystemProcessesIT {
             stubFor(terminateJobFlowsRequest().inScenario("TerminateEMRClusters")
                     .whenScenarioStateIs(STARTED)
                     .willSetStateTo("TERMINATED"));
-            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
@@ -211,7 +210,7 @@ class ShutdownSystemProcessesIT {
             stubFor(terminateJobFlowsRequestWithJobIdCount(10));
             stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
                     .willSetStateTo("TERMINATED"));
-            stubFor(listActiveClusterRequest().inScenario("TerminateEMRClusters")
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
@@ -231,7 +230,7 @@ class ShutdownSystemProcessesIT {
         void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClusterRequest()
+            stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": []}")));
 
@@ -247,7 +246,7 @@ class ShutdownSystemProcessesIT {
         void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClusterRequest()
+            stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +
                             "   \"Name\": \"sleeper-another-instance-test-cluster\"," +
