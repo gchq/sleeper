@@ -17,18 +17,44 @@
 package sleeper.clients.status.report.ingest.job;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
+import com.amazonaws.services.elasticmapreduce.model.ListStepsRequest;
 import com.amazonaws.services.elasticmapreduce.model.StepSummary;
 
+import sleeper.configuration.properties.InstanceProperties;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import static sleeper.clients.util.EmrUtils.listActiveClusters;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 public class PersistentEMRStepCount {
     private PersistentEMRStepCount() {
     }
 
-    public static Map<String, Integer> byStatus(AmazonElasticMapReduce emrClient) {
-        return new HashMap<>();
+    public static Map<String, Integer> byStatus(
+            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient) {
+        return getPersistentClusterId(instanceProperties, emrClient)
+                .map(id -> emrClient.listSteps(new ListStepsRequest()
+                        .withClusterId(id)).getSteps())
+                .map(PersistentEMRStepCount::countStepsByState)
+                .orElse(Collections.emptyMap());
+    }
+
+    private static Optional<String> getPersistentClusterId(
+            InstanceProperties instanceProperties, AmazonElasticMapReduce emrClient) {
+        String clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
+        if (clusterName == null) {
+            return Optional.empty();
+        }
+        return listActiveClusters(emrClient).getClusters().stream()
+                .filter(cluster -> clusterName.equals(cluster.getName()))
+                .map(ClusterSummary::getId)
+                .findAny();
     }
 
     private static Map<String, Integer> countStepsByState(List<StepSummary> steps) {
