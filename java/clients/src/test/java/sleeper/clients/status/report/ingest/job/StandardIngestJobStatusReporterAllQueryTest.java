@@ -73,7 +73,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
     }
 
     @Test
-    void shouldReportNoIngestJobsWithPersistentEmrStepsPending() throws Exception {
+    void shouldReportNoIngestJobsWithPersistentEmrStepsNotFinished() throws Exception {
         // Given
         List<IngestJobStatus> noJobs = Collections.emptyList();
         Map<String, Integer> stepCount = Map.of("PENDING", 2, "RUNNING", 1);

@@ -23,6 +23,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
@@ -71,5 +72,16 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         // When / Then
         assertThat(getJsonReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/json/jobsWithLargeAndDecimalStatistics.json")));
+    }
+
+    @Test
+    public void shouldReportNoIngestJobsWithPersistentEmrStepsNotFinished() throws Exception {
+        // Given
+        List<IngestJobStatus> noJobs = Collections.emptyList();
+        Map<String, Integer> stepCount = Map.of("PENDING", 2, "RUNNING", 1);
+
+        // When / Then
+        assertThat(getJsonReport(JobQuery.Type.ALL, noJobs, 0, stepCount)).hasToString(
+                example("reports/ingest/job/json/noJobsWithEmrStepsUnfinished.json"));
     }
 }

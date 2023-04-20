@@ -57,10 +57,10 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
                                         Map<String, Integer> persistentEmrStepCount) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("queueMessages", gson.toJsonTree(queueMessages));
-        jsonObject.add("jobList", gson.toJsonTree(statusList));
         if (!persistentEmrStepCount.isEmpty()) {
             jsonObject.add("persistentEmrStepCount", gson.toJsonTree(persistentEmrStepCount));
         }
+        jsonObject.add("jobList", gson.toJsonTree(statusList));
         return jsonObject;
     }
 
