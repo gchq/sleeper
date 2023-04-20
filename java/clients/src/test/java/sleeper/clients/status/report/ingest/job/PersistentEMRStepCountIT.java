@@ -56,6 +56,28 @@ class PersistentEMRStepCountIT {
     }
 
     @Test
+    void shouldFindNoStepsWhenClusterHasTerminated(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
+        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"Clusters\": []}")));
+
+        // When / Then
+        assertThat(getStepCountByStatus(runtimeInfo))
+                .isEqualTo(Collections.emptyMap());
+    }
+
+    @Test
+    void shouldFindNoPersistentClusterDeployed(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        properties.unset(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
+
+        // When / Then
+        assertThat(getStepCountByStatus(runtimeInfo))
+                .isEqualTo(Collections.emptyMap());
+    }
+
+    @Test
     void shouldFindOnePendingStepForCluster(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
@@ -143,16 +165,6 @@ class PersistentEMRStepCountIT {
         // When / Then
         assertThat(getStepCountByStatus(runtimeInfo))
                 .isEqualTo(Map.of("PENDING", 2));
-    }
-
-    @Test
-    void shouldFindNoPersistentClusterDeployed(WireMockRuntimeInfo runtimeInfo) {
-        // Given
-        properties.unset(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
-
-        // When / Then
-        assertThat(getStepCountByStatus(runtimeInfo))
-                .isEqualTo(Collections.emptyMap());
     }
 
     private Map<String, Integer> getStepCountByStatus(WireMockRuntimeInfo runtimeInfo) {
