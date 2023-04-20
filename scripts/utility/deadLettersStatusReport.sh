@@ -27,4 +27,4 @@ fi
 INSTANCE_ID=$1
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.report.DeadLettersStatusReport ${INSTANCE_ID}
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.report.DeadLettersStatusReport "${INSTANCE_ID}"
