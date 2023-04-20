@@ -118,10 +118,14 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
                                         Map<String, Integer> persistentEmrStepCount) {
         queueMessages.print(out);
+        printEmrStepCount(persistentEmrStepCount);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
-        if (!persistentEmrStepCount.isEmpty()) {
-            out.printf("Total persistent EMR steps pending: %s%n", persistentEmrStepCount.get("PENDING"));
-            out.printf("Total persistent EMR steps running: %s%n", persistentEmrStepCount.get("RUNNING"));
+    }
+
+    private void printEmrStepCount(Map<String, Integer> stepCount) {
+        if (!stepCount.isEmpty()) {
+            out.printf("Total persistent EMR steps pending: %s%n", stepCount.getOrDefault("PENDING", 0));
+            out.printf("Total persistent EMR steps running: %s%n", stepCount.getOrDefault("RUNNING", 0));
         }
     }
 
