@@ -51,25 +51,8 @@ place in parallel across multiple servers.
 
 ## Deployment
 
-### Build the plugin
-
 This plugin has been built and tested against Trino 390. This version of Trino requires Java 17, so ensure that you have
 Java 17 installed. Amazon Corretto seems to work perfectly well.
-
-All of the Sleeper-Trino plugin code is contained in the trino subdirectory. It depends on other parts of the Sleeper
-codebase and it will be built at the same time as the rest of Sleeper:
-> cd sleeper/java
->
-> mvn clean package -Pquick
-
-This will download the required dependencies and build all of Sleeper. It will generate a shaded jar called
-'sleeper/java/trino/target/trino-XXXXXX-utility.jar'.
-
-In later steps, a symbolic link will be made to the JAR file, so that Trino always has access to the latest version.
-This makes it easy to modify, rebuild and test any changes to the plugin during development.
-
-Note that the trino module requires Java 17 whereas other parts of Sleeper require Java 8. The Maven POM explicitly
-states that the trino module is different. Maven handles this need for multiple JDKs successfully.
 
 ### Run Trino server
 
@@ -129,6 +112,16 @@ SHOW SCHEMAS FROM SLEEPER;
 
 SHOW TABLES FROM SLEEPER.DEFAULT;
 ```
+
+### Maven build
+
+All of the Sleeper-Trino plugin code is contained in the trino subdirectory. It depends on other parts of the Sleeper
+codebase and it will be built at the same time as the rest of Sleeper.
+
+The Maven build will generate a shaded jar called `sleeper/java/trino/target/trino-XXXXXX-utility.jar`.
+
+Note that the trino module requires Java 17 whereas other parts of Sleeper require Java 8. The Maven POM explicitly
+states that the trino module is different. Maven handles this need for multiple JDKs successfully.
 
 ### Important JVM flags
 
