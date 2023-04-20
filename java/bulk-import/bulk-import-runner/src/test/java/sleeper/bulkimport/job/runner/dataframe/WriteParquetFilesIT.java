@@ -56,7 +56,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class WriteParquetFilesTest {
+class WriteParquetFilesIT {
 
     @TempDir
     public java.nio.file.Path folder;
@@ -77,7 +77,7 @@ public class WriteParquetFilesTest {
     }
 
     @Test
-    public void shouldWriteParquetFiles() throws IOException {
+    void shouldWriteParquetFiles() throws IOException {
         // Given
         String dir = createTempDirectory(folder, null).toString();
         String dataBucket = "dataBucket";
@@ -115,7 +115,7 @@ public class WriteParquetFilesTest {
     }
 
     @Test
-    public void ShouldWriteToMultipleParquetFilesWhenDataContainsMoreThanOnePartition() throws IOException {
+    void shouldWriteToMultipleParquetFilesWhenDataContainsMoreThanOnePartition() throws IOException {
         // Given
         String dir = createTempDirectory(folder, null).toString();
         String dataBucket = "dataBucket";

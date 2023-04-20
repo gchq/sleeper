@@ -42,13 +42,13 @@ import java.util.Map;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ParquetRecordReaderTest {
+class ParquetRecordReaderIT {
 
     @TempDir
     public java.nio.file.Path folder;
 
     @Test
-    public void shouldReadRecordsCorrectlyWithIntKey() throws IOException {
+    void shouldReadRecordsCorrectlyWithIntKey() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new IntType()))
@@ -84,7 +84,7 @@ public class ParquetRecordReaderTest {
     }
 
     @Test
-    public void shouldReadRecordsCorrectlyWithByteArrayKey() throws IOException {
+    void shouldReadRecordsCorrectlyWithByteArrayKey() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new ByteArrayType()))
@@ -121,7 +121,7 @@ public class ParquetRecordReaderTest {
     }
 
     @Test
-    public void shouldReadRecordsCorrectlyWithByteArrayKeyAndMapValue() throws IOException {
+    void shouldReadRecordsCorrectlyWithByteArrayKeyAndMapValue() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new ByteArrayType()))
@@ -166,7 +166,7 @@ public class ParquetRecordReaderTest {
     }
 
     @Test
-    public void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyMapValue() throws IOException {
+    void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyMapValue() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new ByteArrayType()))
@@ -211,7 +211,7 @@ public class ParquetRecordReaderTest {
     }
 
     @Test
-    public void shouldReadRecordsCorrectlyWithByteArrayKeyAndListValue() throws IOException {
+    void shouldReadRecordsCorrectlyWithByteArrayKeyAndListValue() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new ByteArrayType()))
@@ -256,7 +256,7 @@ public class ParquetRecordReaderTest {
     }
 
     @Test
-    public void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyListValue() throws IOException {
+    void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyListValue() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new ByteArrayType()))
@@ -301,7 +301,7 @@ public class ParquetRecordReaderTest {
     }
 
     @Test
-    public void shouldReadRecordsCorrectlyWithASubsetOfTheSchema() throws IOException {
+    void shouldReadRecordsCorrectlyWithASubsetOfTheSchema() throws IOException {
         // Given
         Schema writeSchema = Schema.builder()
                 .rowKeyFields(new Field("column1", new StringType()))

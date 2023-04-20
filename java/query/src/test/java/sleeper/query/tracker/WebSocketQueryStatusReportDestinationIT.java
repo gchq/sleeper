@@ -51,7 +51,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 @WireMockTest
-public class WebSocketQueryStatusReportDestinationTest {
+class WebSocketQueryStatusReportDestinationIT {
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .valueFields(new Field("count", new LongType()))
@@ -64,7 +64,7 @@ public class WebSocketQueryStatusReportDestinationTest {
     }
 
     @Test
-    public void shouldNotSendQueryQueuedNotification() {
+    void shouldNotSendQueryQueuedNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -78,7 +78,7 @@ public class WebSocketQueryStatusReportDestinationTest {
     }
 
     @Test
-    public void shouldNotSendQueryInProgressNotification() {
+    void shouldNotSendQueryInProgressNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -92,7 +92,7 @@ public class WebSocketQueryStatusReportDestinationTest {
     }
 
     @Test
-    public void shouldSendNotificationOfSubQueriesBeingCreated() {
+    void shouldSendNotificationOfSubQueriesBeingCreated() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -120,7 +120,7 @@ public class WebSocketQueryStatusReportDestinationTest {
     }
 
     @Test
-    public void shouldSendQueryCompletedNotification() {
+    void shouldSendQueryCompletedNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -143,7 +143,7 @@ public class WebSocketQueryStatusReportDestinationTest {
     }
 
     @Test
-    public void shouldSendPartialQueryFailureNotification() {
+    void shouldSendPartialQueryFailureNotification() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
@@ -166,7 +166,7 @@ public class WebSocketQueryStatusReportDestinationTest {
     }
 
     @Test
-    public void shouldSendQueryFailureNotificationOnException() {
+    void shouldSendQueryFailureNotificationOnException() {
         // Given
         stubFor(post(config.getUrl()).willReturn(aResponse().withStatus(200)));
         Range range = config.getRangeFactory().createExactRange(SCHEMA.getRowKeyFields().get(0), "a");

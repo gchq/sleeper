@@ -28,13 +28,13 @@ import java.util.List;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class IngestJobUtilsTest {
+class IngestJobUtilsIT {
 
     @TempDir
     public java.nio.file.Path folder;
 
     @Test
-    public void shouldReturnEmptyListIfNoFiles() throws Exception {
+    void shouldReturnEmptyListIfNoFiles() throws Exception {
         // Given
         Configuration conf = new Configuration();
 
@@ -46,7 +46,7 @@ public class IngestJobUtilsTest {
     }
 
     @Test
-    public void shouldReturnEmptyListIfNull() throws Exception {
+    void shouldReturnEmptyListIfNull() throws Exception {
         // Given
         Configuration conf = new Configuration();
 
@@ -58,7 +58,7 @@ public class IngestJobUtilsTest {
     }
 
     @Test
-    public void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
+    void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
         // Given
         String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
@@ -80,7 +80,7 @@ public class IngestJobUtilsTest {
     }
 
     @Test
-    public void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
+    void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
         // Given
         String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
@@ -104,7 +104,7 @@ public class IngestJobUtilsTest {
     }
 
     @Test
-    public void shouldGetPathsForFilesInMultipleDirectories() throws Exception {
+    void shouldGetPathsForFilesInMultipleDirectories() throws Exception {
         // Given
         String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
@@ -133,7 +133,7 @@ public class IngestJobUtilsTest {
     }
 
     @Test
-    public void shouldGetPathsForFilesInNestedDirectories() throws Exception {
+    void shouldGetPathsForFilesInNestedDirectories() throws Exception {
         // Given
         String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
