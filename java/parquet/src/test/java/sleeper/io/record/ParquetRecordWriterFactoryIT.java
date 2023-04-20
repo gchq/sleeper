@@ -17,6 +17,7 @@ package sleeper.io.record;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.column.Encoding;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -47,13 +48,13 @@ import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_EN
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 
-public class ParquetRecordWriterFactoryTest {
+class ParquetRecordWriterFactoryIT {
 
     @TempDir
     public java.nio.file.Path folder;
 
     @Test
-    public void shouldWriteRecordsCorrectlyForStringStringSchema() throws IOException {
+    void shouldWriteRecordsCorrectlyForStringStringSchema() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new StringType()))
@@ -89,7 +90,7 @@ public class ParquetRecordWriterFactoryTest {
     }
 
     @Test
-    public void shouldWriteRecordsCorrectlyForLongLongLongSchema() throws IOException {
+    void shouldWriteRecordsCorrectlyForLongLongLongSchema() throws IOException {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("column1", new LongType()))
@@ -130,7 +131,7 @@ public class ParquetRecordWriterFactoryTest {
     }
 
     @Test
-    public void shouldWriteRecordsCorrectlyForByteArraySchema() throws IOException {
+    void shouldWriteRecordsCorrectlyForByteArraySchema() throws IOException {
         // Given
         byte[] byteArray1 = new byte[]{1, 2, 3, 4, 5};
         byte[] byteArray2 = new byte[]{6, 7, 8, 9, 10};
@@ -170,7 +171,7 @@ public class ParquetRecordWriterFactoryTest {
     }
 
     @Test
-    public void shouldRespectDictionaryEncodingOption() throws IOException {
+    void shouldRespectDictionaryEncodingOption() throws IOException {
         // Given
         byte[] byteArray1 = new byte[]{1, 2, 3, 4, 5};
         byte[] byteArray2 = new byte[]{6, 7, 8, 9, 10};
@@ -194,9 +195,9 @@ public class ParquetRecordWriterFactoryTest {
         writeParquetFile(path1, tableProperties, record);
         try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path1, new Configuration()))) {
             List<ColumnChunkMetaData> columns = reader.getRowGroups().get(0).getColumns();
-            assertThat(columns.get(0).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
-            assertThat(columns.get(1).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
-            assertThat(columns.get(2).getEncodings().stream().map(e -> e.usesDictionary())).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(0).getEncodings().stream().map(Encoding::usesDictionary)).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(1).getEncodings().stream().map(Encoding::usesDictionary)).containsExactlyInAnyOrder(true, false);
+            assertThat(columns.get(2).getEncodings().stream().map(Encoding::usesDictionary)).containsExactlyInAnyOrder(true, false);
         }
 
         // When/Then - Dictionary encoding off
@@ -207,9 +208,9 @@ public class ParquetRecordWriterFactoryTest {
         writeParquetFile(path2, tableProperties, record);
         try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path2, new Configuration()))) {
             List<ColumnChunkMetaData> columns = reader.getRowGroups().get(0).getColumns();
-            assertThat(columns.get(0).getEncodings().stream().map(e -> e.usesDictionary())).containsOnly(false);
-            assertThat(columns.get(1).getEncodings().stream().map(e -> e.usesDictionary())).containsOnly(false);
-            assertThat(columns.get(2).getEncodings().stream().map(e -> e.usesDictionary())).containsOnly(false);
+            assertThat(columns.get(0).getEncodings().stream().map(Encoding::usesDictionary)).containsOnly(false);
+            assertThat(columns.get(1).getEncodings().stream().map(Encoding::usesDictionary)).containsOnly(false);
+            assertThat(columns.get(2).getEncodings().stream().map(Encoding::usesDictionary)).containsOnly(false);
         }
     }
 

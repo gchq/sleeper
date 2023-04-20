@@ -36,7 +36,7 @@ import java.util.Map;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ParquetReaderIteratorTest {
+class ParquetReaderIteratorIT {
     @TempDir
     public java.nio.file.Path folder;
 
@@ -47,7 +47,7 @@ public class ParquetReaderIteratorTest {
             .build();
 
     @Test
-    public void shouldReturnCorrectIterator() throws IOException {
+    void shouldReturnCorrectIterator() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);
@@ -78,7 +78,7 @@ public class ParquetReaderIteratorTest {
     }
 
     @Test
-    public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
+    void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema);

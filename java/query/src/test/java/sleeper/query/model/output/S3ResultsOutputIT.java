@@ -63,7 +63,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.query.model.output.S3ResultsOutput.PAGE_SIZE;
 import static sleeper.query.model.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
-public class S3ResultsOutputTest {
+class S3ResultsOutputIT {
     @TempDir
     public Path tempDir;
 
@@ -84,7 +84,7 @@ public class S3ResultsOutputTest {
     }
 
     @Test
-    public void testDefaultConfig() throws Exception {
+    void testDefaultConfig() throws Exception {
         // Given
         ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
         Query query = new Query("table", "query-id", Collections.emptyList());
@@ -100,7 +100,7 @@ public class S3ResultsOutputTest {
     }
 
     @Test
-    public void testPassingPageSizeAsParam() throws Exception {
+    void testPassingPageSizeAsParam() throws Exception {
         // Given
         Map<String, String> config = new HashMap<>();
         config.put(ROW_GROUP_SIZE, "1024");
@@ -119,7 +119,7 @@ public class S3ResultsOutputTest {
     }
 
     @Test
-    public void testNonDefaultPageSize() throws Exception {
+    void testNonDefaultPageSize() throws Exception {
         // Given
         instanceProperties.set(DEFAULT_RESULTS_ROW_GROUP_SIZE, "1024");
         instanceProperties.set(DEFAULT_RESULTS_PAGE_SIZE, "1020");
@@ -154,8 +154,9 @@ public class S3ResultsOutputTest {
     private ParquetMetadata getMetaData(String path) throws IOException {
         Configuration conf = new Configuration();
         org.apache.hadoop.fs.Path inputPath = new org.apache.hadoop.fs.Path(path);
-        ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(inputPath, conf));
-        return fileReader.getFooter();
+        try (ParquetFileReader fileReader = ParquetFileReader.open(HadoopInputFile.fromPath(inputPath, conf))) {
+            return fileReader.getFooter();
+        }
     }
 
     private List<Record> getRecordsFromOutput(String path) {

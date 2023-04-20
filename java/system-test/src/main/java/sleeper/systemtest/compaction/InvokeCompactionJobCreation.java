@@ -24,6 +24,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
+import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 
@@ -52,7 +53,8 @@ public class InvokeCompactionJobCreation {
 
         WaitForQueueEstimate.containsUnfinishedJobs(AmazonSQSClientBuilder.defaultClient(),
                         systemTestProperties, COMPACTION_JOB_QUEUE_URL,
-                        statusStore, "system-test")
+                        statusStore, "system-test",
+                        PollWithRetries.intervalAndMaxPolls(5000, 12))
                 .pollUntilFinished();
     }
 }

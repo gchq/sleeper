@@ -41,10 +41,10 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class CompactSortedFilesIteratorTest extends CompactSortedFilesTestBase {
+class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
     @Test
-    public void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws Exception {
+    void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
@@ -89,7 +89,7 @@ public class CompactSortedFilesIteratorTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws Exception {
+    void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)

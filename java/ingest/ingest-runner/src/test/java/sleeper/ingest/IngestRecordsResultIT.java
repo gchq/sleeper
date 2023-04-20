@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readIngestedRecords;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class IngestRecordsResultTest extends IngestRecordsTestBase {
+class IngestRecordsResultIT extends IngestRecordsTestBase {
 
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -45,7 +45,7 @@ public class IngestRecordsResultTest extends IngestRecordsTestBase {
     private final StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
     @Test
-    public void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorReducesCount() throws Exception {
+    void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorReducesCount() throws Exception {
         // Given
         List<Record> records = Arrays.asList(record("test-1", 1), record("test-1", 2), record("test-2", 3));
 
@@ -59,7 +59,7 @@ public class IngestRecordsResultTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorFiltersOutAll() throws Exception {
+    void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorFiltersOutAll() throws Exception {
         // Given
         List<Record> records = Arrays.asList(record("test-1", 1), record("test-1", 2), record("test-2", 3));
 

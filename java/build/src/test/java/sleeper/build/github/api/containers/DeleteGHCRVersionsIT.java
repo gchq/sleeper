@@ -48,7 +48,7 @@ import static sleeper.build.github.api.containers.TestGHCRVersion.versionWithIdA
 import static sleeper.build.testutil.TestResources.exampleString;
 
 @WireMockTest
-class DeleteGHCRVersionsTest {
+class DeleteGHCRVersionsIT {
 
     @Test
     void shouldDeleteAVersion(WireMockRuntimeInfo runtimeInfo) {
