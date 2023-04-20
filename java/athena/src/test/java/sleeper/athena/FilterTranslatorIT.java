@@ -52,10 +52,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FilterTranslatorTest {
+public class FilterTranslatorIT {
 
     @TempDir
     public static java.nio.file.Path tempDir;
@@ -69,7 +70,7 @@ public class FilterTranslatorTest {
             .build();
 
     @Test
-    public void shouldTranslateNullValueSetIntoNull() {
+    void shouldTranslateNullValueSetIntoNull() {
         // When
         FilterPredicate filterPredicate = new FilterTranslator(SCHEMA).toPredicate(null);
 
@@ -78,7 +79,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldTranslateEmptyMapIntoNull() {
+    void shouldTranslateEmptyMapIntoNull() {
         // When
         FilterPredicate filterPredicate = new FilterTranslator(SCHEMA).toPredicate(new HashMap<>());
 
@@ -87,7 +88,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldCreateIntegerRangePredicateFromSortedSetContainingRange() throws IOException {
+    void shouldCreateIntegerRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -110,7 +111,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldCreateLongRangePredicateFromSortedSetContainingRange() throws IOException {
+    void shouldCreateLongRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -133,7 +134,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldCreateStringRangePredicateFromSortedSetContainingRange() throws IOException {
+    void shouldCreateStringRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -156,7 +157,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldFilterUsingMoreThanOneColumn() throws IOException {
+    void shouldFilterUsingMoreThanOneColumn() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -182,7 +183,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldFilterUsingMoreThanOneRangeOnTheSameColumn() throws IOException {
+    void shouldFilterUsingMoreThanOneRangeOnTheSameColumn() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -207,7 +208,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldCreateByteArrayRangePredicateFromSortedSetContainingRange() throws IOException {
+    void shouldCreateByteArrayRangePredicateFromSortedSetContainingRange() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -218,7 +219,7 @@ public class FilterTranslatorTest {
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", SortedRangeSet.of(Range
                 .range(new BlockAllocatorImpl(), Types.MinorType.VARBINARY.getType(),
-                        "1".getBytes(), true, "2".getBytes(), false)));
+                        "1".getBytes(UTF_8), true, "2".getBytes(UTF_8), false)));
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
@@ -231,7 +232,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldCreatePredicateWhenOnlyLowerBoundRangeIsGiven() throws IOException {
+    void shouldCreatePredicateWhenOnlyLowerBoundRangeIsGiven() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -254,7 +255,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldConsiderBoundsWhenCreatingFilter() throws IOException {
+    void shouldConsiderBoundsWhenCreatingFilter() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -277,7 +278,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnNullWhenAndingTwoNulls() {
+    void shouldReturnNullWhenAndingTwoNulls() {
         // When
         FilterPredicate and = FilterTranslator.and(null, null);
 
@@ -286,7 +287,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnFirstArgumentWhenSecondArgumentIsNullForAnd() {
+    void shouldReturnFirstArgumentWhenSecondArgumentIsNullForAnd() {
         // Given
         Operators.Eq<Integer> lhs = FilterApi.eq(FilterApi.intColumn("test"), 1);
 
@@ -298,7 +299,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnSecondArgumentWhenFirstArgumentIsNullForAnd() {
+    void shouldReturnSecondArgumentWhenFirstArgumentIsNullForAnd() {
         // Given
         Operators.Eq<Integer> rhs = FilterApi.eq(FilterApi.intColumn("test"), 1);
 
@@ -310,7 +311,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldAndTwoArgumentsWhenBothNotNullForAnd() {
+    void shouldAndTwoArgumentsWhenBothNotNullForAnd() {
         // Given
         Operators.Eq<Integer> lhs = FilterApi.eq(FilterApi.intColumn("other"), 1);
         Operators.Eq<Integer> rhs = FilterApi.eq(FilterApi.intColumn("test"), 1);
@@ -323,7 +324,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnNullWhenOringTwoNulls() {
+    void shouldReturnNullWhenOringTwoNulls() {
         // When
         FilterPredicate or = FilterTranslator.or(null, null);
 
@@ -332,7 +333,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnFirstArgumentWhenSecondArgumentIsNullForOr() {
+    void shouldReturnFirstArgumentWhenSecondArgumentIsNullForOr() {
         // Given
         Operators.Eq<Integer> lhs = FilterApi.eq(FilterApi.intColumn("test"), 1);
 
@@ -344,7 +345,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnSecondArgumentWhenFirstArgumentIsNullForOr() {
+    void shouldReturnSecondArgumentWhenFirstArgumentIsNullForOr() {
         // Given
         Operators.Eq<Integer> rhs = FilterApi.eq(FilterApi.intColumn("test"), 1);
 
@@ -356,7 +357,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldOrTwoArgumentsWhenBothNotNullForOr() {
+    void shouldOrTwoArgumentsWhenBothNotNullForOr() {
         // Given
         Operators.Eq<Integer> lhs = FilterApi.eq(FilterApi.intColumn("other"), 1);
         Operators.Eq<Integer> rhs = FilterApi.eq(FilterApi.intColumn("test"), 1);
@@ -369,7 +370,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueAllowListForIntegers() throws IOException {
+    void shouldHandleExactValueAllowListForIntegers() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -392,7 +393,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueDenyListForIntegers() throws IOException {
+    void shouldHandleExactValueDenyListForIntegers() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -415,7 +416,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueAllowListForLongs() throws IOException {
+    void shouldHandleExactValueAllowListForLongs() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -438,7 +439,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueDenyListForLongs() throws IOException {
+    void shouldHandleExactValueDenyListForLongs() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -461,7 +462,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueAllowListForStrings() throws IOException {
+    void shouldHandleExactValueAllowListForStrings() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -484,7 +485,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueDenyListForStrings() throws IOException {
+    void shouldHandleExactValueDenyListForStrings() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -507,7 +508,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueAllowListForByteArrays() throws IOException {
+    void shouldHandleExactValueAllowListForByteArrays() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -518,7 +519,7 @@ public class FilterTranslatorTest {
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
                         Types.MinorType.VARBINARY.getType(), true, false)
-                .add("1".getBytes()).add("3".getBytes()).add("5".getBytes()).build());
+                .add("1".getBytes(UTF_8)).add("3".getBytes(UTF_8)).add("5".getBytes(UTF_8)).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
@@ -530,7 +531,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleExactValueDenyListForByteArrays() throws IOException {
+    void shouldHandleExactValueDenyListForByteArrays() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -541,7 +542,7 @@ public class FilterTranslatorTest {
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
                         Types.MinorType.VARBINARY.getType(), false, false)
-                .add("0".getBytes()).add("1".getBytes()).add("2".getBytes()).add("3".getBytes()).build());
+                .add("0".getBytes(UTF_8)).add("1".getBytes(UTF_8)).add("2".getBytes(UTF_8)).add("3".getBytes(UTF_8)).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
@@ -553,7 +554,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldHandleDifferentPredicateTypesOverMultipleFields() throws IOException {
+    void shouldHandleDifferentPredicateTypesOverMultipleFields() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -580,7 +581,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnNothingIfPredicatesDontOverlap() throws IOException {
+    void shouldReturnNothingIfPredicatesDontOverlap() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -606,7 +607,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldReturnNullIfPredicateIsAll() throws IOException {
+    void shouldReturnNullIfPredicateIsAll() {
         // Given
         FilterTranslator filterTranslator = new FilterTranslator(SCHEMA);
 
@@ -621,7 +622,7 @@ public class FilterTranslatorTest {
     }
 
     @Test
-    public void shouldDealWithExactBoundedRanges() throws IOException {
+    void shouldDealWithExactBoundedRanges() throws IOException {
         // Given
         String dataFile = new File(createTempDirectory(tempDir, null).toString(), "test.parquet").getAbsolutePath();
         writeData(dataFile);
@@ -700,7 +701,7 @@ public class FilterTranslatorTest {
         record.put("int", i);
         record.put("long", i * 1_000_000_000L);
         record.put("string", Integer.toString(i));
-        record.put("bytes", Integer.toString(i).getBytes());
+        record.put("bytes", Integer.toString(i).getBytes(UTF_8));
         record.put("list", Lists.newArrayList(Integer.toString(i)));
         return record;
     }

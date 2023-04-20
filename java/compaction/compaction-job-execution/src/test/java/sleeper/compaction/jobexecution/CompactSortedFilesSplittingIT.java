@@ -46,10 +46,10 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
-public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase {
+class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyAndStateStoreUpdated() throws Exception {
+    void filesShouldMergeAndSplitCorrectlyAndStateStoreUpdated() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
@@ -91,7 +91,7 @@ public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase 
     }
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnFirstKey() throws Exception {
+    void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnFirstKey() throws Exception {
         // Given
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
@@ -141,7 +141,7 @@ public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase 
     }
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnSecondKey() throws Exception {
+    void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnSecondKey() throws Exception {
         // Given
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());

@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class IngestResultTest extends IngestRecordsTestBase {
+class IngestResultIT extends IngestRecordsTestBase {
     @Test
-    public void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
+    void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
@@ -39,7 +39,7 @@ public class IngestResultTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldReturnFileInfoListFromIngestResult() throws Exception {
+    void shouldReturnFileInfoListFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 

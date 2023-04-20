@@ -34,7 +34,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.util.UUID;
 
 @Testcontainers
-public class IngestRecordsITBase extends IngestRecordsTestBase {
+public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
     private static final int DYNAMO_PORT = 8000;
 
     @Container
