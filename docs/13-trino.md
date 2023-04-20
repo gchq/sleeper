@@ -156,18 +156,18 @@ There is currently no way to create tables in Sleeper using SQL, as the plugin d
 tables must be created in the same way as any other Sleeper table.
 
 Here are the relevant schemas:
-> sleeper.table.name=customer
->
-> sleeper.table.schema={"rowKeyFields"\:[{"name"\:"name","type"\:"StringType"}],"sortKeyFields"\:[],"valueFields"\:[{"name"\:"custkey","type"\:"LongType"},{"name"\:"address","type"\:"StringType"},{"name"\:"nationkey","type"\:"LongType"},{"name"\:"phone","type"\:"StringType"},{"name"\:"acctbal","type"\:"StringType"},{"name"\:"mktsegment","type"\:"StringType"},{"name"\:"comment","type"\:"StringType"}]}
-
-> sleeper.table.name=orders
->
-> sleeper.table.schema={"rowKeyFields"\:[{"name"\:"custkey","type"\:"LongType"}],"sortKeyFields"\:[],"valueFields"\:[{"name"\:"orderkey","type"\:"LongType"},{"name"\:"orderstatus","type"\:"StringType"},{"name"\:"totalprice","type"\:"StringType"},{"name"\:"orderdate","type"\:"StringType"},{"name"\:"orderpriority","type"\:"StringType"},{"name"\:"clerk","type"\:"StringType"},{"name"\:"shippriority","type"\:"IntType"},{"name"\:"comment","type"\:"StringType"}]}
-
-> sleeper.table.name=lineitem
->
-> sleeper.table.schema={"rowKeyFields"\:[{"name"\:"orderkey","type"\:"LongType"}],"sortKeyFields"\:[],"valueFields"\:[{"name"\:"partkey","type"\:"LongType"},{"name"\:"suppkey","type"\:"LongType"},{"name"\:"linenumber","type"\:"IntType"},{"name"\:"quantity","type"\:"IntType"},{"name"\:"extendedprice","type"\:"StringType"},{"name"\:"discount","type"\:"StringType"},{"name"\:"tax","type"\:"StringType"},{"name"\:"returnflag","type"\:"StringType"},{"name"\:"linestatus","type"\:"StringType"},{"name"\:"shipdate","type"\:"StringType"},{"name"\:"commitdate","type"\:"StringType"},{"name"\:"receiptdate","type"\:"StringType"},{"name"\:"shipinstruct","type"\:"StringType"},{"name"\:"shipmode","type"\:"StringType"},{"name"\:"comment","type"\:"StringType"}]}
-
+```properties
+sleeper.table.name=customer
+sleeper.table.schema={"rowKeyFields"\:[{"name"\:"name","type"\:"StringType"}],"sortKeyFields"\:[],"valueFields"\:[{"name"\:"custkey","type"\:"LongType"},{"name"\:"address","type"\:"StringType"},{"name"\:"nationkey","type"\:"LongType"},{"name"\:"phone","type"\:"StringType"},{"name"\:"acctbal","type"\:"StringType"},{"name"\:"mktsegment","type"\:"StringType"},{"name"\:"comment","type"\:"StringType"}]}
+```
+```properties
+sleeper.table.name=orders
+sleeper.table.schema={"rowKeyFields"\:[{"name"\:"custkey","type"\:"LongType"}],"sortKeyFields"\:[],"valueFields"\:[{"name"\:"orderkey","type"\:"LongType"},{"name"\:"orderstatus","type"\:"StringType"},{"name"\:"totalprice","type"\:"StringType"},{"name"\:"orderdate","type"\:"StringType"},{"name"\:"orderpriority","type"\:"StringType"},{"name"\:"clerk","type"\:"StringType"},{"name"\:"shippriority","type"\:"IntType"},{"name"\:"comment","type"\:"StringType"}]}
+```
+```properties
+sleeper.table.name=lineitem
+sleeper.table.schema={"rowKeyFields"\:[{"name"\:"orderkey","type"\:"LongType"}],"sortKeyFields"\:[],"valueFields"\:[{"name"\:"partkey","type"\:"LongType"},{"name"\:"suppkey","type"\:"LongType"},{"name"\:"linenumber","type"\:"IntType"},{"name"\:"quantity","type"\:"IntType"},{"name"\:"extendedprice","type"\:"StringType"},{"name"\:"discount","type"\:"StringType"},{"name"\:"tax","type"\:"StringType"},{"name"\:"returnflag","type"\:"StringType"},{"name"\:"linestatus","type"\:"StringType"},{"name"\:"shipdate","type"\:"StringType"},{"name"\:"commitdate","type"\:"StringType"},{"name"\:"receiptdate","type"\:"StringType"},{"name"\:"shipinstruct","type"\:"StringType"},{"name"\:"shipmode","type"\:"StringType"},{"name"\:"comment","type"\:"StringType"}]}
+```
 The connector will not detect new tables as they are created and you will need to restart Trino to make them appear.
 
 ### Inserting data
@@ -175,15 +175,16 @@ The connector will not detect new tables as they are created and you will need t
 The standard Trino TPCH connector provides excellent sample data of different sizes. To insert a few hundred thousand
 rows, run:
 
-> INSERT INTO sleeper.default.customer SELECT * FROM tpch.sf1.customer
->
-> INSERT INTO sleeper.default.orders SELECT * FROM tpch.sf1.orders
->
-> INSERT INTO sleeper.default.lineitem SELECT * FROM tpch.sf1.lineitem
-
+```sql
+INSERT INTO sleeper.default.customer SELECT * FROM tpch.sf1.customer
+INSERT INTO sleeper.default.orders SELECT * FROM tpch.sf1.orders
+INSERT INTO sleeper.default.lineitem SELECT * FROM tpch.sf1.lineitem
+```
 You may wish to look inside your Sleeper S3 buckets to confirm that the data has been uploaded correctly. Alternatively,
 at this modest scale of data, it is safe to run the following:
-> SELECT * FROM sleeper.default.customer WHERE name LIKE 'C%' LIMIT 100
+```sql
+SELECT * FROM sleeper.default.customer WHERE name LIKE 'C%' LIMIT 100
+```
 
 ## Queries
 
@@ -191,42 +192,36 @@ at this modest scale of data, it is safe to run the following:
 
 The columns in a Sleeper table are mapped to SQL columns and the _comment_ field indicates whether the field is a
 rowkey, sortkey or value field:
-> SHOW COLUMNS FROM sleeper.default.customer
+```sql
+SHOW COLUMNS FROM sleeper.default.customer
+```
 
 Returns:
-> name	varchar		ROWKEY
->
-> custkey	bigint		VALUE
->
-> address	varchar		VALUE
->
-> nationkey	bigint		VALUE
->
-> phone	varchar		VALUE
->
-> acctbal	varchar		VALUE
->
-> mktsegment	varchar		VALUE
->
-> comment	varchar		VALUE
-
+```
+name	    varchar		ROWKEY
+custkey	    bigint		VALUE
+address	    varchar		VALUE
+nationkey   bigint		VALUE
+phone	    varchar		VALUE
+acctbal	    varchar		VALUE
+mktsegment  varchar		VALUE
+comment     varchar		VALUE
+```
 In this table, the rows are keyed by the _name_ field and any query that is run must include a filter on that column.
 The following queries are all valid:
-> SELECT * FROM sleeper.default.customer WHERE name = 'Customer#000000001'
->
-> SELECT * FROM sleeper.default.customer WHERE name IN ('Customer#000000001', 'Customer#000000008')
->
-> SELECT * FROM sleeper.default.customer WHERE name BETWEEN 'Customer#000000001' AND 'Customer#000000900'
->
-> SELECT * FROM sleeper.default.customer WHERE name LIKE 'Customer#0000001%' AND mktsegment = 'MACHINERY'
->
-> SELECT mktsegment, COUNT(*) AS numcustomers FROM sleeper.default.customer WHERE name BETWEEN 'Customer#000000001' AND 'Customer#000000900' GROUP BY mktsegment
+```sql
+SELECT * FROM sleeper.default.customer WHERE name = 'Customer#000000001'
+SELECT * FROM sleeper.default.customer WHERE name IN ('Customer#000000001', 'Customer#000000008')
+SELECT * FROM sleeper.default.customer WHERE name BETWEEN 'Customer#000000001' AND 'Customer#000000900'
+SELECT * FROM sleeper.default.customer WHERE name LIKE 'Customer#0000001%' AND mktsegment = 'MACHINERY'
+SELECT mktsegment, COUNT(*) AS numcustomers FROM sleeper.default.customer WHERE name BETWEEN 'Customer#000000001' AND 'Customer#000000900' GROUP BY mktsegment
+```
 
 The following queries will generate an error:
-> SELECT * FROM sleeper.default.customer
->
-> SELECT * FROM sleeper.default.customer WHERE mktsegment = 'MACHINERY'
-
+```sql
+SELECT * FROM sleeper.default.customer
+SELECT * FROM sleeper.default.customer WHERE mktsegment = 'MACHINERY'
+```
 ### Table joins
 
 This plugin uses dynamic filters to enable efficient joins between tables.
@@ -234,8 +229,9 @@ This plugin uses dynamic filters to enable efficient joins between tables.
 In order to explain what dynamic filters do, and why they are essential to implementing joins between two Sleeper
 tables, consider how the tables _customer_ (keyed by _name_) and _orders_ (keyed by _custkey_) would be joined in the
 following query:
-> SELECT * FROM orders INNER JOIN customer USING (custkey) WHERE name = 'Customer#000000001'
-
+```sql
+SELECT * FROM orders INNER JOIN customer USING (custkey) WHERE name = 'Customer#000000001'
+```
 Without a dynamic filter, the join will be executed as follows:
 
 - The customer table will have the static filter (name = 'Customer#000000001') applied to it and the rows will be
@@ -258,8 +254,9 @@ table and the IN clause does not grow too large.
 
 Unfortunately the order of query execution is affected by the order that the JOIN clause is expressed in the SQL query.
 The following SQL expresses exactly the same join as above, but the execution plan is different:
-> SELECT * FROM customer INNER JOIN orders USING (custkey) WHERE name = 'Customer#0000000001'
-
+```sql
+SELECT * FROM customer INNER JOIN orders USING (custkey) WHERE name = 'Customer#0000000001'
+```
 The execution plan tries to execute the query as follows:
 
 - Scan the entire orders table with no filter.
@@ -268,8 +265,9 @@ The execution plan tries to execute the query as follows:
 This query plan is rejected because no filter has been applied to the orders table.
 
 Trino allows you to see the query plan that it will execute:
-> EXPLAIN SELECT * FROM orders INNER JOIN customer USING (custkey) WHERE name = 'Customer#0000000001'
-
+```sql
+EXPLAIN SELECT * FROM orders INNER JOIN customer USING (custkey) WHERE name = 'Customer#0000000001'
+```
 In order to construct a query which will execute correctly:
 
 - When tables are joined together, the last table in the SQL query is usually scanned first. In the expression 'table1
@@ -285,11 +283,13 @@ Trino allows queries to run where the data comes from different data sources. Th
 such as enrichment.
 
 First of all, we put the enrichment data into memory:
-> CREATE TABLE memory.default.nation SELECT * FROM tpch.sf1.nation
-
+```sql
+CREATE TABLE memory.default.nation SELECT * FROM tpch.sf1.nation
+```
 The join works as usual:
-> SELECT * FROM memory.default.nation INNER JOIN sleeper.default.customer USING (nationkey) WHERE name = 'Customer#0000000001'
-
+```sql
+SELECT * FROM memory.default.nation INNER JOIN sleeper.default.customer USING (nationkey) WHERE name = 'Customer#0000000001'
+```
 The enriched results are now available.
 
 ## System control features
@@ -301,13 +301,15 @@ desired.
 ### System tables
 
 The following query will return details about all of the partitions in the customer table:
-> SELECT * FROM sleeper.system.partitions WHERE schemaname = 'default' AND tablename = 'customer'
-
+```sql
+SELECT * FROM sleeper.system.partitions WHERE schemaname = 'default' AND tablename = 'customer'
+```
 ### System procedures
 
 The following procedure call will display a 'hello world' message in the Trino logs:
-> CALL sleeper.runtime.log_hello('Fred');
-
+```sql
+CALL sleeper.runtime.log_hello('Fred');
+```
 ## Advanced techniques
 
 The techniques in this section have not been tried at significant scale.
@@ -319,21 +321,24 @@ make the enriched data faster to retrive and filter, as the enrichment does not 
 retrieved.
 
 This can be achieved using a join:
-> INSERT INTO exampletable SELECT * FROM enrichment INNER JOIN sourcedata USING (key)
-
+```sql
+INSERT INTO exampletable SELECT * FROM enrichment INNER JOIN sourcedata USING (key)
+```
 ### Secondary indexing
 
 Sleeper queries are only fast when the rows can be fitered by the row key. It is often desirable to be able to query the
 data by a different column and secondary indexing is required.
 
 This can be achieved by storing the index in a second table:
-> INSERT INTO basetable SELECT key, col1, col2, col3, col4, col5 FROM sourcedata
->
-> INSERT INTO indextable SELECT col1, key FROM sourcedata
+```sql
+INSERT INTO basetable SELECT key, col1, col2, col3, col4, col5 FROM sourcedata
+INSERT INTO indextable SELECT col1, key FROM sourcedata
+```
 
 The secondary index table can now be joined the base table as follows:
-> SELECT * FROM basetable INNER JOIN indextable USING (key) WHERE col1 = 'secondary_value_to_look_up'
-
+```sql
+SELECT * FROM basetable INNER JOIN indextable USING (key) WHERE col1 = 'secondary_value_to_look_up'
+```
 This will retrieve rows which are both in the base table and have been indexed. If something goes wrong during the
 insert operation, or if Sleeper has aged-off some data, it is possible to be left with base rows that have no
 corresponding index row, or vice versa. The above query will ignore these rows.
@@ -349,7 +354,9 @@ The _testutils_ directory contains a standalone Trino server called _SleeperQuer
 without additional configuration.
 
 The _etc/jvm.config_ file contains the following line:
-> -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5055
+```
+-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5055
+```
 
 This allows a debugger to connect to a running Trino instance on port 5055. Test classes may also be run and debugged in
 the usual manner for your IDE.
@@ -365,14 +372,17 @@ values (or ranges) that the column can contain. This works well in the one-dimen
 be mapped directly to Sleeper key ranges for a query.
 
 When the TupleDomain contains two or more columns, the domains are ANDed together. In a filter expression such as...
-> SELECT * FROM two_dimensions WHERE (x=1 AND y=2) OR (x=3 AND y=4)
-
+```sql
+SELECT * FROM two_dimensions WHERE (x=1 AND y=2) OR (x=3 AND y=4)
+```
 ...the domains will be the equivalent of...
-> x IN (1,3) AND y IN (2,4)
-
+```sql
+x IN (1,3) AND y IN (2,4)
+```
 ...which could be any of the values:
-> (1,2), (1,4), (2,2), (2,4)
-
+```sql
+(1,2), (1,4), (2,2), (2,4)
+```
 This will result in Sleeper scanning more rows than is necessary. The problem becomes more severe as more and more OR
 clauses are added to the original query, which result in a very large number of combinations of the two domains to scan
 in Sleeper. In a large join with a multi-dimensional row key, this could become very severe.
