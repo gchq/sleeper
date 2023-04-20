@@ -261,10 +261,10 @@ EXPLAIN SELECT * FROM orders INNER JOIN customer USING (custkey) WHERE name = 'C
 ```
 In order to construct a query which will execute correctly:
 
-- When tables are joined together, the last table in the SQL query is usually scanned first. In the expression 'table1
-  INNER JOIN table2', table2 will be scanned first, so make sure that the rowkey for table1 is the join key extracted
+- When tables are joined together, the last table in the SQL query is usually scanned first. In the expression `table1
+  INNER JOIN table2`, table2 will be scanned first, so make sure that the rowkey for table1 is the join key extracted
   from table2.
-- Look at the query plan by running EXPLAIN SELECT... In the query plan, look for the ScanProject and ScanFilterProject
+- Look at the query plan by running `EXPLAIN SELECT...` In the query plan, look for the ScanProject and ScanFilterProject
   rows, which contain _tupledomain_ and _dynamicfilter_ fields. These tell you what static and dynamic filters are being
   applied. The table at the end of the query plan is usually the one that is scanned first.
 
@@ -338,7 +338,7 @@ corresponding index row, or vice versa. The above query will ignore these rows.
 
 ### Testing
 
-The directory _sleeper/tino/test/java/sleeper/trino_ contains several test classes. These provide good examples of the
+The directory _sleeper/trino/test/java/sleeper/trino_ contains several test classes. These provide good examples of the
 way in which SQL expressions can be run and tested against Trino.
 
 The _testutils_ directory contains a standalone Trino server called _SleeperQueryRunner_. This can be run on its own
