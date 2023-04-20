@@ -123,7 +123,10 @@ Trino uses a standard JDBC connection and there are several suitable sophisticat
 Consider installing DBeaver or Squirrel SQL. Trino also provides its own basic command-line client.
 
 Install whichever client you prefer and set up a Trino JDBC database connection to:
-> jdbc:trino://localhost:8080
+
+```
+jdbc:trino://localhost:8080
+```
 
 The default Trino user name is 'user' and the default password is blank.
 
@@ -131,11 +134,14 @@ Trino provides a web interface at http://localhost:8080 to monitor queries and s
 for this monitoring site are the same user name and password as for the JDBC connection above.
 
 All of the tables in the Sleeper instance should appear in a Trino schema called _sleeper.default_:
-> SHOW CATALOGS;
->
-> SHOW SCHEMAS FROM SLEEPER;
->
-> SHOW TABLES FROM SLEEPER.DEFAULT;
+
+```sql
+SHOW CATALOGS;
+
+SHOW SCHEMAS FROM SLEEPER;
+
+SHOW TABLES FROM SLEEPER.DEFAULT;
+```
 
 ## Setting up example Sleeper tables
 
