@@ -77,17 +77,17 @@ public class WaitForEMRClusters {
                 .count();
     }
 
-    private static Map<String, Long> countClustersByState(List<ClusterSummary> clusters) {
-        Map<String, Long> counts = new HashMap<>();
+    private static Map<String, Integer> countClustersByState(List<ClusterSummary> clusters) {
+        Map<String, Integer> counts = new HashMap<>();
         for (ClusterSummary cluster : clusters) {
             counts.compute(cluster.getStatus().getState(), WaitForEMRClusters::incrementCount);
         }
         return counts;
     }
 
-    private static Long incrementCount(String key, Long countBefore) {
+    private static Integer incrementCount(String key, Integer countBefore) {
         if (countBefore == null) {
-            return 1L;
+            return 1;
         } else {
             return countBefore + 1;
         }
