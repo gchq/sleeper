@@ -26,7 +26,7 @@ START_TIME=$(record_time)
 
 END_INGEST=$(record_time)
 
-"$COMMON_DIR/testCompaction.sh"
+"$THIS_DIR/testSplittingCompaction.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
@@ -34,5 +34,5 @@ echo "Finished compaction performance test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Ingest finished at $(recorded_time_str "$END_INGEST"), took $(elapsed_time_str "$START_TIME" "$END_INGEST")"
-echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_INGEST" "$FINISH_TIME")"
+echo "Splitting compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_INGEST" "$FINISH_TIME")"
 echo "Overall, tests took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
