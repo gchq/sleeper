@@ -21,7 +21,9 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.ingest.job.status.IngestJobStatus;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.ingestMessageCount;
@@ -37,14 +39,26 @@ public class IngestJobStatusReporterTestHelper {
     }
 
     public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
+        return getStandardReport(query, statusList, numberInQueue, Collections.emptyMap());
+    }
+
+    public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+                                           Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, ingestMessageCount(numberInQueue));
+        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
+                ingestMessageCount(numberInQueue), persistentEmrStepCount);
         return output.toString();
     }
 
     public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
+        return getJsonReport(query, statusList, numberInQueue, Collections.emptyMap());
+    }
+
+    public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+                                       Map<String, Integer> persistentEmrStepCount) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, ingestMessageCount(numberInQueue));
+        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
+                ingestMessageCount(numberInQueue), persistentEmrStepCount);
         return output.toString();
     }
 }

@@ -79,7 +79,8 @@ public class IngestJobStatusReport {
         }
         ingestJobStatusReporter.report(
                 query.run(statusStore), queryType,
-                IngestQueueMessages.from(properties, queueClient));
+                IngestQueueMessages.from(properties, queueClient),
+                Map.of());
     }
 
     public static void main(String[] args) throws IOException {
