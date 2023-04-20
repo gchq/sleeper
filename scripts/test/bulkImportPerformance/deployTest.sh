@@ -15,24 +15,28 @@
 
 set -e
 
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+  exit 1
+fi
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-COMMON_DIR=$(cd "$THIS_DIR" && cd ../common && pwd)
+TEST_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$COMMON_DIR/waitForIngest.sh"
+"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@" "true" "$TEST_DIR/splitpoints/string/512-partitions.txt"
+END_DEPLOY_TIME=$(record_time)
 
-END_INGEST=$(record_time)
-
-"$COMMON_DIR/testCompaction.sh"
+"$THIS_DIR/testBulkImport.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished compaction performance test"
+echo "Finished paused deploy & test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Ingest finished at $(recorded_time_str "$END_INGEST"), took $(elapsed_time_str "$START_TIME" "$END_INGEST")"
-echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_INGEST" "$FINISH_TIME")"
-echo "Overall, tests took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
+echo "Tests finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$FINISH_TIME")"
+echo "Overall, deploy & paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
