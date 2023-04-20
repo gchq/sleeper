@@ -38,19 +38,23 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 
 public class WaitForIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
+    private static final long TASKS_FINISHED_POLL_INTERVAL_MILLIS = 30000;
+    private static final int TASKS_FINISHED_MAX_POLLS = 30;
+    private static final long QUEUE_EMPTY_POLL_INTERVAL_MILLIS = 10000;
+    private static final int QUEUE_EMPTY_MAX_POLLS = 12;
 
     private final IngestTaskStatusStore taskStatusStore;
     private final WaitForQueueEstimate waitForEmptyQueue;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(
+            TASKS_FINISHED_POLL_INTERVAL_MILLIS, TASKS_FINISHED_MAX_POLLS);
 
     public WaitForIngestTasks(
             SystemTestProperties systemTestProperties,
             AmazonSQS sqsClient,
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
-        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL);
+        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL,
+                PollWithRetries.intervalAndMaxPolls(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_MAX_POLLS));
     }
 
     public void pollUntilFinished() throws InterruptedException {
