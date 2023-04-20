@@ -16,8 +16,8 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.List;
 
