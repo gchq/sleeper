@@ -75,6 +75,57 @@ class PersistentEMRStepCountIT {
     }
 
     @Test
+    void shouldFindOnePendingStepForClusterWhenOtherClustersArePresent(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
+        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"Clusters\": [{" +
+                        "\"Name\":\"test-emr-cluster\"," +
+                        "\"Id\":\"test-cluster-id\"" +
+                        "},{" +
+                        "\"Name\":\"other-emr-cluster\"," +
+                        "\"Id\":\"other-cluster-id\"" +
+                        "}]}")));
+        stubFor(listStepsRequestWithClusterId("test-cluster-id").willReturn(aResponse().withStatus(200)
+                .withBody("{\"Steps\": [{" +
+                        "\"Status\":{\"State\":\"PENDING\"}" +
+                        "}]}")));
+        stubFor(listStepsRequestWithClusterId("other-cluster-id").willReturn(aResponse().withStatus(200)
+                .withBody("{\"Steps\": [{" +
+                        "\"Status\":{\"State\":\"PENDING\"}" +
+                        "}]}")));
+
+        // When / Then
+        assertThat(getStepCountByStatus(runtimeInfo))
+                .isEqualTo(Map.of("PENDING", 1));
+    }
+
+    @Test
+    void shouldFindStepsWithDifferentStatesForCluster(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
+        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+                .withBody("{\"Clusters\": [{" +
+                        "\"Name\":\"test-emr-cluster\"," +
+                        "\"Id\":\"test-cluster-id\"" +
+                        "}]}")));
+        stubFor(listStepsRequestWithClusterId("test-cluster-id").willReturn(aResponse().withStatus(200)
+                .withBody("{\"Steps\": [{" +
+                        "\"Status\":{\"State\":\"PENDING\"}" +
+                        "},{" +
+                        "\"Status\":{\"State\":\"RUNNING\"}" +
+                        "},{" +
+                        "\"Status\":{\"State\":\"COMPLETED\"}" +
+                        "}]}")));
+        // When / Then
+        assertThat(getStepCountByStatus(runtimeInfo))
+                .isEqualTo(Map.of(
+                        "PENDING", 1,
+                        "RUNNING", 1,
+                        "COMPLETED", 1));
+    }
+
+    @Test
     void shouldFindNoPersistentClusterDeployed(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.unset(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
