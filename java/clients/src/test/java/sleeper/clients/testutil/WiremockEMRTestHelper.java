@@ -17,6 +17,7 @@
 package sleeper.clients.testutil;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
@@ -25,9 +26,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 
 public class WiremockEMRTestHelper {
     private WiremockEMRTestHelper() {
@@ -36,24 +35,6 @@ public class WiremockEMRTestHelper {
     public static final String OPERATION_HEADER = "X-Amz-Target";
     private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
     private static final StringValuePattern MATCHING_LIST_STEPS_OPERATION = matching("ElasticMapReduce.ListSteps");
-
-    public static void stubForListingRunningClusters(int numRunningClusters) {
-        StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
-        for (int i = 1; i <= numRunningClusters; i++) {
-            clustersBody.append("{" +
-                    "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
-                    "\"Id\": \"test-cluster-id-" + i + "\"," +
-                    "\"Status\": {\"State\": \"RUNNING\"}" +
-                    "}");
-            if (i != numRunningClusters) {
-                clustersBody.append(",");
-            }
-        }
-        clustersBody.append("]}");
-        stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
-                .willReturn(aResponse().withStatus(200).withBody(clustersBody.toString()))
-                .whenScenarioStateIs(STARTED));
-    }
 
     public static MappingBuilder listActiveClustersRequest() {
         return post("/")
@@ -73,5 +54,21 @@ public class WiremockEMRTestHelper {
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterStates\":[" +
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithNumRunningClusters(int numRunningClusters) {
+        StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
+        for (int i = 1; i <= numRunningClusters; i++) {
+            clustersBody.append("{" +
+                    "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
+                    "\"Id\": \"test-cluster-id-" + i + "\"," +
+                    "\"Status\": {\"State\": \"RUNNING\"}" +
+                    "}");
+            if (i != numRunningClusters) {
+                clustersBody.append(",");
+            }
+        }
+        clustersBody.append("]}");
+        return aResponse().withStatus(200).withBody(clustersBody.toString());
     }
 }

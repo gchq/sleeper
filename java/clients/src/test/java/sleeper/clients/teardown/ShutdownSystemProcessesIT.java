@@ -44,9 +44,9 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningClusters;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.stubForListingRunningClusters;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -100,7 +100,8 @@ class ShutdownSystemProcessesIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
-        stubForListingRunningClusters(0);
+        stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
 
         // When
         shutdown(properties);
@@ -132,7 +133,8 @@ class ShutdownSystemProcessesIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
-        stubForListingRunningClusters(0);
+        stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
 
         // When
         shutdown(properties, List.of(extraClusterProperty));
@@ -158,7 +160,8 @@ class ShutdownSystemProcessesIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
-        stubForListingRunningClusters(0);
+        stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
 
         // When
         shutdown(properties);
@@ -206,7 +209,9 @@ class ShutdownSystemProcessesIT {
         void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubForListingRunningClusters(11);
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponseWithNumRunningClusters(11))
+                    .whenScenarioStateIs(STARTED));
             stubFor(terminateJobFlowsRequestWithJobIdCount(10));
             stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
                     .willSetStateTo("TERMINATED"));
