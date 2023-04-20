@@ -80,9 +80,17 @@ public class WaitForEMRClusters {
     private static Map<String, Long> countClustersByState(List<ClusterSummary> clusters) {
         Map<String, Long> counts = new HashMap<>();
         for (ClusterSummary cluster : clusters) {
-            counts.merge(cluster.getStatus().getState(), 1L, Long::sum);
+            counts.compute(cluster.getStatus().getState(), WaitForEMRClusters::incrementCount);
         }
         return counts;
+    }
+
+    private static Long incrementCount(String key, Long countBefore) {
+        if (countBefore == null) {
+            return 1L;
+        } else {
+            return countBefore + 1;
+        }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
