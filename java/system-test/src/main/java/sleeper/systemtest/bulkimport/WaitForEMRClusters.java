@@ -80,8 +80,7 @@ public class WaitForEMRClusters {
     private static Map<String, Long> countClustersByState(List<ClusterSummary> clusters) {
         Map<String, Long> counts = new HashMap<>();
         for (ClusterSummary cluster : clusters) {
-            counts.compute(cluster.getStatus().getState(),
-                    (state, count) -> count == null ? 1 : count + 1);
+            counts.merge(cluster.getStatus().getState(), 1L, Long::sum);
         }
         return counts;
     }
