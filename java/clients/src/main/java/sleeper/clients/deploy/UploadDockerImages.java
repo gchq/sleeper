@@ -18,10 +18,10 @@ package sleeper.clients.deploy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.RunCommand;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.util.ClientUtils;
-import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -20,11 +20,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.StateStoreException;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 

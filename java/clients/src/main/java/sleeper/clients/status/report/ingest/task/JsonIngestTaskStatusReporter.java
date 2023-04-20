@@ -18,8 +18,8 @@ package sleeper.clients.status.report.ingest.task;
 
 import com.google.gson.Gson;
 
+import sleeper.clients.util.GsonConfig;
 import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.util.GsonConfig;
 
 import java.io.PrintStream;
 import java.util.List;

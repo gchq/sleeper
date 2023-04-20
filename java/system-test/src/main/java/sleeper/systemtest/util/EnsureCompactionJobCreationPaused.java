@@ -23,8 +23,8 @@ import com.amazonaws.services.cloudwatchevents.model.RuleState;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 

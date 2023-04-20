@@ -20,8 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.util.RunCommand;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;

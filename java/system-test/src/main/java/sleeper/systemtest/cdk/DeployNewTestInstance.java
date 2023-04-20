@@ -21,8 +21,8 @@ import sleeper.clients.deploy.DeployNewInstance;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewTestInstance {
 

@@ -23,10 +23,10 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
+import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.util.GsonConfig;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.util.GsonConfig;
 
 import java.io.PrintStream;
 import java.util.List;

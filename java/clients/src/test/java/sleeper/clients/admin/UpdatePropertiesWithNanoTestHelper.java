@@ -16,11 +16,11 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.util.RunCommand;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Files;

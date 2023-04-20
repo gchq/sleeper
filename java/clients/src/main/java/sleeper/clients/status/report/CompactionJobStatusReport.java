@@ -25,12 +25,12 @@ import sleeper.clients.status.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.job.JsonCompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.status.report.job.query.JobQueryArgument;
+import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
-import sleeper.clients.status.report.job.query.JobQueryArgument;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.util.ClientUtils.optionalArgument;
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";

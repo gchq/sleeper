@@ -21,9 +21,9 @@ import com.amazonaws.services.cloudwatchevents.model.DisableRuleRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 

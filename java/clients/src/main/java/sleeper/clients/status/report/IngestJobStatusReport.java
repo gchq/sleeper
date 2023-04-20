@@ -27,14 +27,14 @@ import sleeper.clients.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.status.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.status.report.job.query.JobQueryArgument;
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.clients.status.report.job.query.JobQueryArgument;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.util.ClientUtils.optionalArgument;
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class IngestJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";

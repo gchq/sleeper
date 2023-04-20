@@ -24,13 +24,13 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
-import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 

@@ -15,7 +15,7 @@
  */
 package sleeper.utils;
 
-import sleeper.util.RunCommand;
+import sleeper.clients.util.RunCommand;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;

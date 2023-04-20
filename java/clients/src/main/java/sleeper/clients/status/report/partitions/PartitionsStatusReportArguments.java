@@ -20,14 +20,14 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.clients.status.report.PartitionsStatusReport;
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.clients.status.report.PartitionsStatusReport;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.io.PrintStream;

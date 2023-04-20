@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.util.ClientUtils.optionalArgument;
 
 public class TearDownTestInstance {
 

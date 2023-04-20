@@ -16,13 +16,13 @@
 
 package sleeper.systemtest.compaction;
 
+import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.util.PollWithRetries;
 
 import java.util.List;
 import java.util.Set;

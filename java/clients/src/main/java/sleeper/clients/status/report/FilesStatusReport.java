@@ -21,18 +21,18 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.clients.status.report.filestatus.CVSFileStatusReporter;
 import sleeper.clients.status.report.filestatus.FileStatus;
 import sleeper.clients.status.report.filestatus.FileStatusCollector;
 import sleeper.clients.status.report.filestatus.FileStatusReporter;
 import sleeper.clients.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
-import sleeper.util.ClientUtils;
+import sleeper.clients.util.ClientUtils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.HashMap;

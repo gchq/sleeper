@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.util;
+package sleeper.clients.util;
 
 import java.io.IOException;
 

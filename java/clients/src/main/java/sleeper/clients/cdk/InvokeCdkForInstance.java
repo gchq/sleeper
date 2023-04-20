@@ -15,9 +15,9 @@
  */
 package sleeper.clients.cdk;
 
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.RunCommand;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.ClientUtils;
-import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;

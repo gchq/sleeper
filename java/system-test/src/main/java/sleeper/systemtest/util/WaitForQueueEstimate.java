@@ -20,11 +20,11 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.util.PollWithRetries;
 
 import java.util.function.Predicate;
 

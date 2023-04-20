@@ -18,7 +18,7 @@ package sleeper.utils;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.util.PollWithRetries;
+import sleeper.clients.util.PollWithRetries;
 
 import java.util.Iterator;
 import java.util.List;

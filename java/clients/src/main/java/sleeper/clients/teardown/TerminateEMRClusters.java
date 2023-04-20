@@ -27,8 +27,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;

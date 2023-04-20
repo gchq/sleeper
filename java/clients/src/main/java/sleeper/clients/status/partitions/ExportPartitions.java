@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -31,7 +32,6 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.util.ClientUtils;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -60,9 +60,9 @@ public class ExportPartitions {
 
     public List<String> getPartitionsAsJsonStrings() throws StateStoreException {
         return stateStore.getAllPartitions()
-            .stream()
-            .map(p -> partitionSerDe.toJson(p, false))
-            .collect(Collectors.toUnmodifiableList());
+                .stream()
+                .map(p -> partitionSerDe.toJson(p, false))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public void writePartitionsToFile(String filename) throws FileNotFoundException, IOException, StateStoreException {

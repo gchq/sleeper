@@ -17,8 +17,8 @@ package sleeper.systemtest.ingest.json;
 
 import com.google.gson.Gson;
 
+import sleeper.clients.util.GsonConfig;
 import sleeper.ingest.task.IngestTaskStatus;
-import sleeper.util.GsonConfig;
 
 import java.time.Instant;
 

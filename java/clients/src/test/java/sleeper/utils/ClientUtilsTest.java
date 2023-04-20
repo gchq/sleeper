@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.util.ClientUtils;
+import sleeper.clients.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;

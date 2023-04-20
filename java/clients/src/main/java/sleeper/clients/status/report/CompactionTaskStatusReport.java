@@ -23,10 +23,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportArguments;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReporter;
+import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 

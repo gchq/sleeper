@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.util;
+package sleeper.clients.util;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;

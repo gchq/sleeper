@@ -16,10 +16,10 @@
 
 package sleeper.clients.status.report.job;
 
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.clients.status.report.table.TableFieldDefinition;
 import sleeper.clients.status.report.table.TableRow;
 import sleeper.clients.status.report.table.TableWriterFactory;
+import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
 
-import static sleeper.util.ClientUtils.countWithCommas;
-import static sleeper.util.ClientUtils.decimalWithCommas;
+import static sleeper.clients.util.ClientUtils.countWithCommas;
+import static sleeper.clients.util.ClientUtils.decimalWithCommas;
 
 public class StandardProcessRunReporter {
 

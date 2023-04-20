@@ -28,6 +28,7 @@ import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
+import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
@@ -38,12 +39,11 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.util.ClientUtils.optionalArgument;
 
 /**
  * A utility class to report information about the partitions, the files, the
