@@ -20,8 +20,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.statestore.StateStoreException;
-import sleeper.status.report.FilesStatusReport;
-import sleeper.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.clients.status.report.FilesStatusReport;
+import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 

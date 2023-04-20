@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
+import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -33,7 +34,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 
 import java.time.Instant;
 import java.util.List;

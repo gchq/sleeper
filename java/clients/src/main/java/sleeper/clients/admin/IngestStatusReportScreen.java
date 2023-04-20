@@ -24,12 +24,12 @@ import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.MenuOption;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.status.report.IngestJobStatusReport;
-import sleeper.status.report.IngestTaskStatusReport;
-import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
-import sleeper.status.report.ingest.task.IngestTaskQuery;
-import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
-import sleeper.status.report.job.query.JobQuery;
+import sleeper.clients.status.report.IngestJobStatusReport;
+import sleeper.clients.status.report.IngestTaskStatusReport;
+import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
+import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
+import sleeper.clients.status.report.job.query.JobQuery;
 
 import java.util.Optional;
 

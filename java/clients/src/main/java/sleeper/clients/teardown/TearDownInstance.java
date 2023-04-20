@@ -35,7 +35,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.status.update.DownloadConfig;
+import sleeper.clients.status.update.DownloadConfig;
 import sleeper.util.ClientUtils;
 
 import java.io.IOException;

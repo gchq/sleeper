@@ -18,7 +18,7 @@ package sleeper;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import sleeper.status.report.filestatus.FilesStatusReportTest;
+import sleeper.clients.status.report.filestatus.FilesStatusReportTest;
 
 import java.io.IOException;
 import java.net.URL;
