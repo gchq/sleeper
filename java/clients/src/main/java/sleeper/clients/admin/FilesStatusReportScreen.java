@@ -16,12 +16,12 @@
 
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.statestore.StateStoreException;
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
 import sleeper.clients.status.report.FilesStatusReport;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStoreException;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 

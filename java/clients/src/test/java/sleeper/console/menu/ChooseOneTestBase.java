@@ -16,6 +16,9 @@
 package sleeper.console.menu;
 
 import sleeper.ToStringPrintStream;
+import sleeper.clients.console.menu.ChooseOne;
+import sleeper.clients.console.menu.Chosen;
+import sleeper.clients.console.menu.ConsoleChoice;
 import sleeper.console.TestConsoleInput;
 
 public abstract class ChooseOneTestBase {

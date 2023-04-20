@@ -16,12 +16,12 @@
 
 package sleeper.clients.admin;
 
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
-import sleeper.statestore.StateStoreException;
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
+import sleeper.clients.console.UserExitedException;
 import sleeper.clients.status.report.partitions.PartitionsStatus;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
+import sleeper.statestore.StateStoreException;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 

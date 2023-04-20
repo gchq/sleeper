@@ -15,6 +15,9 @@
  */
 package sleeper.console;
 
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;

@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.clients.console;
 
-package sleeper.console;
+import java.io.Console;
 
-import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.MenuOption;
+public class ConsoleInput {
 
-public class ConsoleHelper {
-    private final ChooseOne chooseOne;
+    private final Console console;
 
-    public ConsoleHelper(ConsoleOutput out, ConsoleInput in) {
-        this.chooseOne = new ChooseOne(out, in);
+    public ConsoleInput(Console console) {
+        this.console = console;
     }
 
-    public MenuOption chooseOptionUntilValid(String message, MenuOption... options) {
-        return chooseOne.chooseWithMessageFrom(message, options)
-                .chooseUntilChoiceFound(() -> chooseOne.chooseWithMessageFrom(
-                        "\nInput not recognised please try again\n", options));
+    public String promptLine(String prompt) {
+        return console.readLine(prompt);
+    }
+
+    public void waitForLine() {
+        console.readLine();
     }
 }

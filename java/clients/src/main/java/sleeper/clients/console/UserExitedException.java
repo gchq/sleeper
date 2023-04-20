@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console.menu;
+package sleeper.clients.console;
 
-public interface ConsoleChoice {
+public class UserExitedException extends RuntimeException {
 
-    String getDescription();
-
-    static ConsoleChoice describedAs(String description) {
-        return () -> description;
+    public UserExitedException() {
+        super("User chose to exit");
     }
-
 }

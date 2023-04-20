@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console.menu;
+package sleeper.clients.console.menu;
 
-import sleeper.console.UserExitedException;
+import sleeper.clients.console.UserExitedException;
 
 @FunctionalInterface
 public interface MenuOperation {

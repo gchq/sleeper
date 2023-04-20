@@ -16,7 +16,7 @@
 
 package sleeper.clients.admin;
 
-import sleeper.console.ConsoleInput;
+import sleeper.clients.console.ConsoleInput;
 
 public class JobStatusScreenHelper {
     private JobStatusScreenHelper() {

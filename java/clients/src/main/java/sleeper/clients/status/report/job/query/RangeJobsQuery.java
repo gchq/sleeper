@@ -15,9 +15,9 @@
  */
 package sleeper.clients.status.report.job.query;
 
+import sleeper.clients.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 

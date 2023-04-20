@@ -31,8 +31,8 @@ import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
 import sleeper.clients.cdk.InvokeCdkForInstance;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
 import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;

@@ -15,13 +15,13 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
+import sleeper.clients.console.menu.ChooseOne;
+import sleeper.clients.console.menu.ConsoleChoice;
 import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TablePropertyGroup;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.ConsoleChoice;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

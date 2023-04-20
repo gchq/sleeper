@@ -17,7 +17,9 @@ package sleeper.console.menu;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.console.UserExitedException;
+import sleeper.clients.console.UserExitedException;
+import sleeper.clients.console.menu.Chosen;
+import sleeper.clients.console.menu.ConsoleChoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

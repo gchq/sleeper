@@ -15,7 +15,7 @@
  */
 package sleeper;
 
-import sleeper.console.ConsoleOutput;
+import sleeper.clients.console.ConsoleOutput;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

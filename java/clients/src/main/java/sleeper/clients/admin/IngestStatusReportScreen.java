@@ -16,20 +16,20 @@
 
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.console.ConsoleHelper;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.MenuOption;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.clients.console.ConsoleHelper;
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
+import sleeper.clients.console.menu.MenuOption;
 import sleeper.clients.status.report.IngestJobStatusReport;
 import sleeper.clients.status.report.IngestTaskStatusReport;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.job.common.QueueMessageCount;
 
 import java.util.Optional;
 

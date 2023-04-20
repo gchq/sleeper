@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console.menu;
+package sleeper.clients.console.menu;
 
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
+import sleeper.clients.console.ConsoleInput;
+import sleeper.clients.console.ConsoleOutput;
+import sleeper.clients.console.UserExitedException;
 
 import java.util.Arrays;
 import java.util.List;
