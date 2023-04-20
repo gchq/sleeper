@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.util.console;
+package sleeper.clients.testutil;
+
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 
 import java.util.Arrays;
 import java.util.LinkedList;

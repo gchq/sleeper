@@ -15,8 +15,8 @@
  */
 package sleeper.clients.util.console.menu;
 
+import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.clients.util.console.TestConsoleInput;
 
 public abstract class ChooseOneTestBase {
 

@@ -16,8 +16,8 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.clients.util.console.TestConsoleInput;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;

@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static sleeper.clients.util.RunCommandTestHelper.commandRunOn;
+import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithNanoTestHelper {

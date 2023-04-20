@@ -26,8 +26,8 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.clients.util.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TableSelectHelperIT extends AdminClientITBase {
