@@ -25,7 +25,6 @@ import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +52,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 
-public class EmrExecutorTest {
+class EmrExecutorTest {
     private AmazonElasticMapReduce emr;
     private TablePropertiesProvider tablePropertiesProvider;
     private AtomicReference<RunJobFlowRequest> requested;
@@ -62,7 +61,7 @@ public class EmrExecutorTest {
     @BeforeEach
     public void setUpEmr() {
         requested = new AtomicReference<>();
-        amazonS3 = mock(AmazonS3Client.class);
+        amazonS3 = mock(AmazonS3.class);
         emr = mock(AmazonElasticMapReduce.class);
         when(emr.runJobFlow(any(RunJobFlowRequest.class)))
                 .then((Answer<RunJobFlowResult>) invocation -> {
@@ -75,7 +74,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldCreateAClusterOfThreeMachinesByDefault() {
+    void shouldCreateAClusterOfThreeMachinesByDefault() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -99,7 +98,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseInstanceTypeDefinedInJob() {
+    void shouldUseInstanceTypeDefinedInJob() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -122,7 +121,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseDefaultMarketType() {
+    void shouldUseDefaultMarketType() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -144,7 +143,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseMarketTypeDefinedInConfig() {
+    void shouldUseMarketTypeDefinedInConfig() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -175,7 +174,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseMarketTypeDefinedInRequest() {
+    void shouldUseMarketTypeDefinedInRequest() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -209,7 +208,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldEnableEMRManagedClusterScaling() {
+    void shouldEnableEMRManagedClusterScaling() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -232,7 +231,7 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseUserProvidedConfigIfValuesOverrideDefaults() {
+    void shouldUseUserProvidedConfigIfValuesOverrideDefaults() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");

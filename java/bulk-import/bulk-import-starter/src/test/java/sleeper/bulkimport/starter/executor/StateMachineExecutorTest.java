@@ -16,7 +16,6 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.amazonaws.services.stepfunctions.model.StartExecutionResult;
@@ -44,7 +43,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class StateMachineExecutorTest {
+class StateMachineExecutorTest {
     private AWSStepFunctions stepFunctions;
     private TablePropertiesProvider tablePropertiesProvider;
     private AtomicReference<StartExecutionRequest> requested;
@@ -54,7 +53,7 @@ public class StateMachineExecutorTest {
     public void setUpStepFunctions() {
         requested = new AtomicReference<>();
         stepFunctions = mock(AWSStepFunctions.class);
-        amazonS3 = mock(AmazonS3Client.class);
+        amazonS3 = mock(AmazonS3.class);
         tablePropertiesProvider = mock(TablePropertiesProvider.class);
         when(stepFunctions.startExecution(any(StartExecutionRequest.class)))
                 .then((Answer<StartExecutionResult>) invocation -> {
@@ -66,7 +65,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldPassJobToStepFunctions() {
+    void shouldPassJobToStepFunctions() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -87,7 +86,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldPassJobIdToSparkConfig() {
+    void shouldPassJobIdToSparkConfig() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -109,7 +108,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldUseDefaultConfigurationIfNoneSpecified() {
+    void shouldUseDefaultConfigurationIfNoneSpecified() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -130,7 +129,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldThrowExceptionWhenInputFilesAreNull() {
+    void shouldThrowExceptionWhenInputFilesAreNull() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -149,7 +148,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldOverwriteDefaultConfigurationIfSpecifiedInJob() {
+    void shouldOverwriteDefaultConfigurationIfSpecifiedInJob() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -172,7 +171,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldUseDefaultJobIdIfNoneWasPresentInTheJob() {
+    void shouldUseDefaultJobIdIfNoneWasPresentInTheJob() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -194,7 +193,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldSetJobIdToUUIDIfNotSetByUser() {
+    void shouldSetJobIdToUUIDIfNotSetByUser() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
@@ -213,7 +212,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldPassConfigBucketAndJobIdsToSparkArgs() {
+    void shouldPassConfigBucketAndJobIdsToSparkArgs() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
@@ -236,7 +235,7 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldUseJobIdAsDriverPodName() {
+    void shouldUseJobIdAsDriverPodName() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
