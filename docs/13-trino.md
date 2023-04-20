@@ -81,41 +81,24 @@ Read through the instructions and then download trino-server-YYY.tar.gz and unpa
 Trino requires some configuration. The standard Trino instructions provide a great deal of detail about how to do this,
 and the instructions below should be sufficient to get you started.
 
-Run the following commands to make three plugins available to Trino: _Sleeper_, _TPCH_ (to provide sample data) and
-_memory_ (to demonstrate joins between different data sources):
-> cd trino-server-YYY
->
-> mv plugin plugin.all # Back up all of the existing plugins
->
-> mkdir plugin
->
-> cp -r plugin.all/tpch plugin
->
-> cp -r plugin.all/memory plugin
->
-> mkdir plugin/sleeper
->
-> ln -s <SLEEPER_SOURCE_DIR>/java/trino/target/trino-XXXXXX-utility.jar plugin/sleeper/sleeper-trino-plugin.jar # Makes latest plugin JAR available to Trino
+Scripts are available under [scripts/trino/](../scripts/cli/trino) to build the plugin and run Trino in Docker.
+These use the Trino Docker image as documented here: https://trino.io/docs/current/installation/containers.html
 
-Trino stores most of its configuration files in its _etc_ directory. There is an example available:
-> cp -r <SLEEPER_SOURCE_DIR>/java/trino/example.trino.etc.dir etc
+Follow the steps below to run the Trino server.
 
-Edit the following files and make changes if needed:
+1. In a Sleeper build/development environment, open a terminal in the [scripts/trino/](../scripts/cli/trino) directory.
+2. Ensure that AWS credentials are available and valid to work with Sleeper.
+3. Run `./buildMaven.sh`. This will build the plugin and copy an example Trino configuration into the current directory.
+4. Edit `./etc/catalog/sleeper.properties` to set the config bucket to point to your Sleeper instance.
+5. Run `./runDockerServer.sh`. This will expose Trino on port 8080, but you can edit this in the script.
 
-- _etc/node.properties_: The _node.data-dir_ property specifies where Trino will store its own data on each node. This
-  should be a directory that is writeable.
-- _etc/catalog/sleeper.properties_: The _sleeper.config-bucket_ property determines which Sleeper instance to connect
-  to.
+This will start the Trino server with three plugins available: _Sleeper_, _TPCH_ (to provide sample data) and
+_memory_ (to demonstrate joins between different data sources).
 
-Install your current AWS keys as usual, using _aws configure_ commands. Check that commands such as _aws s3 ls_ work
-from the command-line. The Trino plugin uses these default credentials to communicate with AWS.
-
-Run Trino using:
-> bin/launcher run
-
-If everything has been installed correctly, then this command will generate a few pages of logs, followed by 'SERVER
-STARTED'. Somewhere in the final few log rows will be information about the Sleeper plugin configuration and how many
-Sleeper tables it has found. This should reassure you that it has connected to Sleeper and is ready for use.
+You can check the logs for the server with `docker logs trino`. If everything has run correctly, this will generate
+a few pages of logs, followed by 'SERVER STARTED'. Somewhere in the final few log rows will be information about the
+Sleeper plugin configuration and how many Sleeper tables it has found. This should reassure you that it has connected
+to Sleeper and is ready for use.
 
 If this fails, look in the error messages for the following:
 
@@ -128,9 +111,12 @@ If this fails, look in the error messages for the following:
 There is a conflict between Apache Arrow 8.0.0 and Java 17, which causes errors such as "module java.base does not "opens java.nio" to unnamed module."
 To avoid these errors, add the following flag to the JVM command line:
 
-> --add-opens=java.base/java.nio=ALL-UNNAMED
+```
+--add-opens=java.base/java.nio=ALL-UNNAMED
+```
 
-This flag has already been added to the example etc/jvm.config file.
+This flag has already been added to the example `etc/jvm.config` file.
+
 ### Install a SQL client and connect to the Trino server
 
 Trino uses a standard JDBC connection and there are several suitable sophisticated SQL clients available for free.
