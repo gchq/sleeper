@@ -59,7 +59,7 @@ public class AdminCommonPromptsTest {
 
             // Then
             assertThat(properties).isEmpty();
-            assertThat(out.toString()).isEqualTo("\n" +
+            assertThat(out).hasToString("\n" +
                     "Could not load properties for instance test-instance\n" +
                     "Cause: Source Exception\n" +
                     PROMPT_RETURN_TO_MAIN);
@@ -97,7 +97,7 @@ public class AdminCommonPromptsTest {
 
             // Then
             assertThat(properties).isEmpty();
-            assertThat(out.toString()).isEqualTo("\n" +
+            assertThat(out).hasToString("\n" +
                     "Could not load properties for table test-table in instance test-instance\n" +
                     "Cause: Source Exception\n" +
                     PROMPT_RETURN_TO_MAIN);
@@ -122,6 +122,6 @@ public class AdminCommonPromptsTest {
         confirmReturnToMainScreen(out.consoleOut(), in.consoleIn());
 
         // Then
-        assertThat(out.toString()).isEqualTo(PROMPT_RETURN_TO_MAIN);
+        assertThat(out).hasToString(PROMPT_RETURN_TO_MAIN);
     }
 }
