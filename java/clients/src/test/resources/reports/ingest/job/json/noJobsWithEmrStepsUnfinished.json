@@ -2,9 +2,6 @@
   "queueMessages": {
     "ingestMessages": 0
   },
-  "persistentEmrStepCount": {
-    "PENDING": 2,
-    "RUNNING": 1
-  },
+  "pendingEMRSteps": 2,
   "jobList": []
 }
