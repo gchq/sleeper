@@ -16,14 +16,14 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.UserExitedException;
+import sleeper.clients.util.console.menu.ChooseOne;
+import sleeper.clients.util.console.menu.Chosen;
+import sleeper.clients.util.console.menu.ConsoleChoice;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
-import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.ConsoleChoice;
 
 import java.util.Optional;
 

@@ -29,25 +29,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkCommand;
-import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.clients.status.update.DownloadConfig;
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.status.update.DownloadConfig;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.util.ClientUtils.optionalArgument;
 
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);

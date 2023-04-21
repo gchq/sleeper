@@ -20,7 +20,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
 import com.google.gson.JsonSerializer;
 
-import sleeper.util.GsonConfig;
+import sleeper.clients.util.GsonConfig;
 
 import java.io.IOException;
 import java.io.Reader;

@@ -18,9 +18,9 @@ package sleeper.systemtest.compaction;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.clients.util.GsonConfig;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.util.GsonConfig;
 
 import java.time.Duration;
 import java.time.Instant;

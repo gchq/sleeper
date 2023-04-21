@@ -20,7 +20,7 @@ import com.amazonaws.services.ecs.model.Task;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.util.GsonConfig;
+import sleeper.clients.util.GsonConfig;
 
 import java.time.Instant;
 import java.util.Date;

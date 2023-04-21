@@ -33,12 +33,12 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERT
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 
 class AdminClientIT extends AdminClientITBase {
 

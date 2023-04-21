@@ -15,11 +15,11 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.testutil.TestConsoleInput;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;

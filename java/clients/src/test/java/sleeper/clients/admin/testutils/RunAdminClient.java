@@ -16,16 +16,16 @@
 
 package sleeper.clients.admin.testutils;
 
-import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.testutil.TestConsoleInput;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.TestConsoleInput;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
