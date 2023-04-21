@@ -30,6 +30,8 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
 
+import java.util.Collections;
+
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
@@ -164,6 +166,7 @@ public class RunAdminClient {
     }
 
     private AdminClient client() {
-        return new AdminClient(store.getStore(), statusStores, editor, out.consoleOut(), in.consoleIn(), queueClient);
+        return new AdminClient(store.getStore(), statusStores, editor, out.consoleOut(), in.consoleIn(),
+                queueClient, (properties -> Collections.emptyMap()));
     }
 }

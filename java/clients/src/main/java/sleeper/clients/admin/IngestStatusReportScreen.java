@@ -31,7 +31,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.job.common.QueueMessageCount;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
@@ -47,10 +49,11 @@ public class IngestStatusReportScreen {
     private final AdminClientStatusStoreFactory statusStores;
     private final QueueMessageCount.Client queueClient;
     private final TableSelectHelper tableSelectHelper;
+    private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store,
-                                    AdminClientStatusStoreFactory statusStores,
-                                    QueueMessageCount.Client queueClient) {
+                                    AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient,
+                                    Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
@@ -58,6 +61,7 @@ public class IngestStatusReportScreen {
         this.statusStores = statusStores;
         this.queueClient = queueClient;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.getStepCount = getStepCount;
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
@@ -115,7 +119,7 @@ public class IngestStatusReportScreen {
                                           JobQuery.Type queryType, String queryParameters) {
         new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), tableName, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
-                queueClient, properties).run();
+                queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);
     }
 
