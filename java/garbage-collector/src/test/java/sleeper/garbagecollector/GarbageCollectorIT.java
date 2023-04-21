@@ -62,11 +62,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers
@@ -115,8 +115,8 @@ public class GarbageCollectorIT {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(DATA_BUCKET, dataBucket);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, tableName + "-fip");
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, tableName + "-fl");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
         tableProperties.saveToS3(s3);
@@ -230,14 +230,14 @@ public class GarbageCollectorIT {
         //  - File1 should have been deleted
         assertThat(Files.exists(new File(file1).toPath())).isFalse();
         //  - The active file should still be there
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getFileInPartitionList();
         assertThat(activeFiles).containsExactly(fileInfo2);
         //  - The ready for GC table should still have 1 item in (but it's not returned by getReadyForGCFiles()
         //      because it is less than 10 seconds since it was marked as ready for GC). As the StateStore API
         //      does not have a method to return all values in the ready for gc table, we query the table
         //      directly.
         ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
+                .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
         assertThat(scanResult.getItems())

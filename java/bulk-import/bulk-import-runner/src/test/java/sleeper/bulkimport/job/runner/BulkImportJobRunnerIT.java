@@ -85,11 +85,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers
@@ -183,8 +183,8 @@ public class BulkImportJobRunnerIT {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(DATA_BUCKET, dataBucket);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, tableName + "-fip");
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, tableName + "-fl");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
         s3.createBucket(tableProperties.get(DATA_BUCKET));
@@ -323,9 +323,9 @@ public class BulkImportJobRunnerIT {
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         List<Record> readRecords = new ArrayList<>();
-        for (FileInfo fileInfo : activeFiles) {
+        for (FileInfo fileInfo : fileInPartitionList) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
                 List<Record> recordsInThisFile = new ArrayList<>();
                 Record record = reader.read();
@@ -374,9 +374,9 @@ public class BulkImportJobRunnerIT {
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         List<Record> readRecords = new ArrayList<>();
-        for (FileInfo fileInfo : activeFiles) {
+        for (FileInfo fileInfo : fileInPartitionList) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
                 List<Record> recordsInThisFile = new ArrayList<>();
                 Record record = reader.read();
@@ -433,7 +433,7 @@ public class BulkImportJobRunnerIT {
                 .filter(record -> ((int) record.get("key")) >= 50)
                 .collect(Collectors.toList());
         sortRecords(rightPartition);
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileInPartitionList())
                 .extracting(FileInfo::getNumberOfRecords,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactlyInAnyOrder(
@@ -469,14 +469,14 @@ public class BulkImportJobRunnerIT {
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         for (Partition leaf : leafPartitions) {
             Integer minRowKey = (Integer) leaf.getRegion().getRange(schema.getRowKeyFieldNames().get(0)).getMin();
             if (Integer.MIN_VALUE == minRowKey) {
                 continue;
             }
-            List<FileInfo> relevantFiles = activeFiles.stream()
+            List<FileInfo> relevantFiles = fileInPartitionList.stream()
                     .filter(af -> af.getPartitionId().equals(leaf.getId()))
                     .collect(Collectors.toList());
 
@@ -548,7 +548,7 @@ public class BulkImportJobRunnerIT {
         // Then
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
         sortRecords(records);
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileInPartitionList())
                 .extracting(FileInfo::getNumberOfRecords, FileInfo::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));

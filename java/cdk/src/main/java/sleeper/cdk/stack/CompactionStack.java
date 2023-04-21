@@ -358,7 +358,8 @@ public class CompactionStack extends NestedStack {
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
         jarsBucket.grantRead(handler);
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(handler));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteFileInPartitionMetadata(handler));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteFileLifecycleMetadata(handler));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(handler));
         eventStore.grantWriteJobEvent(handler);
 
@@ -413,9 +414,9 @@ public class CompactionStack extends NestedStack {
             jarsBucket.grantRead(taskDef.getTaskRole());
             dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
             stateStoreStacks.forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
+                    stateStoreStack -> stateStoreStack.grantReadWriteFileInPartitionMetadata(taskDef.getTaskRole()));
             stateStoreStacks.forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
+                    stateStoreStack -> stateStoreStack.grantReadWriteFileLifecycleMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
@@ -489,9 +490,9 @@ public class CompactionStack extends NestedStack {
             jarsBucket.grantRead(taskDef.getTaskRole());
             dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
             stateStoreStacks.forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
+                    stateStoreStack -> stateStoreStack.grantReadWriteFileInPartitionMetadata(taskDef.getTaskRole()));
             stateStoreStacks.forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
+                    stateStoreStack -> stateStoreStack.grantReadWriteFileLifecycleMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
 

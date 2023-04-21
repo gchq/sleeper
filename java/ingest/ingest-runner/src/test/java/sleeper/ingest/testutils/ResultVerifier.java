@@ -88,7 +88,7 @@ public class ResultVerifier {
         Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
                 .collect(Collectors.groupingBy(
                         record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(sleeperSchema.getRowKeyFieldNames())))));
-        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
+        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getFileInPartitionList().stream()
                 .collect(Collectors.groupingBy(FileInfo::getPartitionId));
         Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
                 .map(entry -> {
@@ -112,7 +112,7 @@ public class ResultVerifier {
                 .flatMap(Function.identity())
                 .collect(Collectors.toSet());
 
-        assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
+        assertThat(stateStore.getFileInPartitionList()).hasSize(expectedTotalNoOfFiles);
         assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
 
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(

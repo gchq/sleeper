@@ -48,6 +48,6 @@ public class IngestResultTest extends IngestRecordsTestBase {
 
         // Then
         assertThat(result.getFileInfoList())
-                .containsExactlyInAnyOrderElementsOf(stateStore.getActiveFiles());
+                .containsExactlyInAnyOrderElementsOf(stateStore.getFileInPartitionList());
     }
 }

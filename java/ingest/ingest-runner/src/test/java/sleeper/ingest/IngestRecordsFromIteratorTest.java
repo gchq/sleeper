@@ -66,35 +66,35 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList()
                 .stream()
                 .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).hasSize(2);
-        FileInfo fileInfo = activeFiles.get(0);
+        assertThat(fileInPartitionList).hasSize(2);
+        FileInfo fileInfo = fileInPartitionList.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
-        fileInfo = activeFiles.get(1);
+        fileInfo = fileInPartitionList.get(1);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(3L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        List<Record> readRecords = readRecordsFromParquetFile(fileInPartitionList.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(0));
-        readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
+        readRecords = readRecordsFromParquetFile(fileInPartitionList.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, fileInPartitionList.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(1L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)
                 .quantile(0.4, 1L).quantile(0.5, 1L)
                 .quantile(0.6, 1L).quantile(0.7, 1L)
                 .quantile(0.8, 1L).quantile(0.9, 1L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, fileInPartitionList.get(1).getFilename()).getQuantilesSketch("key"))
                 .min(3L).max(3L)
                 .quantile(0.0, 3L).quantile(0.1, 3L)
                 .quantile(0.2, 3L).quantile(0.3, 3L)
@@ -125,22 +125,22 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getSingleRecord().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList()
                 .stream()
                 .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
+        assertThat(fileInPartitionList).hasSize(1);
+        FileInfo fileInfo = fileInPartitionList.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
 
         //  - Read files and check they have the correct records
-        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        List<Record> readRecords = readRecordsFromParquetFile(fileInPartitionList.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(getSingleRecord().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, fileInPartitionList.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(1L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)
@@ -161,7 +161,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).isEmpty();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        assertThat(fileInPartitionList).isEmpty();
     }
 }

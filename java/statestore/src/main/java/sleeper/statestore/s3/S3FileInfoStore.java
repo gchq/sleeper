@@ -38,6 +38,7 @@ import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
@@ -96,19 +97,26 @@ public class S3FileInfoStore implements FileInfoStore {
         addFiles(Collections.singletonList(fileInfo));
     }
 
+    // DONE
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         for (FileInfo fileInfo : fileInfos) {
             if (null == fileInfo.getFilename()
-                    || null == fileInfo.getFileStatus()
                     || null == fileInfo.getPartitionId()
                     || null == fileInfo.getNumberOfRecords()) {
-                throw new IllegalArgumentException("FileInfo needs non-null filename, status, partition id and number of records: got " + fileInfo);
+                throw new IllegalArgumentException("FileInfo needs non-null filename, partition id and number of records: got " + fileInfo);
             }
         }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            list.addAll(fileInfos);
-            return list;
+            List<FileInfo> updatedFileList = new ArrayList<>(list);
+            fileInfos.stream()
+                .forEach(fileInfo -> {
+                    FileInfo fileInPartition = fileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
+                    FileInfo fileLifecycle = fileInfo.cloneWithStatus(FileStatus.ACTIVE);
+                    updatedFileList.add(fileInPartition);
+                    updatedFileList.add(fileLifecycle);
+                });
+            return updatedFileList;
         };
         try {
             updateFiles(update);
@@ -118,19 +126,96 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile)
-            throws StateStoreException {
-        Set<String> namesOfFilesToBeMarkedReadyForGC = filesToBeMarkedReadyForGC.stream()
+    public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
+        setStatusToReadyForGarbageCollection(Collections.singletonList(filename));
+    }
+
+    @Override
+    public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
+        Function<List<FileInfo>, String> condition = list -> {
+            Map<String, List<FileInfo>> fileNameToFileInfos = new HashMap<>();
+            list.forEach(f -> {
+                if (!fileNameToFileInfos.containsKey(f.getFilename())) {
+                    fileNameToFileInfos.put(f.getFilename(), new ArrayList<>());
+                }
+                fileNameToFileInfos.get(f.getFilename()).add(f);
+            });
+            for (String filename : filenames) {
+                // There should be an ACTIVE file lifecyle record for the file in fileInfo.
+                if (!fileNameToFileInfos.containsKey(filename)) {
+                    return "Can't set status to ready for garbage collection for file "
+                        + filename + " as there are no records this file";
+                }
+                List<FileInfo> fileInfosForThisFile = fileNameToFileInfos.get(filename);
+                boolean activeMatch = fileInfosForThisFile.stream().anyMatch(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE));
+                if (!activeMatch) {
+                    return "Can't set status to ready for garbage collection for file "
+                        + filename + " as there is no ACTIVE file record";
+                }
+                // There should be no FILE_IN_PARTITION record for fileInfo.
+                boolean fileInPartitionMatch = fileInfosForThisFile.stream().anyMatch(f -> f.getFileStatus().equals(FileInfo.FileStatus.FILE_IN_PARTITION));
+                if (fileInPartitionMatch) {
+                    return "Can't set status to ready for garbage collection for file "
+                        + filename + " as there is an existing FILE_IN_PARTITION record";
+                }
+            }
+            return "";
+        };
+
+        Set<String> filenamesToSetToGC = new HashSet<>(filenames);
+
+        Function<List<FileInfo>, List<FileInfo>> update = list -> {
+            List<FileInfo> updatedFiles = new ArrayList<>();
+            for (FileInfo fileInfo : list) {
+                if (!filenamesToSetToGC.contains(fileInfo.getFilename())) {
+                    updatedFiles.add(fileInfo);
+                }
+            }
+            // TODO
+            // for (FileInfo fileInfo : fileInfosToSetToGC) {
+            //     FileInfo fileInfoWithGC = fileInfo.cloneWithStatus(FileStatus.READY_FOR_GARBAGE_COLLECTION);
+            //     updatedFiles.add(fileInfoWithGC);
+            // }
+            return updatedFiles;
+        };
+
+        try {
+            updateFiles(update, condition);
+        } catch (IOException e) {
+            throw new StateStoreException("IOException updating file infos", e);
+        }
+    }
+
+    // DONE
+    @Override
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
+            List<FileInfo> fileInPartitionRecordsToBeDeleted, FileInfo newActiveFile) throws StateStoreException {
+        Set<String> namesOfFilesWithFileInPartitionRecordsToBeDeleted = fileInPartitionRecordsToBeDeleted.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toSet());
 
         Function<List<FileInfo>, String> condition = list -> {
-            Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-            for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
-                if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
-                        || !fileNameToFileInfo.get(fileInfo.getFilename()).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active";
+            // Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
+            // list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
+            Map<String, List<FileInfo>> fileNameToFileInfos = new HashMap<>();
+            list.forEach(f -> {
+                if (!fileNameToFileInfos.containsKey(f.getFilename())) {
+                    fileNameToFileInfos.put(f.getFilename(), new ArrayList<>());
+                }
+                fileNameToFileInfos.get(f.getFilename()).add(f);
+            });
+
+            for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
+                // There should be a FILE_IN_PARTITION record for the file in fileInfo.
+                String filename = fileInfo.getFilename();
+                if (!fileNameToFileInfos.containsKey(filename)) {
+                    return "There is no record of the file " + filename;
+                }
+                List<FileInfo> fileInfosForThisFile = fileNameToFileInfos.get(filename);
+                boolean fileInPartitionMatch = fileInfosForThisFile.stream().anyMatch(f -> f.getFileStatus().equals(FileInfo.FileStatus.FILE_IN_PARTITION));
+                if (!fileInPartitionMatch) {
+                    return "Can't remove FILE_IN_PARTITION record for file "
+                        + filename + " as there is no existing FILE_IN_PARTITION record";
                 }
             }
             return "";
@@ -139,15 +224,18 @@ public class S3FileInfoStore implements FileInfoStore {
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
-                if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder()
-                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(System.currentTimeMillis())
-                            .build();
+                if (!namesOfFilesWithFileInPartitionRecordsToBeDeleted.contains(fileInfo.getFilename())) {
+                    // fileInfo = fileInfo.toBuilder()
+                    //         .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    //         .lastStateStoreUpdateTime(System.currentTimeMillis())
+                    //         .build();
+                    filteredFiles.add(fileInfo);
                 }
-                filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(newActiveFile);
+            FileInfo newFileInPartition = newActiveFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
+            filteredFiles.add(newFileInPartition);
+            FileInfo newFileLifecycle = newActiveFile.cloneWithStatus(FileStatus.ACTIVE);
+            filteredFiles.add(newFileLifecycle);
             return filteredFiles;
         };
 
@@ -158,20 +246,21 @@ public class S3FileInfoStore implements FileInfoStore {
         }
     }
 
+    // DONE
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
-                                                                         FileInfo leftFileInfo,
-                                                                         FileInfo rightFileInfo) throws StateStoreException {
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(List<FileInfo> fileInPartitionRecordsToBeDeleted,
+                                                                              FileInfo leftFileInfo,
+                                                                              FileInfo rightFileInfo) throws StateStoreException {
         Set<String> namesOfFilesToBeMarkedReadyForGC = new HashSet<>();
-        filesToBeMarkedReadyForGC.stream().map(FileInfo::getFilename).forEach(namesOfFilesToBeMarkedReadyForGC::add);
+        fileInPartitionRecordsToBeDeleted.stream().map(FileInfo::getFilename).forEach(namesOfFilesToBeMarkedReadyForGC::add);
 
         Function<List<FileInfo>, String> condition = list -> {
             Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
             list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
-            for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
+            for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
                 if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
                         || !fileNameToFileInfo.get(fileInfo.getFilename()).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
-                    return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active";
+                    return "Files in fileInPartitionRecordsToBeDeleted should be active: file " + fileInfo.getFilename() + " is not active";
                 }
             }
             return "";
@@ -180,16 +269,26 @@ public class S3FileInfoStore implements FileInfoStore {
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
-                if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder()
-                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(System.currentTimeMillis())
-                            .build();
+                if (!namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
+                    // fileInfo = fileInfo.toBuilder()
+                    //         .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                    //         .lastStateStoreUpdateTime(System.currentTimeMillis())
+                    //         .build();
+                    filteredFiles.add(fileInfo);
                 }
-                filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(leftFileInfo);
-            filteredFiles.add(rightFileInfo);
+            // filteredFiles.add(leftFileInfo);
+            // filteredFiles.add(rightFileInfo);
+            // Left file
+            FileInfo newFileInPartitionLeftFile = leftFileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
+            filteredFiles.add(newFileInPartitionLeftFile);
+            FileInfo newFileLifecycleLeftFile = leftFileInfo.cloneWithStatus(FileStatus.ACTIVE);
+            filteredFiles.add(newFileLifecycleLeftFile);
+            // Right file
+            FileInfo newFileInPartitionRightFile = rightFileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
+            filteredFiles.add(newFileInPartitionRightFile);
+            FileInfo newFileLifecycleRightFile = rightFileInfo.cloneWithStatus(FileStatus.ACTIVE);
+            filteredFiles.add(newFileLifecycleRightFile);
             return filteredFiles;
         };
         try {
@@ -237,37 +336,39 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo readyForGCFileInfo) throws StateStoreException {
-        Function<List<FileInfo>, String> condition = list -> {
-            Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
-            list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        // Function<List<FileInfo>, String> condition = list -> {
+        //     Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
+        //     list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
 
-            FileInfo currentFileInfo = fileNameToFileInfo.get(readyForGCFileInfo.getFilename());
-            if (!currentFileInfo.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
-                return "File to be deleted should be marked as ready for GC, got " + currentFileInfo.getFileStatus();
-            }
-            return "";
-        };
+        //     FileInfo currentFileInfo = fileNameToFileInfo.get(readyForGCFileInfo.getFilename());
+        //     if (!currentFileInfo.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
+        //         return "File to be deleted should be marked as ready for GC, got " + currentFileInfo.getFileStatus();
+        //     }
+        //     return "";
+        // };
 
-        Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            List<FileInfo> filteredFiles = new ArrayList<>();
-            for (FileInfo fileInfo : list) {
-                if (!readyForGCFileInfo.getFilename().equals(fileInfo.getFilename())) {
-                    filteredFiles.add(fileInfo);
-                }
-            }
-            return filteredFiles;
-        };
+        // Function<List<FileInfo>, List<FileInfo>> update = list -> {
+        //     List<FileInfo> filteredFiles = new ArrayList<>();
+        //     for (FileInfo fileInfo : list) {
+        //         if (!readyForGCFileInfo.getFilename().equals(fileInfo.getFilename())) {
+        //             filteredFiles.add(fileInfo);
+        //         }
+        //     }
+        //     return filteredFiles;
+        // };
 
-        try {
-            updateFiles(update, condition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException updating file infos", e);
-        }
+        // try {
+        //     updateFiles(update, condition);
+        // } catch (IOException e) {
+        //     throw new StateStoreException("IOException updating file infos", e);
+        // }
     }
 
+
+
     @Override
-    public List<FileInfo> getActiveFiles() throws StateStoreException {
+    public List<FileInfo> getFileInPartitionList() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
@@ -275,26 +376,54 @@ public class S3FileInfoStore implements FileInfoStore {
         }
         try {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(revisionId));
-            return fileInfos.stream().filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE)).collect(Collectors.toList());
+            return fileInfos.stream().filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.FILE_IN_PARTITION)).collect(Collectors.toList());
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving active files", e);
         }
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
+    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+        RevisionId revisionId = getCurrentFilesRevisionId();
+        if (null == revisionId) {
+            return Collections.EMPTY_LIST;
+        }
+        try {
+            List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(revisionId));
+            return fileInfos.stream().filter(f -> !f.getFileStatus().equals(FileInfo.FileStatus.FILE_IN_PARTITION)).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new StateStoreException("IOException retrieving active files", e);
+        }
+    }
+
+    @Override
+    public List<FileInfo> getActiveFileList() throws StateStoreException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getReadyForGCFileInfos'");
+    }
+
+    @Override
+    public Iterator<String> getReadyForGCFiles() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
             long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
             long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
-            List<FileInfo> filesReadyForGC = fileInfos.stream().filter(f -> {
+            List<String> filesReadyForGC = fileInfos.stream().filter(f -> {
                 if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
                     return false;
                 }
                 long lastUpdateTime = f.getLastStateStoreUpdateTime();
                 return lastUpdateTime < deleteTime;
-            }).collect(Collectors.toList());
+            })
+            .map(FileInfo::getFilename)
+            .collect(Collectors.toList());
             return filesReadyForGC.iterator();
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
@@ -302,7 +431,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
+    public List<FileInfo> getFileInPartitionInfosWithNoJobId() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
@@ -319,7 +448,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        List<FileInfo> files = getActiveFiles();
+        List<FileInfo> files = getFileInPartitionList();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
         for (FileInfo fileInfo : files) {
             String partition = fileInfo.getPartitionId();

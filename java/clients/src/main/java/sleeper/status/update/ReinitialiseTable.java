@@ -47,9 +47,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
@@ -182,8 +182,8 @@ public class ReinitialiseTable {
         if (isS3StateStore) {
             deleteRelevantS3StateStoreRevisionInfo(tableProperties.get(REVISION_TABLENAME));
         } else {
-            deleteAllDynamoTableItems(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), tableProperties);
-            deleteAllDynamoTableItems(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), tableProperties);
+            deleteAllDynamoTableItems(tableProperties.get(FILE_IN_PARTITION_TABLENAME), tableProperties);
+            deleteAllDynamoTableItems(tableProperties.get(FILE_LIFECYCLE_TABLENAME), tableProperties);
             if (deletePartitions) {
                 deleteAllDynamoTableItems(tableProperties.get(PARTITION_TABLENAME), tableProperties);
             }

@@ -117,7 +117,8 @@ public class SystemTestStack extends NestedStack {
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteFileInPartitionMetadata(taskDefinition.getTaskRole()));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteFileLifecycleMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
         if (null != ingestJobQueue) {
             ingestJobQueue.grantSendMessages(taskDefinition.getTaskRole());

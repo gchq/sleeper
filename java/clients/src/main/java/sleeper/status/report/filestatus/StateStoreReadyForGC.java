@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class StateStoreReadyForGC {
-
     private final List<FileInfo> files;
     private final boolean reachedMax;
 
@@ -48,7 +47,7 @@ public class StateStoreReadyForGC {
     }
 
     public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        Iterator<FileInfo> readyForGCIT = stateStore.getReadyForGCFiles();
+        Iterator<FileInfo> readyForGCIT = stateStore.getReadyForGCFileInfos();
         List<FileInfo> readyForGC = new ArrayList<>();
         int count = 0;
         while (readyForGCIT.hasNext() && count < maxNumberOfReadyForGCFilesToCount) {
@@ -62,5 +61,4 @@ public class StateStoreReadyForGC {
     public static StateStoreReadyForGC none() {
         return new StateStoreReadyForGC(Collections.emptyList(), true);
     }
-
 }

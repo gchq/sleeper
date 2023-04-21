@@ -235,7 +235,7 @@ public class QueryStack extends NestedStack {
         // the S3 bucket, write back to the query queue and write to the results
         // queue and S3 bucket
         dataBuckets.forEach(bucket -> bucket.grantRead(queryExecutorLambda));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(queryExecutorLambda));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadFileInPartitionMetadata(queryExecutorLambda));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(queryExecutorLambda));
         configBucket.grantRead(queryExecutorLambda);
         jarsBucket.grantRead(queryExecutorLambda);

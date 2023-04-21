@@ -16,79 +16,173 @@
 package sleeper.statestore.inmemory;
 
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
+import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
+    private final Map<String, Map<String, FileInfo>> fileInPartitionEntries = new HashMap<>(); // filename -> partition id -> fileinfo
+    private final Map<String, FileInfo> fileLifecycleEntries = new HashMap<>();
+    private final long garbageCollectorDelayBeforeDeletionInSeconds;
 
-    private final Map<String, FileInfo> activeFiles = new HashMap<>();
-    private final Map<String, FileInfo> readyForGCFiles = new HashMap<>();
+    public InMemoryFileInfoStore(long garbageCollectorDelayBeforeDeletionInSeconds) {
+        this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
+    }
+
+    public InMemoryFileInfoStore() {
+        this(Long.MAX_VALUE);
+    }
 
     @Override
     public void addFile(FileInfo fileInfo) {
-        activeFiles.put(fileInfo.getFilename(), fileInfo);
+        fileInPartitionEntries.putIfAbsent(fileInfo.getFilename(), new HashMap<>());
+        fileInPartitionEntries.get(fileInfo.getFilename()).put(fileInfo.getPartitionId(), fileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
+        fileLifecycleEntries.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileStatus.ACTIVE));
     }
 
     @Override
     public void addFiles(List<FileInfo> fileInfos) {
-        for (FileInfo fileInfo : fileInfos) {
-            addFile(fileInfo);
+        fileInfos.stream().forEach(this::addFile);
+    }
+
+    @Override
+    public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
+        setStatusToReadyForGarbageCollection(Collections.singletonList(filename));
+    }
+
+    @Override
+    public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
+        for (String filename : filenames) {
+            if (!fileLifecycleEntries.containsKey(filename)) {
+                throw new StateStoreException("Cannot set status of file " + filename
+                    + " to READY_FOR_GARBAGE_COLLECTION as there is no file lifecycle record for the file");
+            }
+            if (fileInPartitionEntries.containsKey(filename)) {
+                throw new StateStoreException("Cannot set status of file " + filename
+                    + " to READY_FOR_GARBAGE_COLLECTION as there exists a FILE_IN_PARTITION record for the file");
+            }
+            FileInfo fileInfo = fileLifecycleEntries.get(filename)
+                .toBuilder()
+                .fileStatus(READY_FOR_GARBAGE_COLLECTION)
+                .lastStateStoreUpdateTime(Instant.now())
+                .build();
+            fileLifecycleEntries.put(filename, fileInfo);
         }
     }
 
     @Override
-    public List<FileInfo> getActiveFiles() {
-        return Collections.unmodifiableList(new ArrayList<>(activeFiles.values()));
+    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+        return new ArrayList<>(fileLifecycleEntries.values());
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        return readyForGCFiles.values().iterator();
+    public List<FileInfo> getFileInPartitionList() {
+        return fileInPartitionEntries.values().stream()
+            .map(map -> map.values())
+            .flatMap(c -> c.stream())
+            .collect(Collectors.toList());
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() {
-        return Collections.unmodifiableList(activeFiles.values().stream()
+    public List<FileInfo> getActiveFileList() throws StateStoreException {
+        return fileLifecycleEntries.values().stream()
+            .filter(f -> f.getFileStatus().equals(ACTIVE))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+        return getReadyForGCFileInfoStream().iterator();
+    }
+
+    @Override
+    public Iterator<String> getReadyForGCFiles() {
+        return getReadyForGCFileInfoStream().map(FileInfo::getFilename).iterator();
+    }
+
+    private Stream<FileInfo> getReadyForGCFileInfoStream() {
+        long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
+        long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+        return fileLifecycleEntries.values().stream()
+            .filter(f -> f.getFileStatus().equals(READY_FOR_GARBAGE_COLLECTION))
+            .filter(f -> (f.getLastStateStoreUpdateTime() < deleteTime));
+    }
+
+    @Override
+    public List<FileInfo> getFileInPartitionInfosWithNoJobId() {
+        return getFileInPartitionList().stream()
                 .filter(file -> file.getJobId() == null)
-                .collect(toList()));
+                .collect(Collectors.toList());
     }
 
+    // TODO - rename
     @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() {
-        return activeFiles.values().stream().collect(
+        return getFileInPartitionList().stream().collect(
                 groupingBy(FileInfo::getPartitionId,
-                        mapping(FileInfo::getFilename, toList())));
+                        mapping(FileInfo::getFilename, Collectors.toList())));
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) {
-        filesToBeMarkedReadyForGC.forEach(this::moveToGC);
+    public synchronized void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(List<FileInfo> fileInPartitionRecordsToBeDeleted,
+            FileInfo newActiveFile) throws StateStoreException {
+        checkAndDeleteFileInPartitionInfos(fileInPartitionRecordsToBeDeleted);
+
+        // Add the new file
         addFile(newActiveFile);
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) {
-        filesToBeMarkedReadyForGC.forEach(this::moveToGC);
+    public synchronized void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(List<FileInfo> fileInPartitionRecordsToBeDeleted,
+            FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
+        checkAndDeleteFileInPartitionInfos(fileInPartitionRecordsToBeDeleted);
+
+        // Add the new files
         addFile(leftFileInfo);
         addFile(rightFileInfo);
     }
 
-    private void moveToGC(FileInfo file) {
-        activeFiles.remove(file.getFilename());
-        readyForGCFiles.put(file.getFilename(),
-                file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
+    private synchronized void checkAndDeleteFileInPartitionInfos(List<FileInfo> fileInPartitionRecordsToBeDeleted)
+            throws StateStoreException {
+        // Check that the right file-in-partition records exist
+        List<FileInfo> failures = new ArrayList<>();
+        for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
+            if (!fileInPartitionEntries.containsKey(fileInfo.getFilename())) {
+                failures.add(fileInfo);
+            } else {
+                Map<String, FileInfo> partitionToFileInfo = fileInPartitionEntries.get(fileInfo.getFilename());
+                if (!partitionToFileInfo.containsKey(fileInfo.getPartitionId())) {
+                    failures.add(fileInfo);
+                }
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new StateStoreException("Some of the provided fileInPartitionRecordsToBeDeleted do not have the correct"
+                + " file-in-partition entries" + failures);
+        }
+
+        // Delete the records
+        for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
+            fileInPartitionEntries.get(fileInfo.getFilename()).remove(fileInfo.getPartitionId());
+            if (fileInPartitionEntries.get(fileInfo.getFilename()).isEmpty()) {
+                fileInPartitionEntries.remove(fileInfo.getFilename());
+            }
+        }
     }
 
     @Override
@@ -98,24 +192,33 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
         }
         for (FileInfo file : fileInfos) {
-            activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId).build());
+            FileInfo temp = fileInPartitionEntries.get(file.getFilename()).get(file.getPartitionId()).toBuilder()
+                .jobId(jobId)
+                .build();
+            fileInPartitionEntries.get(file.getFilename()).put(file.getPartitionId(), temp);
         }
     }
 
     private List<String> findFilenamesWithJobIdSet(List<FileInfo> fileInfos) {
-        return fileInfos.stream()
-                .filter(file -> activeFiles.getOrDefault(file.getFilename(), file).getJobId() != null)
-                .map(FileInfo::getFilename)
-                .collect(toList());
+        List<String> filenamesWithJobIdSet = new ArrayList<>();
+        for (FileInfo file : fileInfos) {
+            if (null != fileInPartitionEntries.get(file.getFilename()).get(file.getPartitionId()).getJobId()) {
+                filenamesWithJobIdSet.add(file.getFilename());
+            }
+        }
+        return filenamesWithJobIdSet;
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) {
-        readyForGCFiles.remove(fileInfo.getFilename());
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        filenames.stream().forEach(this::deleteReadyForGCFile);
+    }
+
+    private void deleteReadyForGCFile(String filename) {
+        fileLifecycleEntries.remove(filename);
     }
 
     @Override
     public void initialise() throws StateStoreException {
-
     }
 }

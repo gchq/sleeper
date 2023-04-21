@@ -88,11 +88,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_R
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -218,11 +218,11 @@ public class ReinitialiseTableIT {
         // Then
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
                 validTableProperties, "1", "2");
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = s3StateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
+        assertThat(fileInPartitionList).isEmpty();
         assertThat(s3StateStore.getAllPartitions()).hasSize(3);
         assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
@@ -284,11 +284,11 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
                 validTableProperties, "1", "1");
 
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = s3StateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
+        assertThat(fileInPartitionList).isEmpty();
         assertThat(s3StateStore.getAllPartitions()).hasSize(1);
         assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
 
@@ -361,11 +361,11 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
                 validTableProperties, "1", "1");
 
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = s3StateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
+        assertThat(fileInPartitionList).isEmpty();
 
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
@@ -443,11 +443,11 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
                 validTableProperties, "1", "1");
 
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = s3StateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
+        assertThat(fileInPartitionList).isEmpty();
 
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
@@ -522,11 +522,11 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
                 validTableProperties, "1", "2");
 
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+        List<FileInfo> fileInPartitionList = s3StateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
+        assertThat(fileInPartitionList).isEmpty();
 
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(3);
@@ -538,11 +538,11 @@ public class ReinitialiseTableIT {
     private void assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(
             TableProperties tableProperties, DynamoDBStateStore dynamoStateStore) throws StateStoreException {
         ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
+                .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
         assertThat(scanResult.getItems()).isEmpty();
-        assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
+        assertThat(dynamoStateStore.getFileInPartitionList()).isEmpty();
     }
 
     private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(TableProperties tableProperties,
@@ -626,17 +626,17 @@ public class ReinitialiseTableIT {
         //   does not have a method to return all values in the ready for gc table, we query the table
         //   directly.
         ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
+                .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
         assertThat(scanResult.getItems()).hasSize(1);
 
-        // - Check DynamoDBStateStore has correct active files
-        List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles()
+        // - Check DynamoDBStateStore has correct file in partition list
+        List<FileInfo> fileInPartitionList = dynamoDBStateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles).hasSize(2);
+        assertThat(fileInPartitionList).hasSize(2);
 
         // - Check DynamoDBStateStore has correct partitions
         List<Partition> partitionsList = dynamoDBStateStore.getAllPartitions();
@@ -662,8 +662,8 @@ public class ReinitialiseTableIT {
         //   set to version 2
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(tableProperties, "2", "2");
 
-        // - Check S3StateStore has correct active files
-        assertThat(s3StateStore.getActiveFiles()).hasSize(2);
+        // - Check S3StateStore has correct file in partition list
+        assertThat(s3StateStore.getFileInPartitionList()).hasSize(2);
 
         // - Check S3StateStore has correct partitions
         assertThat(s3StateStore.getAllPartitions()).hasSize(3);
@@ -760,8 +760,8 @@ public class ReinitialiseTableIT {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ENCRYPTED, "false");
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, "sleeper" + "-" + tableName + "-" + "active-files");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, "sleeper" + "-" + tableName + "-" + "gc-files");
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, "sleeper" + "-" + tableName + "-" + "file-in-partition");
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, "sleeper" + "-" + tableName + "-" + "gc-files");
         tableProperties.set(PARTITION_TABLENAME, "sleeper" + "-" + tableName + "-" + "partitions");
         tableProperties.set(REVISION_TABLENAME, "sleeper" + "-" + tableName + "-" + "revisions");
         if (isS3StateStore) {

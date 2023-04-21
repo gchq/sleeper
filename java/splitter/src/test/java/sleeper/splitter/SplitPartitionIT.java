@@ -130,7 +130,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        partitionSplitter.splitPartition(rootPartition, stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+        partitionSplitter.splitPartition(rootPartition, stateStore.getFileInPartitionList().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
@@ -241,7 +241,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(partition2.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -344,7 +344,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(partition2.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -379,7 +379,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -443,7 +443,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -512,7 +512,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -573,7 +573,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -625,7 +625,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -688,7 +688,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -825,7 +825,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(partition2.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -936,7 +936,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(partition2.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -971,7 +971,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -1037,7 +1037,7 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
+        List<String> fileNames = stateStore.getFileInPartitionList().stream()
                 .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());

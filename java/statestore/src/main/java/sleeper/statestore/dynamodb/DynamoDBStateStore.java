@@ -21,24 +21,23 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
 
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
 /**
  * An implementation of {@link StateStore} that uses DynamoDB to store the state.
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
-
     public static final String FILE_NAME = DynamoDBFileInfoFormat.NAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
 
 
     public DynamoDBStateStore(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME),
-                tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
+        this(tableProperties.get(FILE_IN_PARTITION_TABLENAME),
+                tableProperties.get(FILE_LIFECYCLE_TABLENAME),
                 tableProperties.get(PARTITION_TABLENAME),
                 tableProperties.getSchema(),
                 tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
@@ -47,8 +46,8 @@ public class DynamoDBStateStore extends DelegatingStateStore {
     }
 
     public DynamoDBStateStore(
-            String activeFileInfoTablename,
-            String readyForGCFileInfoTablename,
+            String fileInPartitionTablename,
+            String fileLifecycleTablename,
             String partitionTablename,
             Schema schema,
             int garbageCollectorDelayBeforeDeletionInSeconds,
@@ -56,12 +55,15 @@ public class DynamoDBStateStore extends DelegatingStateStore {
             AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
-                .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
+                .fileInPartitionTablename(fileInPartitionTablename)
+                .fileLifecycleTablename(fileLifecycleTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
                 .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
-                .build(), DynamoDBPartitionStore.builder()
+                .build(),
+            DynamoDBPartitionStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
-                .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
+                .tableName(partitionTablename)
+                .stronglyConsistentReads(stronglyConsistentReads)
                 .build());
     }
 }

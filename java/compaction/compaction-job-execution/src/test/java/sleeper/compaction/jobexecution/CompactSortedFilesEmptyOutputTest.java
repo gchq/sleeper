@@ -72,8 +72,8 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
         // - Check DynamoDBStateStore has correct ready for GC files
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file in partition list
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L));
     }
@@ -105,8 +105,8 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
         // - Check DynamoDBStateStore has correct ready for GC files
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file in partition list
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 0L, null, null));
     }
@@ -145,8 +145,8 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
         // - Check DynamoDBStateStore has correct ready for GC files
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file in partition list
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L, 0L, 199L),

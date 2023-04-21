@@ -19,13 +19,13 @@ import software.amazon.awscdk.services.iam.IGrantable;
 
 public interface StateStoreStack {
 
-    void grantReadActiveFileMetadata(IGrantable grantee);
+    void grantReadFileInPartitionMetadata(IGrantable grantee);
 
-    void grantReadWriteActiveFileMetadata(IGrantable grantee);
+    void grantReadWriteFileInPartitionMetadata(IGrantable grantee);
 
-    void grantReadWriteReadyForGCFileMetadata(IGrantable grantee);
+    void grantReadFileLifecycleMetadata(IGrantable grantee);
 
-    void grantWriteReadyForGCFileMetadata(IGrantable grantee);
+    void grantReadWriteFileLifecycleMetadata(IGrantable grantee);
 
     void grantReadPartitionMetadata(IGrantable grantee);
 

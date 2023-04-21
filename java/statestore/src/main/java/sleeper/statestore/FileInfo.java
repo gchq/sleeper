@@ -31,7 +31,9 @@ import java.util.Objects;
  */
 public class FileInfo {
     public enum FileStatus {
-        ACTIVE, READY_FOR_GARBAGE_COLLECTION
+        FILE_IN_PARTITION,
+        ACTIVE,
+        READY_FOR_GARBAGE_COLLECTION
     }
 
     private final List<PrimitiveType> rowKeyTypes;
@@ -150,6 +152,20 @@ public class FileInfo {
                 .fileStatus(fileStatus)
                 .jobId(jobId)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
+    }
+
+    public FileInfo cloneWithStatus(FileStatus fileStatus) {
+        return FileInfo.builder()
+            .rowKeyTypes(rowKeyTypes)
+            .minRowKey(minRowKey)
+            .maxRowKey(maxRowKey)
+            .filename(filename)
+            .partitionId(partitionId)
+            .numberOfRecords(numberOfRecords)
+            .fileStatus(fileStatus)
+            .jobId(jobId)
+            .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
+            .build();
     }
 
     public static final class Builder {

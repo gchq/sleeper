@@ -280,7 +280,8 @@ public final class EksBulkImportStack extends NestedStack {
                                List<StateStoreStack> stateStoreStacks, IBucket configBucket) {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(sparkServiceAccount));
         stateStoreStacks.forEach(sss -> {
-            sss.grantReadWriteActiveFileMetadata(sparkServiceAccount);
+            sss.grantReadWriteFileInPartitionMetadata(sparkServiceAccount);
+            sss.grantReadWriteFileLifecycleMetadata(sparkServiceAccount);
             sss.grantReadPartitionMetadata(sparkServiceAccount);
         });
         configBucket.grantRead(sparkServiceAccount);

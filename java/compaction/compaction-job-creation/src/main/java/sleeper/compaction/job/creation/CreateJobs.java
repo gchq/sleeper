@@ -105,12 +105,13 @@ public class CreateJobs {
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         // NB We retrieve the information about all the active files and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
-        List<FileInfo> activeFileInfosWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
-        List<FileInfo> activeFileInfosWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
+        // TODO - rename these variables
+        List<FileInfo> activeFileInfosWithNoJobId = fileInPartitionList.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
+        List<FileInfo> activeFileInfosWithJobId = fileInPartitionList.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
         LOGGER.debug("Found {} active files with no job id", activeFileInfosWithNoJobId.size());
         LOGGER.debug("Found {} active files with a job id", activeFileInfosWithJobId.size());
 
@@ -133,7 +134,7 @@ public class CreateJobs {
 
             List<FileInfo> fileInfos1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
-                for (FileInfo fileInfo : activeFiles) {
+                for (FileInfo fileInfo : fileInPartitionList) {
                     if (fileInfo.getFilename().equals(filename)) {
                         fileInfos1.add(fileInfo);
                         break;

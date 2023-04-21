@@ -99,22 +99,22 @@ public class FindPartitionsToSplit {
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableName, splitThreshold);
 
-        List<FileInfo> activeFileInfos = stateStore.getActiveFiles();
-        LOGGER.info("There are {} active files in table {}", activeFileInfos.size(), tableName);
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        LOGGER.info("There are {} file in partition records in table {}", fileInPartitionList.size(), tableName);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableName);
 
         List<FindPartitionToSplitResult> results = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            splitPartitionIfNecessary(tableName, splitThreshold, partition, activeFileInfos).ifPresent(results::add);
+            splitPartitionIfNecessary(tableName, splitThreshold, partition, fileInPartitionList).ifPresent(results::add);
         }
         return results;
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            String tableName, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
-        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
+            String tableName, long splitThreshold, Partition partition, List<FileInfo> fileInPartitionList) {
+        List<FileInfo> relevantFiles = getFilesInPartition(partition, fileInPartitionList);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
@@ -126,9 +126,9 @@ public class FindPartitionsToSplit {
         }
     }
 
-    public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
+    public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> fileInPartitionList) {
         List<FileInfo> relevantFiles = new ArrayList<>();
-        for (FileInfo fileInfo : activeFileInfos) {
+        for (FileInfo fileInfo : fileInPartitionList) {
             if (fileInfo.getPartitionId().equals(partition.getId())) {
                 relevantFiles.add(fileInfo);
             }

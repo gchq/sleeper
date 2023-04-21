@@ -136,7 +136,7 @@ public class CreateJobsTest {
     }
 
     private void setActiveFiles(List<FileInfo> files) throws Exception {
-        when(stateStore.getActiveFiles()).thenReturn(files);
+        when(stateStore.getFileInPartitionList()).thenReturn(files);
     }
 
     private void verifySetJobForFilesInStateStore(String jobId, List<FileInfo> files) throws Exception {
@@ -149,7 +149,7 @@ public class CreateJobsTest {
 
     private void verifyOtherStateStoreCalls() throws Exception {
         verify(stateStore).getAllPartitions();
-        verify(stateStore).getActiveFiles();
+        verify(stateStore).getFileInPartitionList();
         verifyNoMoreInteractions(stateStore);
     }
 

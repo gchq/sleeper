@@ -55,10 +55,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_R
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TestUtils {
@@ -103,9 +103,9 @@ public class TestUtils {
         tableProperties.set(DATA_BUCKET, dataDir);
 
         // Create a state store
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, tableName + "-fip");
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, tableName + "-fl");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
 
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(tableName, schema, dynamoDB).create();

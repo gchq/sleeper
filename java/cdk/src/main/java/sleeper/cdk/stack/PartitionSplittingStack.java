@@ -151,7 +151,8 @@ public class PartitionSplittingStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(findPartitionsToSplitLambda);
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(findPartitionsToSplitLambda));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadFileInPartitionMetadata(findPartitionsToSplitLambda));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadFileLifecycleMetadata(findPartitionsToSplitLambda));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(findPartitionsToSplitLambda));
 
         // Grant this function permission to write to the SQS queue

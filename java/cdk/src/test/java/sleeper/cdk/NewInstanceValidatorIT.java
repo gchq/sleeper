@@ -119,7 +119,7 @@ class NewInstanceValidatorIT {
 
     @Test
     void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsTableActiveFiles() throws IOException {
-        checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-active-files");
+        checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-file-in-partition");
     }
 
     @Test

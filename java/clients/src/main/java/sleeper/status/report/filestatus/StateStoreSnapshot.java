@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class StateStoreSnapshot {
-
     private final List<FileInfo> active;
     private final StateStoreReadyForGC readyForGC;
     private final List<Partition> partitions;
@@ -61,7 +60,7 @@ public class StateStoreSnapshot {
 
     public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
         return builder()
-                .active(stateStore.getActiveFiles())
+                .active(stateStore.getActiveFileList())
                 .readyForGC(StateStoreReadyForGC.from(stateStore, maxNumberOfReadyForGCFilesToCount))
                 .partitions(stateStore.getAllPartitions())
                 .build();

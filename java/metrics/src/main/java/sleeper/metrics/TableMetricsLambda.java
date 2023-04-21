@@ -91,13 +91,13 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
         LOGGER.info("Querying state store for table {} for active files", tableName);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
-        int fileCount = activeFiles.size();
-        long recordCount = activeFiles.stream().mapToLong(activeFile -> activeFile.getNumberOfRecords()).sum();
+        List<FileInfo> fileInPartitions = stateStore.getFileInPartitionList();
+        LOGGER.info("Found {} file in partition records for table {}", fileInPartitions.size(), tableName);
+        int fileCount = fileInPartitions.size();
+        long recordCount = fileInPartitions.stream().mapToLong(activeFile -> activeFile.getNumberOfRecords()).sum();
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
-        LongSummaryStatistics filesPerPartitionStats = activeFiles.stream().collect(
+        LongSummaryStatistics filesPerPartitionStats = fileInPartitions.stream().collect(
                 Collectors.groupingBy(
                         activeFile -> activeFile.getPartitionId(),
                         Collectors.counting()

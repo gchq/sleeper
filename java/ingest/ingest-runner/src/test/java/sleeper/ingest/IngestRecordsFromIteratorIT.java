@@ -44,9 +44,9 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        assertThat(fileInPartitionList).hasSize(1);
+        FileInfo fileInfo = fileInPartitionList.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
@@ -57,7 +57,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(inputFolderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, fileInPartitionList.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)

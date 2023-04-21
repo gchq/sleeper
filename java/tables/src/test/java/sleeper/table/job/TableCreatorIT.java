@@ -189,7 +189,7 @@ public class TableCreatorIT {
         // Then
         String instanceId = instanceProperties.get(ID);
         assertThat(dynamoClient.listTables().getTableNames()).contains(
-                "sleeper-" + instanceId + "-table-mytable-active-files",
+                "sleeper-" + instanceId + "-table-mytable-file-in-partition",
                 "sleeper-" + instanceId + "-table-mytable-gc-files",
                 "sleeper-" + instanceId + "-table-mytable-partitions");
     }

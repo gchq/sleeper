@@ -98,7 +98,7 @@ public class CompactSortedFilesTestUtils {
 
     public static void assertReadyForGC(StateStore dynamoStateStore, List<FileInfo> files) {
         try {
-            assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
+            assertThat(dynamoStateStore.getReadyForGCFileInfos()).toIterable()
                     .extracting(
                             FileInfo::getFilename,
                             FileInfo::getRowKeyTypes,

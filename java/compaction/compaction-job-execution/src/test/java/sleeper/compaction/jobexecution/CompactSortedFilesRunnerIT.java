@@ -287,9 +287,9 @@ public class CompactSortedFilesRunnerIT {
                 .withWaitTimeSeconds(2);
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
-        // - Check DynamoDBStateStore has correct active files
-        List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles();
-        assertThat(activeFiles)
+        // - Check DynamoDBStateStore has correct file in partition list
+        List<FileInfo> fileInPartitionList = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getFileInPartitionList();
+        assertThat(fileInPartitionList)
                 .extracting(FileInfo::getFilename)
                 .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
     }

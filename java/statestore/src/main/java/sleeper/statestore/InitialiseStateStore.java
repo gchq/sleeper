@@ -72,12 +72,14 @@ public class InitialiseStateStore {
         // Validate that this appears to be an empty table
         List<Partition> partitions = stateStore.getAllPartitions();
         if (!partitions.isEmpty()) {
-            LOGGER.error("This should only be run on a database on which no data has been ingested - this instance has " + partitions.size() + " partitions");
+            LOGGER.error("This should only be run on a database on which no data has been ingested - this instance has {} partitions",
+                partitions.size());
             return;
         }
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        if (!activeFiles.isEmpty()) {
-            LOGGER.error("This should only be run on a database on which no data has been ingested - this instance has " + activeFiles.size() + " active files");
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        if (!fileInPartitionList.isEmpty()) {
+            LOGGER.error("This should only be run on a database on which no data has been ingested - this instance has {} file in partition records",
+                fileInPartitionList.size());
             return;
         }
         LOGGER.info("Database appears to be empty");

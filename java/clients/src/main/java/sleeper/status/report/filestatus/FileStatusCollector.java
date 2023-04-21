@@ -87,6 +87,7 @@ public class FileStatusCollector {
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
         for (Partition partition : state.getPartitions()) {
+            // TODO This logic needs changing
             List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getActive());
             long numRecordsInPartition = activeFilesInThisPartition.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
             totalRecords += numRecordsInPartition;

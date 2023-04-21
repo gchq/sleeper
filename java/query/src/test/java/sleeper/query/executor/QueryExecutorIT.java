@@ -167,7 +167,7 @@ public class QueryExecutorIT {
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
-        List<String> files = stateStore.getActiveFiles().stream()
+        List<String> files = stateStore.getFileInPartitionList().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -236,7 +236,7 @@ public class QueryExecutorIT {
         StateStore stateStore = getStateStore(schema);
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
-        List<String> files = stateStore.getActiveFiles().stream()
+        List<String> files = stateStore.getFileInPartitionList().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -300,7 +300,7 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         }
-        List<String> files = stateStore.getActiveFiles().stream()
+        List<String> files = stateStore.getFileInPartitionList().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -364,7 +364,7 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
-        List<String> files = stateStore.getActiveFiles().stream()
+        List<String> files = stateStore.getFileInPartitionList().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -503,11 +503,11 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
-        List<String> filesInLeftPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInLeftPartition = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInRightPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInRightPartition = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -618,11 +618,11 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsMultidimRowKey().iterator());
         }
-        List<String> filesInLeftPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInLeftPartition = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInRightPartition = stateStore.getActiveFiles().stream()
+        List<String> filesInRightPartition = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -851,19 +851,19 @@ public class QueryExecutorIT {
                 partition2, partition4);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
-        List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition1 = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(partition1.getId()) || f.getPartitionId().equals(leftPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInLeafPartition2 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition2 = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(partition2.getId()) || f.getPartitionId().equals(rightPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInLeafPartition3 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition3 = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(partition3.getId()) || f.getPartitionId().equals(leftPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        List<String> filesInLeafPartition4 = stateStore.getActiveFiles().stream()
+        List<String> filesInLeafPartition4 = stateStore.getFileInPartitionList().stream()
                 .filter(f -> f.getPartitionId().equals(partition4.getId()) || f.getPartitionId().equals(rightPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());

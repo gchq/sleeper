@@ -42,11 +42,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 
@@ -59,8 +59,8 @@ public class DynamoDBStateStoreCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBStateStoreCreator.class);
 
     private final AmazonDynamoDB dynamoDB;
-    private final String activeFileInfoTablename;
-    private final String readyForGCFileInfoTablename;
+    private final String fileInPartitionTablename;
+    private final String fileLifecycleTablename;
     private final String partitionTableName;
     private final Schema schema;
     private final List<PrimitiveType> rowKeyTypes;
@@ -69,16 +69,16 @@ public class DynamoDBStateStoreCreator {
     private final Collection<Tag> tags;
 
     private DynamoDBStateStoreCreator(
-            String activeFileInfoTablename,
-            String readyForGCFileInfoTablename,
+            String fileInPartitionTablename,
+            String fileLifecycleTablename,
             String partitionTablename,
             Schema schema,
             int garbageCollectorDelayBeforeDeletionInSeconds,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB,
             Map<String, String> tags) {
-        this.activeFileInfoTablename = Objects.requireNonNull(activeFileInfoTablename, "activeFileInfoTablename must not be null");
-        this.readyForGCFileInfoTablename = Objects.requireNonNull(readyForGCFileInfoTablename, "readyForGCFileInfoTablename must not be null");
+        this.fileInPartitionTablename = Objects.requireNonNull(fileInPartitionTablename, "fileInPartitionTablename must not be null");
+        this.fileLifecycleTablename = Objects.requireNonNull(fileLifecycleTablename, "fileLifecycleTablename must not be null");
         this.partitionTableName = Objects.requireNonNull(partitionTablename, "partitionTableName must not be null");
         this.schema = Objects.requireNonNull(schema, "schema must not be null");
         this.rowKeyTypes = schema.getRowKeyTypes();
@@ -111,14 +111,14 @@ public class DynamoDBStateStoreCreator {
             Schema schema,
             int garbageCollectorDelayBeforeDeletionInSeconds,
             AmazonDynamoDB dynamoDB) {
-        this(tablenameStub + "-af", tablenameStub + "-rgcf", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInSeconds, false, dynamoDB, Collections.EMPTY_MAP);
+        this(tablenameStub + "-fip", tablenameStub + "-fl", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInSeconds, false, dynamoDB, Collections.EMPTY_MAP);
     }
 
     public DynamoDBStateStoreCreator(
             InstanceProperties instanceProperties,
             TableProperties tableProperties,
             AmazonDynamoDB dynamoDB) {
-        this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
+        this(tableProperties.get(FILE_IN_PARTITION_TABLENAME), tableProperties.get(FILE_LIFECYCLE_TABLENAME),
                 tableProperties.get(PARTITION_TABLENAME), tableProperties.getSchema(),
                 tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
                 tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS),
@@ -128,16 +128,30 @@ public class DynamoDBStateStoreCreator {
     public DynamoDBStateStore create() throws StateStoreException {
         createFileInfoTables();
         createPartitionInfoTable();
-        return new DynamoDBStateStore(activeFileInfoTablename, readyForGCFileInfoTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads, dynamoDB);
+        return new DynamoDBStateStore(fileInPartitionTablename, fileLifecycleTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads, dynamoDB);
     }
 
     public void createFileInfoTables() {
+        createFileInPartitionTable();
+        createFileLifecycleTable();
+    }
+
+    private void createFileInPartitionTable() {
+        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
+        attributeDefinitions.add(new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
+        attributeDefinitions.add(new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
+        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
+        keySchemaElements.add(new KeySchemaElement(FILE_NAME, KeyType.HASH));
+        keySchemaElements.add(new KeySchemaElement(PARTITION_ID, KeyType.RANGE));
+        initialiseTable(fileInPartitionTablename, attributeDefinitions, keySchemaElements);
+    }
+
+    private void createFileLifecycleTable() {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
         keySchemaElements.add(new KeySchemaElement(FILE_NAME, KeyType.HASH));
-        initialiseTable(activeFileInfoTablename, attributeDefinitions, keySchemaElements);
-        initialiseTable(readyForGCFileInfoTablename, attributeDefinitions, keySchemaElements);
+        initialiseTable(fileLifecycleTablename, attributeDefinitions, keySchemaElements);
     }
 
     public void createPartitionInfoTable() throws StateStoreException {

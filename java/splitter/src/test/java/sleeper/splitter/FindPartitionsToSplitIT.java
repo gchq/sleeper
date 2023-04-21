@@ -261,8 +261,8 @@ public class FindPartitionsToSplitIT {
         assertThat(job.getTableName()).isEqualTo("test");
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> activeFiles.stream()
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileInPartitionList.stream()
                 .filter(fi -> fi.getFilename().equals(fileName))
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 

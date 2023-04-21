@@ -111,8 +111,8 @@ public class CreateJobsIT {
         createJobs.createJobs();
 
         // Then
-        assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
-        String jobId = assertAllFilesHaveJobId(stateStore.getActiveFiles());
+        assertThat(stateStore.getFileInPartitionInfosWithNoJobId()).isEmpty();
+        String jobId = assertAllFilesHaveJobId(stateStore.getFileInPartitionList());
         assertThat(receiveJobQueueMessage().getMessages())
                 .extracting(this::readJobMessage).singleElement().satisfies(job -> {
                     assertThat(job.getId()).isEqualTo(jobId);

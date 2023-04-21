@@ -71,23 +71,23 @@ public class S3StateStoreStack implements StateStoreStack {
     }
 
     @Override
-    public void grantReadActiveFileMetadata(IGrantable grantee) {
+    public void grantReadFileInPartitionMetadata(IGrantable grantee) {
         grantRead(grantee);
     }
 
     @Override
-    public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
+    public void grantReadWriteFileInPartitionMetadata(IGrantable grantee) {
         grantReadWrite(grantee);
     }
 
     @Override
-    public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
+    public void grantReadWriteFileLifecycleMetadata(IGrantable grantee) {
         grantReadWrite(grantee);
     }
 
     @Override
-    public void grantWriteReadyForGCFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
+    public void grantReadFileLifecycleMetadata(IGrantable grantee) {
+        grantRead(grantee);
     }
 
     @Override

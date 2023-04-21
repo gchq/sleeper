@@ -33,6 +33,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsIT extends IngestRecordsITBase {
+
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
@@ -45,9 +46,9 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        assertThat(fileInPartitionList).hasSize(1);
+        FileInfo fileInfo = fileInPartitionList.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
@@ -81,7 +82,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).isEmpty();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+        assertThat(fileInPartitionList).isEmpty();
     }
 }

@@ -41,13 +41,24 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, newActiveFile);
+    public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
+        fileInfoStore.setStatusToReadyForGarbageCollection(filename);
     }
 
     @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
-        fileInfoStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
+    public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
+        fileInfoStore.setStatusToReadyForGarbageCollection(filenames);
+    }
+
+    @Override
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
+            List<FileInfo> fileInPartitionRecordsToBeDeleted, FileInfo newActiveFile) throws StateStoreException {
+        fileInfoStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(fileInPartitionRecordsToBeDeleted, newActiveFile);
+    }
+
+    @Override
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
+        fileInfoStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
     }
 
     @Override
@@ -56,23 +67,38 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        fileInfoStore.deleteReadyForGCFile(fileInfo);
+    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+        fileInfoStore.deleteReadyForGCFiles(filenames);
     }
 
     @Override
-    public List<FileInfo> getActiveFiles() throws StateStoreException {
-        return fileInfoStore.getActiveFiles();
+    public List<FileInfo> getFileInPartitionList() throws StateStoreException {
+        return fileInfoStore.getFileInPartitionList();
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
+    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+        return fileInfoStore.getFileLifecycleList();
+    }
+
+    @Override
+    public List<FileInfo> getActiveFileList() throws StateStoreException {
+        return fileInfoStore.getActiveFileList();
+    }
+
+    @Override
+    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+        return fileInfoStore.getReadyForGCFileInfos();
+    }
+
+    @Override
+    public Iterator<String> getReadyForGCFiles() throws StateStoreException {
         return fileInfoStore.getReadyForGCFiles();
     }
 
     @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
-        return fileInfoStore.getActiveFilesWithNoJobId();
+    public List<FileInfo> getFileInPartitionInfosWithNoJobId() throws StateStoreException {
+        return fileInfoStore.getFileInPartitionInfosWithNoJobId();
     }
 
     @Override

@@ -25,6 +25,7 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ class DynamoDBFileInfoFormat {
 
     static final String NAME = "Name";
     static final String STATUS = "Status";
-    static final String PARTITION = "Partition";
+    static final String PARTITION = DynamoDBStateStore.PARTITION_ID;
     private static final String NUMBER_LINES = "NumLines";
     private static final String MIN_KEY = "MinKey";
     private static final String MAX_KEY = "MaxKey";
@@ -103,6 +104,8 @@ class DynamoDBFileInfoFormat {
         }
         if (null != fileInfo.getLastStateStoreUpdateTime()) {
             itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
+        } else {
+            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(Instant.now().toEpochMilli()));
         }
 
         return itemValues;

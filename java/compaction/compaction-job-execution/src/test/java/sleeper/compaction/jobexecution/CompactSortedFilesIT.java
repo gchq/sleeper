@@ -121,8 +121,8 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct ready for GC files
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file in partition list
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
     }
@@ -162,8 +162,8 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         // - Check DynamoDBStateStore has correct ready for GC files
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
-        // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        // - Check DynamoDBStateStore has correct file in partition list
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L),

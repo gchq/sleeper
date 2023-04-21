@@ -245,11 +245,11 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .systemDefined(true).build();
     // DynamoDBStateStore properties
-    TableProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.active.table")
+    TableProperty FILE_IN_PARTITION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.file-in-partition.table")
             .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .systemDefined(true).build();
-    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.gc.table")
+    TableProperty FILE_LIFECYCLE_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.file-lifecycle.table")
             .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
                     "in the Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)

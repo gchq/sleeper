@@ -90,7 +90,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .build());
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(role));
         stateStoreStacks.forEach(sss -> {
-            sss.grantReadWriteActiveFileMetadata(role);
+            sss.grantReadWriteFileInPartitionMetadata(role);
+            sss.grantReadWriteFileLifecycleMetadata(role);
             sss.grantReadPartitionMetadata(role);
         });
 

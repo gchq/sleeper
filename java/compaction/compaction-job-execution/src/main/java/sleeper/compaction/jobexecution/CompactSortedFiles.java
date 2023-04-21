@@ -383,11 +383,11 @@ public class CompactSortedFiles {
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
+            stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
+            LOGGER.error("Exception updating DynamoDB while deleting records of input files being in partition and creating new active file lifecycle and file in partition records: {}", e.getMessage());
             return false;
         }
     }
@@ -434,11 +434,11 @@ public class CompactSortedFiles {
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
+            stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
+            LOGGER.error("Exception updating DynamoDB while deleting records of input files being in partition and creating new active file lifecycle and file in partition records", e);
             return false;
         }
     }

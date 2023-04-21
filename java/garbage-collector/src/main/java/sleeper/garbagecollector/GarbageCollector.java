@@ -30,8 +30,10 @@ import sleeper.table.job.TableLister;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Queries the {@link StateStore} for files that are marked as being ready for
@@ -69,7 +71,7 @@ public class GarbageCollector {
             StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
-            Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
+            Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFileInfos();
 
             int numberDeleted = 0;
             while (readyForGC.hasNext() && numberDeleted < garbageCollectorBatchSize) {
@@ -90,7 +92,7 @@ public class GarbageCollector {
     private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {
         deleteFiles(fileInfo.getFilename(), conf);
         try {
-            stateStore.deleteReadyForGCFile(fileInfo);
+            stateStore.deleteReadyForGCFiles(Arrays.asList(fileInfo.getFilename()));
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating status of " + fileInfo.getFilename() + " to garbage collected", e);
         }

@@ -30,15 +30,15 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBStateStoreStack implements StateStoreStack {
-    private final Table activeFileInfoTable;
-    private final Table readyForGCFileInfoTable;
+    private final Table fileInPartitionTable;
+    private final Table fileLifecycleTable;
     private final Table partitionTable;
 
     public DynamoDBStateStoreStack(Construct scope,
@@ -50,39 +50,44 @@ public class DynamoDBStateStoreStack implements StateStoreStack {
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        // DynamoDB table for active file information
-        Attribute partitionKeyActiveFileInfoTable = Attribute.builder()
+        // DynamoDB table for file in partition information
+        Attribute partitionKeyFileInPartitionTable = Attribute.builder()
                 .name(DynamoDBStateStore.FILE_NAME)
                 .type(AttributeType.STRING)
                 .build();
+        Attribute sortKeyFileInPartitionTable = Attribute.builder()
+                .name(DynamoDBStateStore.PARTITION_ID)
+                .type(AttributeType.STRING)
+                .build();
 
-        this.activeFileInfoTable = Table.Builder
-                .create(scope, tableName + "DynamoDBActiveFileInfoTable")
-                .tableName(String.join("-", "sleeper", instanceId, "table", tableName, "active-files"))
+        this.fileInPartitionTable = Table.Builder
+                .create(scope, tableName + "DynamoDBFileInPartitionTable")
+                .tableName(String.join("-", "sleeper", instanceId, "table", tableName, "file-in-partition"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
-                .partitionKey(partitionKeyActiveFileInfoTable)
+                .partitionKey(partitionKeyFileInPartitionTable)
+                .sortKey(sortKeyFileInPartitionTable)
                 .pointInTimeRecovery(tableProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, activeFileInfoTable.getTableName());
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, fileInPartitionTable.getTableName());
 
-        activeFileInfoTable.grantReadData(tablesProvider.getOnEventHandler());
+        fileInPartitionTable.grantReadData(tablesProvider.getOnEventHandler());
 
-        // DynamoDB table for ready for GC file information
-        Attribute partitionKeyReadyForGCFileInfoTable = Attribute.builder()
+        // DynamoDB table for file lifecyle information
+        Attribute partitionKeyFileLifecycleTable = Attribute.builder()
                 .name(DynamoDBStateStore.FILE_NAME)
                 .type(AttributeType.STRING)
                 .build();
-        this.readyForGCFileInfoTable = Table.Builder
-                .create(scope, tableName + "DynamoDBReadyForGCFileInfoTable")
-                .tableName(String.join("-", "sleeper", instanceId, "table", tableName, "gc-files"))
+        this.fileLifecycleTable = Table.Builder
+                .create(scope, tableName + "DynamoDBFileLifecycleTable")
+                .tableName(String.join("-", "sleeper", instanceId, "table", tableName, "file-lifecycle"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
-                .partitionKey(partitionKeyReadyForGCFileInfoTable)
+                .partitionKey(partitionKeyFileLifecycleTable)
                 .pointInTimeRecovery(tableProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
 
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, readyForGCFileInfoTable.getTableName());
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, fileLifecycleTable.getTableName());
 
         // DynamoDB table for partition information
         Attribute partitionKeyPartitionTable = Attribute.builder()
@@ -103,23 +108,23 @@ public class DynamoDBStateStoreStack implements StateStoreStack {
     }
 
     @Override
-    public void grantReadActiveFileMetadata(IGrantable grantee) {
-        activeFileInfoTable.grantReadData(grantee);
+    public void grantReadFileInPartitionMetadata(IGrantable grantee) {
+        fileInPartitionTable.grantReadData(grantee);
     }
 
     @Override
-    public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
-        activeFileInfoTable.grantReadWriteData(grantee);
+    public void grantReadWriteFileInPartitionMetadata(IGrantable grantee) {
+        fileInPartitionTable.grantReadWriteData(grantee);
     }
 
     @Override
-    public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
-        readyForGCFileInfoTable.grantReadWriteData(grantee);
+    public void grantReadWriteFileLifecycleMetadata(IGrantable grantee) {
+        fileLifecycleTable.grantReadWriteData(grantee);
     }
 
     @Override
-    public void grantWriteReadyForGCFileMetadata(IGrantable grantee) {
-        readyForGCFileInfoTable.grantWriteData(grantee);
+    public void grantReadFileLifecycleMetadata(IGrantable grantee) {
+        fileLifecycleTable.grantReadData(grantee);
     }
 
     @Override

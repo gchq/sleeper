@@ -206,7 +206,8 @@ public class TableStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(tableMetricsPublisher);
-        stateStoreStack.grantReadActiveFileMetadata(tableMetricsPublisher);
+        stateStoreStack.grantReadFileInPartitionMetadata(tableMetricsPublisher);
+        stateStoreStack.grantReadFileLifecycleMetadata(tableMetricsPublisher);
         stateStoreStack.grantReadPartitionMetadata(tableMetricsPublisher);
 
         Rule rule = Rule.Builder.create(this, tableName + "MetricsPublishSchedule")

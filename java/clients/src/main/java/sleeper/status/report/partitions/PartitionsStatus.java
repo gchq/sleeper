@@ -44,7 +44,7 @@ public class PartitionsStatus {
         if (partitions.isEmpty()) {
             return new PartitionsStatus(Collections.emptyList(), splitThreshold);
         }
-        List<PartitionStatus> statuses = statusesFrom(tableProperties, partitions, store.getActiveFiles());
+        List<PartitionStatus> statuses = statusesFrom(tableProperties, partitions, store.getFileInPartitionList());
         return new PartitionsStatus(statuses, splitThreshold);
     }
 

@@ -32,10 +32,10 @@ import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -74,10 +74,10 @@ public class TableCreator {
             s3Client.createBucket(bucketName);
             LOGGER.info("Created bucket {}", bucketName);
         }
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "active-files").toLowerCase(Locale.ROOT));
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "gc-files").toLowerCase(Locale.ROOT));
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, String.join("-", "sleeper", instanceId,
+                "table", tableName, "file-in-partition").toLowerCase(Locale.ROOT));
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, String.join("-", "sleeper", instanceId,
+                "table", tableName, "file-lifecycle").toLowerCase(Locale.ROOT));
         tableProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId,
                 "table", tableName, "partitions").toLowerCase(Locale.ROOT));
 
