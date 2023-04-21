@@ -77,13 +77,20 @@ public class WaitForEMRClusters {
                 .count();
     }
 
-    private static Map<String, Long> countClustersByState(List<ClusterSummary> clusters) {
-        Map<String, Long> counts = new HashMap<>();
+    private static Map<String, Integer> countClustersByState(List<ClusterSummary> clusters) {
+        Map<String, Integer> counts = new HashMap<>();
         for (ClusterSummary cluster : clusters) {
-            counts.compute(cluster.getStatus().getState(),
-                    (state, count) -> count == null ? 1 : count + 1);
+            counts.compute(cluster.getStatus().getState(), WaitForEMRClusters::incrementCount);
         }
         return counts;
+    }
+
+    private static Integer incrementCount(String key, Integer countBefore) {
+        if (countBefore == null) {
+            return 1;
+        } else {
+            return countBefore + 1;
+        }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {

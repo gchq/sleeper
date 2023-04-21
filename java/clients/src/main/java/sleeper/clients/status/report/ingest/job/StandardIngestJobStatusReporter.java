@@ -29,6 +29,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Map;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -55,11 +56,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages) {
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+                       Map<String, Integer> persistentEmrStepCount) {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
-        printSummary(statusList, query, queueMessages);
+        printSummary(statusList, query, queueMessages, persistentEmrStepCount);
         if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
                     .showFields(query != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
@@ -68,13 +70,14 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages) {
+    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType,
+                              IngestQueueMessages queueMessages, Map<String, Integer> persistentEmrStepCount) {
         if (queryType.equals(JobQuery.Type.DETAILED)) {
             printDetailedSummary(statusList);
         } else if (queryType.equals(JobQuery.Type.ALL)) {
-            printAllSummary(statusList, queueMessages);
+            printAllSummary(statusList, queueMessages, persistentEmrStepCount);
         } else if (queryType.equals(JobQuery.Type.UNFINISHED)) {
-            printUnfinishedSummary(statusList, queueMessages);
+            printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         } else if (queryType.equals(JobQuery.Type.RANGE)) {
             printRangeSummary(statusList, queueMessages);
         }
@@ -105,15 +108,24 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
     }
 
-    private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
-        printUnfinishedSummary(statusList, queueMessages);
+    private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
+                                 Map<String, Integer> persistentEmrStepCount) {
+        printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
-    private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
+    private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
+                                        Map<String, Integer> persistentEmrStepCount) {
         queueMessages.print(out);
+        printPendingEmrStepCount(persistentEmrStepCount);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
+    }
+
+    private void printPendingEmrStepCount(Map<String, Integer> stepCount) {
+        if (!stepCount.isEmpty()) {
+            out.printf("Total persistent EMR steps pending: %s%n", stepCount.getOrDefault("PENDING", 0));
+        }
     }
 
     private void printRangeSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {

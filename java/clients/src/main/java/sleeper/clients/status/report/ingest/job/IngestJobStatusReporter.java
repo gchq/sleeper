@@ -20,9 +20,11 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IngestJobStatusReporter {
 
-    void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages);
+    void report(List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+                Map<String, Integer> persistentEmrStepCount);
 
 }

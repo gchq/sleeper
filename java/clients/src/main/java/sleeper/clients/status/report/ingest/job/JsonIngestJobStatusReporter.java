@@ -30,6 +30,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Map;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
@@ -47,13 +48,18 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages) {
-        out.println(gson.toJson(createJsonReport(statusList, queueMessages)));
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages,
+                       Map<String, Integer> persistentEmrStepCount) {
+        out.println(gson.toJson(createJsonReport(statusList, queueMessages, persistentEmrStepCount)));
     }
 
-    private JsonObject createJsonReport(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
+    private JsonObject createJsonReport(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
+                                        Map<String, Integer> persistentEmrStepCount) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("queueMessages", gson.toJsonTree(queueMessages));
+        if (!persistentEmrStepCount.isEmpty()) {
+            jsonObject.addProperty("pendingEMRSteps", persistentEmrStepCount.getOrDefault("PENDING", 0));
+        }
         jsonObject.add("jobList", gson.toJsonTree(statusList));
         return jsonObject;
     }

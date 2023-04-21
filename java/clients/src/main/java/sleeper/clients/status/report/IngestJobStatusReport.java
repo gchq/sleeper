@@ -18,6 +18,8 @@ package sleeper.clients.status.report;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -26,6 +28,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import sleeper.clients.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.status.report.ingest.job.JsonIngestJobStatusReporter;
+import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
@@ -59,11 +62,13 @@ public class IngestJobStatusReport {
     private final InstanceProperties properties;
     private final JobQuery query;
     private final JobQuery.Type queryType;
+    private final Map<String, Integer> persistentEmrStepCount;
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
             String tableName, JobQuery.Type queryType, String queryParameters,
-            IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties) {
+            IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
+            Map<String, Integer> persistentEmrStepCount) {
         this.statusStore = ingestJobStatusStore;
         this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
                 Clock.systemUTC(), new ConsoleInput(System.console()));
@@ -71,6 +76,7 @@ public class IngestJobStatusReport {
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;
+        this.persistentEmrStepCount = persistentEmrStepCount;
     }
 
     public void run() {
@@ -79,7 +85,8 @@ public class IngestJobStatusReport {
         }
         ingestJobStatusReporter.report(
                 query.run(statusStore), queryType,
-                IngestQueueMessages.from(properties, queueClient));
+                IngestQueueMessages.from(properties, queueClient),
+                persistentEmrStepCount);
     }
 
     public static void main(String[] args) throws IOException {
@@ -99,8 +106,10 @@ public class IngestJobStatusReport {
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+            AmazonElasticMapReduce emrClient = AmazonElasticMapReduceClientBuilder.defaultClient();
             new IngestJobStatusReport(statusStore, tableName, queryType, queryParameters,
-                    reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties).run();
+                    reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                    PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             printUsage();

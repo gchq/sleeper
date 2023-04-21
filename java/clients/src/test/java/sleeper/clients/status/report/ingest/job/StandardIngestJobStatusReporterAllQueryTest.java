@@ -24,6 +24,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
@@ -69,5 +70,16 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         // When / Then
         Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
+    }
+
+    @Test
+    void shouldReportNoIngestJobsWithPersistentEmrStepsNotFinished() throws Exception {
+        // Given
+        List<IngestJobStatus> noJobs = Collections.emptyList();
+        Map<String, Integer> stepCount = Map.of("PENDING", 2, "RUNNING", 1);
+
+        // When / Then
+        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, noJobs, 0, stepCount))
+                .hasToString(example("reports/ingest/job/standard/all/noJobsWithEmrStepsUnfinished.txt"));
     }
 }
