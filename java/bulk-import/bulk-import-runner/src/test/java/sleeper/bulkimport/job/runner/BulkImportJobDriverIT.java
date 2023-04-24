@@ -83,6 +83,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -183,6 +184,7 @@ class BulkImportJobDriverIT {
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
+        instanceProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
