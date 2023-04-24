@@ -304,6 +304,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     // Bulk Import - properties that are applicable to all bulk import platforms
+    UserDefinedInstanceProperty BULK_IMPORT_MIN_PARTITION_COUNT = Index.propertyBuilder("sleeper.bulk.import.min.partitions")
+            .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
+                    "If this minimum has not been reached, bulk import jobs should refuse to start")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.class.name")
             .description("The class to use to perform the bulk import. The default value below uses Spark Dataframes. There is an " +
                     "alternative option that uses RDDs (sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver).")

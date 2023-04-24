@@ -36,6 +36,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -47,6 +48,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
 
 /**
  * This class executes a Spark job that reads in input Parquet files and writes
@@ -62,17 +64,20 @@ public class BulkImportJobDriver {
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
+    private final int minPartitionCount;
 
     public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
                                TablePropertiesProvider tablePropertiesProvider,
                                StateStoreProvider stateStoreProvider,
                                IngestJobStatusStore statusStore,
-                               Supplier<Instant> getTime) {
+                               Supplier<Instant> getTime,
+                               int minPartitionCount) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
         this.getTime = getTime;
+        this.minPartitionCount = minPartitionCount;
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
@@ -92,13 +97,19 @@ public class BulkImportJobDriver {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 statusStore,
-                getTime);
+                getTime,
+                instanceProperties.getInt(BULK_IMPORT_MIN_PARTITION_COUNT));
     }
 
-    public void run(BulkImportJob job, String taskId) throws IOException {
+    public void run(BulkImportJob job, String taskId) throws IOException, StateStoreException {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
+
+        if (!minPartitionCountReached(job.getTableName())) {
+            LOGGER.warn("Minimum partition count {} not reached. Rejecting job", minPartitionCount);
+            return;
+        }
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
         BulkImportJobOutput output;
@@ -133,6 +144,11 @@ public class BulkImportJobDriver {
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
         output.stopSparkContext();
+    }
+
+    private boolean minPartitionCountReached(String tableName) throws StateStoreException {
+        return stateStoreProvider.getStateStore(tableName, tablePropertiesProvider)
+                .getLeafPartitions().size() >= minPartitionCount;
     }
 
     @FunctionalInterface

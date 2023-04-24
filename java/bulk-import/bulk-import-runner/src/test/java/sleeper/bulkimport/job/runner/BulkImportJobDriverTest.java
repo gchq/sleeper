@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstancePropertiesTestHelper;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -30,6 +31,7 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.inmemory.FixedPartitionStore;
 import sleeper.statestore.inmemory.StateStoreTestHelper;
 
 import java.time.Instant;
@@ -39,7 +41,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static org.mockito.Mockito.when;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -139,6 +142,24 @@ class BulkImportJobDriverTest {
         assertThat(stateStore.getActiveFiles()).isEmpty();
     }
 
+    @Test
+    void shouldRefuseToRunJobIfMinPartitionCountHasNotBeenReached() throws Exception {
+        // Given
+        instanceProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "100");
+        BulkImportJob job = singleFileImportJob();
+
+        // When
+        runJob(job, "test-task");
+
+        // Then
+        assertThat(allJobsReported()).isEmpty();
+        assertThat(stateStore.getActiveFiles()).isEmpty();
+    }
+
+    private void runJob(BulkImportJob job, String taskId) throws Exception {
+        runJob(job, taskId, Instant.EPOCH, Instant.EPOCH, List.of());
+    }
+
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
         runJob(job, taskId, startTime, finishTime, outputFiles, stateStore);
@@ -148,6 +169,7 @@ class BulkImportJobDriverTest {
                                             Instant startTime, Instant finishTime, List<FileInfo> outputFiles,
                                             Exception failure) throws Exception {
         StateStore stateStore = mock(StateStore.class);
+        when(stateStore.getLeafPartitions()).thenReturn(new FixedPartitionStore(schema).getLeafPartitions());
         doThrow(failure).when(stateStore).addFiles(outputFiles);
         runJob(job, taskId, startTime, finishTime, outputFiles, stateStore);
     }
@@ -173,7 +195,8 @@ class BulkImportJobDriverTest {
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                statusStore, List.of(startTime, finishTime).iterator()::next);
+                statusStore, List.of(startTime, finishTime).iterator()::next,
+                instanceProperties.getInt(BULK_IMPORT_MIN_PARTITION_COUNT));
         driver.run(job, taskId);
     }
 
@@ -186,5 +209,11 @@ class BulkImportJobDriverTest {
 
     private List<IngestJobStatus> allJobsReported() {
         return statusStore.getAllJobs(tableProperties.get(TABLE_NAME));
+    }
+
+    private InstanceProperties createTestInstanceProperties() {
+        InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
+        properties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1");
+        return properties;
     }
 }

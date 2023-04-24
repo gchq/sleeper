@@ -307,7 +307,7 @@ class BulkImportJobDriverIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
+    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws Exception {
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
@@ -316,7 +316,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws Exception {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -363,7 +363,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws Exception {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -410,7 +410,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws Exception {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -450,7 +450,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws Exception {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -519,7 +519,8 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner)
+            throws Exception {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
