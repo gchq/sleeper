@@ -103,7 +103,7 @@ public class BulkImportJobDriver {
         LOGGER.info("Job is {}", job);
 
 
-        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider.getTableProperties(job.getTableName()))) {
+        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, job.getTableName())) {
             LOGGER.info("Skipping job {}", job.getId());
             return;
         }

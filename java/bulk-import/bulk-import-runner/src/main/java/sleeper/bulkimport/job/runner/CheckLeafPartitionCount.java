@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
@@ -31,9 +33,16 @@ public class CheckLeafPartitionCount {
     private CheckLeafPartitionCount() {
     }
 
-    public static boolean hasMinimumPartitions(StateStoreProvider stateStore, TableProperties tableProperties)
+    public static boolean hasMinimumPartitions(
+            StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider, String tableName)
             throws StateStoreException {
-        int leafPartitionCount = stateStore.getStateStore(tableProperties).getLeafPartitions().size();
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        return hasMinimumPartitions(stateStoreProvider.getStateStore(tableProperties), tableProperties);
+    }
+
+    public static boolean hasMinimumPartitions(StateStore stateStore, TableProperties tableProperties)
+            throws StateStoreException {
+        int leafPartitionCount = stateStore.getLeafPartitions().size();
         int minPartitionCount = tableProperties.getInt(BULK_IMPORT_MIN_PARTITION_COUNT);
         if (leafPartitionCount < minPartitionCount) {
             LOGGER.info("Minimum partition count was {}, but found {} leaf partitions.",
