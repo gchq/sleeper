@@ -145,7 +145,7 @@ class BulkImportJobDriverTest {
     @Test
     void shouldRefuseToRunJobIfMinPartitionCountHasNotBeenReached() throws Exception {
         // Given
-        instanceProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "100");
+        instanceProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1000");
         BulkImportJob job = singleFileImportJob();
 
         // When
