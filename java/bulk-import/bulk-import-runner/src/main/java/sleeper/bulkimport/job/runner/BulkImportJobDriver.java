@@ -106,8 +106,10 @@ public class BulkImportJobDriver {
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
 
-        if (!minPartitionCountReached(job.getTableName())) {
-            LOGGER.warn("Minimum partition count {} not reached. Rejecting job", minPartitionCount);
+        int leafPartitionCount = getLeafPartitionCount(job);
+        if (leafPartitionCount < minPartitionCount) {
+            LOGGER.info("Minimum partition count was {}, but found {} leaf partitions. Skipping job {}",
+                    minPartitionCount, leafPartitionCount, job.getId());
             return;
         }
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
@@ -146,9 +148,9 @@ public class BulkImportJobDriver {
         output.stopSparkContext();
     }
 
-    private boolean minPartitionCountReached(String tableName) throws StateStoreException {
-        return stateStoreProvider.getStateStore(tableName, tablePropertiesProvider)
-                .getLeafPartitions().size() >= minPartitionCount;
+    private int getLeafPartitionCount(BulkImportJob job) throws StateStoreException {
+        return stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
+                .getLeafPartitions().size();
     }
 
     @FunctionalInterface
