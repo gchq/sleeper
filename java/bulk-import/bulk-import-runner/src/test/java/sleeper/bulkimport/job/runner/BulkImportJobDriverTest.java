@@ -23,6 +23,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstancePropertiesTestHelper;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesTestHelper;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -42,8 +43,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -53,7 +54,7 @@ import static sleeper.statestore.FileInfoTestData.defaultFileOnRootPartitionWith
 class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TableProperties tableProperties = createTestTableProperties();
     private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
     private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
 
@@ -145,7 +146,7 @@ class BulkImportJobDriverTest {
     @Test
     void shouldRefuseToRunJobIfMinPartitionCountHasNotBeenReached() throws Exception {
         // Given
-        instanceProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1000");
+        tableProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1000");
         BulkImportJob job = singleFileImportJob();
 
         // When
@@ -195,8 +196,7 @@ class BulkImportJobDriverTest {
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                statusStore, List.of(startTime, finishTime).iterator()::next,
-                instanceProperties.getInt(BULK_IMPORT_MIN_PARTITION_COUNT));
+                statusStore, List.of(startTime, finishTime).iterator()::next);
         driver.run(job, taskId);
     }
 
@@ -213,6 +213,12 @@ class BulkImportJobDriverTest {
 
     private InstanceProperties createTestInstanceProperties() {
         InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
+        properties.set(DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT, "1");
+        return properties;
+    }
+
+    private TableProperties createTestTableProperties() {
+        TableProperties properties = TablePropertiesTestHelper.createTestTableProperties(instanceProperties, schema);
         properties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1");
         return properties;
     }

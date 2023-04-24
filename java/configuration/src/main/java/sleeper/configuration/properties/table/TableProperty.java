@@ -18,6 +18,7 @@ package sleeper.configuration.properties.table;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
+import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
@@ -32,6 +33,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
@@ -220,6 +222,11 @@ public interface TableProperty extends SleeperProperty {
                     "be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
+    TableProperty BULK_IMPORT_MIN_PARTITION_COUNT = Index.propertyBuilder("sleeper.bulk.import.min.partitions")
+            .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
+                    "If this minimum has not been reached, bulk import jobs should refuse to start")
+            .defaultProperty(DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     // Size ratio compaction strategy
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
