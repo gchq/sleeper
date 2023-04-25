@@ -62,6 +62,7 @@ public class ArrowRecordWriterAcceptingRecords implements ArrowRecordWriter<Reco
      * @param vectorSchemaRoot The Arrow store to write into
      * @param record           The {@link Record} to write
      * @param insertAtRowNo    The row number to write to
+     * @return The row number to use when this method is next called
      * @throws OutOfMemoryException When the {@link BufferAllocator} associated with the {@link VectorSchemaRoot} cannot
      *                              provide enough memory
      */
