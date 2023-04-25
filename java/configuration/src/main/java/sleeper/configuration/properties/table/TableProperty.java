@@ -222,7 +222,7 @@ public interface TableProperty extends SleeperProperty {
                     "be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.bulk.import.min.leaf.partitions")
+    TableProperty BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.table.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
