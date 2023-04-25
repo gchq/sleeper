@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.bulkimport.job.runner;
+package sleeper.bulkimport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
@@ -34,21 +35,23 @@ public class CheckLeafPartitionCount {
     }
 
     public static boolean hasMinimumPartitions(
-            StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider, String tableName)
-            throws StateStoreException {
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-        return hasMinimumPartitions(stateStoreProvider.getStateStore(tableProperties), tableProperties);
-    }
+            StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider, BulkImportJob job) {
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
 
-    public static boolean hasMinimumPartitions(StateStore stateStore, TableProperties tableProperties)
-            throws StateStoreException {
-        int leafPartitionCount = stateStore.getLeafPartitions().size();
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        int leafPartitionCount;
+        try {
+            leafPartitionCount = stateStore.getLeafPartitions().size();
+        } catch (StateStoreException e) {
+            throw new RuntimeException("Failed to get leaf partition count", e);
+        }
         int minPartitionCount = tableProperties.getInt(BULK_IMPORT_MIN_PARTITION_COUNT);
         if (leafPartitionCount < minPartitionCount) {
-            LOGGER.info("Minimum partition count was {}, but found {} leaf partitions.",
-                    minPartitionCount, leafPartitionCount);
+            LOGGER.info("Minimum partition count was {}, but found {} leaf partitions. Skipping job {}",
+                    minPartitionCount, leafPartitionCount, job.getId());
             return false;
         } else {
+            LOGGER.info("Minimum partition count has been met. Running job {}", job.getId());
             return true;
         }
     }
