@@ -220,6 +220,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
+        importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> grantAccessToResources(bulkImportJobStarter, bucket));
 
         Utils.addStackTagIfSet(this, instanceProperties);
