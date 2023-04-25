@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
@@ -81,10 +80,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
     }
 
     @Override
-    public boolean runJobOnPlatform(BulkImportJob bulkImportJob) {
-        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
-            return false;
-        }
+    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
@@ -130,7 +126,6 @@ public class EmrExecutor extends AbstractEmrExecutor {
                         .collect(Collectors.toList())));
 
         LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
-        return true;
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {

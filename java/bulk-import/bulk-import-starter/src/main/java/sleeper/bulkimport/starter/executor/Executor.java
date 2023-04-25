@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
@@ -63,16 +64,15 @@ public abstract class Executor {
         validateJob(bulkImportJob);
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
-        LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        boolean jobSubmitted = runJobOnPlatform(bulkImportJob);
-        if (jobSubmitted) {
-            LOGGER.info("Successfully submitted job");
-        } else {
-            LOGGER.info("Job was not submitted");
+        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+            return;
         }
+        LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
+        runJobOnPlatform(bulkImportJob);
+        LOGGER.info("Successfully submitted job");
     }
 
-    protected abstract boolean runJobOnPlatform(BulkImportJob bulkImportJob);
+    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
 
     protected abstract String getJarLocation();
 

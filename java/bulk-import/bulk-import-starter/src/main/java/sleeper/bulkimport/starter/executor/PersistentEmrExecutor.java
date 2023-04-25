@@ -33,7 +33,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreProvider;
 
-import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
@@ -59,10 +58,7 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     }
 
     @Override
-    public boolean runJobOnPlatform(BulkImportJob bulkImportJob) {
-        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
-            return false;
-        }
+    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         StepConfig stepConfig = new StepConfig()
                 .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
@@ -74,7 +70,6 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
 
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest);
         emrClient.addJobFlowSteps(addJobFlowStepsRequest);
-        return true;
     }
 
     private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String clusterName) {
