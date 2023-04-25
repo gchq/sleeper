@@ -47,6 +47,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
@@ -70,19 +72,24 @@ public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final AmazonElasticMapReduce emrClient;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instancePropeties,
                        TablePropertiesProvider tablePropertiesProvider,
-                       AmazonS3 amazonS3) {
+                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
         super(instancePropeties, tablePropertiesProvider, amazonS3);
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
         this.emrClient = emrClient;
     }
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+            return;
+        }
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
