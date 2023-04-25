@@ -46,7 +46,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 
 /**
@@ -100,11 +99,6 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
-
-
-        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, job)) {
-            return;
-        }
         statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
 
         BulkImportJobOutput output;
