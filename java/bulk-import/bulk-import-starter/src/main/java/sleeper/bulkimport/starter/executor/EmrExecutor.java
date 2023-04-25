@@ -70,18 +70,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
  */
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
-
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
     private final AmazonElasticMapReduce emrClient;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instancePropeties,
+                       InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
-        super(instancePropeties, tablePropertiesProvider, amazonS3);
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
     }
 

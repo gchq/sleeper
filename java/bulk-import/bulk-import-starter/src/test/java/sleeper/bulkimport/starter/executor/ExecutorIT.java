@@ -33,6 +33,8 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.FixedStateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.UUID;
 
@@ -40,6 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 @Testcontainers
 class ExecutorIT {
@@ -215,7 +219,9 @@ class ExecutorIT {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(SCHEMA);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        return new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
+        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider, s3);
     }
 
     private ExecutorMock buildExecutorWithTable(String tableName) {
@@ -224,7 +230,9 @@ class ExecutorIT {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(SCHEMA);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        return new ExecutorMock(instanceProperties, tablePropertiesProvider, null);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
+        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider, null);
     }
 
     private static class ExecutorMock extends Executor {
@@ -236,8 +244,9 @@ class ExecutorIT {
 
         ExecutorMock(InstanceProperties instanceProperties,
                      TablePropertiesProvider tablePropertiesProvider,
+                     StateStoreProvider stateStoreProvider,
                      AmazonS3 s3) {
-            super(instanceProperties, tablePropertiesProvider, s3);
+            super(instanceProperties, tablePropertiesProvider, stateStoreProvider, s3);
         }
 
         @Override

@@ -24,6 +24,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,11 +43,14 @@ public abstract class Executor {
 
     protected final InstanceProperties instanceProperties;
     protected final TablePropertiesProvider tablePropertiesProvider;
+    protected final StateStoreProvider stateStoreProvider;
     protected final AmazonS3 s3Client;
 
-    protected Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
+    protected Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3Client) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
         this.s3Client = amazonS3Client;
     }
 

@@ -45,20 +45,17 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     private final AmazonElasticMapReduce emrClient;
     private final String clusterId;
     private final String clusterName;
-    private final StateStoreProvider stateStoreProvider;
 
     public PersistentEmrExecutor(
             AmazonElasticMapReduce emrClient,
-            InstanceProperties instancePropeties,
+            InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             AmazonS3 amazonS3) {
-        super(instancePropeties, tablePropertiesProvider, amazonS3);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
-        this.clusterName = String.join("-", "sleeper", instancePropeties.get(ID), "persistentEMR");
+        this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
-        this.stateStoreProvider = stateStoreProvider;
-
     }
 
     @Override
