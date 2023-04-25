@@ -73,7 +73,7 @@ public class ExecutorFactory {
             case "EKS":
                 return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, s3Client);
             case "PersistentEMR":
-                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, s3Client);
+                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }

@@ -31,7 +31,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
+import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
@@ -43,20 +45,27 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     private final AmazonElasticMapReduce emrClient;
     private final String clusterId;
     private final String clusterName;
+    private final StateStoreProvider stateStoreProvider;
 
     public PersistentEmrExecutor(
             AmazonElasticMapReduce emrClient,
             InstanceProperties instancePropeties,
             TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
             AmazonS3 amazonS3) {
         super(instancePropeties, tablePropertiesProvider, amazonS3);
         this.emrClient = emrClient;
         this.clusterName = String.join("-", "sleeper", instancePropeties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
+        this.stateStoreProvider = stateStoreProvider;
+
     }
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+            return;
+        }
         StepConfig stepConfig = new StepConfig()
                 .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
