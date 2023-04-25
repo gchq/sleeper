@@ -60,11 +60,15 @@ public abstract class Executor {
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        runJobOnPlatform(bulkImportJob);
-        LOGGER.info("Successfully submitted job");
+        boolean jobSubmitted = runJobOnPlatform(bulkImportJob);
+        if (jobSubmitted) {
+            LOGGER.info("Successfully submitted job");
+        } else {
+            LOGGER.info("Job was not submitted");
+        }
     }
 
-    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
+    protected abstract boolean runJobOnPlatform(BulkImportJob bulkImportJob);
 
     protected abstract String getJarLocation();
 

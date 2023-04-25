@@ -241,8 +241,9 @@ class ExecutorIT {
         }
 
         @Override
-        protected void runJobOnPlatform(BulkImportJob bulkImportJob) {
+        protected boolean runJobOnPlatform(BulkImportJob bulkImportJob) {
             runJobOnPlatformCalled = true;
+            return true;
         }
 
         @Override

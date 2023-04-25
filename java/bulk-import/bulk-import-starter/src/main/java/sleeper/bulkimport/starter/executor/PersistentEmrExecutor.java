@@ -62,9 +62,9 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public boolean runJobOnPlatform(BulkImportJob bulkImportJob) {
         if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
-            return;
+            return false;
         }
         StepConfig stepConfig = new StepConfig()
                 .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
@@ -77,6 +77,7 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
 
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest);
         emrClient.addJobFlowSteps(addJobFlowStepsRequest);
+        return true;
     }
 
     private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String clusterName) {

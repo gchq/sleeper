@@ -83,7 +83,7 @@ public class StateMachineExecutor extends Executor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public boolean runJobOnPlatform(BulkImportJob bulkImportJob) {
         String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         Map<String, Object> input = new HashMap<>();
         List<String> args = constructArgs(bulkImportJob, stateMachineArn);
@@ -95,6 +95,7 @@ public class StateMachineExecutor extends Executor {
                         .withStateMachineArn(stateMachineArn)
                         .withName(String.join("-", "sleeper", instanceProperties.get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
                         .withInput(new Gson().toJson(input)));
+        return true;
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {

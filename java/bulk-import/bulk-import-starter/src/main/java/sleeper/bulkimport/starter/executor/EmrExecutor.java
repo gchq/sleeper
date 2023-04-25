@@ -86,9 +86,9 @@ public class EmrExecutor extends AbstractEmrExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public boolean runJobOnPlatform(BulkImportJob bulkImportJob) {
         if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
-            return;
+            return false;
         }
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
@@ -135,6 +135,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                         .collect(Collectors.toList())));
 
         LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
+        return true;
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
