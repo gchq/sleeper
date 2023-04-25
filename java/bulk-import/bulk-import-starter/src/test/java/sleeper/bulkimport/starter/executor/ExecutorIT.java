@@ -41,6 +41,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
@@ -218,6 +219,7 @@ class ExecutorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(SCHEMA);
+        tableProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1");
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
@@ -229,6 +231,7 @@ class ExecutorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(SCHEMA);
+        tableProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "1");
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
