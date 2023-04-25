@@ -83,7 +83,6 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -184,7 +183,6 @@ class BulkImportJobDriverIT {
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
-        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT, "1");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
@@ -309,7 +307,7 @@ class BulkImportJobDriverIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws Exception {
+    private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
@@ -318,7 +316,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws Exception {
+    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -365,7 +363,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws Exception {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -412,7 +410,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws Exception {
+    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -452,7 +450,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws Exception {
+    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
@@ -521,8 +519,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner)
-            throws Exception {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
         String dataDir = createTempDirectory(folder, null).toString();
