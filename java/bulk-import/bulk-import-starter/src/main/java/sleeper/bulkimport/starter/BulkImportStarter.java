@@ -15,6 +15,8 @@
  */
 package sleeper.bulkimport.starter;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -44,11 +46,15 @@ public class BulkImportStarter implements RequestHandler<SQSEvent, Void> {
     private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
 
     public BulkImportStarter() throws IOException {
-        this(AmazonS3ClientBuilder.defaultClient(), AmazonElasticMapReduceClientBuilder.defaultClient(), AWSStepFunctionsClientBuilder.defaultClient());
+        this(AmazonS3ClientBuilder.defaultClient(),
+                AmazonElasticMapReduceClientBuilder.defaultClient(),
+                AWSStepFunctionsClientBuilder.defaultClient(),
+                AmazonDynamoDBClientBuilder.defaultClient());
     }
 
-    public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient, AWSStepFunctions stepFunctionsClient) throws IOException {
-        this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient).createExecutor());
+    public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+                             AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
+        this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor());
     }
 
     public BulkImportStarter(Executor executor) {
