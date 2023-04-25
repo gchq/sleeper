@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -44,6 +45,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
@@ -265,6 +267,33 @@ class StateMachineExecutorTest {
                 .inPath("$.args").isArray().extracting(Objects::toString)
                 .filteredOn(s -> s.startsWith("spark.kubernetes.driver.pod.name="))
                 .containsExactly("spark.kubernetes.driver.pod.name=my-job");
+    }
+
+    @Test
+    void shouldNotStartExecutionIfMinimumPartitionCountNotReached() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
+        when(tablePropertiesProvider.getTableProperties(any()))
+                .thenAnswer((Answer<TableProperties>) x -> {
+                    TableProperties tableProperties = new TableProperties(instanceProperties);
+                    tableProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "5");
+                    return tableProperties;
+                });
+
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        BulkImportJob myJob = new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+
+        // When
+        stateMachineExecutor.runJob(myJob);
+
+        // Then
+        assertThat(requested.get())
+                .isNull();
     }
 
 }
