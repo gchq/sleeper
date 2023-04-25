@@ -14,5 +14,7 @@ generated/
 scripts/jars/
 scripts/docker/
 scripts/**/version.txt
+scripts/trino/etc
+scripts/trino/jars
 __pycache__
 *.pem
