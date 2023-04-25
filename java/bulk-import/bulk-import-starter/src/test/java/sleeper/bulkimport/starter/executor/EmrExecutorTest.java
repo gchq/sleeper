@@ -49,11 +49,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
@@ -76,7 +76,7 @@ class EmrExecutorTest {
                     return new RunJobFlowResult();
                 });
         instanceProperties = new InstanceProperties();
-        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT, "1");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         tablePropertiesProvider = mock(TablePropertiesProvider.class);
         when(tablePropertiesProvider.getTableProperties(anyString()))
                 .then((Answer<TableProperties>) x -> new TableProperties(instanceProperties));
@@ -273,7 +273,7 @@ class EmrExecutorTest {
         when(tablePropertiesProvider.getTableProperties(any()))
                 .thenAnswer((Answer<TableProperties>) x -> {
                     TableProperties tableProperties = new TableProperties(instanceProperties);
-                    tableProperties.set(BULK_IMPORT_MIN_PARTITION_COUNT, "5");
+                    tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
                     return tableProperties;
                 });
 

@@ -26,7 +26,7 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 
 public class CheckLeafPartitionCount {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckLeafPartitionCount.class);
@@ -45,7 +45,7 @@ public class CheckLeafPartitionCount {
         } catch (StateStoreException e) {
             throw new RuntimeException("Failed to get leaf partition count", e);
         }
-        int minPartitionCount = tableProperties.getInt(BULK_IMPORT_MIN_PARTITION_COUNT);
+        int minPartitionCount = tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT);
         if (leafPartitionCount < minPartitionCount) {
             LOGGER.info("Minimum partition count was {}, but found {} leaf partitions. Skipping job {}",
                     minPartitionCount, leafPartitionCount, job.getId());

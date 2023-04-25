@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
@@ -222,10 +222,10 @@ public interface TableProperty extends SleeperProperty {
                     "be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_MIN_PARTITION_COUNT = Index.propertyBuilder("sleeper.bulk.import.min.partitions")
+    TableProperty BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
-                    "If this minimum has not been reached, bulk import jobs should refuse to start")
-            .defaultProperty(DEFAULT_BULK_IMPORT_MIN_PARTITION_COUNT)
+                    "If this minimum has not been reached, bulk import jobs will refuse to start")
+            .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     // Size ratio compaction strategy
