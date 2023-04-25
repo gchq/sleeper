@@ -46,6 +46,7 @@
         <module>metrics</module>
         <module>distribution</module>
         <module>dynamodb-tools</module>
+        <module>trino</module>
         <module>build</module>
     </modules>
 
@@ -90,6 +91,9 @@
         <arrow.version>10.0.1</arrow.version>
         <bouncycastle.version>1.72</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
+        <trino.version>390</trino.version>
+        <!-- Trino's AssertJ plugin is not compatible with the latest version -->
+        <trino.assertj.version>3.18.1</trino.assertj.version>
         <!-- Build module uses Jersey for communicating with GitHub API -->
         <jersey.version>2.38</jersey.version>
         <!-- Netty version is managed because AWS and Arrow both depend on it but use incompatible versions -->
@@ -128,6 +132,10 @@
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
         java.util.AbstractList is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
         java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
+
+        See also https://arrow.apache.org/docs/java/install.html
+        "When using Java 17 or later, some JDK internals must be exposed by adding - - add-opens=java.base/java.nio=ALL-UNNAMED.
+        Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
         -->
         <module.access.args>
             --add-opens java.base/java.nio=ALL-UNNAMED
