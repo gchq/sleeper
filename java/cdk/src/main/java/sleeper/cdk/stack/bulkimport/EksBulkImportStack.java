@@ -222,6 +222,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         ingestSourceBuckets.forEach(bucket -> grantAccessToResources(bulkImportJobStarter, bucket));
+        statusStoreStack.getResources().grantWriteJobEvent(sparkServiceAccount);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
