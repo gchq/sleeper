@@ -22,8 +22,8 @@ import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.PollWithRetries;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 

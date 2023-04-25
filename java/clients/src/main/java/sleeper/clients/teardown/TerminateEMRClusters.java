@@ -18,23 +18,22 @@ package sleeper.clients.teardown;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
-import com.amazonaws.services.elasticmapreduce.model.ClusterState;
 import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
-import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
 import com.amazonaws.services.elasticmapreduce.model.TerminateJobFlowsRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
+import static sleeper.clients.util.EmrUtils.listActiveClusters;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
@@ -48,8 +47,6 @@ public class TerminateEMRClusters {
 
     private final AmazonElasticMapReduce emrClient;
     private final String clusterPrefix;
-    private static final List<String> ACTIVE_STATES = List.of(ClusterState.STARTING.name(), ClusterState.BOOTSTRAPPING.name(),
-            ClusterState.RUNNING.name(), ClusterState.WAITING.name(), ClusterState.TERMINATING.name());
 
     public TerminateEMRClusters(AmazonElasticMapReduce emrClient, InstanceProperties properties) {
         this.emrClient = emrClient;
@@ -57,13 +54,12 @@ public class TerminateEMRClusters {
     }
 
     public void run() throws InterruptedException {
-        List<ClusterSummary> clusters = emrClient.listClusters(new ListClustersRequest()
-                .withClusterStates(ACTIVE_STATES)).getClusters();
+        List<ClusterSummary> clusters = listActiveClusters(emrClient).getClusters();
         List<String> clusterIds = clusters.stream()
                 .filter(cluster -> cluster.getName().startsWith(clusterPrefix))
                 .map(ClusterSummary::getId)
                 .collect(Collectors.toList());
-        if (clusterIds.size() == 0) {
+        if (clusterIds.isEmpty()) {
             LOGGER.info("No running clusters to terminate");
         } else {
             LOGGER.info("Terminating {} running clusters", clusterIds.size());
@@ -92,8 +88,7 @@ public class TerminateEMRClusters {
     }
 
     private boolean allClustersTerminated() {
-        List<ClusterSummary> clusters = emrClient.listClusters(new ListClustersRequest()
-                .withClusterStates(ACTIVE_STATES)).getClusters();
+        List<ClusterSummary> clusters = listActiveClusters(emrClient).getClusters();
         long clustersStillRunning = clusters.stream()
                 .filter(cluster -> cluster.getName().startsWith(clusterPrefix)).count();
         LOGGER.info("{} clusters are still terminating for instance", clustersStillRunning);

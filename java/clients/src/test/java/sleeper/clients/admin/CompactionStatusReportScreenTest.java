@@ -52,10 +52,10 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
+import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
-import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested

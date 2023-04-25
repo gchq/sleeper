@@ -16,15 +16,15 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.menu.ChooseOne;
+import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.MenuOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

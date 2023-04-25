@@ -33,7 +33,7 @@ TEMP_DIR=/tmp/sleeper/generated
 # Download to temporary directory
 mkdir -p "$TEMP_DIR"
 rm -rf "${TEMP_DIR:?}"/*
-java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.status.update.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.update.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
 
 # Overwrite generated directory
 mkdir -p "$GENERATED_DIR"

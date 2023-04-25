@@ -22,7 +22,7 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_INPUT_NOT_RECOGNISED;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class AdminMainScreenTest extends AdminClientMockStoreBase {
 

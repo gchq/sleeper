@@ -30,6 +30,7 @@ import com.google.gson.JsonObject;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -37,7 +38,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.statestore.StateStoreException;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.net.URI;

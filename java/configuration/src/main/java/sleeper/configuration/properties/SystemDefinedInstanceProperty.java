@@ -230,6 +230,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for bulk import jobs using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.cluster.name")
+            .description("The name of the cluster used for persistent EMR bulk import jobs.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master")
             .description("The public DNS name of the cluster's master node for bulk import using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)

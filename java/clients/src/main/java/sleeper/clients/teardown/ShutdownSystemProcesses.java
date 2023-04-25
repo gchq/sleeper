@@ -24,9 +24,9 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.status.update.PauseSystem;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.status.update.PauseSystem;
 
 import java.util.List;
 import java.util.function.Consumer;

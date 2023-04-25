@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
+import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -33,7 +34,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 
 import java.time.Instant;
 import java.util.List;
@@ -57,9 +57,9 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
 

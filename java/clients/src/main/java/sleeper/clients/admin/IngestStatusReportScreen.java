@@ -16,22 +16,24 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.status.report.IngestJobStatusReport;
+import sleeper.clients.status.report.IngestTaskStatusReport;
+import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
+import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
+import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.util.console.ConsoleHelper;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.console.ConsoleHelper;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.MenuOption;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.status.report.IngestJobStatusReport;
-import sleeper.status.report.IngestTaskStatusReport;
-import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
-import sleeper.status.report.ingest.task.IngestTaskQuery;
-import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
-import sleeper.status.report.job.query.JobQuery;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
@@ -47,10 +49,11 @@ public class IngestStatusReportScreen {
     private final AdminClientStatusStoreFactory statusStores;
     private final QueueMessageCount.Client queueClient;
     private final TableSelectHelper tableSelectHelper;
+    private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store,
-                                    AdminClientStatusStoreFactory statusStores,
-                                    QueueMessageCount.Client queueClient) {
+                                    AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient,
+                                    Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
@@ -58,6 +61,7 @@ public class IngestStatusReportScreen {
         this.statusStores = statusStores;
         this.queueClient = queueClient;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.getStepCount = getStepCount;
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
@@ -115,7 +119,7 @@ public class IngestStatusReportScreen {
                                           JobQuery.Type queryType, String queryParameters) {
         new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), tableName, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
-                queueClient, properties).run();
+                queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);
     }
 
