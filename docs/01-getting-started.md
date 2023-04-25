@@ -35,8 +35,9 @@ You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
 
 ### Deployment environment
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Run these commands to
-do this with the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
+You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. The Sleeper CLI 
+can do this for you, and will automatically configure pre-authentication for the EC2 instance with administrator access. 
+Run these commands to create the EC2 using the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
 
 ```bash
 sleeper aws configure
