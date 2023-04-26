@@ -49,6 +49,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 public class StateMachineExecutor extends Executor {
     private static final String DEFAULT_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String DEFAULT_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
+    private static final String EKS_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
     private static final Map<String, String> DEFAULT_CONFIG;
 
     private final AWSStepFunctions stepFunctions;
@@ -120,6 +121,8 @@ public class StateMachineExecutor extends Executor {
         }
 
         defaultConfig.putAll(DEFAULT_CONFIG);
+        // Override JAVA_HOME for EKS
+        defaultConfig.put("spark.executorEnv.JAVA_HOME", EKS_JAVA_HOME);
 
         return defaultConfig;
     }
