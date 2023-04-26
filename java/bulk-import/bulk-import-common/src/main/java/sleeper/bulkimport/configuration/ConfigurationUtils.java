@@ -51,7 +51,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
 public class ConfigurationUtils {
-    private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
+    private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.x86_64";
 
     private ConfigurationUtils() {
     }
