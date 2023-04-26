@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
@@ -73,7 +73,7 @@ public class SendBulkImportJobs {
             String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
             LOGGER.info("Sending message to bulk import queue ({})", jsonJob);
             sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(systemTestProperties.get(BULK_IMPORT_EKS_JOB_QUEUE_URL))
+                    .withQueueUrl(systemTestProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
                     .withMessageBody(jsonJob));
         }
         sqsClient.shutdown();
