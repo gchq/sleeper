@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.util.BucketUtils.doesBucketExist;
+import static sleeper.clients.util.BucketUtils.doesBucketExist;
 
 class RemoveJarsBucketIT extends JarsBucketITBase {
     @Test

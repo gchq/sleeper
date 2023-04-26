@@ -26,6 +26,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,8 +79,9 @@ public class StateMachineExecutor extends Executor {
     public StateMachineExecutor(AWSStepFunctions stepFunctions,
                                 InstanceProperties instanceProperties,
                                 TablePropertiesProvider tablePropertiesProvider,
+                                StateStoreProvider stateStoreProvider,
                                 AmazonS3 s3Client) {
-        super(instanceProperties, tablePropertiesProvider, s3Client);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
         this.stepFunctions = stepFunctions;
     }
 

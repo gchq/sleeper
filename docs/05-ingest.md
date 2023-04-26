@@ -455,7 +455,7 @@ pods all use the job ID as it's name. If you don't set this manually, it will be
 instance_id=abc1234
 
 # This shortcut means we don't have to add -n <the namespace> to all our commands
-kubectl config set-context --current --namespace sleeper-${instance_id}-bulk-import
+kubectl config set-context --current --namespace sleeper-${instance_id}-eks-bulk-import
 
 # Inspect the logs (add -f to follow them)
 kubectl logs pods/my-job-name

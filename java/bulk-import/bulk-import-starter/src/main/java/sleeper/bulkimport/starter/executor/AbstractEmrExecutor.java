@@ -21,14 +21,16 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
 public abstract class AbstractEmrExecutor extends Executor {
 
     protected AbstractEmrExecutor(
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
             AmazonS3 amazonS3Client) {
-        super(instanceProperties, tablePropertiesProvider, amazonS3Client);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3Client);
     }
 
     @Override

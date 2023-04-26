@@ -17,4 +17,4 @@ set -e
 
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.report.CompactionJobStatusReport "$@"
+java -cp "${SCRIPTS_DIR}"/jars/clients-*-utility.jar sleeper.clients.status.report.CompactionJobStatusReport "$@"

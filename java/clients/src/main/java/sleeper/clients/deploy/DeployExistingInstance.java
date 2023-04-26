@@ -22,13 +22,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkCommand;
-import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;

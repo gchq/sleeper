@@ -23,12 +23,12 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkCommand;
-import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,9 +38,9 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
-import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);

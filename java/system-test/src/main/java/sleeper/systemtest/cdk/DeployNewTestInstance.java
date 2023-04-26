@@ -15,14 +15,14 @@
  */
 package sleeper.systemtest.cdk;
 
-import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.util.ClientUtils.optionalArgument;
 
 public class DeployNewTestInstance {
 

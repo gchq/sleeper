@@ -17,6 +17,7 @@ package sleeper.clients;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
@@ -30,14 +31,18 @@ import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
-import sleeper.clients.cdk.InvokeCdkForInstance;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
+import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.function.Function;
 
 public class AdminClient {
 
@@ -47,16 +52,18 @@ public class AdminClient {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final QueueMessageCount.Client queueClient;
+    private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public AdminClient(AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
                        UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in,
-                       QueueMessageCount.Client queueClient) {
+                       QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.store = store;
         this.statusStores = statusStores;
         this.editor = editor;
         this.out = out;
         this.in = in;
         this.queueClient = queueClient;
+        this.getStepCount = getStepCount;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -83,7 +90,9 @@ public class AdminClient {
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console()),
-                QueueMessageCount.withSqsClient(AmazonSQSClientBuilder.defaultClient())).start(instanceId);
+                QueueMessageCount.withSqsClient(AmazonSQSClientBuilder.defaultClient()),
+                (properties -> PersistentEMRStepCount.byStatus(properties, AmazonElasticMapReduceClientBuilder.defaultClient())))
+                .start(instanceId);
     }
 
     public void start(String instanceId) throws InterruptedException {
@@ -116,6 +125,6 @@ public class AdminClient {
     }
 
     public IngestStatusReportScreen ingestStatusReportScreen() {
-        return new IngestStatusReportScreen(out, in, store, statusStores, queueClient);
+        return new IngestStatusReportScreen(out, in, store, statusStores, queueClient, getStepCount);
     }
 }

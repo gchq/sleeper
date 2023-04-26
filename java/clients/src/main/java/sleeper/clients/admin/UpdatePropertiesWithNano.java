@@ -15,14 +15,14 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.RunCommand;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.ClientUtils;
-import sleeper.util.RunCommand;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

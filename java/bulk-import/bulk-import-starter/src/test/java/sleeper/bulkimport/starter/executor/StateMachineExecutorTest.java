@@ -29,11 +29,13 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -42,10 +44,16 @@ import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class StateMachineExecutorTest {
     private AWSStepFunctions stepFunctions;
+    private InstanceProperties instanceProperties;
     private TablePropertiesProvider tablePropertiesProvider;
+    private StateStoreProvider stateStoreProvider;
     private AtomicReference<StartExecutionRequest> requested;
     private AmazonS3 amazonS3;
 
@@ -54,22 +62,27 @@ class StateMachineExecutorTest {
         requested = new AtomicReference<>();
         stepFunctions = mock(AWSStepFunctions.class);
         amazonS3 = mock(AmazonS3.class);
-        tablePropertiesProvider = mock(TablePropertiesProvider.class);
         when(stepFunctions.startExecution(any(StartExecutionRequest.class)))
                 .then((Answer<StartExecutionResult>) invocation -> {
                     requested.set(invocation.getArgument(0));
                     return null;
                 });
+        instanceProperties = new InstanceProperties();
+        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
+        tablePropertiesProvider = mock(TablePropertiesProvider.class);
         when(tablePropertiesProvider.getTableProperties(anyString()))
-                .then((Answer<TableProperties>) x -> new TableProperties(new InstanceProperties()));
+                .then((Answer<TableProperties>) x -> new TableProperties(instanceProperties));
+        stateStoreProvider = mock(StateStoreProvider.class);
+        when(stateStoreProvider.getStateStore(any())).thenReturn(
+                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
     }
 
     @Test
     void shouldPassJobToStepFunctions() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -88,9 +101,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldPassJobIdToSparkConfig() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -110,9 +123,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldUseDefaultConfigurationIfNoneSpecified() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -131,9 +144,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldThrowExceptionWhenInputFilesAreNull() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -150,9 +163,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldOverwriteDefaultConfigurationIfSpecifiedInJob() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -173,9 +186,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldUseDefaultJobIdIfNoneWasPresentInTheJob() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -195,9 +208,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldSetJobIdToUUIDIfNotSetByUser() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .files(Lists.newArrayList("file1.parquet"))
                 .tableName("myTable")
@@ -214,11 +227,11 @@ class StateMachineExecutorTest {
     @Test
     void shouldPassConfigBucketAndJobIdsToSparkArgs() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "myStateMachine");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -237,9 +250,9 @@ class StateMachineExecutorTest {
     @Test
     void shouldUseJobIdAsDriverPodName() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider, amazonS3);
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -254,6 +267,33 @@ class StateMachineExecutorTest {
                 .inPath("$.args").isArray().extracting(Objects::toString)
                 .filteredOn(s -> s.startsWith("spark.kubernetes.driver.pod.name="))
                 .containsExactly("spark.kubernetes.driver.pod.name=eks-my-job");
+    }
+
+    @Test
+    void shouldNotStartExecutionIfMinimumPartitionCountNotReached() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
+        when(tablePropertiesProvider.getTableProperties(any()))
+                .thenAnswer((Answer<TableProperties>) x -> {
+                    TableProperties tableProperties = new TableProperties(instanceProperties);
+                    tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
+                    return tableProperties;
+                });
+
+        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
+                stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        BulkImportJob myJob = new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+
+        // When
+        stateMachineExecutor.runJob(myJob);
+
+        // Then
+        assertThat(requested.get())
+                .isNull();
     }
 
 }
