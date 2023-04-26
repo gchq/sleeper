@@ -106,7 +106,17 @@ public class StateMachineExecutor extends Executor {
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         defaultConfig.put("spark.kubernetes.container.image", imageName);
         defaultConfig.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
-        defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId());
+        /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
+         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/latest/running-on-kubernetes.html)
+         * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
+         * After adding an "eks-" prefix, characters to truncate are 47-(17+4) = 10 characters
+         */
+        if (bulkImportJob.getId().length() > 26) {
+            defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId().substring(0, 26));
+        } else {
+            defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId());
+        }
+
 
         defaultConfig.putAll(DEFAULT_CONFIG);
 
@@ -120,9 +130,7 @@ public class StateMachineExecutor extends Executor {
         // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
         // which have been specified in the Spark conf on the bulk import job.
         if (null != bulkImportJob.getSparkConf()) {
-            for (Map.Entry<String, String> entry : bulkImportJob.getSparkConf().entrySet()) {
-                sparkProperties.put(entry.getKey(), entry.getValue());
-            }
+            sparkProperties.putAll(bulkImportJob.getSparkConf());
         }
 
         BulkImportJob cloneWithUpdatedProps = new BulkImportJob.Builder()

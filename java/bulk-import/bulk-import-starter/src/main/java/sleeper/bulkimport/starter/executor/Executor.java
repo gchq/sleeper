@@ -86,16 +86,7 @@ public abstract class Executor {
         args.add(getJarLocation());
 
         args.add(instanceProperties.get(CONFIG_BUCKET));
-        /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
-         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/latest/running-on-kubernetes.html)
-         * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
-         * After adding an "eks-" prefix, characters to truncate are 47-(17+4) = 10 characters
-         */
-        if (bulkImportJob.getId().length() > 26) {
-            args.add("eks-" + bulkImportJob.getId().substring(0, 26));
-        } else {
-            args.add("eks-" + bulkImportJob.getId());
-        }
+        args.add(bulkImportJob.getId());
         args.add(taskId);
 
         return args;
