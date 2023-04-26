@@ -112,11 +112,11 @@ public class StateMachineExecutor extends Executor {
          * After adding an "eks-" prefix, characters to truncate are 47-(17+4) = 10 characters
          */
         if (bulkImportJob.getId().length() > 26) {
-            defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId().substring(0, 26));
-            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", bulkImportJob.getId().substring(0, 26));
+            defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId().substring(0, 26));
+            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", "eks-" + bulkImportJob.getId().substring(0, 26));
         } else {
-            defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId());
-            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", bulkImportJob.getId());
+            defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId());
+            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", "eks-" + bulkImportJob.getId());
         }
 
         defaultConfig.putAll(DEFAULT_CONFIG);
