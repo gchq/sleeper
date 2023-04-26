@@ -86,7 +86,11 @@ public abstract class Executor {
         args.add(getJarLocation());
 
         args.add(instanceProperties.get(CONFIG_BUCKET));
-        args.add(bulkImportJob.getId());
+        if (bulkImportJob.getId().length() >= 14) {
+            args.add("eks-" + bulkImportJob.getId().substring(0, 14));
+        } else {
+            args.add("eks-" + bulkImportJob.getId());
+        }
         args.add(taskId);
 
         return args;
