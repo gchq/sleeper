@@ -266,7 +266,7 @@ class StateMachineExecutorTest {
         assertThatJson(requested.get().getInput())
                 .inPath("$.args").isArray().extracting(Objects::toString)
                 .filteredOn(s -> s.startsWith("spark.kubernetes.driver.pod.name="))
-                .containsExactly("spark.kubernetes.driver.pod.name=my-job");
+                .containsExactly("spark.kubernetes.driver.pod.name=eks-my-job");
     }
 
     @Test

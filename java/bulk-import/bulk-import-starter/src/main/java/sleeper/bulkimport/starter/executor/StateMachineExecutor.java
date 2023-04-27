@@ -50,6 +50,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 public class StateMachineExecutor extends Executor {
     private static final String DEFAULT_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String DEFAULT_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
+    private static final String EKS_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
     private static final Map<String, String> DEFAULT_CONFIG;
 
     private final AWSStepFunctions stepFunctions;
@@ -108,9 +109,22 @@ public class StateMachineExecutor extends Executor {
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         defaultConfig.put("spark.kubernetes.container.image", imageName);
         defaultConfig.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
-        defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId());
+        /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
+         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/latest/running-on-kubernetes.html)
+         * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
+         * After adding an "eks-" prefix, maximum id length = 47-(17+4) = 26 characters
+         */
+        if (bulkImportJob.getId().length() > 26) {
+            defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId().substring(0, 26));
+            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", "eks-" + bulkImportJob.getId().substring(0, 26));
+        } else {
+            defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId());
+            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", "eks-" + bulkImportJob.getId());
+        }
 
         defaultConfig.putAll(DEFAULT_CONFIG);
+        // Override JAVA_HOME for EKS
+        defaultConfig.put("spark.executorEnv.JAVA_HOME", EKS_JAVA_HOME);
 
         return defaultConfig;
     }
@@ -122,9 +136,7 @@ public class StateMachineExecutor extends Executor {
         // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
         // which have been specified in the Spark conf on the bulk import job.
         if (null != bulkImportJob.getSparkConf()) {
-            for (Map.Entry<String, String> entry : bulkImportJob.getSparkConf().entrySet()) {
-                sparkProperties.put(entry.getKey(), entry.getValue());
-            }
+            sparkProperties.putAll(bulkImportJob.getSparkConf());
         }
 
         BulkImportJob cloneWithUpdatedProps = new BulkImportJob.Builder()

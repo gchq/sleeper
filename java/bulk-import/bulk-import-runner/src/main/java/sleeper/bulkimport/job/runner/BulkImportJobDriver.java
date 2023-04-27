@@ -179,7 +179,7 @@ public class BulkImportJobDriver {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
         String jsonJobKey = "bulk_import/" + jobId + ".json";
-        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", bulkImportBucket, jsonJobKey);
+        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
         String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
         BulkImportJob bulkImportJob;
         try {
