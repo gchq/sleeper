@@ -52,4 +52,5 @@ export_common_github_env() {
 export_github_env_for_image sleeper-local ENV
 export_github_env_for_image sleeper-deployment DEPLOY
 export_github_env_for_image sleeper-builder BUILDER
-export_common_github_env "sleeper-local,sleeper-deployment,sleeper-builder"
+export_github_env_for_image sleeper-devcontainer DEVCONTAINER
+export_common_github_env "sleeper-local,sleeper-deployment,sleeper-builder,sleeper-devcontainer"
