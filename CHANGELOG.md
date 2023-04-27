@@ -22,7 +22,7 @@ Scripts:
 
 CDK:
 - Added the flag `deployPaused` to deploy the system in a paused state.
-- Added the tag `InstanceId` to all AWS resources when deployed.
+- Add the tag `InstanceId` to all AWS resources when they are deployed.
 - Pre-authenticate the environment EC2 instance with AWS.
 
 Clients:
