@@ -115,7 +115,7 @@ jobs:
           push: ${{ inputs.pushImages }}
           imageName: mcr.microsoft.com/devcontainers/java
           imageTag: ${{ env.DEPLOY_PUSH_TAG }}
-          platforms: ${{ env.DOCKER_PLATFORMS }}
+          platform: ${{ env.DOCKER_PLATFORMS }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
