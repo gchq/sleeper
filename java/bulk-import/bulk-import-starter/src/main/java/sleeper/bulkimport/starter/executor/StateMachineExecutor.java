@@ -112,7 +112,7 @@ public class StateMachineExecutor extends Executor {
         /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
          * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/latest/running-on-kubernetes.html)
          * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
-         * After adding an "eks-" prefix, characters to truncate are 47-(17+4) = 10 characters
+         * After adding an "eks-" prefix, maximum id length = 47-(17+4) = 26 characters
          */
         if (bulkImportJob.getId().length() > 26) {
             defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId().substring(0, 26));
