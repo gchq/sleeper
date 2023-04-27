@@ -113,7 +113,7 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           push: ${{ inputs.pushImages }}
-          imageName: ${{ env.DEVCONTAINER_PUSH_TAG }}
+          imageName: ghcr.io/${{ github.repository_owner }}/sleeper-devcontainer
           platform: ${{ env.DOCKER_PLATFORMS }}
       - name: Delete old images
         if: ${{ inputs.pushImages }}
