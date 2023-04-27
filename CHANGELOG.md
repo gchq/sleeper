@@ -9,7 +9,7 @@ are available [here](docs/12-performance-test.md)
 This contains the following improvements:
 
 Trino:
-- Added a plugin for Trino, see documentation [here](docs/13-trino.md)
+- Added a plugin for Trino, see documentation [here](docs/13-trino.md).
 
 Bulk Import:
 - Improve observability of bulk import jobs by including them in ingest job status reports.
@@ -27,22 +27,22 @@ CDK:
 
 Clients:
 - Added count of input files to compaction job report.
-- For persistent EMR bulk import, report on steps that have not started yet in the ingest status report
+- For persistent EMR bulk import, report on steps that have not started yet in the ingest status report.
 - Avoid loading properties unnecessarily in the admin client.
 - Refactor compaction and ingest reports to remove unnecessary wrapping of arguments.
 
 Tests:
-- Simplify `compactionPerformance` system test to only perform merge compactions
+- Simplify `compactionPerformance` system test to only perform merge compactions.
 - Assert output of `compactionPerformance` system test to detect failures
-- Create `partitionSplitting` system test, which do not perform merge compactions and only perform splitting compactions
+- Create `partitionSplitting` system test, which do not perform merge compactions and only perform splitting compactions.
 - Create `bulkImportPerformance` system test, which performs a bulk import and does no merge/splitting compactions.
-- Reduce code duplication in Arrow ingest test helpers
+- Reduce code duplication in Arrow ingest test helpers.
 - Introduce test fakes for querying properties and status stores in the admin client and reports.
 
 Bugfixes:
-- Fixed issue where the queue estimates sometimes did not update before invoking the compaction task lambda in the `compactionPerformance` system test
+- Fixed issue where the queue estimates sometimes did not update before invoking the compaction task lambda in the `compactionPerformance` system test.
 - Fixed issue where the `tearDown` script failed if non-persistent EMR clusters were still running.
-- Fixed issue where `WaitForGenerateData` was excluding 1 task from checks, causing it to not wait if the number of tasks was 1
+- Fixed issue where `WaitForGenerateData` was excluding 1 task from checks, causing it to not wait if the number of tasks was 1.
 
 ## Version 0.15.0
 
