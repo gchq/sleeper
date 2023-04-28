@@ -34,9 +34,9 @@ public interface FileInfoStore {
 
     /**
      * This is used when a file of data is added to a table. The provided {@FileInfo}
-     * should indicate which partition the data is in. A record indicating the
-     * partition is in is added to the file-in-partition table and a record indicating
-     * the file exists is added to the file-lifecycle table.
+     * should indicate which partition the data is in - the file should only contain
+     * data for that partition. A record is added to the file-in-partition table and
+     * a record indicating the file exists is added to the file-lifecycle table.
      *
      * @param fileInfo The fileInfo to be added
      * @throws StateStoreException if the update fails
@@ -45,9 +45,10 @@ public interface FileInfoStore {
 
     /**
      * This is used when a multiple files are added to a table. Each provided {@FileInfo}
-     * should indicate which partition the data in that file is in. For each {@FileInfo}
-     * a record indicating the partition is in is added to the file-in-partition table
-     * and a record indicating the file exists is added to the file-lifecycle table.
+     * should indicate which partition the data in that file is in - the file should only
+     * contain data for that partition. For each {@FileInfo} a record is added to the
+     * file-in-partition table and a record indicating the file exists is added to the
+     * file-lifecycle table.
      *
      * For some implementations of <code>FileInfoStore</code> it may be more efficient
      * to use this method than to repeatedly call <code>addFile(FileInfo fileInfo)</code>.
@@ -146,20 +147,12 @@ public interface FileInfoStore {
             throws StateStoreException;
 
     /**
-     * Deletes the file-lifecyle record for the file with the given filename.
-     *
-     * @param filename The name of the file to be deleted.
-     * @throws StateStoreException if the delete fails
-     */
-//     void deleteReadyForGCFile(String filename) throws StateStoreException;
-
-    /**
      * Deletes the file-lifecyle record for the files with the given filenames.
      *
      * @param filenames The name of the file to be deleted.
      * @throws StateStoreException if the delete fails
      */
-    void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException;
+    void deleteFileLifecycleEntries(List<String> filenames) throws StateStoreException;
 
     /**
      * Returns all file-in-partition {@link FileInfo}s.
@@ -170,7 +163,7 @@ public interface FileInfoStore {
     List<FileInfo> getFileInPartitionList() throws StateStoreException;
 
     /**
-     * Returns all file-in-partition {@link FileInfo}s.
+     * Returns all file-lifecycle {@link FileInfo}s.
      *
      * @return a {@code List} of {@code FileInfo}s for the file-lifecycle records
      * @throws StateStoreException if the query fails
@@ -190,13 +183,23 @@ public interface FileInfoStore {
      * for garbage collection, i.e. their file-lifecycle status is
      * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update
      * time is more than <code>delayBeforeGarbageCollectionInSeconds</code> seconds ago (where
-     * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the SleeperProperties).
+     * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the table properties).
      *
      * @return an {@link Iterator} of filenames of files that are ready to be garbage collected
      * @throws StateStoreException if query fails
      */
     Iterator<String> getReadyForGCFiles() throws StateStoreException;
 
+    /**
+     * Returns an {@link Iterator} of {@link FileInfo}s file-lifecycle records of files that
+     * are ready for garbage collection, i.e. their file-lifecycle status is
+     * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update
+     * time is more than <code>delayBeforeGarbageCollectionInSeconds</code> seconds ago (where
+     * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the table properties).
+     *
+     * @return an {@link Iterator} of {@link FileInfo}s file-lifecyle records of files that are ready to be garbage collected
+     * @throws StateStoreException if query fails
+     */
     Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException;
 
     /**
@@ -214,7 +217,7 @@ public interface FileInfoStore {
      * @return a {@link Map} from the partition id to a {@link List} of the filenames
      * @throws StateStoreException if the query fails
      */
-    Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
+    Map<String, List<String>> getPartitionToFileInPartitionMap() throws StateStoreException;
 
     /**
      * Used to initialise the store.

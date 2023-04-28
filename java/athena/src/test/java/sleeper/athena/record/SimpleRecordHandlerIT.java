@@ -151,7 +151,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -203,7 +203,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
@@ -297,7 +297,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)

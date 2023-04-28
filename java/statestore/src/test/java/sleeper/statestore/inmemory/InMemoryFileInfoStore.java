@@ -132,7 +132,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     // TODO - rename
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() {
+    public Map<String, List<String>> getPartitionToFileInPartitionMap() {
         return getFileInPartitionList().stream().collect(
                 groupingBy(FileInfo::getPartitionId,
                         mapping(FileInfo::getFilename, Collectors.toList())));
@@ -210,7 +210,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+    public void deleteFileLifecycleEntries(List<String> filenames) throws StateStoreException {
         filenames.stream().forEach(this::deleteReadyForGCFile);
     }
 

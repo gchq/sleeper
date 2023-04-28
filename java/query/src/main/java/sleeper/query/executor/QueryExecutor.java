@@ -120,7 +120,7 @@ public class QueryExecutor {
      */
     public void init() throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToFileInPartitionMap();
         LOGGER.info("Retrieved {} partitions from StateStore", partitions.size());
 
         init(partitions, partitionToFileMapping);

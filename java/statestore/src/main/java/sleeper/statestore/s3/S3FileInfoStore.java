@@ -336,7 +336,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
+    public void deleteFileLifecycleEntries(List<String> filenames) throws StateStoreException {
         // Function<List<FileInfo>, String> condition = list -> {
         //     Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
         //     list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
@@ -447,7 +447,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
+    public Map<String, List<String>> getPartitionToFileInPartitionMap() throws StateStoreException {
         List<FileInfo> files = getFileInPartitionList();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
         for (FileInfo fileInfo : files) {

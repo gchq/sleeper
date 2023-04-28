@@ -70,7 +70,7 @@ public class InMemoryFileInfoStoreTest {
         assertThat(store.getFileInPartitionList()).containsExactlyInAnyOrder(fileInfoFileInPartitionList.toArray(new FileInfo[]{}));
         assertThat(store.getFileInPartitionInfosWithNoJobId()).containsExactlyInAnyOrder(fileInfoFileInPartitionList.toArray(new FileInfo[]{}));
         assertThat(store.getReadyForGCFiles()).isExhausted();
-        assertThat(store.getPartitionToActiveFilesMap())
+        assertThat(store.getPartitionToFileInPartitionMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
                         assertThat(files).containsExactlyInAnyOrder("file1", "file2", "file3"));
@@ -273,7 +273,7 @@ public class InMemoryFileInfoStoreTest {
         // Then
         assertThat(store.getFileInPartitionList()).containsExactly(newFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
         assertThat(store.getFileInPartitionInfosWithNoJobId()).containsExactly(newFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
-        assertThat(store.getPartitionToActiveFilesMap())
+        assertThat(store.getPartitionToFileInPartitionMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
                         assertThat(files).containsExactly("newFile"));
@@ -301,7 +301,7 @@ public class InMemoryFileInfoStoreTest {
         newRightFile = newRightFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
         assertThat(store.getFileInPartitionList()).containsExactlyInAnyOrder(newLeftFile, newRightFile);
         assertThat(store.getFileInPartitionInfosWithNoJobId()).containsExactlyInAnyOrder(newLeftFile, newRightFile);
-        assertThat(store.getPartitionToActiveFilesMap())
+        assertThat(store.getPartitionToFileInPartitionMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
                         assertThat(files).containsExactlyInAnyOrder("newLeftFile", "newRightFile"));
@@ -322,7 +322,7 @@ public class InMemoryFileInfoStoreTest {
         store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
         // When
-        store.deleteReadyForGCFiles(Collections.singletonList(oldFile.getFilename()));
+        store.deleteFileLifecycleEntries(Collections.singletonList(oldFile.getFilename()));
 
         // Then
         assertThat(store.getReadyForGCFiles()).isExhausted();

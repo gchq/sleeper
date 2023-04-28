@@ -179,7 +179,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
 
@@ -226,7 +226,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
 
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
 
@@ -284,7 +284,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
 

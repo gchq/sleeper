@@ -625,7 +625,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check that the correct number of files have been written
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToFileInPartitionMap();
         assertThat(partitionToFileMapping.get(partition1.getId())).hasSize(40);
         assertThat(partitionToFileMapping.get(partition2.getId())).hasSize(40);
         //  - Check that the files in each partition contain the correct data

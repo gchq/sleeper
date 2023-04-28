@@ -265,7 +265,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         StateStore stateStore = getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToActiveFiles = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFiles = stateStore.getPartitionToFileInPartitionMap();
         PartitionTree partitionTree = new PartitionTree(schema, allPartitions);
         // Filtering existing list to avoid expensive call to statestore
         List<Partition> leafPartitions = allPartitions.stream()

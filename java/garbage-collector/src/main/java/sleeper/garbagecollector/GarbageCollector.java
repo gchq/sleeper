@@ -92,7 +92,7 @@ public class GarbageCollector {
     private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {
         deleteFiles(fileInfo.getFilename(), conf);
         try {
-            stateStore.deleteReadyForGCFiles(Arrays.asList(fileInfo.getFilename()));
+            stateStore.deleteFileLifecycleEntries(Arrays.asList(fileInfo.getFilename()));
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating status of " + fileInfo.getFilename() + " to garbage collected", e);
         }

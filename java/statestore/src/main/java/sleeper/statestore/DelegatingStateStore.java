@@ -67,8 +67,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void deleteReadyForGCFiles(List<String> filenames) throws StateStoreException {
-        fileInfoStore.deleteReadyForGCFiles(filenames);
+    public void deleteFileLifecycleEntries(List<String> filenames) throws StateStoreException {
+        fileInfoStore.deleteFileLifecycleEntries(filenames);
     }
 
     @Override
@@ -102,8 +102,8 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        return fileInfoStore.getPartitionToActiveFilesMap();
+    public Map<String, List<String>> getPartitionToFileInPartitionMap() throws StateStoreException {
+        return fileInfoStore.getPartitionToFileInPartitionMap();
     }
 
     @Override
