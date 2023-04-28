@@ -9,11 +9,11 @@ are available [here](docs/12-performance-test.md)
 This contains the following improvements:
 
 Trino:
-- Added a plugin for Trino, see documentation [here](docs/13-trino.md).
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/13-trino.md). This is an experimental feature.
 
 Bulk Import:
 - Improve observability of bulk import jobs by including them in ingest job status reports.
-- Added table property for minimum leaf partition count. If the minimum is not met, bulk import jobs will be skipped.
+- Added table property for minimum leaf partition count. If the minimum is not met, bulk import jobs will not be run.
 
 Scripts:
 - Added logging output to `DownloadConfig` class.
