@@ -36,6 +36,7 @@ import software.constructs.Construct;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -79,7 +80,8 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             BuiltJars jars,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
-            TopicStack errorsTopicStack) {
+            TopicStack errorsTopicStack,
+            List<StateStoreStack> stateStoreStacks) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 this, "PersistentEMR", instanceProperties);
@@ -87,6 +89,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "PersistentEMR", jobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(jobStarter);
+        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }

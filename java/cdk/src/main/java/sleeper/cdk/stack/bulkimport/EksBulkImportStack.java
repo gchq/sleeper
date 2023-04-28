@@ -103,7 +103,8 @@ public final class EksBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             TableStack tableStack,
             TopicStack errorsTopicStack,
-            IngestStatusStoreStack statusStoreStack) {
+            IngestStatusStoreStack statusStoreStack,
+            List<StateStoreStack> stateStoreStacks) {
         super(scope, id);
 
         List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
@@ -168,6 +169,7 @@ public final class EksBulkImportStack extends NestedStack {
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
+        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(UserDefinedInstanceProperty.VPC_ID))
