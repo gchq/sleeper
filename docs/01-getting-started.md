@@ -18,7 +18,7 @@ Before running this demo functionality, you will need the following installed:
 #### Sleeper CLI installation
 
 The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the CLI. The version can be `main` or a release in the format `v0.14.0`.
+following commands to install the CLI. The version can be `main` or a release in the format `v0.16.0`.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
