@@ -93,7 +93,7 @@ my_sleeper.bulk_import_parquet_files_from_s3('my_table', files, 'mybulkimportjob
 platform_spec = {
     "sleeper.table.bulk.import.emr.executor.initial.instances": "1",
     "sleeper.table.bulk.import.emr.executor.max.instances": "10",
-    "sleeper.table.bulk.import.emr.release.label": "emr-6.9.0",
+    "sleeper.table.bulk.import.emr.release.label": "emr-6.10.0",
     "sleeper.table.bulk.import.emr.master.instance.type": "m5.xlarge",
     "sleeper.table.bulk.import.emr.executor.instance.type": "m5.4xlarge",
     "sleeper.table.bulk.import.emr.executor.market.type": "SPOT" // Use "ON_DEMAND" for on demand instances
