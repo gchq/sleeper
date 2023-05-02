@@ -80,7 +80,7 @@ public class WaitForQueueEstimate {
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        LOGGER.info("Waiting for messages on {}", queueUrl);
+        LOGGER.info("Waiting until {}", description);
         poll.pollUntil(description, this::isFinished);
     }
 
