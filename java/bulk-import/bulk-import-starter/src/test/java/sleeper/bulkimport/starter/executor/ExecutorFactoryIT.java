@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -61,7 +62,7 @@ public class ExecutorFactoryIT {
 
     private ExecutorFactory executorFactory(AmazonS3 s3Client) throws IOException {
         return new ExecutorFactory(s3Client,
-                mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class),
+                mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class), mock(AmazonDynamoDB.class),
                 environment::get);
     }
 

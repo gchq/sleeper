@@ -18,7 +18,7 @@ Before running this demo functionality, you will need the following installed:
 #### Sleeper CLI installation
 
 The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the CLI. The version can be `main` or a release in the format `v0.14.0`.
+following commands to install the CLI. The version can be `main` or a release in the format `v0.16.0`.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
@@ -35,8 +35,9 @@ You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
 
 ### Deployment environment
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Run these commands to
-do this with the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
+You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. The Sleeper CLI 
+can do this for you, and will automatically configure pre-authentication for the EC2 instance with administrator access. 
+Run these commands to create the EC2 using the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
 
 ```bash
 sleeper aws configure
@@ -74,10 +75,6 @@ deployment being slow uploading jars and Docker images.
 The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
-
-To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
-See
-the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
 
 ### System test
 

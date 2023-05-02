@@ -970,6 +970,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.bulk.import.min.leaf.partitions")
+            .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
+                    "If this minimum has not been reached, bulk import jobs will refuse to start")
+            .defaultValue("64")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

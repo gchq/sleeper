@@ -134,25 +134,34 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    topicStack);
+                    topicStack,
+                    tableStack.getStateStoreStacks()
+            );
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
-                    instanceProperties, jars, bulkImportBucketStack,
-                    emrBulkImportCommonStack, topicStack
+                    instanceProperties,
+                    jars,
+                    bulkImportBucketStack,
+                    emrBulkImportCommonStack,
+                    topicStack,
+                    tableStack.getStateStoreStacks()
             );
         }
 
         // Stack to run bulk import jobs via EKS
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
             new EksBulkImportStack(this, "BulkImportEKS",
-                    instanceProperties, jars,
+                    instanceProperties,
+                    jars,
                     bulkImportBucketStack,
                     tableStack,
                     topicStack,
-                    ingestStatusStoreStack);
+                    ingestStatusStoreStack,
+                    tableStack.getStateStoreStacks()
+            );
         }
 
         // Stack to garbage collect old files

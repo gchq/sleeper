@@ -24,6 +24,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
@@ -42,11 +44,14 @@ public abstract class Executor {
 
     protected final InstanceProperties instanceProperties;
     protected final TablePropertiesProvider tablePropertiesProvider;
+    protected final StateStoreProvider stateStoreProvider;
     protected final AmazonS3 s3Client;
 
-    protected Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
+    protected Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3Client) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
         this.s3Client = amazonS3Client;
     }
 
@@ -59,6 +64,9 @@ public abstract class Executor {
         validateJob(bulkImportJob);
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
+        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+            return;
+        }
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         runJobOnPlatform(bulkImportJob);
         LOGGER.info("Successfully submitted job");

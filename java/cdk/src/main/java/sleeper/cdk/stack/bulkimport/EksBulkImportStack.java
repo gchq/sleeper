@@ -41,7 +41,9 @@ import software.amazon.awscdk.services.eks.KubernetesVersion;
 import software.amazon.awscdk.services.eks.Selector;
 import software.amazon.awscdk.services.eks.ServiceAccount;
 import software.amazon.awscdk.services.eks.ServiceAccountOptions;
+import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -101,7 +103,8 @@ public final class EksBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             TableStack tableStack,
             TopicStack errorsTopicStack,
-            IngestStatusStoreStack statusStoreStack) {
+            IngestStatusStoreStack statusStoreStack,
+            List<StateStoreStack> stateStoreStacks) {
         super(scope, id);
 
         List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
@@ -160,11 +163,13 @@ public final class EksBulkImportStack extends NestedStack {
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
+        configureJobStarterFunction(bulkImportJobStarter);
 
         configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
+        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(UserDefinedInstanceProperty.VPC_ID))
@@ -217,9 +222,20 @@ public final class EksBulkImportStack extends NestedStack {
 
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
+        importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         ingestSourceBuckets.forEach(bucket -> grantAccessToResources(bulkImportJobStarter, bucket));
+        statusStoreStack.getResources().grantWriteJobEvent(sparkServiceAccount);
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
+
+        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
+                .actions(Lists.newArrayList("eks:*", "states:*"))
+                .effect(Effect.ALLOW)
+                .resources(Lists.newArrayList("*"))
+                .build());
     }
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
