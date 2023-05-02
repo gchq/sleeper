@@ -1,13 +1,7 @@
 {
   "name": "Sleeper dev container",
-  "image": "mcr.microsoft.com/devcontainers/java",
+  "image": "ghcr.io/gchq/sleeper-builder",
   "features": {
-    "ghcr.io/devcontainers/features/java:1": {
-      "version": "none",
-      "installMaven": "true",
-      "mavenVersion": "3.8.6",
-      "installGradle": "false"
-    },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   }
 }
