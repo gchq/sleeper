@@ -1,6 +1,6 @@
 {
   "name": "Sleeper dev container",
-  "image":"mcr.microsoft.com/devcontainers/java",
+  "image": "mcr.microsoft.com/devcontainers/java",
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
       "version": "none",
@@ -9,6 +9,5 @@
       "installGradle": "false"
     },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
-  "postStartCommand":"./scripts/cli/install.sh"
+  }
 }
