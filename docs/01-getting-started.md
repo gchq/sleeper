@@ -76,10 +76,6 @@ The Sleeper Git repository will also be cloned, and you can access it by running
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
 
-To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
-See
-the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
-
 ### System test
 
 To run the system test, set the environment variable `ID` to be a globally unique string. This is the instance id. It
