@@ -15,6 +15,10 @@
  */
 package sleeper.clients.util;
 
+import com.google.common.math.LongMath;
+
+import java.math.RoundingMode;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 public class PollWithRetries {
@@ -29,6 +33,11 @@ public class PollWithRetries {
 
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
         return new PollWithRetries(pollIntervalMillis, maxPolls);
+    }
+
+    public static PollWithRetries intervalAndPollingTimeout(long pollIntervalMillis, long timeoutMillis) {
+        return intervalAndMaxPolls(pollIntervalMillis,
+                (int) LongMath.divide(timeoutMillis, pollIntervalMillis, RoundingMode.CEILING));
     }
 
     public void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
@@ -46,5 +55,30 @@ public class PollWithRetries {
         private TimedOutException(String message) {
             super(message);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PollWithRetries that = (PollWithRetries) o;
+        return pollIntervalMillis == that.pollIntervalMillis && maxPolls == that.maxPolls;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pollIntervalMillis, maxPolls);
+    }
+
+    @Override
+    public String toString() {
+        return "PollWithRetries{" +
+                "pollIntervalMillis=" + pollIntervalMillis +
+                ", maxPolls=" + maxPolls +
+                '}';
     }
 }

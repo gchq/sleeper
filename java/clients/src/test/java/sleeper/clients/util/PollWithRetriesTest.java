@@ -67,4 +67,16 @@ class PollWithRetriesTest {
         assertThat(iterator1).isExhausted();
         assertThat(iterator2).isExhausted();
     }
+
+    @Test
+    void shouldComputeMaxPollsFromTimeout() {
+        assertThat(PollWithRetries.intervalAndPollingTimeout(1000, 60000))
+                .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 60));
+    }
+
+    @Test
+    void shouldComputeMaxPollsFromTimeoutWhichIsNotAnExactMultipleOfPollInterval() {
+        assertThat(PollWithRetries.intervalAndPollingTimeout(1000, 1500))
+                .isEqualTo(PollWithRetries.intervalAndMaxPolls(1000, 2));
+    }
 }
