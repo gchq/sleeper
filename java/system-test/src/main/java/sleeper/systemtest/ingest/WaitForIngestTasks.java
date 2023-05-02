@@ -39,14 +39,14 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 public class WaitForIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
     private static final long TASKS_FINISHED_POLL_INTERVAL_MILLIS = 30000;
-    private static final int TASKS_FINISHED_MAX_POLLS = 30;
+    private static final int TASKS_FINISHED_TIMEOUT_MILLIS = 15 * 60 * 1000;
     private static final long QUEUE_EMPTY_POLL_INTERVAL_MILLIS = 10000;
-    private static final int QUEUE_EMPTY_MAX_POLLS = 12;
+    private static final int QUEUE_EMPTY_TIMEOUT_MILLIS = 5 * 60 * 1000;
 
     private final IngestTaskStatusStore taskStatusStore;
     private final WaitForQueueEstimate waitForEmptyQueue;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(
-            TASKS_FINISHED_POLL_INTERVAL_MILLIS, TASKS_FINISHED_MAX_POLLS);
+    private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
+            TASKS_FINISHED_POLL_INTERVAL_MILLIS, TASKS_FINISHED_TIMEOUT_MILLIS);
 
     public WaitForIngestTasks(
             SystemTestProperties systemTestProperties,
@@ -54,7 +54,7 @@ public class WaitForIngestTasks {
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
         this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL,
-                PollWithRetries.intervalAndMaxPolls(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_MAX_POLLS));
+                PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
     }
 
     public void pollUntilFinished() throws InterruptedException {

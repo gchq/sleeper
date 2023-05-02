@@ -71,7 +71,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                     String id,
                                     InstanceProperties instanceProperties,
                                     BulkImportBucketStack importBucketStack,
-                                    TableStack tableStack, IngestStatusStoreStack statusStoreStack) {
+                                    TableStack tableStack,
+                                    IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());

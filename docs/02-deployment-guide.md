@@ -36,6 +36,8 @@ export AWS_PROFILE=named-profile-123456789
 export AWS_REGION=eu-west-2
 ```
 
+Also see the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
+
 ### Bootstrapping CDK
 
 To deploy Sleeper into your AWS account you will need to have bootstrapped CDK in the

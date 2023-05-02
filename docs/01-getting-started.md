@@ -18,7 +18,7 @@ Before running this demo functionality, you will need the following installed:
 #### Sleeper CLI installation
 
 The Sleeper CLI contains Docker images with the necessary dependencies and scripts to work with Sleeper. Run the
-following commands to install the CLI. The version can be `main` or a release in the format `v0.14.0`.
+following commands to install the CLI. The version can be `main` or a release in the format `v0.16.0`.
 
 ```bash
 curl "https://raw.githubusercontent.com/gchq/sleeper/[version]/scripts/cli/install.sh" -o ./sleeper-install.sh
@@ -75,10 +75,6 @@ deployment being slow uploading jars and Docker images.
 The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
-
-To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
-See
-the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
 
 ### System test
 
