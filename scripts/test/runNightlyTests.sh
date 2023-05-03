@@ -15,12 +15,29 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <vpc> <subnet>"
   exit 1
 fi
 
+VPC=$1
+SUBNET=$2
+
+START_TIME=$(date +"%Y%m%d_%H%M%S")
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
+
+pushd "$THIS_DIR"
 
 git fetch
 git switch -C main origin/main
+
+mkdir -p "$OUTPUT_DIR"
+../build/buildForTest.sh
+set +e
+
+./bulkImportPerformance/deployTest.sh "bulkImportPerformance-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/bulkImportPerformance.log"
+./compactionPerformance/deployTest.sh "compactionPerformance-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/compactionPerformance.log"
+./partitionSplitting/deployTest.sh "partitionSplitting-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/partitionSplitting.log"
+
+popd
