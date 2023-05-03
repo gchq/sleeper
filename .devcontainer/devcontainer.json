@@ -13,7 +13,11 @@
     }
   },
   "mounts": [
-    "source=${localEnv:HOME}/.aws,target=/root/.aws,type=bind,consistency=cached"
+    {
+      "source": "${localEnv:HOME}/.aws",
+      "target": "/root/.aws",
+      "type": "bind"
+    }
   ],
   "containerEnv": {
     "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
