@@ -15,16 +15,18 @@
 
 set -e
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <vpc> <subnet>"
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 <vpc> <subnet> <results bucket>"
   exit 1
 fi
 
 VPC=$1
 SUBNET=$2
+RESULTS_BUCKET=$3
 
 START_TIME=$(date +"%Y%m%d_%H%M%S")
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
 
 pushd "$THIS_DIR"
@@ -34,10 +36,18 @@ git switch -C main origin/main
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
+VERSION=$(cat "$TEMPLATE_DIR/version.txt")
+SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
 ./bulkImportPerformance/deployTest.sh "bulkImportPerformance-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/bulkImportPerformance.log"
+echo "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
 ./compactionPerformance/deployTest.sh "compactionPerformance-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/compactionPerformance.log"
+echo "$?" > "$OUTPUT_DIR/compactionPerformance.status"
 ./partitionSplitting/deployTest.sh "partitionSplitting-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/partitionSplitting.log"
+echo "$?" > "$OUTPUT_DIR/partitionSplitting.status"
+
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.output.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIME" "$OUTPUT_DIR"
 
 popd
