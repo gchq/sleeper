@@ -3,5 +3,13 @@
   "image": "ghcr.io/gchq/sleeper-builder",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "eamodio.gitlens"
+      ]
+    }
   }
 }
