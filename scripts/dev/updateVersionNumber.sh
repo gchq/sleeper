@@ -36,4 +36,4 @@ source "${PROJECT_ROOT}/scripts/functions/sedInPlace.sh"
 # Update the version number in the Python module
 sed_in_place \
   -e "s|^    version=.*|    version='${NEW_VERSION}',|" \
-  python/setup.py
+  "${PROJECT_ROOT}/python/setup.py"
