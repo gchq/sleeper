@@ -24,9 +24,12 @@ VPC=$1
 SUBNET=$2
 RESULTS_BUCKET=$3
 
-START_TIME=$(date +"%Y%m%d_%H%M%S")
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+
+source "$SCRIPTS_DIR/functions/timeUtils.sh"
+START_TIMESTAMP=$(record_time)
+START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d_%H%M%S")
 OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
 
 pushd "$THIS_DIR"
@@ -48,6 +51,6 @@ echo "$?" > "$OUTPUT_DIR/compactionPerformance.status"
 echo "$?" > "$OUTPUT_DIR/partitionSplitting.status"
 
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.output.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIME" "$OUTPUT_DIR"
+sleeper.systemtest.output.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
