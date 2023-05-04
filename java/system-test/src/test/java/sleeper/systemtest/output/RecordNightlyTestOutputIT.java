@@ -36,6 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 class RecordNightlyTestOutputIT {
+
+    private static final String BUCKET_NAME = "test-bucket";
+
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
@@ -52,19 +55,26 @@ class RecordNightlyTestOutputIT {
     }
 
     @Test
+    // Can't format start time
     @Disabled("TODO")
     void shouldUploadLogFile() throws Exception {
         // Given
-        s3Client.createBucket("test-bucket");
-        long timestamp = Instant.parse("2023-05-04T09:35:00Z").getEpochSecond();
+        Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
         Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
         // When
-        new RecordNightlyTestOutput(s3Client, "test-bucket", timestamp, tempDir).uploadLogFiles();
+        uploadLogFiles(startTime);
 
         // Then
-        assertThat(s3Client.listObjects("test-bucket").getObjectSummaries()
+        assertThat(s3Client.listObjects(BUCKET_NAME).getObjectSummaries()
                 .stream().map(S3ObjectSummary::getKey))
-                .containsExactly("bulkImportPerformance.log");
+                .containsExactly("20230504_093500/bulkImportPerformance.log");
+    }
+
+    // TODO handle directories in output dir, files with unrecognised file type
+
+    private void uploadLogFiles(Instant startTime) throws Exception {
+        s3Client.createBucket(BUCKET_NAME);
+        RecordNightlyTestOutput.uploadLogFiles(s3Client, BUCKET_NAME, startTime.getEpochSecond(), tempDir);
     }
 }

@@ -18,22 +18,35 @@ package sleeper.systemtest.output;
 
 import com.amazonaws.services.s3.AmazonS3;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.stream.Stream;
 
 public class RecordNightlyTestOutput {
-    private final AmazonS3 s3Client;
-    private final String bucketName;
-    private final long timestamp;
-    private final Path output;
 
-
-    public RecordNightlyTestOutput(AmazonS3 s3Client, String bucketName, long timestamp, Path output) {
-        this.s3Client = s3Client;
-        this.bucketName = bucketName;
-        this.timestamp = timestamp;
-        this.output = output;
+    private RecordNightlyTestOutput() {
     }
 
-    public void uploadLogFiles() {
+    private static final DateTimeFormatter S3_PREFIX_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm");
+
+    public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, long timestamp, Path output) throws IOException {
+        Instant startTime = parseCommandLineTimestamp(timestamp);
+        try (Stream<Path> entriesInDirectory = Files.list(output)) {
+            entriesInDirectory.forEach(path ->
+                    s3Client.putObject(bucketName,
+                            getPathInS3(startTime, path),
+                            path.toFile()));
+        }
+    }
+
+    public static String getPathInS3(Instant startTime, Path filePath) {
+        return S3_PREFIX_FORMAT.format(startTime) + "/" + filePath.getFileName();
+    }
+
+    public static Instant parseCommandLineTimestamp(long timestamp) {
+        return Instant.ofEpochSecond(timestamp);
     }
 }
