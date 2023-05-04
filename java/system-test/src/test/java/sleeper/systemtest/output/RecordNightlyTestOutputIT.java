@@ -30,6 +30,7 @@ import sleeper.core.CommonTestConstants;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,13 +38,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 class RecordNightlyTestOutputIT {
 
-    private static final String BUCKET_NAME = "test-bucket";
-
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
     private final AmazonS3 s3Client = createS3Client();
+    private final String bucketName = UUID.randomUUID().toString();
     @TempDir
     private Path tempDir;
 
@@ -81,15 +81,28 @@ class RecordNightlyTestOutputIT {
         assertThat(streamS3Objects())
                 .isEmpty();
     }
-    // TODO handle directories in output dir, files with unrecognised file type
+
+    @Test
+    void shouldIgnoreDirectoriesInOutputDirectory() throws Exception {
+        // Given
+        Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
+        Files.createDirectory(tempDir.resolve("testDir.log"));
+
+        // When
+        uploadLogFiles(startTime);
+
+        // Then
+        assertThat(streamS3Objects())
+                .isEmpty();
+    }
 
     private Stream<String> streamS3Objects() {
-        return s3Client.listObjects(BUCKET_NAME).getObjectSummaries()
+        return s3Client.listObjects(bucketName).getObjectSummaries()
                 .stream().map(S3ObjectSummary::getKey);
     }
 
     private void uploadLogFiles(Instant startTime) throws Exception {
-        s3Client.createBucket(BUCKET_NAME);
-        RecordNightlyTestOutput.uploadLogFiles(s3Client, BUCKET_NAME, NightlyTestTimestamp.from(startTime), tempDir);
+        s3Client.createBucket(bucketName);
+        RecordNightlyTestOutput.uploadLogFiles(s3Client, bucketName, NightlyTestTimestamp.from(startTime), tempDir);
     }
 }

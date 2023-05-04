@@ -35,6 +35,7 @@ public class RecordNightlyTestOutput {
     public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp, Path output) throws IOException {
         try (Stream<Path> entriesInDirectory = Files.list(output)) {
             entriesInDirectory.filter(LOG_FILE_MATCHER::matches)
+                    .filter(Files::isRegularFile)
                     .forEach(path ->
                             s3Client.putObject(bucketName,
                                     getPathInS3(timestamp, path),
