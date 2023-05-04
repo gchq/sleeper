@@ -76,11 +76,14 @@ class NightlyTestOutputFileSystemIT {
         void shouldReadStatusFiles() throws Exception {
             // Given
             Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
+            Files.writeString(tempDir.resolve("compactionPerformance.status"), "1");
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
                     .isEqualTo(NightlyTestOutput.builder()
-                            .statusCodeByTest(Map.of("bulkImportPerformance", 0))
+                            .statusCodeByTest(Map.of(
+                                    "bulkImportPerformance", 0,
+                                    "compactionPerformance", 1))
                             .build());
         }
     }
