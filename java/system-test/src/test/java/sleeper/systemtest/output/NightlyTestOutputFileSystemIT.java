@@ -46,16 +46,6 @@ class NightlyTestOutputFileSystemIT {
         }
 
         @Test
-        void shouldIgnoreFileWithUnrecognisedExtension() throws Exception {
-            // Given
-            Files.writeString(tempDir.resolve("bulkImportPerformance.test"), "test");
-
-            // When / Then
-            assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(emptyOutput());
-        }
-
-        @Test
         void shouldIgnoreDirectories() throws Exception {
             // Given
             Files.createDirectory(tempDir.resolve("testDir.log"));
@@ -82,6 +72,26 @@ class NightlyTestOutputFileSystemIT {
                             "bulkImportPerformance", 0,
                             "compactionPerformance", 1)));
         }
+
+        @Test
+        void shouldIgnoreDirectories() throws Exception {
+            // Given
+            Files.createDirectory(tempDir.resolve("testDir.status"));
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(emptyOutput());
+        }
+    }
+
+    @Test
+    void shouldIgnoreFileWithUnrecognisedExtension() throws Exception {
+        // Given
+        Files.writeString(tempDir.resolve("bulkImportPerformance.test"), "test");
+
+        // When / Then
+        assertThat(NightlyTestOutput.from(tempDir))
+                .isEqualTo(emptyOutput());
     }
 
     private NightlyTestOutput emptyOutput() {
