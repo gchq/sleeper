@@ -42,9 +42,7 @@ class NightlyTestOutputFileSystemIT {
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(NightlyTestOutput.builder()
-                            .logFiles(List.of(tempDir.resolve("bulkImportPerformance.log")))
-                            .build());
+                    .isEqualTo(outputWithLogFiles(tempDir.resolve("bulkImportPerformance.log")));
         }
 
         @Test
@@ -54,7 +52,7 @@ class NightlyTestOutputFileSystemIT {
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(NightlyTestOutput.builder().build());
+                    .isEqualTo(emptyOutput());
         }
 
         @Test
@@ -64,7 +62,7 @@ class NightlyTestOutputFileSystemIT {
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(NightlyTestOutput.builder().build());
+                    .isEqualTo(emptyOutput());
         }
     }
 
@@ -80,11 +78,25 @@ class NightlyTestOutputFileSystemIT {
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(NightlyTestOutput.builder()
-                            .statusCodeByTest(Map.of(
-                                    "bulkImportPerformance", 0,
-                                    "compactionPerformance", 1))
-                            .build());
+                    .isEqualTo(outputWithStatusCodeByTest(Map.of(
+                            "bulkImportPerformance", 0,
+                            "compactionPerformance", 1)));
         }
+    }
+
+    private NightlyTestOutput emptyOutput() {
+        return NightlyTestOutput.builder().build();
+    }
+
+    private NightlyTestOutput outputWithLogFiles(Path... logFiles) {
+        return NightlyTestOutput.builder()
+                .logFiles(List.of(logFiles))
+                .build();
+    }
+
+    private NightlyTestOutput outputWithStatusCodeByTest(Map<String, Integer> statusCodeByTest) {
+        return NightlyTestOutput.builder()
+                .statusCodeByTest(statusCodeByTest)
+                .build();
     }
 }
