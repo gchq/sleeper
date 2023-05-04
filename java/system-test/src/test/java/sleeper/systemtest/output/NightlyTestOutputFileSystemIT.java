@@ -23,10 +23,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.output.NightlyTestOutputTestHelper.emptyOutput;
+import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithLogFiles;
+import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestOutputFileSystemIT {
     @TempDir
@@ -94,19 +96,5 @@ class NightlyTestOutputFileSystemIT {
                 .isEqualTo(emptyOutput());
     }
 
-    private NightlyTestOutput emptyOutput() {
-        return NightlyTestOutput.builder().build();
-    }
 
-    private NightlyTestOutput outputWithLogFiles(Path... logFiles) {
-        return NightlyTestOutput.builder()
-                .logFiles(List.of(logFiles))
-                .build();
-    }
-
-    private NightlyTestOutput outputWithStatusCodeByTest(Map<String, Integer> statusCodeByTest) {
-        return NightlyTestOutput.builder()
-                .statusCodeByTest(statusCodeByTest)
-                .build();
-    }
 }
