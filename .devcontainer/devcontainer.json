@@ -1,0 +1,7 @@
+{
+  "name": "Sleeper dev container",
+  "image": "ghcr.io/gchq/sleeper-builder",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  }
+}
