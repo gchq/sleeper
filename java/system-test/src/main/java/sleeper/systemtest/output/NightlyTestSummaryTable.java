@@ -16,15 +16,69 @@
 
 package sleeper.systemtest.output;
 
+import com.google.gson.Gson;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import sleeper.clients.util.GsonConfig;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class NightlyTestSummaryTable {
-    private NightlyTestSummaryTable() {
+
+    private static final Gson GSON = GsonConfig.standardBuilder().create();
+
+    private final List<Execution> executions;
+
+    private NightlyTestSummaryTable(List<Execution> executions) {
+        this.executions = executions;
     }
 
-    public static NightlyTestSummaryTable fromSingleSummary(NightlyTestOutput build) {
-        return new NightlyTestSummaryTable();
+    public static NightlyTestSummaryTable fromSingleExecution(
+            NightlyTestTimestamp timestamp, NightlyTestOutput output) {
+        return new NightlyTestSummaryTable(List.of(
+                execution(timestamp, output)));
     }
 
     public String toJson() {
-        return "";
+        return GSON.toJson(this);
     }
+
+    private static Execution execution(NightlyTestTimestamp timestamp, NightlyTestOutput output) {
+        return new Execution(timestamp.toInstant(), tests(output.getStatusCodeByTest()));
+    }
+
+    private static List<Test> tests(Map<String, Integer> statusCodeByTest) {
+        return statusCodeByTest.entrySet().stream()
+                .map(entry -> new Test(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
+    public static class Execution {
+
+        private final Instant startTime;
+        private final List<Test> tests;
+
+        public Execution(Instant startTime, List<Test> tests) {
+            this.startTime = startTime;
+            this.tests = tests;
+        }
+    }
+
+    @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
+    public static class Test {
+
+        private final String name;
+        private final Integer exitCode;
+
+        public Test(String name, Integer exitCode) {
+            this.name = name;
+            this.exitCode = exitCode;
+        }
+    }
+
 }

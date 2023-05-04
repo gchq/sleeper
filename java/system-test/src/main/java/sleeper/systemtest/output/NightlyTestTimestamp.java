@@ -42,6 +42,10 @@ public class NightlyTestTimestamp {
         return S3_PREFIX_FORMAT.format(startTime);
     }
 
+    public Instant toInstant() {
+        return startTime;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

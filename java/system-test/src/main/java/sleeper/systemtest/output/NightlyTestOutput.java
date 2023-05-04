@@ -16,7 +16,6 @@
 package sleeper.systemtest.output;
 
 import com.amazonaws.services.s3.AmazonS3;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -37,9 +36,7 @@ public class NightlyTestOutput {
     private static final PathMatcher LOG_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
     private static final PathMatcher STATUS_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.status");
 
-    @NotNull
     private final List<Path> logFiles;
-    @NotNull
     private final Map<String, Integer> statusCodeByTest;
 
     private NightlyTestOutput(Builder builder) {
@@ -59,6 +56,10 @@ public class NightlyTestOutput {
 
     private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
         return timestamp.getS3FolderName() + "/" + filePath.getFileName();
+    }
+
+    public Map<String, Integer> getStatusCodeByTest() {
+        return statusCodeByTest;
     }
 
     public static NightlyTestOutput from(Path directory) throws IOException {

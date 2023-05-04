@@ -16,26 +16,26 @@
 
 package sleeper.systemtest.output;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
-public class NightlyTestSummaryTableTest {
+class NightlyTestSummaryTableTest {
     @Test
-    @Disabled("TODO")
-    void shouldAddTestExecutionToEmptySummary() {
+    void shouldCreateSummaryWithSingleNightlyExecution() {
         // Given
-        NightlyTestSummaryTable summaries = NightlyTestSummaryTable.fromSingleSummary(
-                outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+        NightlyTestSummaryTable summaries = NightlyTestSummaryTable.fromSingleExecution(
+                NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)));
 
         // When
         assertThatJson(summaries.toJson())
                 .isEqualTo("{\"executions\":[{" +
-                        "\"timestamp\":\"2023-05-03T15:15:00Z\"," +
+                        "\"startTime\":\"2023-05-03T15:15:00Z\"," +
                         "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
                         "}]}");
     }
