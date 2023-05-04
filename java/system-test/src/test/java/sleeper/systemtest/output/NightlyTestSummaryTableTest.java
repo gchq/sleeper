@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.output;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -64,7 +63,6 @@ class NightlyTestSummaryTableTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldFormatAsATable() {
         // Given
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
@@ -76,6 +74,11 @@ class NightlyTestSummaryTableTest {
                         outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
 
         // When / Then
-        assertThat(summary.toTableString()).isEqualTo("");
+        assertThat(summary.toTableString()).isEqualTo("" +
+                "------------------------------------------------\n" +
+                "| START_TIME           | bulkImportPerformance |\n" +
+                "| 2023-05-03T15:15:00Z |                       |\n" +
+                "| 2023-05-04T15:42:00Z |                       |\n" +
+                "------------------------------------------------\n");
     }
 }

@@ -20,7 +20,14 @@ import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.table.TableField;
+import sleeper.clients.util.table.TableWriter;
+import sleeper.clients.util.table.TableWriterFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +63,20 @@ public class NightlyTestSummaryTable {
     }
 
     public String toTableString() {
-        return null;
+        OutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+        TableWriterFactory.Builder tableDefinitionBuilder = TableWriterFactory.builder();
+        TableField startTime = tableDefinitionBuilder.addField("START_TIME");
+        Map<String, TableField> fieldByTestName = executions.stream()
+                .flatMap(execution -> execution.tests.stream())
+                .map(test -> test.name).distinct()
+                .collect(Collectors.toMap(name -> name, tableDefinitionBuilder::addField));
+        TableWriter.Builder tableBuilder = tableDefinitionBuilder.build().tableBuilder();
+        executions.forEach(execution -> {
+            tableBuilder.row(rowBuilder -> rowBuilder.value(startTime, execution.startTime));
+        });
+        tableBuilder.build().write(printStream);
+        return outputStream.toString();
     }
 
     private static Execution execution(NightlyTestTimestamp timestamp, NightlyTestOutput output) {
