@@ -17,6 +17,8 @@ package sleeper.systemtest.output;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -26,7 +28,11 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 class RecordNightlyTestOutputIT {
@@ -46,7 +52,19 @@ class RecordNightlyTestOutputIT {
     }
 
     @Test
-    void shouldUploadLogFile() {
+    @Disabled("TODO")
+    void shouldUploadLogFile() throws Exception {
+        // Given
+        s3Client.createBucket("test-bucket");
+        long timestamp = Instant.parse("2023-05-04T09:35:00Z").getEpochSecond();
+        Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
+        // When
+        new RecordNightlyTestOutput(s3Client, "test-bucket", timestamp, tempDir).uploadLogFiles();
+
+        // Then
+        assertThat(s3Client.listObjects("test-bucket").getObjectSummaries()
+                .stream().map(S3ObjectSummary::getKey))
+                .containsExactly("bulkImportPerformance.log");
     }
 }
