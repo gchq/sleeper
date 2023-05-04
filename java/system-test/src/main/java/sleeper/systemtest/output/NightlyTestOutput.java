@@ -125,7 +125,7 @@ public class NightlyTestOutput {
         private List<Path> logFiles = Collections.emptyList();
         private Map<String, Integer> statusCodeByTest = Collections.emptyMap();
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder logFiles(List<Path> logFiles) {
