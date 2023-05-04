@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class NightlyTestOutput {
@@ -51,24 +52,25 @@ public class NightlyTestOutput {
     }
 
     public static NightlyTestOutput from(Path directory) throws IOException {
-        List<Path> regularFiles = new ArrayList<>();
-        try (Stream<Path> entriesInDirectory = Files.list(directory)) {
-            entriesInDirectory.filter(Files::isRegularFile)
-                    .forEach(regularFiles::add);
-        }
         List<Path> logFiles = new ArrayList<>();
         List<Path> statusFiles = new ArrayList<>();
-        for (Path path : regularFiles) {
-            if (LOG_FILE_MATCHER.matches(path)) {
-                logFiles.add(path);
-            } else if (STATUS_FILE_MATCHER.matches(path)) {
-                statusFiles.add(path);
+        forEachFileIn(directory, file -> {
+            if (LOG_FILE_MATCHER.matches(file)) {
+                logFiles.add(file);
+            } else if (STATUS_FILE_MATCHER.matches(file)) {
+                statusFiles.add(file);
             }
-        }
+        });
         return builder()
                 .logFiles(logFiles)
                 .statusCodeByTest(readStatusFiles(statusFiles))
                 .build();
+    }
+
+    private static void forEachFileIn(Path directory, Consumer<Path> action) throws IOException {
+        try (Stream<Path> entriesInDirectory = Files.list(directory)) {
+            entriesInDirectory.filter(Files::isRegularFile).forEach(action);
+        }
     }
 
     private static Map<String, Integer> readStatusFiles(List<Path> statusFiles) throws IOException {
