@@ -16,12 +16,14 @@
 
 package sleeper.systemtest.output;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestSummaryTableTest {
@@ -59,5 +61,21 @@ class NightlyTestSummaryTableTest {
                         "\"startTime\":\"2023-05-04T15:42:00Z\"," +
                         "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":1}]" +
                         "}]}");
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldFormatAsATable() {
+        // Given
+        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                .add(
+                        NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                        outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)))
+                .add(
+                        NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
+                        outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+
+        // When / Then
+        assertThat(summary.toTableString()).isEqualTo("");
     }
 }

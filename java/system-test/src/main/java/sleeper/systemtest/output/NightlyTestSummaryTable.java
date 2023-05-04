@@ -55,6 +55,10 @@ public class NightlyTestSummaryTable {
         return GSON.toJson(this);
     }
 
+    public String toTableString() {
+        return null;
+    }
+
     private static Execution execution(NightlyTestTimestamp timestamp, NightlyTestOutput output) {
         return new Execution(timestamp.toInstant(), tests(output.getStatusCodeByTest()));
     }
