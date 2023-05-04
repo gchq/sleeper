@@ -17,22 +17,17 @@ package sleeper.systemtest.output;
 
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.output.RecordNightlyTestOutput.parseCommandLineTimestamp;
 
-class RecordNightlyTestOutputTest {
+class NightlyTestTimestampTest {
 
     @Test
     void shouldFormatStartTimeInS3Folder() {
         Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-        assertThat(getPathInS3(startTime, Path.of("test.log")))
-                .isEqualTo("20230504_093500/test.log");
-    }
-
-    private String getPathInS3(Instant startTime, Path filePath) {
-        return RecordNightlyTestOutput.getPathInS3(parseCommandLineTimestamp(startTime.getEpochSecond()), filePath);
+        NightlyTestTimestamp nightlyTestTimestamp = NightlyTestTimestamp.from(startTime);
+        assertThat(nightlyTestTimestamp.getS3FolderName())
+                .isEqualTo("20230504_093500");
     }
 }
