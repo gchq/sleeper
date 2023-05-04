@@ -18,6 +18,7 @@ package sleeper.systemtest.output;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +36,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 @Testcontainers
 class NightlyTestOutputS3IT {
@@ -59,14 +61,14 @@ class NightlyTestOutputS3IT {
     void shouldUploadLogFile() throws Exception {
         // Given
         Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-        Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
+        Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test data");
 
         // When
         uploadFromTempDir(startTime);
 
         // Then
         assertThat(streamS3Objects())
-                .containsExactly("20230504_093500/bulkImportPerformance.log");
+                .containsExactly(tuple("20230504_093500/bulkImportPerformance.log", "test data"));
     }
 
     @Test
@@ -80,13 +82,18 @@ class NightlyTestOutputS3IT {
         uploadFromTempDir(startTime);
 
         // Then
-        assertThat(streamS3Objects())
+        assertThat(streamS3ObjectKeys())
                 .containsExactly("summary.json", "summary.txt");
     }
 
-    private Stream<String> streamS3Objects() {
+    private Stream<String> streamS3ObjectKeys() {
         return s3Client.listObjects(bucketName).getObjectSummaries()
                 .stream().map(S3ObjectSummary::getKey);
+    }
+
+    private Stream<Tuple> streamS3Objects() {
+        return streamS3ObjectKeys().map(key -> tuple(key,
+                s3Client.getObjectAsString(bucketName, key)));
     }
 
     private void uploadFromTempDir(Instant startTime) throws Exception {
