@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 
@@ -30,7 +31,8 @@ public class RecordNightlyTestOutput {
     private RecordNightlyTestOutput() {
     }
 
-    private static final DateTimeFormatter S3_PREFIX_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm");
+    private static final DateTimeFormatter S3_PREFIX_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+            .withZone(ZoneId.of("UTC"));
 
     public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, long timestamp, Path output) throws IOException {
         Instant startTime = parseCommandLineTimestamp(timestamp);

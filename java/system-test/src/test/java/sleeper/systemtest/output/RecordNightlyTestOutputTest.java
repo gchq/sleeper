@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.output;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -27,7 +26,6 @@ import static sleeper.systemtest.output.RecordNightlyTestOutput.parseCommandLine
 class RecordNightlyTestOutputTest {
 
     @Test
-    @Disabled("TODO")
     void shouldFormatStartTimeInS3Folder() {
         Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
         assertThat(getPathInS3(startTime, Path.of("test.log")))

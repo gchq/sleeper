@@ -18,7 +18,6 @@ package sleeper.systemtest.output;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -55,8 +54,6 @@ class RecordNightlyTestOutputIT {
     }
 
     @Test
-    // Can't format start time
-    @Disabled("TODO")
     void shouldUploadLogFile() throws Exception {
         // Given
         Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
