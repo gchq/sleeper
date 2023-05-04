@@ -16,34 +16,20 @@
 
 package sleeper.systemtest.output;
 
-import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.util.stream.Stream;
 
 public class RecordNightlyTestOutput {
-    private static final PathMatcher LOG_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
 
     private RecordNightlyTestOutput() {
     }
 
-
-    public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp, Path output) throws IOException {
-        try (Stream<Path> entriesInDirectory = Files.list(output)) {
-            entriesInDirectory.filter(LOG_FILE_MATCHER::matches)
-                    .filter(Files::isRegularFile)
-                    .forEach(path ->
-                            s3Client.putObject(bucketName,
-                                    getPathInS3(timestamp, path),
-                                    path.toFile()));
-        }
-    }
-
-    public static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
-        return timestamp.getS3FolderName() + "/" + filePath.getFileName();
+    public static void main(String[] args) throws IOException {
+        String bucketName = args[0];
+        NightlyTestTimestamp timestamp = NightlyTestTimestamp.from(args[1]);
+        Path output = Path.of(args[2]);
+        NightlyTestOutput.from(output).uploadToS3(AmazonS3ClientBuilder.defaultClient(), bucketName, timestamp);
     }
 }

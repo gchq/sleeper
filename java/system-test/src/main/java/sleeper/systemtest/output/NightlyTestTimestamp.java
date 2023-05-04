@@ -19,6 +19,7 @@ package sleeper.systemtest.output;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class NightlyTestTimestamp {
     private static final DateTimeFormatter S3_PREFIX_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
@@ -29,11 +30,37 @@ public class NightlyTestTimestamp {
         this.startTime = startTime;
     }
 
+    public static NightlyTestTimestamp from(String commandLineArgument) {
+        return from(Instant.ofEpochSecond(Long.parseLong(commandLineArgument)));
+    }
+
     public static NightlyTestTimestamp from(Instant startTime) {
         return new NightlyTestTimestamp(startTime);
     }
 
     public String getS3FolderName() {
         return S3_PREFIX_FORMAT.format(startTime);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        NightlyTestTimestamp that = (NightlyTestTimestamp) o;
+        return Objects.equals(startTime, that.startTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(startTime);
+    }
+
+    @Override
+    public String toString() {
+        return startTime.toString();
     }
 }

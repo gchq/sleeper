@@ -30,4 +30,16 @@ class NightlyTestTimestampTest {
         assertThat(nightlyTestTimestamp.getS3FolderName())
                 .isEqualTo("20230504_093500");
     }
+
+    @Test
+    void shouldReadEpochSecondsFromCommandLineArgument() {
+        assertThat(NightlyTestTimestamp.from("0"))
+                .isEqualTo(NightlyTestTimestamp.from(Instant.EPOCH));
+    }
+
+    @Test
+    void shouldReadNonZeroEpochSecondsFromCommandLineArgument() {
+        assertThat(NightlyTestTimestamp.from("1683192900"))
+                .isEqualTo(NightlyTestTimestamp.from(Instant.parse("2023-05-04T09:35:00Z")));
+    }
 }
