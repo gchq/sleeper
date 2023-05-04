@@ -101,6 +101,8 @@ class NightlyTestOutputUploadIT {
             assertThat(streamS3Objects())
                     .isEmpty();
         }
+
+        // TODO test body of log files
     }
 
     @Nested
