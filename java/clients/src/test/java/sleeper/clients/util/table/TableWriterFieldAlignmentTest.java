@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.report.table;
+package sleeper.clients.util.table;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,10 +22,10 @@ import sleeper.clients.testutil.ToStringPrintStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
-public class TableWriterFieldAlignmentTest {
+class TableWriterFieldAlignmentTest {
 
     @Test
-    public void shouldAlignFieldValuesToTheRight() throws Exception {
+    void shouldAlignFieldValuesToTheRight() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field = factoryBuilder.addNumericField("Field");
