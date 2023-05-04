@@ -61,7 +61,7 @@
         See the versions listed in the documentation:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-690-release.html
         -->
-        <spark.version>3.3.0</spark.version>
+        <spark.version>3.3.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
         <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
         <joom.spark.platform.version>0.3.0</joom.spark.platform.version>

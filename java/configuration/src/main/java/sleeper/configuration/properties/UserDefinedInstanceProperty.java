@@ -525,7 +525,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("(Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster for bulk importing data " +
                     "using Spark running on EMR. This default can be overridden by a table property or by a property in the " +
                     "bulk import job specification.")
-            .defaultValue("emr-6.9.0")
+            .defaultValue("emr-6.10.0")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.instance.type")
             .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master node of the EMR cluster. " +
