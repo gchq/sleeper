@@ -51,6 +51,16 @@ public class NightlyTestOutput {
         return new Builder();
     }
 
+    public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
+        logFiles.forEach(path -> s3Client.putObject(bucketName,
+                getPathInS3(timestamp, path),
+                path.toFile()));
+    }
+
+    private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
+        return timestamp.getS3FolderName() + "/" + filePath.getFileName();
+    }
+
     public static NightlyTestOutput from(Path directory) throws IOException {
         List<Path> logFiles = new ArrayList<>();
         List<Path> statusFiles = new ArrayList<>();
@@ -84,16 +94,6 @@ public class NightlyTestOutput {
     private static String readTestName(Path statusFile) {
         String fullFilename = statusFile.getFileName().toString();
         return fullFilename.substring(0, fullFilename.lastIndexOf('.'));
-    }
-
-    public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
-        logFiles.forEach(path -> s3Client.putObject(bucketName,
-                getPathInS3(timestamp, path),
-                path.toFile()));
-    }
-
-    private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
-        return timestamp.getS3FolderName() + "/" + filePath.getFileName();
     }
 
     @Override
