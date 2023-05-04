@@ -111,6 +111,14 @@ public class NightlyTestOutput {
         return Objects.hash(logFiles, statusCodeByTest);
     }
 
+    @Override
+    public String toString() {
+        return "NightlyTestOutput{" +
+                "logFiles=" + logFiles +
+                ", statusCodeByTest=" + statusCodeByTest +
+                '}';
+    }
+
     public static final class Builder {
         private List<Path> logFiles = Collections.emptyList();
         private Map<String, Integer> statusCodeByTest = Collections.emptyMap();
