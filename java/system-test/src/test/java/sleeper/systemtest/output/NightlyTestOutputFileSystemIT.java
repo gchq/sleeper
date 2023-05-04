@@ -22,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +39,18 @@ public class NightlyTestOutputFileSystemIT {
         assertThat(NightlyTestOutput.from(tempDir))
                 .isEqualTo(NightlyTestOutput.builder()
                         .logFiles(List.of(tempDir.resolve("bulkImportPerformance.log")))
+                        .build());
+    }
+
+    @Test
+    void shouldReadStatusFiles() throws Exception {
+        // Given
+        Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
+
+        // When / Then
+        assertThat(NightlyTestOutput.from(tempDir))
+                .isEqualTo(NightlyTestOutput.builder()
+                        .statusCodeByTest(Map.of("bulkImportPerformance", 0))
                         .build());
     }
 }

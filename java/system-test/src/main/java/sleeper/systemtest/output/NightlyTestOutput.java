@@ -16,6 +16,7 @@
 package sleeper.systemtest.output;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -23,22 +24,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 public class NightlyTestOutput {
 
     private static final PathMatcher LOG_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
+    private static final PathMatcher STATUS_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.status");
 
+    @NotNull
     private final List<Path> logFiles;
-
-    private NightlyTestOutput(List<Path> logFiles) {
-        this.logFiles = logFiles;
-    }
+    @NotNull
+    private final Map<String, Integer> statusCodeByTest;
 
     private NightlyTestOutput(Builder builder) {
-        logFiles = builder.logFiles;
+        logFiles = Objects.requireNonNull(builder.logFiles, "logFiles must not be null");
+        statusCodeByTest = Objects.requireNonNull(builder.statusCodeByTest, "statusCodeByTest must not be null");
     }
 
     public static Builder builder() {
@@ -46,13 +51,37 @@ public class NightlyTestOutput {
     }
 
     public static NightlyTestOutput from(Path directory) throws IOException {
-        List<Path> logFiles = new ArrayList<>();
+        List<Path> regularFiles = new ArrayList<>();
         try (Stream<Path> entriesInDirectory = Files.list(directory)) {
-            entriesInDirectory.filter(LOG_FILE_MATCHER::matches)
-                    .filter(Files::isRegularFile)
-                    .forEach(logFiles::add);
+            entriesInDirectory.filter(Files::isRegularFile)
+                    .forEach(regularFiles::add);
         }
-        return new NightlyTestOutput(logFiles);
+        List<Path> logFiles = new ArrayList<>();
+        List<Path> statusFiles = new ArrayList<>();
+        for (Path path : regularFiles) {
+            if (LOG_FILE_MATCHER.matches(path)) {
+                logFiles.add(path);
+            } else if (STATUS_FILE_MATCHER.matches(path)) {
+                statusFiles.add(path);
+            }
+        }
+        return builder()
+                .logFiles(logFiles)
+                .statusCodeByTest(readStatusFiles(statusFiles))
+                .build();
+    }
+
+    private static Map<String, Integer> readStatusFiles(List<Path> statusFiles) throws IOException {
+        Map<String, Integer> statusCodeByTest = new HashMap<>();
+        for (Path statusFile : statusFiles) {
+            statusCodeByTest.put(readTestName(statusFile), Integer.parseInt(Files.readString(statusFile)));
+        }
+        return statusCodeByTest;
+    }
+
+    private static String readTestName(Path statusFile) {
+        String fullFilename = statusFile.getFileName().toString();
+        return fullFilename.substring(0, fullFilename.lastIndexOf('.'));
     }
 
     public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
@@ -74,29 +103,28 @@ public class NightlyTestOutput {
             return false;
         }
         NightlyTestOutput that = (NightlyTestOutput) o;
-        return Objects.equals(logFiles, that.logFiles);
+        return logFiles.equals(that.logFiles) && statusCodeByTest.equals(that.statusCodeByTest);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logFiles);
-    }
-
-    @Override
-    public String toString() {
-        return "NightlyTestOutput{" +
-                "logFiles=" + logFiles +
-                '}';
+        return Objects.hash(logFiles, statusCodeByTest);
     }
 
     public static final class Builder {
-        private List<Path> logFiles;
+        private List<Path> logFiles = Collections.emptyList();
+        private Map<String, Integer> statusCodeByTest = Collections.emptyMap();
 
         public Builder() {
         }
 
         public Builder logFiles(List<Path> logFiles) {
             this.logFiles = logFiles;
+            return this;
+        }
+
+        public Builder statusCodeByTest(Map<String, Integer> statusCodeByTest) {
+            this.statusCodeByTest = statusCodeByTest;
             return this;
         }
 
