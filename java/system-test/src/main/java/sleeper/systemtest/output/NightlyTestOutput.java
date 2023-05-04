@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class NightlyTestOutput {
@@ -34,6 +35,14 @@ public class NightlyTestOutput {
 
     private NightlyTestOutput(List<Path> logFiles) {
         this.logFiles = logFiles;
+    }
+
+    private NightlyTestOutput(Builder builder) {
+        logFiles = builder.logFiles;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static NightlyTestOutput from(Path directory) throws IOException {
@@ -54,5 +63,45 @@ public class NightlyTestOutput {
 
     private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
         return timestamp.getS3FolderName() + "/" + filePath.getFileName();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        NightlyTestOutput that = (NightlyTestOutput) o;
+        return Objects.equals(logFiles, that.logFiles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(logFiles);
+    }
+
+    @Override
+    public String toString() {
+        return "NightlyTestOutput{" +
+                "logFiles=" + logFiles +
+                '}';
+    }
+
+    public static final class Builder {
+        private List<Path> logFiles;
+
+        public Builder() {
+        }
+
+        public Builder logFiles(List<Path> logFiles) {
+            this.logFiles = logFiles;
+            return this;
+        }
+
+        public NightlyTestOutput build() {
+            return new NightlyTestOutput(this);
+        }
     }
 }
