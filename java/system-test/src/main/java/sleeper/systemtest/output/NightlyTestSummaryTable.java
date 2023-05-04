@@ -22,6 +22,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.clients.util.GsonConfig;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,16 +32,23 @@ public class NightlyTestSummaryTable {
 
     private static final Gson GSON = GsonConfig.standardBuilder().create();
 
-    private final List<Execution> executions;
+    private final List<Execution> executions = new ArrayList<>();
 
-    private NightlyTestSummaryTable(List<Execution> executions) {
-        this.executions = executions;
+    private NightlyTestSummaryTable() {
     }
 
-    public static NightlyTestSummaryTable fromSingleExecution(
+    public static NightlyTestSummaryTable empty() {
+        return new NightlyTestSummaryTable();
+    }
+
+    public static NightlyTestSummaryTable fromJson(String json) {
+        return GSON.fromJson(json, NightlyTestSummaryTable.class);
+    }
+
+    public NightlyTestSummaryTable add(
             NightlyTestTimestamp timestamp, NightlyTestOutput output) {
-        return new NightlyTestSummaryTable(List.of(
-                execution(timestamp, output)));
+        executions.add(execution(timestamp, output));
+        return this;
     }
 
     public String toJson() {

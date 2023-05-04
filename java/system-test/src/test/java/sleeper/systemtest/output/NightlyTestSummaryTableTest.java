@@ -28,15 +28,36 @@ class NightlyTestSummaryTableTest {
     @Test
     void shouldCreateSummaryWithSingleNightlyExecution() {
         // Given
-        NightlyTestSummaryTable summaries = NightlyTestSummaryTable.fromSingleExecution(
+        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                 NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
                 outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)));
 
-        // When
-        assertThatJson(summaries.toJson())
+        // When / Then
+        assertThatJson(summary.toJson())
                 .isEqualTo("{\"executions\":[{" +
                         "\"startTime\":\"2023-05-03T15:15:00Z\"," +
                         "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                        "}]}");
+    }
+
+    @Test
+    void shouldAddASecondNightlyExecution() {
+        NightlyTestSummaryTable summary = NightlyTestSummaryTable.fromJson(
+                "{\"executions\":[{" +
+                        "\"startTime\":\"2023-05-03T15:15:00Z\"," +
+                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                        "}]}").add(
+                NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
+                outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+
+        // When / Then
+        assertThatJson(summary.toJson())
+                .isEqualTo("{\"executions\":[{" +
+                        "\"startTime\":\"2023-05-03T15:15:00Z\"," +
+                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                        "},{" +
+                        "\"startTime\":\"2023-05-04T15:42:00Z\"," +
+                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":1}]" +
                         "}]}");
     }
 }
