@@ -19,8 +19,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -57,72 +55,33 @@ class NightlyTestOutputS3IT {
                 .build();
     }
 
-    @Nested
-    @DisplayName("Upload log files")
-    class UploadLogFiles {
-        @Test
-        void shouldUploadLogFile() throws Exception {
-            // Given
-            Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-            Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
+    @Test
+    void shouldUploadLogFile() throws Exception {
+        // Given
+        Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
+        Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
-            // When
-            uploadFromTempDir(startTime);
+        // When
+        uploadFromTempDir(startTime);
 
-            // Then
-            assertThat(streamS3Objects())
-                    .containsExactly("20230504_093500/bulkImportPerformance.log");
-        }
-
-        @Test
-        void shouldNotUploadFilesWithUnrecognisedFileType() throws Exception {
-            // Given
-            Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-            Files.writeString(tempDir.resolve("bulkImportPerformance.test"), "test");
-
-            // When
-            uploadFromTempDir(startTime);
-
-            // Then
-            assertThat(streamS3Objects())
-                    .isEmpty();
-        }
-
-        @Test
-        void shouldIgnoreDirectoriesInOutputDirectory() throws Exception {
-            // Given
-            Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-            Files.createDirectory(tempDir.resolve("testDir.log"));
-
-            // When
-            uploadFromTempDir(startTime);
-
-            // Then
-            assertThat(streamS3Objects())
-                    .isEmpty();
-        }
-
-        // TODO test body of log files
+        // Then
+        assertThat(streamS3Objects())
+                .containsExactly("20230504_093500/bulkImportPerformance.log");
     }
 
-    @Nested
-    @DisplayName("Upload summary")
-    class UploadSummary {
+    @Test
+    @Disabled("TODO")
+    void shouldUploadSummary() throws Exception {
+        // Given
+        Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
+        Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
 
-        @Test
-        @Disabled("TODO")
-        void shouldRecordSuccessfulTest() throws Exception {
-            // Given
-            Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
-            Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
+        // When
+        uploadFromTempDir(startTime);
 
-            // When
-            uploadFromTempDir(startTime);
-
-            // Then
-            assertThat(streamS3Objects())
-                    .containsExactly("summary.json", "summary.txt");
-        }
+        // Then
+        assertThat(streamS3Objects())
+                .containsExactly("summary.json", "summary.txt");
     }
 
     private Stream<String> streamS3Objects() {

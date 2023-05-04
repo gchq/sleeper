@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.output;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,27 +32,56 @@ class NightlyTestOutputFileSystemIT {
     @TempDir
     private Path tempDir;
 
-    @Test
-    void shouldReadLogFiles() throws Exception {
-        // Given
-        Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
+    @Nested
+    @DisplayName("Find log files")
+    class FindLogFiles {
+        @Test
+        void shouldFindLogFile() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
-        // When / Then
-        assertThat(NightlyTestOutput.from(tempDir))
-                .isEqualTo(NightlyTestOutput.builder()
-                        .logFiles(List.of(tempDir.resolve("bulkImportPerformance.log")))
-                        .build());
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(NightlyTestOutput.builder()
+                            .logFiles(List.of(tempDir.resolve("bulkImportPerformance.log")))
+                            .build());
+        }
+
+        @Test
+        void shouldIgnoreFileWithUnrecognisedExtension() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("bulkImportPerformance.test"), "test");
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(NightlyTestOutput.builder().build());
+        }
+
+        @Test
+        void shouldIgnoreDirectories() throws Exception {
+            // Given
+            Files.createDirectory(tempDir.resolve("testDir.log"));
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(NightlyTestOutput.builder().build());
+        }
     }
 
-    @Test
-    void shouldReadStatusFiles() throws Exception {
-        // Given
-        Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
+    @Nested
+    @DisplayName("Read status files")
+    class ReadStatusFiles {
 
-        // When / Then
-        assertThat(NightlyTestOutput.from(tempDir))
-                .isEqualTo(NightlyTestOutput.builder()
-                        .statusCodeByTest(Map.of("bulkImportPerformance", 0))
-                        .build());
+        @Test
+        void shouldReadStatusFiles() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(NightlyTestOutput.builder()
+                            .statusCodeByTest(Map.of("bulkImportPerformance", 0))
+                            .build());
+        }
     }
 }
