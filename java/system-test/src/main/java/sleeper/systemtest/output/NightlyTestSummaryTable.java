@@ -25,7 +25,6 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -63,10 +62,10 @@ public class NightlyTestSummaryTable {
     }
 
     public String toTableString() {
-        OutputStream outputStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
         printTableString(printStream);
-        return outputStream.toString();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     private void printTableString(PrintStream printStream) {

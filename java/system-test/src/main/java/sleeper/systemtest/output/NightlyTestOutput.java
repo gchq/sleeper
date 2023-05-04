@@ -93,6 +93,9 @@ public class NightlyTestOutput {
     }
 
     private static String readTestName(Path statusFile) {
+        if (statusFile.getFileName() == null) {
+            return "";
+        }
         String fullFilename = statusFile.getFileName().toString();
         return fullFilename.substring(0, fullFilename.lastIndexOf('.'));
     }
