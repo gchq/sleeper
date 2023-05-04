@@ -72,11 +72,20 @@ public class NightlyTestSummaryTable {
                 .map(test -> test.name).distinct()
                 .collect(Collectors.toMap(name -> name, tableDefinitionBuilder::addField));
         TableWriter.Builder tableBuilder = tableDefinitionBuilder.build().tableBuilder();
-        executions.forEach(execution -> {
-            tableBuilder.row(rowBuilder -> rowBuilder.value(startTime, execution.startTime));
-        });
+        executions.forEach(execution -> tableBuilder.row(rowBuilder -> {
+            rowBuilder.value(startTime, execution.startTime);
+            execution.tests.forEach(test -> rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
+        }));
         tableBuilder.build().write(printStream);
         return outputStream.toString();
+    }
+
+    private String getTestStatus(Integer exitCode) {
+        if (exitCode == 0) {
+            return "PASSED";
+        } else {
+            return "FAILED";
+        }
     }
 
     private static Execution execution(NightlyTestTimestamp timestamp, NightlyTestOutput output) {
