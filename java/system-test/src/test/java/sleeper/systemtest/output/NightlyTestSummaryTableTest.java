@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +64,7 @@ class NightlyTestSummaryTableTest {
     }
 
     @Test
-    void shouldFormatAsATable() {
+    void shouldFormatAsATableWithMultipleExecutions() {
         // Given
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
                 .add(
@@ -80,5 +81,24 @@ class NightlyTestSummaryTableTest {
                 "| 2023-05-03T15:15:00Z | PASSED                |\n" +
                 "| 2023-05-04T15:42:00Z | FAILED                |\n" +
                 "------------------------------------------------\n");
+    }
+
+    @Test
+    void shouldFormatAsATableWithMultipleTestsInOneExecution() {
+        // Given
+        Map<String, Integer> statusCodeByTest = new TreeMap<>();
+        statusCodeByTest.put("bulkImportPerformance", 0);
+        statusCodeByTest.put("compactionPerformance", 0);
+        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                .add(
+                        NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                        outputWithStatusCodeByTest(statusCodeByTest));
+
+        // When / Then
+        assertThat(summary.toTableString()).isEqualTo("" +
+                "------------------------------------------------------------------------\n" +
+                "| START_TIME           | bulkImportPerformance | compactionPerformance |\n" +
+                "| 2023-05-03T15:15:00Z | PASSED                | PASSED                |\n" +
+                "------------------------------------------------------------------------\n");
     }
 }

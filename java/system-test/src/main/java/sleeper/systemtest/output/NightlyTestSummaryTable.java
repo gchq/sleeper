@@ -65,6 +65,11 @@ public class NightlyTestSummaryTable {
     public String toTableString() {
         OutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+        printTableString(printStream);
+        return outputStream.toString();
+    }
+
+    private void printTableString(PrintStream printStream) {
         TableWriterFactory.Builder tableDefinitionBuilder = TableWriterFactory.builder();
         TableField startTime = tableDefinitionBuilder.addField("START_TIME");
         Map<String, TableField> fieldByTestName = executions.stream()
@@ -77,7 +82,6 @@ public class NightlyTestSummaryTable {
             execution.tests.forEach(test -> rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
         }));
         tableBuilder.build().write(printStream);
-        return outputStream.toString();
     }
 
     private String getTestStatus(Integer exitCode) {
