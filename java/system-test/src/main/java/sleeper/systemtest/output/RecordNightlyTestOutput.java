@@ -19,11 +19,14 @@ package sleeper.systemtest.output;
 import com.amazonaws.services.s3.AmazonS3;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.stream.Stream;
 
 public class RecordNightlyTestOutput {
+    private static final PathMatcher LOG_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
 
     private RecordNightlyTestOutput() {
     }
@@ -31,10 +34,11 @@ public class RecordNightlyTestOutput {
 
     public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp, Path output) throws IOException {
         try (Stream<Path> entriesInDirectory = Files.list(output)) {
-            entriesInDirectory.forEach(path ->
-                    s3Client.putObject(bucketName,
-                            getPathInS3(timestamp, path),
-                            path.toFile()));
+            entriesInDirectory.filter(LOG_FILE_MATCHER::matches)
+                    .forEach(path ->
+                            s3Client.putObject(bucketName,
+                                    getPathInS3(timestamp, path),
+                                    path.toFile()));
         }
     }
 

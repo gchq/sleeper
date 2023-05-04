@@ -30,6 +30,7 @@ import sleeper.core.CommonTestConstants;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,12 +64,29 @@ class RecordNightlyTestOutputIT {
         uploadLogFiles(startTime);
 
         // Then
-        assertThat(s3Client.listObjects(BUCKET_NAME).getObjectSummaries()
-                .stream().map(S3ObjectSummary::getKey))
+        assertThat(streamS3Objects())
                 .containsExactly("20230504_093500/bulkImportPerformance.log");
     }
 
+    @Test
+    void shouldNotUploadFilesWithUnrecognisedFileType() throws Exception {
+        // Given
+        Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
+        Files.writeString(tempDir.resolve("bulkImportPerformance.test"), "test");
+
+        // When
+        uploadLogFiles(startTime);
+
+        // Then
+        assertThat(streamS3Objects())
+                .isEmpty();
+    }
     // TODO handle directories in output dir, files with unrecognised file type
+
+    private Stream<String> streamS3Objects() {
+        return s3Client.listObjects(BUCKET_NAME).getObjectSummaries()
+                .stream().map(S3ObjectSummary::getKey);
+    }
 
     private void uploadLogFiles(Instant startTime) throws Exception {
         s3Client.createBucket(BUCKET_NAME);
