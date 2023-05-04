@@ -21,9 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 
 public class RecordNightlyTestOutput {
@@ -31,24 +28,17 @@ public class RecordNightlyTestOutput {
     private RecordNightlyTestOutput() {
     }
 
-    private static final DateTimeFormatter S3_PREFIX_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
-            .withZone(ZoneId.of("UTC"));
 
-    public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, long timestamp, Path output) throws IOException {
-        Instant startTime = parseCommandLineTimestamp(timestamp);
+    public static void uploadLogFiles(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp, Path output) throws IOException {
         try (Stream<Path> entriesInDirectory = Files.list(output)) {
             entriesInDirectory.forEach(path ->
                     s3Client.putObject(bucketName,
-                            getPathInS3(startTime, path),
+                            getPathInS3(timestamp, path),
                             path.toFile()));
         }
     }
 
-    public static String getPathInS3(Instant startTime, Path filePath) {
-        return S3_PREFIX_FORMAT.format(startTime) + "/" + filePath.getFileName();
-    }
-
-    public static Instant parseCommandLineTimestamp(long timestamp) {
-        return Instant.ofEpochSecond(timestamp);
+    public static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
+        return timestamp.getS3FolderName() + "/" + filePath.getFileName();
     }
 }

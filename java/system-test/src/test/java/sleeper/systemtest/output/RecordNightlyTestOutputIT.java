@@ -72,6 +72,6 @@ class RecordNightlyTestOutputIT {
 
     private void uploadLogFiles(Instant startTime) throws Exception {
         s3Client.createBucket(BUCKET_NAME);
-        RecordNightlyTestOutput.uploadLogFiles(s3Client, BUCKET_NAME, startTime.getEpochSecond(), tempDir);
+        RecordNightlyTestOutput.uploadLogFiles(s3Client, BUCKET_NAME, NightlyTestTimestamp.from(startTime), tempDir);
     }
 }
