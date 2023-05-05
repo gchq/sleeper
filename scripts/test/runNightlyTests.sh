@@ -39,7 +39,7 @@ git switch --discard-changes -C 806-automate-performance-tests-in-ec2 origin/806
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
-VERSION=$(cat "$TEMPLATE_DIR/version.txt")
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
