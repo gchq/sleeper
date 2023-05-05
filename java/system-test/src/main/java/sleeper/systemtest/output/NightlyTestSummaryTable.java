@@ -71,17 +71,33 @@ public class NightlyTestSummaryTable {
 
     private void printTableString(PrintStream printStream) {
         TableWriterFactory.Builder tableDefinitionBuilder = TableWriterFactory.builder();
-        TableField startTime = tableDefinitionBuilder.addField("START_TIME");
-        Map<String, TableField> fieldByTestName = executions.stream()
+
+        TableField startTimeField = tableDefinitionBuilder.addField("START_TIME");
+        Map<String, TableField> fieldByTestName = addTestFieldsToTable(tableDefinitionBuilder);
+
+        TableWriter.Builder tableBuilder = tableDefinitionBuilder.build().tableBuilder();
+
+        addDataToTable(startTimeField, fieldByTestName, tableBuilder);
+
+        tableBuilder.build().write(printStream);
+    }
+
+    private Map<String, TableField> addTestFieldsToTable(TableWriterFactory.Builder tableDefinitionBuilder) {
+        return executions.stream()
                 .flatMap(execution -> execution.tests.stream())
                 .map(test -> test.name).distinct()
                 .collect(Collectors.toMap(name -> name, tableDefinitionBuilder::addField));
-        TableWriter.Builder tableBuilder = tableDefinitionBuilder.build().tableBuilder();
-        executions.forEach(execution -> tableBuilder.row(rowBuilder -> {
-            rowBuilder.value(startTime, execution.startTime);
-            execution.tests.forEach(test -> rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
-        }));
-        tableBuilder.build().write(printStream);
+    }
+
+    private void addDataToTable(
+            TableField startTimeField, Map<String, TableField> fieldByTestName, TableWriter.Builder tableBuilder) {
+        executions.stream()
+                .sorted(Comparator.comparing((Execution execution) -> execution.startTime).reversed())
+                .forEach(execution -> tableBuilder.row(rowBuilder -> {
+                    rowBuilder.value(startTimeField, execution.startTime);
+                    execution.tests.forEach(test ->
+                            rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
+                }));
     }
 
     private String getTestStatus(Integer exitCode) {

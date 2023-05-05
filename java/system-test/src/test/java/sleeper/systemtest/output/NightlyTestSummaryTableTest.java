@@ -86,8 +86,8 @@ class NightlyTestSummaryTableTest {
             assertThat(summary.toTableString()).isEqualTo("" +
                     "------------------------------------------------\n" +
                     "| START_TIME           | bulkImportPerformance |\n" +
-                    "| 2023-05-03T15:15:00Z | PASSED                |\n" +
                     "| 2023-05-04T15:42:00Z | FAILED                |\n" +
+                    "| 2023-05-03T15:15:00Z | PASSED                |\n" +
                     "------------------------------------------------\n");
         }
 
