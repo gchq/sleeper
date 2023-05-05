@@ -32,6 +32,7 @@ import sleeper.core.CommonTestConstants;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -106,6 +107,57 @@ class NightlyTestOutputS3IT {
                                 "| START_TIME           | bulkImportPerformance |\n" +
                                 "| 2023-05-04T09:35:00Z | PASSED                |\n" +
                                 "------------------------------------------------\n"));
+    }
+
+    @Test
+    void shouldUpdateSummaryIfAlreadyExists() throws Exception {
+        // Given
+        setExistingSummary(Instant.parse("2023-05-04T09:35:00Z"), Map.of("bulkImportPerformance", 0));
+        Instant startTime = Instant.parse("2023-05-04T09:40:00Z");
+        Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
+
+        // When
+        uploadFromTempDir(startTime);
+
+        // Then
+        assertThat(streamS3Objects())
+                .containsExactly(
+                        tuple("summary.json", "{\n" +
+                                "  \"executions\": [\n" +
+                                "    {\n" +
+                                "      \"startTime\": \"2023-05-04T09:35:00Z\",\n" +
+                                "      \"tests\": [\n" +
+                                "        {\n" +
+                                "          \"name\": \"bulkImportPerformance\",\n" +
+                                "          \"exitCode\": 0\n" +
+                                "        }\n" +
+                                "      ]\n" +
+                                "    },\n" +
+                                "    {\n" +
+                                "      \"startTime\": \"2023-05-04T09:40:00Z\",\n" +
+                                "      \"tests\": [\n" +
+                                "        {\n" +
+                                "          \"name\": \"bulkImportPerformance\",\n" +
+                                "          \"exitCode\": 0\n" +
+                                "        }\n" +
+                                "      ]\n" +
+                                "    }\n" +
+                                "  ]\n" +
+                                "}"),
+                        tuple("summary.txt", "" +
+                                "------------------------------------------------\n" +
+                                "| START_TIME           | bulkImportPerformance |\n" +
+                                "| 2023-05-04T09:35:00Z | PASSED                |\n" +
+                                "| 2023-05-04T09:40:00Z | PASSED                |\n" +
+                                "------------------------------------------------\n"));
+    }
+
+    private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {
+        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
+                NightlyTestTimestamp.from(startTime),
+                NightlyTestOutput.builder().statusCodeByTest(statusCodeByTest).build());
+        s3Client.putObject(bucketName, "summary.json", summary.toJson());
+        s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
     }
 
     private Stream<String> streamS3ObjectKeys() {

@@ -57,9 +57,15 @@ public class NightlyTestOutput {
     }
 
     private void updateSummary(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
-        NightlyTestSummaryTable nightlyTestSummaryTable = NightlyTestSummaryTable.empty().add(timestamp, this);
-        s3Client.putObject(bucketName, "summary.json", nightlyTestSummaryTable.toJson());
-        s3Client.putObject(bucketName, "summary.txt", nightlyTestSummaryTable.toTableString());
+        NightlyTestSummaryTable summary;
+        if (s3Client.doesObjectExist(bucketName, "summary.json")) {
+            summary = NightlyTestSummaryTable.fromJson(s3Client.getObjectAsString(bucketName, "summary.json"));
+        } else {
+            summary = NightlyTestSummaryTable.empty();
+        }
+        summary.add(timestamp, this);
+        s3Client.putObject(bucketName, "summary.json", summary.toJson());
+        s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
     }
 
     private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
