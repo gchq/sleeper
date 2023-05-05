@@ -35,7 +35,7 @@ OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
 pushd "$THIS_DIR"
 
 git fetch
-git switch -C 806-automate-performance-tests-in-ec2 origin/806-automate-performance-tests-in-ec2
+git switch --discard-changes -C 806-automate-performance-tests-in-ec2 origin/806-automate-performance-tests-in-ec2
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
