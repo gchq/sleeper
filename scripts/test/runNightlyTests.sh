@@ -43,11 +43,11 @@ VERSION=$(cat "$TEMPLATE_DIR/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
-./bulkImportPerformance/deployTest.sh "bulkImportPerformance-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/bulkImportPerformance.log"
+./bulkImportPerformance/deployTest.sh "bulkImportPerformance-$START_TIME" "$VPC" "$SUBNET" |& tee "$OUTPUT_DIR/bulkImportPerformance.log"
 echo "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
-./compactionPerformance/deployTest.sh "compactionPerformance-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/compactionPerformance.log"
+./compactionPerformance/deployTest.sh "compactionPerformance-$START_TIME" "$VPC" "$SUBNET" |& tee "$OUTPUT_DIR/compactionPerformance.log"
 echo "$?" > "$OUTPUT_DIR/compactionPerformance.status"
-./partitionSplitting/deployTest.sh "partitionSplitting-$START_TIME" "$VPC" "$SUBNET" > "$OUTPUT_DIR/partitionSplitting.log"
+./partitionSplitting/deployTest.sh "partitionSplitting-$START_TIME" "$VPC" "$SUBNET" |& tee "$OUTPUT_DIR/partitionSplitting.log"
 echo "$?" > "$OUTPUT_DIR/partitionSplitting.status"
 
 java -cp "${SYSTEM_TEST_JAR}" \
