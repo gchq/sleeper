@@ -59,11 +59,11 @@ class NightlyTestSummaryTableTest {
             // When / Then
             assertThatJson(summary.toJson())
                     .isEqualTo("{\"executions\":[{" +
-                            "\"startTime\":\"2023-05-03T15:15:00Z\"," +
-                            "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
-                            "},{" +
                             "\"startTime\":\"2023-05-04T15:42:00Z\"," +
                             "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":1}]" +
+                            "},{" +
+                            "\"startTime\":\"2023-05-03T15:15:00Z\"," +
+                            "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
                             "}]}");
         }
     }

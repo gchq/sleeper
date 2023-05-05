@@ -28,8 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,7 +39,7 @@ public class NightlyTestSummaryTable {
 
     private static final Gson GSON = GsonConfig.standardBuilder().create();
 
-    private final List<Execution> executions = new ArrayList<>();
+    private final LinkedList<Execution> executions = new LinkedList<>();
 
     private NightlyTestSummaryTable() {
     }
@@ -54,7 +54,7 @@ public class NightlyTestSummaryTable {
 
     public NightlyTestSummaryTable add(
             NightlyTestTimestamp timestamp, NightlyTestOutput output) {
-        executions.add(execution(timestamp, output));
+        executions.addFirst(execution(timestamp, output));
         return this;
     }
 
@@ -91,13 +91,11 @@ public class NightlyTestSummaryTable {
 
     private void addDataToTable(
             TableField startTimeField, Map<String, TableField> fieldByTestName, TableWriter.Builder tableBuilder) {
-        executions.stream()
-                .sorted(Comparator.comparing((Execution execution) -> execution.startTime).reversed())
-                .forEach(execution -> tableBuilder.row(rowBuilder -> {
-                    rowBuilder.value(startTimeField, execution.startTime);
-                    execution.tests.forEach(test ->
-                            rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
-                }));
+        executions.forEach(execution -> tableBuilder.row(rowBuilder -> {
+            rowBuilder.value(startTimeField, execution.startTime);
+            execution.tests.forEach(test ->
+                    rowBuilder.value(fieldByTestName.get(test.name), getTestStatus(test.exitCode)));
+        }));
     }
 
     private String getTestStatus(Integer exitCode) {
