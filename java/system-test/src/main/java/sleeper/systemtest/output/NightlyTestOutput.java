@@ -16,6 +16,7 @@
 package sleeper.systemtest.output;
 
 import com.amazonaws.services.s3.AmazonS3;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -92,10 +93,8 @@ public class NightlyTestOutput {
         return statusCodeByTest;
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static String readTestName(Path statusFile) {
-        if (statusFile.getFileName() == null) {
-            return "";
-        }
         String fullFilename = statusFile.getFileName().toString();
         return fullFilename.substring(0, fullFilename.lastIndexOf('.'));
     }
