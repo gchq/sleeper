@@ -18,6 +18,7 @@ package sleeper.systemtest.output;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.commons.io.IOUtils;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,10 +30,14 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -89,24 +94,8 @@ class NightlyTestOutputS3IT {
         // Then
         assertThat(streamS3Objects())
                 .containsExactly(
-                        tuple("summary.json", "{\n" +
-                                "  \"executions\": [\n" +
-                                "    {\n" +
-                                "      \"startTime\": \"2023-05-04T09:35:00Z\",\n" +
-                                "      \"tests\": [\n" +
-                                "        {\n" +
-                                "          \"name\": \"bulkImportPerformance\",\n" +
-                                "          \"exitCode\": 0\n" +
-                                "        }\n" +
-                                "      ]\n" +
-                                "    }\n" +
-                                "  ]\n" +
-                                "}"),
-                        tuple("summary.txt", "" +
-                                "------------------------------------------------\n" +
-                                "| START_TIME           | bulkImportPerformance |\n" +
-                                "| 2023-05-04T09:35:00Z | PASSED                |\n" +
-                                "------------------------------------------------\n"));
+                        tuple("summary.json", example("nightlyTest/uploadSummary.json")),
+                        tuple("summary.txt", example("nightlyTest/uploadSummary.txt")));
     }
 
     @Test
@@ -122,34 +111,8 @@ class NightlyTestOutputS3IT {
         // Then
         assertThat(streamS3Objects())
                 .containsExactly(
-                        tuple("summary.json", "{\n" +
-                                "  \"executions\": [\n" +
-                                "    {\n" +
-                                "      \"startTime\": \"2023-05-04T09:35:00Z\",\n" +
-                                "      \"tests\": [\n" +
-                                "        {\n" +
-                                "          \"name\": \"bulkImportPerformance\",\n" +
-                                "          \"exitCode\": 0\n" +
-                                "        }\n" +
-                                "      ]\n" +
-                                "    },\n" +
-                                "    {\n" +
-                                "      \"startTime\": \"2023-05-04T09:40:00Z\",\n" +
-                                "      \"tests\": [\n" +
-                                "        {\n" +
-                                "          \"name\": \"bulkImportPerformance\",\n" +
-                                "          \"exitCode\": 0\n" +
-                                "        }\n" +
-                                "      ]\n" +
-                                "    }\n" +
-                                "  ]\n" +
-                                "}"),
-                        tuple("summary.txt", "" +
-                                "------------------------------------------------\n" +
-                                "| START_TIME           | bulkImportPerformance |\n" +
-                                "| 2023-05-04T09:35:00Z | PASSED                |\n" +
-                                "| 2023-05-04T09:40:00Z | PASSED                |\n" +
-                                "------------------------------------------------\n"));
+                        tuple("summary.json", example("nightlyTest/updateExistingSummary.json")),
+                        tuple("summary.txt", example("nightlyTest/updateExistingSummary.txt")));
     }
 
     private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {
@@ -172,5 +135,10 @@ class NightlyTestOutputS3IT {
 
     private void uploadFromTempDir(Instant startTime) throws Exception {
         NightlyTestOutput.from(tempDir).uploadToS3(s3Client, bucketName, NightlyTestTimestamp.from(startTime));
+    }
+
+    public static String example(String path) throws IOException {
+        URL url = NightlyTestOutput.class.getClassLoader().getResource(path);
+        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
     }
 }
