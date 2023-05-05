@@ -29,7 +29,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIMESTAMP=$(record_time)
-START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d_%H%M%S")
+START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
 
 pushd "$THIS_DIR"
