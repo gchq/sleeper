@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.output;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -26,77 +28,86 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestSummaryTableTest {
-    @Test
-    void shouldCreateSummaryWithSingleNightlyExecution() {
-        // Given
-        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
-                NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)));
+    @Nested
+    @DisplayName("Output summary as json")
+    class OutputJson {
+        @Test
+        void shouldCreateSummaryWithSingleNightlyExecution() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
+                    NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                    outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)));
 
-        // When / Then
-        assertThatJson(summary.toJson())
-                .isEqualTo("{\"executions\":[{" +
-                        "\"startTime\":\"2023-05-03T15:15:00Z\"," +
-                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
-                        "}]}");
+            // When / Then
+            assertThatJson(summary.toJson())
+                    .isEqualTo("{\"executions\":[{" +
+                            "\"startTime\":\"2023-05-03T15:15:00Z\"," +
+                            "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                            "}]}");
+        }
+
+        @Test
+        void shouldAddASecondNightlyExecution() {
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.fromJson(
+                    "{\"executions\":[{" +
+                            "\"startTime\":\"2023-05-03T15:15:00Z\"," +
+                            "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                            "}]}").add(
+                    NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
+                    outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+
+            // When / Then
+            assertThatJson(summary.toJson())
+                    .isEqualTo("{\"executions\":[{" +
+                            "\"startTime\":\"2023-05-03T15:15:00Z\"," +
+                            "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                            "},{" +
+                            "\"startTime\":\"2023-05-04T15:42:00Z\"," +
+                            "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":1}]" +
+                            "}]}");
+        }
     }
 
-    @Test
-    void shouldAddASecondNightlyExecution() {
-        NightlyTestSummaryTable summary = NightlyTestSummaryTable.fromJson(
-                "{\"executions\":[{" +
-                        "\"startTime\":\"2023-05-03T15:15:00Z\"," +
-                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
-                        "}]}").add(
-                NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
-                outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+    @Nested
+    @DisplayName("Output summary as table")
+    class OutputTable {
+        @Test
+        void shouldFormatAsATableWithMultipleExecutions() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                            outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)))
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
+                            outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
 
-        // When / Then
-        assertThatJson(summary.toJson())
-                .isEqualTo("{\"executions\":[{" +
-                        "\"startTime\":\"2023-05-03T15:15:00Z\"," +
-                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
-                        "},{" +
-                        "\"startTime\":\"2023-05-04T15:42:00Z\"," +
-                        "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":1}]" +
-                        "}]}");
-    }
+            // When / Then
+            assertThat(summary.toTableString()).isEqualTo("" +
+                    "------------------------------------------------\n" +
+                    "| START_TIME           | bulkImportPerformance |\n" +
+                    "| 2023-05-03T15:15:00Z | PASSED                |\n" +
+                    "| 2023-05-04T15:42:00Z | FAILED                |\n" +
+                    "------------------------------------------------\n");
+        }
 
-    @Test
-    void shouldFormatAsATableWithMultipleExecutions() {
-        // Given
-        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
-                .add(
-                        NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                        outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)))
-                .add(
-                        NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
-                        outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+        @Test
+        void shouldFormatAsATableWithMultipleTestsInOneExecutionOrderedByName() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
+                    .add(
+                            NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
+                            outputWithStatusCodeByTest(Map.of(
+                                    "splittingPerformance", 0,
+                                    "bulkImportPerformance", 0,
+                                    "compactionPerformance", 0)));
 
-        // When / Then
-        assertThat(summary.toTableString()).isEqualTo("" +
-                "------------------------------------------------\n" +
-                "| START_TIME           | bulkImportPerformance |\n" +
-                "| 2023-05-03T15:15:00Z | PASSED                |\n" +
-                "| 2023-05-04T15:42:00Z | FAILED                |\n" +
-                "------------------------------------------------\n");
-    }
-
-    @Test
-    void shouldFormatAsATableWithMultipleTestsInOneExecution() {
-        // Given
-        NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
-                .add(
-                        NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                        outputWithStatusCodeByTest(Map.of(
-                                "bulkImportPerformance", 0,
-                                "compactionPerformance", 0)));
-
-        // When / Then
-        assertThat(summary.toTableString()).isEqualTo("" +
-                "------------------------------------------------------------------------\n" +
-                "| START_TIME           | bulkImportPerformance | compactionPerformance |\n" +
-                "| 2023-05-03T15:15:00Z | PASSED                | PASSED                |\n" +
-                "------------------------------------------------------------------------\n");
+            // When / Then
+            assertThat(summary.toTableString()).isEqualTo("" +
+                    "-----------------------------------------------------------------------------------------------\n" +
+                    "| START_TIME           | bulkImportPerformance | compactionPerformance | splittingPerformance |\n" +
+                    "| 2023-05-03T15:15:00Z | PASSED                | PASSED                | PASSED               |\n" +
+                    "-----------------------------------------------------------------------------------------------\n");
+        }
     }
 }
