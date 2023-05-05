@@ -53,6 +53,13 @@ public class NightlyTestOutput {
         logFiles.forEach(path -> s3Client.putObject(bucketName,
                 getPathInS3(timestamp, path),
                 path.toFile()));
+        updateSummary(s3Client, bucketName, timestamp);
+    }
+
+    private void updateSummary(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
+        NightlyTestSummaryTable nightlyTestSummaryTable = NightlyTestSummaryTable.empty().add(timestamp, this);
+        s3Client.putObject(bucketName, "summary.json", nightlyTestSummaryTable.toJson());
+        s3Client.putObject(bucketName, "summary.txt", nightlyTestSummaryTable.toTableString());
     }
 
     private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {

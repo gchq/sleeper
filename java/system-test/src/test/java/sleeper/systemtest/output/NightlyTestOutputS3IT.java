@@ -19,7 +19,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.assertj.core.groups.Tuple;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -72,7 +71,6 @@ class NightlyTestOutputS3IT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldUploadSummary() throws Exception {
         // Given
         Instant startTime = Instant.parse("2023-05-04T09:35:00Z");
@@ -82,8 +80,26 @@ class NightlyTestOutputS3IT {
         uploadFromTempDir(startTime);
 
         // Then
-        assertThat(streamS3ObjectKeys())
-                .containsExactly("summary.json", "summary.txt");
+        assertThat(streamS3Objects())
+                .containsExactly(
+                        tuple("summary.json", "{\n" +
+                                "  \"executions\": [\n" +
+                                "    {\n" +
+                                "      \"startTime\": \"2023-05-04T09:35:00Z\",\n" +
+                                "      \"tests\": [\n" +
+                                "        {\n" +
+                                "          \"name\": \"bulkImportPerformance\",\n" +
+                                "          \"exitCode\": 0\n" +
+                                "        }\n" +
+                                "      ]\n" +
+                                "    }\n" +
+                                "  ]\n" +
+                                "}"),
+                        tuple("summary.txt", "" +
+                                "------------------------------------------------\n" +
+                                "| START_TIME           | bulkImportPerformance |\n" +
+                                "| 2023-05-04T09:35:00Z | PASSED                |\n" +
+                                "------------------------------------------------\n"));
     }
 
     private Stream<String> streamS3ObjectKeys() {
