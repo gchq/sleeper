@@ -45,15 +45,15 @@ set +e
 
 echo "[$(time_str)] Running bulkImportPerformance test"
 ./bulkImportPerformance/deployTest.sh "bulkImportPerformance-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/bulkImportPerformance.log"
-echo "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
+echo -n "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
 
 echo "[$(time_str)] Running compactionPerformance test"
 ./compactionPerformance/deployTest.sh "compactionPerformance-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/compactionPerformance.log"
-echo "$?" > "$OUTPUT_DIR/compactionPerformance.status"
+echo -n "$?" > "$OUTPUT_DIR/compactionPerformance.status"
 
 echo "[$(time_str)] Running partitionSplitting test"
 ./partitionSplitting/deployTest.sh "partitionSplitting-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/partitionSplitting.log"
-echo "$?" > "$OUTPUT_DIR/partitionSplitting.status"
+echo -n "$?" > "$OUTPUT_DIR/partitionSplitting.status"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
