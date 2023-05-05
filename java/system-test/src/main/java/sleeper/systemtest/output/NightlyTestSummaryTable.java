@@ -18,6 +18,7 @@ package sleeper.systemtest.output;
 
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.jetbrains.annotations.NotNull;
 
 import sleeper.clients.util.GsonConfig;
 import sleeper.clients.util.table.TableField;
@@ -98,6 +99,7 @@ public class NightlyTestSummaryTable {
     private static List<Test> tests(Map<String, Integer> statusCodeByTest) {
         return statusCodeByTest.entrySet().stream()
                 .map(entry -> new Test(entry.getKey(), entry.getValue()))
+                .sorted()
                 .collect(Collectors.toList());
     }
 
@@ -114,7 +116,7 @@ public class NightlyTestSummaryTable {
     }
 
     @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
-    public static class Test {
+    public static class Test implements Comparable<Test> {
 
         private final String name;
         private final Integer exitCode;
@@ -122,6 +124,11 @@ public class NightlyTestSummaryTable {
         public Test(String name, Integer exitCode) {
             this.name = name;
             this.exitCode = exitCode;
+        }
+
+        @Override
+        public int compareTo(@NotNull Test other) {
+            return this.name.compareTo(other.name);
         }
     }
 

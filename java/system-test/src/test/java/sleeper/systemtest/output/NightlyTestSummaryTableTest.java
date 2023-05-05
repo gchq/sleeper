@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,13 +85,12 @@ class NightlyTestSummaryTableTest {
     @Test
     void shouldFormatAsATableWithMultipleTestsInOneExecution() {
         // Given
-        Map<String, Integer> statusCodeByTest = new TreeMap<>();
-        statusCodeByTest.put("bulkImportPerformance", 0);
-        statusCodeByTest.put("compactionPerformance", 0);
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
                 .add(
                         NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                        outputWithStatusCodeByTest(statusCodeByTest));
+                        outputWithStatusCodeByTest(Map.of(
+                                "bulkImportPerformance", 0,
+                                "compactionPerformance", 0)));
 
         // When / Then
         assertThat(summary.toTableString()).isEqualTo("" +
