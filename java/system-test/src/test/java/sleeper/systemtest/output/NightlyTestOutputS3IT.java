@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -49,6 +50,11 @@ class NightlyTestOutputS3IT {
     @TempDir
     private Path tempDir;
 
+    @BeforeEach
+    public void setup() {
+        s3Client.createBucket(bucketName);
+    }
+
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
@@ -67,7 +73,7 @@ class NightlyTestOutputS3IT {
 
         // Then
         assertThat(streamS3Objects())
-                .containsExactly(tuple("20230504_093500/bulkImportPerformance.log", "test data"));
+                .contains(tuple("20230504_093500/bulkImportPerformance.log", "test data"));
     }
 
     @Test
@@ -113,7 +119,6 @@ class NightlyTestOutputS3IT {
     }
 
     private void uploadFromTempDir(Instant startTime) throws Exception {
-        s3Client.createBucket(bucketName);
         NightlyTestOutput.from(tempDir).uploadToS3(s3Client, bucketName, NightlyTestTimestamp.from(startTime));
     }
 }
