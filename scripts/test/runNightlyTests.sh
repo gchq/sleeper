@@ -44,15 +44,15 @@ SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
 echo "[$(time_str)] Running bulkImportPerformance test"
-./bulkImportPerformance/deployTest.sh "bulk-import-performance-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/bulkImportPerformance.log"
+./bulkImportPerformance/deployTest.sh "bi-perf-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/bulkImportPerformance.log"
 echo -n "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
 
 echo "[$(time_str)] Running compactionPerformance test"
-./compactionPerformance/deployTest.sh "compaction-performance-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/compactionPerformance.log"
+./compactionPerformance/deployTest.sh "compn-perf-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/compactionPerformance.log"
 echo -n "$?" > "$OUTPUT_DIR/compactionPerformance.status"
 
 echo "[$(time_str)] Running partitionSplitting test"
-./partitionSplitting/deployTest.sh "partition-splitting-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/partitionSplitting.log"
+./partitionSplitting/deployTest.sh "partn-splt-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/partitionSplitting.log"
 echo -n "$?" > "$OUTPUT_DIR/partitionSplitting.status"
 
 echo "[$(time_str)] Uploading test output"
