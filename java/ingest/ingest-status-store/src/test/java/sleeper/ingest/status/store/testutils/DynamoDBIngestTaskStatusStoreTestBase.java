@@ -33,6 +33,7 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -42,7 +43,11 @@ import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.tas
 public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("expiryDate").build();
+            .withIgnoredFields("expiryDate")
+            // For some reason, default Double comparator compares NaNs as object references instead of their double values
+            .withComparatorForFields(Comparator.naturalOrder(),
+                    "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
+            .build();
     private final InstanceProperties instanceProperties = IngestStatusStoreTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
     protected final IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
@@ -108,6 +113,12 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
         return startedTaskWithDefaultsBuilder().finished(
                 taskFinishTimeWithDurationInSecondsNotAWholeNumber(), IngestTaskFinishedStatus.builder()
                         .addJobSummary(defaultJobSummary())
+        ).build();
+    }
+
+    protected static IngestTaskStatus finishedTaskWithNoJobsAndZeroDuration() {
+        return startedTaskWithDefaultsBuilder().finished(
+                defaultTaskStartTime(), IngestTaskFinishedStatus.builder()
         ).build();
     }
 

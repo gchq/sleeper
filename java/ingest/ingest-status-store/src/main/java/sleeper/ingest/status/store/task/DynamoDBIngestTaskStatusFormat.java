@@ -113,12 +113,22 @@ public class DynamoDBIngestTaskStatusFormat {
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                         .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
-                        .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
-                        .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
+                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE))
+                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE))
                         .build());
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
+        }
+    }
+
+    private static Double getDoubleAttribute(Map<String, AttributeValue> item, String key) {
+        String attributeValue = getNumberAttribute(item, key);
+        boolean isNaN = attributeValue == null;
+        if (isNaN) {
+            return Double.NaN;
+        } else {
+            return Double.parseDouble(attributeValue);
         }
     }
 }
