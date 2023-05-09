@@ -22,7 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
@@ -37,20 +37,14 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
     }
 
     public static void createStringTable() {
-        createTable(ScalarAttributeType.S);
+        createTable();
     }
 
-    public static void createNumericTable() {
-        createTable(ScalarAttributeType.N);
-    }
-
-    public static void createTable(ScalarAttributeType valueType) {
+    public static void createTable() {
         initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
-                Arrays.asList(
-                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
-                        new AttributeDefinition(TEST_VALUE, valueType)),
-                Arrays.asList(
-                        new KeySchemaElement(TEST_KEY, KeyType.HASH),
-                        new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
+                List.of(
+                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
+                List.of(
+                        new KeySchemaElement(TEST_KEY, KeyType.HASH)));
     }
 }

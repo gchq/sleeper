@@ -18,10 +18,10 @@ package sleeper.dynamodb.tools;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -35,7 +35,12 @@ public class DynamoDBRecordBuilder {
     }
 
     public DynamoDBRecordBuilder number(String key, Number value) {
-        return add(new Attribute(key, createNumberAttribute(value)));
+        if (value.equals(Double.NaN)) {
+            // Converting NaN fails in createNumberAttribute. If not provided numbers default to NaN
+            return this;
+        } else {
+            return add(new Attribute(key, createNumberAttribute(value)));
+        }
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {
@@ -44,8 +49,9 @@ public class DynamoDBRecordBuilder {
     }
 
     public Map<String, AttributeValue> build() {
-        return attributes.stream()
-                .collect(Collectors.toMap(Attribute::getKey, Attribute::getValue));
+        Map<String, AttributeValue> record = new HashMap<>();
+        attributes.forEach(attribute -> record.put(attribute.key, attribute.value));
+        return record;
     }
 
     private DynamoDBRecordBuilder add(Attribute attribute) {
