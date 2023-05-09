@@ -36,7 +36,8 @@ public class DynamoDBRecordBuilder {
 
     public DynamoDBRecordBuilder number(String key, Number value) {
         if (value.equals(Double.NaN)) {
-            // Converting NaN fails in createNumberAttribute. If not provided numbers default to NaN
+            // Converting NaN fails in createNumberAttribute.
+            // If you try to retrieve a number attribute that does not exist, it will return NaN
             return this;
         } else {
             return add(new Attribute(key, createNumberAttribute(value)));
