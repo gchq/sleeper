@@ -95,4 +95,18 @@ public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
         assertThat(result.getItems()).containsExactly(record);
     }
+
+    @Test
+    void shouldCreateRecordWithNullNumber() {
+        // Given
+        String key = UUID.randomUUID().toString();
+        Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key)
+                .number(TEST_VALUE, null).build();
+        // When
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
+        // Then
+        ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
+        assertThat(result.getItems()).containsExactly(record);
+    }
 }

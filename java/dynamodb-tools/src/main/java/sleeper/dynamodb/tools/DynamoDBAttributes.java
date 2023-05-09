@@ -17,6 +17,8 @@ package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
+import javax.annotation.Nonnull;
+
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Map;
@@ -44,8 +46,15 @@ public class DynamoDBAttributes {
      * @param number the number to convert
      * @return the AttributeValue
      */
-    public static AttributeValue createNumberAttribute(Number number) {
-        return new AttributeValue().withN("" + number);
+    public static AttributeValue createNumberAttribute(@Nonnull Number number) {
+        // To differentiate NaN and null:
+        // - An attribute which is set to the value of null will be treated as NaN
+        // - An attribute which is NOT set, will be treated as null
+        if (number.equals(Double.NaN)) {
+            return new AttributeValue().withNULL(true);
+        } else {
+            return new AttributeValue().withN(String.valueOf(number));
+        }
     }
 
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
