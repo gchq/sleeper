@@ -18,10 +18,10 @@ package sleeper.dynamodb.tools;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -50,9 +50,8 @@ public class DynamoDBRecordBuilder {
     }
 
     public Map<String, AttributeValue> build() {
-        Map<String, AttributeValue> record = new HashMap<>();
-        attributes.forEach(attribute -> record.put(attribute.key, attribute.value));
-        return record;
+        return attributes.stream()
+                .collect(Collectors.toMap(Attribute::getKey, Attribute::getValue));
     }
 
     private DynamoDBRecordBuilder add(Attribute attribute) {
