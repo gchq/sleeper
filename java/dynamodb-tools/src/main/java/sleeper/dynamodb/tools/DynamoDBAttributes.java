@@ -22,6 +22,7 @@ import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.LongFunction;
 
@@ -97,6 +98,19 @@ public class DynamoDBAttributes {
         return buildInstant.apply(Long.parseLong(string));
     }
 
+    public static Optional<Double> getDoubleAttribute(Map<String, AttributeValue> item, String key) {
+        if (!item.containsKey(key)) {
+            return Optional.empty();
+        }
+        String attributeValue = getNumberAttribute(item, key);
+        boolean isNaN = attributeValue == null;
+        if (isNaN) {
+            return Optional.of(Double.NaN);
+        } else {
+            return Optional.of(Double.parseDouble(attributeValue));
+        }
+    }
+
     private static <T> T getAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
         AttributeValue value = item.get(name);
         if (value == null) {
@@ -105,5 +119,4 @@ public class DynamoDBAttributes {
             return getter.apply(value);
         }
     }
-
 }

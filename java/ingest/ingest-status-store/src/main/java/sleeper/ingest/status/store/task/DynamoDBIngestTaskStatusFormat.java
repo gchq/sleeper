@@ -31,10 +31,10 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getDoubleAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBIngestTaskStatusFormat {
@@ -107,28 +107,18 @@ public class DynamoDBIngestTaskStatusFormat {
                         getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond));
                 break;
             case FINISHED:
-                builder.taskFinished(taskId, IngestTaskFinishedStatus.builder()
+                IngestTaskFinishedStatus.Builder finishedStatusBuilder = IngestTaskFinishedStatus.builder()
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
                         .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
-                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
-                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE))
-                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE))
-                        .build());
+                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0));
+                getDoubleAttribute(item, READ_RATE).ifPresent(finishedStatusBuilder::recordsReadPerSecond);
+                getDoubleAttribute(item, WRITE_RATE).ifPresent(finishedStatusBuilder::recordsWrittenPerSecond);
+                builder.taskFinished(taskId, finishedStatusBuilder.build());
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
-        }
-    }
-
-    private static Double getDoubleAttribute(Map<String, AttributeValue> item, String key) {
-        String attributeValue = getNumberAttribute(item, key);
-        boolean isNaN = attributeValue == null;
-        if (isNaN) {
-            return Double.NaN;
-        } else {
-            return Double.parseDouble(attributeValue);
         }
     }
 }

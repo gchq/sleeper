@@ -72,4 +72,33 @@ public class DynamoDBAttributesTest {
         // Then the Instant attribute should be read from the record
         assertThat(DynamoDBAttributes.getInstantAttribute(item, TEST_KEY)).isEqualTo(time);
     }
+
+    @Test
+    void shouldGetDoubleAttribute() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, DynamoDBAttributes.createNumberAttribute(123.456));
+
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
+                .isPresent().get().isEqualTo(123.456);
+    }
+
+    @Test
+    void shouldGetDoubleAttributeWhenAttributeSetToNull() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, null);
+
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
+                .isPresent().get().isEqualTo(Double.NaN);
+    }
+
+    @Test
+    void shouldGetDoubleAttributeWhenAttributeNotSet() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
+                .isEmpty();
+    }
 }
