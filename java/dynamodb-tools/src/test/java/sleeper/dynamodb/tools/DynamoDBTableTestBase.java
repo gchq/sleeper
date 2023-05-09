@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.List;
 
@@ -31,13 +32,14 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
     public static final String TEST_VALUE = "test-value";
     public static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
 
+    @BeforeEach
+    void setup() {
+        createTable();
+    }
+
     @AfterEach
     public void tearDown() {
         dynamoDBClient.deleteTable(TEST_TABLE_NAME);
-    }
-
-    public static void createStringTable() {
-        createTable();
     }
 
     public static void createTable() {

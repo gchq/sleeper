@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -30,11 +29,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
-    @BeforeEach
-    void setup() {
-        createTable();
-    }
-
     @Test
     public void shouldCreateRecordWithStringAttribute() {
         // Given
