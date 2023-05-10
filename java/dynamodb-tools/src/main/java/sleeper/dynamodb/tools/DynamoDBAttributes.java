@@ -17,7 +17,6 @@ package sleeper.dynamodb.tools;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Map;
@@ -47,11 +46,11 @@ public class DynamoDBAttributes {
      * @param number the number to convert
      * @return the AttributeValue
      */
-    public static AttributeValue createNumberAttribute(@Nonnull Number number) {
+    public static AttributeValue createNumberAttribute(Number number) {
         // To differentiate NaN and null:
         // - An attribute which is set to the value of null will be treated as NaN
         // - An attribute which is NOT set, will be treated as null
-        if (number.equals(Double.NaN)) {
+        if (Double.valueOf(Double.NaN).equals(number)) {
             return new AttributeValue().withNULL(true);
         } else {
             return new AttributeValue().withN(String.valueOf(number));
@@ -103,7 +102,7 @@ public class DynamoDBAttributes {
             return Optional.empty();
         }
         AttributeValue attributeValue = item.get(key);
-        if (attributeValue == NAN) {
+        if (attributeValue.getNULL()) {
             return Optional.of(Double.NaN);
         } else {
             return Optional.of(Double.parseDouble(getNumberAttribute(item, key)));
