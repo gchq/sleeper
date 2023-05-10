@@ -79,6 +79,7 @@ public class DynamoDBAttributesTest {
         Map<String, AttributeValue> item = new HashMap<>();
         item.put(TEST_KEY, DynamoDBAttributes.createNumberAttribute(123.456));
 
+        // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
                 .isPresent().get().isEqualTo(123.456);
     }
@@ -87,17 +88,19 @@ public class DynamoDBAttributesTest {
     void shouldGetDoubleAttributeWhenAttributeSetToNull() {
         // Given
         Map<String, AttributeValue> item = new HashMap<>();
-        item.put(TEST_KEY, null);
+        item.put(TEST_KEY, DynamoDBAttributes.NAN);
 
+        // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
                 .isPresent().get().isEqualTo(Double.NaN);
     }
 
     @Test
-    void shouldGetDoubleAttributeWhenAttributeNotSet() {
+    void shouldNotGetDoubleAttributeWhenAttributeNotSet() {
         // Given
         Map<String, AttributeValue> item = new HashMap<>();
 
+        // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
                 .isEmpty();
     }

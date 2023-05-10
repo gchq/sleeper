@@ -18,7 +18,6 @@ package sleeper.dynamodb.tools;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import javax.annotation.Nonnull;
-
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Map;
@@ -27,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.LongFunction;
 
 public class DynamoDBAttributes {
+    public static final AttributeValue NAN = null;
 
     private DynamoDBAttributes() {
     }
@@ -102,12 +102,11 @@ public class DynamoDBAttributes {
         if (!item.containsKey(key)) {
             return Optional.empty();
         }
-        String attributeValue = getNumberAttribute(item, key);
-        boolean isNaN = attributeValue == null;
-        if (isNaN) {
+        AttributeValue attributeValue = item.get(key);
+        if (attributeValue == NAN) {
             return Optional.of(Double.NaN);
         } else {
-            return Optional.of(Double.parseDouble(attributeValue));
+            return Optional.of(Double.parseDouble(getNumberAttribute(item, key)));
         }
     }
 
