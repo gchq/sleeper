@@ -88,7 +88,7 @@ public class DynamoDBAttributesTest {
     void shouldGetDoubleAttributeWhenAttributeSetToNull() {
         // Given
         Map<String, AttributeValue> item = new HashMap<>();
-        item.put(TEST_KEY, DynamoDBAttributes.NAN);
+        item.put(TEST_KEY, null);
 
         // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))

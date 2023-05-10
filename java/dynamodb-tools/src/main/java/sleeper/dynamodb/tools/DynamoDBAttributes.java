@@ -25,7 +25,6 @@ import java.util.function.Function;
 import java.util.function.LongFunction;
 
 public class DynamoDBAttributes {
-    public static final AttributeValue NAN = null;
 
     private DynamoDBAttributes() {
     }
@@ -101,11 +100,11 @@ public class DynamoDBAttributes {
         if (!item.containsKey(key)) {
             return Optional.empty();
         }
-        AttributeValue attributeValue = item.get(key);
-        if (attributeValue.getNULL()) {
+        String attributeValue = getNumberAttribute(item, key);
+        if (attributeValue == null) {
             return Optional.of(Double.NaN);
         } else {
-            return Optional.of(Double.parseDouble(getNumberAttribute(item, key)));
+            return Optional.of(Double.parseDouble(attributeValue));
         }
     }
 
