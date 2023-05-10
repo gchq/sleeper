@@ -29,8 +29,8 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIMESTAMP=$(record_time)
-START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
+START_DATE=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d")
+OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_DATE"
 
 pushd "$THIS_DIR"
 
@@ -44,15 +44,15 @@ SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
 echo "[$(time_str)] Running bulkImportPerformance test"
-./bulkImportPerformance/deployTest.sh "bi-perf-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/bulkImportPerformance.log"
+./bulkImportPerformance/deployTest.sh "bi-perf-test-$START_DATE" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/bulkImportPerformance.log"
 echo -n "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
 
 echo "[$(time_str)] Running compactionPerformance test"
-./compactionPerformance/deployTest.sh "compn-perf-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/compactionPerformance.log"
+./compactionPerformance/deployTest.sh "compn-perf-test-$START_DATE" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/compactionPerformance.log"
 echo -n "$?" > "$OUTPUT_DIR/compactionPerformance.status"
 
 echo "[$(time_str)] Running partitionSplitting test"
-./partitionSplitting/deployTest.sh "partn-splt-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/partitionSplitting.log"
+./partitionSplitting/deployTest.sh "partn-splt-test-$START_DATE" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/partitionSplitting.log"
 echo -n "$?" > "$OUTPUT_DIR/partitionSplitting.status"
 
 echo "[$(time_str)] Uploading test output"
