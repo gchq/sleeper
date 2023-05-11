@@ -81,7 +81,7 @@ public class DynamoDBAttributesTest {
 
         // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
-                .isPresent().get().isEqualTo(123.456);
+                .isEqualTo(123.456);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class DynamoDBAttributesTest {
 
         // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
-                .isPresent().get().isEqualTo(Double.NaN);
+                .isEqualTo(Double.valueOf(Double.NaN));
     }
 
     @Test
@@ -102,6 +102,6 @@ public class DynamoDBAttributesTest {
 
         // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
-                .isEmpty();
+                .isEqualTo(0.0);
     }
 }
