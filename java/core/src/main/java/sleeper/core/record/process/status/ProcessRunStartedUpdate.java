@@ -20,4 +20,8 @@ import java.time.Instant;
 public interface ProcessRunStartedUpdate extends ProcessStatusUpdate {
 
     Instant getStartTime();
+
+    default boolean isStartOfRun() {
+        return true;
+    }
 }
