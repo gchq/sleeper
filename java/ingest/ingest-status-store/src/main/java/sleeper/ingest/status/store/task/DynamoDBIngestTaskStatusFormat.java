@@ -107,15 +107,15 @@ public class DynamoDBIngestTaskStatusFormat {
                         getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond));
                 break;
             case FINISHED:
-                IngestTaskFinishedStatus.Builder finishedStatusBuilder = IngestTaskFinishedStatus.builder()
+                builder.taskFinished(taskId, IngestTaskFinishedStatus.builder()
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
                         .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
-                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0));
-                getDoubleAttribute(item, READ_RATE).ifPresent(finishedStatusBuilder::recordsReadPerSecond);
-                getDoubleAttribute(item, WRITE_RATE).ifPresent(finishedStatusBuilder::recordsWrittenPerSecond);
-                builder.taskFinished(taskId, finishedStatusBuilder.build());
+                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
+                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE).orElse(0.0))
+                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE).orElse(0.0))
+                        .build());
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
