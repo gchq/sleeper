@@ -40,8 +40,12 @@ public class WaitForIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
     private static final long TASKS_FINISHED_POLL_INTERVAL_MILLIS = 30000;
     private static final int TASKS_FINISHED_TIMEOUT_MILLIS = 15 * 60 * 1000;
-    private static final long QUEUE_EMPTY_POLL_INTERVAL_MILLIS = 10000;
-    private static final int QUEUE_EMPTY_TIMEOUT_MILLIS = 5 * 60 * 1000;
+
+    // There's a common case where Fargate doesn't have capacity to create a task for every ingest job.
+    // In that case we need to wait for the running tasks to finish their jobs and pick up another one.
+    // To accommodate this, the poll rate is set low and the timeout is set high.
+    private static final long QUEUE_EMPTY_POLL_INTERVAL_MILLIS = 60000;
+    private static final int QUEUE_EMPTY_TIMEOUT_MILLIS = 60 * 60 * 1000;
 
     private final IngestTaskStatusStore taskStatusStore;
     private final WaitForQueueEstimate waitForEmptyQueue;
