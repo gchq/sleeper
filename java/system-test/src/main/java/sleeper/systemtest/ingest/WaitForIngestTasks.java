@@ -57,12 +57,12 @@ public class WaitForIngestTasks {
             AmazonSQS sqsClient,
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
-        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL,
-                PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
+        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL);
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        waitForEmptyQueue.pollUntilFinished();
+        waitForEmptyQueue.pollUntilFinished(
+                PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
         poll.pollUntil("ingest tasks finished", this::isIngestTasksFinished);
     }
 

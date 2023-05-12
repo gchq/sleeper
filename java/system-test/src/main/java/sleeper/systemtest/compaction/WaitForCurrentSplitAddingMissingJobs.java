@@ -60,8 +60,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
-                sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
-                PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
+                sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
     }
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
@@ -82,7 +81,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
         }
         // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
-        waitForJobQueueEstimate.pollUntilFinished();
+        waitForJobQueueEstimate.pollUntilFinished(
+                PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
         LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
         InvokeSystemTestLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
         waitForCompaction.pollUntilFinished();

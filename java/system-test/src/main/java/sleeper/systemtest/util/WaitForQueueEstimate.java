@@ -35,51 +35,46 @@ public class WaitForQueueEstimate {
     private final Predicate<QueueMessageCount> isFinished;
     private final String description;
     private final String queueUrl;
-    private final PollWithRetries poll;
 
     public static WaitForQueueEstimate notEmpty(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            PollWithRetries poll) {
+            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty) {
         String queueUrl = instanceProperties.get(queueProperty);
-        return new WaitForQueueEstimate(sqsClient, queueUrl, poll,
+        return new WaitForQueueEstimate(sqsClient, queueUrl,
                 estimate -> estimate.getApproximateNumberOfMessages() > 0,
                 "estimate not empty for queue " + queueUrl);
     }
 
     public static WaitForQueueEstimate isEmpty(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            PollWithRetries poll) {
+            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty) {
         String queueUrl = instanceProperties.get(queueProperty);
-        return new WaitForQueueEstimate(sqsClient, queueUrl, poll,
+        return new WaitForQueueEstimate(sqsClient, queueUrl,
                 estimate -> estimate.getApproximateNumberOfMessages() == 0,
                 "estimate empty for queue " + queueUrl);
     }
 
     public static WaitForQueueEstimate containsUnfinishedJobs(
             AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
+            CompactionJobStatusStore statusStore, String tableName) {
         int unfinished = statusStore.getUnfinishedJobs(tableName).size();
         LOGGER.info("Found {} unfinished compaction jobs", unfinished);
-        return new WaitForQueueEstimate(sqsClient, instanceProperties, queueProperty, poll,
+        return new WaitForQueueEstimate(sqsClient, instanceProperties, queueProperty,
                 estimate -> estimate.getApproximateNumberOfMessages() >= unfinished,
                 "queue estimate matching unfinished compaction jobs");
     }
 
     private WaitForQueueEstimate(AmazonSQS sqsClient, InstanceProperties properties, InstanceProperty queueProperty,
-                                 PollWithRetries poll, Predicate<QueueMessageCount> isFinished, String description) {
-        this(sqsClient, properties.get(queueProperty), poll, isFinished, description);
+                                 Predicate<QueueMessageCount> isFinished, String description) {
+        this(sqsClient, properties.get(queueProperty), isFinished, description);
     }
 
-    private WaitForQueueEstimate(AmazonSQS sqsClient, String queueUrl,
-                                 PollWithRetries poll, Predicate<QueueMessageCount> isFinished, String description) {
+    private WaitForQueueEstimate(AmazonSQS sqsClient, String queueUrl, Predicate<QueueMessageCount> isFinished, String description) {
         this.queueClient = QueueMessageCount.withSqsClient(sqsClient);
         this.queueUrl = queueUrl;
-        this.poll = poll;
         this.isFinished = isFinished;
         this.description = description;
     }
 
-    public void pollUntilFinished() throws InterruptedException {
+    public void pollUntilFinished(PollWithRetries poll) throws InterruptedException {
         LOGGER.info("Waiting until {}", description);
         poll.pollUntil(description, this::isFinished);
     }

@@ -53,8 +53,7 @@ public class InvokeCompactionJobCreation {
 
         WaitForQueueEstimate.containsUnfinishedJobs(AmazonSQSClientBuilder.defaultClient(),
                         systemTestProperties, COMPACTION_JOB_QUEUE_URL,
-                        statusStore, "system-test",
-                        PollWithRetries.intervalAndMaxPolls(5000, 12))
-                .pollUntilFinished();
+                        statusStore, "system-test")
+                .pollUntilFinished(PollWithRetries.intervalAndMaxPolls(5000, 12));
     }
 }
