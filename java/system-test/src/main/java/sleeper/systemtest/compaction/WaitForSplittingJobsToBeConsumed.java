@@ -23,6 +23,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.util.WaitForQueueEstimate;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 public class WaitForSplittingJobsToBeConsumed {
@@ -44,6 +45,6 @@ public class WaitForSplittingJobsToBeConsumed {
 
     private boolean isFinished(QueueMessageCount count) {
         return count.getApproximateNumberOfMessages() > 0 ||
-                statusStore.getAllJobs(tableName).stream().allMatch(CompactionJobStatus::isStarted);
+                statusStore.getAllJobs(tableName).stream().anyMatch(not(CompactionJobStatus::isStarted));
     }
 }
