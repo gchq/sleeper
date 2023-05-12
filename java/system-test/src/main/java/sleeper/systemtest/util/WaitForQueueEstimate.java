@@ -61,6 +61,12 @@ public class WaitForQueueEstimate {
                 "queue estimate matching unfinished compaction jobs");
     }
 
+    public static WaitForQueueEstimate withCustomPredicate(
+            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
+            String description, Predicate<QueueMessageCount> customPredicate) {
+        return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty, customPredicate, description);
+    }
+
     private WaitForQueueEstimate(QueueMessageCount.Client queueClient,
                                  InstanceProperties properties, InstanceProperty queueProperty,
                                  Predicate<QueueMessageCount> isFinished, String description) {
