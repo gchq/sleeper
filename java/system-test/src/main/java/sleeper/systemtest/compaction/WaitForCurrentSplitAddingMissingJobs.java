@@ -38,6 +38,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class WaitForCurrentSplitAddingMissingJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
@@ -60,7 +61,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
-                sqsClient, instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
+                withSqsClient(sqsClient), instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
     }
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
