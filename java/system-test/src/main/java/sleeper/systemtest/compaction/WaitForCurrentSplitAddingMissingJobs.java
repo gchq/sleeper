@@ -35,6 +35,7 @@ import sleeper.systemtest.util.WaitForQueueEstimate;
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -44,11 +45,13 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
     private static final long JOBS_ESTIMATE_POLL_INTERVAL_MILLIS = 5000;
     private static final int JOBS_ESTIMATE_MAX_POLLS = 12;
+    private static final long SPLITTING_POLL_INTERVAL_MILLIS = 5000;
+    private static final int SPLITTING_MAX_POLLS = 12;
 
     private final String instanceId;
     private final String tableName;
     private final CompactionJobStatusStore store;
-    private final WaitForPartitionSplittingQueue waitForSplitting;
+    private final WaitForQueueEstimate waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForQueueEstimate waitForJobQueueEstimate;
 
@@ -58,7 +61,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
         this.instanceId = instanceProperties.get(ID);
         this.tableName = tableName;
         this.store = store;
-        waitForSplitting = new WaitForPartitionSplittingQueue(sqsClient, instanceProperties);
+        waitForSplitting = WaitForQueueEstimate.isEmpty(
+                withSqsClient(sqsClient), instanceProperties, PARTITION_SPLITTING_QUEUE_URL);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
                 withSqsClient(sqsClient), instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
@@ -66,7 +70,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
         LOGGER.info("Waiting for partition splits");
-        waitForSplitting.pollUntilFinished();
+        waitForSplitting.pollUntilFinished(
+                PollWithRetries.intervalAndMaxPolls(SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS));
         checkIfSplittingCompactionNeededAndWait();
     }
 
