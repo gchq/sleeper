@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class WaitForIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
@@ -57,7 +58,8 @@ public class WaitForIngestTasks {
             AmazonSQS sqsClient,
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
-        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL);
+        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(
+                withSqsClient(sqsClient), systemTestProperties, INGEST_JOB_QUEUE_URL);
     }
 
     public void pollUntilFinished() throws InterruptedException {

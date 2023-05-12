@@ -22,7 +22,8 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
 
 class WaitForQueueEstimateTest {
@@ -31,10 +32,10 @@ class WaitForQueueEstimateTest {
     void shouldTimeOutWaitingForNonEmptyQueue() {
         // Given
         InstanceProperties properties = new InstanceProperties();
-        properties.set(COMPACTION_JOB_QUEUE_URL, "test-job-queue");
+        properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
         WaitForQueueEstimate wait = WaitForQueueEstimate.notEmpty(
                 singleQueueVisibleMessages("test-job-queue", 0),
-                properties, COMPACTION_JOB_QUEUE_URL);
+                properties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
         PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
 
         // When / Then
@@ -46,10 +47,40 @@ class WaitForQueueEstimateTest {
     void shouldFinishWaitingForNonEmptyQueue() {
         // Given
         InstanceProperties properties = new InstanceProperties();
-        properties.set(COMPACTION_JOB_QUEUE_URL, "test-job-queue");
+        properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
         WaitForQueueEstimate wait = WaitForQueueEstimate.notEmpty(
                 singleQueueVisibleMessages("test-job-queue", 1),
-                properties, COMPACTION_JOB_QUEUE_URL);
+                properties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
+        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
+
+        // When / Then
+        assertThatCode(() -> wait.pollUntilFinished(poll))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldTimeOutWaitingForEmptyQueue() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
+        WaitForQueueEstimate wait = WaitForQueueEstimate.isEmpty(
+                singleQueueVisibleMessages("test-job-queue", 1),
+                properties, INGEST_JOB_QUEUE_URL);
+        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
+
+        // When / Then
+        assertThatThrownBy(() -> wait.pollUntilFinished(poll))
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
+    }
+
+    @Test
+    void shouldFinishWaitingForEmptyQueue() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
+        WaitForQueueEstimate wait = WaitForQueueEstimate.isEmpty(
+                singleQueueVisibleMessages("test-job-queue", 0),
+                properties, INGEST_JOB_QUEUE_URL);
         PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
 
         // When / Then
