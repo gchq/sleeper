@@ -25,6 +25,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class IngestResultTest extends IngestRecordsTestBase {
+
     @Test
     public void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
         // Given

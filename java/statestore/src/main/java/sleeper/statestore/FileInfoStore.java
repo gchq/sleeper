@@ -172,9 +172,9 @@ public interface FileInfoStore {
 
     /**
      * Returns all file-lifecycle {@link FileInfo}s with a status of ACTIVE.
-     * 
-     * @return
-     * @throws StateStoreException
+     *
+     * @return a {@code} List} of the {@link FileInfo}s with a status of ACTIVE
+     * @throws StateStoreException if retrieving the active file list fails
      */
      List<FileInfo> getActiveFileList() throws StateStoreException;
 

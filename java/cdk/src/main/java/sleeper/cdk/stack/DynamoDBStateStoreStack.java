@@ -30,10 +30,10 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBStateStoreStack implements StateStoreStack {

@@ -70,7 +70,7 @@ public class PartitionFileWriterUtils {
                 .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .numberOfRecords(numberOfLines)
                 .minRowKey(Key.create(minKey))
                 .maxRowKey(Key.create(maxKey))
