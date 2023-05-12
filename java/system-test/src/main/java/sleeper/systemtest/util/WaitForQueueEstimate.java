@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.util;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +26,6 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.function.Predicate;
-
-import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class WaitForQueueEstimate {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueueEstimate.class);
@@ -55,11 +52,11 @@ public class WaitForQueueEstimate {
     }
 
     public static WaitForQueueEstimate containsUnfinishedJobs(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
+            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
             CompactionJobStatusStore statusStore, String tableName) {
         int unfinished = statusStore.getUnfinishedJobs(tableName).size();
         LOGGER.info("Found {} unfinished compaction jobs", unfinished);
-        return new WaitForQueueEstimate(withSqsClient(sqsClient), instanceProperties, queueProperty,
+        return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty,
                 estimate -> estimate.getApproximateNumberOfMessages() >= unfinished,
                 "queue estimate matching unfinished compaction jobs");
     }

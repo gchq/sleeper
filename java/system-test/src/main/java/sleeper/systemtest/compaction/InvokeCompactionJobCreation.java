@@ -30,6 +30,7 @@ import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class InvokeCompactionJobCreation {
 
@@ -51,7 +52,8 @@ public class InvokeCompactionJobCreation {
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
                 AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
 
-        WaitForQueueEstimate.containsUnfinishedJobs(AmazonSQSClientBuilder.defaultClient(),
+        WaitForQueueEstimate.containsUnfinishedJobs(
+                        withSqsClient(AmazonSQSClientBuilder.defaultClient()),
                         systemTestProperties, COMPACTION_JOB_QUEUE_URL,
                         statusStore, "system-test")
                 .pollUntilFinished(PollWithRetries.intervalAndMaxPolls(5000, 12));
