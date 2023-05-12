@@ -122,7 +122,7 @@ class WaitForQueueEstimateTest {
             statusStore.jobCreated(jobHelper.singleFileCompaction());
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.containsUnfinishedJobs(
+            WaitForQueueEstimate wait = WaitForQueueEstimate.matchesUnfinishedJobs(
                     singleQueueVisibleMessages("test-job-queue", 0),
                     properties, INGEST_JOB_QUEUE_URL, statusStore, tableName);
             PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
@@ -138,7 +138,7 @@ class WaitForQueueEstimateTest {
             statusStore.jobCreated(jobHelper.singleFileCompaction());
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.containsUnfinishedJobs(
+            WaitForQueueEstimate wait = WaitForQueueEstimate.matchesUnfinishedJobs(
                     singleQueueVisibleMessages("test-job-queue", 1),
                     properties, INGEST_JOB_QUEUE_URL, statusStore, tableName);
             PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
@@ -159,7 +159,7 @@ class WaitForQueueEstimateTest {
             statusStore.jobFinished(job, summary, "test-task");
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.containsUnfinishedJobs(
+            WaitForQueueEstimate wait = WaitForQueueEstimate.matchesUnfinishedJobs(
                     singleQueueVisibleMessages("test-job-queue", 0),
                     properties, INGEST_JOB_QUEUE_URL, statusStore, tableName);
             PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);

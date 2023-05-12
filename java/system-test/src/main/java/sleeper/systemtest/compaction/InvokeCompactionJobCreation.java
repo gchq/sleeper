@@ -52,7 +52,7 @@ public class InvokeCompactionJobCreation {
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
                 AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
 
-        WaitForQueueEstimate.containsUnfinishedJobs(
+        WaitForQueueEstimate.matchesUnfinishedJobs(
                         withSqsClient(AmazonSQSClientBuilder.defaultClient()),
                         systemTestProperties, COMPACTION_JOB_QUEUE_URL,
                         statusStore, "system-test")

@@ -51,7 +51,7 @@ public class WaitForQueueEstimate {
                 "estimate empty for queue " + queueUrl);
     }
 
-    public static WaitForQueueEstimate containsUnfinishedJobs(
+    public static WaitForQueueEstimate matchesUnfinishedJobs(
             QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
             CompactionJobStatusStore statusStore, String tableName) {
         int unfinished = statusStore.getUnfinishedJobs(tableName).size();
