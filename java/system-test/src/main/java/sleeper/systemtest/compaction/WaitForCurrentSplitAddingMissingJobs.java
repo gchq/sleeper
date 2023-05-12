@@ -36,7 +36,6 @@ import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
@@ -53,7 +52,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final CompactionJobStatusStore store;
     private final WaitForQueueEstimate waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
-    private final WaitForQueueEstimate waitForJobQueueEstimate;
+    private final WaitForSplittingJobsToBeConsumed waitForJobsToBeConsumed;
 
     public WaitForCurrentSplitAddingMissingJobs(
             AmazonSQS sqsClient, CompactionJobStatusStore store,
@@ -64,8 +63,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
         waitForSplitting = WaitForQueueEstimate.isEmpty(
                 withSqsClient(sqsClient), instanceProperties, PARTITION_SPLITTING_QUEUE_URL);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
-        waitForJobQueueEstimate = WaitForQueueEstimate.notEmpty(
-                withSqsClient(sqsClient), instanceProperties, SPLITTING_COMPACTION_JOB_QUEUE_URL);
+        waitForJobsToBeConsumed = new WaitForSplittingJobsToBeConsumed(
+                withSqsClient(sqsClient), instanceProperties, tableName, store);
     }
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
@@ -87,7 +86,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         }
         // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
-        waitForJobQueueEstimate.pollUntilFinished(
+        waitForJobsToBeConsumed.pollUntilFinished(
                 PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
         LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
         InvokeSystemTestLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
