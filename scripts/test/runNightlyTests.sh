@@ -15,6 +15,11 @@
 
 set -e
 
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+
+pushd "$THIS_DIR"
+
 git fetch
 git switch --discard-changes -C 806-automate-performance-tests-in-ec2 origin/806-automate-performance-tests-in-ec2
 
@@ -27,15 +32,10 @@ VPC=$1
 SUBNET=$2
 RESULTS_BUCKET=$3
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
-
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
-
-pushd "$THIS_DIR"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
