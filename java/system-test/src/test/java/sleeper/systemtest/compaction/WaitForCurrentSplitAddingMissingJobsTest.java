@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
@@ -105,7 +106,29 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
-    // TODO: case where it times out running compaction, polling status store waiting for job to finish
+    @Test
+    void shouldTimeOutIfCompactionJobDoesNotFinish() {
+        // Given
+        CompactionJob job = jobHelper.singleFileCompaction();
+        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
+        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
+        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createTime);
+        Runnable invokeCompactionTaskLambda = () -> statusStore.jobStarted(job, startTime, taskId);
+
+        WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
+                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
+                .waitForCompactionsToAppearOnQueue(pollTimes(1))
+                .waitForCompactionJobs(pollTimes(2))
+                .build();
+
+        // When/Then
+        assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
+        assertThat(statusStore.getAllJobs(tableName)).containsExactly(
+                jobCreated(job, createTime, startedCompactionRun(taskId, startTime)));
+    }
+
     // TODO: case where job is started immediately after it's created, and queue estimate is zero when first polled
     // TODO: case where queue estimate is zero when first polled, but job is started immediately after that, and estimate stays zero
 
