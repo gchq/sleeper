@@ -29,7 +29,7 @@ class QueueMessageCountsInMemoryTest {
     @Test
     void shouldRetrieveMessageCountsForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.singleQueueVisibleAndNotVisibleCounts(
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.visibleAndNotVisibleCounts(
                 "test-queue", 12, 34);
 
         // When / Then
@@ -40,7 +40,7 @@ class QueueMessageCountsInMemoryTest {
     @Test
     void shouldRetrieveVisibleMessageCountForSpecifiedQueue() {
         // Given
-        QueueMessageCount.Client client = QueueMessageCountsInMemory.singleQueueVisibleMessages("test-queue", 42);
+        QueueMessageCount.Client client = QueueMessageCountsInMemory.visibleMessages("test-queue", 42);
 
         // When / Then
         assertThat(client.getQueueMessageCount("test-queue"))

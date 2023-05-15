@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
+import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
 class WaitForQueueEstimateTest {
 
@@ -53,7 +53,7 @@ class WaitForQueueEstimateTest {
             // Given
             properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = notEmpty(
-                    singleQueueVisibleMessages("test-job-queue", 0),
+                    visibleMessages("test-job-queue", 0),
                     SPLITTING_COMPACTION_JOB_QUEUE_URL);
 
             // When / Then
@@ -66,7 +66,7 @@ class WaitForQueueEstimateTest {
             // Given
             properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = notEmpty(
-                    singleQueueVisibleMessages("test-job-queue", 1),
+                    visibleMessages("test-job-queue", 1),
                     SPLITTING_COMPACTION_JOB_QUEUE_URL);
 
             // When / Then
@@ -90,7 +90,7 @@ class WaitForQueueEstimateTest {
             // Given
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = isEmpty(
-                    singleQueueVisibleMessages("test-job-queue", 1),
+                    visibleMessages("test-job-queue", 1),
                     INGEST_JOB_QUEUE_URL);
 
             // When / Then
@@ -103,7 +103,7 @@ class WaitForQueueEstimateTest {
             // Given
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = isEmpty(
-                    singleQueueVisibleMessages("test-job-queue", 0),
+                    visibleMessages("test-job-queue", 0),
                     INGEST_JOB_QUEUE_URL);
 
             // When / Then
@@ -133,7 +133,7 @@ class WaitForQueueEstimateTest {
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = matchesUnfinishedJobs(
-                    singleQueueVisibleMessages("test-job-queue", 0),
+                    visibleMessages("test-job-queue", 0),
                     INGEST_JOB_QUEUE_URL);
 
             // When / Then
@@ -148,7 +148,7 @@ class WaitForQueueEstimateTest {
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = matchesUnfinishedJobs(
-                    singleQueueVisibleMessages("test-job-queue", 1),
+                    visibleMessages("test-job-queue", 1),
                     INGEST_JOB_QUEUE_URL);
 
             // When / Then
@@ -168,7 +168,7 @@ class WaitForQueueEstimateTest {
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
             WaitForQueueEstimate wait = matchesUnfinishedJobs(
-                    singleQueueVisibleMessages("test-job-queue", 0),
+                    visibleMessages("test-job-queue", 0),
                     INGEST_JOB_QUEUE_URL);
 
             // When / Then

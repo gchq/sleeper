@@ -39,13 +39,13 @@ public class QueueMessageCountsInMemory implements QueueMessageCount.Client {
         return from(Collections.emptyMap());
     }
 
-    public static QueueMessageCount.Client singleQueueVisibleAndNotVisibleCounts(
+    public static QueueMessageCount.Client visibleAndNotVisibleCounts(
             String queueName, int visible, int notVisible) {
         return from(Map.of(queueName, approximateNumberVisibleAndNotVisible(visible, notVisible)));
     }
 
-    public static QueueMessageCount.Client singleQueueVisibleMessages(String queueName, int visible) {
-        return singleQueueVisibleAndNotVisibleCounts(queueName, visible, 0);
+    public static QueueMessageCount.Client visibleMessages(String queueName, int visible) {
+        return visibleAndNotVisibleCounts(queueName, visible, 0);
     }
 
     @Override

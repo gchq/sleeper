@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
-import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
+import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
 class WaitForSplittingJobsToBeConsumedTest {
     InstanceProperties properties = createTestInstanceProperties();
@@ -55,7 +55,7 @@ class WaitForSplittingJobsToBeConsumedTest {
         statusStore.jobStarted(job, Instant.parse("2023-05-12T14:32:00Z"), "test-task");
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
         WaitForQueueEstimate waitForJobs = waitForJobs(
-                singleQueueVisibleMessages("test-job-queue", 1));
+                visibleMessages("test-job-queue", 1));
 
         // When/Then
         assertThatCode(waitForJobs::pollUntilFinished)
@@ -69,7 +69,7 @@ class WaitForSplittingJobsToBeConsumedTest {
 
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
         WaitForQueueEstimate waitForJobs = waitForJobs(
-                singleQueueVisibleMessages("test-job-queue", 0));
+                visibleMessages("test-job-queue", 0));
 
         // When/Then
         assertThatCode(waitForJobs::pollUntilFinished)
@@ -81,7 +81,7 @@ class WaitForSplittingJobsToBeConsumedTest {
         // Given
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
         WaitForQueueEstimate waitForJobs = waitForJobs(
-                singleQueueVisibleMessages("test-job-queue", 0));
+                visibleMessages("test-job-queue", 0));
 
         // When/Then
         assertThatThrownBy(waitForJobs::pollUntilFinished)
@@ -97,7 +97,7 @@ class WaitForSplittingJobsToBeConsumedTest {
 
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
         WaitForQueueEstimate waitForJobs = waitForJobs(
-                singleQueueVisibleMessages("test-job-queue", 0));
+                visibleMessages("test-job-queue", 0));
 
         // When/Then
         assertThatThrownBy(waitForJobs::pollUntilFinished)
