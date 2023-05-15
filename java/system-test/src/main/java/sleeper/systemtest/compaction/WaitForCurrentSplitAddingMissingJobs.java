@@ -61,11 +61,11 @@ public class WaitForCurrentSplitAddingMissingJobs {
         store = builder.store;
         waitForSplitting = WaitForQueueEstimate.isEmpty(
                 builder.queueClient, builder.instanceProperties, PARTITION_SPLITTING_QUEUE_URL,
-                PollWithRetries.intervalAndMaxPolls(SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS));
+                builder.waitForSplitsToFinish);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobsToBeConsumed = WaitForSplittingJobsToBeConsumed.from(
                 builder.queueClient, builder.instanceProperties, tableName, store,
-                PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
+                builder.waitForCompactionsToAppearOnQueue);
     }
 
     public static Builder builder() {
@@ -79,6 +79,10 @@ public class WaitForCurrentSplitAddingMissingJobs {
                 .store(store)
                 .instanceProperties(instanceProperties)
                 .tableName(tableName)
+                .waitForSplitsToFinish(PollWithRetries.intervalAndMaxPolls(
+                        SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS))
+                .waitForCompactionsToAppearOnQueue(PollWithRetries.intervalAndMaxPolls(
+                        JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
                 .build();
     }
 
@@ -133,6 +137,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
         private String tableName;
         private CompactionJobStatusStore store;
         private QueueMessageCount.Client queueClient;
+        private PollWithRetries waitForSplitsToFinish;
+        private PollWithRetries waitForCompactionsToAppearOnQueue;
 
         private Builder() {
         }
@@ -154,6 +160,16 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         public Builder queueClient(QueueMessageCount.Client queueClient) {
             this.queueClient = queueClient;
+            return this;
+        }
+
+        public Builder waitForSplitsToFinish(PollWithRetries waitForSplitsToFinish) {
+            this.waitForSplitsToFinish = waitForSplitsToFinish;
+            return this;
+        }
+
+        public Builder waitForCompactionsToAppearOnQueue(PollWithRetries waitForCompactionsToAppearOnQueue) {
+            this.waitForCompactionsToAppearOnQueue = waitForCompactionsToAppearOnQueue;
             return this;
         }
 
