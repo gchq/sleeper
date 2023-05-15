@@ -21,7 +21,7 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
 pushd "$THIS_DIR"
 
 git fetch
-git switch --discard-changes -C 806-automate-performance-tests-in-ec2 origin/806-automate-performance-tests-in-ec2
+git switch --discard-changes -C main origin/main
 
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 <vpc> <subnet> <results bucket>"
