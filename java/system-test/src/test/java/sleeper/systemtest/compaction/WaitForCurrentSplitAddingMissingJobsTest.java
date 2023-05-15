@@ -17,6 +17,7 @@ package sleeper.systemtest.compaction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
 
 import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJob;
@@ -24,6 +25,7 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.time.Duration;
@@ -31,6 +33,8 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
@@ -40,6 +44,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 import static sleeper.job.common.QueueMessageCountsSequence.inOrder;
 
@@ -132,6 +137,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldCompleteIfCompactionJobIsPickedUpByAlreadyRunningTask() throws Exception {
         // Given
+        QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
         CompactionJob job = jobHelper.singleFileCompaction();
         Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
         RecordsProcessedSummary summary = summary(
@@ -140,12 +146,17 @@ class WaitForCurrentSplitAddingMissingJobsTest {
             statusStore.jobCreated(job, createTime);
             statusStore.jobStarted(job, summary.getStartTime(), taskId);
         };
-        Runnable invokeCompactionTaskLambda = () ->
-                statusStore.jobFinished(job, summary, taskId);
+        Runnable invokeCompactionTaskLambda = () -> {
+        };
+        when(queueClient.getQueueMessageCount(COMPACTION_JOB_QUEUE_URL))
+                .thenAnswer((Answer<QueueMessageCount>) invocation -> {
+                    statusStore.jobFinished(job, summary, taskId);
+                    return approximateNumberVisibleAndNotVisible(0, 0);
+                });
 
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
                 .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
-                .queueClient(visibleMessages(COMPACTION_JOB_QUEUE_URL, 0))
+                .queueClient(queueClient)
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .waitForCompactionJobs(pollTimes(1))
                 .build();
@@ -153,9 +164,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         // When/Then
         assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
     }
-
     // TODO: avoid need to run compaction task lambda if job is already picked up by a running task (?)
-    // TODO: find a better place to report the job as finished in the test rather than have the compaction task lambda do it (?)
     // TODO: case where queue estimate is zero when first polled, but job is started immediately after that, and estimate stays zero
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
