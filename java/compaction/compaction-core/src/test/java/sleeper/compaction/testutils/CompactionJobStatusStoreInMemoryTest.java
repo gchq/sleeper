@@ -91,6 +91,29 @@ class CompactionJobStatusStoreInMemoryTest {
                                     startedCompactionStatus(startedTime),
                                     finishedCompactionStatus(summary(startedTime, finishedTime, 100, 100))))));
         }
+
+        @Test
+        void shouldUseDefaultUpdateTimeIfUpdateTimeNotFixed() {
+            // Given
+            Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
+            Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
+            Instant finishTime = Instant.parse("2023-03-29T12:28:43Z");
+            String taskId = "test-task";
+
+            RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
+            CompactionJob job = dataHelper.singleFileCompaction();
+            store.jobCreated(job, createdTime);
+            store.jobStarted(job, startedTime, taskId);
+            store.jobFinished(job, summary, taskId);
+
+            // When / Then
+            assertThat(store.streamAllJobs(tableName))
+                    .containsExactly(jobStatusFrom(records().fromUpdates(
+                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJobOnTask(job.getId(), taskId,
+                                    startedCompactionStatus(startedTime),
+                                    finishedCompactionStatus(summary)))));
+        }
     }
 
     @Nested
@@ -283,21 +306,21 @@ class CompactionJobStatusStoreInMemoryTest {
 
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
-        store.fixTime(createdTime);
+        store.fixUpdateTime(createdTime);
         store.jobCreated(job);
         return job;
     }
 
     private CompactionJob addStartedJob(Instant createdTime, Instant startedTime, String taskId) {
         CompactionJob job = addCreatedJob(createdTime);
-        store.fixTime(defaultUpdateTime(startedTime));
+        store.fixUpdateTime(defaultUpdateTime(startedTime));
         store.jobStarted(job, startedTime, taskId);
         return job;
     }
 
     private CompactionJob addFinishedJob(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
         CompactionJob job = addStartedJob(createdTime, summary.getStartTime(), taskId);
-        store.fixTime(defaultUpdateTime(summary.getFinishTime()));
+        store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
         store.jobFinished(job, summary, taskId);
         return job;
     }

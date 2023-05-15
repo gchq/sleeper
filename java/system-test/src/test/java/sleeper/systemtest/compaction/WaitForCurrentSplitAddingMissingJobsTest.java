@@ -121,13 +121,13 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob(
             CompactionJob job, Instant createdTime, RecordsProcessedSummary summary) {
         Runnable invokeCompactionJobLambda = () -> {
-            statusStore.fixTime(createdTime);
+            statusStore.fixUpdateTime(createdTime);
             statusStore.jobCreated(job);
         };
         Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.fixTime(defaultUpdateTime(summary.getStartTime()));
+            statusStore.fixUpdateTime(defaultUpdateTime(summary.getStartTime()));
             statusStore.jobStarted(job, summary.getStartTime(), taskId);
-            statusStore.fixTime(defaultUpdateTime(summary.getFinishTime()));
+            statusStore.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
             statusStore.jobFinished(job, summary, taskId);
         };
         return builderWithDefaults()
