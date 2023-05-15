@@ -103,6 +103,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
+    // TODO: case where it times out running compaction, polling status store waiting for job to finish
     // TODO: case where job is started immediately after it's created, and queue estimate is zero when first polled
     // TODO: case where queue estimate is zero when first polled, but job is started immediately after that, and estimate stays zero
 
