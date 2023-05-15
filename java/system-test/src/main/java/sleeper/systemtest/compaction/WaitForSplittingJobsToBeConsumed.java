@@ -27,24 +27,18 @@ import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 public class WaitForSplittingJobsToBeConsumed {
-    private final String tableName;
-    private final CompactionJobStatusStore statusStore;
-    private final WaitForQueueEstimate waitForQueueEstimate;
 
-    public WaitForSplittingJobsToBeConsumed(QueueMessageCount.Client client, InstanceProperties properties, String tableName, CompactionJobStatusStore statusStore) {
-        this.tableName = tableName;
-        this.statusStore = statusStore;
-        this.waitForQueueEstimate = WaitForQueueEstimate.withCustomPredicate(
+    private WaitForSplittingJobsToBeConsumed() {
+    }
+
+    public static WaitForQueueEstimate from(
+            QueueMessageCount.Client client, InstanceProperties properties, String tableName,
+            CompactionJobStatusStore statusStore, PollWithRetries poll) {
+
+        return WaitForQueueEstimate.withCustomPredicate(
                 client, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL, "all jobs consumed",
-                this::isFinished);
-    }
-
-    public void pollUntilFinished(PollWithRetries poll) throws InterruptedException {
-        waitForQueueEstimate.pollUntilFinished(poll);
-    }
-
-    private boolean isFinished(QueueMessageCount count) {
-        return count.getApproximateNumberOfMessages() > 0 ||
-                statusStore.getAllJobs(tableName).stream().anyMatch(not(CompactionJobStatus::isStarted));
+                count -> count.getApproximateNumberOfMessages() > 0
+                        || statusStore.getAllJobs(tableName).stream().anyMatch(not(CompactionJobStatus::isStarted)),
+                poll);
     }
 }

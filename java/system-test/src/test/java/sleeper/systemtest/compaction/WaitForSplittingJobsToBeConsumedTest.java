@@ -24,6 +24,8 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.job.common.QueueMessageCount;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.time.Instant;
 
@@ -33,11 +35,17 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
 
-public class WaitForSplittingJobsToBeConsumedTest {
+class WaitForSplittingJobsToBeConsumedTest {
     InstanceProperties properties = createTestInstanceProperties();
     String tableName = "test-table";
     CompactionJobTestDataHelper jobHelper = CompactionJobTestDataHelper.forTable(tableName);
     CompactionJobStatusStore statusStore = new CompactionJobStatusStoreInMemory();
+
+    private WaitForQueueEstimate waitForJobs(QueueMessageCount.Client queueClient) {
+        return WaitForSplittingJobsToBeConsumed.from(
+                queueClient, properties, tableName, statusStore,
+                PollWithRetries.intervalAndMaxPolls(0, 1));
+    }
 
     @Test
     void shouldFinishWhenQueueIsNotEmptyAndNoJobsArePending() {
@@ -46,13 +54,11 @@ public class WaitForSplittingJobsToBeConsumedTest {
         statusStore.jobCreated(job);
         statusStore.jobStarted(job, Instant.parse("2023-05-12T14:32:00Z"), "test-task");
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
-        WaitForSplittingJobsToBeConsumed waitForJobs = new WaitForSplittingJobsToBeConsumed(
-                singleQueueVisibleMessages("test-job-queue", 1),
-                properties, tableName, statusStore);
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
+        WaitForQueueEstimate waitForJobs = waitForJobs(
+                singleQueueVisibleMessages("test-job-queue", 1));
 
         // When/Then
-        assertThatCode(() -> waitForJobs.pollUntilFinished(poll))
+        assertThatCode(waitForJobs::pollUntilFinished)
                 .doesNotThrowAnyException();
     }
 
@@ -62,13 +68,11 @@ public class WaitForSplittingJobsToBeConsumedTest {
         statusStore.jobCreated(jobHelper.singleFileCompaction());
 
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
-        WaitForSplittingJobsToBeConsumed waitForJobs = new WaitForSplittingJobsToBeConsumed(
-                singleQueueVisibleMessages("test-job-queue", 0),
-                properties, tableName, statusStore);
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
+        WaitForQueueEstimate waitForJobs = waitForJobs(
+                singleQueueVisibleMessages("test-job-queue", 0));
 
         // When/Then
-        assertThatCode(() -> waitForJobs.pollUntilFinished(poll))
+        assertThatCode(waitForJobs::pollUntilFinished)
                 .doesNotThrowAnyException();
     }
 
@@ -76,13 +80,11 @@ public class WaitForSplittingJobsToBeConsumedTest {
     void shouldTimeoutWhenQueueEmptyAndStatusStoreIsEmpty() {
         // Given
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
-        WaitForSplittingJobsToBeConsumed waitForJobs = new WaitForSplittingJobsToBeConsumed(
-                singleQueueVisibleMessages("test-job-queue", 0),
-                properties, tableName, statusStore);
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
+        WaitForQueueEstimate waitForJobs = waitForJobs(
+                singleQueueVisibleMessages("test-job-queue", 0));
 
         // When/Then
-        assertThatThrownBy(() -> waitForJobs.pollUntilFinished(poll))
+        assertThatThrownBy(waitForJobs::pollUntilFinished)
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
@@ -94,13 +96,11 @@ public class WaitForSplittingJobsToBeConsumedTest {
         statusStore.jobStarted(job, Instant.parse("2023-05-12T14:32:00Z"), "test-task");
 
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
-        WaitForSplittingJobsToBeConsumed waitForJobs = new WaitForSplittingJobsToBeConsumed(
-                singleQueueVisibleMessages("test-job-queue", 0),
-                properties, tableName, statusStore);
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(0, 1);
+        WaitForQueueEstimate waitForJobs = waitForJobs(
+                singleQueueVisibleMessages("test-job-queue", 0));
 
         // When/Then
-        assertThatThrownBy(() -> waitForJobs.pollUntilFinished(poll))
+        assertThatThrownBy(waitForJobs::pollUntilFinished)
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 }

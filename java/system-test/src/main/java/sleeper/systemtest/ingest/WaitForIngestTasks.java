@@ -59,12 +59,12 @@ public class WaitForIngestTasks {
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
         this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(
-                withSqsClient(sqsClient), systemTestProperties, INGEST_JOB_QUEUE_URL);
+                withSqsClient(sqsClient), systemTestProperties, INGEST_JOB_QUEUE_URL,
+                PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        waitForEmptyQueue.pollUntilFinished(
-                PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
+        waitForEmptyQueue.pollUntilFinished();
         poll.pollUntil("ingest tasks finished", this::isIngestTasksFinished);
     }
 

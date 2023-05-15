@@ -53,17 +53,19 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final CompactionJobStatusStore store;
     private final WaitForQueueEstimate waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
-    private final WaitForSplittingJobsToBeConsumed waitForJobsToBeConsumed;
+    private final WaitForQueueEstimate waitForJobsToBeConsumed;
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
         instanceId = builder.instanceProperties.get(ID);
         tableName = builder.tableName;
         store = builder.store;
         waitForSplitting = WaitForQueueEstimate.isEmpty(
-                builder.queueClient, builder.instanceProperties, PARTITION_SPLITTING_QUEUE_URL);
+                builder.queueClient, builder.instanceProperties, PARTITION_SPLITTING_QUEUE_URL,
+                PollWithRetries.intervalAndMaxPolls(SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS));
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
-        waitForJobsToBeConsumed = new WaitForSplittingJobsToBeConsumed(
-                builder.queueClient, builder.instanceProperties, tableName, store);
+        waitForJobsToBeConsumed = WaitForSplittingJobsToBeConsumed.from(
+                builder.queueClient, builder.instanceProperties, tableName, store,
+                PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
     }
 
     public static Builder builder() {
@@ -82,8 +84,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
         LOGGER.info("Waiting for partition splits");
-        waitForSplitting.pollUntilFinished(
-                PollWithRetries.intervalAndMaxPolls(SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS));
+        waitForSplitting.pollUntilFinished();
         checkIfSplittingCompactionNeededAndWait();
     }
 
@@ -99,8 +100,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         }
         // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
-        waitForJobsToBeConsumed.pollUntilFinished(
-                PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS));
+        waitForJobsToBeConsumed.pollUntilFinished();
         LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
         InvokeSystemTestLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
         waitForCompaction.pollUntilFinished();

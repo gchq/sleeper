@@ -34,54 +34,60 @@ public class WaitForQueueEstimate {
     private final Predicate<QueueMessageCount> isFinished;
     private final String description;
     private final String queueUrl;
+    private final PollWithRetries poll;
 
     public static WaitForQueueEstimate notEmpty(
-            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty) {
+            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
+            PollWithRetries poll) {
         String queueUrl = instanceProperties.get(queueProperty);
         return new WaitForQueueEstimate(queueClient, queueUrl,
                 estimate -> estimate.getApproximateNumberOfMessages() > 0,
-                "estimate not empty for queue " + queueUrl);
+                "estimate not empty for queue " + queueUrl, poll);
     }
 
     public static WaitForQueueEstimate isEmpty(
-            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty) {
+            QueueMessageCount.Client queueClient,
+            InstanceProperties instanceProperties, InstanceProperty queueProperty, PollWithRetries poll) {
         String queueUrl = instanceProperties.get(queueProperty);
         return new WaitForQueueEstimate(queueClient, queueUrl,
                 estimate -> estimate.getApproximateNumberOfMessages() == 0,
-                "estimate empty for queue " + queueUrl);
+                "estimate empty for queue " + queueUrl, poll);
     }
 
     public static WaitForQueueEstimate matchesUnfinishedJobs(
             QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            CompactionJobStatusStore statusStore, String tableName) {
+            CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
         int unfinished = statusStore.getUnfinishedJobs(tableName).size();
         LOGGER.info("Found {} unfinished compaction jobs", unfinished);
         return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty,
                 estimate -> estimate.getApproximateNumberOfMessages() >= unfinished,
-                "queue estimate matching unfinished compaction jobs");
+                "queue estimate matching unfinished compaction jobs", poll);
     }
 
     public static WaitForQueueEstimate withCustomPredicate(
             QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            String description, Predicate<QueueMessageCount> customPredicate) {
-        return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty, customPredicate, description);
+            String description, Predicate<QueueMessageCount> customPredicate, PollWithRetries poll) {
+        return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty, customPredicate, description, poll);
     }
 
     private WaitForQueueEstimate(QueueMessageCount.Client queueClient,
                                  InstanceProperties properties, InstanceProperty queueProperty,
-                                 Predicate<QueueMessageCount> isFinished, String description) {
-        this(queueClient, properties.get(queueProperty), isFinished, description);
+                                 Predicate<QueueMessageCount> isFinished, String description,
+                                 PollWithRetries poll) {
+        this(queueClient, properties.get(queueProperty), isFinished, description, poll);
     }
 
     private WaitForQueueEstimate(QueueMessageCount.Client queueClient, String queueUrl,
-                                 Predicate<QueueMessageCount> isFinished, String description) {
+                                 Predicate<QueueMessageCount> isFinished, String description,
+                                 PollWithRetries poll) {
         this.queueClient = queueClient;
         this.queueUrl = queueUrl;
         this.isFinished = isFinished;
         this.description = description;
+        this.poll = poll;
     }
 
-    public void pollUntilFinished(PollWithRetries poll) throws InterruptedException {
+    public void pollUntilFinished() throws InterruptedException {
         LOGGER.info("Waiting until {}", description);
         poll.pollUntil(description, this::isFinished);
     }
