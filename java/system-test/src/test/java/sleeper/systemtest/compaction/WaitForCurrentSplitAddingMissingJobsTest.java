@@ -54,15 +54,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldRunOneRoundOfSplitsWithOneSplittingCompactionJob() throws Exception {
         // Given
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
-        Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.jobStarted(job, startTime, "test-task");
-            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
-        };
-        WaitForCurrentSplitAddingMissingJobs waiter = builder()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob()
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .build();
@@ -74,15 +66,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldWaitForCompactionJobToAppearOnQueue() throws Exception {
         // Given
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
-        Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.jobStarted(job, startTime, "test-task");
-            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
-        };
-        WaitForCurrentSplitAddingMissingJobs waiter = builder()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob()
                 .queueClient(inOrder(
                         visibleMessages(COMPACTION_JOB_QUEUE_URL, 0),
                         visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
@@ -96,15 +80,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldTimeOutIfCompactionJobDoesNotAppearOnQueue() {
         // Given
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
-        Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.jobStarted(job, startTime, "test-task");
-            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
-        };
-        WaitForCurrentSplitAddingMissingJobs waiter = builder()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob()
                 .queueClient(inOrder(
                         visibleMessages(COMPACTION_JOB_QUEUE_URL, 0),
                         visibleMessages(COMPACTION_JOB_QUEUE_URL, 0)))
@@ -114,6 +90,18 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         // When/Then
         assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
+    }
+
+    private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
+        CompactionJob job = jobHelper.singleFileCompaction();
+        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
+        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
+        Runnable invokeCompactionTaskLambda = () -> {
+            statusStore.jobStarted(job, startTime, "test-task");
+            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
+        };
+        return builder()
+                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda));
     }
 
     private WaitForCurrentSplitAddingMissingJobs.Builder builder() {
