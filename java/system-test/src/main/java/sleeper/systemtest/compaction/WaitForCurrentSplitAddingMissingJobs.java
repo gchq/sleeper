@@ -39,7 +39,6 @@ import java.util.Objects;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class WaitForCurrentSplitAddingMissingJobs {
@@ -49,19 +48,19 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private static final long SPLITTING_POLL_INTERVAL_MILLIS = 5000;
     private static final int SPLITTING_MAX_POLLS = 12;
 
-    private final String instanceId;
     private final String tableName;
     private final CompactionJobStatusStore store;
     private final WaitForQueueEstimate waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForQueueEstimate waitForJobsToBeConsumed;
+    private final InvokeSystemTestLambda.Client lambdaClient;
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
         QueueMessageCount.Client queueClient = Objects.requireNonNull(builder.queueClient, "queueClient must not be null");
         InstanceProperties properties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
-        instanceId = properties.get(ID);
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         store = Objects.requireNonNull(builder.store, "store must not be null");
+        lambdaClient = Objects.requireNonNull(builder.lambdaClient, "lambdaClient must not be null");
         waitForSplitting = WaitForQueueEstimate.isEmpty(
                 queueClient, properties, PARTITION_SPLITTING_QUEUE_URL,
                 Objects.requireNonNull(builder.waitForSplitsToFinish,
@@ -88,6 +87,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
                         SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS))
                 .waitForCompactionsToAppearOnQueue(PollWithRetries.intervalAndMaxPolls(
                         JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
+                .lambdaClient(InvokeSystemTestLambda.client(instanceProperties))
                 .build();
     }
 
@@ -102,7 +102,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
      */
     public boolean checkIfSplittingCompactionNeededAndWait() throws InterruptedException, IOException {
         LOGGER.info("Creating compaction jobs");
-        InvokeSystemTestLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+        lambdaClient.invokeLambda(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
         if (store.getUnfinishedJobs(tableName).isEmpty()) {
             LOGGER.info("Lambda created no more jobs, splitting complete");
             return false;
@@ -111,7 +111,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
         waitForJobsToBeConsumed.pollUntilFinished();
         LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-        InvokeSystemTestLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
         waitForCompaction.pollUntilFinished();
         return true;
     }
@@ -144,6 +144,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         private QueueMessageCount.Client queueClient;
         private PollWithRetries waitForSplitsToFinish;
         private PollWithRetries waitForCompactionsToAppearOnQueue;
+        private InvokeSystemTestLambda.Client lambdaClient;
 
         private Builder() {
         }
@@ -175,6 +176,11 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         public Builder waitForCompactionsToAppearOnQueue(PollWithRetries waitForCompactionsToAppearOnQueue) {
             this.waitForCompactionsToAppearOnQueue = waitForCompactionsToAppearOnQueue;
+            return this;
+        }
+
+        public Builder lambdaClient(InvokeSystemTestLambda.Client lambdaClient) {
+            this.lambdaClient = lambdaClient;
             return this;
         }
 
