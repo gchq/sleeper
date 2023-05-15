@@ -34,6 +34,7 @@ import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
@@ -56,16 +57,20 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final WaitForQueueEstimate waitForJobsToBeConsumed;
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
-        instanceId = builder.instanceProperties.get(ID);
-        tableName = builder.tableName;
-        store = builder.store;
+        QueueMessageCount.Client queueClient = Objects.requireNonNull(builder.queueClient, "queueClient must not be null");
+        InstanceProperties properties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        instanceId = properties.get(ID);
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        store = Objects.requireNonNull(builder.store, "store must not be null");
         waitForSplitting = WaitForQueueEstimate.isEmpty(
-                builder.queueClient, builder.instanceProperties, PARTITION_SPLITTING_QUEUE_URL,
-                builder.waitForSplitsToFinish);
+                queueClient, properties, PARTITION_SPLITTING_QUEUE_URL,
+                Objects.requireNonNull(builder.waitForSplitsToFinish,
+                        "waitForSplitsToFinish must not be null"));
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobsToBeConsumed = WaitForSplittingJobsToBeConsumed.from(
-                builder.queueClient, builder.instanceProperties, tableName, store,
-                builder.waitForCompactionsToAppearOnQueue);
+                queueClient, properties, tableName, store,
+                Objects.requireNonNull(builder.waitForCompactionsToAppearOnQueue,
+                        "waitForCompactionsToAppearOnQueue must not be null"));
     }
 
     public static Builder builder() {
