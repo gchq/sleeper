@@ -95,9 +95,9 @@ public class DynamoDBAttributes {
         return buildInstant.apply(Long.parseLong(string));
     }
 
-    public static double getDoubleAttribute(Map<String, AttributeValue> item, String key) {
+    public static double getDoubleAttribute(Map<String, AttributeValue> item, String key, double defaultValue) {
         if (!item.containsKey(key)) {
-            return 0.0;
+            return defaultValue;
         }
         String attributeValue = getNumberAttribute(item, key);
         if (attributeValue == null) {

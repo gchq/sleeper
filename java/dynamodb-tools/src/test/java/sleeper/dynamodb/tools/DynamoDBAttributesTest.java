@@ -80,7 +80,7 @@ public class DynamoDBAttributesTest {
         item.put(TEST_KEY, DynamoDBAttributes.createNumberAttribute(123.456));
 
         // When/Then
-        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
                 .isEqualTo(123.456);
     }
 
@@ -91,7 +91,7 @@ public class DynamoDBAttributesTest {
         item.put(TEST_KEY, null);
 
         // When/Then
-        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
                 .isEqualTo(Double.valueOf(Double.NaN));
     }
 
@@ -101,7 +101,7 @@ public class DynamoDBAttributesTest {
         Map<String, AttributeValue> item = new HashMap<>();
 
         // When/Then
-        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY))
-                .isEqualTo(0.0);
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
+                .isEqualTo(0);
     }
 }

@@ -116,8 +116,8 @@ public class DynamoDBCompactionTaskStatusFormat {
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                         .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
-                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE))
-                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE))
+                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
+                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
                         .build());
                 break;
             default:
