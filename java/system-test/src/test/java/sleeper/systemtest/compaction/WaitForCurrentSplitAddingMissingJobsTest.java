@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.time.Duration;
@@ -31,6 +31,9 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -43,8 +46,9 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     private static final String COMPACTION_JOB_QUEUE_URL = "test-splitting-compaction-job-queue";
     private final InstanceProperties properties = createTestInstanceProperties();
     private final String tableName = "test-table";
+    private final String taskId = "test-task";
     private final CompactionJobTestDataHelper jobHelper = CompactionJobTestDataHelper.forTable(tableName);
-    private final CompactionJobStatusStore statusStore = new CompactionJobStatusStoreInMemory();
+    private final CompactionJobStatusStoreInMemory statusStore = new CompactionJobStatusStoreInMemory();
 
     @BeforeEach
     void setUp() {
@@ -54,13 +58,20 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldRunOneRoundOfSplitsWithOneSplittingCompactionJob() throws Exception {
         // Given
-        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob()
+        CompactionJob job = jobHelper.singleFileCompaction();
+        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
+        RecordsProcessedSummary summary = summary(
+                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
+
+        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob(job, createTime, summary)
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .build();
 
         // When/Then
         assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+        assertThat(statusStore.getAllJobs(tableName)).containsExactly(
+                jobCreated(job, createTime, finishedCompactionRun(taskId, summary)));
     }
 
     @Test
@@ -94,11 +105,23 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
         CompactionJob job = jobHelper.singleFileCompaction();
-        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
+        Instant createdTime = Instant.parse("2023-05-15T12:11:00Z");
+        RecordsProcessedSummary summary = summary(
+                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
+        return runningOneJob(job, createdTime, summary);
+    }
+
+    private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob(
+            CompactionJob job, Instant createdTime, RecordsProcessedSummary summary) {
+        Runnable invokeCompactionJobLambda = () -> {
+            statusStore.fixTime(createdTime);
+            statusStore.jobCreated(job);
+        };
         Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.jobStarted(job, startTime, "test-task");
-            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
+            statusStore.fixTime(defaultUpdateTime(summary.getStartTime()));
+            statusStore.jobStarted(job, summary.getStartTime(), taskId);
+            statusStore.fixTime(defaultUpdateTime(summary.getFinishTime()));
+            statusStore.jobFinished(job, summary, taskId);
         };
         return builder()
                 .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda));
