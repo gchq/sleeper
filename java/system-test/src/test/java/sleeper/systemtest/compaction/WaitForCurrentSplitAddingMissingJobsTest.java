@@ -31,7 +31,6 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -120,14 +119,9 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob(
             CompactionJob job, Instant createdTime, RecordsProcessedSummary summary) {
-        Runnable invokeCompactionJobLambda = () -> {
-            statusStore.fixUpdateTime(createdTime);
-            statusStore.jobCreated(job);
-        };
+        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createdTime);
         Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.fixUpdateTime(defaultUpdateTime(summary.getStartTime()));
             statusStore.jobStarted(job, summary.getStartTime(), taskId);
-            statusStore.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
             statusStore.jobFinished(job, summary, taskId);
         };
         return builderWithDefaults()
