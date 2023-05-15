@@ -28,6 +28,7 @@ import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
@@ -54,22 +55,29 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForSplittingJobsToBeConsumed waitForJobsToBeConsumed;
 
-    public static WaitForCurrentSplitAddingMissingJobs from(AmazonSQS sqsClient, CompactionJobStatusStore store,
-                                                            InstanceProperties instanceProperties, String tableName) {
-        return new WaitForCurrentSplitAddingMissingJobs(sqsClient, store, instanceProperties, tableName);
-    }
-
-    public WaitForCurrentSplitAddingMissingJobs(
-            AmazonSQS sqsClient, CompactionJobStatusStore store,
-            InstanceProperties instanceProperties, String tableName) {
-        this.instanceId = instanceProperties.get(ID);
-        this.tableName = tableName;
-        this.store = store;
+    private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
+        instanceId = builder.instanceProperties.get(ID);
+        tableName = builder.tableName;
+        store = builder.store;
         waitForSplitting = WaitForQueueEstimate.isEmpty(
-                withSqsClient(sqsClient), instanceProperties, PARTITION_SPLITTING_QUEUE_URL);
+                builder.queueClient, builder.instanceProperties, PARTITION_SPLITTING_QUEUE_URL);
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
         waitForJobsToBeConsumed = new WaitForSplittingJobsToBeConsumed(
-                withSqsClient(sqsClient), instanceProperties, tableName, store);
+                builder.queueClient, builder.instanceProperties, tableName, store);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static WaitForCurrentSplitAddingMissingJobs from(AmazonSQS sqsClient, CompactionJobStatusStore store,
+                                                            InstanceProperties instanceProperties, String tableName) {
+        return builder()
+                .queueClient(withSqsClient(sqsClient))
+                .store(store)
+                .instanceProperties(instanceProperties)
+                .tableName(tableName)
+                .build();
     }
 
     public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
@@ -118,5 +126,39 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         WaitForCurrentSplitAddingMissingJobs.from(sqsClient, store, systemTestProperties, tableName)
                 .waitForSplittingAndCompaction();
+    }
+
+    public static final class Builder {
+        private InstanceProperties instanceProperties;
+        private String tableName;
+        private CompactionJobStatusStore store;
+        private QueueMessageCount.Client queueClient;
+
+        private Builder() {
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder store(CompactionJobStatusStore store) {
+            this.store = store;
+            return this;
+        }
+
+        public Builder queueClient(QueueMessageCount.Client queueClient) {
+            this.queueClient = queueClient;
+            return this;
+        }
+
+        public WaitForCurrentSplitAddingMissingJobs build() {
+            return new WaitForCurrentSplitAddingMissingJobs(this);
+        }
     }
 }
