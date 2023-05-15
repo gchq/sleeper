@@ -103,6 +103,9 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
+    // TODO: case where job is started immediately after it's created, and queue estimate is zero when first polled
+    // TODO: case where queue estimate is zero when first polled, but job is started immediately after that, and estimate stays zero
+
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
         CompactionJob job = jobHelper.singleFileCompaction();
         Instant createdTime = Instant.parse("2023-05-15T12:11:00Z");
