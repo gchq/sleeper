@@ -52,7 +52,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final CompactionJobStatusStore store;
     private final WaitForQueueEstimate waitForSplitting;
     private final WaitForCompactionJobs waitForCompaction;
-    private final WaitForQueueEstimate waitForJobsToBeConsumed;
+    private final WaitForQueueEstimate waitForCompactionsToAppearOnQueue;
     private final InvokeSystemTestLambda.Client lambdaClient;
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
@@ -66,7 +66,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
                 Objects.requireNonNull(builder.waitForSplitsToFinish,
                         "waitForSplitsToFinish must not be null"));
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
-        waitForJobsToBeConsumed = WaitForSplittingJobsToBeConsumed.from(
+        waitForCompactionsToAppearOnQueue = WaitForSplittingJobsToBeConsumed.from(
                 queueClient, properties, tableName, store,
                 Objects.requireNonNull(builder.waitForCompactionsToAppearOnQueue,
                         "waitForCompactionsToAppearOnQueue must not be null"));
@@ -91,7 +91,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
                 .build();
     }
 
-    public void waitForSplittingAndCompaction() throws InterruptedException, IOException {
+    public void waitForSplittingAndCompaction() throws InterruptedException {
         LOGGER.info("Waiting for partition splits");
         waitForSplitting.pollUntilFinished();
         checkIfSplittingCompactionNeededAndWait();
@@ -100,7 +100,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     /**
      * @return true if any splitting was done, false if none was needed
      */
-    public boolean checkIfSplittingCompactionNeededAndWait() throws InterruptedException, IOException {
+    public boolean checkIfSplittingCompactionNeededAndWait() throws InterruptedException {
         LOGGER.info("Creating compaction jobs");
         lambdaClient.invokeLambda(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
         if (store.getUnfinishedJobs(tableName).isEmpty()) {
@@ -109,7 +109,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         }
         // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
-        waitForJobsToBeConsumed.pollUntilFinished();
+        waitForCompactionsToAppearOnQueue.pollUntilFinished();
         LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
         lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
         waitForCompaction.pollUntilFinished();
