@@ -54,6 +54,11 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForSplittingJobsToBeConsumed waitForJobsToBeConsumed;
 
+    public static WaitForCurrentSplitAddingMissingJobs from(AmazonSQS sqsClient, CompactionJobStatusStore store,
+                                                            InstanceProperties instanceProperties, String tableName) {
+        return new WaitForCurrentSplitAddingMissingJobs(sqsClient, store, instanceProperties, tableName);
+    }
+
     public WaitForCurrentSplitAddingMissingJobs(
             AmazonSQS sqsClient, CompactionJobStatusStore store,
             InstanceProperties instanceProperties, String tableName) {
@@ -111,7 +116,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
-        new WaitForCurrentSplitAddingMissingJobs(sqsClient, store, systemTestProperties, tableName)
+        WaitForCurrentSplitAddingMissingJobs.from(sqsClient, store, systemTestProperties, tableName)
                 .waitForSplittingAndCompaction();
     }
 }
