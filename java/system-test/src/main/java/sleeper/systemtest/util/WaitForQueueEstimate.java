@@ -25,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 public class WaitForQueueEstimate {
@@ -80,11 +81,11 @@ public class WaitForQueueEstimate {
     private WaitForQueueEstimate(QueueMessageCount.Client queueClient, String queueUrl,
                                  Predicate<QueueMessageCount> isFinished, String description,
                                  PollWithRetries poll) {
-        this.queueClient = queueClient;
-        this.queueUrl = queueUrl;
-        this.isFinished = isFinished;
-        this.description = description;
-        this.poll = poll;
+        this.queueClient = Objects.requireNonNull(queueClient, "queueClient must not be null");
+        this.queueUrl = Objects.requireNonNull(queueUrl, "queueUrl must not be null");
+        this.isFinished = Objects.requireNonNull(isFinished, "isFinished must not be null");
+        this.description = Objects.requireNonNull(description, "description must not be null");
+        this.poll = Objects.requireNonNull(poll, "poll must not be null");
     }
 
     public void pollUntilFinished() throws InterruptedException {

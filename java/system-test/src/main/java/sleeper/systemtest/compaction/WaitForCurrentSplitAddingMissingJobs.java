@@ -48,6 +48,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private static final int JOBS_ESTIMATE_MAX_POLLS = 12;
     private static final long SPLITTING_POLL_INTERVAL_MILLIS = 5000;
     private static final int SPLITTING_MAX_POLLS = 12;
+    private static final long COMPACTION_JOB_POLL_INTERVAL_MILLIS = 30000;
+    private static final int COMPACTION_JOB_MAX_POLLS = 120;
 
     private final String tableName;
     private final CompactionJobStatusStore store;
@@ -63,14 +65,10 @@ public class WaitForCurrentSplitAddingMissingJobs {
         store = Objects.requireNonNull(builder.store, "store must not be null");
         lambdaClient = Objects.requireNonNull(builder.lambdaClient, "lambdaClient must not be null");
         waitForSplitting = WaitForQueueEstimate.isEmpty(
-                queueClient, properties, PARTITION_SPLITTING_QUEUE_URL,
-                Objects.requireNonNull(builder.waitForSplitsToFinish,
-                        "waitForSplitsToFinish must not be null"));
-        waitForCompaction = new WaitForCompactionJobs(store, tableName);
+                queueClient, properties, PARTITION_SPLITTING_QUEUE_URL, builder.waitForSplitsToFinish);
+        waitForCompaction = new WaitForCompactionJobs(store, tableName, builder.waitForCompactionJobs);
         waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.notEmpty(
-                queueClient, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
-                Objects.requireNonNull(builder.waitForCompactionsToAppearOnQueue,
-                        "waitForCompactionsToAppearOnQueue must not be null"));
+                queueClient, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL, builder.waitForCompactionsToAppearOnQueue);
     }
 
     public static Builder builder() {
@@ -88,6 +86,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
                         SPLITTING_POLL_INTERVAL_MILLIS, SPLITTING_MAX_POLLS))
                 .waitForCompactionsToAppearOnQueue(PollWithRetries.intervalAndMaxPolls(
                         JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
+                .waitForCompactionJobs(PollWithRetries.intervalAndMaxPolls(
+                        COMPACTION_JOB_POLL_INTERVAL_MILLIS, COMPACTION_JOB_MAX_POLLS))
                 .lambdaClient(InvokeSystemTestLambda.client(instanceProperties))
                 .build();
     }
@@ -145,6 +145,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         private QueueMessageCount.Client queueClient;
         private PollWithRetries waitForSplitsToFinish;
         private PollWithRetries waitForCompactionsToAppearOnQueue;
+        private PollWithRetries waitForCompactionJobs;
         private InvokeSystemTestLambda.Client lambdaClient;
 
         private Builder() {
@@ -177,6 +178,11 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         public Builder waitForCompactionsToAppearOnQueue(PollWithRetries waitForCompactionsToAppearOnQueue) {
             this.waitForCompactionsToAppearOnQueue = waitForCompactionsToAppearOnQueue;
+            return this;
+        }
+
+        public Builder waitForCompactionJobs(PollWithRetries waitForCompactionJobs) {
+            this.waitForCompactionJobs = waitForCompactionJobs;
             return this;
         }
 

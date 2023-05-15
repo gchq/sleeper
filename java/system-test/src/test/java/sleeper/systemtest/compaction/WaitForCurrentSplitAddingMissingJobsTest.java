@@ -36,6 +36,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompact
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -43,6 +44,7 @@ import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 import static sleeper.job.common.QueueMessageCountsSequence.inOrder;
 
 class WaitForCurrentSplitAddingMissingJobsTest {
+    private static final String SPLITTING_QUEUE_URL = "test-splitting-queue";
     private static final String COMPACTION_JOB_QUEUE_URL = "test-splitting-compaction-job-queue";
     private final InstanceProperties properties = createTestInstanceProperties();
     private final String tableName = "test-table";
@@ -52,6 +54,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @BeforeEach
     void setUp() {
+        properties.set(PARTITION_SPLITTING_QUEUE_URL, SPLITTING_QUEUE_URL);
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
@@ -127,17 +130,18 @@ class WaitForCurrentSplitAddingMissingJobsTest {
             statusStore.fixTime(defaultUpdateTime(summary.getFinishTime()));
             statusStore.jobFinished(job, summary, taskId);
         };
-        return builder()
+        return builderWithDefaults()
                 .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda));
     }
 
-    private WaitForCurrentSplitAddingMissingJobs.Builder builder() {
+    private WaitForCurrentSplitAddingMissingJobs.Builder builderWithDefaults() {
         return WaitForCurrentSplitAddingMissingJobs.builder()
                 .instanceProperties(properties)
                 .store(statusStore)
                 .tableName(tableName)
-                .waitForSplitsToFinish(pollTimes(0))
-                .waitForCompactionsToAppearOnQueue(pollTimes(0));
+                .waitForSplitsToFinish(pollTimes(1))
+                .waitForCompactionsToAppearOnQueue(pollTimes(1))
+                .waitForCompactionJobs(pollTimes(1));
     }
 
     private static InvokeSystemTestLambda.Client invokeCompactionJobAndTaskClient(
