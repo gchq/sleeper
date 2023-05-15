@@ -129,7 +129,33 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 jobCreated(job, createTime, startedCompactionRun(taskId, startTime)));
     }
 
-    // TODO: case where job is started immediately after it's created, and queue estimate is zero when first polled
+    @Test
+    void shouldCompleteIfCompactionJobIsPickedUpByAlreadyRunningTask() throws Exception {
+        // Given
+        CompactionJob job = jobHelper.singleFileCompaction();
+        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
+        RecordsProcessedSummary summary = summary(
+                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
+        Runnable invokeCompactionJobLambda = () -> {
+            statusStore.jobCreated(job, createTime);
+            statusStore.jobStarted(job, summary.getStartTime(), taskId);
+        };
+        Runnable invokeCompactionTaskLambda = () ->
+                statusStore.jobFinished(job, summary, taskId);
+
+        WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
+                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .queueClient(visibleMessages(COMPACTION_JOB_QUEUE_URL, 0))
+                .waitForCompactionsToAppearOnQueue(pollTimes(1))
+                .waitForCompactionJobs(pollTimes(1))
+                .build();
+
+        // When/Then
+        assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+    }
+
+    // TODO: avoid need to run compaction task lambda if job is already picked up by a running task (?)
+    // TODO: find a better place to report the job as finished in the test rather than have the compaction task lambda do it (?)
     // TODO: case where queue estimate is zero when first polled, but job is started immediately after that, and estimate stays zero
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {

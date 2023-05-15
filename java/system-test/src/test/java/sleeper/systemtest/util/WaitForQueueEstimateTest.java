@@ -119,20 +119,20 @@ class WaitForQueueEstimateTest {
     }
 
     @Nested
-    @DisplayName("Wait for queue to match count of unfinished compaction jobs")
-    class WaitForQueueToMatchUnfinishedCompactionJobs {
+    @DisplayName("Wait for queue to match count of unstarted compaction jobs")
+    class WaitForQueueToMatchUnstartedCompactionJobs {
 
         String tableName = "test-table";
         CompactionJobTestDataHelper jobHelper = CompactionJobTestDataHelper.forTable(tableName);
         CompactionJobStatusStore statusStore = new CompactionJobStatusStoreInMemory();
 
         @Test
-        void shouldTimeOutWaitingForQueueEstimateToIncludeSingleUnfinishedJob() {
+        void shouldTimeOutWaitingForQueueEstimateToIncludeSingleUnstartedJob() {
             // Given
             statusStore.jobCreated(jobHelper.singleFileCompaction());
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = matchesUnfinishedJobs(
+            WaitForQueueEstimate wait = matchesUnstartedJobs(
                     visibleMessages("test-job-queue", 0),
                     INGEST_JOB_QUEUE_URL);
 
@@ -142,12 +142,12 @@ class WaitForQueueEstimateTest {
         }
 
         @Test
-        void shouldFinishWaitingForQueueEstimateToIncludeSingleUnfinishedJob() {
+        void shouldFinishWaitingForQueueEstimateToIncludeSingleUnstartedJob() {
             // Given
             statusStore.jobCreated(jobHelper.singleFileCompaction());
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = matchesUnfinishedJobs(
+            WaitForQueueEstimate wait = matchesUnstartedJobs(
                     visibleMessages("test-job-queue", 1),
                     INGEST_JOB_QUEUE_URL);
 
@@ -157,17 +157,16 @@ class WaitForQueueEstimateTest {
         }
 
         @Test
-        void shouldFinishWaitingForQueueEstimateWhenJobHasAlreadyFinished() {
+        void shouldFinishWaitingForQueueEstimateWhenJobHasAlreadyStarted() {
             // Given
             CompactionJob job = jobHelper.singleFileCompaction();
             RecordsProcessedSummary summary = summary(
                     Instant.parse("2023-05-12T12:16:42Z"), Duration.ofSeconds(30), 10L, 10L);
             statusStore.jobCreated(job);
             statusStore.jobStarted(job, summary.getStartTime(), "test-task");
-            statusStore.jobFinished(job, summary, "test-task");
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = matchesUnfinishedJobs(
+            WaitForQueueEstimate wait = matchesUnstartedJobs(
                     visibleMessages("test-job-queue", 0),
                     INGEST_JOB_QUEUE_URL);
 
@@ -176,8 +175,8 @@ class WaitForQueueEstimateTest {
                     .doesNotThrowAnyException();
         }
 
-        private WaitForQueueEstimate matchesUnfinishedJobs(QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
-            return WaitForQueueEstimate.matchesUnfinishedJobs(
+        private WaitForQueueEstimate matchesUnstartedJobs(QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
+            return WaitForQueueEstimate.matchesUnstartedJobs(
                     queueClient, properties, queueUrl, statusStore, tableName,
                     PollWithRetries.intervalAndMaxPolls(0, 1));
         }

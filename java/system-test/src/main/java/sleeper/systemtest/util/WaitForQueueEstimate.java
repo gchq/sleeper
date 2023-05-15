@@ -21,12 +21,15 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Objects;
 import java.util.function.Predicate;
+
+import static java.util.function.Predicate.not;
 
 public class WaitForQueueEstimate {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueueEstimate.class);
@@ -55,14 +58,17 @@ public class WaitForQueueEstimate {
                 "estimate empty for queue " + queueUrl, poll);
     }
 
-    public static WaitForQueueEstimate matchesUnfinishedJobs(
+    public static WaitForQueueEstimate matchesUnstartedJobs(
             QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
             CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
-        int unfinished = statusStore.getUnfinishedJobs(tableName).size();
-        LOGGER.info("Found {} unfinished compaction jobs", unfinished);
         return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty,
-                estimate -> estimate.getApproximateNumberOfMessages() >= unfinished,
-                "queue estimate matching unfinished compaction jobs", poll);
+                estimate -> {
+                    long unstarted = statusStore.getUnfinishedJobs(tableName).stream()
+                            .filter(not(CompactionJobStatus::isStarted)).count();
+                    LOGGER.info("Found {} unstarted compaction jobs", unstarted);
+                    return estimate.getApproximateNumberOfMessages() >= unstarted;
+                },
+                "queue estimate matching unstarted compaction jobs", poll);
     }
 
     public static WaitForQueueEstimate withCustomPredicate(

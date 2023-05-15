@@ -67,8 +67,9 @@ public class WaitForCurrentSplitAddingMissingJobs {
         waitForSplitting = WaitForQueueEstimate.isEmpty(
                 queueClient, properties, PARTITION_SPLITTING_QUEUE_URL, builder.waitForSplitsToFinish);
         waitForCompaction = new WaitForCompactionJobs(store, tableName, builder.waitForCompactionJobs);
-        waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.notEmpty(
-                queueClient, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL, builder.waitForCompactionsToAppearOnQueue);
+        waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.matchesUnstartedJobs(
+                queueClient, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
+                store, tableName, builder.waitForCompactionsToAppearOnQueue);
     }
 
     public static Builder builder() {
