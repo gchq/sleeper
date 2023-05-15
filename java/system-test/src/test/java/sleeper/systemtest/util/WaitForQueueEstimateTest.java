@@ -25,7 +25,9 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.job.common.QueueMessageCount;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,10 +52,9 @@ class WaitForQueueEstimateTest {
         void shouldTimeOutWaitingForNonEmptyQueue() {
             // Given
             properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.notEmpty(
+            WaitForQueueEstimate wait = notEmpty(
                     singleQueueVisibleMessages("test-job-queue", 0),
-                    properties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    SPLITTING_COMPACTION_JOB_QUEUE_URL);
 
             // When / Then
             assertThatThrownBy(wait::pollUntilFinished)
@@ -64,14 +65,19 @@ class WaitForQueueEstimateTest {
         void shouldFinishWaitingForNonEmptyQueue() {
             // Given
             properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.notEmpty(
+            WaitForQueueEstimate wait = notEmpty(
                     singleQueueVisibleMessages("test-job-queue", 1),
-                    properties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    SPLITTING_COMPACTION_JOB_QUEUE_URL);
 
             // When / Then
             assertThatCode(wait::pollUntilFinished)
                     .doesNotThrowAnyException();
+        }
+
+        private WaitForQueueEstimate notEmpty(QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
+            return WaitForQueueEstimate.notEmpty(
+                    queueClient, properties, queueUrl,
+                    PollWithRetries.intervalAndMaxPolls(0, 1));
         }
     }
 
@@ -83,10 +89,9 @@ class WaitForQueueEstimateTest {
         void shouldTimeOutWaitingForEmptyQueue() {
             // Given
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.isEmpty(
+            WaitForQueueEstimate wait = isEmpty(
                     singleQueueVisibleMessages("test-job-queue", 1),
-                    properties, INGEST_JOB_QUEUE_URL,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    INGEST_JOB_QUEUE_URL);
 
             // When / Then
             assertThatThrownBy(wait::pollUntilFinished)
@@ -97,14 +102,19 @@ class WaitForQueueEstimateTest {
         void shouldFinishWaitingForEmptyQueue() {
             // Given
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.isEmpty(
+            WaitForQueueEstimate wait = isEmpty(
                     singleQueueVisibleMessages("test-job-queue", 0),
-                    properties, INGEST_JOB_QUEUE_URL,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    INGEST_JOB_QUEUE_URL);
 
             // When / Then
             assertThatCode(wait::pollUntilFinished)
                     .doesNotThrowAnyException();
+        }
+
+        private WaitForQueueEstimate isEmpty(QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
+            return WaitForQueueEstimate.isEmpty(
+                    queueClient, properties, queueUrl,
+                    PollWithRetries.intervalAndMaxPolls(0, 1));
         }
     }
 
@@ -122,10 +132,9 @@ class WaitForQueueEstimateTest {
             statusStore.jobCreated(jobHelper.singleFileCompaction());
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.matchesUnfinishedJobs(
+            WaitForQueueEstimate wait = matchesUnfinishedJobs(
                     singleQueueVisibleMessages("test-job-queue", 0),
-                    properties, INGEST_JOB_QUEUE_URL, statusStore, tableName,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    INGEST_JOB_QUEUE_URL);
 
             // When / Then
             assertThatThrownBy(wait::pollUntilFinished)
@@ -138,10 +147,9 @@ class WaitForQueueEstimateTest {
             statusStore.jobCreated(jobHelper.singleFileCompaction());
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.matchesUnfinishedJobs(
+            WaitForQueueEstimate wait = matchesUnfinishedJobs(
                     singleQueueVisibleMessages("test-job-queue", 1),
-                    properties, INGEST_JOB_QUEUE_URL, statusStore, tableName,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    INGEST_JOB_QUEUE_URL);
 
             // When / Then
             assertThatCode(wait::pollUntilFinished)
@@ -159,14 +167,19 @@ class WaitForQueueEstimateTest {
             statusStore.jobFinished(job, summary, "test-task");
 
             properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
-            WaitForQueueEstimate wait = WaitForQueueEstimate.matchesUnfinishedJobs(
+            WaitForQueueEstimate wait = matchesUnfinishedJobs(
                     singleQueueVisibleMessages("test-job-queue", 0),
-                    properties, INGEST_JOB_QUEUE_URL, statusStore, tableName,
-                    PollWithRetries.intervalAndMaxPolls(0, 1));
+                    INGEST_JOB_QUEUE_URL);
 
             // When / Then
             assertThatCode(wait::pollUntilFinished)
                     .doesNotThrowAnyException();
+        }
+
+        private WaitForQueueEstimate matchesUnfinishedJobs(QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
+            return WaitForQueueEstimate.matchesUnfinishedJobs(
+                    queueClient, properties, queueUrl, statusStore, tableName,
+                    PollWithRetries.intervalAndMaxPolls(0, 1));
         }
     }
 }
