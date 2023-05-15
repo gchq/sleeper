@@ -30,6 +30,7 @@ import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -146,8 +147,8 @@ class WaitForCurrentSplitAddingMissingJobsTest {
             statusStore.jobCreated(job, createTime);
             statusStore.jobStarted(job, summary.getStartTime(), taskId);
         };
-        Runnable invokeCompactionTaskLambda = () -> {
-        };
+        AtomicBoolean hasCompactionTaskLambdaRun = new AtomicBoolean(false);
+        Runnable invokeCompactionTaskLambda = () -> hasCompactionTaskLambdaRun.set(true);
         when(queueClient.getQueueMessageCount(COMPACTION_JOB_QUEUE_URL))
                 .thenAnswer((Answer<QueueMessageCount>) invocation -> {
                     statusStore.jobFinished(job, summary, taskId);
@@ -163,7 +164,9 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
         // When/Then
         assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+        assertThat(hasCompactionTaskLambdaRun).isFalse();
     }
+
     // TODO: avoid need to run compaction task lambda if job is already picked up by a running task (?)
     // TODO: case where queue estimate is zero when first polled, but job is started immediately after that, and estimate stays zero
 

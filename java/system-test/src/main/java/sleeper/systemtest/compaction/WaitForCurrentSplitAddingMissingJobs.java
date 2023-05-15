@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
@@ -36,6 +37,7 @@ import sleeper.systemtest.util.WaitForQueueEstimate;
 import java.io.IOException;
 import java.util.Objects;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -112,9 +114,14 @@ public class WaitForCurrentSplitAddingMissingJobs {
         // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
         waitForCompactionsToAppearOnQueue.pollUntilFinished();
-        LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-        lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
-        waitForCompaction.pollUntilFinished();
+        if (store.getUnfinishedJobs(tableName).stream()
+                .noneMatch(not(CompactionJobStatus::isStarted))) {
+            LOGGER.info("Lambda created new jobs, but they were picked up by another running task");
+        } else {
+            LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
+            lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+            waitForCompaction.pollUntilFinished();
+        }
         return true;
     }
 
