@@ -38,6 +38,7 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
@@ -66,8 +67,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
                 Objects.requireNonNull(builder.waitForSplitsToFinish,
                         "waitForSplitsToFinish must not be null"));
         waitForCompaction = new WaitForCompactionJobs(store, tableName);
-        waitForCompactionsToAppearOnQueue = WaitForSplittingJobsToBeConsumed.from(
-                queueClient, properties, tableName, store,
+        waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.notEmpty(
+                queueClient, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
                 Objects.requireNonNull(builder.waitForCompactionsToAppearOnQueue,
                         "waitForCompactionsToAppearOnQueue must not be null"));
     }

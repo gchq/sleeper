@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -68,6 +69,51 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
         // When/Then
         assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+    }
+
+    @Test
+    void shouldWaitForCompactionJobToAppearOnQueue() throws Exception {
+        // Given
+        CompactionJob job = jobHelper.singleFileCompaction();
+        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
+        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
+        Runnable invokeCompactionTaskLambda = () -> {
+            statusStore.jobStarted(job, startTime, "test-task");
+            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
+        };
+        WaitForCurrentSplitAddingMissingJobs waiter = builder()
+                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .queueClient(inOrder(
+                        visibleMessages(COMPACTION_JOB_QUEUE_URL, 0),
+                        visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
+                .waitForCompactionsToAppearOnQueue(pollTimes(2))
+                .build();
+
+        // When/Then
+        assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+    }
+
+    @Test
+    void shouldTimeOutIfCompactionJobDoesNotAppearOnQueue() {
+        // Given
+        CompactionJob job = jobHelper.singleFileCompaction();
+        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
+        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job);
+        Runnable invokeCompactionTaskLambda = () -> {
+            statusStore.jobStarted(job, startTime, "test-task");
+            statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
+        };
+        WaitForCurrentSplitAddingMissingJobs waiter = builder()
+                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .queueClient(inOrder(
+                        visibleMessages(COMPACTION_JOB_QUEUE_URL, 0),
+                        visibleMessages(COMPACTION_JOB_QUEUE_URL, 0)))
+                .waitForCompactionsToAppearOnQueue(pollTimes(2))
+                .build();
+
+        // When/Then
+        assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
     private WaitForCurrentSplitAddingMissingJobs.Builder builder() {
