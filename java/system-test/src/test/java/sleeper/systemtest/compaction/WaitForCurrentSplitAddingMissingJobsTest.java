@@ -24,8 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.job.common.QueueMessageCount;
-import sleeper.job.common.QueueMessageCountsSequence;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,6 +36,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
+import static sleeper.job.common.QueueMessageCountsSequence.inOrder;
 
 class WaitForCurrentSplitAddingMissingJobsTest {
     private static final String COMPACTION_JOB_QUEUE_URL = "test-splitting-compaction-job-queue";
@@ -50,25 +50,6 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         properties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
-    private WaitForCurrentSplitAddingMissingJobs waitAndAddJobs(
-            Runnable invokeCompactionJobLambda, Runnable invokeCompactionTaskLambda, QueueMessageCount.Client queueClient) {
-        return WaitForCurrentSplitAddingMissingJobs.builder()
-                .instanceProperties(properties)
-                .lambdaClient((lambdaFunctionProperty -> {
-                    if (lambdaFunctionProperty.equals(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION)) {
-                        invokeCompactionJobLambda.run();
-                    } else if (lambdaFunctionProperty.equals(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION)) {
-                        invokeCompactionTaskLambda.run();
-                    }
-                }))
-                .store(statusStore)
-                .tableName(tableName)
-                .waitForSplitsToFinish(PollWithRetries.intervalAndMaxPolls(0, 1))
-                .waitForCompactionsToAppearOnQueue(PollWithRetries.intervalAndMaxPolls(0, 1))
-                .queueClient(queueClient)
-                .build();
-    }
-
     @Test
     void shouldRunOneRoundOfSplitsWithOneSplittingCompactionJob() throws Exception {
         // Given
@@ -79,12 +60,37 @@ class WaitForCurrentSplitAddingMissingJobsTest {
             statusStore.jobStarted(job, startTime, "test-task");
             statusStore.jobFinished(job, summary(startTime, Duration.ofMinutes(1), 100L, 100L), "test-task");
         };
-        QueueMessageCount.Client sequence = QueueMessageCountsSequence.inOrder(
-                visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)
-        );
+        WaitForCurrentSplitAddingMissingJobs waiter = builder()
+                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
+                .waitForCompactionsToAppearOnQueue(pollTimes(1))
+                .build();
 
         // When/Then
-        assertThat(waitAndAddJobs(invokeCompactionJobLambda, invokeCompactionTaskLambda, sequence)
-                .checkIfSplittingCompactionNeededAndWait()).isTrue();
+        assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+    }
+
+    private WaitForCurrentSplitAddingMissingJobs.Builder builder() {
+        return WaitForCurrentSplitAddingMissingJobs.builder()
+                .instanceProperties(properties)
+                .store(statusStore)
+                .tableName(tableName)
+                .waitForSplitsToFinish(pollTimes(0))
+                .waitForCompactionsToAppearOnQueue(pollTimes(0));
+    }
+
+    private static InvokeSystemTestLambda.Client invokeCompactionJobAndTaskClient(
+            Runnable invokeCompactionJobLambda, Runnable invokeCompactionTaskLambda) {
+        return lambdaFunctionProperty -> {
+            if (lambdaFunctionProperty.equals(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION)) {
+                invokeCompactionJobLambda.run();
+            } else if (lambdaFunctionProperty.equals(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION)) {
+                invokeCompactionTaskLambda.run();
+            }
+        };
+    }
+
+    private static PollWithRetries pollTimes(int polls) {
+        return PollWithRetries.intervalAndMaxPolls(0, polls);
     }
 }
