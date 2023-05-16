@@ -49,33 +49,15 @@ public class IngestJobStatusTestData {
     }
 
     public static ProcessRun startedIngestRunWithValidation(
-            IngestJob job, String taskId, Instant validationTime, ValidationData validationData, Instant startTime) {
+            IngestJob job, String taskId, Instant startTime, Instant validationTime, ValidationData validationData) {
         return ProcessRun.builder()
                 .taskId(taskId)
                 .statusUpdates(ValidationStatus.builder()
                                 .updateTime(validationTime)
                                 .validationData(validationData).build(),
-                        IngestJobStartedStatus.validation(true)
+                        IngestJobStartedStatus.withValidation()
                                 .inputFileCount(job.getFiles().size())
                                 .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
-                .build();
-    }
-
-    public static ProcessRun unstartedValidRun(String taskId, Instant validationTime) {
-        return ProcessRun.builder()
-                .taskId(taskId)
-                .statusUpdates(ValidationStatus.builder()
-                        .updateTime(validationTime)
-                        .validationData(ValidationData.valid()).build())
-                .build();
-    }
-
-    public static ProcessRun invalidRun(String taskId, Instant validationTime, ValidationData validationData) {
-        return ProcessRun.builder()
-                .taskId(taskId)
-                .statusUpdates(ValidationStatus.builder()
-                        .updateTime(validationTime)
-                        .validationData(validationData).build())
                 .build();
     }
 

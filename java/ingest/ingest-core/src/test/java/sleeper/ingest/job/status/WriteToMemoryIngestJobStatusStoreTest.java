@@ -30,11 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.invalidRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRunWithValidation;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.unstartedValidRun;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -198,23 +196,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     @DisplayName("Report validation of job")
     class ReportValidationStatus {
         @Test
-        void shouldReportUnstartedJobWithNoValidationFailures() {
-            // Given
-            String tableName = "test-table";
-            String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
-            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-
-            // When
-            store.jobValidated(taskId, job, validationTime, ValidationData.valid());
-
-            // Then
-            assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, unstartedValidRun(taskId, validationTime)));
-        }
-
-        @Test
-        void shouldReportStartedJobWithNoValidationFailures() {
+        void shouldReportValidatedJob() {
             // Given
             String tableName = "test-table";
             String taskId = "test-task";
@@ -223,30 +205,12 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobValidated(taskId, job, validationTime, ValidationData.valid());
-            store.jobStarted(taskId, job, startTime, true);
+            store.jobStartedWithValidation(taskId, job, startTime, validationTime, ValidationData.valid());
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, startedIngestRunWithValidation(job, taskId,
-                            validationTime, ValidationData.valid(), startTime)));
-        }
-
-        @Test
-        void shouldReportJobWithValidationFailures() {
-            // Given
-            String tableName = "test-table";
-            String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
-            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            ValidationData validationData = ValidationData.invalid("Test validation reason");
-
-            // When
-            store.jobValidated(taskId, job, validationTime, validationData);
-
-            // Then
-            assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, invalidRun(taskId, validationTime, validationData)));
+                    .containsExactly(jobStatus(job, startedIngestRunWithValidation(job, taskId, startTime,
+                            validationTime, ValidationData.valid())));
         }
     }
 }

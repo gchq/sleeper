@@ -35,27 +35,27 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
 
     @Override
-    public void jobValidated(String taskId, IngestJob job, Instant validationTime, ValidationData validationData) {
+    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
+        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)), taskId);
+        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+    }
+
+    @Override
+    public void jobStartedWithValidation(String taskId, IngestJob job, Instant startTime,
+                                         Instant validationTime, ValidationData validationData) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 ValidationStatus.builder().updateTime(validationTime)
                         .validationData(validationData).build(), taskId);
+        ProcessStatusUpdateRecord startedRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                IngestJobStartedStatus.withValidation()
+                        .inputFileCount(job.getFiles().size())
+                        .startTime(startTime)
+                        .updateTime(defaultUpdateTime(startTime)).build(), taskId);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
-                .add(validationRecord);
-    }
-
-    @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, false);
-    }
-
-    @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean validation) {
-        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.validation(validation).inputFileCount(job.getFiles().size())
-                        .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build(), taskId);
-        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+                .addAll(List.of(validationRecord, startedRecord));
     }
 
     @Override
