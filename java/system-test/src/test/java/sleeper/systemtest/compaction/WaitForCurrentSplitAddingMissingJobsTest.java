@@ -114,11 +114,10 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldTimeOutIfCompactionJobDoesNotFinish() {
         // Given
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createTime);
-        Runnable invokeCompactionTaskLambda = () -> statusStore.jobStarted(job, startTime, taskId);
-
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .lambdaClient(invokeCompactionJobAndTaskClient(
+                        lambdaWhichCreatesCompactionJob(),
+                        lambdaWhichStartsCompactionJob()))
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .waitForCompactionJobs(pollTimes(2))
@@ -194,6 +193,14 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         };
         return builderWithDefaults()
                 .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda));
+    }
+
+    private Runnable lambdaWhichCreatesCompactionJob() {
+        return () -> statusStore.jobCreated(job, createTime);
+    }
+
+    private Runnable lambdaWhichStartsCompactionJob() {
+        return () -> statusStore.jobStarted(job, summary.getStartTime(), taskId);
     }
 
     private Runnable lambdaWhichCreatesAndStartsCompactionJob() {
