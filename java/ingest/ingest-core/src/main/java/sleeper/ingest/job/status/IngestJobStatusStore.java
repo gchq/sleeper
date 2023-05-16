@@ -27,10 +27,13 @@ public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {
     };
 
-    default void jobStarted(String taskId, IngestJob job, Instant startTime) {
+    default void jobValidated(String taskId, IngestJob job, Instant validationTime, ValidationData validationData) {
     }
 
-    default void jobStartedWithValidation(String taskId, IngestJob job, Instant startTime, Instant validationTime, ValidationData validationData) {
+    default void jobStarted(String taskId, IngestJob job, Instant startTime, boolean validated) {
+    }
+
+    default void jobStarted(String taskId, IngestJob job, Instant startTime) {
     }
 
     default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {

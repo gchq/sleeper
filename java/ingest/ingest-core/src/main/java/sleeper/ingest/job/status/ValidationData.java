@@ -28,7 +28,11 @@ public class ValidationData {
     }
 
     public static ValidationData valid() {
-        return new Builder().valid(true).build();
+        return new Builder().valid(true).reason("").build();
+    }
+
+    public static ValidationData invalid(String reason) {
+        return new Builder().valid(false).reason(reason).build();
     }
 
     @Override
@@ -58,13 +62,18 @@ public class ValidationData {
 
     public static final class Builder {
         private boolean valid;
-        private final String reason = "";
+        private String reason = "";
 
         public Builder() {
         }
 
         public Builder valid(boolean valid) {
             this.valid = valid;
+            return this;
+        }
+
+        public Builder reason(String reason) {
+            this.reason = reason;
             return this;
         }
 
