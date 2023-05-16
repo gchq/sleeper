@@ -39,7 +39,7 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
         return new Builder();
     }
 
-    public static Builder bulkImport() {
+    public static Builder withValidation() {
         return builder().isStartOfRun(false);
     }
 
