@@ -11,7 +11,8 @@
           "startedStatus": {
             "inputFileCount": 1,
             "startTime": "2022-10-13T14:02:10Z",
-            "updateTime": "2022-10-13T14:02:10.123Z"
+            "updateTime": "2022-10-13T14:02:10.123Z",
+            "isStartOfRun": true
           },
           "finishedStatus": {
             "updateTime": "2022-10-13T14:04:13.123Z",
@@ -38,7 +39,8 @@
           "startedStatus": {
             "inputFileCount": 1,
             "startTime": "2022-10-13T14:01:10Z",
-            "updateTime": "2022-10-13T14:01:10.123Z"
+            "updateTime": "2022-10-13T14:01:10.123Z",
+            "isStartOfRun": true
           },
           "finishedStatus": {
             "updateTime": "2022-10-13T14:02:10.123Z",
@@ -65,7 +67,8 @@
           "startedStatus": {
             "inputFileCount": 1,
             "startTime": "2022-10-13T12:01:10Z",
-            "updateTime": "2022-10-13T12:01:10.123Z"
+            "updateTime": "2022-10-13T12:01:10.123Z",
+            "isStartOfRun": true
           },
           "finishedStatus": {
             "updateTime": "2022-10-13T14:01:10.123Z",
@@ -92,7 +95,8 @@
           "startedStatus": {
             "inputFileCount": 1,
             "startTime": "2022-10-13T10:00:10Z",
-            "updateTime": "2022-10-13T10:00:10.123Z"
+            "updateTime": "2022-10-13T10:00:10.123Z",
+            "isStartOfRun": true
           },
           "finishedStatus": {
             "updateTime": "2022-10-13T10:02:13.123Z",
