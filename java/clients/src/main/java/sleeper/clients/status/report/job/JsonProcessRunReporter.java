@@ -31,7 +31,7 @@ public class JsonProcessRunReporter {
         return ((processRun, type, context) -> createProcessRunJson(processRun, context));
     }
 
-    public static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
+    private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("taskId", run.getTaskId());
         jsonObject.add("startedStatus", context.serialize(run.getStartedStatus()));

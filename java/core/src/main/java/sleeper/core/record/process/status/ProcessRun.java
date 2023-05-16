@@ -134,11 +134,11 @@ public class ProcessRun {
                 '}';
     }
 
-    public static class Builder {
+    public static final class Builder {
         private String taskId;
         private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
-        protected Builder() {
+        private Builder() {
         }
 
         public Builder taskId(String taskId) {
