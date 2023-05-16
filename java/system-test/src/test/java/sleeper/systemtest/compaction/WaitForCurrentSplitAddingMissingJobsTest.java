@@ -115,7 +115,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldTimeOutIfCompactionJobDoesNotFinish() {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(
+                .lambdaClient(createCompactionJobAndTaskLambdas(
                         lambdaWhichCreatesCompactionJob(),
                         lambdaWhichStartsCompactionJob()))
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
@@ -134,7 +134,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldCompleteIfCompactionJobIsFinishedBeforeWeCheckQueueEstimate() throws Exception {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(
+                .lambdaClient(createCompactionJobAndTaskLambdas(
                         lambdaWhichCreatesAndFinishesCompactionJob(),
                         lambdaWhichDoesNothing()))
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 0)))
@@ -152,7 +152,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldCompleteIfCompactionJobIsStartedBeforeWeCheckQueueEstimate() throws Exception {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(
+                .lambdaClient(createCompactionJobAndTaskLambdas(
                         lambdaWhichCreatesAndStartsCompactionJob(),
                         lambdaWhichDoesNothing()))
                 .queueClient(emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked())
@@ -172,7 +172,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         Runnable invokeCompactionTaskLambda = mock(Runnable.class);
 
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(
+                .lambdaClient(createCompactionJobAndTaskLambdas(
                         lambdaWhichCreatesAndStartsCompactionJob(),
                         invokeCompactionTaskLambda))
                 .queueClient(emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked())
@@ -186,13 +186,10 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     }
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createTime);
-        Runnable invokeCompactionTaskLambda = () -> {
-            statusStore.jobStarted(job, summary.getStartTime(), taskId);
-            statusStore.jobFinished(job, summary, taskId);
-        };
         return builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda));
+                .lambdaClient(createCompactionJobAndTaskLambdas(
+                        lambdaWhichCreatesCompactionJob(),
+                        lambdaWhichStartsAndFinishesCompactionJob()));
     }
 
     private Runnable lambdaWhichCreatesCompactionJob() {
@@ -201,6 +198,13 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     private Runnable lambdaWhichStartsCompactionJob() {
         return () -> statusStore.jobStarted(job, summary.getStartTime(), taskId);
+    }
+
+    private Runnable lambdaWhichStartsAndFinishesCompactionJob() {
+        return () -> {
+            statusStore.jobStarted(job, summary.getStartTime(), taskId);
+            statusStore.jobFinished(job, summary, taskId);
+        };
     }
 
     private Runnable lambdaWhichCreatesAndStartsCompactionJob() {
@@ -243,7 +247,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .waitForCompactionJobs(pollTimes(1));
     }
 
-    private static InvokeSystemTestLambda.Client invokeCompactionJobAndTaskClient(
+    private static InvokeSystemTestLambda.Client createCompactionJobAndTaskLambdas(
             Runnable invokeCompactionJobLambda, Runnable invokeCompactionTaskLambda) {
         return lambdaFunctionProperty -> {
             if (lambdaFunctionProperty.equals(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION)) {
