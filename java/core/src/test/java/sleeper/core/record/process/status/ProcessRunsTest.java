@@ -190,4 +190,15 @@ public class ProcessRunsTest {
         assertThat(runs.isFinished()).isTrue();
     }
 
+    @Test
+    void shouldNotCreateProcessRunIfStatusUpdateNotFlaggedAsStartOfRun() {
+        // Given
+        ProcessStatusUpdate notStartedUpdate = () -> Instant.parse("2022-09-24T09:23:30.001Z");
+
+        // When
+        ProcessRuns runs = runsFromUpdates(notStartedUpdate);
+
+        // Then
+        assertThat(runs.getRunList()).isEmpty();
+    }
 }
