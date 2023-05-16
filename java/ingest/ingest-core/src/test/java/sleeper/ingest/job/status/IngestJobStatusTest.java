@@ -126,7 +126,7 @@ public class IngestJobStatusTest {
         Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
 
         List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
-                forJob(job.getId(), IngestJobStartedStatus.withValidation()
+                forJob(job.getId(), IngestJobStartedStatus.validation(true)
                         .inputFileCount(job.getFiles().size())
                         .startTime(startTime)
                         .updateTime(defaultUpdateTime(startTime)).build())));

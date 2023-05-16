@@ -39,8 +39,8 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
         return new Builder();
     }
 
-    public static Builder withValidation() {
-        return builder().isStartOfRun(false);
+    public static Builder validation(boolean validation) {
+        return builder().isStartOfRun(!validation);
     }
 
     public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
