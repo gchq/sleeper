@@ -38,6 +38,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.job.common.QueueMessageCountsInMemory.visibleAndNotVisibleMessages;
 import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
 class WaitForQueueEstimateTest {
@@ -114,6 +115,56 @@ class WaitForQueueEstimateTest {
         private WaitForQueueEstimate isEmpty(QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
             return WaitForQueueEstimate.isEmpty(
                     queueClient, properties, queueUrl,
+                    PollWithRetries.intervalAndMaxPolls(0, 1));
+        }
+    }
+
+    @Nested
+    @DisplayName("Wait for consumed queue")
+    class WaitForConsumedQueue {
+
+        @Test
+        void shouldTimeOutWaitingForConsumedQueueWhenNoneAreTakenOffQueue() {
+            // Given
+            properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
+            WaitForQueueEstimate wait = isConsumed(
+                    visibleMessages("test-job-queue", 1),
+                    INGEST_JOB_QUEUE_URL);
+
+            // When / Then
+            assertThatThrownBy(wait::pollUntilFinished)
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+        }
+
+        @Test
+        void shouldTimeOutWaitingForConsumedQueueWhenOneIsTakenOffQueueButNotConsumed() {
+            // Given
+            properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
+            WaitForQueueEstimate wait = isConsumed(
+                    visibleAndNotVisibleMessages("test-job-queue", 0, 1),
+                    INGEST_JOB_QUEUE_URL);
+
+            // When / Then
+            assertThatThrownBy(wait::pollUntilFinished)
+                    .isInstanceOf(PollWithRetries.TimedOutException.class);
+        }
+
+        @Test
+        void shouldFinishWaitingForEmptyQueue() {
+            // Given
+            properties.set(INGEST_JOB_QUEUE_URL, "test-job-queue");
+            WaitForQueueEstimate wait = isConsumed(
+                    visibleAndNotVisibleMessages("test-job-queue", 0, 0),
+                    INGEST_JOB_QUEUE_URL);
+
+            // When / Then
+            assertThatCode(wait::pollUntilFinished)
+                    .doesNotThrowAnyException();
+        }
+
+        private WaitForQueueEstimate isConsumed(
+                QueueMessageCount.Client queueClient, InstanceProperty queueUrl) {
+            return WaitForQueueEstimate.isConsumed(queueClient, properties, queueUrl,
                     PollWithRetries.intervalAndMaxPolls(0, 1));
         }
     }

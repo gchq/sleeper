@@ -64,7 +64,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         store = Objects.requireNonNull(builder.store, "store must not be null");
         lambdaClient = Objects.requireNonNull(builder.lambdaClient, "lambdaClient must not be null");
-        waitForSplitsToFinish = WaitForQueueEstimate.isEmpty(
+        waitForSplitsToFinish = WaitForQueueEstimate.isConsumed(
                 queueClient, properties, PARTITION_SPLITTING_QUEUE_URL, builder.waitForSplitsToFinish);
         waitForCompaction = new WaitForCompactionJobs(store, tableName, builder.waitForCompactionJobs);
         waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.matchesUnstartedJobs(

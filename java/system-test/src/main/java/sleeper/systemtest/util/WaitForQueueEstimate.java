@@ -55,6 +55,16 @@ public class WaitForQueueEstimate {
                 "estimate empty for queue " + queueUrl, poll);
     }
 
+    public static WaitForQueueEstimate isConsumed(
+            QueueMessageCount.Client queueClient,
+            InstanceProperties instanceProperties, InstanceProperty queueProperty, PollWithRetries poll) {
+        String queueUrl = instanceProperties.get(queueProperty);
+        return new WaitForQueueEstimate(queueClient, queueUrl,
+                estimate -> estimate.getApproximateNumberOfMessages() == 0
+                        && estimate.getApproximateNumberOfMessagesNotVisible() == 0,
+                "estimate fully consumed for queue " + queueUrl, poll);
+    }
+
     public static WaitForQueueEstimate matchesUnstartedJobs(
             QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
             CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
@@ -65,12 +75,6 @@ public class WaitForQueueEstimate {
                     return estimate.getApproximateNumberOfMessages() >= unstarted;
                 },
                 "queue estimate matching unstarted compaction jobs", poll);
-    }
-
-    public static WaitForQueueEstimate withCustomPredicate(
-            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            String description, Predicate<QueueMessageCount> customPredicate, PollWithRetries poll) {
-        return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty, customPredicate, description, poll);
     }
 
     private WaitForQueueEstimate(QueueMessageCount.Client queueClient,
