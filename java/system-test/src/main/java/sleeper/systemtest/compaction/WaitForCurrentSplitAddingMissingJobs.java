@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
@@ -37,7 +36,6 @@ import sleeper.systemtest.util.WaitForQueueEstimate;
 import java.io.IOException;
 import java.util.Objects;
 
-import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -55,7 +53,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
     private final String tableName;
     private final CompactionJobStatusStore store;
-    private final WaitForQueueEstimate waitForSplitting;
+    private final WaitForQueueEstimate waitForSplitsToFinish;
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForQueueEstimate waitForCompactionsToAppearOnQueue;
     private final InvokeSystemTestLambda.Client lambdaClient;
@@ -66,7 +64,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         store = Objects.requireNonNull(builder.store, "store must not be null");
         lambdaClient = Objects.requireNonNull(builder.lambdaClient, "lambdaClient must not be null");
-        waitForSplitting = WaitForQueueEstimate.isEmpty(
+        waitForSplitsToFinish = WaitForQueueEstimate.isEmpty(
                 queueClient, properties, PARTITION_SPLITTING_QUEUE_URL, builder.waitForSplitsToFinish);
         waitForCompaction = new WaitForCompactionJobs(store, tableName, builder.waitForCompactionJobs);
         waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.matchesUnstartedJobs(
@@ -97,7 +95,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
     public void waitForSplittingAndCompaction() throws InterruptedException {
         LOGGER.info("Waiting for partition splits");
-        waitForSplitting.pollUntilFinished();
+        waitForSplitsToFinish.pollUntilFinished();
         checkIfSplittingCompactionNeededAndWait();
     }
 
@@ -106,16 +104,17 @@ public class WaitForCurrentSplitAddingMissingJobs {
      */
     public boolean checkIfSplittingCompactionNeededAndWait() throws InterruptedException {
         LOGGER.info("Creating compaction jobs");
+        int numJobsBefore = store.getAllJobs(tableName).size();
         lambdaClient.invokeLambda(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
-        if (store.getUnfinishedJobs(tableName).isEmpty()) {
+        int numJobsAfter = store.getAllJobs(tableName).size();
+        if (numJobsAfter == numJobsBefore) {
             LOGGER.info("Lambda created no more jobs, splitting complete");
             return false;
         }
         // SQS message count doesn't always seem to update before task creation Lambda runs, so wait for it
         // (the Lambda decides how many tasks to run based on how many messages it can see are in the queue)
         waitForCompactionsToAppearOnQueue.pollUntilFinished();
-        if (store.getUnfinishedJobs(tableName).stream()
-                .noneMatch(not(CompactionJobStatus::isStarted))) {
+        if (store.getUnstartedJobs(tableName).isEmpty()) {
             LOGGER.info("Lambda created new jobs, but they were picked up by another running task");
         } else {
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");

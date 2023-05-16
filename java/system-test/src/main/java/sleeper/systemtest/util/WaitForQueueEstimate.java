@@ -21,15 +21,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Objects;
 import java.util.function.Predicate;
-
-import static java.util.function.Predicate.not;
 
 public class WaitForQueueEstimate {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueueEstimate.class);
@@ -63,8 +60,7 @@ public class WaitForQueueEstimate {
             CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
         return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty,
                 estimate -> {
-                    long unstarted = statusStore.getUnfinishedJobs(tableName).stream()
-                            .filter(not(CompactionJobStatus::isStarted)).count();
+                    long unstarted = statusStore.getUnstartedJobs(tableName).size();
                     LOGGER.info("Found {} unstarted compaction jobs", unstarted);
                     return estimate.getApproximateNumberOfMessages() >= unstarted;
                 },
