@@ -33,6 +33,8 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunJsonSerializer;
+
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
@@ -74,22 +76,6 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
         jsonObject.add("jobRunList", context.serialize(jobStatus.getJobRuns()));
-        return jsonObject;
-    }
-
-    private static JsonSerializer<ProcessRun> processRunJsonSerializer() {
-        return ((processRun, type, context) -> createProcessRunJson(processRun, context));
-    }
-
-    private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("taskId", run.getTaskId());
-        if (run.getStartedStatus() != null) {
-            jsonObject.add("startedStatus", context.serialize(run.getStartedStatus()));
-        }
-        if (run.isFinished()) {
-            jsonObject.add("finishedStatus", context.serialize(run.getFinishedStatus()));
-        }
         return jsonObject;
     }
 }

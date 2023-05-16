@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
@@ -104,36 +102,5 @@ public class IngestJobStatusTest {
                 forJob(job.getId(), ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary))));
 
         assertThat(statuses).isEmpty();
-    }
-
-    @Test
-    void shouldDetectStartOfRunWhenBuildingStartedIngestJobStatusFromStandardIngest() {
-        IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
-        Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
-
-        List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
-                forJob(job.getId(), IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)))));
-
-        assertThat(statuses)
-                .flatMap(IngestJobStatus::getJobRuns)
-                .extracting(ProcessRun::getStartedStatus)
-                .allMatch(ProcessRunStartedUpdate::isStartOfRun);
-    }
-
-    @Test
-    void shouldNotDetectStartOfRunWhenBuildingStartedIngestJobStatusFromBulkImport() {
-        IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
-        Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
-
-        List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
-                forJob(job.getId(), IngestJobStartedStatus.validation(true)
-                        .inputFileCount(job.getFiles().size())
-                        .startTime(startTime)
-                        .updateTime(defaultUpdateTime(startTime)).build())));
-
-        assertThat(statuses)
-                .flatMap(IngestJobStatus::getJobRuns)
-                .extracting(ProcessRun::getStartedStatus)
-                .allMatch(startedStatus -> !startedStatus.isStartOfRun());
     }
 }
