@@ -18,7 +18,6 @@ package sleeper.configuration.properties.table;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
-import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
@@ -43,6 +42,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILE_LIMIT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE_LIMIT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE_LIMIT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -226,7 +228,24 @@ public interface TableProperty extends SleeperProperty {
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultProperty(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT)
-            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
+
+    // Ingest batcher
+    TableProperty INGEST_BATCHER_MIN_JOB_SIZE_LIMIT = Index.propertyBuilder("sleeper.ingest.batcher.job.min.size")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE_LIMIT)
+            .description("Specifies the minimum file size required for an ingest job to be batched and sent.")
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+    TableProperty INGEST_BATCHER_MAX_JOB_SIZE_LIMIT = Index.propertyBuilder("sleeper.ingest.batcher.job.max.size")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE_LIMIT)
+            .description("Specifies the maximum total file size for a job in the ingest batcher. " +
+                    "Any more file will be placed into new ingest jobs.")
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+    TableProperty INGEST_BATCHER_MAX_JOB_FILE_LIMIT = Index.propertyBuilder("sleeper.ingest.batcher.job.max.files")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_FILE_LIMIT)
+            .description("Specifies the maximum amount of files for a job in the ingest batcher. " +
+                    "Any more file will be placed into new ingest jobs.")
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+
 
     // Size ratio compaction strategy
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
