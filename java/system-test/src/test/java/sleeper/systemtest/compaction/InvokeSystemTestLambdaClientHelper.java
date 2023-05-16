@@ -16,37 +16,40 @@
 
 package sleeper.systemtest.compaction;
 
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class InvokeSystemTestLambdaClientHelper {
-    private Runnable compactionJobLambda;
-    private Runnable compactionTaskLambda;
+    private final Map<String, Runnable> lambdaByPropertyName = new HashMap<>();
 
-    public static InvokeSystemTestLambdaClientHelper clientBuilder() {
+    public static InvokeSystemTestLambdaClientHelper lambdaClientBuilder() {
         return new InvokeSystemTestLambdaClientHelper();
     }
 
-    public InvokeSystemTestLambdaClientHelper compactionJobLambda(Runnable compactionJobLambda) {
-        this.compactionJobLambda = compactionJobLambda;
-        return this;
+    public InvokeSystemTestLambdaClientHelper compactionJobCreation(Runnable compactionJobLambda) {
+        return lambda(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, compactionJobLambda);
     }
 
-    public InvokeSystemTestLambdaClientHelper compactionTaskLambda(Runnable compactionTaskLambda) {
-        this.compactionTaskLambda = compactionTaskLambda;
+    public InvokeSystemTestLambdaClientHelper splittingCompactionTaskCreation(Runnable compactionTaskLambda) {
+        return lambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, compactionTaskLambda);
+    }
+
+    public InvokeSystemTestLambdaClientHelper lambda(InstanceProperty property, Runnable behaviour) {
+        lambdaByPropertyName.put(property.getPropertyName(), behaviour);
         return this;
     }
 
     public InvokeSystemTestLambda.Client build() {
-        return lambdaFunctionProperty -> {
-            if (lambdaFunctionProperty.equals(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION)) {
-                compactionJobLambda.run();
-            } else if (lambdaFunctionProperty.equals(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION)) {
-                compactionTaskLambda.run();
-            }
-        };
+        return lambdaFunctionProperty ->
+                Optional.ofNullable(lambdaByPropertyName.get(lambdaFunctionProperty.getPropertyName()))
+                        .ifPresent(Runnable::run);
     }
 
 }
