@@ -30,7 +30,7 @@ chunks:
   ingest-common:
     name: Ingest Common
     workflow: chunk-ingest-common.yaml
-    modules: [ ingest/ingest-core, ingest/ingest-status-store ]
+    modules: [ ingest/ingest-core, ingest/ingest-status-store, ingest/ingest-batch-core ]
   ingest-runner:
     name: Ingest Runner
     workflow: chunk-ingest-runner.yaml
