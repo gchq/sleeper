@@ -119,8 +119,8 @@ public class WaitForCurrentSplitAddingMissingJobs {
         } else {
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
             lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
-            waitForCompaction.pollUntilFinished();
         }
+        waitForCompaction.pollUntilFinished();
         return true;
     }
 

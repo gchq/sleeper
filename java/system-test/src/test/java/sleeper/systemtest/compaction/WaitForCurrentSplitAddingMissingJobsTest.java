@@ -165,6 +165,43 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     }
 
     @Test
+    void shouldCompleteIfCompactionJobIsStartedOnSecondQueueEstimateCheck() throws Exception {
+        // Given
+        WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
+                .lambdaClient(clientBuilder()
+                        .compactionJobLambda(lambdaWhichCreatesCompactionJob())
+                        .compactionTaskLambda(lambdaWhichDoesNothing()).build())
+                .queueClient(inOrder(
+                        visibleMessages(COMPACTION_JOB_QUEUE_URL, 0),
+                        emptyCompactionQueueWhichStartsAndFinishesJobWhenEstimateIsChecked()))
+                .waitForCompactionsToAppearOnQueue(pollTimes(2))
+                .waitForCompactionJobs(pollTimes(1))
+                .build();
+
+        // When / Then
+        assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
+        assertThat(statusStore.getAllJobs(tableName)).containsExactly(
+                jobCreated(job, createTime, finishedCompactionRun(taskId, summary)));
+    }
+
+    @Test
+    void shouldTimeOutIfCompactionJobIsStartedBeforeQueueEstimateCheckButNeverFinishes() {
+        // Given
+        WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
+                .lambdaClient(clientBuilder()
+                        .compactionJobLambda(lambdaWhichCreatesCompactionJob())
+                        .compactionTaskLambda(lambdaWhichDoesNothing()).build())
+                .queueClient(emptyCompactionQueueWhichStartsJobWhenEstimateIsChecked())
+                .waitForCompactionsToAppearOnQueue(pollTimes(1))
+                .waitForCompactionJobs(pollTimes(1))
+                .build();
+
+        // When / Then
+        assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
+    }
+
+    @Test
     void shouldNotInvokeCompactionTaskCreationIfJobFinishesFirst() throws Exception {
         // Given
         Runnable invokeCompactionTaskLambda = mock(Runnable.class);
@@ -188,6 +225,16 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .lambdaClient(clientBuilder()
                         .compactionJobLambda(lambdaWhichCreatesCompactionJob())
                         .compactionTaskLambda(lambdaWhichStartsAndFinishesCompactionJob()).build());
+    }
+
+    private WaitForCurrentSplitAddingMissingJobs.Builder builderWithDefaults() {
+        return WaitForCurrentSplitAddingMissingJobs.builder()
+                .instanceProperties(properties)
+                .store(statusStore)
+                .tableName(tableName)
+                .waitForSplitsToFinish(pollTimes(1))
+                .waitForCompactionsToAppearOnQueue(pollTimes(1))
+                .waitForCompactionJobs(pollTimes(1));
     }
 
     private Runnable lambdaWhichCreatesCompactionJob() {
@@ -226,23 +273,31 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     }
 
     private QueueMessageCount.Client emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked() {
+        return emptyCompactionQueueWithActionWhenEstimateIsChecked(
+                () -> statusStore.jobFinished(job, summary, taskId));
+    }
+
+    private QueueMessageCount.Client emptyCompactionQueueWhichStartsJobWhenEstimateIsChecked() {
+        return emptyCompactionQueueWithActionWhenEstimateIsChecked(
+                () -> statusStore.jobStarted(job, startTime, taskId));
+    }
+
+    private QueueMessageCount.Client emptyCompactionQueueWhichStartsAndFinishesJobWhenEstimateIsChecked() {
+        return emptyCompactionQueueWithActionWhenEstimateIsChecked(
+                () -> {
+                    statusStore.jobStarted(job, startTime, taskId);
+                    statusStore.jobFinished(job, summary, taskId);
+                });
+    }
+
+    private QueueMessageCount.Client emptyCompactionQueueWithActionWhenEstimateIsChecked(Runnable runnable) {
         QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
         when(queueClient.getQueueMessageCount(COMPACTION_JOB_QUEUE_URL))
                 .thenAnswer(invocation -> {
-                    statusStore.jobFinished(job, summary, taskId);
+                    runnable.run();
                     return approximateNumberVisibleAndNotVisible(0, 0);
                 });
         return queueClient;
-    }
-
-    private WaitForCurrentSplitAddingMissingJobs.Builder builderWithDefaults() {
-        return WaitForCurrentSplitAddingMissingJobs.builder()
-                .instanceProperties(properties)
-                .store(statusStore)
-                .tableName(tableName)
-                .waitForSplitsToFinish(pollTimes(1))
-                .waitForCompactionsToAppearOnQueue(pollTimes(1))
-                .waitForCompactionJobs(pollTimes(1));
     }
 
     private static PollWithRetries pollTimes(int polls) {
