@@ -35,7 +35,11 @@ public class DynamoDBRecordBuilder {
     }
 
     public DynamoDBRecordBuilder number(String key, Number value) {
-        return add(new Attribute(key, createNumberAttribute(value)));
+        if (null == value) {
+            return remove(key);
+        } else {
+            return add(new Attribute(key, createNumberAttribute(value)));
+        }
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {
@@ -50,6 +54,11 @@ public class DynamoDBRecordBuilder {
 
     private DynamoDBRecordBuilder add(Attribute attribute) {
         attributes.add(attribute);
+        return this;
+    }
+
+    private DynamoDBRecordBuilder remove(String key) {
+        attributes.removeIf(attribute -> attribute.key.equals(key));
         return this;
     }
 
