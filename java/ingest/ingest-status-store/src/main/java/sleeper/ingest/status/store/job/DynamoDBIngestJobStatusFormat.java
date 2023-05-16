@@ -29,12 +29,15 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.ValidationData;
+import sleeper.ingest.job.status.ValidationStatus;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -47,14 +50,20 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String JOB_ID = "JobId";
     public static final String UPDATE_TIME = "UpdateTime";
     public static final String UPDATE_TYPE = "UpdateType";
+    public static final String VALIDATION_TIME = "ValidationTime";
+    public static final String VALIDATION_RESULT = "Result";
+    public static final String VALIDATION_REASON = "ValidationReason";
+
     public static final String TABLE_NAME = "TableName";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
+    public static final String START_OF_RUN = "StartOfRun";
     public static final String START_TIME = "StartTime";
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
     public static final String TASK_ID = "TaskId";
     public static final String EXPIRY_DATE = "ExpiryDate";
+    public static final String UPDATE_TYPE_VALIDATED = "validated";
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
 
@@ -66,11 +75,22 @@ public class DynamoDBIngestJobStatusFormat {
         this.getTimeNow = getTimeNow;
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime, String taskId) {
+    public Map<String, AttributeValue> createJobValidatedRecord(
+            IngestJob job, Instant validationTime, ValidationData validationData, String taskId) {
+        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
+                .number(VALIDATION_TIME, validationTime.toEpochMilli())
+                .string(VALIDATION_RESULT, String.valueOf(validationData.isValid()))
+                .string(VALIDATION_REASON, validationData.getReason())
+                .string(TASK_ID, taskId)
+                .build();
+    }
+
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime, String taskId, boolean validated) {
         return createJobRecord(job, UPDATE_TYPE_STARTED)
                 .number(START_TIME, startTime.toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(INPUT_FILES_COUNT, job.getFiles().size())
+                .string(START_OF_RUN, String.valueOf(validated))
                 .build();
     }
 
@@ -109,11 +129,18 @@ public class DynamoDBIngestJobStatusFormat {
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
+            case UPDATE_TYPE_VALIDATED:
+                return ValidationStatus.builder()
+                        .validationTime(getInstantAttribute(item, VALIDATION_TIME))
+                        .validationData(ValidationData.builder()
+                                .valid(getBooleanAttribute(item, VALIDATION_RESULT))
+                                .reason(getStringAttribute(item, VALIDATION_REASON)).build())
+                        .build();
             case UPDATE_TYPE_STARTED:
-                return IngestJobStartedStatus.inputFileCountStartAndUpdateTime(
-                        getIntAttribute(item, INPUT_FILES_COUNT, 0),
-                        getInstantAttribute(item, START_TIME),
-                        getInstantAttribute(item, UPDATE_TIME));
+                return IngestJobStartedStatus.validation(getBooleanAttribute(item, START_OF_RUN))
+                        .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
+                        .startTime(getInstantAttribute(item, START_TIME))
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME)).build();
             case UPDATE_TYPE_FINISHED:
                 return ProcessFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),

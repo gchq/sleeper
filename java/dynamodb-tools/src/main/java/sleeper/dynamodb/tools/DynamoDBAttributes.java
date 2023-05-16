@@ -45,7 +45,7 @@ public class DynamoDBAttributes {
      * @return the AttributeValue
      */
     public static AttributeValue createNumberAttribute(Number number) {
-        return new AttributeValue().withN("" + number);
+        return new AttributeValue().withN(String.valueOf(number));
     }
 
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
@@ -58,6 +58,10 @@ public class DynamoDBAttributes {
 
     public static String getNumberAttribute(Map<String, AttributeValue> item, String name) {
         return getAttribute(item, name, AttributeValue::getN);
+    }
+
+    public static boolean getBooleanAttribute(Map<String, AttributeValue> item, String name) {
+        return getStringAttribute(item, name).equalsIgnoreCase("true");
     }
 
     public static int getIntAttribute(Map<String, AttributeValue> item, String name, int defaultValue) {
