@@ -44,12 +44,22 @@ public class ProcessRuns {
             ProcessStatusUpdateRecord record = recordList.get(i);
             String taskId = record.getTaskId();
             ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
-            if (statusUpdate instanceof ProcessRunStartedUpdate) {
+            if (statusUpdate.isStartOfRun()) {
                 ProcessRun.Builder builder = ProcessRun.builder()
-                        .startedStatus((ProcessRunStartedUpdate) statusUpdate)
+                        .statusUpdates(statusUpdate)
                         .taskId(taskId);
+
                 taskBuilders.put(taskId, builder);
                 orderedBuilders.add(builder);
+
+            } else if (statusUpdate instanceof ProcessRunStartedUpdate) {
+                taskBuilders.computeIfAbsent(taskId, (task) -> {
+                            ProcessRun.Builder builder = ProcessRun.builder()
+                                    .taskId(taskId);
+                            orderedBuilders.add(builder);
+                            return builder;
+                        })
+                        .startedStatus((ProcessRunStartedUpdate) statusUpdate);
             } else if ((statusUpdate instanceof ProcessFinishedStatus)
                     && taskBuilders.containsKey(taskId)) {
                 taskBuilders.remove(taskId)
