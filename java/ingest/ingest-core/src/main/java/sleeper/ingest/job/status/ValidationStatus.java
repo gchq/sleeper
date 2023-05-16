@@ -77,7 +77,7 @@ public class ValidationStatus implements ProcessStatusUpdate {
         public Builder() {
         }
 
-        public Builder validationTime(Instant updateTime) {
+        public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }

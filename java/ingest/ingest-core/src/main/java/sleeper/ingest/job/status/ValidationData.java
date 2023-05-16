@@ -27,24 +27,12 @@ public class ValidationData {
         reason = builder.reason;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public static ValidationData valid() {
-        return builder().valid(true).reason("").build();
+        return new Builder().valid(true).reason("").build();
     }
 
     public static ValidationData invalid(String reason) {
-        return builder().valid(false).reason(reason).build();
-    }
-
-    public boolean isValid() {
-        return valid;
-    }
-
-    public String getReason() {
-        return reason;
+        return new Builder().valid(false).reason(reason).build();
     }
 
     @Override
