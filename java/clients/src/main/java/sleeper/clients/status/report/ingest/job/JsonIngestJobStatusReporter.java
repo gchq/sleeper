@@ -26,6 +26,7 @@ import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.GsonConfig;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.io.PrintStream;
@@ -36,6 +37,7 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(IngestJobStatus.class, ingestJobStatusJsonSerializer())
+            .registerTypeAdapter(ProcessRun.class, processRunJsonSerializer())
             .create();
     private final PrintStream out;
 
@@ -72,6 +74,22 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
         jsonObject.add("jobRunList", context.serialize(jobStatus.getJobRuns()));
+        return jsonObject;
+    }
+
+    private static JsonSerializer<ProcessRun> processRunJsonSerializer() {
+        return ((processRun, type, context) -> createProcessRunJson(processRun, context));
+    }
+
+    private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("taskId", run.getTaskId());
+        if (run.getStartedStatus() != null) {
+            jsonObject.add("startedStatus", context.serialize(run.getStartedStatus()));
+        }
+        if (run.isFinished()) {
+            jsonObject.add("finishedStatus", context.serialize(run.getFinishedStatus()));
+        }
         return jsonObject;
     }
 }

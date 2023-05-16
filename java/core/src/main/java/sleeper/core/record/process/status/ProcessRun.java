@@ -19,17 +19,17 @@ package sleeper.core.record.process.status;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ProcessRun {
     private final String taskId;
-    private final ProcessRunStartedUpdate startedStatus;
-    private final ProcessFinishedStatus finishedStatus;
+    private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
-    private ProcessRun(Builder builder) {
+    protected ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
-        finishedStatus = builder.finishedStatus;
+        statusUpdates.addAll(builder.statusUpdates);
     }
 
     public static Builder builder() {
@@ -54,15 +54,19 @@ public class ProcessRun {
     }
 
     public ProcessRunStartedUpdate getStartedStatus() {
-        return startedStatus;
+        return (ProcessRunStartedUpdate) statusUpdates.stream()
+                .filter(update -> update instanceof ProcessRunStartedUpdate)
+                .findFirst().orElse(null);
     }
 
     public ProcessFinishedStatus getFinishedStatus() {
-        return finishedStatus;
+        return (ProcessFinishedStatus) statusUpdates.stream()
+                .filter(update -> update instanceof ProcessFinishedStatus)
+                .findFirst().orElse(null);
     }
 
     public boolean isFinished() {
-        return finishedStatus != null;
+        return getFinishedStatus() != null;
     }
 
     public Instant getStartTime() {
@@ -114,31 +118,27 @@ public class ProcessRun {
             return false;
         }
         ProcessRun that = (ProcessRun) o;
-        return taskId.equals(that.taskId)
-                && Objects.equals(startedStatus, that.startedStatus)
-                && Objects.equals(finishedStatus, that.finishedStatus);
+        return Objects.equals(taskId, that.taskId) && Objects.equals(statusUpdates, that.statusUpdates);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, startedStatus, finishedStatus);
+        return Objects.hash(taskId, statusUpdates);
     }
 
     @Override
     public String toString() {
         return "ProcessRun{" +
                 "taskId='" + taskId + '\'' +
-                ", startedStatus=" + startedStatus +
-                ", finishedStatus=" + finishedStatus +
+                ", statusUpdates=" + statusUpdates +
                 '}';
     }
 
-    public static final class Builder {
+    public static class Builder {
         private String taskId;
-        private ProcessRunStartedUpdate startedStatus;
-        private ProcessFinishedStatus finishedStatus;
+        private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
-        private Builder() {
+        protected Builder() {
         }
 
         public Builder taskId(String taskId) {
@@ -147,12 +147,21 @@ public class ProcessRun {
         }
 
         public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
-            this.startedStatus = startedStatus;
+            this.statusUpdates.add(startedStatus);
             return this;
         }
 
         public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
-            this.finishedStatus = finishedStatus;
+            this.statusUpdates.add(finishedStatus);
+            return this;
+        }
+
+        public Builder statusUpdates(ProcessStatusUpdate... statusUpdates) {
+            return statusUpdates(List.of(statusUpdates));
+        }
+
+        public Builder statusUpdates(List<ProcessStatusUpdate> statusUpdates) {
+            this.statusUpdates.addAll(statusUpdates);
             return this;
         }
 

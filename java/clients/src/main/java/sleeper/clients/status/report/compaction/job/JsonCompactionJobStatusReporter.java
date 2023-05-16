@@ -27,6 +27,7 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.GsonConfig;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -35,6 +36,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(CompactionJobStatus.class, compactionJobStatusJsonSerializer())
+            .registerTypeAdapter(ProcessRun.class, processRunJsonSerializer())
             .create();
     private final PrintStream out;
 
@@ -65,6 +67,20 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
         createdStatus.add("childPartitionIds", context.serialize(jobStatus.getChildPartitionIds()));
         createdStatus.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
         jsonObject.add("createdStatus", createdStatus);
+        return jsonObject;
+    }
+
+    private static JsonSerializer<ProcessRun> processRunJsonSerializer() {
+        return ((processRun, type, context) -> createProcessRunJson(processRun, context));
+    }
+
+    private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("taskId", run.getTaskId());
+        jsonObject.add("startedStatus", context.serialize(run.getStartedStatus()));
+        if (run.isFinished()) {
+            jsonObject.add("finishedStatus", context.serialize(run.getFinishedStatus()));
+        }
         return jsonObject;
     }
 }
