@@ -27,7 +27,7 @@ public class ProcessRun {
     private final String taskId;
     private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
-    protected ProcessRun(Builder builder) {
+    private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         statusUpdates.addAll(builder.statusUpdates);
     }
