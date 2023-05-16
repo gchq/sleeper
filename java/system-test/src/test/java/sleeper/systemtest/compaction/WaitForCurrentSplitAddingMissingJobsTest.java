@@ -56,6 +56,11 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     private final String taskId = "test-task";
     private final CompactionJobTestDataHelper jobHelper = CompactionJobTestDataHelper.forTable(tableName);
     private final CompactionJobStatusStoreInMemory statusStore = new CompactionJobStatusStoreInMemory();
+    private final CompactionJob job = jobHelper.singleFileCompaction();
+    private final Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
+    private final Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
+    private final RecordsProcessedSummary summary = summary(
+            startTime, Duration.ofMinutes(1), 100L, 100L);
 
     @BeforeEach
     void setUp() {
@@ -66,12 +71,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldRunOneRoundOfSplitsWithOneSplittingCompactionJob() throws Exception {
         // Given
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
-        RecordsProcessedSummary summary = summary(
-                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
-
-        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob(job, createTime, summary)
+        WaitForCurrentSplitAddingMissingJobs waiter = runningOneJob()
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .build();
@@ -114,9 +114,6 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     @Test
     void shouldTimeOutIfCompactionJobDoesNotFinish() {
         // Given
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
-        Instant startTime = Instant.parse("2023-05-15T12:12:00Z");
         Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createTime);
         Runnable invokeCompactionTaskLambda = () -> statusStore.jobStarted(job, startTime, taskId);
 
@@ -136,12 +133,6 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @Test
     void shouldCompleteIfCompactionJobIsFinishedBeforeWeCheckQueueEstimate() throws Exception {
-        // Given some compaction job details
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
-        RecordsProcessedSummary summary = summary(
-                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
-
         // Given the compaction job lambda creates a job which is immediately started on an already running task
         // And the job finishes before we check the compaction job queue for an update to its estimate
         // And we poll the compaction job queue once, seeing an estimate of zero messages
@@ -169,12 +160,6 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @Test
     void shouldCompleteIfCompactionJobIsStartedBeforeWeCheckQueueEstimate() throws Exception {
-        // Given some compaction job details
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
-        RecordsProcessedSummary summary = summary(
-                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
-
         // Given the compaction job lambda creates a job which is immediately started on an already running task
         // And the job finishes before we check the compaction job queue for an update to its estimate
         // And we poll the compaction job queue once, seeing an estimate of zero messages
@@ -207,12 +192,6 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @Test
     void shouldNotInvokeCompactionTaskCreationIfJobFinishesFirst() throws Exception {
-        // Given some compaction job details
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant createTime = Instant.parse("2023-05-15T12:11:00Z");
-        RecordsProcessedSummary summary = summary(
-                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
-
         // Given the compaction job lambda creates a job which is immediately started on an already running task
         // And the job finishes before we check the compaction job queue for an update to its estimate
         // And we poll the compaction job queue once, seeing an estimate of zero messages
@@ -242,16 +221,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     }
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
-        CompactionJob job = jobHelper.singleFileCompaction();
-        Instant createdTime = Instant.parse("2023-05-15T12:11:00Z");
-        RecordsProcessedSummary summary = summary(
-                Instant.parse("2023-05-15T12:12:00Z"), Duration.ofMinutes(1), 100L, 100L);
-        return runningOneJob(job, createdTime, summary);
-    }
-
-    private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob(
-            CompactionJob job, Instant createdTime, RecordsProcessedSummary summary) {
-        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createdTime);
+        Runnable invokeCompactionJobLambda = () -> statusStore.jobCreated(job, createTime);
         Runnable invokeCompactionTaskLambda = () -> {
             statusStore.jobStarted(job, summary.getStartTime(), taskId);
             statusStore.jobFinished(job, summary, taskId);
