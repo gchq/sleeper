@@ -30,9 +30,6 @@ public interface IngestJobStatusStore {
     default void jobStarted(String taskId, IngestJob job, Instant startTime) {
     }
 
-    default void jobStartedWithValidation(String taskId, IngestJob job, Instant startTime, Instant validationTime, ValidationData validationData) {
-    }
-
     default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
     }
 

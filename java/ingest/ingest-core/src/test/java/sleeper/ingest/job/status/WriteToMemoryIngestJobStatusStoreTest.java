@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.job.status;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.RecordsProcessed;
@@ -32,7 +30,6 @@ import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRunWithValidation;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -190,27 +187,5 @@ public class WriteToMemoryIngestJobStatusStoreTest {
                 jobStatus(job2, startedIngestRun(job2, taskId, startTime2)));
         assertThat(store.getAllJobs(tableName1)).containsExactly(
                 jobStatus(job1, startedIngestRun(job1, taskId, startTime1)));
-    }
-
-    @Nested
-    @DisplayName("Report validation of job")
-    class ReportValidationStatus {
-        @Test
-        void shouldReportValidatedJob() {
-            // Given
-            String tableName = "test-table";
-            String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
-            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-
-            // When
-            store.jobStartedWithValidation(taskId, job, startTime, validationTime, ValidationData.valid());
-
-            // Then
-            assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, startedIngestRunWithValidation(job, taskId, startTime,
-                            validationTime, ValidationData.valid())));
-        }
     }
 }

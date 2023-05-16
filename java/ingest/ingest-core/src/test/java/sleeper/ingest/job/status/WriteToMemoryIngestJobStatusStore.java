@@ -43,22 +43,6 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStartedWithValidation(String taskId, IngestJob job, Instant startTime,
-                                         Instant validationTime, ValidationData validationData) {
-        ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                ValidationStatus.builder().updateTime(validationTime)
-                        .validationData(validationData).build(), taskId);
-        ProcessStatusUpdateRecord startedRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.withValidation()
-                        .inputFileCount(job.getFiles().size())
-                        .startTime(startTime)
-                        .updateTime(defaultUpdateTime(startTime)).build(), taskId);
-        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
-                .addAll(List.of(validationRecord, startedRecord));
-    }
-
-    @Override
     public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
