@@ -133,26 +133,17 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @Test
     void shouldCompleteIfCompactionJobIsFinishedBeforeWeCheckQueueEstimate() throws Exception {
-        // Given the compaction job lambda creates a job which is immediately started on an already running task
-        // And the job finishes before we check the compaction job queue for an update to its estimate
-        // And we poll the compaction job queue once, seeing an estimate of zero messages
-        Runnable invokeCompactionJobLambda = () -> {
-            statusStore.jobCreated(job, createTime);
-            statusStore.jobStarted(job, summary.getStartTime(), taskId);
-            statusStore.jobFinished(job, summary, taskId);
-        };
-        Runnable invokeCompactionTaskLambda = () -> {
-        };
-
+        // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
+                .lambdaClient(invokeCompactionJobAndTaskClient(
+                        lambdaWhichCreatesAndFinishesCompactionJob(),
+                        lambdaWhichDoesNothing()))
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 0)))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .waitForCompactionJobs(pollTimes(1))
                 .build();
 
-        // When we try to run a splitting compaction if necessary
-        // Then the compaction runs and is reported as finished
+        // When / Then
         assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
         assertThat(statusStore.getAllJobs(tableName)).containsExactly(
                 jobCreated(job, createTime, finishedCompactionRun(taskId, summary)));
@@ -160,31 +151,17 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @Test
     void shouldCompleteIfCompactionJobIsStartedBeforeWeCheckQueueEstimate() throws Exception {
-        // Given the compaction job lambda creates a job which is immediately started on an already running task
-        // And the job finishes before we check the compaction job queue for an update to its estimate
-        // And we poll the compaction job queue once, seeing an estimate of zero messages
-        Runnable invokeCompactionJobLambda = () -> {
-            statusStore.jobCreated(job, createTime);
-            statusStore.jobStarted(job, summary.getStartTime(), taskId);
-        };
-        Runnable invokeCompactionTaskLambda = () -> {
-        };
-        QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
-        when(queueClient.getQueueMessageCount(COMPACTION_JOB_QUEUE_URL))
-                .thenAnswer(invocation -> {
-                    statusStore.jobFinished(job, summary, taskId);
-                    return approximateNumberVisibleAndNotVisible(0, 0);
-                });
-
+        // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
-                .queueClient(queueClient)
+                .lambdaClient(invokeCompactionJobAndTaskClient(
+                        lambdaWhichCreatesAndStartsCompactionJob(),
+                        lambdaWhichDoesNothing()))
+                .queueClient(emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked())
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .waitForCompactionJobs(pollTimes(1))
                 .build();
 
-        // When we try to run a splitting compaction if necessary
-        // Then the compaction runs and is reported as finished
+        // When / Then
         assertThat(waiter.checkIfSplittingCompactionNeededAndWait()).isTrue();
         assertThat(statusStore.getAllJobs(tableName)).containsExactly(
                 jobCreated(job, createTime, finishedCompactionRun(taskId, summary)));
@@ -192,30 +169,19 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     @Test
     void shouldNotInvokeCompactionTaskCreationIfJobFinishesFirst() throws Exception {
-        // Given the compaction job lambda creates a job which is immediately started on an already running task
-        // And the job finishes before we check the compaction job queue for an update to its estimate
-        // And we poll the compaction job queue once, seeing an estimate of zero messages
-        Runnable invokeCompactionJobLambda = () -> {
-            statusStore.jobCreated(job, createTime);
-            statusStore.jobStarted(job, summary.getStartTime(), taskId);
-        };
+        // Given
         Runnable invokeCompactionTaskLambda = mock(Runnable.class);
-        QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
-        when(queueClient.getQueueMessageCount(COMPACTION_JOB_QUEUE_URL))
-                .thenAnswer(invocation -> {
-                    statusStore.jobFinished(job, summary, taskId);
-                    return approximateNumberVisibleAndNotVisible(0, 0);
-                });
 
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda))
-                .queueClient(queueClient)
+                .lambdaClient(invokeCompactionJobAndTaskClient(
+                        lambdaWhichCreatesAndStartsCompactionJob(),
+                        invokeCompactionTaskLambda))
+                .queueClient(emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked())
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .waitForCompactionJobs(pollTimes(1))
                 .build();
 
-        // When we try to run a splitting compaction if necessary
-        // Then the compaction task creation lambda is not invoked
+        // When / Then
         waiter.checkIfSplittingCompactionNeededAndWait();
         verifyNoInteractions(invokeCompactionTaskLambda);
     }
@@ -228,6 +194,36 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         };
         return builderWithDefaults()
                 .lambdaClient(invokeCompactionJobAndTaskClient(invokeCompactionJobLambda, invokeCompactionTaskLambda));
+    }
+
+    private Runnable lambdaWhichCreatesAndStartsCompactionJob() {
+        return () -> {
+            statusStore.jobCreated(job, createTime);
+            statusStore.jobStarted(job, summary.getStartTime(), taskId);
+        };
+    }
+
+    private Runnable lambdaWhichCreatesAndFinishesCompactionJob() {
+        return () -> {
+            statusStore.jobCreated(job, createTime);
+            statusStore.jobStarted(job, summary.getStartTime(), taskId);
+            statusStore.jobFinished(job, summary, taskId);
+        };
+    }
+
+    private static Runnable lambdaWhichDoesNothing() {
+        return () -> {
+        };
+    }
+
+    private QueueMessageCount.Client emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked() {
+        QueueMessageCount.Client queueClient = mock(QueueMessageCount.Client.class);
+        when(queueClient.getQueueMessageCount(COMPACTION_JOB_QUEUE_URL))
+                .thenAnswer(invocation -> {
+                    statusStore.jobFinished(job, summary, taskId);
+                    return approximateNumberVisibleAndNotVisible(0, 0);
+                });
+        return queueClient;
     }
 
     private WaitForCurrentSplitAddingMissingJobs.Builder builderWithDefaults() {
