@@ -17,7 +17,6 @@
 package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,11 +39,12 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class IngestBatcherTest {
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+
     @Nested
     @DisplayName("Batch with minimum file count")
     class BatchWithMinimumFileCount {
-        private final InstanceProperties instanceProperties = createTestInstanceProperties();
-        private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
 
         @BeforeEach
         void setUp() {
@@ -52,15 +52,18 @@ class IngestBatcherTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldBatchOneFileWhenMinimumFileCountIsOne() {
             // Given
             Supplier<String> jobIdSupplier = () -> "test-job-id";
+            tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
             IngestBatcher batcher = IngestBatcher.builder().tablePropertiesProvider(tablePropertiesProvider)
                     .jobIdSupplier(jobIdSupplier).build();
-            List<TrackedFile> inputFiles = List.of(TrackedFile.builder().pathToFile("test-bucket/test.parquet").build());
+            List<TrackedFile> inputFiles = List.of(TrackedFile.builder()
+                    .pathToFile("test-bucket/test.parquet")
+                    .tableName("test-table")
+                    .build());
 
             // When
             List<IngestJob> jobs = batcher.batchFiles(inputFiles);
@@ -68,7 +71,7 @@ class IngestBatcherTest {
             // Then
             assertThat(jobs).containsExactly(IngestJob.builder()
                     .files("test-bucket/test.parquet")
-                    .tableName(tableProperties.get(TABLE_NAME))
+                    .tableName("test-table")
                     .id("test-job-id")
                     .build());
         }

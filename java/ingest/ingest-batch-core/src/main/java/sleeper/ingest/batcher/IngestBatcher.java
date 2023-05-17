@@ -19,9 +19,9 @@ package sleeper.ingest.batcher;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.IngestJob;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class IngestBatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -37,7 +37,13 @@ public class IngestBatcher {
     }
 
     public List<IngestJob> batchFiles(List<TrackedFile> inputFiles) {
-        return Collections.emptyList();
+        return inputFiles.stream()
+                .map(file -> IngestJob.builder()
+                        .id(jobIdSupplier.get())
+                        .files(file.getPathToFile())
+                        .tableName(file.getTableName())
+                        .build())
+                .collect(Collectors.toList());
     }
 
 

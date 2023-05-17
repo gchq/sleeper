@@ -16,17 +16,25 @@
 
 package sleeper.ingest.batcher;
 
-import java.util.Objects;
-
 public class TrackedFile {
     private final String pathToFile;
+    private final String tableName;
 
     private TrackedFile(Builder builder) {
-        pathToFile = Objects.requireNonNull(builder.pathToFile, "pathToFile must not be null");
+        pathToFile = builder.pathToFile;
+        tableName = builder.tableName;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public String getPathToFile() {
+        return pathToFile;
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     @Override
@@ -37,30 +45,44 @@ public class TrackedFile {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+
         TrackedFile that = (TrackedFile) o;
-        return Objects.equals(pathToFile, that.pathToFile);
+
+        if (!pathToFile.equals(that.pathToFile)) {
+            return false;
+        }
+        return tableName.equals(that.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pathToFile);
+        int result = pathToFile.hashCode();
+        result = 31 * result + tableName.hashCode();
+        return result;
     }
 
     @Override
     public String toString() {
         return "TrackedFile{" +
                 "pathToFile='" + pathToFile + '\'' +
+                ", tableName='" + tableName + '\'' +
                 '}';
     }
 
     public static final class Builder {
         private String pathToFile;
+        private String tableName;
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder pathToFile(String pathToFile) {
             this.pathToFile = pathToFile;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
             return this;
         }
 
