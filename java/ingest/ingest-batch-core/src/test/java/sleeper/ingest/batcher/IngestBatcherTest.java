@@ -75,5 +75,23 @@ class IngestBatcherTest {
                     .id("test-job-id")
                     .build());
         }
+
+        @Test
+        void shouldBatchNoFilesWhenMinimumCountIsTwoAndOneFileIsTracked() {
+            // Given
+            Supplier<String> jobIdSupplier = () -> "test-job-id";
+            tableProperties.set(TABLE_NAME, "test-table");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
+            TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+            IngestBatcher batcher = IngestBatcher.builder().tablePropertiesProvider(tablePropertiesProvider)
+                    .jobIdSupplier(jobIdSupplier).build();
+            List<TrackedFile> inputFiles = List.of(TrackedFile.builder()
+                    .pathToFile("test-bucket/test.parquet")
+                    .tableName("test-table")
+                    .build());
+
+            // When / Then
+            assertThat(batcher.batchFiles(inputFiles)).isEmpty();
+        }
     }
 }

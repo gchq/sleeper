@@ -16,12 +16,16 @@
 
 package sleeper.ingest.batcher;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class IngestBatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -37,15 +41,30 @@ public class IngestBatcher {
     }
 
     public List<IngestJob> batchFiles(List<TrackedFile> inputFiles) {
-        return inputFiles.stream()
-                .map(file -> IngestJob.builder()
-                        .id(jobIdSupplier.get())
-                        .files(file.getPathToFile())
-                        .tableName(file.getTableName())
-                        .build())
+        Map<String, List<TrackedFile>> filesByTable = inputFiles.stream()
+                .collect(Collectors.groupingBy(TrackedFile::getTableName));
+        return filesByTable.entrySet().stream()
+                .flatMap(entry -> batchTableFiles(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
+    private Stream<IngestJob> batchTableFiles(String tableName, List<TrackedFile> inputFiles) {
+        TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
+        int minFiles = properties.getInt(TableProperty.INGEST_BATCHER_MIN_JOB_FILES);
+        if (inputFiles.size() < minFiles) {
+            return Stream.empty();
+        } else {
+            return inputFiles.stream().map(this::batch);
+        }
+    }
+
+    private IngestJob batch(TrackedFile file) {
+        return IngestJob.builder()
+                .id(jobIdSupplier.get())
+                .tableName(file.getTableName())
+                .files(file.getPathToFile())
+                .build();
+    }
 
     public static final class Builder {
         private TablePropertiesProvider tablePropertiesProvider;
