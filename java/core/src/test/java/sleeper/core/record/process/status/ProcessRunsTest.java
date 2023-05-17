@@ -23,6 +23,8 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.status.ProcessStartedStatus.updateAndStartTime;
+import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.updateAndStartTimeNotStartOfRun;
 import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
@@ -200,5 +202,22 @@ public class ProcessRunsTest {
 
         // Then
         assertThat(runs.getRunList()).isEmpty();
+    }
+
+    @Test
+    void shouldCreateProcessRunFromTwoStartedUpdatesWhenOneIsFlaggedAsStartOfRun() {
+        // Given
+        ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
+                Instant.parse("2022-09-24T08:23:30Z"), Instant.parse("2022-09-24T08:23:30.001Z"));
+        ProcessStartedStatus startedStatus = updateAndStartTime(
+                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+
+        // When
+        ProcessRuns runs = runsFromUpdates(startedStatusNotStartOfRun, startedStatus);
+
+        // Then
+        assertThat(runs.getRunList()).containsExactly(
+                ProcessRun.started(DEFAULT_TASK_ID, startedStatus)
+        );
     }
 }
