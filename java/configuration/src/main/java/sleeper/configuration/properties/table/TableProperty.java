@@ -239,22 +239,30 @@ public interface TableProperty extends SleeperProperty {
     // Ingest batcher
     TableProperty INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.ingest.batcher.job.min.size")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE)
-            .description("Specifies the minimum file size required for an ingest job to be batched and sent.")
+            .description("Specifies the minimum file size required for an ingest job to be batched and sent. " +
+                    "An ingest job will be created if the batcher runs while this much data is waiting, and the " +
+                    "minimum number of files is also met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
     TableProperty INGEST_BATCHER_MAX_JOB_SIZE = Index.propertyBuilder("sleeper.ingest.batcher.job.max.size")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE)
             .description("Specifies the maximum total file size for a job in the ingest batcher. " +
-                    "Any more file will be placed into new ingest jobs.")
+                    "If more data is waiting than this, it will be split into multiple jobs. " +
+                    "If a single file exceeds this, it will still be ingested in its own job. " +
+                    "It's also possible some data may be left for a future run of the batcher if some recent files " +
+                    "overflow the size of a job but aren't enough to create a job on their own.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
     TableProperty INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.ingest.batcher.job.min.files")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_FILES)
             .description("Specifies the minimum number of files for a job in the ingest batcher. " +
-                    "Any more file will be placed into new ingest jobs.")
+                    "An ingest job will be created if the batcher runs while this many files are waiting, and the " +
+                    "minimum size of files is also met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
     TableProperty INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.ingest.batcher.job.max.files")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_FILES)
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
-                    "Any more file will be placed into new ingest jobs.")
+                    "If more files are waiting than this, they will be split into multiple jobs. " +
+                    "It's possible some data may be left for a future run of the batcher if some recent files " +
+                    "overflow the size of a job but aren't enough to create a job on their own.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
     TableProperty INGEST_BATCHER_MAX_FILE_AGE = Index.propertyBuilder("sleeper.ingest.batcher.file.max.age")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE)
