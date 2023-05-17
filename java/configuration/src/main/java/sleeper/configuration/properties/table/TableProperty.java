@@ -21,11 +21,12 @@ import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
@@ -42,6 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
@@ -113,7 +115,8 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.compression.codec")
             .defaultProperty(DEFAULT_COMPRESSION_CODEC)
-            .description("The compression codec to use for this table. Defaults to the value in the instance properties.")
+            .description("The compression codec to use for this table. Defaults to the value in the instance properties.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
@@ -259,6 +262,11 @@ public interface TableProperty extends SleeperProperty {
                     "will be created with all the currently held files, even if other criteria for a batch are not " +
                     "met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+    TableProperty INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.ingest.batcher.ingest.mode")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_MODE)
+            .description("Specifies the target ingest queue where batched jobs are sent.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
     // Size ratio compaction strategy
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
@@ -316,10 +324,6 @@ public interface TableProperty extends SleeperProperty {
 
     static List<TableProperty> getSystemDefined() {
         return Index.INSTANCE.getSystemDefined();
-    }
-
-    static Optional<TableProperty> getByName(String propertyName) {
-        return Index.INSTANCE.getByName(propertyName);
     }
 
     static boolean has(String propertyName) {

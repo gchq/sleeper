@@ -18,10 +18,15 @@ package sleeper.configuration.properties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
+import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 
 /**
  * Sleeper properties set by the user. All non-mandatory properties should be accompanied by a default value and should
@@ -938,7 +943,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.default.compression.codec")
-            .description("The compression codec to use in the Parquet files.")
+            .description("The compression codec to use in the Parquet files.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .defaultValue("ZSTD")
             .validationPredicate(Utils::isValidCompressionCodec)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
@@ -1007,6 +1013,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "met.")
             .defaultValue("60")
             .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.mode")
+            .description("Specifies the target ingest queue where batched jobs are sent.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
+            .defaultValue(BatchIngestMode.STANDARD_INGEST.name().toLowerCase(Locale.ROOT))
+            .validationPredicate(BatchIngestMode::isValidMode)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
