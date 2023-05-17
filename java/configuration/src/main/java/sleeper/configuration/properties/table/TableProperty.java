@@ -42,6 +42,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
@@ -250,6 +251,13 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_FILES)
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
                     "Any more file will be placed into new ingest jobs.")
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+    TableProperty INGEST_BATCHER_MAX_FILE_AGE = Index.propertyBuilder("sleeper.ingest.batcher.file.max.age")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE)
+            .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
+                    "will be included in an ingest job. When any file has been waiting for longer than this, a job " +
+                    "will be created with all the currently held files, even if other criteria for a batch are not " +
+                    "met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
     // Size ratio compaction strategy

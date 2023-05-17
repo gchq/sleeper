@@ -988,19 +988,25 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("1G")
             .validationPredicate(Utils::isValidNumberOfBytes)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.min.files")
             .description("Specifies the minimum number of files for a job in the ingest batcher. " +
                     "Any more file will be placed into new ingest jobs.")
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.files")
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
                     "Any more file will be placed into new ingest jobs.")
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age")
+            .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
+                    "will be included in an ingest job. When any file has been waiting for longer than this, a job " +
+                    "will be created with all the currently held files, even if other criteria for a batch are not " +
+                    "met.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
