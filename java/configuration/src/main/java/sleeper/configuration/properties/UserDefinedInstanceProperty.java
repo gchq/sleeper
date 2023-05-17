@@ -990,19 +990,19 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.size")
             .description("Specifies the maximum total file size for a job in the ingest batcher. " +
-                    "Any more file will be placed into new ingest jobs.")
+                    "Any more files will be placed into new ingest jobs.")
             .defaultValue("1G")
             .validationPredicate(Utils::isValidNumberOfBytes)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.min.files")
             .description("Specifies the minimum number of files for a job in the ingest batcher. " +
-                    "Any more file will be placed into new ingest jobs.")
-            .defaultValue("10")
+                    "Fewer files than this will not result in an ingest job, even if they meet the minimum size.")
+            .defaultValue("0")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.files")
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
-                    "Any more file will be placed into new ingest jobs.")
+                    "Any more files will be placed into new ingest jobs.")
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
