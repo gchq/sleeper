@@ -25,10 +25,14 @@ import java.util.Objects;
 
 public class ProcessRun {
     private final String taskId;
+    private final ProcessRunStartedUpdate startedStatus;
+    private final ProcessFinishedStatus finishedStatus;
     private final List<ProcessStatusUpdate> statusUpdates;
 
     private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        startedStatus = builder.startedStatus;
+        finishedStatus = builder.finishedStatus;
         statusUpdates = Objects.requireNonNull(builder.statusUpdates, "statusUpdates must not be null");
     }
 
@@ -54,15 +58,11 @@ public class ProcessRun {
     }
 
     public ProcessRunStartedUpdate getStartedStatus() {
-        return (ProcessRunStartedUpdate) statusUpdates.stream()
-                .filter(update -> update instanceof ProcessRunStartedUpdate)
-                .findFirst().orElse(null);
+        return startedStatus;
     }
 
     public ProcessFinishedStatus getFinishedStatus() {
-        return (ProcessFinishedStatus) statusUpdates.stream()
-                .filter(update -> update instanceof ProcessFinishedStatus)
-                .findFirst().orElse(null);
+        return finishedStatus;
     }
 
     public boolean isFinished() {
@@ -136,6 +136,8 @@ public class ProcessRun {
 
     public static final class Builder {
         private String taskId;
+        private ProcessRunStartedUpdate startedStatus;
+        private ProcessFinishedStatus finishedStatus;
         private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
         private Builder() {
@@ -147,18 +149,26 @@ public class ProcessRun {
         }
 
         public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
+            this.startedStatus = startedStatus;
             this.statusUpdates.add(startedStatus);
             return this;
         }
 
         public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
-            this.statusUpdates.add(finishedStatus);
+            this.finishedStatus = finishedStatus;
+            this.statusUpdates.add(startedStatus);
             return this;
         }
 
         public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
-            this.statusUpdates.add(statusUpdate);
-            return this;
+            if (statusUpdate instanceof ProcessRunStartedUpdate) {
+                return startedStatus((ProcessRunStartedUpdate) statusUpdate);
+            } else if (statusUpdate instanceof ProcessFinishedStatus) {
+                return finishedStatus((ProcessFinishedStatus) statusUpdate);
+            } else {
+                this.statusUpdates.add(statusUpdate);
+                return this;
+            }
         }
 
         public ProcessRun build() {
