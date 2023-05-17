@@ -1020,6 +1020,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue(BatchIngestMode.STANDARD_INGEST.name().toLowerCase(Locale.ROOT))
             .validationPredicate(BatchIngestMode::isValidMode)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_TRACKING_TTL = Index.propertyBuilder("sleeper.default.ingest.batcher.file.tracking.ttl")
+            .description("The time in seconds that the tracking information is retained for a file before the " +
+                    "records of its ingest are deleted (eg. which ingest job it was assigned to, the time this " +
+                    "occurred, the size of the file).\n" +
+                    "The expiry time is fixed when a file is saved to the store, so changing this will only affect " +
+                    "new data.\n" +
+                    "Defaults to 24 hours.")
+            .defaultValue("" + 60 * 60 * 24)
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

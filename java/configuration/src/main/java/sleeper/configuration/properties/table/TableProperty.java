@@ -49,6 +49,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -266,6 +267,15 @@ public interface TableProperty extends SleeperProperty {
             .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_MODE)
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
+    TableProperty INGEST_BATCHER_TRACKING_TTL = Index.propertyBuilder("sleeper.ingest.batcher.file.tracking.ttl")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_TRACKING_TTL)
+            .description("The time in seconds that the tracking information is retained for a file before the " +
+                    "records of its ingest are deleted (eg. which ingest job it was assigned to, the time this " +
+                    "occurred, the size of the file).\n" +
+                    "The expiry time is fixed when a file is saved to the store, so changing this will only affect " +
+                    "new data.\n" +
+                    "Defaults to 24 hours.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
     // Size ratio compaction strategy
