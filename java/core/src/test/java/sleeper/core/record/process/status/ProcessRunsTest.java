@@ -23,6 +23,8 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.status.CustomProcessStatus.notPartOfRunWithUpdateTime;
+import static sleeper.core.record.process.status.CustomProcessStatus.partOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.ProcessStartedStatus.updateAndStartTime;
 import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.updateAndStartTimeNotStartOfRun;
 import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
@@ -216,8 +218,41 @@ public class ProcessRunsTest {
         ProcessRuns runs = runsFromUpdates(startedStatusNotStartOfRun, startedStatus);
 
         // Then
-        assertThat(runs.getRunList()).containsExactly(
-                ProcessRun.started(DEFAULT_TASK_ID, startedStatus)
-        );
+        assertThat(runs.getRunList())
+                .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+    }
+
+    @Test
+    void shouldCreateProcessRunWithCustomStatusUpdatePartOfRun() {
+        // Given
+        ProcessStartedStatus startedStatus = updateAndStartTime(
+                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+        CustomProcessStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+
+        // When
+        ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+
+        // Then
+        assertThat(runs.getRunList())
+                .containsExactly(ProcessRun.builder()
+                        .taskId(DEFAULT_TASK_ID)
+                        .startedStatus(startedStatus)
+                        .statusUpdate(customStatus)
+                        .build());
+    }
+
+    @Test
+    void shouldCreateProcessRunWithCustomStatusUpdateNotPartOfRun() {
+        // Given
+        ProcessStartedStatus startedStatus = updateAndStartTime(
+                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+        CustomProcessStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+
+        // When
+        ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+
+        // Then
+        assertThat(runs.getRunList())
+                .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
     }
 }
