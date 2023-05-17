@@ -19,10 +19,10 @@ package sleeper.clients.status.report.compaction.job;
 import sleeper.clients.status.report.job.AverageRecordRateReport;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.clients.status.report.table.TableField;
-import sleeper.clients.status.report.table.TableRow;
-import sleeper.clients.status.report.table.TableWriter;
-import sleeper.clients.status.report.table.TableWriterFactory;
+import sleeper.clients.util.table.TableField;
+import sleeper.clients.util.table.TableRow;
+import sleeper.clients.util.table.TableWriter;
+import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.AverageRecordRate;
 

@@ -39,13 +39,21 @@ public class WaitForCompactionJobs {
 
     private final CompactionJobStatusStore statusStore;
     private final String tableName;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll;
 
     public WaitForCompactionJobs(
             CompactionJobStatusStore statusStore,
             String tableName) {
+        this(statusStore, tableName, PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS));
+    }
+
+    public WaitForCompactionJobs(
+            CompactionJobStatusStore statusStore,
+            String tableName,
+            PollWithRetries poll) {
         this.statusStore = statusStore;
         this.tableName = tableName;
+        this.poll = poll;
     }
 
     public void pollUntilFinished() throws InterruptedException {

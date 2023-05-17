@@ -16,9 +16,15 @@
 package sleeper.clients.util;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -29,17 +35,25 @@ public class GsonConfig {
 
     public static GsonBuilder standardBuilder() {
         return new GsonBuilder().serializeSpecialFloatingPointValues()
-                .registerTypeAdapter(Instant.class, instantJsonSerializer())
+                .registerTypeAdapter(Instant.class, new InstantSerDe())
                 .registerTypeAdapter(Duration.class, durationSerializer())
                 .setPrettyPrinting();
     }
 
-    private static JsonSerializer<Instant> instantJsonSerializer() {
-        return (instant, type, context) -> new JsonPrimitive(instant.toString());
-    }
-
     private static JsonSerializer<Duration> durationSerializer() {
         return (duration, type, context) -> new JsonPrimitive(duration.toMillis() / 1000.0);
+    }
+
+    private static class InstantSerDe implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
+        @Override
+        public Instant deserialize(JsonElement element, Type type, JsonDeserializationContext context) throws JsonParseException {
+            return Instant.parse(element.getAsString());
+        }
+
+        @Override
+        public JsonElement serialize(Instant instant, Type type, JsonSerializationContext context) {
+            return new JsonPrimitive(instant.toString());
+        }
     }
 
 }

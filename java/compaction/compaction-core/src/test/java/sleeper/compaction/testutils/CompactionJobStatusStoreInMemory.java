@@ -24,9 +24,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,30 +33,54 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
+
 public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
-    private Clock clock = Clock.systemUTC();
+    private Instant fixedUpdateTime;
 
-    public void fixTime(Instant now) {
-        clock = Clock.fixed(now, ZoneOffset.UTC);
+    public void fixUpdateTime(Instant now) {
+        fixedUpdateTime = now;
+    }
+
+    private Instant getCreatedTime() {
+        if (null != fixedUpdateTime) {
+            return fixedUpdateTime;
+        } else {
+            return Instant.now();
+        }
+    }
+
+    private Instant getUpdateTimeForEventTime(Instant eventTime) {
+        if (null != fixedUpdateTime) {
+            return fixedUpdateTime;
+        } else {
+            return defaultUpdateTime(eventTime);
+        }
     }
 
     @Override
     public void jobCreated(CompactionJob job) {
+        jobCreated(job, getCreatedTime());
+    }
+
+    public void jobCreated(CompactionJob job, Instant createdTime) {
         add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
-                CompactionJobCreatedStatus.from(job, clock.instant()), null));
+                CompactionJobCreatedStatus.from(job, createdTime), null));
     }
 
     @Override
     public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
         add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
-                CompactionJobStartedStatus.startAndUpdateTime(startTime, clock.instant()), taskId));
+                CompactionJobStartedStatus.startAndUpdateTime(startTime,
+                        getUpdateTimeForEventTime(startTime)), taskId));
     }
 
     @Override
     public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
         add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessFinishedStatus.updateTimeAndSummary(clock.instant(), summary), taskId));
+                ProcessFinishedStatus.updateTimeAndSummary(
+                        getUpdateTimeForEventTime(summary.getFinishTime()), summary), taskId));
     }
 
     @Override

@@ -56,6 +56,12 @@ public interface CompactionJobStatusStore {
                 .collect(Collectors.toList());
     }
 
+    default List<CompactionJobStatus> getUnstartedJobs(String tableName) {
+        return streamAllJobs(tableName)
+                .filter(job -> !job.isStarted())
+                .collect(Collectors.toList());
+    }
+
     default List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
         return streamAllJobs(tableName)
                 .filter(job -> job.isTaskIdAssigned(taskId))

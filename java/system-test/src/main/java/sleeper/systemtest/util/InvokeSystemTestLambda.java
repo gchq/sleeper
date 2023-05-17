@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.deploy.InvokeLambda;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 
@@ -29,12 +30,24 @@ public class InvokeSystemTestLambda {
     private InvokeSystemTestLambda() {
     }
 
-    public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
+    public interface Client {
+        void invokeLambda(InstanceProperty lambdaFunctionProperty);
+    }
+
+    public static Client client(String instanceId) throws IOException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         s3Client.shutdown();
+        return client(systemTestProperties);
+    }
 
-        InvokeLambda.invoke(systemTestProperties.get(lambdaFunctionProperty));
+    public static Client client(InstanceProperties instanceProperties) {
+        return lambdaFunctionProperty ->
+                InvokeLambda.invoke(instanceProperties.get(lambdaFunctionProperty));
+    }
+
+    public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
+        client(instanceId).invokeLambda(lambdaFunctionProperty);
     }
 }
