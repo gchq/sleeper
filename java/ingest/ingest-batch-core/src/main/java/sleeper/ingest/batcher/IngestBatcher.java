@@ -17,26 +17,44 @@
 package sleeper.ingest.batcher;
 
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.IngestJob;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Supplier;
 
 public class IngestBatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final Supplier<String> jobIdSupplier;
 
     private IngestBatcher(Builder builder) {
         tablePropertiesProvider = builder.tablePropertiesProvider;
+        jobIdSupplier = builder.jobIdSupplier;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
+    public List<IngestJob> batchFiles(List<TrackedFile> inputFiles) {
+        return Collections.emptyList();
+    }
+
+
     public static final class Builder {
         private TablePropertiesProvider tablePropertiesProvider;
+        private Supplier<String> jobIdSupplier;
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
+            return this;
+        }
+
+        public Builder jobIdSupplier(Supplier<String> jobIdSupplier) {
+            this.jobIdSupplier = jobIdSupplier;
             return this;
         }
 
