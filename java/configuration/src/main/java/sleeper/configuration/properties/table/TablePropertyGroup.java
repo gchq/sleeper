@@ -40,7 +40,7 @@ public class TablePropertyGroup {
     public static final PropertyGroup BULK_IMPORT = tableGroup("Bulk Import")
             .description("The following table properties relate to bulk import, " +
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.").build();
-    public static final PropertyGroup INGEST_BATCHER = tableGroup("Bulk Import")
+    public static final PropertyGroup INGEST_BATCHER = tableGroup("Ingest Batcher")
             .description("The following table properties relate to the ingest batcher.").build();
     public static final PropertyGroup METADATA = tableGroup("Metadata")
             .description("The following table properties relate to storing and retrieving metadata for tables.").build();
