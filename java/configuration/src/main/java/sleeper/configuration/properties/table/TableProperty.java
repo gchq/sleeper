@@ -42,9 +42,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILE_LIMIT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE_LIMIT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE_LIMIT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -231,21 +232,25 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
 
     // Ingest batcher
-    TableProperty INGEST_BATCHER_MIN_JOB_SIZE_LIMIT = Index.propertyBuilder("sleeper.ingest.batcher.job.min.size")
-            .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE_LIMIT)
+    TableProperty INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.ingest.batcher.job.min.size")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE)
             .description("Specifies the minimum file size required for an ingest job to be batched and sent.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_MAX_JOB_SIZE_LIMIT = Index.propertyBuilder("sleeper.ingest.batcher.job.max.size")
-            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE_LIMIT)
+    TableProperty INGEST_BATCHER_MAX_JOB_SIZE = Index.propertyBuilder("sleeper.ingest.batcher.job.max.size")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE)
             .description("Specifies the maximum total file size for a job in the ingest batcher. " +
                     "Any more file will be placed into new ingest jobs.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_MAX_JOB_FILE_LIMIT = Index.propertyBuilder("sleeper.ingest.batcher.job.max.files")
-            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_FILE_LIMIT)
-            .description("Specifies the maximum amount of files for a job in the ingest batcher. " +
+    TableProperty INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.ingest.batcher.job.min.files")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_FILES)
+            .description("Specifies the minimum number of files for a job in the ingest batcher. " +
                     "Any more file will be placed into new ingest jobs.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-
+    TableProperty INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.ingest.batcher.job.max.files")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_FILES)
+            .description("Specifies the maximum number of files for a job in the ingest batcher. " +
+                    "Any more file will be placed into new ingest jobs.")
+            .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
     // Size ratio compaction strategy
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
