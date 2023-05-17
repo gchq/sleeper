@@ -25,11 +25,11 @@ import java.util.Objects;
 
 public class ProcessRun {
     private final String taskId;
-    private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
+    private final List<ProcessStatusUpdate> statusUpdates;
 
     private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        statusUpdates.addAll(builder.statusUpdates);
+        statusUpdates = Objects.requireNonNull(builder.statusUpdates, "statusUpdates must not be null");
     }
 
     public static Builder builder() {
@@ -156,12 +156,8 @@ public class ProcessRun {
             return this;
         }
 
-        public Builder statusUpdates(ProcessStatusUpdate... statusUpdates) {
-            return statusUpdates(List.of(statusUpdates));
-        }
-
-        public Builder statusUpdates(List<ProcessStatusUpdate> statusUpdates) {
-            this.statusUpdates.addAll(statusUpdates);
+        public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
+            this.statusUpdates.add(statusUpdate);
             return this;
         }
 
