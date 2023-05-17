@@ -219,6 +219,13 @@ The other EMR-based approach uses a persistent, i.e. long running, EMR cluster. 
 of the cluster monitors a queue and when a job appears submits it to YARN for execution. The EMR cluster can
 either be of fixed size or use EMR managed scaling.
 
+### Ingest batcher (WIP)
+
+This is a work-in-progress system which will take files from an S3 bucket and automatically batch and send 
+ingest jobs to either standard ingest or bulk import. An outline of the design of this system is shown below:
+
+![Ingest Batcher design diagram](diagrams/ingest-batcher.png)
+
 ## Compactions
 
 The purpose of a compaction job is to read N files and replace them with one file. This process keeps the number
