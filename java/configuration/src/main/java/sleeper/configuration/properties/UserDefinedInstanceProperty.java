@@ -18,10 +18,15 @@ package sleeper.configuration.properties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
+import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+
+import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 
 /**
  * Sleeper properties set by the user. All non-mandatory properties should be accompanied by a default value and should
@@ -938,7 +943,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("" + (128 * 1024)) // 128 KiB
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.default.compression.codec")
-            .description("The compression codec to use in the Parquet files.")
+            .description("The compression codec to use in the Parquet files.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .defaultValue("ZSTD")
             .validationPredicate(Utils::isValidCompressionCodec)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
@@ -975,6 +981,54 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "If this minimum has not been reached, bulk import jobs will refuse to start")
             .defaultValue("64")
             .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.default.ingest.batcher.job.min.size")
+            .description("Specifies the minimum file size required for an ingest job to be batched and sent.")
+            .defaultValue("1G")
+            .validationPredicate(Utils::isValidNumberOfBytes)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.size")
+            .description("Specifies the maximum total file size for a job in the ingest batcher. " +
+                    "Any more file will be placed into new ingest jobs.")
+            .defaultValue("1G")
+            .validationPredicate(Utils::isValidNumberOfBytes)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.min.files")
+            .description("Specifies the minimum number of files for a job in the ingest batcher. " +
+                    "Any more file will be placed into new ingest jobs.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.files")
+            .description("Specifies the maximum number of files for a job in the ingest batcher. " +
+                    "Any more file will be placed into new ingest jobs.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age")
+            .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
+                    "will be included in an ingest job. When any file has been waiting for longer than this, a job " +
+                    "will be created with all the currently held files, even if other criteria for a batch are not " +
+                    "met.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.mode")
+            .description("Specifies the target ingest queue where batched jobs are sent.\n" +
+                    "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
+            .defaultValue(BatchIngestMode.STANDARD_INGEST.name().toLowerCase(Locale.ROOT))
+            .validationPredicate(BatchIngestMode::isValidMode)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_TRACKING_TTL = Index.propertyBuilder("sleeper.default.ingest.batcher.file.tracking.ttl")
+            .description("The time in seconds that the tracking information is retained for a file before the " +
+                    "records of its ingest are deleted (eg. which ingest job it was assigned to, the time this " +
+                    "occurred, the size of the file).\n" +
+                    "The expiry time is fixed when a file is saved to the store, so changing this will only affect " +
+                    "new data.\n" +
+                    "Defaults to 24 hours.")
+            .defaultValue("" + 60 * 60 * 24)
+            .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
