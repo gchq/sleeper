@@ -16,66 +16,74 @@
 
 package sleeper.ingest.batcher;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestBatcher {
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Supplier<String> jobIdSupplier;
     private final IngestBatcherStateStore store;
+    private final IngestBatcherQueueClient queueClient;
 
     private IngestBatcher(Builder builder) {
+        instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         jobIdSupplier = builder.jobIdSupplier;
         store = builder.store;
+        queueClient = builder.queueClient;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public List<IngestJob> batchFiles() {
-        Map<String, List<FileIngestRequest>> filesByTable = store.getAllFiles().stream()
-                .collect(Collectors.groupingBy(FileIngestRequest::getTableName));
-        return filesByTable.entrySet().stream()
-                .flatMap(entry -> batchTableFiles(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+    public void batchFiles() {
+        store.getAllFiles().stream()
+                .collect(Collectors.groupingBy(FileIngestRequest::getTableName))
+                .forEach(this::batchTableFiles);
     }
 
-    private Stream<IngestJob> batchTableFiles(String tableName, List<FileIngestRequest> inputFiles) {
+    private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         int minFiles = properties.getInt(TableProperty.INGEST_BATCHER_MIN_JOB_FILES);
-        if (inputFiles.size() < minFiles) {
-            return Stream.empty();
-        } else {
-            return inputFiles.stream().map(this::batch);
+        if (inputFiles.size() >= minFiles) {
+            inputFiles.forEach(this::batch);
         }
     }
 
-    private IngestJob batch(FileIngestRequest file) {
+    private void batch(FileIngestRequest file) {
         IngestJob job = IngestJob.builder()
                 .id(jobIdSupplier.get())
                 .tableName(file.getTableName())
                 .files(file.getPathToFile())
                 .build();
         store.assignJob(job.getId(), List.of(file));
-        return job;
+        queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
     }
 
     public static final class Builder {
+        private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
         private Supplier<String> jobIdSupplier;
         private IngestBatcherStateStore store;
+        private IngestBatcherQueueClient queueClient;
 
         private Builder() {
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
         }
 
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
@@ -90,6 +98,11 @@ public class IngestBatcher {
 
         public Builder store(IngestBatcherStateStore store) {
             this.store = store;
+            return this;
+        }
+
+        public Builder queueClient(IngestBatcherQueueClient queueClient) {
+            this.queueClient = queueClient;
             return this;
         }
 
