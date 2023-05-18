@@ -28,7 +28,7 @@ class IngestBatcherStateStoreInMemoryTest {
     @Test
     void shouldTrackOneFile() {
         // Given
-        FileIngestRequest fileIngestRequest = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest = fileRequest()
                 .pathToFile("test-bucket/test.parquet")
                 .tableName("test-table").build();
 
@@ -43,30 +43,35 @@ class IngestBatcherStateStoreInMemoryTest {
     }
 
     @Test
-    void shouldTrackOneFileWhenAddingTheSameFileTwice() {
+    void shouldOverwriteTrackingInformationWhenAddingTheSameFileTwice() {
         // Given
-        FileIngestRequest fileIngestRequest = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest1 = fileRequest()
                 .pathToFile("test-bucket/test.parquet")
-                .tableName("test-table").build();
+                .tableName("test-table")
+                .fileSizeBytes(1024).build();
+        FileIngestRequest fileIngestRequest2 = fileRequest()
+                .pathToFile("test-bucket/test.parquet")
+                .tableName("test-table")
+                .fileSizeBytes(2048).build();
 
         // When
-        store.addFile(fileIngestRequest);
-        store.addFile(fileIngestRequest);
+        store.addFile(fileIngestRequest1);
+        store.addFile(fileIngestRequest2);
 
         // Then
         assertThat(store.getAllFiles())
-                .containsExactly(fileIngestRequest);
+                .containsExactly(fileIngestRequest2);
         assertThat(store.getPendingFiles())
-                .containsExactly(fileIngestRequest);
+                .containsExactly(fileIngestRequest2);
     }
 
     @Test
     void shouldTrackTheSameFileForMultipleTables() {
         // Given
-        FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest1 = fileRequest()
                 .pathToFile("test-bucket/test.parquet")
                 .tableName("test-table-1").build();
-        FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest2 = fileRequest()
                 .pathToFile("test-bucket/test.parquet")
                 .tableName("test-table-2").build();
 
@@ -84,10 +89,10 @@ class IngestBatcherStateStoreInMemoryTest {
     @Test
     void shouldTrackJobWasCreatedWithTwoFiles() {
         // Given
-        FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest1 = fileRequest()
                 .pathToFile("test-bucket/test-1.parquet")
                 .tableName("test-table-1").build();
-        FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest2 = fileRequest()
                 .pathToFile("test-bucket/test-2.parquet")
                 .tableName("test-table-1").build();
 
@@ -106,10 +111,10 @@ class IngestBatcherStateStoreInMemoryTest {
     @Test
     void shouldSendSameFileTwiceIfFirstRequestAssignedToJob() {
         // Given
-        FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest1 = fileRequest()
                 .pathToFile("test-bucket/test.parquet")
                 .tableName("test-table-1").build();
-        FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
+        FileIngestRequest fileIngestRequest2 = fileRequest()
                 .pathToFile("test-bucket/test.parquet")
                 .tableName("test-table-1").build();
 
@@ -128,4 +133,9 @@ class IngestBatcherStateStoreInMemoryTest {
     private static FileIngestRequest onJob(String jobId, FileIngestRequest request) {
         return request.toBuilder().jobId(jobId).build();
     }
+
+    private static FileIngestRequest.Builder fileRequest() {
+        return FileIngestRequest.builder().fileSizeBytes(1024);
+    }
+
 }

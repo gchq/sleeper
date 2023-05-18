@@ -20,11 +20,13 @@ import java.util.Objects;
 
 public class FileIngestRequest {
     private final String pathToFile;
+    private final long fileSizeBytes;
     private final String tableName;
     private final String jobId;
 
     private FileIngestRequest(Builder builder) {
         pathToFile = Objects.requireNonNull(builder.pathToFile, "pathToFile must not be null");
+        fileSizeBytes = builder.fileSizeBytes;
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         jobId = builder.jobId;
     }
@@ -39,6 +41,10 @@ public class FileIngestRequest {
 
     public String getPathToFile() {
         return pathToFile;
+    }
+
+    public long getFileSizeBytes() {
+        return fileSizeBytes;
     }
 
     public String getTableName() {
@@ -66,6 +72,9 @@ public class FileIngestRequest {
 
         FileIngestRequest that = (FileIngestRequest) o;
 
+        if (fileSizeBytes != that.fileSizeBytes) {
+            return false;
+        }
         if (!pathToFile.equals(that.pathToFile)) {
             return false;
         }
@@ -78,6 +87,7 @@ public class FileIngestRequest {
     @Override
     public int hashCode() {
         int result = pathToFile.hashCode();
+        result = 31 * result + (int) (fileSizeBytes ^ (fileSizeBytes >>> 32));
         result = 31 * result + tableName.hashCode();
         result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
         return result;
@@ -87,6 +97,7 @@ public class FileIngestRequest {
     public String toString() {
         return "FileIngestRequest{" +
                 "pathToFile='" + pathToFile + '\'' +
+                ", fileSizeBytes=" + fileSizeBytes +
                 ", tableName='" + tableName + '\'' +
                 ", jobId='" + jobId + '\'' +
                 '}';
@@ -94,6 +105,7 @@ public class FileIngestRequest {
 
     public static final class Builder {
         private String pathToFile;
+        private long fileSizeBytes;
         private String tableName;
         private String jobId;
 
@@ -102,6 +114,11 @@ public class FileIngestRequest {
 
         public Builder pathToFile(String pathToFile) {
             this.pathToFile = pathToFile;
+            return this;
+        }
+
+        public Builder fileSizeBytes(long fileSizeBytes) {
+            this.fileSizeBytes = fileSizeBytes;
             return this;
         }
 
