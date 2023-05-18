@@ -984,7 +984,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.default.ingest.batcher.job.min.size")
-            .description("Specifies the minimum file size required for an ingest job to be batched and sent. " +
+            .description("Specifies the minimum total file size required for an ingest job to be batched and sent. " +
                     "An ingest job will be created if the batcher runs while this much data is waiting, and the " +
                     "minimum number of files is also met.")
             .defaultValue("1G")

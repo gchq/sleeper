@@ -239,7 +239,7 @@ public interface TableProperty extends SleeperProperty {
     // Ingest batcher
     TableProperty INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.table.ingest.batcher.job.min.size")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE)
-            .description("Specifies the minimum file size required for an ingest job to be batched and sent. " +
+            .description("Specifies the minimum total file size required for an ingest job to be batched and sent. " +
                     "An ingest job will be created if the batcher runs while this much data is waiting, and the " +
                     "minimum number of files is also met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
