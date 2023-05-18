@@ -20,6 +20,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,7 +34,7 @@ public class ProcessRun {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
-        statusUpdates = Objects.requireNonNull(builder.statusUpdates, "statusUpdates must not be null");
+        statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
     }
 
     public static Builder builder() {
