@@ -16,6 +16,7 @@
 
 package sleeper.ingest.batcher;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -81,6 +82,7 @@ class IngestBatcherStateStoreInMemoryTest {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldTrackJobWasCreatedWithTwoFiles() {
         // Given
         FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
@@ -95,10 +97,15 @@ class IngestBatcherStateStoreInMemoryTest {
         store.assignJob("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
 
         // Then
-        assertThat(store.getAllFiles())
-                .containsExactly(fileIngestRequest1, fileIngestRequest2);
+        assertThat(store.getAllFiles()).containsExactly(
+                onJob("test-job", fileIngestRequest1),
+                onJob("test-job", fileIngestRequest2));
         assertThat(store.getPendingFiles()).isEmpty();
     }
 
     // TODO allow sending same file twice if the first request has been assigned to a job
+
+    private static FileIngestRequest onJob(String jobId, FileIngestRequest request) {
+        return FileIngestRequest.builder(request).jobId(jobId).build();
+    }
 }

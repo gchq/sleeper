@@ -16,17 +16,29 @@
 
 package sleeper.ingest.batcher;
 
+import java.util.Objects;
+
 public class FileIngestRequest {
     private final String pathToFile;
     private final String tableName;
+    private final String jobId;
 
     private FileIngestRequest(Builder builder) {
         pathToFile = builder.pathToFile;
         tableName = builder.tableName;
+        jobId = builder.jobId;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Builder builder(FileIngestRequest copy) {
+        Builder builder = new Builder();
+        builder.pathToFile = copy.getPathToFile();
+        builder.tableName = copy.getTableName();
+        builder.jobId = copy.getJobId();
+        return builder;
     }
 
     public String getPathToFile() {
@@ -35,6 +47,10 @@ public class FileIngestRequest {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getJobId() {
+        return jobId;
     }
 
     @Override
@@ -51,13 +67,17 @@ public class FileIngestRequest {
         if (!pathToFile.equals(that.pathToFile)) {
             return false;
         }
-        return tableName.equals(that.tableName);
+        if (!tableName.equals(that.tableName)) {
+            return false;
+        }
+        return Objects.equals(jobId, that.jobId);
     }
 
     @Override
     public int hashCode() {
         int result = pathToFile.hashCode();
         result = 31 * result + tableName.hashCode();
+        result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
         return result;
     }
 
@@ -66,12 +86,14 @@ public class FileIngestRequest {
         return "FileIngestRequest{" +
                 "pathToFile='" + pathToFile + '\'' +
                 ", tableName='" + tableName + '\'' +
+                ", jobId='" + jobId + '\'' +
                 '}';
     }
 
     public static final class Builder {
         private String pathToFile;
         private String tableName;
+        private String jobId;
 
         private Builder() {
         }
@@ -83,6 +105,11 @@ public class FileIngestRequest {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
             return this;
         }
 
