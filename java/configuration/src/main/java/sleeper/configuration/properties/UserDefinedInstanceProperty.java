@@ -1011,7 +1011,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "If more files are waiting than this, they will be split into multiple jobs. " +
                     "It's possible some data may be left for a future run of the batcher if some recent files " +
                     "overflow the size of a job but aren't enough to create a job on their own.")
-            .defaultValue("10")
+            .defaultValue("100")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age.seconds")
