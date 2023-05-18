@@ -17,6 +17,7 @@
 package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -114,6 +115,32 @@ class IngestBatcherTest {
             // Then
             assertThat(store.getPendingFiles()).containsExactly(request1, request2);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
+        }
+    }
+
+    @Nested
+    @DisplayName("Batch with minimum file size")
+    class BatchWithMinimumFileSize {
+
+        @Test
+        @Disabled("TODO")
+        void shouldBatchOneFileWhenFileExceedsMinimumFileSize() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            FileIngestRequest request = addFileToStore(FileIngestRequest.builder()
+                    .pathToFile("test-bucket/test.parquet")
+                    .tableName(DEFAULT_TABLE_NAME)
+                    .build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id", request));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id", "test-bucket/test.parquet")));
         }
     }
 
