@@ -17,7 +17,6 @@
 package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -123,14 +122,12 @@ class IngestBatcherTest {
     class BatchWithMinimumFileSize {
 
         @Test
-        @Disabled("TODO")
         void shouldBatchOneFileWhenFileExceedsMinimumFileSize() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            FileIngestRequest request = addFileToStore(FileIngestRequest.builder()
+            FileIngestRequest request = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test.parquet")
-                    .tableName(DEFAULT_TABLE_NAME)
-                    .build());
+                    .fileSizeBytes(2048).build());
 
             // When
             batchFilesWithJobIds("test-job-id");
@@ -141,6 +138,22 @@ class IngestBatcherTest {
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id", "test-bucket/test.parquet")));
+        }
+
+        @Test
+        void shouldBatchNoFilesWhenUnderMinimumFileSize() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            FileIngestRequest request = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test.parquet")
+                    .fileSizeBytes(512).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
     }
 
@@ -162,10 +175,14 @@ class IngestBatcherTest {
     }
 
     private FileIngestRequest addFileToStore(String pathToFile) {
-        return addFileToStore(FileIngestRequest.builder()
-                .pathToFile(pathToFile)
+        return addFileToStore(ingestRequest()
+                .pathToFile(pathToFile).build());
+    }
+
+    private FileIngestRequest.Builder ingestRequest() {
+        return FileIngestRequest.builder()
                 .tableName(DEFAULT_TABLE_NAME)
-                .build());
+                .fileSizeBytes(1024);
     }
 
     private FileIngestRequest addFileToStore(FileIngestRequest request) {

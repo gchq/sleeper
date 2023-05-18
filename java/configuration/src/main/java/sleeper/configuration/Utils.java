@@ -23,7 +23,11 @@ import sleeper.configuration.properties.table.CompressionCodec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.DoublePredicate;
+import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,11 +86,34 @@ public class Utils {
         return VALID_LOG_RETENTION_VALUES.contains(logRetention);
     }
 
+    private static final Pattern BYTES_PATTERN = Pattern.compile("(\\d+)([KMG]?)");
+
     public static boolean isValidNumberOfBytes(String numberOfBytes) {
         if (!isNonNullNonEmptyString(numberOfBytes)) {
             return false;
         }
-        return numberOfBytes.matches("[0-9]+[KMG]?");
+        return BYTES_PATTERN.matcher(numberOfBytes).matches();
+    }
+
+    public static long readBytes(String value) {
+        Matcher matcher = BYTES_PATTERN.matcher(value);
+        matcher.matches();
+        return Long.parseLong(matcher.group(1)) * readFileSizeUnits(matcher.group(2));
+    }
+
+    private static long readFileSizeUnits(String units) {
+        switch (units) {
+            case "":
+                return 1;
+            case "K":
+                return 1024L;
+            case "M":
+                return 1024L * 1024L;
+            case "G":
+                return 1024L * 1024L * 1024L;
+            default:
+                throw new IllegalArgumentException("Unrecognised file size units: " + units);
+        }
     }
 
     public static boolean isValidEbsSize(String ebsSizeInGb) {
@@ -115,7 +142,7 @@ public class Utils {
         return combinedList;
     }
 
-    private static boolean parseAndCheckInteger(String string, Predicate<Integer> check) {
+    private static boolean parseAndCheckInteger(String string, IntPredicate check) {
         try {
             return check.test(Integer.parseInt(string));
         } catch (NumberFormatException e) {
@@ -123,7 +150,7 @@ public class Utils {
         }
     }
 
-    private static boolean parseAndCheckLong(String string, Predicate<Long> check) {
+    private static boolean parseAndCheckLong(String string, LongPredicate check) {
         try {
             return check.test(Long.parseLong(string));
         } catch (NumberFormatException e) {
@@ -131,7 +158,7 @@ public class Utils {
         }
     }
 
-    private static boolean parseAndCheckDouble(String string, Predicate<Double> check) {
+    private static boolean parseAndCheckDouble(String string, DoublePredicate check) {
         try {
             return check.test(Double.parseDouble(string));
         } catch (NumberFormatException e) {

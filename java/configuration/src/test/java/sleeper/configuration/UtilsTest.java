@@ -23,7 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.Utils.combineLists;
 
-public class UtilsTest {
+class UtilsTest {
 
     @Test
     void shouldCombineLists() {
@@ -64,5 +64,25 @@ public class UtilsTest {
                 .isTrue();
         assertThat(Utils.isPositiveDouble("ABC"))
                 .isFalse();
+    }
+
+    @Test
+    void shouldReadBytesSize() {
+        assertThat(Utils.readBytes("42")).isEqualTo(42L);
+    }
+
+    @Test
+    void shouldReadKBSize() {
+        assertThat(Utils.readBytes("2K")).isEqualTo(2048L);
+    }
+
+    @Test
+    void shouldReadMBSize() {
+        assertThat(Utils.readBytes("2M")).isEqualTo(2 * 1024 * 1024L);
+    }
+
+    @Test
+    void shouldReadGBSize() {
+        assertThat(Utils.readBytes("2G")).isEqualTo(2 * 1024 * 1024 * 1024L);
     }
 }

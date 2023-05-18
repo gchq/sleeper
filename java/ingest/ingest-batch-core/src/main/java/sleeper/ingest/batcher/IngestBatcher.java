@@ -56,7 +56,9 @@ public class IngestBatcher {
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         int minFiles = properties.getInt(TableProperty.INGEST_BATCHER_MIN_JOB_FILES);
-        if (inputFiles.size() >= minFiles) {
+        long minBytes = properties.getBytes(TableProperty.INGEST_BATCHER_MIN_JOB_SIZE);
+        if (inputFiles.size() >= minFiles &&
+                inputFiles.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() >= minBytes) {
             inputFiles.forEach(this::batch);
         }
     }
