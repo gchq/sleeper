@@ -24,21 +24,13 @@ public class FileIngestRequest {
     private final String jobId;
 
     private FileIngestRequest(Builder builder) {
-        pathToFile = builder.pathToFile;
-        tableName = builder.tableName;
+        pathToFile = Objects.requireNonNull(builder.pathToFile, "pathToFile must not be null");
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         jobId = builder.jobId;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static Builder builder(FileIngestRequest copy) {
-        Builder builder = new Builder();
-        builder.pathToFile = copy.getPathToFile();
-        builder.tableName = copy.getTableName();
-        builder.jobId = copy.getJobId();
-        return builder;
     }
 
     public String getPathToFile() {
@@ -51,6 +43,12 @@ public class FileIngestRequest {
 
     public String getJobId() {
         return jobId;
+    }
+
+    public Builder toBuilder() {
+        return builder().pathToFile(pathToFile)
+                .tableName(tableName)
+                .jobId(jobId);
     }
 
     @Override

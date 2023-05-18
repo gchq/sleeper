@@ -35,7 +35,8 @@ public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore 
     public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
         filesInJob.forEach(file -> {
             requests.remove(new IngestBatcherStateStoreKeyFields(file));
-            requests.put(new IngestBatcherStateStoreKeyFields(file, jobId), file);
+            FileIngestRequest fileWithJob = file.toBuilder().jobId(jobId).build();
+            requests.put(new IngestBatcherStateStoreKeyFields(fileWithJob), fileWithJob);
         });
     }
 

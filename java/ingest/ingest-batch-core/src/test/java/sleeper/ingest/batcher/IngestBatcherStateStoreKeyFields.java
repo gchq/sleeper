@@ -26,13 +26,7 @@ public class IngestBatcherStateStoreKeyFields {
     public IngestBatcherStateStoreKeyFields(FileIngestRequest request) {
         pathToFile = request.getPathToFile();
         tableName = request.getTableName();
-        jobId = null;
-    }
-
-    public IngestBatcherStateStoreKeyFields(FileIngestRequest request, String jobId) {
-        this.pathToFile = request.getPathToFile();
-        this.tableName = request.getTableName();
-        this.jobId = jobId;
+        jobId = request.getJobId();
     }
 
     public boolean isAssignedToJob() {
