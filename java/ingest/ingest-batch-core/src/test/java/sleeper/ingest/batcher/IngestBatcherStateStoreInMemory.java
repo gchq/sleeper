@@ -24,7 +24,9 @@ public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore 
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {
-        files.add(fileIngestRequest);
+        if (!files.contains(fileIngestRequest)) {
+            files.add(fileIngestRequest);
+        }
     }
 
     @Override
