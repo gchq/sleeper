@@ -16,6 +16,7 @@
 
 package sleeper.ingest.batcher;
 
+import com.google.common.collect.Iterators;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,11 +25,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -41,6 +40,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 class IngestBatcherTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
 
     @Nested
     @DisplayName("Batch with minimum file count")
@@ -54,44 +54,42 @@ class IngestBatcherTest {
         @Test
         void shouldBatchOneFileWhenMinimumFileCountIsOne() {
             // Given
-            Supplier<String> jobIdSupplier = () -> "test-job-id";
             tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-            IngestBatcher batcher = IngestBatcher.builder().tablePropertiesProvider(tablePropertiesProvider)
-                    .jobIdSupplier(jobIdSupplier).build();
-            List<TrackedFile> inputFiles = List.of(TrackedFile.builder()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName("test-table")
-                    .build());
-
-            // When
-            List<IngestJob> jobs = batcher.batchFiles(inputFiles);
-
-            // Then
-            assertThat(jobs).containsExactly(IngestJob.builder()
-                    .files("test-bucket/test.parquet")
-                    .tableName("test-table")
-                    .id("test-job-id")
-                    .build());
-        }
-
-        @Test
-        void shouldBatchNoFilesWhenMinimumCountIsTwoAndOneFileIsTracked() {
-            // Given
-            Supplier<String> jobIdSupplier = () -> "test-job-id";
-            tableProperties.set(TABLE_NAME, "test-table");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-            IngestBatcher batcher = IngestBatcher.builder().tablePropertiesProvider(tablePropertiesProvider)
-                    .jobIdSupplier(jobIdSupplier).build();
-            List<TrackedFile> inputFiles = List.of(TrackedFile.builder()
+            store.addFile(FileIngestRequest.builder()
                     .pathToFile("test-bucket/test.parquet")
                     .tableName("test-table")
                     .build());
 
             // When / Then
-            assertThat(batcher.batchFiles(inputFiles)).isEmpty();
+            assertThat(batchFilesWithJobIds("test-job-id")).containsExactly(
+                    IngestJob.builder()
+                            .files("test-bucket/test.parquet")
+                            .tableName("test-table")
+                            .id("test-job-id")
+                            .build());
         }
+
+        @Test
+        void shouldBatchNoFilesWhenMinimumCountIsTwoAndOneFileIsTracked() {
+            // Given
+            tableProperties.set(TABLE_NAME, "test-table");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
+            store.addFile(FileIngestRequest.builder()
+                    .pathToFile("test-bucket/test.parquet")
+                    .tableName("test-table")
+                    .build());
+
+            // When / Then
+            assertThat(batchFilesWithJobIds()).isEmpty();
+        }
+    }
+
+    private List<IngestJob> batchFilesWithJobIds(String... jobIds) {
+        IngestBatcher batcher = IngestBatcher.builder()
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
+                .jobIdSupplier(Iterators.forArray(jobIds)::next)
+                .build();
+        return batcher.batchFiles(store.getPendingFiles());
     }
 }

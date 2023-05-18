@@ -40,15 +40,15 @@ public class IngestBatcher {
         return new Builder();
     }
 
-    public List<IngestJob> batchFiles(List<TrackedFile> inputFiles) {
-        Map<String, List<TrackedFile>> filesByTable = inputFiles.stream()
-                .collect(Collectors.groupingBy(TrackedFile::getTableName));
+    public List<IngestJob> batchFiles(List<FileIngestRequest> inputFiles) {
+        Map<String, List<FileIngestRequest>> filesByTable = inputFiles.stream()
+                .collect(Collectors.groupingBy(FileIngestRequest::getTableName));
         return filesByTable.entrySet().stream()
                 .flatMap(entry -> batchTableFiles(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
-    private Stream<IngestJob> batchTableFiles(String tableName, List<TrackedFile> inputFiles) {
+    private Stream<IngestJob> batchTableFiles(String tableName, List<FileIngestRequest> inputFiles) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         int minFiles = properties.getInt(TableProperty.INGEST_BATCHER_MIN_JOB_FILES);
         if (inputFiles.size() < minFiles) {
@@ -58,7 +58,7 @@ public class IngestBatcher {
         }
     }
 
-    private IngestJob batch(TrackedFile file) {
+    private IngestJob batch(FileIngestRequest file) {
         return IngestJob.builder()
                 .id(jobIdSupplier.get())
                 .tableName(file.getTableName())
