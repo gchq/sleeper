@@ -30,18 +30,20 @@ import java.util.stream.Stream;
 public class IngestBatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Supplier<String> jobIdSupplier;
+    private final IngestBatcherStateStore store;
 
     private IngestBatcher(Builder builder) {
         tablePropertiesProvider = builder.tablePropertiesProvider;
         jobIdSupplier = builder.jobIdSupplier;
+        store = builder.store;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public List<IngestJob> batchFiles(List<FileIngestRequest> inputFiles) {
-        Map<String, List<FileIngestRequest>> filesByTable = inputFiles.stream()
+    public List<IngestJob> batchFiles() {
+        Map<String, List<FileIngestRequest>> filesByTable = store.getAllFiles().stream()
                 .collect(Collectors.groupingBy(FileIngestRequest::getTableName));
         return filesByTable.entrySet().stream()
                 .flatMap(entry -> batchTableFiles(entry.getKey(), entry.getValue()))
@@ -59,16 +61,19 @@ public class IngestBatcher {
     }
 
     private IngestJob batch(FileIngestRequest file) {
-        return IngestJob.builder()
+        IngestJob job = IngestJob.builder()
                 .id(jobIdSupplier.get())
                 .tableName(file.getTableName())
                 .files(file.getPathToFile())
                 .build();
+        store.assignJob(job.getId(), List.of(file));
+        return job;
     }
 
     public static final class Builder {
         private TablePropertiesProvider tablePropertiesProvider;
         private Supplier<String> jobIdSupplier;
+        private IngestBatcherStateStore store;
 
         private Builder() {
         }
@@ -80,6 +85,11 @@ public class IngestBatcher {
 
         public Builder jobIdSupplier(Supplier<String> jobIdSupplier) {
             this.jobIdSupplier = jobIdSupplier;
+            return this;
+        }
+
+        public Builder store(IngestBatcherStateStore store) {
+            this.store = store;
             return this;
         }
 

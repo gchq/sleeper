@@ -36,6 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -56,7 +57,7 @@ class IngestBatcherTest {
             // Given
             tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            store.addFile(FileIngestRequest.builder()
+            FileIngestRequest request = addFileToStore(FileIngestRequest.builder()
                     .pathToFile("test-bucket/test.parquet")
                     .tableName("test-table")
                     .build());
@@ -68,6 +69,8 @@ class IngestBatcherTest {
                             .tableName("test-table")
                             .id("test-job-id")
                             .build());
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id", request));
         }
 
         @Test
@@ -75,21 +78,28 @@ class IngestBatcherTest {
             // Given
             tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            store.addFile(FileIngestRequest.builder()
+            FileIngestRequest request = addFileToStore(FileIngestRequest.builder()
                     .pathToFile("test-bucket/test.parquet")
                     .tableName("test-table")
                     .build());
 
             // When / Then
             assertThat(batchFilesWithJobIds()).isEmpty();
+            assertThat(store.getPendingFiles()).containsExactly(request);
         }
+    }
+
+    private FileIngestRequest addFileToStore(FileIngestRequest request) {
+        store.addFile(request);
+        return request;
     }
 
     private List<IngestJob> batchFilesWithJobIds(String... jobIds) {
         IngestBatcher batcher = IngestBatcher.builder()
                 .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .jobIdSupplier(Iterators.forArray(jobIds)::next)
+                .store(store)
                 .build();
-        return batcher.batchFiles(store.getPendingFiles());
+        return batcher.batchFiles();
     }
 }

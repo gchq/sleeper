@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherStateStoreInMemoryTest {
     private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
@@ -123,9 +124,5 @@ class IngestBatcherStateStoreInMemoryTest {
                 onJob("test-job", fileIngestRequest1),
                 fileIngestRequest2);
         assertThat(store.getPendingFiles()).containsExactly(fileIngestRequest2);
-    }
-
-    private static FileIngestRequest onJob(String jobId, FileIngestRequest request) {
-        return request.toBuilder().jobId(jobId).build();
     }
 }
