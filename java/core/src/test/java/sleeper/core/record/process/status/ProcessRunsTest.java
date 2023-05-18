@@ -16,6 +16,8 @@
 
 package sleeper.core.record.process.status;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -254,5 +256,42 @@ public class ProcessRunsTest {
         // Then
         assertThat(runs.getRunList())
                 .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+    }
+
+    @Nested
+    @DisplayName("Retrieve status updates by class")
+    class RetrieveStatusUpdatesByClass {
+        @Test
+        void shouldReturnLastStatusUpdateByClass() {
+            // Given
+            ProcessStartedStatus startedStatus = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            CustomProcessStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+
+            // Then
+            assertThat(runs.getLatestRun()
+                    .flatMap(latestRun -> latestRun.getLastStatusOfType(CustomProcessStatus.class)))
+                    .get().isEqualTo(customStatus);
+        }
+
+        @Test
+        void shouldReturnLastStatusUpdateByClassWithMultipleUpdatesForClass() {
+            // Given
+            ProcessStartedStatus startedStatus = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            CustomProcessStatus customStatus1 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            CustomProcessStatus customStatus2 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:25:30Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(startedStatus, customStatus1, customStatus2);
+
+            // Then
+            assertThat(runs.getLatestRun()
+                    .flatMap(latestRun -> latestRun.getLastStatusOfType(CustomProcessStatus.class)))
+                    .get().isEqualTo(customStatus2);
+        }
     }
 }

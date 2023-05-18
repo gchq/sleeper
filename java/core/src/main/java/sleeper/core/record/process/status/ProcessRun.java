@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class ProcessRun {
     private final String taskId;
@@ -108,6 +109,18 @@ public class ProcessRun {
         } else {
             return null;
         }
+    }
+
+    public List<ProcessStatusUpdate> getStatusUpdates() {
+        return statusUpdates;
+    }
+
+    public <T extends ProcessStatusUpdate> Optional<ProcessStatusUpdate> getLastStatusOfType(Class<T> cls) {
+        List<ProcessStatusUpdate> updatesLatestFirst = new ArrayList<>(getStatusUpdates());
+        Collections.reverse(updatesLatestFirst);
+        return updatesLatestFirst.stream()
+                .filter(update -> update.getClass().equals(cls))
+                .findFirst();
     }
 
     @Override
