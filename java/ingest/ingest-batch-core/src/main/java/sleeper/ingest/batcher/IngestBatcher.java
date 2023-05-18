@@ -59,26 +59,53 @@ public class IngestBatcher {
         long minBytes = properties.getBytes(TableProperty.INGEST_BATCHER_MIN_JOB_SIZE);
         if (inputFiles.size() >= minFiles &&
                 inputFiles.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() >= minBytes) {
-            batch(tableName, inputFiles);
+            batchByMaxFiles(tableName, inputFiles);
         }
     }
 
-    private void batch(String tableName, List<FileIngestRequest> files) {
+    private void batchByMaxFiles(String tableName, List<FileIngestRequest> files) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         int maxFiles = properties.getInt(TableProperty.INGEST_BATCHER_MAX_JOB_FILES);
-        for (int i = 0; i < files.size(); i += maxFiles) {
-            int toIndex = Math.min(i + maxFiles, files.size());
-            List<FileIngestRequest> batchedFiles = files.subList(i, toIndex);
-            IngestJob job = IngestJob.builder()
-                    .id(jobIdSupplier.get())
-                    .tableName(tableName)
-                    .files(batchedFiles.stream()
-                            .map(FileIngestRequest::getPathToFile)
-                            .collect(Collectors.toList()))
-                    .build();
-            store.assignJob(job.getId(), batchedFiles);
-            queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+        long maxSize = properties.getBytes(TableProperty.INGEST_BATCHER_MAX_JOB_SIZE);
+        if (files.size() > maxFiles) {
+            for (int i = 0; i < files.size(); i += maxFiles) {
+                int toIndex = Math.min(i + maxFiles, files.size());
+                List<FileIngestRequest> batchedFiles = files.subList(i, toIndex);
+                createJob(tableName, batchedFiles);
+            }
+        } else {
+            if (files.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() > maxSize) {
+                batchByMaxSize(tableName, files, maxSize);
+            } else {
+                createJob(tableName, files);
+            }
         }
+    }
+
+    private void batchByMaxSize(String tableName, List<FileIngestRequest> files, long maxSize) {
+        long totalSize = 0;
+        int startIndex = 0;
+        for (int i = 0; i < files.size(); i++) {
+            totalSize += files.get(i).getFileSizeBytes();
+            if (totalSize > maxSize) {
+                createJob(tableName, files.subList(startIndex, i));
+                totalSize = files.get(i).getFileSizeBytes();
+                startIndex = i;
+            }
+        }
+        createJob(tableName, files.subList(startIndex, files.size()));
+    }
+
+    private void createJob(String tableName, List<FileIngestRequest> files) {
+        IngestJob job = IngestJob.builder()
+                .id(jobIdSupplier.get())
+                .tableName(tableName)
+                .files(files.stream()
+                        .map(FileIngestRequest::getPathToFile)
+                        .collect(Collectors.toList()))
+                .build();
+        store.assignJob(job.getId(), files);
+        queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
     }
 
     public static final class Builder {
