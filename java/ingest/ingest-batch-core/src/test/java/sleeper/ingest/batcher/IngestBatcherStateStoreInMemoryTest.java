@@ -69,6 +69,7 @@ class IngestBatcherStateStoreInMemoryTest {
         FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
                 .pathToFile("test-bucket/test.parquet")
                 .tableName("test-table-2").build();
+
         // When
         store.addFile(fileIngestRequest1);
         store.addFile(fileIngestRequest2);
@@ -89,6 +90,7 @@ class IngestBatcherStateStoreInMemoryTest {
         FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
                 .pathToFile("test-bucket/test-2.parquet")
                 .tableName("test-table-1").build();
+
         // When
         store.addFile(fileIngestRequest1);
         store.addFile(fileIngestRequest2);
@@ -101,7 +103,27 @@ class IngestBatcherStateStoreInMemoryTest {
         assertThat(store.getPendingFiles()).isEmpty();
     }
 
-    // TODO allow sending same file twice if the first request has been assigned to a job
+    @Test
+    void shouldSendSameFileTwiceIfFirstRequestAssignedToJob() {
+        // Given
+        FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
+                .pathToFile("test-bucket/test.parquet")
+                .tableName("test-table-1").build();
+        FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
+                .pathToFile("test-bucket/test.parquet")
+                .tableName("test-table-1").build();
+
+        // When
+        store.addFile(fileIngestRequest1);
+        store.assignJob("test-job", List.of(fileIngestRequest1));
+        store.addFile(fileIngestRequest2);
+
+        // Then
+        assertThat(store.getAllFiles()).containsExactly(
+                onJob("test-job", fileIngestRequest1),
+                fileIngestRequest2);
+        assertThat(store.getPendingFiles()).containsExactly(fileIngestRequest2);
+    }
 
     private static FileIngestRequest onJob(String jobId, FileIngestRequest request) {
         return request.toBuilder().jobId(jobId).build();
