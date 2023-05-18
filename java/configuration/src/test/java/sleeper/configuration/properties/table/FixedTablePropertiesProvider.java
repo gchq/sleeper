@@ -21,19 +21,13 @@ import java.util.Objects;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class FixedTablePropertiesProvider extends TablePropertiesProvider {
+    public FixedTablePropertiesProvider(TableProperties tableProperties) {
+        this(List.of(tableProperties));
+    }
+
     public FixedTablePropertiesProvider(List<TableProperties> tables) {
         super(tableName -> tables.stream()
                 .filter(table -> Objects.equals(tableName, table.get(TABLE_NAME)))
                 .findFirst().orElseThrow());
-    }
-
-    public FixedTablePropertiesProvider(TableProperties tableProperties) {
-        super(tableName -> {
-            if (Objects.equals(tableName, tableProperties.get(TABLE_NAME))) {
-                return tableProperties;
-            } else {
-                throw new IllegalArgumentException("Table not found: " + tableName);
-            }
-        });
     }
 }
