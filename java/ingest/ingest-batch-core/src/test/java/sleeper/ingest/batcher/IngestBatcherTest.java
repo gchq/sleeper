@@ -206,6 +206,64 @@ class IngestBatcherTest {
         }
     }
 
+    @Nested
+    @DisplayName("Batch with combined minimum job sizes")
+    class BatchWithCombinedMinimumJobSizes {
+        @Test
+        void shouldNotBatchFileWhenMinimumFileSizeMetButMinimumFileCountNotMet() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
+            FileIngestRequest request = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test.parquet")
+                    .fileSizeBytes(2048).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(queues.getMessagesByQueueUrl()).isEmpty();
+        }
+
+        @Test
+        void shouldNotBatchFileWhenMinimumFileCountMetButMinimumFileSizeNotMet() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+            FileIngestRequest request = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test.parquet")
+                    .fileSizeBytes(512).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(queues.getMessagesByQueueUrl()).isEmpty();
+        }
+
+        @Test
+        void shouldBatchFileWhenMinimumFileSizeMetAndMinimumFileCountMet() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+            FileIngestRequest request = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test.parquet")
+                    .fileSizeBytes(2048).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id", request));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id", "test-bucket/test.parquet")));
+        }
+    }
+
     private TableProperties createTableProperties(String tableName) {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
