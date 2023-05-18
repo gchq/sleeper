@@ -23,14 +23,14 @@ public class IngestBatcherStateStoreKeyFields {
     private final String tableName;
     private final String jobId;
 
-    public IngestBatcherStateStoreKeyFields(FileIngestRequest request) {
+    private IngestBatcherStateStoreKeyFields(FileIngestRequest request) {
         pathToFile = request.getPathToFile();
         tableName = request.getTableName();
         jobId = request.getJobId();
     }
 
-    public boolean isAssignedToJob() {
-        return jobId != null;
+    public static IngestBatcherStateStoreKeyFields keyFor(FileIngestRequest request) {
+        return new IngestBatcherStateStoreKeyFields(request);
     }
 
     @Override

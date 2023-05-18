@@ -33,6 +33,10 @@ public class FileIngestRequest {
         return new Builder();
     }
 
+    public boolean isAssignedToJob() {
+        return jobId != null;
+    }
+
     public String getPathToFile() {
         return pathToFile;
     }

@@ -22,21 +22,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.ingest.batcher.IngestBatcherStateStoreKeyFields.keyFor;
+
 public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore {
 
     private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {
-        requests.put(new IngestBatcherStateStoreKeyFields(fileIngestRequest), fileIngestRequest);
+        requests.put(keyFor(fileIngestRequest), fileIngestRequest);
     }
 
     @Override
     public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
         filesInJob.forEach(file -> {
-            requests.remove(new IngestBatcherStateStoreKeyFields(file));
+            requests.remove(keyFor(file));
             FileIngestRequest fileWithJob = file.toBuilder().jobId(jobId).build();
-            requests.put(new IngestBatcherStateStoreKeyFields(fileWithJob), fileWithJob);
+            requests.put(keyFor(fileWithJob), fileWithJob);
         });
     }
 
@@ -47,9 +49,8 @@ public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore 
 
     @Override
     public List<FileIngestRequest> getPendingFiles() {
-        return requests.entrySet().stream()
-                .filter(entry -> !entry.getKey().isAssignedToJob())
-                .map(Map.Entry::getValue)
+        return requests.values().stream()
+                .filter(request -> !request.isAssignedToJob())
                 .collect(Collectors.toList());
     }
 }
