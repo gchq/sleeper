@@ -17,25 +17,38 @@
 package sleeper.ingest.batcher;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore {
-    List<FileIngestRequest> files = new ArrayList<>();
+
+    private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {
-        if (files.stream().noneMatch(file -> isDuplicateRequest(file, fileIngestRequest))) {
-            files.add(fileIngestRequest);
-        }
+        requests.put(new IngestBatcherStateStoreKeyFields(fileIngestRequest), fileIngestRequest);
     }
 
-    private static boolean isDuplicateRequest(FileIngestRequest request1, FileIngestRequest request2) {
-        return request1.getPathToFile().equals(request2.getPathToFile())
-                && request1.getTableName().equals(request2.getTableName());
+    @Override
+    public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
+        filesInJob.forEach(file -> {
+            requests.remove(new IngestBatcherStateStoreKeyFields(file));
+            requests.put(new IngestBatcherStateStoreKeyFields(file, jobId), file);
+        });
     }
 
     @Override
     public List<FileIngestRequest> getAllFiles() {
-        return files;
+        return new ArrayList<>(requests.values());
+    }
+
+    @Override
+    public List<FileIngestRequest> getPendingFiles() {
+        return requests.entrySet().stream()
+                .filter(entry -> !entry.getKey().isAssignedToJob())
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
     }
 }

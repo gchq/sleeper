@@ -18,9 +18,11 @@ package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class IngestBatcherStateStoreInMemoryTest {
+class IngestBatcherStateStoreInMemoryTest {
     private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
 
     @Test
@@ -35,6 +37,8 @@ public class IngestBatcherStateStoreInMemoryTest {
 
         // Then
         assertThat(store.getAllFiles())
+                .containsExactly(fileIngestRequest);
+        assertThat(store.getPendingFiles())
                 .containsExactly(fileIngestRequest);
     }
 
@@ -51,6 +55,8 @@ public class IngestBatcherStateStoreInMemoryTest {
 
         // Then
         assertThat(store.getAllFiles())
+                .containsExactly(fileIngestRequest);
+        assertThat(store.getPendingFiles())
                 .containsExactly(fileIngestRequest);
     }
 
@@ -70,5 +76,29 @@ public class IngestBatcherStateStoreInMemoryTest {
         // Then
         assertThat(store.getAllFiles())
                 .containsExactly(fileIngestRequest1, fileIngestRequest2);
+        assertThat(store.getPendingFiles())
+                .containsExactly(fileIngestRequest1, fileIngestRequest2);
     }
+
+    @Test
+    void shouldTrackJobWasCreatedWithTwoFiles() {
+        // Given
+        FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
+                .pathToFile("test-bucket/test-1.parquet")
+                .tableName("test-table-1").build();
+        FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
+                .pathToFile("test-bucket/test-2.parquet")
+                .tableName("test-table-1").build();
+        // When
+        store.addFile(fileIngestRequest1);
+        store.addFile(fileIngestRequest2);
+        store.assignJob("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
+
+        // Then
+        assertThat(store.getAllFiles())
+                .containsExactly(fileIngestRequest1, fileIngestRequest2);
+        assertThat(store.getPendingFiles()).isEmpty();
+    }
+
+    // TODO allow sending same file twice if the first request has been assigned to a job
 }

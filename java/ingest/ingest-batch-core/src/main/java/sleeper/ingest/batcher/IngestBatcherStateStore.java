@@ -21,5 +21,9 @@ import java.util.List;
 public interface IngestBatcherStateStore {
     void addFile(FileIngestRequest fileIngestRequest);
 
+    void assignJob(String jobId, List<FileIngestRequest> filesInJob);
+
     List<FileIngestRequest> getAllFiles();
+
+    List<FileIngestRequest> getPendingFiles();
 }
