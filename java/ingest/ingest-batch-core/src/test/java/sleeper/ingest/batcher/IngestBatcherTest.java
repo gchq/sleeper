@@ -48,31 +48,30 @@ class IngestBatcherTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
     private final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
+    private static final String DEFAULT_TABLE_NAME = "test-table";
+
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, "test-ingest-queue-url");
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
+        tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "0");
+        tableProperties.set(TABLE_NAME, DEFAULT_TABLE_NAME);
+    }
+
+    private Map<String, List<Object>> queueMessages(IngestJob... jobs) {
+        return Map.of("test-ingest-queue-url", List.of(jobs));
+    }
 
     @Nested
     @DisplayName("Batch with minimum file count")
     class BatchWithMinimumFileCount {
-
-        @BeforeEach
-        void setUp() {
-            instanceProperties.set(INGEST_JOB_QUEUE_URL, "test-ingest-queue-url");
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        }
-
-        private Map<String, List<Object>> queueMessages(IngestJob... jobs) {
-            return Map.of("test-ingest-queue-url", List.of(jobs));
-        }
-
         @Test
         void shouldBatchOneFileWhenMinimumFileCountIsOne() {
             // Given
-            tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            FileIngestRequest request = addFileToStore(FileIngestRequest.builder()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName("test-table")
-                    .build());
+            FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id");
@@ -81,22 +80,15 @@ class IngestBatcherTest {
             assertThat(store.getAllFiles()).containsExactly(
                     onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
-                    .isEqualTo(queueMessages(IngestJob.builder()
-                            .files("test-bucket/test.parquet")
-                            .tableName("test-table")
-                            .id("test-job-id")
-                            .build()));
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id", "test-bucket/test.parquet")));
         }
 
         @Test
         void shouldBatchNoFilesWhenMinimumCountIsTwoAndOneFileIsTracked() {
             // Given
-            tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            FileIngestRequest request = addFileToStore(FileIngestRequest.builder()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName("test-table")
-                    .build());
+            FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id");
@@ -105,6 +97,21 @@ class IngestBatcherTest {
             assertThat(store.getPendingFiles()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
         }
+    }
+
+    private IngestJob jobWithFiles(String jobId, String... files) {
+        return IngestJob.builder()
+                .files(files)
+                .tableName(DEFAULT_TABLE_NAME)
+                .id(jobId)
+                .build();
+    }
+
+    private FileIngestRequest addFileToStore(String pathToFile) {
+        return addFileToStore(FileIngestRequest.builder()
+                .pathToFile(pathToFile)
+                .tableName(DEFAULT_TABLE_NAME)
+                .build());
     }
 
     private FileIngestRequest addFileToStore(FileIngestRequest request) {
