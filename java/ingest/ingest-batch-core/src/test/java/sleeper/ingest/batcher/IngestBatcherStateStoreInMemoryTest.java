@@ -39,7 +39,7 @@ public class IngestBatcherStateStoreInMemoryTest {
     }
 
     @Test
-    void shouldNotTrackFileWhenAddingTheSameFileTwice() {
+    void shouldTrackOneFileWhenAddingTheSameFileTwice() {
         // Given
         FileIngestRequest fileIngestRequest = FileIngestRequest.builder()
                 .pathToFile("test-bucket/test.parquet")
@@ -52,5 +52,23 @@ public class IngestBatcherStateStoreInMemoryTest {
         // Then
         assertThat(store.getAllFiles())
                 .containsExactly(fileIngestRequest);
+    }
+
+    @Test
+    void shouldTrackTheSameFileForMultipleTables() {
+        // Given
+        FileIngestRequest fileIngestRequest1 = FileIngestRequest.builder()
+                .pathToFile("test-bucket/test.parquet")
+                .tableName("test-table-1").build();
+        FileIngestRequest fileIngestRequest2 = FileIngestRequest.builder()
+                .pathToFile("test-bucket/test.parquet")
+                .tableName("test-table-2").build();
+        // When
+        store.addFile(fileIngestRequest1);
+        store.addFile(fileIngestRequest2);
+
+        // Then
+        assertThat(store.getAllFiles())
+                .containsExactly(fileIngestRequest1, fileIngestRequest2);
     }
 }
