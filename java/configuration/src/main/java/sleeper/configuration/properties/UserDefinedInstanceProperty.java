@@ -996,7 +996,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "If a single file exceeds this, it will still be ingested in its own job. " +
                     "It's also possible some data may be left for a future run of the batcher if some recent files " +
                     "overflow the size of a job but aren't enough to create a job on their own.")
-            .defaultValue("1G")
+            .defaultValue("5G")
             .validationPredicate(Utils::isValidNumberOfBytes)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.min.files")
