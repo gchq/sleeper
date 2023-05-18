@@ -15,11 +15,17 @@
  */
 package sleeper.configuration.properties.table;
 
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class FixedTablePropertiesProvider extends TablePropertiesProvider {
+    public FixedTablePropertiesProvider(List<TableProperties> tables) {
+        super(tableName -> tables.stream()
+                .filter(table -> Objects.equals(tableName, table.get(TABLE_NAME)))
+                .findFirst().orElseThrow());
+    }
 
     public FixedTablePropertiesProvider(TableProperties tableProperties) {
         super(tableName -> {

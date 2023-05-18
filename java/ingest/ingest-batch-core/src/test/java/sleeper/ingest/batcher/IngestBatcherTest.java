@@ -16,7 +16,6 @@
 
 package sleeper.ingest.batcher;
 
-import com.google.common.collect.Iterators;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,20 +43,15 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherTest {
+    private static final String DEFAULT_TABLE_NAME = "test-table";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_NAME);
     private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
     private final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
-    private static final String DEFAULT_TABLE_NAME = "test-table";
-
 
     @BeforeEach
     void setUp() {
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "test-ingest-queue-url");
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-        tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "0");
-        tableProperties.set(TABLE_NAME, DEFAULT_TABLE_NAME);
     }
 
     private Map<String, List<Object>> queueMessages(IngestJob... jobs) {
@@ -97,6 +91,39 @@ class IngestBatcherTest {
             assertThat(store.getPendingFiles()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
         }
+
+        @Test
+        void shouldBatchNoFilesWhenMinimumCountIsTwoAndTwoFilesAreTrackedForDifferentTables() {
+            // Given
+            TableProperties table1 = createTableProperties("test-table-1");
+            TableProperties table2 = createTableProperties("test-table-2");
+            table1.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
+            table2.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
+            FileIngestRequest request1 = addFileToStore(FileIngestRequest.builder()
+                    .pathToFile("test-bucket/test-1.parquet")
+                    .tableName("test-table-1")
+                    .build());
+            FileIngestRequest request2 = addFileToStore(FileIngestRequest.builder()
+                    .pathToFile("test-bucket/test-2.parquet")
+                    .tableName("test-table-2")
+                    .build());
+
+            // When
+            batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of());
+
+            // Then
+            assertThat(store.getPendingFiles()).containsExactly(request1, request2);
+            assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
+        }
+    }
+
+    private TableProperties createTableProperties(String tableName) {
+        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        properties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
+        properties.set(INGEST_BATCHER_MIN_JOB_FILES, "0");
+        properties.set(TABLE_NAME, tableName);
+        return properties;
     }
 
     private IngestJob jobWithFiles(String jobId, String... files) {
@@ -120,10 +147,14 @@ class IngestBatcherTest {
     }
 
     private void batchFilesWithJobIds(String... jobIds) {
+        batchFilesWithTablesAndJobIds(List.of(tableProperties), List.of(jobIds));
+    }
+
+    private void batchFilesWithTablesAndJobIds(List<TableProperties> tables, List<String> jobIds) {
         IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
-                .jobIdSupplier(Iterators.forArray(jobIds)::next)
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tables))
+                .jobIdSupplier(jobIds.iterator()::next)
                 .store(store).queueClient(queues)
                 .build().batchFiles();
     }
