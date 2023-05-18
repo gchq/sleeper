@@ -25,6 +25,7 @@ expect_non_empty_string "$(recorded_time_str "${START}")"
 
 expect_string_for_actual "1970-01-01 00:00:00 UTC" "$(recorded_time_str 0)"
 expect_string_for_actual "2022-10-28 11:57:10 UTC" "$(recorded_time_str 1666958230)"
+expect_string_for_actual "Fri Oct 28 11:57:10 2022" "$(recorded_time_str 1666958230 "%c")"
 
 expect_string_for_actual "1970-01-01 00:00:10 UTC" "$(recorded_time_str 10)"
 expect_string_for_actual "1970-01-01 00:00:30 UTC" "$(recorded_time_str 30)"

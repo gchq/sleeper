@@ -17,9 +17,9 @@ package sleeper.clients.status.report.compaction.task;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
-import sleeper.clients.status.report.table.TableField;
-import sleeper.clients.status.report.table.TableRow;
-import sleeper.clients.status.report.table.TableWriterFactory;
+import sleeper.clients.util.table.TableField;
+import sleeper.clients.util.table.TableRow;
+import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.core.record.process.AverageRecordRate;

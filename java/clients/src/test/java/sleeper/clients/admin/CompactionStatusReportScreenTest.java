@@ -70,9 +70,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             TableProperties tableProperties = createValidTableProperties(properties, "test-table");
             setInstanceProperties(properties, tableProperties);
             exampleJob = CompactionJobTestDataHelper.forTable("test-table").singleFileCompaction();
-            statusStore.fixTime(Instant.parse("2023-03-15T17:52:12.001Z"));
+            statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:52:12.001Z"));
             statusStore.jobCreated(exampleJob);
-            statusStore.fixTime(Instant.parse("2023-03-15T17:53:12.123Z"));
+            statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:53:12.123Z"));
             statusStore.jobStarted(exampleJob, Instant.parse("2023-03-15T17:53:12.001Z"), "test-task-1");
         }
 

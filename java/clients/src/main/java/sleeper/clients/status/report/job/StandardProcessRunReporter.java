@@ -16,9 +16,9 @@
 
 package sleeper.clients.status.report.job;
 
-import sleeper.clients.status.report.table.TableFieldDefinition;
-import sleeper.clients.status.report.table.TableRow;
-import sleeper.clients.status.report.table.TableWriterFactory;
+import sleeper.clients.util.table.TableFieldDefinition;
+import sleeper.clients.util.table.TableRow;
+import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;

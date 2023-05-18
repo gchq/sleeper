@@ -44,12 +44,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -237,13 +237,13 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.BULK_IMPORT).build();
 
     // Ingest batcher
-    TableProperty INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.ingest.batcher.job.min.size")
+    TableProperty INGEST_BATCHER_MIN_JOB_SIZE = Index.propertyBuilder("sleeper.table.ingest.batcher.job.min.size")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE)
-            .description("Specifies the minimum file size required for an ingest job to be batched and sent. " +
+            .description("Specifies the minimum total file size required for an ingest job to be batched and sent. " +
                     "An ingest job will be created if the batcher runs while this much data is waiting, and the " +
                     "minimum number of files is also met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_MAX_JOB_SIZE = Index.propertyBuilder("sleeper.ingest.batcher.job.max.size")
+    TableProperty INGEST_BATCHER_MAX_JOB_SIZE = Index.propertyBuilder("sleeper.table.ingest.batcher.job.max.size")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE)
             .description("Specifies the maximum total file size for a job in the ingest batcher. " +
                     "If more data is waiting than this, it will be split into multiple jobs. " +
@@ -251,39 +251,39 @@ public interface TableProperty extends SleeperProperty {
                     "It's also possible some data may be left for a future run of the batcher if some recent files " +
                     "overflow the size of a job but aren't enough to create a job on their own.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.ingest.batcher.job.min.files")
+    TableProperty INGEST_BATCHER_MIN_JOB_FILES = Index.propertyBuilder("sleeper.table.ingest.batcher.job.min.files")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MIN_JOB_FILES)
             .description("Specifies the minimum number of files for a job in the ingest batcher. " +
                     "An ingest job will be created if the batcher runs while this many files are waiting, and the " +
                     "minimum size of files is also met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.ingest.batcher.job.max.files")
+    TableProperty INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.table.ingest.batcher.job.max.files")
             .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_JOB_FILES)
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
                     "If more files are waiting than this, they will be split into multiple jobs. " +
                     "It's possible some data may be left for a future run of the batcher if some recent files " +
                     "overflow the size of a job but aren't enough to create a job on their own.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_MAX_FILE_AGE = Index.propertyBuilder("sleeper.ingest.batcher.file.max.age")
-            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE)
+    TableProperty INGEST_BATCHER_MAX_FILE_AGE_SECONDS = Index.propertyBuilder("sleeper.table.ingest.batcher.file.max.age.seconds")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS)
             .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
                     "will be included in an ingest job. When any file has been waiting for longer than this, a job " +
                     "will be created with all the currently held files, even if other criteria for a batch are not " +
                     "met.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.ingest.batcher.ingest.mode")
+    TableProperty INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.table.ingest.batcher.ingest.mode")
             .defaultProperty(DEFAULT_INGEST_BATCHER_INGEST_MODE)
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(BatchIngestMode.class))
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-    TableProperty INGEST_BATCHER_TRACKING_TTL = Index.propertyBuilder("sleeper.ingest.batcher.file.tracking.ttl")
-            .defaultProperty(DEFAULT_INGEST_BATCHER_TRACKING_TTL)
-            .description("The time in seconds that the tracking information is retained for a file before the " +
+    TableProperty INGEST_BATCHER_TRACKING_TTL_MINUTES = Index.propertyBuilder("sleeper.table.ingest.batcher.file.tracking.ttl.minutes")
+            .defaultProperty(DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES)
+            .description("The time in minutes that the tracking information is retained for a file before the " +
                     "records of its ingest are deleted (eg. which ingest job it was assigned to, the time this " +
                     "occurred, the size of the file).\n" +
                     "The expiry time is fixed when a file is saved to the store, so changing this will only affect " +
                     "new data.\n" +
-                    "Defaults to 24 hours.")
+                    "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
     // Size ratio compaction strategy

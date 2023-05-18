@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.report.table;
+package sleeper.clients.util.table;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,10 +22,10 @@ import sleeper.clients.testutil.ToStringPrintStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
-public class TableWriterTest {
+class TableWriterTest {
 
     @Test
-    public void shouldOutputSingleField() throws Exception {
+    void shouldOutputSingleField() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field = factoryBuilder.addField("Field");
@@ -42,7 +42,7 @@ public class TableWriterTest {
     }
 
     @Test
-    public void shouldOutputEmptyField() throws Exception {
+    void shouldOutputEmptyField() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         factoryBuilder.addField("Field");
@@ -60,7 +60,7 @@ public class TableWriterTest {
     }
 
     @Test
-    public void shouldOutputTwoRowsWithDifferentLengths() throws Exception {
+    void shouldOutputTwoRowsWithDifferentLengths() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field = factoryBuilder.addField("Field");
@@ -78,7 +78,7 @@ public class TableWriterTest {
     }
 
     @Test
-    public void shouldOutputTwoFieldsWithDifferentLengths() throws Exception {
+    void shouldOutputTwoFieldsWithDifferentLengths() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         factoryBuilder.addField("Tiny");
