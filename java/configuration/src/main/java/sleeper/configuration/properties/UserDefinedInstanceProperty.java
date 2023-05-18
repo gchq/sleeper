@@ -1014,7 +1014,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age")
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age.seconds")
             .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
                     "will be included in an ingest job. When any file has been waiting for longer than this, a job " +
                     "will be created with all the currently held files, even if other criteria for a batch are not " +
@@ -1028,14 +1028,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue(BatchIngestMode.STANDARD_INGEST.name().toLowerCase(Locale.ROOT))
             .validationPredicate(BatchIngestMode::isValidMode)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_TRACKING_TTL_HOURS = Index.propertyBuilder("sleeper.default.ingest.batcher.file.tracking.ttl.hours")
-            .description("The time in hours that the tracking information is retained for a file before the " +
+    UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES = Index.propertyBuilder("sleeper.default.ingest.batcher.file.tracking.ttl.minutes")
+            .description("The time in minutes that the tracking information is retained for a file before the " +
                     "records of its ingest are deleted (eg. which ingest job it was assigned to, the time this " +
                     "occurred, the size of the file).\n" +
                     "The expiry time is fixed when a file is saved to the store, so changing this will only affect " +
                     "new data.\n" +
                     "Defaults to 1 week.")
-            .defaultValue("" + 24 * 7)
+            .defaultValue("" + 60 * 24 * 7)
             .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
