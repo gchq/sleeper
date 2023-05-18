@@ -39,6 +39,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -261,6 +262,30 @@ class IngestBatcherTest {
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id", "test-bucket/test.parquet")));
+        }
+    }
+
+    @Nested
+    @DisplayName("Batch with maximum file count")
+    class BatchWithMaximumFileCount {
+        @Test
+        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileCountIsOne() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "1");
+            FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
+            FileIngestRequest request2 = addFileToStore("test-bucket/test-2.parquet");
+
+            // When
+            batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id-1", request1),
+                    onJob("test-job-id-2", request2));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
+                            jobWithFiles("test-job-id-2", "test-bucket/test-2.parquet")));
         }
     }
 
