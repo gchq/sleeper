@@ -66,34 +66,35 @@ public class IngestBatcher {
     private void batchByMaxFiles(String tableName, List<FileIngestRequest> files) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         int maxFiles = properties.getInt(TableProperty.INGEST_BATCHER_MAX_JOB_FILES);
-        long maxSize = properties.getBytes(TableProperty.INGEST_BATCHER_MAX_JOB_SIZE);
         if (files.size() > maxFiles) {
             for (int i = 0; i < files.size(); i += maxFiles) {
                 int toIndex = Math.min(i + maxFiles, files.size());
                 List<FileIngestRequest> batchedFiles = files.subList(i, toIndex);
-                createJob(tableName, batchedFiles);
+                batchByMaxSize(tableName, batchedFiles,
+                        properties.getBytes(TableProperty.INGEST_BATCHER_MAX_JOB_SIZE));
             }
         } else {
-            if (files.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() > maxSize) {
-                batchByMaxSize(tableName, files, maxSize);
-            } else {
-                createJob(tableName, files);
-            }
+            batchByMaxSize(tableName, files,
+                    properties.getBytes(TableProperty.INGEST_BATCHER_MAX_JOB_SIZE));
         }
     }
 
     private void batchByMaxSize(String tableName, List<FileIngestRequest> files, long maxSize) {
-        long totalSize = 0;
-        int startIndex = 0;
-        for (int i = 0; i < files.size(); i++) {
-            totalSize += files.get(i).getFileSizeBytes();
-            if (totalSize > maxSize) {
-                createJob(tableName, files.subList(startIndex, i));
-                totalSize = files.get(i).getFileSizeBytes();
-                startIndex = i;
+        if (files.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() > maxSize) {
+            long totalSize = 0;
+            int fromIndex = 0;
+            for (int i = 0; i < files.size(); i++) {
+                totalSize += files.get(i).getFileSizeBytes();
+                if (totalSize > maxSize) {
+                    createJob(tableName, files.subList(fromIndex, i));
+                    totalSize = files.get(i).getFileSizeBytes();
+                    fromIndex = i;
+                }
             }
+            createJob(tableName, files.subList(fromIndex, files.size()));
+        } else {
+            createJob(tableName, files);
         }
-        createJob(tableName, files.subList(startIndex, files.size()));
     }
 
     private void createJob(String tableName, List<FileIngestRequest> files) {

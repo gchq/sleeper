@@ -318,6 +318,40 @@ class IngestBatcherTest {
         }
     }
 
+    @Nested
+    @DisplayName("Batch with combined maximum job sizes")
+    class BatchWithCombinedMaximumJobSizes {
+        @Test
+        void shouldBatchMultipleFilesWhenMaximumFileSizeIsExceededAfterBatchingByFileCount() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
+            FileIngestRequest request1 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-1.parquet")
+                    .fileSizeBytes(600).build());
+            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-2.parquet")
+                    .fileSizeBytes(600).build());
+            FileIngestRequest request3 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-3.parquet")
+                    .fileSizeBytes(600).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id-1", request1),
+                    onJob("test-job-id-2", request2),
+                    onJob("test-job-id-3", request3));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
+                            jobWithFiles("test-job-id-2", "test-bucket/test-2.parquet"),
+                            jobWithFiles("test-job-id-3", "test-bucket/test-3.parquet")));
+        }
+    }
+
     private TableProperties createTableProperties(String tableName) {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
