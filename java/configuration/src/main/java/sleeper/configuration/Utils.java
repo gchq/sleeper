@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utility methods for interacting with SQS queues.
@@ -135,5 +137,10 @@ public class Utils {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    public static <T extends Enum<T>> String describeEnumValuesInLowerCase(Class<T> cls) {
+        return Stream.of(cls.getEnumConstants()).map(Enum::toString)
+                .map(String::toLowerCase).collect(Collectors.toList()).toString();
     }
 }
