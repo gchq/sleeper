@@ -30,6 +30,9 @@ import sleeper.ingest.job.IngestJob;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -155,6 +158,31 @@ class IngestBatcherTest {
             assertThat(store.getPendingFiles()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
+
+        @Test
+        void shouldBatchMultipleFilesWhenTotalFileSizeExceedsMinimum() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            FileIngestRequest request1 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-1.parquet")
+                    .fileSizeBytes(600).build());
+            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-2.parquet")
+                    .fileSizeBytes(600).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id", request1),
+                    onJob("test-job-id", request2));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id",
+                                    "test-bucket/test-1.parquet",
+                                    "test-bucket/test-2.parquet")));
+        }
     }
 
     private TableProperties createTableProperties(String tableName) {
@@ -198,8 +226,13 @@ class IngestBatcherTest {
         IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(new FixedTablePropertiesProvider(tables))
-                .jobIdSupplier(jobIds.iterator()::next)
+                .jobIdSupplier(jobIdSupplier(jobIds))
                 .store(store).queueClient(queues)
                 .build().batchFiles();
+    }
+
+    private Supplier<String> jobIdSupplier(List<String> jobIds) {
+        return Stream.concat(jobIds.stream(), IntStream.iterate(1, n -> n + 1)
+                .mapToObj(num -> "unexpected-job-" + num)).iterator()::next;
     }
 }

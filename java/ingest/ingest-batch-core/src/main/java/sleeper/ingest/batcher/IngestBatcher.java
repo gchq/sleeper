@@ -59,17 +59,17 @@ public class IngestBatcher {
         long minBytes = properties.getBytes(TableProperty.INGEST_BATCHER_MIN_JOB_SIZE);
         if (inputFiles.size() >= minFiles &&
                 inputFiles.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() >= minBytes) {
-            inputFiles.forEach(this::batch);
+            batch(tableName, inputFiles);
         }
     }
 
-    private void batch(FileIngestRequest file) {
+    private void batch(String tableName, List<FileIngestRequest> files) {
         IngestJob job = IngestJob.builder()
                 .id(jobIdSupplier.get())
-                .tableName(file.getTableName())
-                .files(file.getPathToFile())
+                .tableName(tableName)
+                .files(files.stream().map(FileIngestRequest::getPathToFile).collect(Collectors.toList()))
                 .build();
-        store.assignJob(job.getId(), List.of(file));
+        store.assignJob(job.getId(), files);
         queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
     }
 
