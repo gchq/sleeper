@@ -24,9 +24,14 @@ public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore 
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {
-        if (!files.contains(fileIngestRequest)) {
+        if (files.stream().noneMatch(file -> isDuplicateRequest(file, fileIngestRequest))) {
             files.add(fileIngestRequest);
         }
+    }
+
+    private static boolean isDuplicateRequest(FileIngestRequest request1, FileIngestRequest request2) {
+        return request1.getPathToFile().equals(request2.getPathToFile())
+                && request1.getTableName().equals(request2.getTableName());
     }
 
     @Override
