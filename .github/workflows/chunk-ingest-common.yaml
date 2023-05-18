@@ -11,6 +11,7 @@ on:
       - 'java/ingest/pom.xml'
       - 'java/ingest/ingest-core/**'
       - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-batch-core/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
