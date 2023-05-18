@@ -16,11 +16,11 @@
 
 package sleeper.ingest.batcher;
 
-public class TrackedFile {
+public class FileIngestRequest {
     private final String pathToFile;
     private final String tableName;
 
-    private TrackedFile(Builder builder) {
+    private FileIngestRequest(Builder builder) {
         pathToFile = builder.pathToFile;
         tableName = builder.tableName;
     }
@@ -46,7 +46,7 @@ public class TrackedFile {
             return false;
         }
 
-        TrackedFile that = (TrackedFile) o;
+        FileIngestRequest that = (FileIngestRequest) o;
 
         if (!pathToFile.equals(that.pathToFile)) {
             return false;
@@ -63,7 +63,7 @@ public class TrackedFile {
 
     @Override
     public String toString() {
-        return "TrackedFile{" +
+        return "FileIngestRequest{" +
                 "pathToFile='" + pathToFile + '\'' +
                 ", tableName='" + tableName + '\'' +
                 '}';
@@ -86,8 +86,8 @@ public class TrackedFile {
             return this;
         }
 
-        public TrackedFile build() {
-            return new TrackedFile(this);
+        public FileIngestRequest build() {
+            return new FileIngestRequest(this);
         }
     }
 }
