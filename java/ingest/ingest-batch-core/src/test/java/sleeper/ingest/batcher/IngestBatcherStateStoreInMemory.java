@@ -16,8 +16,8 @@
 
 package sleeper.ingest.batcher;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,7 +26,7 @@ import static sleeper.ingest.batcher.IngestBatcherStateStoreKeyFields.keyFor;
 
 public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore {
 
-    private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new LinkedHashMap<>();
+    private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new HashMap<>();
 
     @Override
     public void addFile(FileIngestRequest fileIngestRequest) {
@@ -44,13 +44,16 @@ public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore 
 
     @Override
     public List<FileIngestRequest> getAllFiles() {
-        return new ArrayList<>(requests.values());
+        return requests.values().stream()
+                .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime).reversed())
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<FileIngestRequest> getPendingFiles() {
         return requests.values().stream()
                 .filter(request -> !request.isAssignedToJob())
+                .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime))
                 .collect(Collectors.toList());
     }
 }

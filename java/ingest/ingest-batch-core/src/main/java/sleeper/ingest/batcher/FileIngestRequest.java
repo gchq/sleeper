@@ -16,18 +16,21 @@
 
 package sleeper.ingest.batcher;
 
+import java.time.Instant;
 import java.util.Objects;
 
 public class FileIngestRequest {
     private final String pathToFile;
     private final long fileSizeBytes;
     private final String tableName;
+    private final Instant receivedTime;
     private final String jobId;
 
     private FileIngestRequest(Builder builder) {
         pathToFile = Objects.requireNonNull(builder.pathToFile, "pathToFile must not be null");
         fileSizeBytes = builder.fileSizeBytes;
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        receivedTime = Objects.requireNonNull(builder.receivedTime, "receivedTime must not be null");
         jobId = builder.jobId;
     }
 
@@ -51,6 +54,10 @@ public class FileIngestRequest {
         return tableName;
     }
 
+    public Instant getReceivedTime() {
+        return receivedTime;
+    }
+
     public String getJobId() {
         return jobId;
     }
@@ -59,6 +66,7 @@ public class FileIngestRequest {
         return builder().pathToFile(pathToFile)
                 .tableName(tableName)
                 .fileSizeBytes(fileSizeBytes)
+                .receivedTime(receivedTime)
                 .jobId(jobId);
     }
 
@@ -82,6 +90,9 @@ public class FileIngestRequest {
         if (!tableName.equals(that.tableName)) {
             return false;
         }
+        if (!receivedTime.equals(that.receivedTime)) {
+            return false;
+        }
         return Objects.equals(jobId, that.jobId);
     }
 
@@ -90,6 +101,7 @@ public class FileIngestRequest {
         int result = pathToFile.hashCode();
         result = 31 * result + (int) (fileSizeBytes ^ (fileSizeBytes >>> 32));
         result = 31 * result + tableName.hashCode();
+        result = 31 * result + receivedTime.hashCode();
         result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
         return result;
     }
@@ -100,6 +112,7 @@ public class FileIngestRequest {
                 "pathToFile='" + pathToFile + '\'' +
                 ", fileSizeBytes=" + fileSizeBytes +
                 ", tableName='" + tableName + '\'' +
+                ", receivedTime=" + receivedTime +
                 ", jobId='" + jobId + '\'' +
                 '}';
     }
@@ -108,6 +121,7 @@ public class FileIngestRequest {
         private String pathToFile;
         private long fileSizeBytes;
         private String tableName;
+        private Instant receivedTime;
         private String jobId;
 
         private Builder() {
@@ -125,6 +139,11 @@ public class FileIngestRequest {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder receivedTime(Instant receivedTime) {
+            this.receivedTime = receivedTime;
             return this;
         }
 
