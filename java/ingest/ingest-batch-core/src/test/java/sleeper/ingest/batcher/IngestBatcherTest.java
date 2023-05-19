@@ -290,7 +290,7 @@ class IngestBatcherTest {
         }
 
         @Test
-        void shouldCreateOneJobForOneFileWhenMaximumFileCountIsMet() {
+        void shouldCreateOneJobForOneFileWhenMaximumFileCountIsOne() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "1");
             FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
@@ -307,7 +307,7 @@ class IngestBatcherTest {
         }
 
         @Test
-        void shouldCreateOneJobForTwoFileWhenMaximumFileCountIsMet() {
+        void shouldCreateOneJobForTwoFilesWhenMaximumFileCountIsTwo() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
             FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
