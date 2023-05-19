@@ -22,6 +22,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.ingest.job.IngestJob;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -58,7 +59,7 @@ public class IngestBatcher {
         int minFiles = properties.getInt(TableProperty.INGEST_BATCHER_MIN_JOB_FILES);
         long minBytes = properties.getBytes(TableProperty.INGEST_BATCHER_MIN_JOB_SIZE);
         if (inputFiles.size() >= minFiles &&
-                inputFiles.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() >= minBytes) {
+                totalBytes(inputFiles) >= minBytes) {
             batchByMaxFiles(tableName, inputFiles);
         }
     }
@@ -80,20 +81,19 @@ public class IngestBatcher {
     }
 
     private void batchByMaxSize(String tableName, List<FileIngestRequest> files, long maxSize) {
-        if (files.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum() > maxSize) {
-            long totalSize = 0;
-            int fromIndex = 0;
-            for (int i = 0; i < files.size(); i++) {
-                totalSize += files.get(i).getFileSizeBytes();
-                if (totalSize > maxSize) {
-                    createJob(tableName, files.subList(fromIndex, i));
-                    totalSize = files.get(i).getFileSizeBytes();
-                    fromIndex = i;
-                }
+        long totalSize = 0;
+        List<FileIngestRequest> batch = new ArrayList<>();
+        for (FileIngestRequest file : files) {
+            totalSize += file.getFileSizeBytes();
+            batch.add(file);
+            if (totalSize >= maxSize) {
+                createJob(tableName, batch);
+                totalSize = 0;
+                batch.clear();
             }
-            createJob(tableName, files.subList(fromIndex, files.size()));
-        } else {
-            createJob(tableName, files);
+        }
+        if (!batch.isEmpty()) {
+            createJob(tableName, batch);
         }
     }
 
@@ -107,6 +107,10 @@ public class IngestBatcher {
                 .build();
         store.assignJob(job.getId(), files);
         queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+    }
+
+    private static long totalBytes(List<FileIngestRequest> files) {
+        return files.stream().mapToLong(FileIngestRequest::getFileSizeBytes).sum();
     }
 
     public static final class Builder {

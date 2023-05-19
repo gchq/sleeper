@@ -294,7 +294,7 @@ class IngestBatcherTest {
     @DisplayName("Batch with maximum file size")
     class BatchWithMaximumFileSize {
         @Test
-        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileSizeIsExceeded() {
+        void shouldCreateOneJobForTwoFilesWhenMaximumFileSizeIsExceeded() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             FileIngestRequest request1 = addFileToStore(ingestRequest()
@@ -303,6 +303,55 @@ class IngestBatcherTest {
             FileIngestRequest request2 = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test-2.parquet")
                     .fileSizeBytes(600).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id", request1),
+                    onJob("test-job-id", request2));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id",
+                                    "test-bucket/test-1.parquet",
+                                    "test-bucket/test-2.parquet")));
+        }
+
+        @Test
+        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileSizeIsMetByFirstFile() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
+            FileIngestRequest request1 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-1.parquet")
+                    .fileSizeBytes(1024).build());
+            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-2.parquet")
+                    .fileSizeBytes(512).build());
+
+            // When
+            batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id-1", request1),
+                    onJob("test-job-id-2", request2));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
+                            jobWithFiles("test-job-id-2", "test-bucket/test-2.parquet")));
+        }
+
+        @Test
+        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileSizeIsExceededByEitherFile() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
+            FileIngestRequest request1 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-1.parquet")
+                    .fileSizeBytes(2048).build());
+            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-2.parquet")
+                    .fileSizeBytes(2048).build());
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
@@ -322,19 +371,22 @@ class IngestBatcherTest {
     @DisplayName("Batch with combined maximum job sizes")
     class BatchWithCombinedMaximumJobSizes {
         @Test
-        void shouldBatchMultipleFilesWhenMaximumFileSizeIsExceededAfterBatchingByFileCount() {
+        void shouldCreateFirstBatchMeetingFileCountAndSecondBatchMeetingFileSizeAndThirdBatchWithLeftoverFile() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             FileIngestRequest request1 = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(600).build());
+                    .fileSizeBytes(256).build());
             FileIngestRequest request2 = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(600).build());
+                    .fileSizeBytes(256).build());
             FileIngestRequest request3 = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test-3.parquet")
-                    .fileSizeBytes(600).build());
+                    .fileSizeBytes(2048).build());
+            FileIngestRequest request4 = addFileToStore(ingestRequest()
+                    .pathToFile("test-bucket/test-4.parquet")
+                    .fileSizeBytes(512).build());
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
@@ -342,13 +394,18 @@ class IngestBatcherTest {
             // Then
             assertThat(store.getAllFiles()).containsExactly(
                     onJob("test-job-id-1", request1),
-                    onJob("test-job-id-2", request2),
-                    onJob("test-job-id-3", request3));
+                    onJob("test-job-id-1", request2),
+                    onJob("test-job-id-2", request3),
+                    onJob("test-job-id-3", request4));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
-                            jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
-                            jobWithFiles("test-job-id-2", "test-bucket/test-2.parquet"),
-                            jobWithFiles("test-job-id-3", "test-bucket/test-3.parquet")));
+                            jobWithFiles("test-job-id-1",
+                                    "test-bucket/test-1.parquet",
+                                    "test-bucket/test-2.parquet"),
+                            jobWithFiles("test-job-id-2",
+                                    "test-bucket/test-3.parquet"),
+                            jobWithFiles("test-job-id-3",
+                                    "test-bucket/test-4.parquet")));
         }
     }
 
