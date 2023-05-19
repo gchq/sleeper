@@ -47,6 +47,7 @@ public class WriteRandomDataFiles {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         conf.set("fs.s3a.fast.upload", "true");
+        conf.set("fs.s3a.bucket.probe", "false");
 
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
         long count = 0L;
