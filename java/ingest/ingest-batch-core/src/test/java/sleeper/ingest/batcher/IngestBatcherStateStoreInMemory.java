@@ -43,14 +43,14 @@ public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore 
     }
 
     @Override
-    public List<FileIngestRequest> getAllFiles() {
+    public List<FileIngestRequest> getAllFilesNewestFirst() {
         return requests.values().stream()
                 .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime).reversed())
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<FileIngestRequest> getPendingFiles() {
+    public List<FileIngestRequest> getPendingFilesOldestFirst() {
         return requests.values().stream()
                 .filter(request -> !request.isAssignedToJob())
                 .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime))

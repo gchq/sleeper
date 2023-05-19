@@ -23,7 +23,7 @@ public interface IngestBatcherStateStore {
 
     void assignJob(String jobId, List<FileIngestRequest> filesInJob);
 
-    List<FileIngestRequest> getAllFiles();
+    List<FileIngestRequest> getAllFilesNewestFirst();
 
-    List<FileIngestRequest> getPendingFiles();
+    List<FileIngestRequest> getPendingFilesOldestFirst();
 }
