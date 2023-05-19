@@ -19,7 +19,6 @@ package sleeper.ingest.batcher;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.ArrayList;
@@ -28,6 +27,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestBatcher {
     private final InstanceProperties instanceProperties;
@@ -56,57 +60,56 @@ public class IngestBatcher {
 
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
-        int minFiles = properties.getInt(TableProperty.INGEST_BATCHER_MIN_JOB_FILES);
-        long minBytes = properties.getBytes(TableProperty.INGEST_BATCHER_MIN_JOB_SIZE);
+        int minFiles = properties.getInt(INGEST_BATCHER_MIN_JOB_FILES);
+        long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
         if (inputFiles.size() >= minFiles &&
                 totalBytes(inputFiles) >= minBytes) {
-            batchByMaxFiles(tableName, inputFiles);
+            BatchSender batchSender = new BatchSender(properties);
+            inputFiles.forEach(batchSender::add);
+            batchSender.finish();
         }
     }
 
-    private void batchByMaxFiles(String tableName, List<FileIngestRequest> files) {
-        TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
-        int maxFiles = properties.getInt(TableProperty.INGEST_BATCHER_MAX_JOB_FILES);
-        if (files.size() > maxFiles) {
-            for (int i = 0; i < files.size(); i += maxFiles) {
-                int toIndex = Math.min(i + maxFiles, files.size());
-                List<FileIngestRequest> batchedFiles = files.subList(i, toIndex);
-                batchByMaxSize(tableName, batchedFiles,
-                        properties.getBytes(TableProperty.INGEST_BATCHER_MAX_JOB_SIZE));
-            }
-        } else {
-            batchByMaxSize(tableName, files,
-                    properties.getBytes(TableProperty.INGEST_BATCHER_MAX_JOB_SIZE));
-        }
-    }
+    private class BatchSender {
+        private final int maxFiles;
+        private final long maxBytes;
+        private final String tableName;
+        private final List<FileIngestRequest> batch = new ArrayList<>();
+        private long batchBytes;
 
-    private void batchByMaxSize(String tableName, List<FileIngestRequest> files, long maxSize) {
-        long totalSize = 0;
-        List<FileIngestRequest> batch = new ArrayList<>();
-        for (FileIngestRequest file : files) {
-            totalSize += file.getFileSizeBytes();
+        BatchSender(TableProperties properties) {
+            maxFiles = properties.getInt(INGEST_BATCHER_MAX_JOB_FILES);
+            maxBytes = properties.getBytes(INGEST_BATCHER_MAX_JOB_SIZE);
+            tableName = properties.get(TABLE_NAME);
+        }
+
+        void add(FileIngestRequest file) {
+            batchBytes += file.getFileSizeBytes();
             batch.add(file);
-            if (totalSize >= maxSize) {
-                createJob(tableName, batch);
-                totalSize = 0;
+            if (batch.size() >= maxFiles || batchBytes >= maxBytes) {
+                sendJob();
+                batchBytes = 0;
                 batch.clear();
             }
         }
-        if (!batch.isEmpty()) {
-            createJob(tableName, batch);
-        }
-    }
 
-    private void createJob(String tableName, List<FileIngestRequest> files) {
-        IngestJob job = IngestJob.builder()
-                .id(jobIdSupplier.get())
-                .tableName(tableName)
-                .files(files.stream()
-                        .map(FileIngestRequest::getPathToFile)
-                        .collect(Collectors.toList()))
-                .build();
-        store.assignJob(job.getId(), files);
-        queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+        void finish() {
+            if (!batch.isEmpty()) {
+                sendJob();
+            }
+        }
+
+        void sendJob() {
+            IngestJob job = IngestJob.builder()
+                    .id(jobIdSupplier.get())
+                    .tableName(tableName)
+                    .files(batch.stream()
+                            .map(FileIngestRequest::getPathToFile)
+                            .collect(Collectors.toList()))
+                    .build();
+            store.assignJob(job.getId(), batch);
+            queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+        }
     }
 
     private static long totalBytes(List<FileIngestRequest> files) {
