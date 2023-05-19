@@ -80,12 +80,12 @@ public class IngestBatcher {
 
     private static Stream<List<FileIngestRequest>> createBatches(
             TableProperties properties, List<FileIngestRequest> inputFiles) {
-        BatchSender batchSender = new BatchSender(properties);
-        inputFiles.forEach(batchSender::add);
-        return batchSender.streamBatches();
+        BatchCreator batchCreator = new BatchCreator(properties);
+        inputFiles.forEach(batchCreator::add);
+        return batchCreator.streamBatches();
     }
 
-    private static class BatchSender {
+    private static class BatchCreator {
         private final int maxFiles;
         private final long maxBytes;
         private final List<FileIngestRequest> batch = new ArrayList<>();
@@ -93,7 +93,7 @@ public class IngestBatcher {
         private long batchSpaceInBytes;
         private final List<List<FileIngestRequest>> batches = new ArrayList<>();
 
-        BatchSender(TableProperties properties) {
+        BatchCreator(TableProperties properties) {
             maxFiles = properties.getInt(INGEST_BATCHER_MAX_JOB_FILES);
             maxBytes = properties.getBytes(INGEST_BATCHER_MAX_JOB_SIZE);
             batchSpaceInFiles = maxFiles;
