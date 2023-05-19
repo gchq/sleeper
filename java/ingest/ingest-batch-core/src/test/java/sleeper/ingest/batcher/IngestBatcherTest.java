@@ -486,8 +486,8 @@ class IngestBatcherTest {
     }
 
     @Nested
-    @DisplayName("Fill batches")
-    class FillBatches {
+    @DisplayName("Add to previous batches")
+    class AddToPreviousBatches {
         @Test
         void shouldAddToPreviousBatchWhenSmallFileIsAddedAfterLargeFile() {
             // Given
