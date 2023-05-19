@@ -57,6 +57,7 @@ public class FileIngestRequest {
 
     public Builder toBuilder() {
         return builder().pathToFile(pathToFile)
+                .fileSizeBytes(fileSizeBytes)
                 .tableName(tableName)
                 .jobId(jobId);
     }

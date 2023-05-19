@@ -25,13 +25,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestBatcher {
     private final InstanceProperties instanceProperties;
@@ -64,51 +64,68 @@ public class IngestBatcher {
         long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
         if (inputFiles.size() >= minFiles &&
                 totalBytes(inputFiles) >= minBytes) {
-            BatchSender batchSender = new BatchSender(properties);
-            inputFiles.forEach(batchSender::add);
-            batchSender.finish();
+            createBatches(properties, inputFiles).forEach((List<FileIngestRequest> batch) -> {
+                IngestJob job = IngestJob.builder()
+                        .id(jobIdSupplier.get())
+                        .tableName(tableName)
+                        .files(batch.stream()
+                                .map(FileIngestRequest::getPathToFile)
+                                .collect(Collectors.toList()))
+                        .build();
+                store.assignJob(job.getId(), batch);
+                queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+            });
         }
     }
 
-    private class BatchSender {
+    private static Stream<List<FileIngestRequest>> createBatches(
+            TableProperties properties, List<FileIngestRequest> inputFiles) {
+        BatchSender batchSender = new BatchSender(properties);
+        inputFiles.forEach(batchSender::add);
+        return batchSender.streamBatches();
+    }
+
+    private static class BatchSender {
         private final int maxFiles;
         private final long maxBytes;
-        private final String tableName;
         private final List<FileIngestRequest> batch = new ArrayList<>();
-        private long batchBytes;
+        private int batchSpaceInFiles;
+        private long batchSpaceInBytes;
+        private final List<List<FileIngestRequest>> batches = new ArrayList<>();
 
         BatchSender(TableProperties properties) {
             maxFiles = properties.getInt(INGEST_BATCHER_MAX_JOB_FILES);
             maxBytes = properties.getBytes(INGEST_BATCHER_MAX_JOB_SIZE);
-            tableName = properties.get(TABLE_NAME);
+            batchSpaceInFiles = maxFiles;
+            batchSpaceInBytes = maxBytes;
+        }
+
+        void addBatch() {
+            batches.add(new ArrayList<>(batch));
+            batchSpaceInFiles = maxFiles;
+            batchSpaceInBytes = maxBytes;
+            batch.clear();
         }
 
         void add(FileIngestRequest file) {
-            batchBytes += file.getFileSizeBytes();
+            long fileBytes = file.getFileSizeBytes();
+            if (fileDoesNotFitInBatch(fileBytes)) {
+                addBatch();
+            }
             batch.add(file);
-            if (batch.size() >= maxFiles || batchBytes >= maxBytes) {
-                sendJob();
-                batchBytes = 0;
-                batch.clear();
-            }
+            batchSpaceInBytes -= fileBytes;
+            batchSpaceInFiles--;
         }
 
-        void finish() {
+        boolean fileDoesNotFitInBatch(long fileBytes) {
+            return !batch.isEmpty() && (fileBytes > batchSpaceInBytes || batchSpaceInFiles < 1);
+        }
+
+        Stream<List<FileIngestRequest>> streamBatches() {
             if (!batch.isEmpty()) {
-                sendJob();
+                batches.add(new ArrayList<>(batch));
             }
-        }
-
-        void sendJob() {
-            IngestJob job = IngestJob.builder()
-                    .id(jobIdSupplier.get())
-                    .tableName(tableName)
-                    .files(batch.stream()
-                            .map(FileIngestRequest::getPathToFile)
-                            .collect(Collectors.toList()))
-                    .build();
-            store.assignJob(job.getId(), batch);
-            queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+            return batches.stream();
         }
     }
 
