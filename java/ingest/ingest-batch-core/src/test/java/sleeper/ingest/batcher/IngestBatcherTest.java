@@ -398,8 +398,13 @@ class IngestBatcherTest {
                 .build().batchFiles();
     }
 
-    private Supplier<String> jobIdSupplier(List<String> jobIds) {
-        return Stream.concat(jobIds.stream(), IntStream.iterate(1, n -> n + 1)
-                .mapToObj(num -> "unexpected-job-" + num)).iterator()::next;
+    private static Supplier<String> jobIdSupplier(List<String> jobIds) {
+        return Stream.concat(jobIds.stream(), infiniteIdsForUnexpectedJobs())
+                .iterator()::next;
+    }
+
+    private static Stream<String> infiniteIdsForUnexpectedJobs() {
+        return IntStream.iterate(1, n -> n + 1)
+                .mapToObj(num -> "unexpected-job-" + num);
     }
 }
