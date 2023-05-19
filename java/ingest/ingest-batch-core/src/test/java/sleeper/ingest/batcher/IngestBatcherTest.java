@@ -288,6 +288,44 @@ class IngestBatcherTest {
                             jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
                             jobWithFiles("test-job-id-2", "test-bucket/test-2.parquet")));
         }
+
+        @Test
+        void shouldCreateOneJobForOneFileWhenMaximumFileCountIsMet() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "1");
+            FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
+
+            // When
+            batchFilesWithJobIds("test-job-id");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id", request));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id", "test-bucket/test.parquet")));
+        }
+
+        @Test
+        void shouldCreateOneJobForTwoFileWhenMaximumFileCountIsMet() {
+            // Given
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
+            FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
+            FileIngestRequest request2 = addFileToStore("test-bucket/test-2.parquet");
+
+            // When
+            batchFilesWithJobIds("test-job-id-1");
+
+            // Then
+            assertThat(store.getAllFiles()).containsExactly(
+                    onJob("test-job-id-1", request1),
+                    onJob("test-job-id-1", request2));
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(
+                            jobWithFiles("test-job-id-1",
+                                    "test-bucket/test-1.parquet",
+                                    "test-bucket/test-2.parquet")));
+        }
     }
 
     @Nested
