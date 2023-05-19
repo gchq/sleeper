@@ -130,6 +130,28 @@ class IngestBatcherStateStoreInMemoryTest {
         assertThat(store.getPendingFiles()).containsExactly(fileIngestRequest2);
     }
 
+    @Test
+    void shouldRetainAllFileRequestParametersAfterAssigningToJob() {
+        // Given
+        FileIngestRequest fileIngestRequest = fileRequest()
+                .pathToFile("test-bucket/test.parquet")
+                .tableName("test-table-1")
+                .fileSizeBytes(1234L).build();
+
+        // When
+        store.addFile(fileIngestRequest);
+        store.assignJob("test-job", List.of(fileIngestRequest));
+
+        // Then
+        assertThat(store.getAllFiles()).containsExactly(
+                fileRequest()
+                        .pathToFile("test-bucket/test.parquet")
+                        .tableName("test-table-1")
+                        .fileSizeBytes(1234L)
+                        .jobId("test-job")
+                        .build());
+    }
+
     private static FileIngestRequest onJob(String jobId, FileIngestRequest request) {
         return request.toBuilder().jobId(jobId).build();
     }
