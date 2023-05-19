@@ -45,14 +45,15 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.batcher.FileIngestRequestTestHelper.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherTest {
-    private static final String DEFAULT_TABLE_NAME = "test-table";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_NAME);
     private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
     private final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
+    private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @BeforeEach
     void setUp() {
@@ -76,7 +77,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
@@ -93,7 +94,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
         }
 
@@ -104,11 +105,11 @@ class IngestBatcherTest {
             TableProperties table2 = createTableProperties("test-table-2");
             table1.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
             table2.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            FileIngestRequest request1 = addFileToStore(FileIngestRequest.builder()
+            FileIngestRequest request1 = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test-1.parquet")
                     .tableName("test-table-1")
                     .build());
-            FileIngestRequest request2 = addFileToStore(FileIngestRequest.builder()
+            FileIngestRequest request2 = addFileToStore(ingestRequest()
                     .pathToFile("test-bucket/test-2.parquet")
                     .tableName("test-table-2")
                     .build());
@@ -117,7 +118,7 @@ class IngestBatcherTest {
             batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of());
 
             // Then
-            assertThat(store.getPendingFiles()).containsExactly(request1, request2);
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request1, request2);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
         }
 
@@ -132,7 +133,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id", request1),
                     onJob("test-job-id", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -159,7 +160,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
@@ -178,7 +179,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
 
@@ -197,7 +198,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id", request1),
                     onJob("test-job-id", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -224,7 +225,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
 
@@ -241,7 +242,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFiles()).containsExactly(request);
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
 
@@ -258,7 +259,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
@@ -280,7 +281,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -299,7 +300,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
@@ -317,7 +318,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-1", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -346,7 +347,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -370,7 +371,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -394,7 +395,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
@@ -429,7 +430,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-1", request2),
                     onJob("test-job-id-2", request3),
@@ -467,7 +468,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-2", request2),
                     onJob("test-job-id-2", request3),
@@ -505,7 +506,7 @@ class IngestBatcherTest {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFiles()).containsExactly(
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-id-1", request1),
                     onJob("test-job-id-1", request3),
                     onJob("test-job-id-2", request2));
@@ -542,9 +543,7 @@ class IngestBatcherTest {
     }
 
     private FileIngestRequest.Builder ingestRequest() {
-        return FileIngestRequest.builder()
-                .tableName(DEFAULT_TABLE_NAME)
-                .fileSizeBytes(1024);
+        return requests.fileRequest();
     }
 
     private FileIngestRequest addFileToStore(FileIngestRequest request) {

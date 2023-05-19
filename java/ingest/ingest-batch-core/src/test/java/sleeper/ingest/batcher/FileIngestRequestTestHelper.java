@@ -15,9 +15,20 @@
  */
 package sleeper.ingest.batcher;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class FileIngestRequestTestHelper {
 
-    private FileIngestRequestTestHelper() {
+    public static final String DEFAULT_TABLE_NAME = "test-table";
+    private static final Instant FIRST_REQUEST_TIME = Instant.parse("2023-05-19T15:33:42Z");
+    private int requestCount = 0;
+
+    public FileIngestRequest.Builder fileRequest() {
+        return FileIngestRequest.builder()
+                .fileSizeBytes(1024)
+                .tableName(DEFAULT_TABLE_NAME)
+                .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestCount++)));
     }
 
     public static FileIngestRequest onJob(String jobId, FileIngestRequest request) {

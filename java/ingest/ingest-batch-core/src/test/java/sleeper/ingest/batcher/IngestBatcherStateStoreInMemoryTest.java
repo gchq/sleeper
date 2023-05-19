@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -30,8 +29,7 @@ import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherStateStoreInMemoryTest {
     private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
-    private static final Instant FIRST_REQUEST_TIME = Instant.parse("2023-05-19T15:33:42Z");
-    private int requestCount = 0;
+    private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @Nested
     @DisplayName("Add ingest requests")
@@ -221,8 +219,7 @@ class IngestBatcherStateStoreInMemoryTest {
     }
 
     private FileIngestRequest.Builder fileRequest() {
-        return FileIngestRequest.builder().fileSizeBytes(1024)
-                .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestCount++)));
+        return requests.fileRequest();
     }
 
 }

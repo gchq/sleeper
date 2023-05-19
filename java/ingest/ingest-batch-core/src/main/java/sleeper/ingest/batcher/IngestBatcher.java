@@ -53,7 +53,7 @@ public class IngestBatcher {
     }
 
     public void batchFiles() {
-        store.getAllFiles().stream()
+        store.getPendingFilesOldestFirst().stream()
                 .collect(Collectors.groupingBy(FileIngestRequest::getTableName))
                 .forEach(this::batchTableFiles);
     }
