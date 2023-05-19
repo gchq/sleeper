@@ -88,44 +88,54 @@ public class IngestBatcher {
     private static class BatchCreator {
         private final int maxFiles;
         private final long maxBytes;
-        private final List<FileIngestRequest> batch = new ArrayList<>();
-        private int batchSpaceInFiles;
-        private long batchSpaceInBytes;
-        private final List<List<FileIngestRequest>> batches = new ArrayList<>();
+        private final List<Batch> batches = new ArrayList<>();
 
         BatchCreator(TableProperties properties) {
             maxFiles = properties.getInt(INGEST_BATCHER_MAX_JOB_FILES);
             maxBytes = properties.getBytes(INGEST_BATCHER_MAX_JOB_SIZE);
-            batchSpaceInFiles = maxFiles;
-            batchSpaceInBytes = maxBytes;
         }
 
-        void addBatch() {
-            batches.add(new ArrayList<>(batch));
-            batchSpaceInFiles = maxFiles;
-            batchSpaceInBytes = maxBytes;
-            batch.clear();
+        Batch getBatchWithSpace(FileIngestRequest file) {
+            return batches.stream()
+                    .filter(batch -> batch.hasSpaceForFile(file))
+                    .findFirst().orElseGet(() -> {
+                        Batch batch = new Batch(maxFiles, maxBytes);
+                        batches.add(batch);
+                        return batch;
+                    });
         }
 
         void add(FileIngestRequest file) {
-            long fileBytes = file.getFileSizeBytes();
-            if (fileDoesNotFitInBatch(fileBytes)) {
-                addBatch();
-            }
-            batch.add(file);
-            batchSpaceInBytes -= fileBytes;
-            batchSpaceInFiles--;
-        }
-
-        boolean fileDoesNotFitInBatch(long fileBytes) {
-            return !batch.isEmpty() && (fileBytes > batchSpaceInBytes || batchSpaceInFiles < 1);
+            getBatchWithSpace(file).add(file);
         }
 
         Stream<List<FileIngestRequest>> streamBatches() {
-            if (!batch.isEmpty()) {
-                batches.add(new ArrayList<>(batch));
-            }
-            return batches.stream();
+            return batches.stream().map(Batch::getFiles);
+        }
+    }
+
+    private static class Batch {
+        private final List<FileIngestRequest> files = new ArrayList<>();
+        private final int maxBatchSizeInFiles;
+        private long batchSpaceInBytes;
+
+        Batch(int maxBatchSizeInFiles, long maxBatchSizeInBytes) {
+            this.maxBatchSizeInFiles = maxBatchSizeInFiles;
+            this.batchSpaceInBytes = maxBatchSizeInBytes;
+        }
+
+        boolean hasSpaceForFile(FileIngestRequest file) {
+            return file.getFileSizeBytes() <= batchSpaceInBytes
+                    && files.size() < maxBatchSizeInFiles;
+        }
+
+        void add(FileIngestRequest file) {
+            files.add(file);
+            batchSpaceInBytes -= file.getFileSizeBytes();
+        }
+
+        List<FileIngestRequest> getFiles() {
+            return files;
         }
     }
 
