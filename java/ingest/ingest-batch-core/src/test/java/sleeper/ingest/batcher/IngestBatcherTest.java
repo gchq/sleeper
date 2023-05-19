@@ -294,7 +294,7 @@ class IngestBatcherTest {
     @DisplayName("Batch with maximum file size")
     class BatchWithMaximumFileSize {
         @Test
-        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileSizeIsExceeded() {
+        void shouldCreateTwoJobsForTwoFilesWhenSizesAddedTogetherExceedMaximum() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             FileIngestRequest request1 = addFileToStore(ingestRequest()
