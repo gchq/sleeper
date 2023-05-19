@@ -270,7 +270,7 @@ class IngestBatcherTest {
     @DisplayName("Batch with maximum file count")
     class BatchWithMaximumFileCount {
         @Test
-        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileCountIsTwo() {
+        void shouldCreateTwoJobsForTwoFilesWhenMaximumFileCountIsOne() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "1");
             FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
