@@ -101,7 +101,7 @@ public class WaitForQueueEstimate {
 
     private boolean isFinished() {
         QueueMessageCount count = queueClient.getQueueMessageCount(queueUrl);
-        LOGGER.info("Message count: {}", count);
+        LOGGER.info("Message count for queue {}: {}", queueUrl, count);
         return isFinished.test(count);
     }
 }

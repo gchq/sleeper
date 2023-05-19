@@ -137,7 +137,7 @@ public class RunTasks {
 
     public void run() {
         long startTime = System.currentTimeMillis();
-
+        LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
         int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
                 .getApproximateNumberOfMessages();
