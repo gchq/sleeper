@@ -16,30 +16,36 @@
 
 package sleeper.ingest.batcher;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestBatcher {
 
@@ -68,7 +74,8 @@ public class IngestBatcher {
         Instant time = timeSupplier.get();
         store.getPendingFilesOldestFirst().stream()
                 .collect(Collectors.groupingBy(FileIngestRequest::getTableName))
-                .forEach((tableName, inputFiles) -> batchTableFiles(tableName, inputFiles, time));
+                .entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> batchTableFiles(entry.getKey(), entry.getValue(), time));
     }
 
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles, Instant time) {
@@ -80,21 +87,38 @@ public class IngestBatcher {
         if ((inputFiles.size() >= minFiles &&
                 totalBytes(inputFiles) >= minBytes)
                 || inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime))) {
-            createBatches(properties, inputFiles).forEach((List<FileIngestRequest> batch) -> {
-                IngestJob job = IngestJob.builder()
-                        .id(jobIdSupplier.get())
-                        .tableName(tableName)
-                        .files(batch.stream()
-                                .map(FileIngestRequest::getPathToFile)
-                                .collect(Collectors.toList()))
-                        .build();
-                try {
-                    store.assignJob(job.getId(), batch);
-                    queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
-                } catch (RuntimeException e) {
-                    LOGGER.error("Failed assigning/sending job: {}", job, e);
-                }
-            });
+            createBatches(properties, inputFiles)
+                    .forEach(batch -> sendBatch(properties, batch));
+        }
+    }
+
+    private void sendBatch(TableProperties properties, List<FileIngestRequest> batch) {
+        IngestJob job = IngestJob.builder()
+                .id(jobIdSupplier.get())
+                .tableName(properties.get(TABLE_NAME))
+                .files(batch.stream()
+                        .map(FileIngestRequest::getPathToFile)
+                        .collect(Collectors.toList()))
+                .build();
+        try {
+            store.assignJob(job.getId(), batch);
+            queueClient.send(jobQueueUrl(properties), job);
+        } catch (RuntimeException e) {
+            LOGGER.error("Failed assigning/sending job: {}", job, e);
+        }
+    }
+
+    private String jobQueueUrl(TableProperties properties) {
+        String mode = properties.get(INGEST_BATCHER_INGEST_MODE);
+        switch (EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode)) {
+            case STANDARD_INGEST:
+                return instanceProperties.get(INGEST_JOB_QUEUE_URL);
+            case BULK_IMPORT_EMR:
+            case BULK_IMPORT_PERSISTENT_EMR:
+            case BULK_IMPORT_EKS:
+                return instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL);
+            default:
+                throw new IllegalArgumentException("Unrecognised ingest mode: " + mode);
         }
     }
 
