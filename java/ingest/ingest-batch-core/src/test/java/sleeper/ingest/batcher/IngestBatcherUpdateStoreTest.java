@@ -30,7 +30,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
+import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     @Test

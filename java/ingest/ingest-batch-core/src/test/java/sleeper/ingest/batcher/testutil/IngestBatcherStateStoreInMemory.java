@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.testutil;
+
+import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.IngestBatcherStateStore;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.ingest.batcher.IngestBatcherStateStoreKeyFields.keyFor;
+import static sleeper.ingest.batcher.testutil.IngestBatcherStateStoreKeyFields.keyFor;
 
 public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore {
 

@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.testutil;
 
 import org.junit.jupiter.api.Test;
+
+import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.time.Instant;
 import java.util.List;
