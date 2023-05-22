@@ -32,30 +32,45 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
 
     @Test
+    void shouldCreateJobOnIngestQueue() {
+        // Given
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-url");
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        addFileToStore("test-bucket/ingest.parquet");
+
+        // When
+        batchFilesWithJobIds("test-job");
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
+                "ingest-url", List.of(jobWithFiles("test-job", "test-bucket/ingest.parquet"))));
+    }
+
+    @Test
     void shouldCreateJobsOnDifferentQueueForEachOfTwoTables() {
         // Given
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-url");
         instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "bulk-import-url");
-        TableProperties table1 = createTableProperties("test-table-1");
-        TableProperties table2 = createTableProperties("test-table-2");
-        table1.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-        table2.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
-        addFileToStore(builder -> builder.pathToFile("test-bucket/test-1.parquet").tableName("test-table-1"));
-        addFileToStore(builder -> builder.pathToFile("test-bucket/test-2.parquet").tableName("test-table-2"));
+        TableProperties ingestTable = createTableProperties("ingest-table");
+        TableProperties bulkImportTable = createTableProperties("bulk-import-table");
+        ingestTable.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        bulkImportTable.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        addFileToStore(builder -> builder.pathToFile("test-bucket/ingest.parquet").tableName("ingest-table"));
+        addFileToStore(builder -> builder.pathToFile("test-bucket/bulk-import.parquet").tableName("bulk-import-table"));
 
         // When
-        batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of("test-job-1", "test-job-2"));
+        batchFilesWithTablesAndJobIds(List.of(ingestTable, bulkImportTable), List.of("test-job-1", "test-job-2"));
 
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
                 "ingest-url", List.of(IngestJob.builder()
-                        .files("test-bucket/test-1.parquet")
-                        .tableName("test-table-1")
+                        .files("test-bucket/ingest.parquet")
+                        .tableName("ingest-table")
                         .id("test-job-1")
                         .build()),
                 "bulk-import-url", List.of(IngestJob.builder()
-                        .files("test-bucket/test-2.parquet")
-                        .tableName("test-table-2")
+                        .files("test-bucket/bulk-import.parquet")
+                        .tableName("bulk-import-table")
                         .id("test-job-2")
                         .build())));
     }

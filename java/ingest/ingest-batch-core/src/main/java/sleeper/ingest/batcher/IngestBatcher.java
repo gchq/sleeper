@@ -29,14 +29,15 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
@@ -73,9 +74,8 @@ public class IngestBatcher {
     public void batchFiles() {
         Instant time = timeSupplier.get();
         store.getPendingFilesOldestFirst().stream()
-                .collect(Collectors.groupingBy(FileIngestRequest::getTableName))
-                .entrySet().stream().sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> batchTableFiles(entry.getKey(), entry.getValue(), time));
+                .collect(Collectors.groupingBy(FileIngestRequest::getTableName, LinkedHashMap::new, toList()))
+                .forEach((tableName, inputFiles) -> batchTableFiles(tableName, inputFiles, time));
     }
 
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles, Instant time) {
@@ -98,7 +98,7 @@ public class IngestBatcher {
                 .tableName(properties.get(TABLE_NAME))
                 .files(batch.stream()
                         .map(FileIngestRequest::getPathToFile)
-                        .collect(Collectors.toList()))
+                        .collect(toList()))
                 .build();
         try {
             store.assignJob(job.getId(), batch);
