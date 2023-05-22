@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.batcher;
+package sleeper.ingest.batcher.testutil;
 
+import sleeper.ingest.batcher.IngestBatcherQueueClient;
 import sleeper.ingest.job.IngestJob;
 
 import java.util.ArrayList;
