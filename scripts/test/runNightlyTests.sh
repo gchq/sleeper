@@ -52,6 +52,10 @@ runTest() {
   echo -n "$? $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
+echo "[$(time_str) Cleaning up old test instances"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.nightly.cleanup.CleanupNightlyTestInstances "$RESULTS_BUCKET"
+
 runTest bulkImportPerformance "bulk-imprt-$START_TIME"
 runTest compactionPerformance "compaction-$START_TIME"
 runTest partitionSplitting "splitting-$START_TIME"
