@@ -43,6 +43,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 @Testcontainers
 class NightlyTestOutputS3IT {
@@ -118,7 +119,7 @@ class NightlyTestOutputS3IT {
     private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                 NightlyTestTimestamp.from(startTime),
-                NightlyTestOutput.builder().statusCodeByTest(statusCodeByTest).build());
+                outputWithStatusCodeByTest(statusCodeByTest));
         s3Client.putObject(bucketName, "summary.json", summary.toJson());
         s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
     }

@@ -24,12 +24,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class NightlyTestOutput {
@@ -37,43 +38,33 @@ public class NightlyTestOutput {
     private static final PathMatcher LOG_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
     private static final PathMatcher STATUS_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.status");
 
-    private final List<Path> logFiles;
-    private final Map<String, Integer> statusCodeByTest;
+    private final List<TestResult> tests;
 
-    private NightlyTestOutput(Builder builder) {
-        logFiles = Objects.requireNonNull(builder.logFiles, "logFiles must not be null");
-        statusCodeByTest = Objects.requireNonNull(builder.statusCodeByTest, "statusCodeByTest must not be null");
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public NightlyTestOutput(List<TestResult> tests) {
+        this.tests = Objects.requireNonNull(tests, "tests must not be null");
     }
 
     public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
-        logFiles.forEach(path -> s3Client.putObject(bucketName,
-                getPathInS3(timestamp, path),
-                path.toFile()));
-        updateSummary(s3Client, bucketName, timestamp);
+        streamLogFiles().forEach(logFile ->
+                s3Client.putObject(bucketName,
+                        logFilePathInS3(timestamp, logFile),
+                        logFile.toFile()));
+        NightlyTestSummaryTable.fromS3(s3Client, bucketName)
+                .add(timestamp, this)
+                .saveToS3(s3Client, bucketName);
     }
 
-    private void updateSummary(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
-        NightlyTestSummaryTable summary;
-        if (s3Client.doesObjectExist(bucketName, "summary.json")) {
-            summary = NightlyTestSummaryTable.fromJson(s3Client.getObjectAsString(bucketName, "summary.json"));
-        } else {
-            summary = NightlyTestSummaryTable.empty();
-        }
-        summary.add(timestamp, this);
-        s3Client.putObject(bucketName, "summary.json", summary.toJson());
-        s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
-    }
-
-    private static String getPathInS3(NightlyTestTimestamp timestamp, Path filePath) {
+    private static String logFilePathInS3(NightlyTestTimestamp timestamp, Path filePath) {
         return timestamp.getS3FolderName() + "/" + filePath.getFileName();
     }
 
-    public Map<String, Integer> getStatusCodeByTest() {
-        return statusCodeByTest;
+    public Stream<Path> streamLogFiles() {
+        return tests.stream()
+                .flatMap(TestResult::streamLogFiles);
+    }
+
+    public List<TestResult> getTests() {
+        return tests;
     }
 
     public static NightlyTestOutput from(Path directory) throws IOException {
@@ -86,10 +77,7 @@ public class NightlyTestOutput {
                 statusFiles.add(file);
             }
         });
-        return builder()
-                .logFiles(logFiles)
-                .statusCodeByTest(readStatusFiles(statusFiles))
-                .build();
+        return fromLogAndStatusFiles(logFiles, statusFiles);
     }
 
     private static void forEachFileIn(Path directory, Consumer<Path> action) throws IOException {
@@ -98,17 +86,41 @@ public class NightlyTestOutput {
         }
     }
 
-    private static Map<String, Integer> readStatusFiles(List<Path> statusFiles) throws IOException {
-        Map<String, Integer> statusCodeByTest = new HashMap<>();
-        for (Path statusFile : statusFiles) {
-            statusCodeByTest.put(readTestName(statusFile), Integer.parseInt(Files.readString(statusFile)));
+    private static NightlyTestOutput fromLogAndStatusFiles(
+            List<Path> logFiles, List<Path> statusFiles) throws IOException {
+        Map<String, TestResult.Builder> resultByTestName = new HashMap<>();
+        for (Path logFile : logFiles) {
+            getResultBuilder(logFile, resultByTestName)
+                    .logFile(logFile);
         }
-        return statusCodeByTest;
+        for (Path statusFile : statusFiles) {
+            readStatusFile(statusFile, getResultBuilder(statusFile, resultByTestName));
+        }
+        return new NightlyTestOutput(resultByTestName.values().stream()
+                .map(TestResult.Builder::build)
+                .sorted(Comparator.comparing(TestResult::getTestName))
+                .collect(Collectors.toList()));
+    }
+
+    private static TestResult.Builder getResultBuilder(
+            Path file, Map<String, TestResult.Builder> resultByTestName) {
+        return resultByTestName.computeIfAbsent(
+                readTestName(file), testName -> TestResult.builder().testName(testName));
+    }
+
+    private static void readStatusFile(Path statusFile, TestResult.Builder builder) throws IOException {
+        String[] parts = Files.readString(statusFile).split(" ");
+        if (parts.length > 0) {
+            builder.exitCode(Integer.parseInt(parts[0]));
+        }
+        if (parts.length > 1) {
+            builder.instanceId(parts[1]);
+        }
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private static String readTestName(Path statusFile) {
-        String fullFilename = statusFile.getFileName().toString();
+    private static String readTestName(Path file) {
+        String fullFilename = file.getFileName().toString();
         return fullFilename.substring(0, fullFilename.lastIndexOf('.'));
     }
 
@@ -120,42 +132,21 @@ public class NightlyTestOutput {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+
         NightlyTestOutput that = (NightlyTestOutput) o;
-        return logFiles.equals(that.logFiles) && statusCodeByTest.equals(that.statusCodeByTest);
+
+        return tests.equals(that.tests);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logFiles, statusCodeByTest);
+        return tests.hashCode();
     }
 
     @Override
     public String toString() {
         return "NightlyTestOutput{" +
-                "logFiles=" + logFiles +
-                ", statusCodeByTest=" + statusCodeByTest +
+                "tests=" + tests +
                 '}';
-    }
-
-    public static final class Builder {
-        private List<Path> logFiles = Collections.emptyList();
-        private Map<String, Integer> statusCodeByTest = Collections.emptyMap();
-
-        private Builder() {
-        }
-
-        public Builder logFiles(List<Path> logFiles) {
-            this.logFiles = logFiles;
-            return this;
-        }
-
-        public Builder statusCodeByTest(Map<String, Integer> statusCodeByTest) {
-            this.statusCodeByTest = statusCodeByTest;
-            return this;
-        }
-
-        public NightlyTestOutput build() {
-            return new NightlyTestOutput(this);
-        }
     }
 }

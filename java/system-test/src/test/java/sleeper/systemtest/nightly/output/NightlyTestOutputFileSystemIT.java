@@ -23,12 +23,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.emptyOutput;
-import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithLogFiles;
-import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestOutputFileSystemIT {
     @TempDir
@@ -43,8 +41,8 @@ class NightlyTestOutputFileSystemIT {
             Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
             // When / Then
-            assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(outputWithLogFiles(tempDir.resolve("bulkImportPerformance.log")));
+            assertThat(NightlyTestOutput.from(tempDir).streamLogFiles())
+                    .containsExactly(tempDir.resolve("bulkImportPerformance.log"));
         }
 
         @Test
@@ -53,8 +51,8 @@ class NightlyTestOutputFileSystemIT {
             Files.createDirectory(tempDir.resolve("testDir.log"));
 
             // When / Then
-            assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(emptyOutput());
+            assertThat(NightlyTestOutput.from(tempDir).streamLogFiles())
+                    .isEmpty();
         }
     }
 
@@ -65,14 +63,29 @@ class NightlyTestOutputFileSystemIT {
         @Test
         void shouldReadStatusFiles() throws Exception {
             // Given
+            Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0 bulk-import-instance");
+            Files.writeString(tempDir.resolve("compactionPerformance.status"), "1 compaction-instance");
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(new NightlyTestOutput(List.of(
+                            TestResult.builder().testName("bulkImportPerformance")
+                                    .instanceId("bulk-import-instance").exitCode(0).build(),
+                            TestResult.builder().testName("compactionPerformance")
+                                    .instanceId("compaction-instance").exitCode(1).build())));
+        }
+
+        @Test
+        void shouldReadStatusFilesWithCodeOnly() throws Exception {
+            // Given
             Files.writeString(tempDir.resolve("bulkImportPerformance.status"), "0");
             Files.writeString(tempDir.resolve("compactionPerformance.status"), "1");
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(outputWithStatusCodeByTest(Map.of(
-                            "bulkImportPerformance", 0,
-                            "compactionPerformance", 1)));
+                    .isEqualTo(new NightlyTestOutput(List.of(
+                            TestResult.builder().testName("bulkImportPerformance").exitCode(0).build(),
+                            TestResult.builder().testName("compactionPerformance").exitCode(1).build())));
         }
 
         @Test

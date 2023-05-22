@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.nightly.output;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -50,6 +51,19 @@ public class NightlyTestSummaryTable {
 
     public static NightlyTestSummaryTable fromJson(String json) {
         return GSON.fromJson(json, NightlyTestSummaryTable.class);
+    }
+
+    public static NightlyTestSummaryTable fromS3(AmazonS3 s3Client, String bucketName) {
+        if (s3Client.doesObjectExist(bucketName, "summary.json")) {
+            return fromJson(s3Client.getObjectAsString(bucketName, "summary.json"));
+        } else {
+            return empty();
+        }
+    }
+
+    public void saveToS3(AmazonS3 s3Client, String bucketName) {
+        s3Client.putObject(bucketName, "summary.json", toJson());
+        s3Client.putObject(bucketName, "summary.txt", toTableString());
     }
 
     public NightlyTestSummaryTable add(
@@ -107,12 +121,12 @@ public class NightlyTestSummaryTable {
     }
 
     private static Execution execution(NightlyTestTimestamp timestamp, NightlyTestOutput output) {
-        return new Execution(timestamp.toInstant(), tests(output.getStatusCodeByTest()));
+        return new Execution(timestamp.toInstant(), tests(output.getTests()));
     }
 
-    private static List<Test> tests(Map<String, Integer> statusCodeByTest) {
-        return statusCodeByTest.entrySet().stream()
-                .map(entry -> new Test(entry.getKey(), entry.getValue()))
+    private static List<Test> tests(List<TestResult> testResults) {
+        return testResults.stream()
+                .map(result -> new Test(result.getTestName(), result.getExitCode(), result.getInstanceId()))
                 .sorted(Comparator.comparing(o -> o.name))
                 .collect(Collectors.toList());
     }
@@ -134,10 +148,12 @@ public class NightlyTestSummaryTable {
 
         private final String name;
         private final Integer exitCode;
+        private final String instanceId;
 
-        public Test(String name, Integer exitCode) {
+        public Test(String name, Integer exitCode, String instanceId) {
             this.name = name;
             this.exitCode = exitCode;
+            this.instanceId = instanceId;
         }
     }
 }
