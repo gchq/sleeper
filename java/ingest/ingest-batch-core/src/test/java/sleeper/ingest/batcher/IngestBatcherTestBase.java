@@ -60,7 +60,7 @@ public class IngestBatcherTestBase {
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
         properties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
-        properties.set(INGEST_BATCHER_MIN_JOB_FILES, "0");
+        properties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
         properties.set(TABLE_NAME, tableName);
         return properties;
     }

@@ -104,7 +104,11 @@ public class IngestBatcher {
             maxBytes = properties.getBytes(INGEST_BATCHER_MAX_JOB_SIZE);
         }
 
-        Batch getBatchWithSpace(FileIngestRequest file) {
+        void add(FileIngestRequest file) {
+            getBatchWithSpaceFor(file).add(file);
+        }
+
+        Batch getBatchWithSpaceFor(FileIngestRequest file) {
             return batches.stream()
                     .filter(batch -> batch.hasSpaceForFile(file))
                     .findFirst().orElseGet(() -> {
@@ -112,10 +116,6 @@ public class IngestBatcher {
                         batches.add(batch);
                         return batch;
                     });
-        }
-
-        void add(FileIngestRequest file) {
-            getBatchWithSpace(file).add(file);
         }
 
         Stream<List<FileIngestRequest>> streamBatches() {

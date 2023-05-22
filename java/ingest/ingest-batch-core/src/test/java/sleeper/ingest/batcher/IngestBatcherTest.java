@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.ingest.job.IngestJob;
 
 import java.util.Collections;
 import java.util.List;
@@ -65,20 +66,25 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         }
 
         @Test
-        void shouldBatchNoFilesWhenMinimumCountIsTwoAndTwoFilesAreTrackedForDifferentTables() {
+        void shouldBatchOneTableWhenOtherTableDoesNotMeetMinSize() {
             // Given
             TableProperties table1 = createTableProperties("test-table-1");
             TableProperties table2 = createTableProperties("test-table-2");
-            table1.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
+            table1.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             table2.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            addFileToStore(builder -> builder.tableName("test-table-1"));
-            addFileToStore(builder -> builder.tableName("test-table-2"));
+            addFileToStore(builder -> builder.tableName("test-table-1").pathToFile("test-bucket/test-1.parquet"));
+            addFileToStore(builder -> builder.tableName("test-table-2").pathToFile("test-bucket/test-2.parquet"));
 
             // When
-            batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of());
+            batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of("test-job-id"));
 
             // Then
-            assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(IngestJob.builder()
+                            .tableName("test-table-1")
+                            .id("test-job-id")
+                            .files("test-bucket/test-1.parquet")
+                            .build()));
         }
 
         @Test
@@ -134,6 +140,30 @@ class IngestBatcherTest extends IngestBatcherTestBase {
 
             // Then
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
+        }
+
+        @Test
+        void shouldBatchOneTableWhenOtherTableDoesNotMeetMinSize() {
+            // Given
+            TableProperties table1 = createTableProperties("test-table-1");
+            TableProperties table2 = createTableProperties("test-table-2");
+            table1.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            table2.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
+            addFileToStore(builder -> builder.tableName("test-table-1").fileSizeBytes(2048)
+                    .pathToFile("test-bucket/test-1.parquet"));
+            addFileToStore(builder -> builder.tableName("test-table-2").fileSizeBytes(600)
+                    .pathToFile("test-bucket/test-2.parquet"));
+
+            // When
+            batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of("test-job-id"));
+
+            // Then
+            assertThat(queues.getMessagesByQueueUrl())
+                    .isEqualTo(queueMessages(IngestJob.builder()
+                            .tableName("test-table-1")
+                            .id("test-job-id")
+                            .files("test-bucket/test-1.parquet")
+                            .build()));
         }
 
         @Test
