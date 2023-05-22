@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,12 +52,12 @@ public class IngestBatcher {
     private final IngestBatcherQueueClient queueClient;
 
     private IngestBatcher(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        tablePropertiesProvider = builder.tablePropertiesProvider;
-        jobIdSupplier = builder.jobIdSupplier;
-        timeSupplier = builder.timeSupplier;
-        store = builder.store;
-        queueClient = builder.queueClient;
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
+        jobIdSupplier = Objects.requireNonNull(builder.jobIdSupplier, "jobIdSupplier must not be null");
+        timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
+        store = Objects.requireNonNull(builder.store, "store must not be null");
+        queueClient = Objects.requireNonNull(builder.queueClient, "queueClient must not be null");
     }
 
     public static Builder builder() {
