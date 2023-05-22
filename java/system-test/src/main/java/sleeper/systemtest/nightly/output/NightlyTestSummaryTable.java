@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.output;
+package sleeper.systemtest.nightly.output;
 
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

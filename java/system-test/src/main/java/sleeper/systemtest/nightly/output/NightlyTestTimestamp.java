@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.output;
+package sleeper.systemtest.nightly.output;
 
 import java.time.Instant;
 import java.time.ZoneId;

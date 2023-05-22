@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.output;
+package sleeper.systemtest.nightly.output;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 

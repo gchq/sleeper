@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.output;
+package sleeper.systemtest.nightly.output;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,9 +26,9 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.output.NightlyTestOutputTestHelper.emptyOutput;
-import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithLogFiles;
-import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
+import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.emptyOutput;
+import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithLogFiles;
+import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestOutputFileSystemIT {
     @TempDir
