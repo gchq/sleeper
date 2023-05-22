@@ -94,16 +94,23 @@ public class IngestBatcherTestBase {
     }
 
     protected void batchFilesWithJobIds(String... jobIds) {
-        batchFilesWithTablesAndJobIds(List.of(tableProperties), List.of(jobIds));
+        batchFilesWithJobIds(List.of(jobIds), builder -> {
+        });
     }
 
     protected void batchFilesWithTablesAndJobIds(List<TableProperties> tables, List<String> jobIds) {
-        IngestBatcher.builder()
+        batchFilesWithJobIds(jobIds, builder ->
+                builder.tablePropertiesProvider(new FixedTablePropertiesProvider(tables)));
+    }
+
+    protected void batchFilesWithJobIds(List<String> jobIds, Consumer<IngestBatcher.Builder> config) {
+        IngestBatcher.Builder builder = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(tables))
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(List.of(tableProperties)))
                 .jobIdSupplier(jobIdSupplier(jobIds))
-                .store(store).queueClient(queues)
-                .build().batchFiles();
+                .store(store).queueClient(queues);
+        config.accept(builder);
+        builder.build().batchFiles();
     }
 
     protected static Supplier<String> jobIdSupplier(List<String> jobIds) {

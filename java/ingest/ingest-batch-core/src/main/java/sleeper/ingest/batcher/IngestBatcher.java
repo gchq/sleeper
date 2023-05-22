@@ -16,6 +16,9 @@
 
 package sleeper.ingest.batcher;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -34,6 +37,8 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 
 public class IngestBatcher {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcher.class);
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Supplier<String> jobIdSupplier;
@@ -72,8 +77,12 @@ public class IngestBatcher {
                                 .map(FileIngestRequest::getPathToFile)
                                 .collect(Collectors.toList()))
                         .build();
-                store.assignJob(job.getId(), batch);
-                queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+                try {
+                    store.assignJob(job.getId(), batch);
+                    queueClient.send(instanceProperties.get(INGEST_JOB_QUEUE_URL), job);
+                } catch (RuntimeException e) {
+                    LOGGER.error("Failed assigning/sending job: {}", job, e);
+                }
             });
         }
     }
