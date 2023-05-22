@@ -21,7 +21,7 @@ import java.time.Instant;
 public class FileIngestRequestTestHelper {
 
     public static final String DEFAULT_TABLE_NAME = "test-table";
-    private static final Instant FIRST_REQUEST_TIME = Instant.parse("2023-05-19T15:33:42Z");
+    public static final Instant FIRST_REQUEST_TIME = Instant.parse("2023-05-19T15:33:42Z");
     private int requestCount = 0;
 
     public FileIngestRequest.Builder fileRequest() {
