@@ -121,4 +121,31 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
                         .id("test-job-2")
                         .build())));
     }
+
+    @Test
+    void shouldConsumeFilesAndRequireResubmissionIfQueueIsNotConfigured() {
+        instanceProperties.unset(INGEST_JOB_QUEUE_URL);
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        addFileToStore("test-bucket/ingest.parquet");
+
+        // When
+        batchFilesWithJobIds("test-job");
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl()).isEmpty();
+        assertThat(store.getPendingFilesOldestFirst()).isEmpty();
+    }
+
+    @Test
+    void shouldConsumeFilesAndRequireResubmissionIfQueueModeIsNotValid() {
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, "invalid");
+        addFileToStore("test-bucket/ingest.parquet");
+
+        // When
+        batchFilesWithJobIds("test-job");
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl()).isEmpty();
+        assertThat(store.getPendingFilesOldestFirst()).isEmpty();
+    }
 }

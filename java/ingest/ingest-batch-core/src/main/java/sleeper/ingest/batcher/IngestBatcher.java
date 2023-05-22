@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.BatchIngestMode;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -48,7 +50,6 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestBatcher {
 
@@ -89,40 +90,51 @@ public class IngestBatcher {
         if ((inputFiles.size() >= minFiles &&
                 totalBytes(inputFiles) >= minBytes)
                 || inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime))) {
+            String jobQueueUrl = jobQueueUrl(properties).orElse(null);
             createBatches(properties, inputFiles)
-                    .forEach(batch -> sendBatch(properties, batch));
+                    .forEach(batch -> sendBatch(tableName, jobQueueUrl, batch));
         }
     }
 
-    private void sendBatch(TableProperties properties, List<FileIngestRequest> batch) {
+    private void sendBatch(String tableName, String jobQueueUrl, List<FileIngestRequest> batch) {
         IngestJob job = IngestJob.builder()
                 .id(jobIdSupplier.get())
-                .tableName(properties.get(TABLE_NAME))
+                .tableName(tableName)
                 .files(batch.stream()
                         .map(FileIngestRequest::getPathToFile)
                         .collect(toList()))
                 .build();
         try {
             store.assignJob(job.getId(), batch);
-            queueClient.send(jobQueueUrl(properties), job);
+            if (jobQueueUrl == null) {
+                LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
+            } else {
+                queueClient.send(jobQueueUrl, job);
+            }
         } catch (RuntimeException e) {
             LOGGER.error("Failed assigning/sending job: {}", job, e);
         }
     }
 
-    private String jobQueueUrl(TableProperties properties) {
-        String mode = properties.get(INGEST_BATCHER_INGEST_MODE);
-        switch (EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode)) {
+    private Optional<String> jobQueueUrl(TableProperties properties) {
+        return Optional.ofNullable(properties.get(INGEST_BATCHER_INGEST_MODE))
+                .map(mode -> EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode))
+                .map(IngestBatcher::jobQueueUrlProperty)
+                .map(instanceProperties::get);
+    }
+
+    private static InstanceProperty jobQueueUrlProperty(BatchIngestMode mode) {
+        switch (mode) {
             case STANDARD_INGEST:
-                return instanceProperties.get(INGEST_JOB_QUEUE_URL);
+                return INGEST_JOB_QUEUE_URL;
             case BULK_IMPORT_EMR:
-                return instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL);
+                return BULK_IMPORT_EMR_JOB_QUEUE_URL;
             case BULK_IMPORT_PERSISTENT_EMR:
-                return instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
+                return BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
             case BULK_IMPORT_EKS:
-                return instanceProperties.get(BULK_IMPORT_EKS_JOB_QUEUE_URL);
+                return BULK_IMPORT_EKS_JOB_QUEUE_URL;
             default:
-                throw new IllegalArgumentException("Unrecognised ingest mode: " + mode);
+                return null;
         }
     }
 
