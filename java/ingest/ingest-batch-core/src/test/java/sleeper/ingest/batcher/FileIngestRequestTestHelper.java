@@ -25,10 +25,13 @@ public class FileIngestRequestTestHelper {
     private int requestCount = 0;
 
     public FileIngestRequest.Builder fileRequest() {
+        int requestIndex = requestCount++;
+        int requestNum = requestIndex + 1;
         return FileIngestRequest.builder()
                 .fileSizeBytes(1024)
                 .tableName(DEFAULT_TABLE_NAME)
-                .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestCount++)));
+                .pathToFile("test-bucket/auto-named-file-" + requestNum + ".parquet")
+                .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestIndex)));
     }
 
     public static FileIngestRequest onJob(String jobId, FileIngestRequest request) {

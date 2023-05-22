@@ -25,6 +25,7 @@ import sleeper.ingest.job.IngestJob;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -84,6 +85,12 @@ public class IngestBatcherTestBase {
     protected FileIngestRequest addFileToStore(FileIngestRequest request) {
         store.addFile(request);
         return request;
+    }
+
+    protected FileIngestRequest addFileToStore(Consumer<FileIngestRequest.Builder> config) {
+        FileIngestRequest.Builder builder = ingestRequest();
+        config.accept(builder);
+        return addFileToStore(builder.build());
     }
 
     protected void batchFilesWithJobIds(String... jobIds) {

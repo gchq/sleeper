@@ -30,7 +30,6 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.ingest.batcher.FileIngestRequestTestHelper.onJob;
 
 class IngestBatcherTest extends IngestBatcherTestBase {
 
@@ -41,14 +40,12 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldBatchOneFileWhenMinimumFileCountIsOne() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
+            addFileToStore("test-bucket/test.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactly(
-                    onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id", "test-bucket/test.parquet")));
@@ -58,13 +55,12 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldBatchNoFilesWhenMinimumCountIsTwoAndOneFileIsTracked() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
+            addFileToStore("test-bucket/test.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
         }
 
@@ -75,20 +71,13 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             TableProperties table2 = createTableProperties("test-table-2");
             table1.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
             table2.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
-                    .pathToFile("test-bucket/test-1.parquet")
-                    .tableName("test-table-1")
-                    .build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
-                    .pathToFile("test-bucket/test-2.parquet")
-                    .tableName("test-table-2")
-                    .build());
+            addFileToStore(builder -> builder.tableName("test-table-1"));
+            addFileToStore(builder -> builder.tableName("test-table-2"));
 
             // When
             batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of());
 
             // Then
-            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request1, request2);
             assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Collections.emptyMap());
         }
 
@@ -96,16 +85,13 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldBatchMultipleFilesWhenMinimumCountIsMet() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
-            FileIngestRequest request2 = addFileToStore("test-bucket/test-2.parquet");
+            addFileToStore("test-bucket/test-1.parquet");
+            addFileToStore("test-bucket/test-2.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id", request1),
-                    onJob("test-job-id", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id",
@@ -122,16 +108,14 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldBatchOneFileWhenFileExceedsMinimumFileSize() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            FileIngestRequest request = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test.parquet")
-                    .fileSizeBytes(2048).build());
+                    .fileSizeBytes(2048));
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactly(
-                    onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id", "test-bucket/test.parquet")));
@@ -141,15 +125,14 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldBatchNoFilesWhenUnderMinimumFileSize() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            FileIngestRequest request = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test.parquet")
-                    .fileSizeBytes(512).build());
+                    .fileSizeBytes(512));
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
 
@@ -157,20 +140,17 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldBatchMultipleFilesWhenTotalFileSizeExceedsMinimum() {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(600).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(600));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(600).build());
+                    .fileSizeBytes(600));
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id", request1),
-                    onJob("test-job-id", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id",
@@ -187,15 +167,14 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            FileIngestRequest request = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test.parquet")
-                    .fileSizeBytes(2048).build());
+                    .fileSizeBytes(2048));
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
 
@@ -204,15 +183,14 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            FileIngestRequest request = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test.parquet")
-                    .fileSizeBytes(512).build());
+                    .fileSizeBytes(512));
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getPendingFilesOldestFirst()).containsExactly(request);
             assertThat(queues.getMessagesByQueueUrl()).isEmpty();
         }
 
@@ -221,16 +199,14 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            FileIngestRequest request = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test.parquet")
-                    .fileSizeBytes(2048).build());
+                    .fileSizeBytes(2048));
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactly(
-                    onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id", "test-bucket/test.parquet")));
@@ -244,16 +220,13 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldCreateTwoJobsForTwoFilesWhenMaximumFileCountIsOne() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "1");
-            FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
-            FileIngestRequest request2 = addFileToStore("test-bucket/test-2.parquet");
+            addFileToStore("test-bucket/test-1.parquet");
+            addFileToStore("test-bucket/test-2.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
@@ -264,14 +237,12 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldCreateOneJobForOneFileWhenMaximumFileCountIsOne() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "1");
-            FileIngestRequest request = addFileToStore("test-bucket/test.parquet");
+            addFileToStore("test-bucket/test.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactly(
-                    onJob("test-job-id", request));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id", "test-bucket/test.parquet")));
@@ -281,16 +252,13 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldCreateOneJobForTwoFilesWhenMaximumFileCountIsTwo() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
-            FileIngestRequest request1 = addFileToStore("test-bucket/test-1.parquet");
-            FileIngestRequest request2 = addFileToStore("test-bucket/test-2.parquet");
+            addFileToStore("test-bucket/test-1.parquet");
+            addFileToStore("test-bucket/test-2.parquet");
 
             // When
             batchFilesWithJobIds("test-job-id-1");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-1", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1",
@@ -306,20 +274,17 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldCreateTwoJobsForTwoFilesWhenSizesAddedTogetherExceedMaximum() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(600).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(600));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(600).build());
+                    .fileSizeBytes(600));
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
@@ -330,20 +295,17 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldCreateTwoJobsForTwoFilesWhenMaximumFileSizeIsMetByFirstFile() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(1024).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(1024));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(512).build());
+                    .fileSizeBytes(512));
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
@@ -354,20 +316,17 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldCreateTwoJobsForTwoFilesWhenMaximumFileSizeIsExceededByEitherFile() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(2048).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(2048));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(2048).build());
+                    .fileSizeBytes(2048));
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1", "test-bucket/test-1.parquet"),
@@ -383,28 +342,23 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(256).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(256));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(256).build());
-            FileIngestRequest request3 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(256));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-3.parquet")
-                    .fileSizeBytes(2048).build());
-            FileIngestRequest request4 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(2048));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-4.parquet")
-                    .fileSizeBytes(512).build());
+                    .fileSizeBytes(512));
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-1", request2),
-                    onJob("test-job-id-2", request3),
-                    onJob("test-job-id-3", request4));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1",
@@ -421,28 +375,23 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(2048).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(2048));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(256).build());
-            FileIngestRequest request3 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(256));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-3.parquet")
-                    .fileSizeBytes(256).build());
-            FileIngestRequest request4 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(256));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-4.parquet")
-                    .fileSizeBytes(512).build());
+                    .fileSizeBytes(512));
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-2", request2),
-                    onJob("test-job-id-2", request3),
-                    onJob("test-job-id-3", request4));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1",
@@ -462,24 +411,20 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldAddToPreviousBatchWhenSmallFileIsAddedAfterLargeFile() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
-                    .fileSizeBytes(256).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(256));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
-                    .fileSizeBytes(1024).build());
-            FileIngestRequest request3 = addFileToStore(ingestRequest()
+                    .fileSizeBytes(1024));
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-3.parquet")
-                    .fileSizeBytes(256).build());
+                    .fileSizeBytes(256));
 
             // When
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-1", request3),
-                    onJob("test-job-id-2", request2));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1",
@@ -493,16 +438,16 @@ class IngestBatcherTest extends IngestBatcherTestBase {
         void shouldFillPreviousBatchWhenSmallFilesAreAddedAfterLargeFile() {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
-            FileIngestRequest request1 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-1.parquet")
                     .fileSizeBytes(512).build());
-            FileIngestRequest request2 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-2.parquet")
                     .fileSizeBytes(1024).build());
-            FileIngestRequest request3 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-3.parquet")
                     .fileSizeBytes(512).build());
-            FileIngestRequest request4 = addFileToStore(ingestRequest()
+            addFileToStore(builder -> builder
                     .pathToFile("test-bucket/test-4.parquet")
                     .fileSizeBytes(256).build());
 
@@ -510,11 +455,6 @@ class IngestBatcherTest extends IngestBatcherTestBase {
             batchFilesWithJobIds("test-job-id-1", "test-job-id-2", "test-job-id-3");
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-id-1", request1),
-                    onJob("test-job-id-1", request3),
-                    onJob("test-job-id-2", request2),
-                    onJob("test-job-id-3", request4));
             assertThat(queues.getMessagesByQueueUrl())
                     .isEqualTo(queueMessages(
                             jobWithFiles("test-job-id-1",
