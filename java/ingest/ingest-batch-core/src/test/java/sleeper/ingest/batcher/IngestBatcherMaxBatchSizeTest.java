@@ -19,15 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.ingest.job.IngestJob;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 
@@ -283,58 +275,6 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
                                     "test-bucket/test-2.parquet"),
                             jobWithFiles("test-job-id-3",
                                     "test-bucket/test-4.parquet")));
-        }
-    }
-
-    @Nested
-    @DisplayName("Apply maximum file age")
-    class ApplyMaxFileAge {
-
-        @Test
-        void shouldSendFileWhenOverMaximumAgeAndMinimumJobSizeIsNotMet() {
-            // Given
-            tableProperties.set(INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "10");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet").fileSizeBytes(256)
-                    .receivedTime(Instant.parse("2023-05-22T11:11:00Z")).build());
-            Instant batchTime = Instant.parse("2023-05-22T11:11:10.001Z");
-
-            // When
-            batchFilesWithJobIds(List.of("test-job-id"), builder ->
-                    builder.timeSupplier(timeSupplier(batchTime)));
-
-            // Then
-            assertThat(queues.getMessagesByQueueUrl())
-                    .isEqualTo(queueMessages(
-                            jobWithFiles("test-job-id", "test-bucket/test.parquet")));
-        }
-
-        @Test
-        void shouldSendTwoFilesWhenOneOfThemIsOverMaximumAgeAndMinimumJobSizeIsNotMet() {
-            // Given
-            tableProperties.set(INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "10");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "3");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet").fileSizeBytes(256)
-                    .receivedTime(Instant.parse("2023-05-22T11:11:00Z")).build());
-            addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet").fileSizeBytes(256)
-                    .receivedTime(Instant.parse("2023-05-22T11:11:05Z")).build());
-            Instant batchTime = Instant.parse("2023-05-22T11:11:10.001Z");
-
-            // When
-            batchFilesWithJobIds(List.of("test-job-id"), builder ->
-                    builder.timeSupplier(timeSupplier(batchTime)));
-
-            // Then
-            assertThat(queues.getMessagesByQueueUrl())
-                    .isEqualTo(queueMessages(
-                            jobWithFiles("test-job-id",
-                                    "test-bucket/test-1.parquet",
-                                    "test-bucket/test-2.parquet")));
         }
     }
 }
