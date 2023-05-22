@@ -38,7 +38,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
@@ -114,9 +116,11 @@ public class IngestBatcher {
             case STANDARD_INGEST:
                 return instanceProperties.get(INGEST_JOB_QUEUE_URL);
             case BULK_IMPORT_EMR:
-            case BULK_IMPORT_PERSISTENT_EMR:
-            case BULK_IMPORT_EKS:
                 return instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL);
+            case BULK_IMPORT_PERSISTENT_EMR:
+                return instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
+            case BULK_IMPORT_EKS:
+                return instanceProperties.get(BULK_IMPORT_EKS_JOB_QUEUE_URL);
             default:
                 throw new IllegalArgumentException("Unrecognised ingest mode: " + mode);
         }

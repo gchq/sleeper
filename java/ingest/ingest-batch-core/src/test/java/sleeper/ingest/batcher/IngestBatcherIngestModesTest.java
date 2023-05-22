@@ -25,14 +25,16 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 
 class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
 
     @Test
-    void shouldCreateJobOnIngestQueue() {
+    void shouldCreateJobOnStandardIngestQueue() {
         // Given
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "ingest-url");
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
@@ -44,6 +46,51 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
                 "ingest-url", List.of(jobWithFiles("test-job", "test-bucket/ingest.parquet"))));
+    }
+
+    @Test
+    void shouldCreateJobOnEmrQueue() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_EMR_JOB_QUEUE_URL, "emr-url");
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        addFileToStore("test-bucket/bulk-import.parquet");
+
+        // When
+        batchFilesWithJobIds("test-job");
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
+                "emr-url", List.of(jobWithFiles("test-job", "test-bucket/bulk-import.parquet"))));
+    }
+
+    @Test
+    void shouldCreateJobOnPersistentEmrQueue() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, "persistent-emr-url");
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_PERSISTENT_EMR.toString());
+        addFileToStore("test-bucket/bulk-import.parquet");
+
+        // When
+        batchFilesWithJobIds("test-job");
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
+                "persistent-emr-url", List.of(jobWithFiles("test-job", "test-bucket/bulk-import.parquet"))));
+    }
+
+    @Test
+    void shouldCreateJobOnEksQueue() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_EKS_JOB_QUEUE_URL, "eks-url");
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EKS.toString());
+        addFileToStore("test-bucket/bulk-import.parquet");
+
+        // When
+        batchFilesWithJobIds("test-job");
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl()).isEqualTo(Map.of(
+                "eks-url", List.of(jobWithFiles("test-job", "test-bucket/bulk-import.parquet"))));
     }
 
     @Test
