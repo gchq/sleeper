@@ -1,0 +1,111 @@
+/*
+ * Copyright 2022-2023 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.ingest.batcher;
+
+import org.junit.jupiter.api.BeforeEach;
+
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.ingest.job.IngestJob;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.batcher.FileIngestRequestTestHelper.DEFAULT_TABLE_NAME;
+
+public class IngestBatcherTestBase {
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createTableProperties(DEFAULT_TABLE_NAME);
+    protected final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
+    protected final IngestBatcherQueuesInMemory queues = new IngestBatcherQueuesInMemory();
+    private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, "test-ingest-queue-url");
+    }
+
+    protected Map<String, List<Object>> queueMessages(IngestJob... jobs) {
+        return Map.of("test-ingest-queue-url", List.of(jobs));
+    }
+
+    protected TableProperties createTableProperties(String tableName) {
+        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        properties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        properties.set(INGEST_BATCHER_MIN_JOB_SIZE, "0");
+        properties.set(INGEST_BATCHER_MIN_JOB_FILES, "0");
+        properties.set(TABLE_NAME, tableName);
+        return properties;
+    }
+
+    protected IngestJob jobWithFiles(String jobId, String... files) {
+        return IngestJob.builder()
+                .files(files)
+                .tableName(DEFAULT_TABLE_NAME)
+                .id(jobId)
+                .build();
+    }
+
+    protected FileIngestRequest addFileToStore(String pathToFile) {
+        return addFileToStore(ingestRequest()
+                .pathToFile(pathToFile).build());
+    }
+
+    protected FileIngestRequest.Builder ingestRequest() {
+        return requests.fileRequest();
+    }
+
+    protected FileIngestRequest addFileToStore(FileIngestRequest request) {
+        store.addFile(request);
+        return request;
+    }
+
+    protected void batchFilesWithJobIds(String... jobIds) {
+        batchFilesWithTablesAndJobIds(List.of(tableProperties), List.of(jobIds));
+    }
+
+    protected void batchFilesWithTablesAndJobIds(List<TableProperties> tables, List<String> jobIds) {
+        IngestBatcher.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tables))
+                .jobIdSupplier(jobIdSupplier(jobIds))
+                .store(store).queueClient(queues)
+                .build().batchFiles();
+    }
+
+    protected static Supplier<String> jobIdSupplier(List<String> jobIds) {
+        return Stream.concat(jobIds.stream(), infiniteIdsForUnexpectedJobs())
+                .iterator()::next;
+    }
+
+    protected static Stream<String> infiniteIdsForUnexpectedJobs() {
+        return IntStream.iterate(1, n -> n + 1)
+                .mapToObj(num -> "unexpected-job-" + num);
+    }
+}
