@@ -23,6 +23,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.Utils;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 
 import java.io.BufferedInputStream;
@@ -102,6 +103,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
 
     public Double getDouble(T property) {
         return Double.parseDouble(get(property));
+    }
+
+    public long getBytes(T property) {
+        return Utils.readBytes(get(property));
     }
 
     public List<String> getList(T property) {

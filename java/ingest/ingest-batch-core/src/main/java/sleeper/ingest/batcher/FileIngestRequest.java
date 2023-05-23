@@ -64,6 +64,7 @@ public class FileIngestRequest {
 
     public Builder toBuilder() {
         return builder().pathToFile(pathToFile)
+                .fileSizeBytes(fileSizeBytes)
                 .tableName(tableName)
                 .fileSizeBytes(fileSizeBytes)
                 .receivedTime(receivedTime)
