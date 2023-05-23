@@ -31,6 +31,6 @@
         <module>ingest-starter</module>
         <module>ingest-runner</module>
         <module>ingest-status-store</module>
-        <module>ingest-batch-core</module>
+        <module>ingest-batcher-core</module>
     </modules>
 </project>
