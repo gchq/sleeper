@@ -17,6 +17,7 @@ package sleeper.systemtest.nightly;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -32,6 +33,7 @@ public class TestResult {
         exitCode = builder.exitCode;
         instanceId = builder.instanceId;
         logFiles = builder.logFiles;
+        Collections.sort(logFiles);
     }
 
     public static Builder builder() {
