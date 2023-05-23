@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties.table;
+
+package sleeper.ingest.batcher;
 
 import java.util.List;
-import java.util.Objects;
 
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+public interface IngestBatcherStateStore {
+    void addFile(FileIngestRequest fileIngestRequest);
 
-public class FixedTablePropertiesProvider extends TablePropertiesProvider {
-    public FixedTablePropertiesProvider(TableProperties tableProperties) {
-        this(List.of(tableProperties));
-    }
+    void assignJob(String jobId, List<FileIngestRequest> filesInJob);
 
-    public FixedTablePropertiesProvider(List<TableProperties> tables) {
-        super(tableName -> tables.stream()
-                .filter(table -> Objects.equals(tableName, table.get(TABLE_NAME)))
-                .findFirst().orElseThrow());
-    }
+    List<FileIngestRequest> getAllFilesNewestFirst();
+
+    List<FileIngestRequest> getPendingFilesOldestFirst();
 }

@@ -932,7 +932,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
                     "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).")
             .defaultValue("64K")
-            .validationPredicate(Utils::isValidNumberOfBytes)
+            .validationPredicate(Utils::isValidHadoopLongBytes)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
