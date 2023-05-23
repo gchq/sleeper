@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.output;
+package sleeper.systemtest.nightly;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
+import static sleeper.systemtest.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestSummaryTableTest {
     @Nested
@@ -64,6 +65,29 @@ class NightlyTestSummaryTableTest {
                             "},{" +
                             "\"startTime\":\"2023-05-03T15:15:00Z\"," +
                             "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
+                            "}]}");
+        }
+
+        @Test
+        void shouldRecordInstanceId() {
+            // Given
+            NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
+                    NightlyTestTimestamp.from(Instant.parse("2023-05-22T16:14:00Z")),
+                    new NightlyTestOutput(List.of(TestResult.builder()
+                            .testName("bulkImportPerformance")
+                            .instanceId("bulk-import-instance")
+                            .exitCode(0)
+                            .build())));
+
+            // When / Then
+            assertThatJson(summary.toJson())
+                    .isEqualTo("{\"executions\":[{" +
+                            "\"startTime\":\"2023-05-22T16:14:00Z\"," +
+                            "\"tests\": [{" +
+                            "\"name\":\"bulkImportPerformance\", " +
+                            "\"exitCode\":0, " +
+                            "\"instanceId\":\"bulk-import-instance\"" +
+                            "}]" +
                             "}]}");
         }
     }
