@@ -86,7 +86,14 @@ public class Utils {
         return VALID_LOG_RETENTION_VALUES.contains(logRetention);
     }
 
-    private static final Pattern BYTES_PATTERN = Pattern.compile("(\\d+)([KMG]?)");
+    public static boolean isValidHadoopLongBytes(String numberOfBytes) {
+        if (!isNonNullNonEmptyString(numberOfBytes)) {
+            return false;
+        }
+        return numberOfBytes.matches("\\d+[KMGTPE]?");
+    }
+
+    private static final Pattern BYTES_PATTERN = Pattern.compile("(\\d+)([KMGTPE]?)");
 
     public static boolean isValidNumberOfBytes(String numberOfBytes) {
         if (!isNonNullNonEmptyString(numberOfBytes)) {
@@ -111,6 +118,12 @@ public class Utils {
                 return 1024L * 1024L;
             case "G":
                 return 1024L * 1024L * 1024L;
+            case "T":
+                return 1024L * 1024L * 1024L * 1024L;
+            case "P":
+                return 1024L * 1024L * 1024L * 1024L * 1024L;
+            case "E":
+                return 1024L * 1024L * 1024L * 1024L * 1024L * 1024L;
             default:
                 throw new IllegalArgumentException("Unrecognised file size units: " + units);
         }

@@ -72,17 +72,32 @@ class UtilsTest {
     }
 
     @Test
-    void shouldReadKBSize() {
+    void shouldReadKilobytesSize() {
         assertThat(Utils.readBytes("2K")).isEqualTo(2048L);
     }
 
     @Test
-    void shouldReadMBSize() {
+    void shouldReadMegabytesSize() {
         assertThat(Utils.readBytes("2M")).isEqualTo(2 * 1024 * 1024L);
     }
 
     @Test
-    void shouldReadGBSize() {
+    void shouldReadGigabytesSize() {
         assertThat(Utils.readBytes("2G")).isEqualTo(2 * 1024 * 1024 * 1024L);
+    }
+
+    @Test
+    void shouldReadTerabytesSize() {
+        assertThat(Utils.readBytes("2T")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L);
+    }
+
+    @Test
+    void shouldReadPetabytesSize() {
+        assertThat(Utils.readBytes("2P")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L);
+    }
+
+    @Test
+    void shouldReadExabytesSize() {
+        assertThat(Utils.readBytes("2E")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L * 1024L);
     }
 }
