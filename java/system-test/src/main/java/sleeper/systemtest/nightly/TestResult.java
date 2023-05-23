@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.nightly.output;
+package sleeper.systemtest.nightly;
 
 import java.nio.file.Path;
 import java.util.Objects;
