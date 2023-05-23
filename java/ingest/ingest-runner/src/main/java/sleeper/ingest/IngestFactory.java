@@ -143,7 +143,7 @@ public class IngestFactory {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         conf.set("fs.s3a.fast.upload", "true");
-        conf.set("fs.s3a.bucket.probe", "false");
+        conf.set("fs.s3a.bucket.probe", "0");
         return conf;
     }
 
