@@ -16,21 +16,22 @@
 package sleeper.systemtest.nightly;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 public class TestResult {
     private final String testName;
     private final int exitCode;
     private final String instanceId;
-    private final Path logFile;
+    private final List<Path> logFiles;
 
     private TestResult(Builder builder) {
         testName = builder.testName;
         exitCode = builder.exitCode;
         instanceId = builder.instanceId;
-        logFile = builder.logFile;
+        logFiles = builder.logFiles;
     }
 
     public static Builder builder() {
@@ -38,7 +39,7 @@ public class TestResult {
     }
 
     public Stream<Path> streamLogFiles() {
-        return Optional.ofNullable(logFile).stream();
+        return logFiles.stream();
     }
 
     public String getTestName() {
@@ -73,7 +74,7 @@ public class TestResult {
         if (!Objects.equals(instanceId, that.instanceId)) {
             return false;
         }
-        return Objects.equals(logFile, that.logFile);
+        return logFiles.equals(that.logFiles);
     }
 
     @Override
@@ -81,7 +82,7 @@ public class TestResult {
         int result = testName != null ? testName.hashCode() : 0;
         result = 31 * result + exitCode;
         result = 31 * result + (instanceId != null ? instanceId.hashCode() : 0);
-        result = 31 * result + (logFile != null ? logFile.hashCode() : 0);
+        result = 31 * result + logFiles.hashCode();
         return result;
     }
 
@@ -91,7 +92,7 @@ public class TestResult {
                 "testName='" + testName + '\'' +
                 ", exitCode=" + exitCode +
                 ", instanceId='" + instanceId + '\'' +
-                ", logFile=" + logFile +
+                ", logFiles=" + logFiles +
                 '}';
     }
 
@@ -99,7 +100,7 @@ public class TestResult {
         private String testName;
         private int exitCode;
         private String instanceId;
-        private Path logFile;
+        private final List<Path> logFiles = new ArrayList<>();
 
         private Builder() {
         }
@@ -124,7 +125,7 @@ public class TestResult {
         }
 
         public Builder logFile(Path logFile) {
-            this.logFile = logFile;
+            logFiles.add(logFile);
             return this;
         }
 

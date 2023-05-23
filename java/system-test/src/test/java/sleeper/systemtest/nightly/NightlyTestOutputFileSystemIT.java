@@ -54,6 +54,24 @@ class NightlyTestOutputFileSystemIT {
             assertThat(NightlyTestOutput.from(tempDir).streamLogFiles())
                     .isEmpty();
         }
+
+        @Test
+        void shouldIncludeTwoLogFiles() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
+            Files.writeString(tempDir.resolve("bulkImportPerformance.tearDown.log"), "test tear down");
+
+            // When
+            NightlyTestOutput output = NightlyTestOutput.from(tempDir);
+
+            // Then
+            assertThat(output.streamLogFiles()).containsExactly(
+                    tempDir.resolve("bulkImportPerformance.log"),
+                    tempDir.resolve("bulkImportPerformance.tearDown.log"));
+            assertThat(output.getTests())
+                    .extracting(TestResult::getTestName)
+                    .containsExactly("bulkImportPerformance");
+        }
     }
 
     @Nested
