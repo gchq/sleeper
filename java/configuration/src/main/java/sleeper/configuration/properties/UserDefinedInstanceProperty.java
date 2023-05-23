@@ -1016,11 +1016,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age.seconds")
             .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
-                    "will be included in an ingest job. When any file has been waiting for longer than this, a job " +
-                    "will be created with all the currently held files, even if other criteria for a batch are not " +
+                    "will be included in an ingest job. When any file has been waiting for longer than this, jobs " +
+                    "will be created for all the currently held files, even if other criteria for a batch are not " +
                     "met.")
-            .defaultValue("60")
-            .validationPredicate(Utils::isNonNegativeInteger)
+            .defaultValue("300")
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_INGEST_MODE = Index.propertyBuilder("sleeper.default.ingest.batcher.ingest.mode")
             .description("Specifies the target ingest queue where batched jobs are sent.\n" +
