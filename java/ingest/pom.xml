@@ -32,5 +32,6 @@
         <module>ingest-runner</module>
         <module>ingest-status-store</module>
         <module>ingest-batcher-core</module>
+        <module>ingest-batcher-store</module>
     </modules>
 </project>
