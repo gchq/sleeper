@@ -121,7 +121,7 @@ public class NightlyTestOutput {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static String readTestName(Path file) {
         String fullFilename = file.getFileName().toString();
-        return fullFilename.substring(0, fullFilename.lastIndexOf('.'));
+        return fullFilename.substring(0, fullFilename.indexOf('.'));
     }
 
     @Override

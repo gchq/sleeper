@@ -49,7 +49,9 @@ runTest() {
 
   echo "[$(time_str)] Running $TEST_NAME test"
   "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/$TEST_NAME.log"
-  echo -n "$? $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
+  EXIT_CODE=$?
+  ./tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+  echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
 runTest bulkImportPerformance "bulk-imprt-$START_TIME"
