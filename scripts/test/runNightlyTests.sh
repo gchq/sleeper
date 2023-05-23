@@ -58,6 +58,6 @@ runTest partitionSplitting "splitting-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.nightly.output.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+sleeper.systemtest.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
