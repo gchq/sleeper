@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.output;
+package sleeper.systemtest.nightly;
 
-import java.nio.file.Path;
-import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class NightlyTestOutputTestHelper {
     private NightlyTestOutputTestHelper() {
     }
 
     public static NightlyTestOutput emptyOutput() {
-        return NightlyTestOutput.builder().build();
-    }
-
-    public static NightlyTestOutput outputWithLogFiles(Path... logFiles) {
-        return NightlyTestOutput.builder()
-                .logFiles(List.of(logFiles))
-                .build();
+        return new NightlyTestOutput(Collections.emptyList());
     }
 
     public static NightlyTestOutput outputWithStatusCodeByTest(Map<String, Integer> statusCodeByTest) {
-        return NightlyTestOutput.builder()
-                .statusCodeByTest(statusCodeByTest)
-                .build();
+        return new NightlyTestOutput(statusCodeByTest.entrySet().stream()
+                .map(entry -> TestResult.builder().testName(entry.getKey()).exitCode(entry.getValue()).build())
+                .sorted(Comparator.comparing(TestResult::getTestName))
+                .collect(Collectors.toList()));
     }
 }

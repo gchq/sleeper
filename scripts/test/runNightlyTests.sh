@@ -43,20 +43,21 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
-echo "[$(time_str)] Running bulkImportPerformance test"
-./bulkImportPerformance/deployTest.sh "bi-perf-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/bulkImportPerformance.log"
-echo -n "$?" > "$OUTPUT_DIR/bulkImportPerformance.status"
+runTest() {
+  TEST_NAME=$1
+  INSTANCE_ID=$2
 
-echo "[$(time_str)] Running compactionPerformance test"
-./compactionPerformance/deployTest.sh "compn-perf-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/compactionPerformance.log"
-echo -n "$?" > "$OUTPUT_DIR/compactionPerformance.status"
+  echo "[$(time_str)] Running $TEST_NAME test"
+  "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/$TEST_NAME.log"
+  echo -n "$? $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
+}
 
-echo "[$(time_str)] Running partitionSplitting test"
-./partitionSplitting/deployTest.sh "partn-splt-$START_TIME" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/partitionSplitting.log"
-echo -n "$?" > "$OUTPUT_DIR/partitionSplitting.status"
+runTest bulkImportPerformance "bulk-imprt-$START_TIME"
+runTest compactionPerformance "compaction-$START_TIME"
+runTest partitionSplitting "splitting-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.output.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+sleeper.systemtest.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
