@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStateStore;
+import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,8 +30,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
-class IngestBatcherStateStoreInMemoryTest {
-    private final IngestBatcherStateStore store = new IngestBatcherStateStoreInMemory();
+class IngestBatcherStoreInMemoryTest {
+    private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @Nested

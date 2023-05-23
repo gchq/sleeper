@@ -17,7 +17,7 @@
 package sleeper.ingest.batcher.testutil;
 
 import sleeper.ingest.batcher.FileIngestRequest;
-import sleeper.ingest.batcher.IngestBatcherStateStore;
+import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.ingest.batcher.testutil.IngestBatcherStateStoreKeyFields.keyFor;
 
-public class IngestBatcherStateStoreInMemory implements IngestBatcherStateStore {
+public class IngestBatcherStoreInMemory implements IngestBatcherStore {
 
     private final Map<IngestBatcherStateStoreKeyFields, FileIngestRequest> requests = new HashMap<>();
 

@@ -58,7 +58,7 @@ public class IngestBatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Supplier<String> jobIdSupplier;
     private final Supplier<Instant> timeSupplier;
-    private final IngestBatcherStateStore store;
+    private final IngestBatcherStore store;
     private final IngestBatcherQueueClient queueClient;
 
     private IngestBatcher(Builder builder) {
@@ -208,7 +208,7 @@ public class IngestBatcher {
         private TablePropertiesProvider tablePropertiesProvider;
         private Supplier<String> jobIdSupplier = () -> UUID.randomUUID().toString();
         private Supplier<Instant> timeSupplier = Instant::now;
-        private IngestBatcherStateStore store;
+        private IngestBatcherStore store;
         private IngestBatcherQueueClient queueClient;
 
         private Builder() {
@@ -234,7 +234,7 @@ public class IngestBatcher {
             return this;
         }
 
-        public Builder store(IngestBatcherStateStore store) {
+        public Builder store(IngestBatcherStore store) {
             this.store = store;
             return this;
         }
