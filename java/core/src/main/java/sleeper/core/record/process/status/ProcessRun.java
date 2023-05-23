@@ -33,7 +33,7 @@ public class ProcessRun {
 
     private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        startedStatus = builder.startedStatus;
+        startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
         finishedStatus = builder.finishedStatus;
         statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
     }
