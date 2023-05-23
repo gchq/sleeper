@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.nightly.output;
+package sleeper.systemtest.nightly;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
+import static sleeper.systemtest.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 @Testcontainers
 class NightlyTestOutputS3IT {

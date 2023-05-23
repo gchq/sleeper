@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.nightly.output;
+package sleeper.systemtest.nightly;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,7 +26,7 @@ import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.nightly.output.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
+import static sleeper.systemtest.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestSummaryTableTest {
     @Nested
