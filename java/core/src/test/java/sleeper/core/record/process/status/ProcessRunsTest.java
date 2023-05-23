@@ -209,7 +209,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    void shouldCreateProcessRunFromTwoStartedUpdatesWhenOneIsFlaggedAsStartOfRun() {
+    void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsAfterTheOther() {
         // Given
         ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
                 Instant.parse("2022-09-24T08:23:30Z"), Instant.parse("2022-09-24T08:23:30.001Z"));
@@ -222,6 +222,26 @@ public class ProcessRunsTest {
         // Then
         assertThat(runs.getRunList())
                 .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+    }
+
+    @Test
+    void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsBeforeTheOther() {
+        // Given
+        ProcessStartedStatus startedStatus = updateAndStartTime(
+                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
+                Instant.parse("2022-09-24T10:23:30Z"), Instant.parse("2022-09-24T10:23:30.001Z"));
+
+        // When
+        ProcessRuns runs = runsFromUpdates(startedStatus, startedStatusNotStartOfRun);
+
+        // Then
+        assertThat(runs.getRunList())
+                .containsExactly(ProcessRun.builder()
+                        .taskId(DEFAULT_TASK_ID)
+                        .startedStatus(startedStatus)
+                        .statusUpdate(startedStatusNotStartOfRun)
+                        .build());
     }
 
     @Test

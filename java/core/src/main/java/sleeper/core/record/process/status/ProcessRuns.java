@@ -44,9 +44,9 @@ public class ProcessRuns {
             ProcessStatusUpdateRecord record = recordList.get(i);
             String taskId = record.getTaskId();
             ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
-            if (statusUpdate.isStartOfRun()) {
+            if (isStartedUpdateAndStartOfRun(statusUpdate)) {
                 ProcessRun.Builder builder = ProcessRun.builder()
-                        .statusUpdate(statusUpdate)
+                        .startedStatus(((ProcessRunStartedUpdate) statusUpdate))
                         .taskId(taskId);
                 taskBuilders.put(taskId, builder);
                 orderedBuilders.add(builder);
@@ -66,6 +66,11 @@ public class ProcessRuns {
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
         return new ProcessRuns(jobRuns);
+    }
+
+    private static boolean isStartedUpdateAndStartOfRun(ProcessStatusUpdate statusUpdate) {
+        return statusUpdate instanceof ProcessRunStartedUpdate
+                && ((ProcessRunStartedUpdate) statusUpdate).isStartOfRun();
     }
 
     public boolean isStarted() {

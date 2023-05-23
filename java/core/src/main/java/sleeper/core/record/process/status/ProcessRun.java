@@ -175,14 +175,8 @@ public class ProcessRun {
         }
 
         public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
-            if (statusUpdate instanceof ProcessRunStartedUpdate) {
-                return startedStatus((ProcessRunStartedUpdate) statusUpdate);
-            } else if (statusUpdate instanceof ProcessFinishedStatus) {
-                return finishedStatus((ProcessFinishedStatus) statusUpdate);
-            } else {
-                this.statusUpdates.add(statusUpdate);
-                return this;
-            }
+            this.statusUpdates.add(statusUpdate);
+            return this;
         }
 
         public ProcessRun build() {
