@@ -31,8 +31,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
-import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.TABLE_NAME;
 
 public class DynamoDBIngestBatcherStoreCreator {
     private DynamoDBIngestBatcherStoreCreator() {
@@ -43,10 +43,10 @@ public class DynamoDBIngestBatcherStoreCreator {
         initialiseTable(dynamoDB, tableName,
                 List.of(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S)),
+                        new AttributeDefinition(FILE_PATH, ScalarAttributeType.S)),
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(TABLE_NAME, KeyType.RANGE)));
+                        new KeySchemaElement(FILE_PATH, KeyType.RANGE)));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_TIME);
     }
 }
