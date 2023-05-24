@@ -85,7 +85,9 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                                 new TransactWriteItem().withPut(new Put()
                                         .withTableName(requestsTableName)
                                         .withItem(DynamoDBIngestRequestFormat.createRecord(
-                                                tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))))
+                                                tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
+                                        .withConditionExpression("attribute_not_exists(#filepath)")
+                                        .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
                         ).collect(Collectors.toList())));
     }
 
