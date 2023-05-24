@@ -116,11 +116,12 @@ public class ProcessRun {
     }
 
     public <T extends ProcessStatusUpdate> Optional<ProcessStatusUpdate> getLastStatusOfType(Class<T> cls) {
-        List<ProcessStatusUpdate> updatesLatestFirst = new ArrayList<>(getStatusUpdates());
-        Collections.reverse(updatesLatestFirst);
-        return updatesLatestFirst.stream()
-                .filter(update -> update.getClass().equals(cls))
-                .findFirst();
+        for (int i = statusUpdates.size() - 1; i >= 0; i--) {
+            if (statusUpdates.get(i).getClass().equals(cls)) {
+                return Optional.of(statusUpdates.get(i));
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
