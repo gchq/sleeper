@@ -183,7 +183,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // When / Then
             assertThatThrownBy(() -> store.assignJob("test-job-2", List.of(fileIngestRequest)))
                     .isInstanceOf(TransactionCanceledException.class);
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-1", fileIngestRequest));
         }
 
@@ -205,6 +205,18 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-1", fileIngestRequest1),
                     fileIngestRequest2);
+        }
+
+        @Test
+        void shouldFailToAssignFileWhenFileHasNotBeenTracked() {
+            // Given
+            FileIngestRequest fileIngestRequest = fileRequest()
+                    .pathToFile("test-bucket/test.parquet").build();
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJob("test-job-1", List.of(fileIngestRequest)))
+                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
     }
 
