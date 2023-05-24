@@ -17,6 +17,7 @@ package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
@@ -168,6 +170,42 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                             .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
                             .jobId("test-job")
                             .build());
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldFailToReassignFileWhenItIsAlreadyAssigned() {
+            // Given
+            FileIngestRequest fileIngestRequest = fileRequest()
+                    .pathToFile("test-bucket/test.parquet").build();
+            store.addFile(fileIngestRequest);
+            store.assignJob("test-job-1", List.of(fileIngestRequest));
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJob("test-job-2", List.of(fileIngestRequest)))
+                    .hasMessage("abc");
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(fileIngestRequest);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldFailToAssignFilesWhenOneIsAlreadyAssigned() {
+            // Given
+            FileIngestRequest fileIngestRequest1 = fileRequest()
+                    .pathToFile("test-bucket/test-1.parquet").build();
+            FileIngestRequest fileIngestRequest2 = fileRequest()
+                    .pathToFile("test-bucket/test-2.parquet").build();
+            store.addFile(fileIngestRequest1);
+            store.addFile(fileIngestRequest2);
+            store.assignJob("test-job-1", List.of(fileIngestRequest1));
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJob("test-job-2",
+                    List.of(fileIngestRequest1, fileIngestRequest2)))
+                    .hasMessage("abc");
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
+                    onJob("test-job-1", fileIngestRequest1),
+                    fileIngestRequest2);
         }
     }
 
