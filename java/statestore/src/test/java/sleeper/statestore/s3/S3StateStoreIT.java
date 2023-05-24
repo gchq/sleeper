@@ -572,7 +572,7 @@
 //         stateStore.setStatusToReadyForGarbageCollection(fileInfo2.getFilename());
 
 //         // When
-//         stateStore.deleteReadyForGCFiles(Collections.singletonList(fileInfo2.getFilename()));
+//         stateStore.deleteFileLifecycleEntries(Collections.singletonList(fileInfo2.getFilename()));
 
 //         // Then
 //         assertThat(stateStore.getFileInPartitionList()).containsExactly(fileInfo1);
@@ -607,7 +607,7 @@
 //         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
 
 //         // When
-//         assertThatThrownBy(() -> stateStore.deleteReadyForGCFiles(Collections.singletonList(fileInfo1.getFilename())))
+//         assertThatThrownBy(() -> stateStore.deleteFileLifecycleEntries(Collections.singletonList(fileInfo1.getFilename())))
 //                 .isInstanceOf(StateStoreException.class);
 //     }
 
@@ -1043,7 +1043,7 @@
 //         stateStore.addFiles(files);
 
 //         // When
-//         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+//         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToFileInPartitionMap();
 
 //         // Then
 //         assertThat(partitionToFileMapping.entrySet()).hasSize(5);

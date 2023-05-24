@@ -165,7 +165,7 @@ public class ReinitialiseTableIT {
     }
 
     @Test
-    public void shouldDeleteActiveAndGCFilesByDefaultForDynamoStateStore() throws Exception {
+    public void shouldDeleteFileInPartitionAndFileExistenceRecordsByDefaultForDynamoStateStore() throws Exception {
         // Given
         String tableName = UUID.randomUUID().toString();
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
@@ -187,7 +187,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
@@ -251,7 +251,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(1);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
@@ -321,7 +321,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -403,7 +403,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -485,7 +485,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(3);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
@@ -535,7 +535,7 @@ public class ReinitialiseTableIT {
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
 
-    private void assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(
+    private void assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(
             TableProperties tableProperties, DynamoDBStateStore dynamoStateStore) throws StateStoreException {
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
@@ -621,22 +621,18 @@ public class ReinitialiseTableIT {
         setupPartitionsAndAddFileInfo(dynamoDBStateStore);
 
         // - Check DynamoDBStateStore is set up correctly
-        // - The ready for GC table should have 1 item in (but it's not returned by getReadyForGCFiles()
-        //   because it is less than 10 seconds since it was marked as ready for GC). As the StateStore API
-        //   does not have a method to return all values in the ready for gc table, we query the table
-        //   directly.
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems()).hasSize(1);
+        assertThat(scanResult.getItems()).hasSize(3);
 
         // - Check DynamoDBStateStore has correct file in partition list
         List<FileInfo> fileInPartitionList = dynamoDBStateStore.getFileInPartitionList()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(fileInPartitionList).hasSize(2);
+        assertThat(fileInPartitionList).hasSize(3);
 
         // - Check DynamoDBStateStore has correct partitions
         List<Partition> partitionsList = dynamoDBStateStore.getAllPartitions();
@@ -663,7 +659,7 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(tableProperties, "2", "2");
 
         // - Check S3StateStore has correct file in partition list
-        assertThat(s3StateStore.getFileInPartitionList()).hasSize(2);
+        assertThat(s3StateStore.getFileInPartitionList()).hasSize(3);
 
         // - Check S3StateStore has correct partitions
         assertThat(s3StateStore.getAllPartitions()).hasSize(3);

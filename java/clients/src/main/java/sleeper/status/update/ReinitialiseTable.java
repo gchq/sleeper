@@ -42,6 +42,7 @@ import sleeper.statestore.s3.S3StateStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -200,6 +201,10 @@ public class ReinitialiseTable {
                     Map<String, AttributeValue> deleteKey;
                     if (dynamoTableName.contains(tableProperties.get(PARTITION_TABLENAME))) {
                         deleteKey = Collections.singletonMap(PARTITION_ID, item.get(PARTITION_ID));
+                    } else if (dynamoTableName.contains(tableProperties.get(FILE_IN_PARTITION_TABLENAME))) {
+                        deleteKey = new HashMap<>();
+                        deleteKey.put(FILE_NAME, item.get(FILE_NAME));
+                        deleteKey.put(PARTITION_ID, item.get(PARTITION_ID));
                     } else {
                         deleteKey = Collections.singletonMap(FILE_NAME, item.get(FILE_NAME));
                     }
