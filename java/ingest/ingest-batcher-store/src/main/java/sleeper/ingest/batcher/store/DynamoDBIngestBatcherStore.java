@@ -80,8 +80,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                                         .withTableName(requestsTableName)
                                         .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
                                         .withConditionExpression("attribute_exists(#filepath)")
-                                        .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))
-                                ),
+                                        .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))),
                                 new TransactWriteItem().withPut(new Put()
                                         .withTableName(requestsTableName)
                                         .withItem(DynamoDBIngestRequestFormat.createRecord(

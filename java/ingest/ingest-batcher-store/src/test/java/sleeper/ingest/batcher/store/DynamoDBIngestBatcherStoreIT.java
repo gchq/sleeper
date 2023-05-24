@@ -18,7 +18,6 @@ package sleeper.ingest.batcher.store;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -182,7 +181,8 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.assignJob("test-job-1", List.of(fileIngestRequest));
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJob("test-job-2", List.of(fileIngestRequest)))
+            List<FileIngestRequest> job2 = List.of(fileIngestRequest);
+            assertThatThrownBy(() -> store.assignJob("test-job-2", job2))
                     .isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-1", fileIngestRequest));
@@ -200,8 +200,8 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.assignJob("test-job-1", List.of(fileIngestRequest1));
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJob("test-job-2",
-                    List.of(fileIngestRequest1, fileIngestRequest2)))
+            List<FileIngestRequest> job2 = List.of(fileIngestRequest1, fileIngestRequest2);
+            assertThatThrownBy(() -> store.assignJob("test-job-2", job2))
                     .isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-1", fileIngestRequest1),
@@ -215,7 +215,8 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     .pathToFile("test-bucket/test.parquet").build();
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJob("test-job-1", List.of(fileIngestRequest)))
+            List<FileIngestRequest> job = List.of(fileIngestRequest);
+            assertThatThrownBy(() -> store.assignJob("test-job", job))
                     .isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
@@ -224,23 +225,18 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldFailToAssignFileWhenAssignmentAlreadyExists() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
-                    .pathToFile("test-bucket/test-1.parquet").build();
+                    .pathToFile("test-bucket/sendTwice.parquet").build();
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job-1", List.of(fileIngestRequest));
+            store.assignJob("duplicate-job", List.of(fileIngestRequest));
             store.addFile(fileIngestRequest);
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJob("test-job-1", List.of(fileIngestRequest)))
+            List<FileIngestRequest> duplicateJob = List.of(fileIngestRequest);
+            assertThatThrownBy(() -> store.assignJob("duplicate-job", duplicateJob))
                     .isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
-                    onJob("test-job-1", fileIngestRequest),
+                    onJob("duplicate-job", fileIngestRequest),
                     fileIngestRequest);
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldFailToAssignFileToExistingJob() {
-            // Given
         }
     }
 
