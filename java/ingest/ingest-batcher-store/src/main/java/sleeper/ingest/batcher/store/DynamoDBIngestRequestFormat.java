@@ -76,6 +76,12 @@ public class DynamoDBIngestRequestFormat {
                 .build();
     }
 
+    public static Map<String, AttributeValue> createUnassignedJobIdItem(String key) {
+        return new DynamoDBRecordBuilder()
+                .string(key, NOT_ASSIGNED_TO_JOB)
+                .build();
+    }
+
     private static long getExpiryTimeEpochSeconds(TableProperties properties, FileIngestRequest fileIngestRequest) {
         int ttlMinutes = properties.getInt(INGEST_BATCHER_TRACKING_TTL_MINUTES);
         return fileIngestRequest.getReceivedTime()

@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -31,14 +32,15 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
-import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
@@ -92,11 +94,13 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public List<FileIngestRequest> getPendingFilesOldestFirst() {
-        // TODO query for requests not assigned to a job
-        return streamPagedItems(dynamoDB, new ScanRequest()
-                .withTableName(requestsTableName))
+        return streamPagedItems(dynamoDB, new QueryRequest()
+                .withTableName(requestsTableName)
+                .withKeyConditionExpression("#JobId = :not_assigned")
+                .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
+                .withExpressionAttributeValues(DynamoDBIngestRequestFormat
+                        .createUnassignedJobIdItem(":not_assigned")))
                 .map(DynamoDBIngestRequestFormat::readRecord)
-                .filter(not(FileIngestRequest::isAssignedToJob))
                 .sorted(comparing(FileIngestRequest::getReceivedTime))
                 .collect(Collectors.toList());
     }
