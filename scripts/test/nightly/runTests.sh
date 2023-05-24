@@ -16,12 +16,9 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 pushd "$THIS_DIR"
-
-git fetch
-git switch --discard-changes -C main origin/main
 
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 <vpc> <subnet> <results bucket>"
