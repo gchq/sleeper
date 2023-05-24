@@ -117,7 +117,7 @@ public class ProcessRun {
 
     public <T extends ProcessStatusUpdate> Optional<ProcessStatusUpdate> getLastStatusOfType(Class<T> cls) {
         for (int i = statusUpdates.size() - 1; i >= 0; i--) {
-            if (statusUpdates.get(i).getClass().equals(cls)) {
+            if (cls.isInstance(statusUpdates.get(i))) {
                 return Optional.of(statusUpdates.get(i));
             }
         }

@@ -313,5 +313,21 @@ public class ProcessRunsTest {
                     .flatMap(latestRun -> latestRun.getLastStatusOfType(CustomProcessStatus.class)))
                     .get().isEqualTo(customStatus2);
         }
+
+        @Test
+        void shouldReturnLastStatusUpdateByInterface() {
+            ProcessStartedStatus startedUpdate = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
+                    Instant.parse("2022-09-24T10:23:30Z"), Instant.parse("2022-09-24T10:23:30.001Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(startedUpdate, startedStatusNotStartOfRun);
+
+            // Then
+            assertThat(runs.getLatestRun()
+                    .flatMap(latestRun -> latestRun.getLastStatusOfType(ProcessRunStartedUpdate.class)))
+                    .get().isEqualTo(startedStatusNotStartOfRun);
+        }
     }
 }
