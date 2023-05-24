@@ -18,7 +18,7 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
-pushd "$THIS_DIR"
+pushd "$SCRIPTS_DIR/test"
 
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 <vpc> <subnet> <results bucket>"
