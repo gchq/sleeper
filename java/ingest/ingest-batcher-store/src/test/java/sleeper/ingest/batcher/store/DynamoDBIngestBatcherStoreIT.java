@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.batcher.store;
 
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,6 +28,10 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.onJob;
 
 public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTestBase {
@@ -41,8 +46,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldTrackOneFile() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName(tableName).build();
+                    .pathToFile("test-bucket/test.parquet").build();
 
             // When
             store.addFile(fileIngestRequest);
@@ -59,11 +63,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
                     .pathToFile("test-bucket/test.parquet")
-                    .tableName(tableName)
                     .fileSizeBytes(1024).build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
                     .pathToFile("test-bucket/test.parquet")
-                    .tableName(tableName)
                     .fileSizeBytes(2048).build();
 
             // When
@@ -107,11 +109,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldTrackJobWasCreatedWithTwoFiles() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
-                    .pathToFile("test-bucket/test-1.parquet")
-                    .tableName(tableName).build();
+                    .pathToFile("test-bucket/test-1.parquet").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
-                    .pathToFile("test-bucket/test-2.parquet")
-                    .tableName(tableName).build();
+                    .pathToFile("test-bucket/test-2.parquet").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -129,11 +129,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldSendSameFileTwiceIfFirstRequestAssignedToJob() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName(tableName).build();
+                    .pathToFile("test-bucket/test.parquet").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName(tableName).build();
+                    .pathToFile("test-bucket/test.parquet").build();
 
             // When
             store.addFile(fileIngestRequest1);
@@ -178,14 +176,11 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
     class OrderFilesReturnedFromStore {
 
         final FileIngestRequest fileIngestRequest1 = fileRequest()
-                .pathToFile("test-bucket/first.parquet")
-                .tableName(tableName).build();
+                .pathToFile("test-bucket/first.parquet").build();
         final FileIngestRequest fileIngestRequest2 = fileRequest()
-                .pathToFile("test-bucket/another.parquet")
-                .tableName(tableName).build();
+                .pathToFile("test-bucket/another.parquet").build();
         final FileIngestRequest fileIngestRequest3 = fileRequest()
-                .pathToFile("test-bucket/last.parquet")
-                .tableName(tableName).build();
+                .pathToFile("test-bucket/last.parquet").build();
 
         @BeforeEach
         void setUp() {
@@ -223,10 +218,45 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
     @Nested
     @DisplayName("Set expiry time")
     class SetExpiryTime {
-        // TODO
+        @Test
+        void shouldSetExpiryTime() {
+            // Given
+            table1.set(INGEST_BATCHER_TRACKING_TTL_MINUTES, "2");
+            FileIngestRequest fileIngestRequest = fileRequest()
+                    .receivedTime(Instant.parse("2023-05-24T11:06:42Z"))
+                    .build();
+            Instant expectedExpiryTime = Instant.parse("2023-05-24T11:08:42Z");
+
+            // When
+            store.addFile(fileIngestRequest);
+
+            // Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest().withTableName(requestsTableName)))
+                    .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
+                    .containsExactly(expectedExpiryTime.getEpochSecond());
+        }
+
+        @Test
+        void shouldSetExpiryTimeWhenAssigningJob() {
+            // Given
+            table1.set(INGEST_BATCHER_TRACKING_TTL_MINUTES, "2");
+            FileIngestRequest fileIngestRequest = fileRequest()
+                    .receivedTime(Instant.parse("2023-05-24T11:06:42Z"))
+                    .build();
+            Instant expectedExpiryTime = Instant.parse("2023-05-24T11:08:42Z");
+
+            // When
+            store.addFile(fileIngestRequest);
+            store.assignJob("test-job", List.of(fileIngestRequest));
+
+            // Then
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest().withTableName(requestsTableName)))
+                    .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
+                    .containsExactly(expectedExpiryTime.getEpochSecond());
+        }
     }
 
     private FileIngestRequest.Builder fileRequest() {
-        return requests.fileRequest();
+        return requests.fileRequest().tableName(tableName);
     }
 }
