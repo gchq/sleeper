@@ -16,8 +16,8 @@
 package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -173,7 +173,6 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToReassignFileWhenItIsAlreadyAssigned() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
@@ -183,12 +182,12 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When / Then
             assertThatThrownBy(() -> store.assignJob("test-job-2", List.of(fileIngestRequest)))
-                    .hasMessage("abc");
-            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(fileIngestRequest);
+                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
+                    onJob("test-job-1", fileIngestRequest));
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToAssignFilesWhenOneIsAlreadyAssigned() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
@@ -202,7 +201,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // When / Then
             assertThatThrownBy(() -> store.assignJob("test-job-2",
                     List.of(fileIngestRequest1, fileIngestRequest2)))
-                    .hasMessage("abc");
+                    .isInstanceOf(TransactionCanceledException.class);
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-1", fileIngestRequest1),
                     fileIngestRequest2);

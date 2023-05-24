@@ -41,6 +41,7 @@ import static java.util.Comparator.comparing;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;
 
@@ -77,7 +78,10 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                         .flatMap(file -> Stream.of(
                                 new TransactWriteItem().withDelete(new Delete()
                                         .withTableName(requestsTableName)
-                                        .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))),
+                                        .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
+                                        .withConditionExpression("attribute_exists(#filepath)")
+                                        .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))
+                                ),
                                 new TransactWriteItem().withPut(new Put()
                                         .withTableName(requestsTableName)
                                         .withItem(DynamoDBIngestRequestFormat.createRecord(
