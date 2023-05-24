@@ -41,7 +41,7 @@ public class DynamoDBIngestRequestFormat {
     public static final String RECEIVED_TIME = "ReceivedTime";
     public static final String EXPIRY_TIME = "ExpiryTime";
 
-    private static final String NOT_ASSIGNED_TO_JOB = "not_assigned_to_job";
+    public static final String NOT_ASSIGNED_TO_JOB = "not_assigned_to_job";
 
     public static Map<String, AttributeValue> createRecord(
             TablePropertiesProvider tablePropertiesProvider, FileIngestRequest fileIngestRequest) {
@@ -73,12 +73,6 @@ public class DynamoDBIngestRequestFormat {
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, NOT_ASSIGNED_TO_JOB)
                 .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getPathToFile())
-                .build();
-    }
-
-    public static Map<String, AttributeValue> createUnassignedJobIdItem(String key) {
-        return new DynamoDBRecordBuilder()
-                .string(key, NOT_ASSIGNED_TO_JOB)
                 .build();
     }
 

@@ -28,6 +28,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
@@ -41,6 +42,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
@@ -98,8 +100,9 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                 .withTableName(requestsTableName)
                 .withKeyConditionExpression("#JobId = :not_assigned")
                 .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
-                .withExpressionAttributeValues(DynamoDBIngestRequestFormat
-                        .createUnassignedJobIdItem(":not_assigned")))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":not_assigned", NOT_ASSIGNED_TO_JOB)
+                        .build()))
                 .map(DynamoDBIngestRequestFormat::readRecord)
                 .sorted(comparing(FileIngestRequest::getReceivedTime))
                 .collect(Collectors.toList());
