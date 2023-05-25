@@ -123,20 +123,20 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     /**
      * Create a {@link FileInfo} object from the values supplied
      *
-     * @param sleeperSchema -
-     * @param filename      -
-     * @param partitionId   -
-     * @param numberOfLines -
-     * @param minKey        -
-     * @param maxKey        -
-     * @param updateTime    -
+     * @param sleeperSchema   -
+     * @param filename        -
+     * @param partitionId     -
+     * @param numberOfRecords -
+     * @param minKey          -
+     * @param maxKey          -
+     * @param updateTime      -
      * @return The {@link FileInfo} object
      */
     private static FileInfo createFileInfo(
             Schema sleeperSchema,
             String filename,
             String partitionId,
-            long numberOfLines,
+            long numberOfRecords,
             Object minKey,
             Object maxKey,
             long updateTime) {
@@ -145,7 +145,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(numberOfLines)
+                .numberOfRecords(numberOfRecords)
                 .minRowKey(Key.create(minKey))
                 .maxRowKey(Key.create(maxKey))
                 .lastStateStoreUpdateTime(updateTime)

@@ -163,38 +163,38 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(2);
-        //  - Sort by number of lines so that we know which file corresponds to
+        //  - Sort by number of records so that we know which file corresponds to
         //      which partition
-        List<FileInfo> activeFilesSortedByNumberOfLines = activeFiles.stream()
+        List<FileInfo> activeFilesSortedByNumberOfRecords = activeFiles.stream()
                 .sorted((f1, f2) -> (int) (f1.getNumberOfRecords() - f2.getNumberOfRecords()))
                 .collect(Collectors.toList());
-        FileInfo fileInfo = activeFilesSortedByNumberOfLines.get(1);
+        FileInfo fileInfo = activeFilesSortedByNumberOfRecords.get(1);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{2, 2});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
-        fileInfo = activeFilesSortedByNumberOfLines.get(0);
+        fileInfo = activeFilesSortedByNumberOfRecords.get(0);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(1).getFilename(), schema);
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfRecords.get(1).getFilename(), schema);
         assertThat(readRecords1).hasSize(2);
         assertThat(readRecords1.get(0)).isEqualTo(getRecordsByteArrayKey().get(0));
         assertThat(readRecords1.get(1)).isEqualTo(getRecordsByteArrayKey().get(1));
-        List<Record> readRecords2 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(0).getFilename(), schema);
+        List<Record> readRecords2 = readRecordsFromParquetFile(activeFilesSortedByNumberOfRecords.get(0).getFilename(), schema);
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(1).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfRecords.get(1).getFilename()).getQuantilesSketch("key"))
                 .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{2, 2}))
                 .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
                 .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
                 .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{2, 2}))
                 .quantile(0.6, wrap(new byte[]{2, 2})).quantile(0.7, wrap(new byte[]{2, 2}))
                 .quantile(0.8, wrap(new byte[]{2, 2})).quantile(0.9, wrap(new byte[]{2, 2})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(0).getFilename()).getQuantilesSketch("key"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfRecords.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(wrap(new byte[]{64, 65})).max(wrap(new byte[]{64, 65}))
                 .quantile(0.0, wrap(new byte[]{64, 65})).quantile(0.1, wrap(new byte[]{64, 65}))
                 .quantile(0.2, wrap(new byte[]{64, 65})).quantile(0.3, wrap(new byte[]{64, 65}))
@@ -233,54 +233,54 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(2);
-        //  - Sort by number of lines so that we know which file corresponds to
+        //  - Sort by number of records so that we know which file corresponds to
         //      which partition
-        List<FileInfo> activeFilesSortedByNumberOfLines = activeFiles.stream()
+        List<FileInfo> activeFilesSortedByNumberOfRecords = activeFiles.stream()
                 .sorted((f1, f2) -> (int) (f1.getNumberOfRecords() - f2.getNumberOfRecords()))
                 .collect(Collectors.toList());
-        FileInfo fileInfo = activeFilesSortedByNumberOfLines.get(0);
+        FileInfo fileInfo = activeFilesSortedByNumberOfRecords.get(0);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{5});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
-        fileInfo = activeFilesSortedByNumberOfLines.get(1);
+        fileInfo = activeFilesSortedByNumberOfRecords.get(1);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{11, 2});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(3L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(0).getFilename(), schema);
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfRecords.get(0).getFilename(), schema);
         assertThat(readRecords1).hasSize(2);
         assertThat(readRecords1.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(0));
         assertThat(readRecords1.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(4));
-        List<Record> readRecords2 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(1).getFilename(), schema);
+        List<Record> readRecords2 = readRecordsFromParquetFile(activeFilesSortedByNumberOfRecords.get(1).getFilename(), schema);
         assertThat(readRecords2).hasSize(3);
         assertThat(readRecords2.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(1));
         assertThat(readRecords2.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
         assertThat(readRecords2.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(0).getFilename()).getQuantilesSketch("key1"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfRecords.get(0).getFilename()).getQuantilesSketch("key1"))
                 .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{5}))
                 .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
                 .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
                 .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{5}))
                 .quantile(0.6, wrap(new byte[]{5})).quantile(0.7, wrap(new byte[]{5}))
                 .quantile(0.8, wrap(new byte[]{5})).quantile(0.9, wrap(new byte[]{5})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(0).getFilename()).getQuantilesSketch("key2"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfRecords.get(0).getFilename()).getQuantilesSketch("key2"))
                 .min(wrap(new byte[]{2, 3})).max(wrap(new byte[]{99}))
                 .quantile(0.0, wrap(new byte[]{2, 3})).quantile(0.1, wrap(new byte[]{2, 3}))
                 .quantile(0.2, wrap(new byte[]{2, 3})).quantile(0.3, wrap(new byte[]{2, 3}))
                 .quantile(0.4, wrap(new byte[]{2, 3})).quantile(0.5, wrap(new byte[]{99}))
                 .quantile(0.6, wrap(new byte[]{99})).quantile(0.7, wrap(new byte[]{99}))
                 .quantile(0.8, wrap(new byte[]{99})).quantile(0.9, wrap(new byte[]{99})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(1).getFilename()).getQuantilesSketch("key1"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfRecords.get(1).getFilename()).getQuantilesSketch("key1"))
                 .min(wrap(new byte[]{11, 2})).max(wrap(new byte[]{64, 65}))
                 .quantile(0.0, wrap(new byte[]{11, 2})).quantile(0.1, wrap(new byte[]{11, 2}))
                 .quantile(0.2, wrap(new byte[]{11, 2})).quantile(0.3, wrap(new byte[]{11, 2}))
                 .quantile(0.4, wrap(new byte[]{64, 65})).quantile(0.5, wrap(new byte[]{64, 65}))
                 .quantile(0.6, wrap(new byte[]{64, 65})).quantile(0.7, wrap(new byte[]{64, 65}))
                 .quantile(0.8, wrap(new byte[]{64, 65})).quantile(0.9, wrap(new byte[]{64, 65})).verify();
-        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(1).getFilename()).getQuantilesSketch("key2"))
+        AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfRecords.get(1).getFilename()).getQuantilesSketch("key2"))
                 .min(wrap(new byte[]{2, 2})).max(wrap(new byte[]{67, 68}))
                 .quantile(0.0, wrap(new byte[]{2, 2})).quantile(0.1, wrap(new byte[]{2, 2}))
                 .quantile(0.2, wrap(new byte[]{2, 2})).quantile(0.3, wrap(new byte[]{2, 2}))
