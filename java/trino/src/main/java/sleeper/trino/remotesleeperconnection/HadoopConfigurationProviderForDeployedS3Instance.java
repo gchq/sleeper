@@ -42,6 +42,7 @@ public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopC
         configuration.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         configuration.set("fs.s3a.fast.upload", "true");
+        configuration.set("fs.s3a.bucket.probe", "0");
         configuration.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
         return configuration;
     }

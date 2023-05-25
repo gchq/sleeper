@@ -65,7 +65,7 @@ public class SplitPartitionsUntilNoMoreSplits {
         StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties)
                 .getStateStore(tableProperties);
 
-        WaitForCurrentSplitAddingMissingJobs applySplit = new WaitForCurrentSplitAddingMissingJobs(
+        WaitForCurrentSplitAddingMissingJobs applySplit = WaitForCurrentSplitAddingMissingJobs.from(
                 sqsClient, store, systemTestProperties, tableName);
 
         int splittingRound = 1;

@@ -61,7 +61,7 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
+import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
@@ -71,7 +71,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
         private final InstanceProperties instanceProperties = createInstancePropertiesWithJobQueueUrl();
         private final TableProperties tableProperties = createValidTableProperties(instanceProperties, "test-table");
-        private final QueueMessageCount.Client queueCounts = singleQueueVisibleMessages(INGEST_JOB_QUEUE_URL, 10);
+        private final QueueMessageCount.Client queueCounts = visibleMessages(INGEST_JOB_QUEUE_URL, 10);
 
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {

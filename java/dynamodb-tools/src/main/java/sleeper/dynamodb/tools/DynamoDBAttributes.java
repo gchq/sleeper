@@ -35,7 +35,11 @@ public class DynamoDBAttributes {
      * @return the AttributeValue
      */
     public static AttributeValue createStringAttribute(String str) {
-        return new AttributeValue(str);
+        if (str == null) {
+            return null;
+        } else {
+            return new AttributeValue(str);
+        }
     }
 
     /**
@@ -45,7 +49,16 @@ public class DynamoDBAttributes {
      * @return the AttributeValue
      */
     public static AttributeValue createNumberAttribute(Number number) {
-        return new AttributeValue().withN(String.valueOf(number));
+        // To differentiate NaN and null:
+        // - An attribute which is set to the value of null will be treated as NaN
+        // - An attribute which is NOT set, will be treated as null
+        if (number == null) {
+            return null;
+        } else if (Double.valueOf(Double.NaN).equals(number)) {
+            return new AttributeValue().withNULL(true);
+        } else {
+            return new AttributeValue().withN(String.valueOf(number));
+        }
     }
 
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
@@ -92,6 +105,18 @@ public class DynamoDBAttributes {
         return buildInstant.apply(Long.parseLong(string));
     }
 
+    public static double getDoubleAttribute(Map<String, AttributeValue> item, String key, double defaultValue) {
+        if (!item.containsKey(key)) {
+            return defaultValue;
+        }
+        String attributeValue = getNumberAttribute(item, key);
+        if (attributeValue == null) {
+            return Double.NaN;
+        } else {
+            return Double.parseDouble(attributeValue);
+        }
+    }
+
     private static <T> T getAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
         AttributeValue value = item.get(name);
         if (value == null) {
@@ -100,5 +125,4 @@ public class DynamoDBAttributes {
             return getter.apply(value);
         }
     }
-
 }

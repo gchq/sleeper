@@ -31,10 +31,10 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getDoubleAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
-import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBIngestTaskStatusFormat {
@@ -113,8 +113,8 @@ public class DynamoDBIngestTaskStatusFormat {
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                         .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
-                        .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
-                        .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
+                        .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
+                        .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
                         .build());
                 break;
             default:

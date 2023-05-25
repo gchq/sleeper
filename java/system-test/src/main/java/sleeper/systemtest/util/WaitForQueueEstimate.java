@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.util;
 
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.job.common.QueueMessageCount;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 public class WaitForQueueEstimate {
@@ -38,45 +38,60 @@ public class WaitForQueueEstimate {
     private final PollWithRetries poll;
 
     public static WaitForQueueEstimate notEmpty(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
+            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
             PollWithRetries poll) {
         String queueUrl = instanceProperties.get(queueProperty);
-        return new WaitForQueueEstimate(sqsClient, queueUrl, poll,
+        return new WaitForQueueEstimate(queueClient, queueUrl,
                 estimate -> estimate.getApproximateNumberOfMessages() > 0,
-                "estimate not empty for queue " + queueUrl);
+                "estimate not empty for queue " + queueUrl, poll);
     }
 
     public static WaitForQueueEstimate isEmpty(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
-            PollWithRetries poll) {
+            QueueMessageCount.Client queueClient,
+            InstanceProperties instanceProperties, InstanceProperty queueProperty, PollWithRetries poll) {
         String queueUrl = instanceProperties.get(queueProperty);
-        return new WaitForQueueEstimate(sqsClient, queueUrl, poll,
+        return new WaitForQueueEstimate(queueClient, queueUrl,
                 estimate -> estimate.getApproximateNumberOfMessages() == 0,
-                "estimate empty for queue " + queueUrl);
+                "estimate empty for queue " + queueUrl, poll);
     }
 
-    public static WaitForQueueEstimate containsUnfinishedJobs(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
+    public static WaitForQueueEstimate isConsumed(
+            QueueMessageCount.Client queueClient,
+            InstanceProperties instanceProperties, InstanceProperty queueProperty, PollWithRetries poll) {
+        String queueUrl = instanceProperties.get(queueProperty);
+        return new WaitForQueueEstimate(queueClient, queueUrl,
+                estimate -> estimate.getApproximateNumberOfMessages() == 0
+                        && estimate.getApproximateNumberOfMessagesNotVisible() == 0,
+                "estimate fully consumed for queue " + queueUrl, poll);
+    }
+
+    public static WaitForQueueEstimate matchesUnstartedJobs(
+            QueueMessageCount.Client queueClient, InstanceProperties instanceProperties, InstanceProperty queueProperty,
             CompactionJobStatusStore statusStore, String tableName, PollWithRetries poll) {
-        int unfinished = statusStore.getUnfinishedJobs(tableName).size();
-        LOGGER.info("Found {} unfinished compaction jobs", unfinished);
-        return new WaitForQueueEstimate(sqsClient, instanceProperties, queueProperty, poll,
-                estimate -> estimate.getApproximateNumberOfMessages() >= unfinished,
-                "queue estimate matching unfinished compaction jobs");
+        return new WaitForQueueEstimate(queueClient, instanceProperties, queueProperty,
+                estimate -> {
+                    long unstarted = statusStore.getUnstartedJobs(tableName).size();
+                    LOGGER.info("Found {} unstarted compaction jobs", unstarted);
+                    return estimate.getApproximateNumberOfMessages() >= unstarted;
+                },
+                "queue estimate matching unstarted compaction jobs", poll);
     }
 
-    private WaitForQueueEstimate(AmazonSQS sqsClient, InstanceProperties properties, InstanceProperty queueProperty,
-                                 PollWithRetries poll, Predicate<QueueMessageCount> isFinished, String description) {
-        this(sqsClient, properties.get(queueProperty), poll, isFinished, description);
+    private WaitForQueueEstimate(QueueMessageCount.Client queueClient,
+                                 InstanceProperties properties, InstanceProperty queueProperty,
+                                 Predicate<QueueMessageCount> isFinished, String description,
+                                 PollWithRetries poll) {
+        this(queueClient, properties.get(queueProperty), isFinished, description, poll);
     }
 
-    private WaitForQueueEstimate(AmazonSQS sqsClient, String queueUrl,
-                                 PollWithRetries poll, Predicate<QueueMessageCount> isFinished, String description) {
-        this.queueClient = QueueMessageCount.withSqsClient(sqsClient);
-        this.queueUrl = queueUrl;
-        this.poll = poll;
-        this.isFinished = isFinished;
-        this.description = description;
+    private WaitForQueueEstimate(QueueMessageCount.Client queueClient, String queueUrl,
+                                 Predicate<QueueMessageCount> isFinished, String description,
+                                 PollWithRetries poll) {
+        this.queueClient = Objects.requireNonNull(queueClient, "queueClient must not be null");
+        this.queueUrl = Objects.requireNonNull(queueUrl, "queueUrl must not be null");
+        this.isFinished = Objects.requireNonNull(isFinished, "isFinished must not be null");
+        this.description = Objects.requireNonNull(description, "description must not be null");
+        this.poll = Objects.requireNonNull(poll, "poll must not be null");
     }
 
     public void pollUntilFinished() throws InterruptedException {
@@ -86,7 +101,7 @@ public class WaitForQueueEstimate {
 
     private boolean isFinished() {
         QueueMessageCount count = queueClient.getQueueMessageCount(queueUrl);
-        LOGGER.info("Message count: {}", count);
+        LOGGER.info("Message count for queue {}: {}", queueUrl, count);
         return isFinished.test(count);
     }
 }
