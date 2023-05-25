@@ -16,12 +16,12 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class ValidationStatus implements ProcessStatusUpdate {
+public class ValidationStatus implements ProcessRunStartedUpdate {
     private final Instant updateTime;
     private final ValidationData validationData;
 
@@ -66,8 +66,8 @@ public class ValidationStatus implements ProcessStatusUpdate {
     }
 
     @Override
-    public boolean isStartOfRun() {
-        return true;
+    public Instant getStartTime() {
+        return updateTime;
     }
 
     public static final class Builder {

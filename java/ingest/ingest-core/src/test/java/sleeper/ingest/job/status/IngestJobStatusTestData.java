@@ -52,9 +52,10 @@ public class IngestJobStatusTestData {
             IngestJob job, String taskId, Instant validationTime, ValidationData validationData, Instant startTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .statusUpdates(ValidationStatus.builder()
-                                .validationTime(validationTime)
-                                .validationData(validationData).build(),
+                .startedStatus(ValidationStatus.builder()
+                        .validationTime(validationTime)
+                        .validationData(validationData).build())
+                .statusUpdate(
                         IngestJobStartedStatus.validation(true)
                                 .inputFileCount(job.getFiles().size())
                                 .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
@@ -64,7 +65,7 @@ public class IngestJobStatusTestData {
     public static ProcessRun unstartedValidRun(String taskId, Instant validationTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .statusUpdates(ValidationStatus.builder()
+                .startedStatus(ValidationStatus.builder()
                         .validationTime(validationTime)
                         .validationData(ValidationData.valid()).build())
                 .build();
@@ -73,7 +74,7 @@ public class IngestJobStatusTestData {
     public static ProcessRun invalidRun(String taskId, Instant validationTime, ValidationData validationData) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .statusUpdates(ValidationStatus.builder()
+                .startedStatus(ValidationStatus.builder()
                         .validationTime(validationTime)
                         .validationData(validationData).build())
                 .build();
