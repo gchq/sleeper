@@ -20,16 +20,22 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class ProcessRun {
     private final String taskId;
-    private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
+    private final ProcessRunStartedUpdate startedStatus;
+    private final ProcessFinishedStatus finishedStatus;
+    private final List<ProcessStatusUpdate> statusUpdates;
 
     private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        statusUpdates.addAll(builder.statusUpdates);
+        startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
+        finishedStatus = builder.finishedStatus;
+        statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
     }
 
     public static Builder builder() {
@@ -54,15 +60,11 @@ public class ProcessRun {
     }
 
     public ProcessRunStartedUpdate getStartedStatus() {
-        return (ProcessRunStartedUpdate) statusUpdates.stream()
-                .filter(update -> update instanceof ProcessRunStartedUpdate)
-                .findFirst().orElse(null);
+        return startedStatus;
     }
 
     public ProcessFinishedStatus getFinishedStatus() {
-        return (ProcessFinishedStatus) statusUpdates.stream()
-                .filter(update -> update instanceof ProcessFinishedStatus)
-                .findFirst().orElse(null);
+        return finishedStatus;
     }
 
     public boolean isFinished() {
@@ -109,6 +111,19 @@ public class ProcessRun {
         }
     }
 
+    public List<ProcessStatusUpdate> getStatusUpdates() {
+        return statusUpdates;
+    }
+
+    public <T extends ProcessStatusUpdate> Optional<ProcessStatusUpdate> getLastStatusOfType(Class<T> cls) {
+        for (int i = statusUpdates.size() - 1; i >= 0; i--) {
+            if (cls.isInstance(statusUpdates.get(i))) {
+                return Optional.of(statusUpdates.get(i));
+            }
+        }
+        return Optional.empty();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -136,6 +151,8 @@ public class ProcessRun {
 
     public static final class Builder {
         private String taskId;
+        private ProcessRunStartedUpdate startedStatus;
+        private ProcessFinishedStatus finishedStatus;
         private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
         private Builder() {
@@ -147,21 +164,19 @@ public class ProcessRun {
         }
 
         public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
+            this.startedStatus = startedStatus;
             this.statusUpdates.add(startedStatus);
             return this;
         }
 
         public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
-            this.statusUpdates.add(finishedStatus);
+            this.finishedStatus = finishedStatus;
+            this.statusUpdates.add(startedStatus);
             return this;
         }
 
-        public Builder statusUpdates(ProcessStatusUpdate... statusUpdates) {
-            return statusUpdates(List.of(statusUpdates));
-        }
-
-        public Builder statusUpdates(List<ProcessStatusUpdate> statusUpdates) {
-            this.statusUpdates.addAll(statusUpdates);
+        public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
+            this.statusUpdates.add(statusUpdate);
             return this;
         }
 

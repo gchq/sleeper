@@ -21,7 +21,7 @@ public interface ProcessStatusUpdate {
 
     Instant getUpdateTime();
 
-    default boolean isStartOfRun() {
+    default boolean isPartOfRun() {
         return false;
     }
 }

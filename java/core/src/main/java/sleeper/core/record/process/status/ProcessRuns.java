@@ -44,27 +44,21 @@ public class ProcessRuns {
             ProcessStatusUpdateRecord record = recordList.get(i);
             String taskId = record.getTaskId();
             ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
-            if (statusUpdate.isStartOfRun()) {
+            if (isStartedUpdateAndStartOfRun(statusUpdate)) {
                 ProcessRun.Builder builder = ProcessRun.builder()
-                        .statusUpdates(statusUpdate)
+                        .startedStatus(((ProcessRunStartedUpdate) statusUpdate))
                         .taskId(taskId);
-
                 taskBuilders.put(taskId, builder);
                 orderedBuilders.add(builder);
-
-            } else if (statusUpdate instanceof ProcessRunStartedUpdate) {
-                taskBuilders.computeIfAbsent(taskId, (task) -> {
-                            ProcessRun.Builder builder = ProcessRun.builder()
-                                    .taskId(taskId);
-                            orderedBuilders.add(builder);
-                            return builder;
-                        })
-                        .startedStatus((ProcessRunStartedUpdate) statusUpdate);
-            } else if ((statusUpdate instanceof ProcessFinishedStatus)
-                    && taskBuilders.containsKey(taskId)) {
-                taskBuilders.remove(taskId)
-                        .finishedStatus((ProcessFinishedStatus) statusUpdate)
-                        .taskId(taskId);
+            } else if (statusUpdate.isPartOfRun() && taskBuilders.containsKey(taskId)) {
+                if (statusUpdate instanceof ProcessFinishedStatus) {
+                    taskBuilders.remove(taskId)
+                            .finishedStatus((ProcessFinishedStatus) statusUpdate)
+                            .taskId(taskId);
+                } else {
+                    taskBuilders.get(taskId)
+                            .statusUpdate(statusUpdate);
+                }
             }
         }
         List<ProcessRun> jobRuns = orderedBuilders.stream()
@@ -72,6 +66,11 @@ public class ProcessRuns {
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
         return new ProcessRuns(jobRuns);
+    }
+
+    private static boolean isStartedUpdateAndStartOfRun(ProcessStatusUpdate statusUpdate) {
+        return statusUpdate instanceof ProcessRunStartedUpdate
+                && ((ProcessRunStartedUpdate) statusUpdate).isStartOfRun();
     }
 
     public boolean isStarted() {

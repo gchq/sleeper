@@ -24,4 +24,8 @@ public interface ProcessRunStartedUpdate extends ProcessStatusUpdate {
     default boolean isStartOfRun() {
         return true;
     }
+
+    default boolean isPartOfRun() {
+        return true;
+    }
 }
