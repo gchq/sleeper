@@ -72,6 +72,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  * job.
  */
 public class PersistentEmrBulkImportStack extends NestedStack {
+    private final Queue bulkImportJobQueue;
 
     public PersistentEmrBulkImportStack(
             Construct scope,
@@ -85,9 +86,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 this, "PersistentEMR", instanceProperties);
-        Queue jobQueue = commonHelper.createJobQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
+        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "PersistentEMR", jobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
+                "PersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(jobStarter);
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
@@ -241,5 +242,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         configurations.add(sparkEnvConfigurations);
 
         return configurations;
+    }
+
+    public Queue getBulkImportJobQueue() {
+        return bulkImportJobQueue;
     }
 }
