@@ -53,4 +53,33 @@ class IngestBatcherSubmitterLambdaTest {
                         .receivedTime(receivedTime)
                         .build());
     }
+
+    @Test
+    void shouldIgnoreAndLogMessageWithInvalidJson() {
+        // Given
+        String json = "{";
+        Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
+
+        // When
+        lambda.handleMessage(json, receivedTime);
+
+        // Then
+        assertThat(store.getAllFilesNewestFirst()).isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreAndLogMessageWithNoFileSize() {
+        // Given
+        String json = "{" +
+                "\"pathToFile\":\"test-bucket/test-file-1.parquet\"," +
+                "\"tableName\":\"test-table\"" +
+                "}";
+        Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
+
+        // When
+        lambda.handleMessage(json, receivedTime);
+
+        // Then
+        assertThat(store.getAllFilesNewestFirst()).isEmpty();
+    }
 }

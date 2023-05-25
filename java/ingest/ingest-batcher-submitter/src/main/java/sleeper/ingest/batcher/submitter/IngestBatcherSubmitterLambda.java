@@ -21,9 +21,12 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
@@ -33,6 +36,7 @@ import java.time.Instant;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final IngestBatcherStore store;
 
     public IngestBatcherSubmitterLambda() throws IOException {
@@ -45,11 +49,20 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
 
     @Override
     public Void handleRequest(SQSEvent input, Context context) {
+        input.getRecords().forEach(message ->
+                handleMessage(message.getBody(), Instant.now()));
         return null;
     }
 
     public void handleMessage(String json, Instant receivedTime) {
-        store.addFile(FileIngestRequestSerDe.fromJson(json, receivedTime));
+        FileIngestRequest request;
+        try {
+            request = FileIngestRequestSerDe.fromJson(json, receivedTime);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Received invalid ingest request: {}", json, e);
+            return;
+        }
+        store.addFile(request);
     }
 
     private static IngestBatcherStore initialiseStore() throws IOException {
