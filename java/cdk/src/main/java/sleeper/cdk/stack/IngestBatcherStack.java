@@ -62,9 +62,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE
 
 public class IngestBatcherStack extends NestedStack {
 
-    private final Queue submitQueue;
-    private final Table ingestRequestsTable;
-
     public IngestBatcherStack(
             Construct scope,
             String id,
@@ -85,7 +82,7 @@ public class IngestBatcherStack extends NestedStack {
                 .maxReceiveCount(1)
                 .queue(submitDLQ)
                 .build();
-        submitQueue = Queue.Builder
+        Queue submitQueue = Queue.Builder
                 .create(this, "IngestBatcherSubmitQueue")
                 .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitQ"))
                 .deadLetterQueue(ingestJobDeadLetterQueue)
@@ -96,7 +93,7 @@ public class IngestBatcherStack extends NestedStack {
 
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        ingestRequestsTable = Table.Builder
+        Table ingestRequestsTable = Table.Builder
                 .create(this, "DynamoDBIngestBatcherRequestsTable")
                 .tableName(DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID)))
                 .removalPolicy(removalPolicy)
