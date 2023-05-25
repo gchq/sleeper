@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
-import com.amazonaws.waiters.WaiterParameters;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -55,8 +53,6 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
 
     @AfterEach
     void tearDown() {
-        dynamoDBClient.deleteTable(requestsTableName);
-        dynamoDBClient.waiters().tableNotExists().run(new WaiterParameters<>(
-                new DescribeTableRequest(requestsTableName)));
+        DynamoDBIngestBatcherStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

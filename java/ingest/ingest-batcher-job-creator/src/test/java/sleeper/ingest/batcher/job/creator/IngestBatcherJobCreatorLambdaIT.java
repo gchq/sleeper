@@ -23,6 +23,8 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -38,6 +40,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 
@@ -63,13 +66,26 @@ public class IngestBatcherJobCreatorLambdaIT {
     private final AmazonS3 s3 = createS3Client();
     private final AmazonSQS sqs = createSQSClient();
     private final AmazonDynamoDB dynamoDB = createDynamoClient();
-    private final InstanceProperties instanceProperties = createTestInstanceProperties(s3);
+    private final InstanceProperties instanceProperties = createTestInstanceProperties(s3,
+            properties -> properties.set(INGEST_JOB_QUEUE_URL, "test-ingest-job-queue"));
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3);
     private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
             new TablePropertiesProvider(s3, instanceProperties));
 
     private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
         return new IngestBatcherJobCreatorLambda(s3, sqs, dynamoDB, timeSupplier(times), jobIdSupplier(jobIds));
+    }
+
+    @BeforeEach
+    void setUp() {
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoDB);
+        sqs.createQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
+    }
+
+    @AfterEach
+    void tearDown() {
+        DynamoDBIngestBatcherStoreCreator.tearDown(instanceProperties, dynamoDB);
+        sqs.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
     }
 
     @Test
@@ -85,7 +101,7 @@ public class IngestBatcherJobCreatorLambdaIT {
 
         // When
         lambdaWithTimesAndJobIds(
-                List.of(Instant.parse("2023-05-25T14:43:00Z")),
+                List.of(Instant.parse("2023-05-25T14:44:00Z")),
                 List.of("test-job-id"))
                 .batchFiles();
 
