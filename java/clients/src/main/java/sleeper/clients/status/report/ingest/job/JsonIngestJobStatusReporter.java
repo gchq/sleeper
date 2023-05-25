@@ -26,16 +26,20 @@ import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.GsonConfig;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunJsonSerializer;
+
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(IngestJobStatus.class, ingestJobStatusJsonSerializer())
+            .registerTypeAdapter(ProcessRun.class, processRunJsonSerializer())
             .create();
     private final PrintStream out;
 
