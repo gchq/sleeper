@@ -141,14 +141,18 @@
             <destName>ingest-starter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../ingest/ingest-batcher-submitter/target/ingest-batcher-submitter-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../ingest/ingest-batcher-submitter/target/ingest-batcher-submitter-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>ingest-batcher-submitter-${project.version}-utility.jar</destName>
+            <destName>ingest-batcher-submitter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../ingest/ingest-batcher-job-creator/target/ingest-batcher-job-creator-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../ingest/ingest-batcher-job-creator/target/ingest-batcher-job-creator-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
-            <destName>ingest-batcher-job-creator-${project.version}-utility.jar</destName>
+            <destName>ingest-batcher-job-creator-${project.version}.jar</destName>
         </file>
         <file>
             <source>${project.basedir}/../metrics/target/metrics-${project.version}-utility.jar</source>

@@ -15,30 +15,80 @@
  */
 package sleeper.cdk.stack;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.Utils;
+import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
+import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATOR_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATOR_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
 public class IngestBatcherStack extends NestedStack {
 
     public IngestBatcherStack(
             Construct scope,
             String id,
+            InstanceProperties instanceProperties,
             BuiltJars jars,
             IngestStack ingestStack,
             EmrBulkImportStack emrBulkImportStack,
             PersistentEmrBulkImportStack persistentEmrBulkImportStack,
             EksBulkImportStack eksBulkImportStack) {
         super(scope, id);
+
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
+        LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
+
+        String submitterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "submit-ingest-batcher"));
+        String jobCreatorName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "batch-ingest-jobs"));
+
+        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+
+        IFunction submitterLambda = submitterJar.buildFunction(this, "SubmitToIngestBatcherLambda", builder -> builder
+                .functionName(submitterName)
+                .description("Triggered by an SQS event that contains a request to ingest a file")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
+                .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
+                .environment(environmentVariables)
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+
+        IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "BatchIngestJobsLambda", builder -> builder
+                .functionName(jobCreatorName)
+                .description("Create ingest jobs by batching up submitted file ingest requests")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATOR_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATOR_TIMEOUT_IN_SECONDS)))
+                .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
+                .environment(environmentVariables)
+                .reservedConcurrentExecutions(1)
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
     }
 
     private static Stream<Queue> ingestQueues(IngestStack ingestStack,
