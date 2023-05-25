@@ -27,13 +27,9 @@ import sleeper.ingest.batcher.testutil.IngestBatcherStoreInMemory;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -45,6 +41,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper.FIRST_REQUEST_TIME;
+import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.jobIdSupplier;
+import static sleeper.ingest.batcher.testutil.IngestBatcherTestHelper.timeSupplier;
 
 public class IngestBatcherTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -118,19 +116,5 @@ public class IngestBatcherTestBase {
                 .store(store).queueClient(queues);
         config.accept(builder);
         builder.build().batchFiles();
-    }
-
-    protected static Supplier<String> jobIdSupplier(List<String> jobIds) {
-        return Stream.concat(jobIds.stream(), infiniteIdsForUnexpectedJobs())
-                .iterator()::next;
-    }
-
-    protected static Supplier<Instant> timeSupplier(Instant... times) {
-        return List.of(times).iterator()::next;
-    }
-
-    protected static Stream<String> infiniteIdsForUnexpectedJobs() {
-        return IntStream.iterate(1, n -> n + 1)
-                .mapToObj(num -> "unexpected-job-" + num);
     }
 }

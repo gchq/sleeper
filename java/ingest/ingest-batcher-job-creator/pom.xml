@@ -33,6 +33,11 @@
             <artifactId>aws-java-sdk-sqs</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+            <version>${aws-lambda-java-events.version}</version>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -45,6 +50,21 @@
             <version>${project.parent.version}</version>
         </dependency>
         <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>localstack</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
@@ -62,20 +82,6 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-batcher-core</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-batcher-store</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>dynamodb-tools</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
