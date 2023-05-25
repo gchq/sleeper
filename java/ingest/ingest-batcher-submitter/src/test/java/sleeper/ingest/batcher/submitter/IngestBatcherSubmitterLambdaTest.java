@@ -19,12 +19,17 @@ package sleeper.ingest.batcher.submitter;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.testutil.IngestBatcherStoreInMemory;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileIngestRequestSerDeTest {
+class IngestBatcherSubmitterLambdaTest {
+
+    private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
+    private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(store);
 
     @Test
     void shouldDeserializeFileIngestRequest() {
@@ -37,11 +42,11 @@ public class FileIngestRequestSerDeTest {
         Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
 
         // When
-        FileIngestRequest fileIngestRequest = FileIngestRequestSerDe.fromJson(json, receivedTime);
+        lambda.handleMessage(json, receivedTime);
 
         // Then
-        assertThat(fileIngestRequest)
-                .isEqualTo(FileIngestRequest.builder()
+        assertThat(store.getAllFilesNewestFirst())
+                .containsExactly(FileIngestRequest.builder()
                         .pathToFile("test-bucket/test-file-1.parquet")
                         .fileSizeBytes(1024)
                         .tableName("test-table")
