@@ -74,10 +74,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
-        try {
-            tablePropertiesProvider.getTableProperties(request.getTableName());
-        } catch (RuntimeException e) {
-            LOGGER.warn("Table does not exist for ingest request: {}", json, e);
+        if (tablePropertiesProvider.getTablePropertiesIfExists(request.getTableName())
+                .isEmpty()) {
+            LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
         store.addFile(request);
