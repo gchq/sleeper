@@ -18,7 +18,7 @@ package sleeper.ingest.batcher;
 
 import java.util.List;
 
-public interface IngestBatcherStateStore {
+public interface IngestBatcherStore {
     void addFile(FileIngestRequest fileIngestRequest);
 
     void assignJob(String jobId, List<FileIngestRequest> filesInJob);

@@ -66,7 +66,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
     void shouldNotSendFileIfFailedToAssignJob() {
         // Given
         FileIngestRequest request = ingestRequest().build();
-        IngestBatcherStateStore store = mock(IngestBatcherStateStore.class);
+        IngestBatcherStore store = mock(IngestBatcherStore.class);
         when(store.getPendingFilesOldestFirst()).thenReturn(List.of(request));
         doThrow(new RuntimeException("Failed assigning job"))
                 .when(store).assignJob("fail-job-id", List.of(request));

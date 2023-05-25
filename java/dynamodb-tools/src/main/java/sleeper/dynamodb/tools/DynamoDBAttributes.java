@@ -35,7 +35,11 @@ public class DynamoDBAttributes {
      * @return the AttributeValue
      */
     public static AttributeValue createStringAttribute(String str) {
-        return new AttributeValue(str);
+        if (str == null) {
+            return null;
+        } else {
+            return new AttributeValue(str);
+        }
     }
 
     /**
@@ -48,7 +52,9 @@ public class DynamoDBAttributes {
         // To differentiate NaN and null:
         // - An attribute which is set to the value of null will be treated as NaN
         // - An attribute which is NOT set, will be treated as null
-        if (Double.valueOf(Double.NaN).equals(number)) {
+        if (number == null) {
+            return null;
+        } else if (Double.valueOf(Double.NaN).equals(number)) {
             return new AttributeValue().withNULL(true);
         } else {
             return new AttributeValue().withN(String.valueOf(number));

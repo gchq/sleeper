@@ -31,15 +31,11 @@ public class DynamoDBRecordBuilder {
     private final List<Attribute> attributes = new ArrayList<>();
 
     public DynamoDBRecordBuilder string(String key, String value) {
-        return add(new Attribute(key, createStringAttribute(value)));
+        return add(key, createStringAttribute(value));
     }
 
     public DynamoDBRecordBuilder number(String key, Number value) {
-        if (null == value) {
-            return remove(key);
-        } else {
-            return add(new Attribute(key, createNumberAttribute(value)));
-        }
+        return add(key, createNumberAttribute(value));
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {
@@ -52,13 +48,12 @@ public class DynamoDBRecordBuilder {
                 .collect(Collectors.toMap(Attribute::getKey, Attribute::getValue));
     }
 
-    private DynamoDBRecordBuilder add(Attribute attribute) {
-        attributes.add(attribute);
-        return this;
-    }
-
-    private DynamoDBRecordBuilder remove(String key) {
-        attributes.removeIf(attribute -> attribute.key.equals(key));
+    private DynamoDBRecordBuilder add(String key, AttributeValue value) {
+        if (value == null) {
+            attributes.removeIf(attribute -> attribute.key.equals(key));
+        } else {
+            attributes.add(new Attribute(key, value));
+        }
         return this;
     }
 
