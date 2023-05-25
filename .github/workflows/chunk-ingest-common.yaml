@@ -13,6 +13,7 @@ on:
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/ingest/ingest-batcher-store/**'
+      - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
