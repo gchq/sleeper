@@ -29,6 +29,7 @@ import sleeper.cdk.stack.CompactionStack;
 import sleeper.cdk.stack.ConfigurationStack;
 import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
+import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
@@ -69,6 +70,7 @@ public class SleeperCdkApp extends Stack {
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
+    private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
@@ -153,7 +155,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to run bulk import jobs via EKS
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
-            new EksBulkImportStack(this, "BulkImportEKS",
+            eksBulkImportStack = new EksBulkImportStack(this, "BulkImportEKS",
                     instanceProperties,
                     jars,
                     bulkImportBucketStack,
@@ -211,6 +213,13 @@ public class SleeperCdkApp extends Stack {
                     tableStack.getDataBuckets(),
                     topicStack.getTopic(),
                     ingestStatusStoreStack);
+        }
+
+        // Stack to batch up files to ingest and create jobs
+        if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
+            new IngestBatcherStack(this, "IngestBatcher",
+                    instanceProperties, jars,
+                    ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack);
         }
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
