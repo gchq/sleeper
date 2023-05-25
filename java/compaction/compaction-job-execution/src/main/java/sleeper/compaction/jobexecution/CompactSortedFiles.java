@@ -163,7 +163,7 @@ public class CompactSortedFiles {
             writer.write(record);
             recordsWritten++;
             if (0 == recordsWritten % 1_000_000) {
-                LOGGER.info("Compaction job {}: Written {} lines", compactionJob.getId(), recordsWritten);
+                LOGGER.info("Compaction job {}: Written {} records", compactionJob.getId(), recordsWritten);
             }
         }
         writer.close();
@@ -188,7 +188,7 @@ public class CompactSortedFiles {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
+        LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFile(),
@@ -225,8 +225,8 @@ public class CompactSortedFiles {
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
         Map<String, ItemsSketch> rightKeyFieldToSketch = getSketches();
 
-        long linesWrittenToLeftFile = 0L;
-        long linesWrittenToRightFile = 0L;
+        long recordsWrittenToLeftFile = 0L;
+        long recordsWrittenToRightFile = 0L;
         // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
         // the last) from both files.
         Object minKeyLeftFile = null;
@@ -248,7 +248,7 @@ public class CompactSortedFiles {
             Record record = mergingIterator.next();
             if (keyComparator.compare(record.get(comparisonKeyFieldName), splitPoint) < 0) {
                 leftWriter.write(record);
-                linesWrittenToLeftFile++;
+                recordsWrittenToLeftFile++;
                 if (null == minKeyLeftFile) {
                     minKeyLeftFile = record.get(rowKeyName0);
                 }
@@ -256,7 +256,7 @@ public class CompactSortedFiles {
                 updateQuantilesSketch(record, leftKeyFieldToSketch);
             } else {
                 rightWriter.write(record);
-                linesWrittenToRightFile++;
+                recordsWrittenToRightFile++;
                 if (null == minKeyRightFile) {
                     minKeyRightFile = record.get(rowKeyName0);
                 }
@@ -264,10 +264,10 @@ public class CompactSortedFiles {
                 updateQuantilesSketch(record, rightKeyFieldToSketch);
             }
 
-            if ((linesWrittenToLeftFile > 0 && 0 == linesWrittenToLeftFile % 1_000_000)
-                    || (linesWrittenToRightFile > 0 && 0 == linesWrittenToRightFile % 1_000_000)) {
-                LOGGER.info("Compaction job {}: Written {} lines to left file and {} lines to right file",
-                        compactionJob.getId(), linesWrittenToLeftFile, linesWrittenToRightFile);
+            if ((recordsWrittenToLeftFile > 0 && 0 == recordsWrittenToLeftFile % 1_000_000)
+                    || (recordsWrittenToRightFile > 0 && 0 == recordsWrittenToRightFile % 1_000_000)) {
+                LOGGER.info("Compaction job {}: Written {} records to left file and {} records to right file",
+                        compactionJob.getId(), recordsWrittenToLeftFile, recordsWrittenToRightFile);
             }
 
         }
@@ -301,21 +301,21 @@ public class CompactSortedFiles {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} lines and wrote ({}, {}) lines",
-                compactionJob.getId(), totalNumberOfRecordsRead, linesWrittenToLeftFile, linesWrittenToRightFile);
+        LOGGER.info("Compaction job {}: Read {} records and wrote ({}, {}) records",
+                compactionJob.getId(), totalNumberOfRecordsRead, recordsWrittenToLeftFile, recordsWrittenToRightFile);
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFiles(),
                 compactionJob.getPartitionId(),
                 compactionJob.getChildPartitions(),
-                new ImmutablePair<>(linesWrittenToLeftFile, linesWrittenToRightFile),
+                new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
                 new ImmutablePair<>(minKeyLeftFile, minKeyRightFile),
                 new ImmutablePair<>(maxKeyLeftFile, maxKeyRightFile),
                 finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
-        return new RecordsProcessed(totalNumberOfRecordsRead, linesWrittenToLeftFile + linesWrittenToRightFile);
+        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
