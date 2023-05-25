@@ -17,6 +17,11 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.dynamodb.Attribute;
+import software.amazon.awscdk.services.dynamodb.AttributeType;
+import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -33,6 +38,8 @@ import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +48,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
@@ -54,8 +62,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE
 
 public class IngestBatcherStack extends NestedStack {
 
-    private Queue submitQueue;
-    private Queue submitDLQ;
+    private final Queue submitQueue;
+    private final Table ingestRequestsTable;
 
     public IngestBatcherStack(
             Construct scope,
@@ -69,7 +77,7 @@ public class IngestBatcherStack extends NestedStack {
         super(scope, id);
 
         // Queue to submit files to the batcher
-        submitDLQ = Queue.Builder
+        Queue submitDLQ = Queue.Builder
                 .create(this, "IngestBatcherSubmitDLQ")
                 .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitDLQ"))
                 .build();
@@ -86,9 +94,28 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_URL, submitQueue.getQueueUrl());
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, submitDLQ.getQueueUrl());
 
+        // DynamoDB table to track submitted files
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+        ingestRequestsTable = Table.Builder
+                .create(this, "DynamoDBIngestBatcherRequestsTable")
+                .tableName(DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID)))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestRequestFormat.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBIngestRequestFormat.FILE_PATH)
+                        .type(AttributeType.STRING)
+                        .build())
+                .timeToLiveAttribute(DynamoDBIngestRequestFormat.EXPIRY_TIME)
+                .pointInTimeRecovery(false)
+                .build();
+
         // Lambdas to receive submitted files and create batches
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
 
@@ -110,6 +137,7 @@ public class IngestBatcherStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(List.of(new SqsEventSource(submitQueue))));
 
+        ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
         configBucket.grantRead(submitterLambda);
 
@@ -124,6 +152,7 @@ public class IngestBatcherStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
+        ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         configBucket.grantRead(jobCreatorLambda);
         ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack)
                 .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));

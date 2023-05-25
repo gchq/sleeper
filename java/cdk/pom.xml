@@ -63,6 +63,11 @@
             <artifactId>ingest-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-batcher-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- AWS Cloud Development Kit -->
         <dependency>
             <groupId>software.amazon.awscdk</groupId>
