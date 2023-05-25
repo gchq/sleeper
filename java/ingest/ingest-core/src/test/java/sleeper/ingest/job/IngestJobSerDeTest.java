@@ -19,10 +19,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class IngestJobSerDeTest {
+class IngestJobSerDeTest {
 
     @Test
-    public void shouldSerDeCorrectly() {
+    void shouldSerDeCorrectly() {
         // Given
         IngestJob ingestJob = IngestJob.builder()
                 .tableName("table").id("id").files("file1", "file2")
