@@ -189,6 +189,14 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the dead letter queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.url")
+            .description("The URL of the queue for ingest batcher file submission.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.url")
+            .description("The URL of the dead letter queue for ingest batcher file submission.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
     SystemDefinedInstanceProperty INGEST_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.ingest.task.definition.family")
             .description("The name of the family of task definitions used for ingest tasks.")
             .propertyGroup(InstancePropertyGroup.INGEST)

@@ -18,8 +18,10 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -32,20 +34,28 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATOR_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATOR_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class IngestBatcherStack extends NestedStack {
+
+    private Queue submitQueue;
+    private Queue submitDLQ;
 
     public IngestBatcherStack(
             Construct scope,
@@ -58,7 +68,27 @@ public class IngestBatcherStack extends NestedStack {
             EksBulkImportStack eksBulkImportStack) {
         super(scope, id);
 
+        // Queue to submit files to the batcher
+        submitDLQ = Queue.Builder
+                .create(this, "IngestBatcherSubmitDLQ")
+                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitDLQ"))
+                .build();
+        DeadLetterQueue ingestJobDeadLetterQueue = DeadLetterQueue.builder()
+                .maxReceiveCount(1)
+                .queue(submitDLQ)
+                .build();
+        submitQueue = Queue.Builder
+                .create(this, "IngestBatcherSubmitQueue")
+                .queueName(Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherSubmitQ"))
+                .deadLetterQueue(ingestJobDeadLetterQueue)
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .build();
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_URL, submitQueue.getQueueUrl());
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, submitDLQ.getQueueUrl());
+
+        // Lambdas to receive submitted files and create batches
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
 
@@ -77,7 +107,11 @@ public class IngestBatcherStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
                 .environment(environmentVariables)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .events(List.of(new SqsEventSource(submitQueue))));
+
+        submitQueue.grantConsumeMessages(submitterLambda);
+        configBucket.grantRead(submitterLambda);
 
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "BatchIngestJobsLambda", builder -> builder
                 .functionName(jobCreatorName)
@@ -90,6 +124,7 @@ public class IngestBatcherStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
+        configBucket.grantRead(jobCreatorLambda);
         ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack)
                 .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
     }

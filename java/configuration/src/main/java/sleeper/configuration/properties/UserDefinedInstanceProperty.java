@@ -222,7 +222,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.submitter.timeout.seconds")
             .description("The timeout in seconds for the lambda that receives submitted requests to ingest files.")
-            .defaultValue("900")
+            .defaultValue("20")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATOR_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.job.creator.memory.mb")
