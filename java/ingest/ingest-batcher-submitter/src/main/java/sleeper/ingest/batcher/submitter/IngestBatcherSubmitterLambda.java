@@ -38,13 +38,25 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final IngestBatcherStore store;
+    private final TablePropertiesProvider tablePropertiesProvider;
 
     public IngestBatcherSubmitterLambda() throws IOException {
-        this(initialiseStore());
+        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        if (null == s3Bucket) {
+            throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
+        }
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3, s3Bucket);
+
+        this.tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
+                instanceProperties, tablePropertiesProvider);
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store) {
+    public IngestBatcherSubmitterLambda(IngestBatcherStore store, TablePropertiesProvider tablePropertiesProvider) {
         this.store = store;
+        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     @Override
@@ -62,18 +74,12 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
-        store.addFile(request);
-    }
-
-    private static IngestBatcherStore initialiseStore() throws IOException {
-        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
-        if (null == s3Bucket) {
-            throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
+        try {
+            tablePropertiesProvider.getTableProperties(request.getTableName());
+        } catch (RuntimeException e) {
+            LOGGER.warn("Table does not exist for ingest request: {}", json, e);
+            return;
         }
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3, s3Bucket);
-        return new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
-                instanceProperties, new TablePropertiesProvider(s3, instanceProperties));
+        store.addFile(request);
     }
 }

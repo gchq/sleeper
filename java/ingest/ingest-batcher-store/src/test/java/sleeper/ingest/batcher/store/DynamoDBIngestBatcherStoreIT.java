@@ -18,7 +18,6 @@ package sleeper.ingest.batcher.store;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -101,20 +100,6 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     .containsExactlyInAnyOrder(fileIngestRequest1, fileIngestRequest2);
             assertThat(store.getPendingFilesOldestFirst())
                     .containsExactlyInAnyOrder(fileIngestRequest1, fileIngestRequest2);
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldFailToAddFileIfTableDoesNotExist() {
-            // Given
-            FileIngestRequest fileIngestRequest = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
-                    .tableName("not-a-table").build();
-
-            // When / Then
-            assertThatThrownBy(() -> store.addFile(fileIngestRequest))
-                    .isInstanceOf(IllegalArgumentException.class);
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
     }
 
