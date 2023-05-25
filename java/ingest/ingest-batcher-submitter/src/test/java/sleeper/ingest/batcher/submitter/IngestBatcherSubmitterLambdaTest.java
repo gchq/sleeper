@@ -32,7 +32,7 @@ class IngestBatcherSubmitterLambdaTest {
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(store);
 
     @Test
-    void shouldDeserializeFileIngestRequest() {
+    void shouldStoreFileIngestRequestFromJson() {
         // Given
         String json = "{" +
                 "\"pathToFile\":\"test-bucket/test-file-1.parquet\"," +
