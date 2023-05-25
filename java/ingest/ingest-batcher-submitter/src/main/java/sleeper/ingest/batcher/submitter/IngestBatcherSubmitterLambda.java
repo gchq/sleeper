@@ -74,6 +74,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
+
+        // Table properties are needed to set the expiry time on DynamoDB records in the store.
+        // To avoid that failing, we can discard the message here if the table does not exist.
         try {
             tablePropertiesProvider.getTableProperties(request.getTableName());
         } catch (RuntimeException e) {

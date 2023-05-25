@@ -13,38 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record.process.status;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
+package sleeper.core.record.process.status;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class ProcessFinishedStatus implements ProcessStatusUpdate {
-
+public class CustomProcessStatus implements ProcessStatusUpdate {
     private final Instant updateTime;
-    private final RecordsProcessedSummary summary;
+    private final boolean isPartOfRun;
 
-    private ProcessFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
-        this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.summary = Objects.requireNonNull(summary, "summary must not be null");
+    private CustomProcessStatus(Instant updateTime, boolean isPartOfRun) {
+        this.updateTime = updateTime;
+        this.isPartOfRun = isPartOfRun;
     }
 
-    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
-        return new ProcessFinishedStatus(updateTime, summary);
+    public static CustomProcessStatus partOfRunWithUpdateTime(Instant updateTime) {
+        return new CustomProcessStatus(updateTime, true);
     }
 
+    public static CustomProcessStatus notPartOfRunWithUpdateTime(Instant updateTime) {
+        return new CustomProcessStatus(updateTime, false);
+    }
+
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
     }
 
-    public RecordsProcessedSummary getSummary() {
-        return summary;
-    }
-
     @Override
     public boolean isPartOfRun() {
-        return true;
+        return isPartOfRun;
     }
 
     @Override
@@ -55,20 +54,19 @@ public class ProcessFinishedStatus implements ProcessStatusUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessFinishedStatus that = (ProcessFinishedStatus) o;
-        return updateTime.equals(that.updateTime) && summary.equals(that.summary);
+        CustomProcessStatus that = (CustomProcessStatus) o;
+        return Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary);
+        return Objects.hash(updateTime);
     }
 
     @Override
     public String toString() {
-        return "ProcessFinishedStatus{" +
+        return "CustomProcessStatus{" +
                 "updateTime=" + updateTime +
-                ", summary=" + summary +
                 '}';
     }
 }
