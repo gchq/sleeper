@@ -37,6 +37,10 @@ import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
+/**
+ * A lambda function to create jobs with the {@link IngestBatcher}.
+ */
+@SuppressWarnings("unused")
 public class IngestBatcherJobCreatorLambda {
 
     private final IngestBatcher batcher;
