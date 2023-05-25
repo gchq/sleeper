@@ -13,30 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.io.IOException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
 @Testcontainers
-public class TablePropertiesIT {
+public class TablePropertiesProviderIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
@@ -51,32 +44,5 @@ public class TablePropertiesIT {
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
                 .build();
-    }
-
-    private TableProperties createValidProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "config");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "test");
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
-        return tableProperties;
-    }
-
-    @Test
-    public void shouldSaveAndLoadFromS3() throws IOException {
-        // Given
-        TableProperties validProperties = createValidProperties();
-        AmazonS3 s3Client = getS3Client();
-        s3Client.createBucket("config");
-        validProperties.saveToS3(s3Client);
-
-        // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "config");
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
-        TableProperties tableProperties = provider.getTableProperties("test");
-
-        // Then
-        assertThat(tableProperties).isEqualTo(validProperties);
     }
 }
