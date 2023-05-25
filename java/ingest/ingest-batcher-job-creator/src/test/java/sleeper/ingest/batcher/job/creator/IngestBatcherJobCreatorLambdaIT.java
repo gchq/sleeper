@@ -25,7 +25,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -49,7 +48,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -66,14 +67,18 @@ public class IngestBatcherJobCreatorLambdaIT {
     private final AmazonS3 s3 = createS3Client();
     private final AmazonSQS sqs = createSQSClient();
     private final AmazonDynamoDB dynamoDB = createDynamoClient();
-    private final InstanceProperties instanceProperties = createTestInstanceProperties(s3,
-            properties -> properties.set(INGEST_JOB_QUEUE_URL, "test-ingest-job-queue"));
+    private final InstanceProperties instanceProperties = createTestInstanceProperties(s3, properties -> {
+        properties.set(INGEST_JOB_QUEUE_URL, "test-ingest-job-queue");
+        properties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
+    });
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3);
     private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
             new TablePropertiesProvider(s3, instanceProperties));
 
     private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
-        return new IngestBatcherJobCreatorLambda(s3, sqs, dynamoDB, timeSupplier(times), jobIdSupplier(jobIds));
+        return new IngestBatcherJobCreatorLambda(
+                s3, instanceProperties.get(CONFIG_BUCKET),
+                sqs, dynamoDB, timeSupplier(times), jobIdSupplier(jobIds));
     }
 
     @BeforeEach
@@ -89,7 +94,6 @@ public class IngestBatcherJobCreatorLambdaIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSendOneFileFromStore() {
         // Given
         store.addFile(FileIngestRequest.builder()

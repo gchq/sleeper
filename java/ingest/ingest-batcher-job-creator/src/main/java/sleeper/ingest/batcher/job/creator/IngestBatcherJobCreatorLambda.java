@@ -21,13 +21,37 @@ import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.batcher.IngestBatcher;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
 public class IngestBatcherJobCreatorLambda {
-    public IngestBatcherJobCreatorLambda(AmazonS3 s3, AmazonSQS sqs, AmazonDynamoDB dynamoDB,
-                                         Supplier<Instant> timeSupplier, Supplier<String> jobIdSupplier) {
 
+    private final IngestBatcher batcher;
+
+    public IngestBatcherJobCreatorLambda(AmazonS3 s3, String configBucket,
+                                         AmazonSQS sqs, AmazonDynamoDB dynamoDB,
+                                         Supplier<Instant> timeSupplier, Supplier<String> jobIdSupplier) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        try {
+            instanceProperties.loadFromS3(s3, configBucket);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        batcher = IngestBatcher.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .store(new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties, tablePropertiesProvider))
+                .queueClient(new SQSIngestBatcherQueueClient(sqs))
+                .timeSupplier(timeSupplier).jobIdSupplier(jobIdSupplier)
+                .build();
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
@@ -35,6 +59,6 @@ public class IngestBatcherJobCreatorLambda {
     }
 
     public void batchFiles() {
-        // TODO
+        batcher.batchFiles();
     }
 }
