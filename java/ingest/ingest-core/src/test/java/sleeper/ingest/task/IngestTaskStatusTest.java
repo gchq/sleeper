@@ -66,7 +66,7 @@ public class IngestTaskStatusTest {
                 .containsExactly(3, Duration.ofSeconds(30));
         assertThat(status.asProcessRun()).extracting("taskId",
                         "startTime", "finishTime", "finishedSummary.duration",
-                        "finishedSummary.linesRead", "finishedSummary.linesWritten",
+                        "finishedSummary.recordsRead", "finishedSummary.linesWritten",
                         "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")
                 .containsExactly("test-task-id",
                         taskStartedTime, taskFinishedTime, Duration.ofSeconds(50),

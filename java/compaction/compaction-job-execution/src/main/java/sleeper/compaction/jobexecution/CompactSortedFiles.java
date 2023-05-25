@@ -123,7 +123,7 @@ public class CompactSortedFiles {
 
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
-        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
         jobStatusStore.jobFinished(compactionJob, summary, taskId);
         return summary;
@@ -183,12 +183,12 @@ public class CompactSortedFiles {
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
         long finishTime = System.currentTimeMillis();
-        long totalNumberOfLinesRead = 0L;
+        long totalNumberOfRecordsRead = 0L;
         for (CloseableIterator<Record> iterator : inputIterators) {
-            totalNumberOfLinesRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
+            totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(), totalNumberOfLinesRead, linesWritten);
+        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(), totalNumberOfRecordsRead, linesWritten);
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFile(),
@@ -201,7 +201,7 @@ public class CompactSortedFiles {
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
 
-        return new RecordsProcessed(totalNumberOfLinesRead, linesWritten);
+        return new RecordsProcessed(totalNumberOfRecordsRead, linesWritten);
     }
 
     private RecordsProcessed compactSplitting() throws IOException, IteratorException {
@@ -296,13 +296,13 @@ public class CompactSortedFiles {
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
         long finishTime = System.currentTimeMillis();
-        long totalNumberOfLinesRead = 0L;
+        long totalNumberOfRecordsRead = 0L;
         for (CloseableIterator<Record> iterator : inputIterators) {
-            totalNumberOfLinesRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
+            totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
         LOGGER.info("Compaction job {}: Read {} lines and wrote ({}, {}) lines",
-                compactionJob.getId(), totalNumberOfLinesRead, linesWrittenToLeftFile, linesWrittenToRightFile);
+                compactionJob.getId(), totalNumberOfRecordsRead, linesWrittenToLeftFile, linesWrittenToRightFile);
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFiles(),
@@ -315,7 +315,7 @@ public class CompactSortedFiles {
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
-        return new RecordsProcessed(totalNumberOfLinesRead, linesWrittenToLeftFile + linesWrittenToRightFile);
+        return new RecordsProcessed(totalNumberOfRecordsRead, linesWrittenToLeftFile + linesWrittenToRightFile);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {

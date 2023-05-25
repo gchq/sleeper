@@ -95,7 +95,7 @@ public class DynamoDBCompactionJobStatusFormat {
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, summary.getLinesRead())
+                .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getLinesWritten())
                 .build();
     }

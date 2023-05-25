@@ -25,16 +25,16 @@ public class RecordsProcessedSummaryTest {
 
     @Test
     public void shouldReturnInputs() {
-        long linesRead = 100L;
+        long recordsRead = 100L;
         long linesWritten = 100L;
         Instant startTime = Instant.parse("2022-09-22T09:44:00.000Z");
         Instant finishTime = Instant.parse("2022-09-22T09:45:00.000Z");
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten),
+                new RecordsProcessed(recordsRead, linesWritten),
                 startTime, finishTime);
 
-        assertThat(summary).extracting("linesRead", "linesWritten", "startTime", "finishTime")
-                .containsExactly(linesRead, linesWritten, startTime, finishTime);
+        assertThat(summary).extracting("recordsRead", "linesWritten", "startTime", "finishTime")
+                .containsExactly(recordsRead, linesWritten, startTime, finishTime);
     }
 
     @Test

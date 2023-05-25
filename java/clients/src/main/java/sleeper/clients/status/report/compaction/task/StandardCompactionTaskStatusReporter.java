@@ -39,7 +39,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
     private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION");
-    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_READ);
+    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.RECORDS_READ);
     private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_WRITTEN);
     private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.READ_RATE);
     private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.WRITE_RATE);
@@ -65,7 +65,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
 
         TABLE_WRITER_FACTORY.tableBuilder()
                 .showFields(query != CompactionTaskQuery.UNFINISHED,
-                        FINISH_TIME, DURATION, JOB_DURATION, JOB_RUNS, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
+                        FINISH_TIME, DURATION, JOB_DURATION, JOB_RUNS, RECORDS_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }

@@ -18,16 +18,16 @@ package sleeper.core.record.process;
 import java.util.Objects;
 
 public class RecordsProcessed {
-    private final long linesRead;
+    private final long recordsRead;
     private final long linesWritten;
 
-    public RecordsProcessed(long linesRead, long linesWritten) {
-        this.linesRead = linesRead;
+    public RecordsProcessed(long recordsRead, long linesWritten) {
+        this.recordsRead = recordsRead;
         this.linesWritten = linesWritten;
     }
 
-    public long getLinesRead() {
-        return linesRead;
+    public long getRecordsRead() {
+        return recordsRead;
     }
 
     public long getLinesWritten() {
@@ -43,18 +43,18 @@ public class RecordsProcessed {
             return false;
         }
         RecordsProcessed that = (RecordsProcessed) o;
-        return linesRead == that.linesRead && linesWritten == that.linesWritten;
+        return recordsRead == that.recordsRead && linesWritten == that.linesWritten;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(linesRead, linesWritten);
+        return Objects.hash(recordsRead, linesWritten);
     }
 
     @Override
     public String toString() {
         return "CompactionJobRecordsProcessed{" +
-                "linesRead=" + linesRead +
+                "recordsRead=" + recordsRead +
                 ", linesWritten=" + linesWritten +
                 '}';
     }
