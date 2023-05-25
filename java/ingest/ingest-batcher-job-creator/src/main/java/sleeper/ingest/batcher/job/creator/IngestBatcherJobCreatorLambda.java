@@ -16,10 +16,13 @@
 package sleeper.ingest.batcher.job.creator;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -29,11 +32,20 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class IngestBatcherJobCreatorLambda {
 
     private final IngestBatcher batcher;
+
+    public IngestBatcherJobCreatorLambda() {
+        this(AmazonS3ClientBuilder.defaultClient(), getConfigBucket(),
+                AmazonSQSClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(),
+                Instant::now, () -> UUID.randomUUID().toString());
+    }
 
     public IngestBatcherJobCreatorLambda(AmazonS3 s3, String configBucket,
                                          AmazonSQS sqs, AmazonDynamoDB dynamoDB,
@@ -60,5 +72,14 @@ public class IngestBatcherJobCreatorLambda {
 
     public void batchFiles() {
         batcher.batchFiles();
+    }
+
+    private static String getConfigBucket() {
+        String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        if (null == s3Bucket) {
+            throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
+        } else {
+            return s3Bucket;
+        }
     }
 }
