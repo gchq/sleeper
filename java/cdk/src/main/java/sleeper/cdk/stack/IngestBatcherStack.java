@@ -89,6 +89,9 @@ public class IngestBatcherStack extends NestedStack {
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+
+        ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack)
+                .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
     }
 
     private static Stream<Queue> ingestQueues(IngestStack ingestStack,
