@@ -19,7 +19,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 pushd "$THIS_DIR"
 
 git fetch
-git switch --discard-changes -C 857-extract-git-update-script-from-nightly-test-script origin/857-extract-git-update-script-from-nightly-test-script
+git switch --discard-changes -C main origin/main
 
 popd
 
