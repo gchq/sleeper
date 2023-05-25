@@ -44,15 +44,15 @@ public class RecordsProcessedSummary {
         this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
         this.duration = Duration.between(startTime, finishTime);
         this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / (this.timeInProcess.toMillis() / 1000.0);
-        this.recordsWrittenPerSecond = recordsProcessed.getLinesWritten() / (this.timeInProcess.toMillis() / 1000.0);
+        this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / (this.timeInProcess.toMillis() / 1000.0);
     }
 
     public long getRecordsRead() {
         return recordsProcessed.getRecordsRead();
     }
 
-    public long getLinesWritten() {
-        return recordsProcessed.getLinesWritten();
+    public long getRecordsWritten() {
+        return recordsProcessed.getRecordsWritten();
     }
 
     public RecordsProcessed getRecordsProcessed() {

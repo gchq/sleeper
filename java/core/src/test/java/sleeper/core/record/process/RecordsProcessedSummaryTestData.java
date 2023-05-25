@@ -23,13 +23,13 @@ public class RecordsProcessedSummaryTestData {
     private RecordsProcessedSummaryTestData() {
     }
 
-    public static RecordsProcessedSummary summary(Instant startTime, Duration duration, long recordsRead, long linesWritten) {
-        return summary(startTime, startTime.plus(duration), recordsRead, linesWritten);
+    public static RecordsProcessedSummary summary(Instant startTime, Duration duration, long recordsRead, long recordsWritten) {
+        return summary(startTime, startTime.plus(duration), recordsRead, recordsWritten);
     }
 
-    public static RecordsProcessedSummary summary(Instant startTime, Instant finishTime, long recordsRead, long linesWritten) {
+    public static RecordsProcessedSummary summary(Instant startTime, Instant finishTime, long recordsRead, long recordsWritten) {
         return new RecordsProcessedSummary(
-                new RecordsProcessed(recordsRead, linesWritten),
+                new RecordsProcessed(recordsRead, recordsWritten),
                 startTime, finishTime);
     }
 }

@@ -48,7 +48,7 @@ public class DynamoDBIngestTaskStatusFormat {
     public static final String MILLIS_SPENT_ON_JOBS = "MillisecondsOnJobs";
     public static final String NUMBER_OF_JOBS = "NumberOfJobs";
     public static final String RECORDS_READ = "RecordsRead";
-    public static final String LINES_WRITTEN = "LinesWritten";
+    public static final String RECORDS_WRITTEN = "RecordsWritten";
     public static final String READ_RATE = "ReadRate";
     public static final String WRITE_RATE = "WriteRate";
     public static final String EXPIRY_DATE = "ExpiryDate";
@@ -77,7 +77,7 @@ public class DynamoDBIngestTaskStatusFormat {
                 .number(MILLIS_SPENT_ON_JOBS, taskStatus.getFinishedStatus().getTimeSpentOnJobs().toMillis())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
                 .number(RECORDS_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
-                .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
+                .number(RECORDS_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
                 .number(READ_RATE, taskStatus.getFinishedStatus().getRecordsReadPerSecond())
                 .number(WRITE_RATE, taskStatus.getFinishedStatus().getRecordsWrittenPerSecond())
                 .build();
@@ -112,7 +112,7 @@ public class DynamoDBIngestTaskStatusFormat {
                         .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, RECORDS_READ, 0))
-                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
+                        .totalRecordsWritten(getLongAttribute(item, RECORDS_WRITTEN, 0))
                         .recordsReadPerSecond(getDoubleAttribute(item, READ_RATE, 0))
                         .recordsWrittenPerSecond(getDoubleAttribute(item, WRITE_RATE, 0))
                         .build());

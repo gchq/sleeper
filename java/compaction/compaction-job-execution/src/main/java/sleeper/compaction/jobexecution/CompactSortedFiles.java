@@ -124,7 +124,7 @@ public class CompactSortedFiles {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
-        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
         jobStatusStore.jobFinished(compactionJob, summary, taskId);
         return summary;
     }
@@ -146,7 +146,7 @@ public class CompactSortedFiles {
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
-        long linesWritten = 0L;
+        long recordsWritten = 0L;
         // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
         // the last).
         Object minKey = null;
@@ -161,9 +161,9 @@ public class CompactSortedFiles {
             updateQuantilesSketch(record, keyFieldToSketch);
             // Write out
             writer.write(record);
-            linesWritten++;
-            if (0 == linesWritten % 1_000_000) {
-                LOGGER.info("Compaction job {}: Written {} lines", compactionJob.getId(), linesWritten);
+            recordsWritten++;
+            if (0 == recordsWritten % 1_000_000) {
+                LOGGER.info("Compaction job {}: Written {} lines", compactionJob.getId(), recordsWritten);
             }
         }
         writer.close();
@@ -188,12 +188,12 @@ public class CompactSortedFiles {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(), totalNumberOfRecordsRead, linesWritten);
+        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFile(),
                 compactionJob.getPartitionId(),
-                linesWritten,
+                recordsWritten,
                 minKey,
                 maxKey,
                 finishTime,
@@ -201,7 +201,7 @@ public class CompactSortedFiles {
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
 
-        return new RecordsProcessed(totalNumberOfRecordsRead, linesWritten);
+        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
     private RecordsProcessed compactSplitting() throws IOException, IteratorException {
@@ -355,7 +355,7 @@ public class CompactSortedFiles {
     private static boolean updateStateStoreSuccess(List<String> inputFiles,
                                                    String outputFile,
                                                    String partitionId,
-                                                   long linesWritten,
+                                                   long recordsWritten,
                                                    Object minRowKey0,
                                                    Object maxRowKey0,
                                                    long finishTime,
@@ -377,9 +377,9 @@ public class CompactSortedFiles {
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(linesWritten)
-                .minRowKey(linesWritten > 0 ? Key.create(minRowKey0) : null)
-                .maxRowKey(linesWritten > 0 ? Key.create(maxRowKey0) : null)
+                .numberOfRecords(recordsWritten)
+                .minRowKey(recordsWritten > 0 ? Key.create(minRowKey0) : null)
+                .maxRowKey(recordsWritten > 0 ? Key.create(maxRowKey0) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
@@ -396,7 +396,7 @@ public class CompactSortedFiles {
                                                    Pair<String, String> outputFiles,
                                                    String partition,
                                                    List<String> childPartitions,
-                                                   Pair<Long, Long> linesWritten,
+                                                   Pair<Long, Long> recordsWritten,
                                                    Pair<Object, Object> minKeys,
                                                    Pair<Object, Object> maxKeys,
                                                    long finishTime,
@@ -418,9 +418,9 @@ public class CompactSortedFiles {
                 .filename(outputFiles.getLeft())
                 .partitionId(childPartitions.get(0))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(linesWritten.getLeft())
-                .minRowKey(linesWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
-                .maxRowKey(linesWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
+                .numberOfRecords(recordsWritten.getLeft())
+                .minRowKey(recordsWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
+                .maxRowKey(recordsWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         FileInfo rightFileInfo = FileInfo.builder()
@@ -428,9 +428,9 @@ public class CompactSortedFiles {
                 .filename(outputFiles.getRight())
                 .partitionId(childPartitions.get(1))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(linesWritten.getRight())
-                .minRowKey(linesWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
-                .maxRowKey(linesWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)
+                .numberOfRecords(recordsWritten.getRight())
+                .minRowKey(recordsWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
+                .maxRowKey(recordsWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {

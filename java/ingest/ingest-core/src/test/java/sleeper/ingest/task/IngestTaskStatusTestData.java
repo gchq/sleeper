@@ -60,11 +60,11 @@ public class IngestTaskStatusTestData {
 
     public static IngestTaskStatus finishedOneJob(String taskId, Instant startTaskTime, Instant finishTaskTime,
                                                   Instant startJobTime, Instant finishJobTime,
-                                                  long recordsRead, long linesWritten) {
+                                                  long recordsRead, long recordsWritten) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(
                         new RecordsProcessedSummary(
-                                new RecordsProcessed(recordsRead, linesWritten),
+                                new RecordsProcessed(recordsRead, recordsWritten),
                                 startJobTime, finishJobTime))))
                 .build();
     }

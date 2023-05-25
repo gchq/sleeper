@@ -19,19 +19,19 @@ import java.util.Objects;
 
 public class RecordsProcessed {
     private final long recordsRead;
-    private final long linesWritten;
+    private final long recordsWritten;
 
-    public RecordsProcessed(long recordsRead, long linesWritten) {
+    public RecordsProcessed(long recordsRead, long recordsWritten) {
         this.recordsRead = recordsRead;
-        this.linesWritten = linesWritten;
+        this.recordsWritten = recordsWritten;
     }
 
     public long getRecordsRead() {
         return recordsRead;
     }
 
-    public long getLinesWritten() {
-        return linesWritten;
+    public long getRecordsWritten() {
+        return recordsWritten;
     }
 
     @Override
@@ -43,19 +43,19 @@ public class RecordsProcessed {
             return false;
         }
         RecordsProcessed that = (RecordsProcessed) o;
-        return recordsRead == that.recordsRead && linesWritten == that.linesWritten;
+        return recordsRead == that.recordsRead && recordsWritten == that.recordsWritten;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recordsRead, linesWritten);
+        return Objects.hash(recordsRead, recordsWritten);
     }
 
     @Override
     public String toString() {
         return "CompactionJobRecordsProcessed{" +
                 "recordsRead=" + recordsRead +
-                ", linesWritten=" + linesWritten +
+                ", recordsWritten=" + recordsWritten +
                 '}';
     }
 }

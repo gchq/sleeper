@@ -18,7 +18,7 @@
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 1234000,
-                "linesWritten": 1234000
+                "recordsWritten": 1234000
               },
               "startTime": "2022-10-13T14:02:10Z",
               "finishTime": "2022-10-13T14:04:13.456Z",
@@ -45,7 +45,7 @@
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 1000600,
-                "linesWritten": 500300
+                "recordsWritten": 500300
               },
               "startTime": "2022-10-13T14:01:10Z",
               "finishTime": "2022-10-13T14:02:10Z",
@@ -72,7 +72,7 @@
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 1000600,
-                "linesWritten": 500300
+                "recordsWritten": 500300
               },
               "startTime": "2022-10-13T12:01:10Z",
               "finishTime": "2022-10-13T14:01:10Z",
@@ -99,7 +99,7 @@
             "summary": {
               "recordsProcessed": {
                 "recordsRead": 600000,
-                "linesWritten": 300000
+                "recordsWritten": 300000
               },
               "startTime": "2022-10-13T10:00:10Z",
               "finishTime": "2022-10-13T10:02:13.123Z",
