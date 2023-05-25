@@ -141,7 +141,7 @@
             <destName>ingest-starter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../ingest-batcher-submitter/target/ingest-batcher-submitter-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../ingest/ingest-batcher-submitter/target/ingest-batcher-submitter-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>ingest-batcher-submitter-${project.version}-utility.jar</destName>
         </file>
