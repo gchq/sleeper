@@ -16,33 +16,47 @@
 
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import org.junit.jupiter.api.Test;
 
-import sleeper.core.CommonTestConstants;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
-@Testcontainers
-public class TablePropertiesProviderIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+import java.io.IOException;
 
-    private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
-            .rowKeyFields(new Field("key", new StringType()))
-            .valueFields(new Field("value", new StringType()))
-            .build();
+import static org.assertj.core.api.Assertions.assertThat;
 
-    private AmazonS3 getS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
+
+    @Test
+    void shouldLoadFromS3() throws IOException {
+        // Given
+        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
+                "test", "provider-load");
+        s3Client.createBucket("provider-load");
+        validProperties.saveToS3(s3Client);
+
+        // When
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-load");
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+
+        // Then
+        assertThat(provider.getTableProperties("test")).isEqualTo(validProperties);
+        assertThat(provider.getTablePropertiesIfExists("test")).contains(validProperties);
+    }
+
+    @Test
+    void shouldReportTableDoesNotExistWhenNotInBucket() {
+        // Given
+        s3Client.createBucket("provider-no-table");
+
+        // When
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-no-table");
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+
+        // Then
+        assertThat(provider.getTablePropertiesIfExists("test"))
+                .isEmpty();
     }
 }
