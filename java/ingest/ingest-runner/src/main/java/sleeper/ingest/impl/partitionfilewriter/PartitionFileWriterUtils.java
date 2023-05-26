@@ -50,19 +50,19 @@ public class PartitionFileWriterUtils {
     /**
      * Create a {@link FileInfo} object to use to add the file to a {@link sleeper.statestore.StateStore}
      *
-     * @param sleeperSchema -
-     * @param filename      -
-     * @param partitionId   -
-     * @param numberOfLines -
-     * @param minKey        -
-     * @param maxKey        -
-     * @param updateTime    -
+     * @param sleeperSchema   -
+     * @param filename        -
+     * @param partitionId     -
+     * @param numberOfRecords -
+     * @param minKey          -
+     * @param maxKey          -
+     * @param updateTime      -
      * @return The {@link FileInfo} object
      */
     public static FileInfo createFileInfo(Schema sleeperSchema,
                                           String filename,
                                           String partitionId,
-                                          long numberOfLines,
+                                          long numberOfRecords,
                                           Object minKey,
                                           Object maxKey,
                                           long updateTime) {
@@ -71,7 +71,7 @@ public class PartitionFileWriterUtils {
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(numberOfLines)
+                .numberOfRecords(numberOfRecords)
                 .minRowKey(Key.create(minKey))
                 .maxRowKey(Key.create(maxKey))
                 .lastStateStoreUpdateTime(updateTime)
@@ -81,12 +81,12 @@ public class PartitionFileWriterUtils {
     /**
      * Create a {@link ParquetWriter} for {@link Record} objects, based on the supplied details.
      *
-     * @param outputFile              The file to write to, which may include a prefix such as s3a://
-     * @param tableProperties         The table properties
-     * @param hadoopConfiguration     The Hadoop configuration to use to create the Parquet writer. This allows the
-     *                                library to locate classes which correspond to a prefix such as s3a://. Note that
-     *                                the library uses a cache and so unusual errors may occur if this configuration
-     *                                changes.
+     * @param outputFile          The file to write to, which may include a prefix such as s3a://
+     * @param tableProperties     The table properties
+     * @param hadoopConfiguration The Hadoop configuration to use to create the Parquet writer. This allows the
+     *                            library to locate classes which correspond to a prefix such as s3a://. Note that
+     *                            the library uses a cache and so unusual errors may occur if this configuration
+     *                            changes.
      * @return The {@link ParquetWriter}
      * @throws IOException -
      */

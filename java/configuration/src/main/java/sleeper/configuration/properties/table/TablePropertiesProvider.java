@@ -20,8 +20,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class TablePropertiesProvider {
@@ -38,10 +40,15 @@ public class TablePropertiesProvider {
     }
 
     public TableProperties getTableProperties(String tableName) {
-        if (!tableNameToPropertiesCache.containsKey(tableName)) {
-            tableNameToPropertiesCache.put(tableName, getTableProperties.apply(tableName));
+        return tableNameToPropertiesCache.computeIfAbsent(tableName, getTableProperties);
+    }
+
+    public Optional<TableProperties> getTablePropertiesIfExists(String tableName) {
+        try {
+            return Optional.of(getTableProperties(tableName));
+        } catch (RuntimeException e) {
+            return Optional.empty();
         }
-        return tableNameToPropertiesCache.get(tableName);
     }
 
     private static TableProperties getTablePropertiesFromS3(
@@ -50,7 +57,7 @@ public class TablePropertiesProvider {
         try {
             tableProperties.loadFromS3(s3Client, tableName);
         } catch (IOException e) {
-            throw new RuntimeException("Exception while trying to download table properties", e);
+            throw new UncheckedIOException("Exception while trying to download table properties", e);
         }
         return tableProperties;
     }

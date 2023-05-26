@@ -74,8 +74,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         // Then
         //  - Read output files and check that they contain the right results
         List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getLinesRead()).isEqualTo(200L);
-        assertThat(summary.getLinesWritten()).isEqualTo(200L);
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults.subList(0, 100));
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(expectedResults.subList(100, 200));
 
@@ -124,8 +124,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         // Then
         //  - Read output files and check that they contain the right results
         List<Record> expectedResults = combineSortedBySingleKey(data1, data2, record -> record.get(field1.getName()));
-        assertThat(summary.getLinesRead()).isEqualTo(200L);
-        assertThat(summary.getLinesWritten()).isEqualTo(200L);
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults.subList(0, 100));
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(expectedResults.subList(100, 200));
 
@@ -173,8 +173,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output files and check that they contain the right results
-        assertThat(summary.getLinesRead()).isEqualTo(200L);
-        assertThat(summary.getLinesWritten()).isEqualTo(200L);
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(data1);
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(data2);
 

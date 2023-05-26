@@ -44,17 +44,17 @@ public class CompactionUtils {
         LOGGER.info("There are {} files for this partition", files.size());
 
         // Create map of number of records in file to files, sorted by number of records in file
-        SortedMap<Long, List<FileInfo>> linesToFiles = new TreeMap<>();
+        SortedMap<Long, List<FileInfo>> recordsToFiles = new TreeMap<>();
         for (FileInfo fileInfo : files) {
-            if (!linesToFiles.containsKey(fileInfo.getNumberOfRecords())) {
-                linesToFiles.put(fileInfo.getNumberOfRecords(), new ArrayList<>());
+            if (!recordsToFiles.containsKey(fileInfo.getNumberOfRecords())) {
+                recordsToFiles.put(fileInfo.getNumberOfRecords(), new ArrayList<>());
             }
-            linesToFiles.get(fileInfo.getNumberOfRecords()).add(fileInfo);
+            recordsToFiles.get(fileInfo.getNumberOfRecords()).add(fileInfo);
         }
 
-        // Convert to list of FileInfos in ascending order of number of lines
+        // Convert to list of FileInfos in ascending order of number of records
         List<FileInfo> fileInfosList = new ArrayList<>();
-        for (Map.Entry<Long, List<FileInfo>> entry : linesToFiles.entrySet()) {
+        for (Map.Entry<Long, List<FileInfo>> entry : recordsToFiles.entrySet()) {
             fileInfosList.addAll(entry.getValue());
         }
 

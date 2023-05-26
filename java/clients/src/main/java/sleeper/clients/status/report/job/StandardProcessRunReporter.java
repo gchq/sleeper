@@ -37,8 +37,8 @@ public class StandardProcessRunReporter {
     public static final TableFieldDefinition START_TIME = TableFieldDefinition.field("START_TIME");
     public static final TableFieldDefinition FINISH_TIME = TableFieldDefinition.field("FINISH_TIME");
     public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION");
-    public static final TableFieldDefinition LINES_READ = TableFieldDefinition.numeric("LINES_READ");
-    public static final TableFieldDefinition LINES_WRITTEN = TableFieldDefinition.numeric("LINES_WRITTEN");
+    public static final TableFieldDefinition RECORDS_READ = TableFieldDefinition.numeric("RECORDS_READ");
+    public static final TableFieldDefinition RECORDS_WRITTEN = TableFieldDefinition.numeric("RECORDS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
 
@@ -50,7 +50,7 @@ public class StandardProcessRunReporter {
         this(out);
         tableBuilder.addFields(
                 TASK_ID, START_TIME, FINISH_TIME, DURATION,
-                LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE);
+                RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     public StandardProcessRunReporter(PrintStream out) {
@@ -62,8 +62,8 @@ public class StandardProcessRunReporter {
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime())
                 .value(DURATION, getDurationInSeconds(run))
-                .value(LINES_READ, getLinesRead(run))
-                .value(LINES_WRITTEN, getLinesWritten(run))
+                .value(RECORDS_READ, getRecordsRead(run))
+                .value(RECORDS_WRITTEN, getRecordsWritten(run))
                 .value(READ_RATE, getRecordsReadPerSecond(run))
                 .value(WRITE_RATE, getRecordsWrittenPerSecond(run));
     }
@@ -77,8 +77,8 @@ public class StandardProcessRunReporter {
             out.printf("Finish Time: %s%n", run.getFinishTime());
             out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
             out.printf("Duration: %s%n", getDurationInSeconds(run));
-            out.printf("Lines Read: %s%n", getLinesRead(run));
-            out.printf("Lines Written: %s%n", getLinesWritten(run));
+            out.printf("Records Read: %s%n", getRecordsRead(run));
+            out.printf("Records Written: %s%n", getRecordsWritten(run));
             out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
             out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(run));
         } else {
@@ -87,7 +87,7 @@ public class StandardProcessRunReporter {
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
-        return Arrays.asList(FINISH_TIME, DURATION, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE);
+        return Arrays.asList(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     public static String getState(ProcessRun run) {
@@ -101,12 +101,12 @@ public class StandardProcessRunReporter {
         return getOrNull(run.getFinishedSummary(), summary -> formatDurationString((long) (summary.getDurationInSeconds() * 1000)));
     }
 
-    public static String getLinesRead(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getLinesRead()));
+    public static String getRecordsRead(ProcessRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getRecordsRead()));
     }
 
-    public static String getLinesWritten(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getLinesWritten()));
+    public static String getRecordsWritten(ProcessRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getRecordsWritten()));
     }
 
     public static String getRecordsReadPerSecond(ProcessRun run) {

@@ -41,8 +41,8 @@ public class IngestTaskStatusReportTestHelper {
     }
 
     public static IngestTaskStatus finishedTask(String taskId, String startTime,
-                                                String finishTime, long linesRead, long linesWritten) {
-        return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten).build();
+                                                String finishTime, long recordsRead, long recordsWritten) {
+        return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten).build();
     }
 
     public static IngestTaskStatus finishedTask(String taskId, String startTime, String finishTime,
@@ -54,22 +54,22 @@ public class IngestTaskStatusReportTestHelper {
     }
 
     private static IngestTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
-                                                                String finishTime, long linesRead, long linesWritten) {
+                                                                String finishTime, long recordsRead, long recordsWritten) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
-                        taskFinishedStatus(startTime, finishTime, linesRead, linesWritten));
+                        taskFinishedStatus(startTime, finishTime, recordsRead, recordsWritten));
     }
 
     private static IngestTaskFinishedStatus.Builder taskFinishedStatus(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
+            String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return IngestTaskFinishedStatus.builder()
-                .addJobSummary(createSummary(startTime, finishTime, linesRead, linesWritten));
+                .addJobSummary(createSummary(startTime, finishTime, recordsRead, recordsWritten));
     }
 
     private static RecordsProcessedSummary createSummary(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
+            String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten),
+                new RecordsProcessed(recordsRead, recordsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }
 }
