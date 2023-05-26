@@ -75,8 +75,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output files and check that they contain the right results
-        assertThat(summary.getLinesRead()).isEqualTo(200L);
-        assertThat(summary.getLinesWritten()).isEqualTo(100L);
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(100L);
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
 
         // - Check DynamoDBStateStore has correct ready for GC files
@@ -123,8 +123,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
 
         // Then
         //  - Read output files and check that they contain the right results
-        assertThat(summary.getLinesRead()).isEqualTo(200L);
-        assertThat(summary.getLinesWritten()).isEqualTo(100L);
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(100L);
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(data1.subList(0, 50));
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(data1.subList(50, 100));
 

@@ -110,8 +110,8 @@ public class AverageRecordRate {
 
         public Builder summary(RecordsProcessedSummary summary) {
             runCount++;
-            recordsRead += summary.getLinesRead();
-            recordsWritten += summary.getLinesWritten();
+            recordsRead += summary.getRecordsRead();
+            recordsWritten += summary.getRecordsWritten();
             totalRunDuration = totalRunDuration.plus(summary.getTimeInProcess());
             totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
