@@ -33,7 +33,7 @@ public interface IngestJobStatusStore {
     default void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
     }
 
-    default void jobStarted(String taskId, IngestJob job, Instant startTime, boolean validated) {
+    default void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
     }
 
     default void jobStarted(String taskId, IngestJob job, Instant startTime) {

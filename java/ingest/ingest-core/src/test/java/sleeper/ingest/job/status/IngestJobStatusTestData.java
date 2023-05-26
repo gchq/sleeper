@@ -54,7 +54,7 @@ public class IngestJobStatusTestData {
                 .taskId(taskId)
                 .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
                 .statusUpdate(
-                        IngestJobStartedStatus.validation(true)
+                        IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
                                 .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
                 .build();

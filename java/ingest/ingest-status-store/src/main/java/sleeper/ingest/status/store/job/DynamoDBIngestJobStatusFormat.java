@@ -94,12 +94,12 @@ public class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime, String taskId, boolean validated) {
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime, String taskId, boolean startOfRun) {
         return createJobRecord(job, UPDATE_TYPE_STARTED)
                 .number(START_TIME, startTime.toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .string(START_OF_RUN, String.valueOf(validated))
+                .bool(START_OF_RUN, startOfRun)
                 .build();
     }
 
@@ -150,7 +150,7 @@ public class DynamoDBIngestJobStatusFormat {
                             .build();
                 }
             case UPDATE_TYPE_STARTED:
-                return IngestJobStartedStatus.validation(getBooleanAttribute(item, START_OF_RUN))
+                return IngestJobStartedStatus.withStartOfRun(getBooleanAttribute(item, START_OF_RUN))
                         .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .startTime(getInstantAttribute(item, START_TIME))
                         .updateTime(getInstantAttribute(item, UPDATE_TIME)).build();

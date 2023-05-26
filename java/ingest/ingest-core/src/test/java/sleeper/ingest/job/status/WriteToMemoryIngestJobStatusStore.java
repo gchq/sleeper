@@ -54,13 +54,13 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, false);
+        jobStarted(taskId, job, startTime, true);
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean validation) {
+    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.validation(validation).inputFileCount(job.getFiles().size())
+                IngestJobStartedStatus.withStartOfRun(startOfRun).inputFileCount(job.getFiles().size())
                         .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build(), taskId);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);

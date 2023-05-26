@@ -95,9 +95,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean validated) {
+    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId, validated));
+            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId, startOfRun));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -107,7 +107,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, false);
+        jobStarted(taskId, job, startTime, true);
     }
 
     @Override
