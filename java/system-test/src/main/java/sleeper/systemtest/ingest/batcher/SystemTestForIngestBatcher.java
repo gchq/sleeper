@@ -16,10 +16,19 @@
 
 package sleeper.systemtest.ingest.batcher;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetWriter;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.systemtest.ingest.RandomRecordSupplier;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,7 +41,8 @@ public class SystemTestForIngestBatcher {
     private final String instanceId;
     private final String vpc;
     private final String subnet;
-    private final S3Client s3Client;
+    private final AmazonS3 s3ClientV1;
+    private final S3Client s3ClientV2;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -40,21 +50,14 @@ public class SystemTestForIngestBatcher {
         instanceId = builder.instanceId;
         vpc = builder.vpc;
         subnet = builder.subnet;
-        s3Client = builder.s3Client;
+        s3ClientV1 = builder.s3ClientV1;
+        s3ClientV2 = builder.s3ClientV2;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    /**
-     * Create an S3 bucket
-     * Add it as an ingest source bucket in a Sleeper instance
-     * Deploy instance
-     * Submit files to the ingest batcher
-     * Trigger the ingest batcher to create jobs
-     * Test ingest via both standard ingest and bulk import
-     */
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length != 5) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
@@ -65,14 +68,23 @@ public class SystemTestForIngestBatcher {
                     .instanceId(args[2])
                     .vpc(args[3])
                     .subnet(args[4])
-                    .s3Client(s3Client)
+                    .s3ClientV1(AmazonS3ClientBuilder.defaultClient())
+                    .s3ClientV2(s3Client)
                     .build().run();
         }
     }
 
+    /**
+     * Create an S3 bucket
+     * Add it as an ingest source bucket in a Sleeper instance
+     * Deploy instance
+     * Submit files to the ingest batcher
+     * Trigger the ingest batcher to create jobs
+     * Test ingest via both standard ingest and bulk import
+     */
     public void run() throws IOException, InterruptedException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
-        createS3Bucket(sourceBucketName);
+        s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
 
         DeployNewInstance.builder().scriptsDirectory(scriptsDir)
                 .instancePropertiesTemplate(propertiesTemplate)
@@ -85,10 +97,26 @@ public class SystemTestForIngestBatcher {
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
+
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.loadFromS3(s3ClientV1, "system-test");
+
+        writeFileWithRecords(tableProperties, sourceBucketName + "/file-1.parquet", 100);
+        writeFileWithRecords(tableProperties, sourceBucketName + "/file-2.parquet", 100);
+        writeFileWithRecords(tableProperties, sourceBucketName + "/file-3.parquet", 100);
+        writeFileWithRecords(tableProperties, sourceBucketName + "/file-4.parquet", 100);
     }
 
-    private void createS3Bucket(String sourceBucketName) {
-        s3Client.createBucket(builder -> builder.bucket(sourceBucketName));
+    private void writeFileWithRecords(TableProperties tableProperties, String filePath, int numRecords) throws IOException {
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                new org.apache.hadoop.fs.Path("s3a://" + filePath), tableProperties, new Configuration())) {
+            RandomRecordSupplier supplier = new RandomRecordSupplier(tableProperties.getSchema());
+            for (int i = 0; i < numRecords; i++) {
+                writer.write(supplier.get());
+            }
+        }
     }
 
     public static final class Builder {
@@ -97,7 +125,8 @@ public class SystemTestForIngestBatcher {
         private String instanceId;
         private String vpc;
         private String subnet;
-        private S3Client s3Client;
+        private AmazonS3 s3ClientV1;
+        private S3Client s3ClientV2;
 
         private Builder() {
         }
@@ -128,8 +157,13 @@ public class SystemTestForIngestBatcher {
             return this;
         }
 
-        public Builder s3Client(S3Client s3Client) {
-            this.s3Client = s3Client;
+        public Builder s3ClientV1(AmazonS3 s3ClientV1) {
+            this.s3ClientV1 = s3ClientV1;
+            return this;
+        }
+
+        public Builder s3ClientV2(S3Client s3ClientV2) {
+            this.s3ClientV2 = s3ClientV2;
             return this;
         }
 
