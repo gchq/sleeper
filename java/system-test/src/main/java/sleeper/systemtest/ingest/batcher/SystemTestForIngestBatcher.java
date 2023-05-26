@@ -87,10 +87,8 @@ public class SystemTestForIngestBatcher {
                 .deployWithDefaultClients();
     }
 
-    private static void createS3Bucket(String sourceBucketName) {
-        try (S3Client s3Client = S3Client.create()) {
-            s3Client.createBucket(builder -> builder.bucket(sourceBucketName));
-        }
+    private void createS3Bucket(String sourceBucketName) {
+        s3Client.createBucket(builder -> builder.bucket(sourceBucketName));
     }
 
     public static final class Builder {
