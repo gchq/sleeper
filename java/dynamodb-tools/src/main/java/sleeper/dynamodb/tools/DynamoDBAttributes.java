@@ -78,7 +78,7 @@ public class DynamoDBAttributes {
     }
 
     public static boolean getBooleanAttribute(Map<String, AttributeValue> item, String name) {
-        return getStringAttribute(item, name).equalsIgnoreCase("true");
+        return Boolean.TRUE.equals(getAttribute(item, name, AttributeValue::getBOOL));
     }
 
     public static int getIntAttribute(Map<String, AttributeValue> item, String name, int defaultValue) {
