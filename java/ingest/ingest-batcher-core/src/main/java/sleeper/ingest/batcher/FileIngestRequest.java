@@ -28,10 +28,18 @@ public class FileIngestRequest {
 
     private FileIngestRequest(Builder builder) {
         pathToFile = Objects.requireNonNull(builder.pathToFile, "pathToFile must not be null");
-        fileSizeBytes = builder.fileSizeBytes;
+        fileSizeBytes = requirePositiveFileSize(builder.fileSizeBytes, "fileSizeBytes must be positive");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         receivedTime = Objects.requireNonNull(builder.receivedTime, "receivedTime must not be null");
         jobId = builder.jobId;
+    }
+
+    private static long requirePositiveFileSize(long bytes, String message) {
+        if (bytes < 1) {
+            throw new IllegalArgumentException(message);
+        } else {
+            return bytes;
+        }
     }
 
     public static Builder builder() {
