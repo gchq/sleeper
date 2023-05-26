@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
@@ -24,37 +25,38 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TablePropertiesIT extends TablePropertiesS3TestBase {
-
-    @Test
-    void shouldSaveToS3() throws IOException {
-        // Given
-        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
-                "test", "save-properties");
-        s3Client.createBucket("save-properties");
-
-        // When
-        validProperties.saveToS3(s3Client);
-
-        // Then
-        assertThat(s3Client.doesObjectExist("save-properties", "tables/test")).isTrue();
-    }
+class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
 
     @Test
     void shouldLoadFromS3() throws IOException {
         // Given
         TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
-                "test", "load-properties");
-        s3Client.createBucket("load-properties");
+                "test", "provider-load");
+        s3Client.createBucket("provider-load");
         validProperties.saveToS3(s3Client);
 
         // When
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "load-properties");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3Client, "test");
+        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-load");
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
 
         // Then
-        assertThat(tableProperties).isEqualTo(validProperties);
+        assertThat(provider.getTableProperties("test")).isEqualTo(validProperties);
+        assertThat(provider.getTablePropertiesIfExists("test")).contains(validProperties);
+    }
+
+    @Test
+    void shouldReportTableDoesNotExistWhenNotInBucket() {
+        // Given
+        s3Client.createBucket("provider-no-table");
+
+        // When
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-no-table");
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+
+        // Then
+        assertThat(provider.getTablePropertiesIfExists("test"))
+                .isEmpty();
     }
 }
