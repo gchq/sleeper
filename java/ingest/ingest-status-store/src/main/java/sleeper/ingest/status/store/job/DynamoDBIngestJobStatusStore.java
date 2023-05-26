@@ -106,11 +106,6 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, true);
-    }
-
-    @Override
     public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
         try {
             PutItemResult result = putItem(format.createJobFinishedRecord(job, summary, taskId));

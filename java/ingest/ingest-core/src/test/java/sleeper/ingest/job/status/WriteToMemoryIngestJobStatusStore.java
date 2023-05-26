@@ -53,11 +53,6 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, true);
-    }
-
-    @Override
     public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 IngestJobStartedStatus.withStartOfRun(startOfRun).inputFileCount(job.getFiles().size())
