@@ -13,8 +13,8 @@ Start Update Time: 2022-10-13T14:02:10.123Z
 Finish Time: 2022-10-13T14:02:10.123Z
 Finish Update Time: 2022-10-13T14:02:10.123Z
 Duration: 0.123s
-Lines Read: 1,234
-Lines Written: 1,234
+Records Read: 1,234
+Records Written: 1,234
 Read Rate (reads per second): 10,032.52
 Write Rate (writes per second): 10,032.52
 --------------------------
@@ -30,8 +30,8 @@ Start Update Time: 2022-10-13T14:01:10.123Z
 Finish Time: 2022-10-13T14:02:10Z
 Finish Update Time: 2022-10-13T14:02:10.123Z
 Duration: 1m
-Lines Read: 1,000,600
-Lines Written: 500,300
+Records Read: 1,000,600
+Records Written: 500,300
 Read Rate (reads per second): 16,676.67
 Write Rate (writes per second): 8,338.33
 --------------------------
@@ -47,8 +47,8 @@ Start Update Time: 2022-10-13T12:01:10.123Z
 Finish Time: 2022-10-13T14:01:10Z
 Finish Update Time: 2022-10-13T14:01:10.123Z
 Duration: 2h
-Lines Read: 1,000,600
-Lines Written: 500,300
+Records Read: 1,000,600
+Records Written: 500,300
 Read Rate (reads per second): 138.97
 Write Rate (writes per second): 69.49
 --------------------------
@@ -64,8 +64,8 @@ Start Update Time: 2022-10-13T12:00:10.123Z
 Finish Time: 2022-10-13T12:00:10.123Z
 Finish Update Time: 2022-10-13T12:00:10.123Z
 Duration: 0.123s
-Lines Read: 600
-Lines Written: 300
+Records Read: 600
+Records Written: 300
 Read Rate (reads per second): 4,878.05
 Write Rate (writes per second): 2,439.02
 --------------------------

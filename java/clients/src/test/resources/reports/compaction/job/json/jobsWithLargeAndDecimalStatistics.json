@@ -21,8 +21,8 @@
           "updateTime": "2022-10-13T14:02:10.123Z",
           "summary": {
             "recordsProcessed": {
-              "linesRead": 1234,
-              "linesWritten": 1234
+              "recordsRead": 1234,
+              "recordsWritten": 1234
             },
             "startTime": "2022-10-13T14:02:10Z",
             "finishTime": "2022-10-13T14:02:10.123Z",
@@ -56,8 +56,8 @@
           "updateTime": "2022-10-13T14:02:10.123Z",
           "summary": {
             "recordsProcessed": {
-              "linesRead": 1000600,
-              "linesWritten": 500300
+              "recordsRead": 1000600,
+              "recordsWritten": 500300
             },
             "startTime": "2022-10-13T14:01:10Z",
             "finishTime": "2022-10-13T14:02:10Z",
@@ -88,8 +88,8 @@
           "updateTime": "2022-10-13T14:01:10.123Z",
           "summary": {
             "recordsProcessed": {
-              "linesRead": 1000600,
-              "linesWritten": 500300
+              "recordsRead": 1000600,
+              "recordsWritten": 500300
             },
             "startTime": "2022-10-13T12:01:10Z",
             "finishTime": "2022-10-13T14:01:10Z",
@@ -120,8 +120,8 @@
           "updateTime": "2022-10-13T12:00:10.123Z",
           "summary": {
             "recordsProcessed": {
-              "linesRead": 600,
-              "linesWritten": 300
+              "recordsRead": 600,
+              "recordsWritten": 300
             },
             "startTime": "2022-10-13T12:00:10Z",
             "finishTime": "2022-10-13T12:00:10.123Z",

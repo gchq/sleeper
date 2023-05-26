@@ -114,8 +114,8 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         // Then
         //  - Read output file and check that it contains the right results
         List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getLinesRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
@@ -154,8 +154,8 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         // Then
         //  - Read output files and check that they contain the right results
         List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getLinesRead()).isEqualTo(200L);
-        assertThat(summary.getLinesWritten()).isEqualTo(200L);
+        assertThat(summary.getRecordsRead()).isEqualTo(200L);
+        assertThat(summary.getRecordsWritten()).isEqualTo(200L);
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults.subList(0, 100));
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(expectedResults.subList(100, 200));
 
