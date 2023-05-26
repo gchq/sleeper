@@ -197,6 +197,18 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the dead letter queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.rule")
+            .description("The name of the CloudWatch rule to trigger the batcher to create jobs from file ingest requests.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.lambda")
+            .description("The name of the ingest batcher Lambda to create jobs from file ingest requests.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.submit.lambda")
+            .description("The name of the ingest batcher Lambda to submit file ingest requests.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
     SystemDefinedInstanceProperty INGEST_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.ingest.task.definition.family")
             .description("The name of the family of task definitions used for ingest tasks.")
             .propertyGroup(InstancePropertyGroup.INGEST)

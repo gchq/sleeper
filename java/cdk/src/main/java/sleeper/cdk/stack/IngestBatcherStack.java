@@ -22,6 +22,9 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.events.Rule;
+import software.amazon.awscdk.services.events.Schedule;
+import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -41,6 +44,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,12 +53,17 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATOR_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATOR_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
@@ -133,26 +142,40 @@ public class IngestBatcherStack extends NestedStack {
                 .environment(environmentVariables)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(List.of(new SqsEventSource(submitQueue))));
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
         configBucket.grantRead(submitterLambda);
 
-        IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "BatchIngestJobsLambda", builder -> builder
+        IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
-                .description("Create ingest jobs by batching up submitted file ingest requests")
+                .description("Create jobs by batching up submitted file ingest requests")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATOR_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATOR_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+        instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         configBucket.grantRead(jobCreatorLambda);
         ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack)
                 .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
+
+        // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
+        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherJobCreationRule");
+        Rule rule = Rule.Builder
+                .create(this, "IngestBatcherJobCreationPeriodicTrigger")
+                .ruleName(ruleName)
+                .description("A rule to periodically trigger the ingest batcher job creation lambda")
+                .enabled(!shouldDeployPaused(this))
+                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
+                .targets(Collections.singletonList(new LambdaFunction(jobCreatorLambda)))
+                .build();
+        instanceProperties.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
     private static Stream<Queue> ingestQueues(IngestStack ingestStack,
