@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.job;
+package sleeper.ingest.batcher.job.creator;
 
-import org.junit.jupiter.api.Test;
+import com.amazonaws.services.sqs.AmazonSQS;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import sleeper.ingest.batcher.IngestBatcherQueueClient;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobSerDe;
 
-public class IngestJobSerDeTest {
+public class SQSIngestBatcherQueueClient implements IngestBatcherQueueClient {
 
-    @Test
-    public void shouldSerDeCorrectly() {
-        // Given
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName("table").id("id").files("file1", "file2")
-                .build();
-        IngestJobSerDe ingestJobSerDe = new IngestJobSerDe();
+    private final AmazonSQS sqs;
+    private final IngestJobSerDe serDe = new IngestJobSerDe();
 
-        // When
-        IngestJob deserialisedJob = ingestJobSerDe.fromJson(ingestJobSerDe.toJson(ingestJob));
+    public SQSIngestBatcherQueueClient(AmazonSQS sqs) {
+        this.sqs = sqs;
+    }
 
-        // Then
-        assertThat(deserialisedJob).isEqualTo(ingestJob);
+    @Override
+    public void send(String queueUrl, IngestJob job) {
+        sqs.sendMessage(queueUrl, serDe.toJson(job));
     }
 }
