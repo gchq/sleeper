@@ -48,13 +48,11 @@ public class IngestJobStatusTestData {
         return jobStatus(job, finishedIngestRun(job, taskId, summary));
     }
 
-    public static ProcessRun startedIngestRunWithValidation(
-            IngestJob job, String taskId, Instant validationTime, ValidationData validationData, Instant startTime) {
+    public static ProcessRun acceptedRunWhichStarted(
+            IngestJob job, String taskId, Instant validationTime, Instant startTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(ValidationStatus.builder()
-                        .validationTime(validationTime)
-                        .validationData(validationData).build())
+                .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
                 .statusUpdate(
                         IngestJobStartedStatus.validation(true)
                                 .inputFileCount(job.getFiles().size())
@@ -62,21 +60,19 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
-    public static ProcessRun unstartedValidRun(String taskId, Instant validationTime) {
+    public static ProcessRun acceptedRun(String taskId, Instant validationTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(ValidationStatus.builder()
-                        .validationTime(validationTime)
-                        .validationData(ValidationData.valid()).build())
+                .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
                 .build();
     }
 
-    public static ProcessRun invalidRun(String taskId, Instant validationTime, ValidationData validationData) {
+    public static ProcessRun rejectedRun(String taskId, Instant validationTime, String reason) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(ValidationStatus.builder()
+                .startedStatus(IngestJobRejectedStatus.builder()
                         .validationTime(validationTime)
-                        .validationData(validationData).build())
+                        .reason(reason).build())
                 .build();
     }
 

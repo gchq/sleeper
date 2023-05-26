@@ -27,7 +27,10 @@ public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {
     };
 
-    default void jobValidated(String taskId, IngestJob job, Instant validationTime, ValidationData validationData) {
+    default void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
+    }
+
+    default void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
     }
 
     default void jobStarted(String taskId, IngestJob job, Instant startTime, boolean validated) {

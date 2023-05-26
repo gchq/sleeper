@@ -36,7 +36,6 @@ import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.job.status.ValidationData;
 
 import java.time.Instant;
 import java.util.List;
@@ -74,9 +73,20 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobValidated(String taskId, IngestJob job, Instant validationTime, ValidationData validationData) {
+    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
         try {
-            PutItemResult result = putItem(format.createJobValidatedRecord(job, validationTime, validationData, taskId));
+            PutItemResult result = putItem(format.createJobAcceptedRecord(job, validationTime, taskId));
+            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    @Override
+    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+        try {
+            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reason, taskId));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

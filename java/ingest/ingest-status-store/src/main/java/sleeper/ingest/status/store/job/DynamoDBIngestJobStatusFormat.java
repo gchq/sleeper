@@ -27,10 +27,10 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.ValidationData;
-import sleeper.ingest.job.status.ValidationStatus;
 
 import java.time.Instant;
 import java.util.Map;
@@ -75,12 +75,21 @@ public class DynamoDBIngestJobStatusFormat {
         this.getTimeNow = getTimeNow;
     }
 
-    public Map<String, AttributeValue> createJobValidatedRecord(
-            IngestJob job, Instant validationTime, ValidationData validationData, String taskId) {
+    public Map<String, AttributeValue> createJobAcceptedRecord(
+            IngestJob job, Instant validationTime, String taskId) {
         return createJobRecord(job, UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, validationTime.toEpochMilli())
-                .string(VALIDATION_RESULT, String.valueOf(validationData.isValid()))
-                .string(VALIDATION_REASON, validationData.getReason())
+                .bool(VALIDATION_RESULT, true)
+                .string(TASK_ID, taskId)
+                .build();
+    }
+
+    public Map<String, AttributeValue> createJobRejectedRecord(
+            IngestJob job, Instant validationTime, String reason, String taskId) {
+        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
+                .number(VALIDATION_TIME, validationTime.toEpochMilli())
+                .bool(VALIDATION_RESULT, false)
+                .string(VALIDATION_REASON, reason)
                 .string(TASK_ID, taskId)
                 .build();
     }
@@ -130,12 +139,16 @@ public class DynamoDBIngestJobStatusFormat {
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_VALIDATED:
-                return ValidationStatus.builder()
-                        .validationTime(getInstantAttribute(item, VALIDATION_TIME))
-                        .validationData(ValidationData.builder()
-                                .valid(getBooleanAttribute(item, VALIDATION_RESULT))
-                                .reason(getStringAttribute(item, VALIDATION_REASON)).build())
-                        .build();
+                boolean accepted = getBooleanAttribute(item, VALIDATION_RESULT);
+                if (accepted) {
+                    return IngestJobAcceptedStatus
+                            .validationTime(getInstantAttribute(item, VALIDATION_TIME));
+                } else {
+                    return IngestJobRejectedStatus.builder()
+                            .validationTime(getInstantAttribute(item, VALIDATION_TIME))
+                            .reason(getStringAttribute(item, VALIDATION_REASON))
+                            .build();
+                }
             case UPDATE_TYPE_STARTED:
                 return IngestJobStartedStatus.validation(getBooleanAttribute(item, START_OF_RUN))
                         .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))

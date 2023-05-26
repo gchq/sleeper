@@ -29,12 +29,12 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.invalidRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRunWithValidation;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.unstartedValidRun;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -206,11 +206,11 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(taskId, job, validationTime, ValidationData.valid());
+            store.jobAccepted(taskId, job, validationTime);
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, unstartedValidRun(taskId, validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRun(taskId, validationTime)));
         }
 
         @Test
@@ -223,13 +223,13 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobValidated(taskId, job, validationTime, ValidationData.valid());
+            store.jobAccepted(taskId, job, validationTime);
             store.jobStarted(taskId, job, startTime, true);
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, startedIngestRunWithValidation(job, taskId,
-                            validationTime, ValidationData.valid(), startTime)));
+                    .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                            validationTime, startTime)));
         }
 
         @Test
@@ -239,14 +239,13 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            ValidationData validationData = ValidationData.invalid("Test validation reason");
 
             // When
-            store.jobValidated(taskId, job, validationTime, validationData);
+            store.jobRejected(taskId, job, validationTime, "Test validation reason");
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, invalidRun(taskId, validationTime, validationData)));
+                    .containsExactly(jobStatus(job, rejectedRun(taskId, validationTime, "Test validation reason")));
         }
     }
 }

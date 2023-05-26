@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
@@ -36,6 +37,10 @@ public class DynamoDBRecordBuilder {
 
     public DynamoDBRecordBuilder number(String key, Number value) {
         return add(key, createNumberAttribute(value));
+    }
+
+    public DynamoDBRecordBuilder bool(String key, Boolean bool) {
+        return add(key, createBooleanAttribute(bool));
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {

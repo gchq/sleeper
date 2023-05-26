@@ -61,6 +61,10 @@ public class DynamoDBAttributes {
         }
     }
 
+    public static AttributeValue createBooleanAttribute(boolean bool) {
+        return new AttributeValue().withBOOL(bool);
+    }
+
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
         return new AttributeValue().withB(ByteBuffer.wrap(bytes));
     }

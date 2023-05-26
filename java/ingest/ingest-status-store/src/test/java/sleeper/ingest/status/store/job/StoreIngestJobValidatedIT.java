@@ -19,15 +19,14 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.ValidationData;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.invalidRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRunWithValidation;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -38,15 +37,15 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobValidated(DEFAULT_TASK_ID, job, validationTime, ValidationData.valid());
+        store.jobAccepted(DEFAULT_TASK_ID, job, validationTime);
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime, true);
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
-                        startedIngestRunWithValidation(job, DEFAULT_TASK_ID,
-                                validationTime, ValidationData.valid(), startedTime)));
+                        acceptedRunWhichStarted(job, DEFAULT_TASK_ID,
+                                validationTime, startedTime)));
     }
 
     @Test
@@ -56,13 +55,12 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
 
         // When
-        store.jobValidated(DEFAULT_TASK_ID, job, validationTime, ValidationData.invalid("Test failure"));
+        store.jobRejected(DEFAULT_TASK_ID, job, validationTime, "Test failure");
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
-                        invalidRun(DEFAULT_TASK_ID,
-                                validationTime, ValidationData.invalid("Test failure"))));
+                        rejectedRun(DEFAULT_TASK_ID, validationTime, "Test failure")));
     }
 }

@@ -16,14 +16,15 @@
 
 package sleeper.ingest.job.status;
 
+import java.time.Instant;
 import java.util.Objects;
 
-public class ValidationData {
-    private final boolean valid;
+public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
+    private final Instant updateTime;
     private final String reason;
 
-    private ValidationData(Builder builder) {
-        valid = builder.valid;
+    private IngestJobRejectedStatus(Builder builder) {
+        updateTime = builder.updateTime;
         reason = builder.reason;
     }
 
@@ -31,20 +32,19 @@ public class ValidationData {
         return new Builder();
     }
 
-    public static ValidationData valid() {
-        return builder().valid(true).reason("").build();
+    @Override
+    public Instant getUpdateTime() {
+        return updateTime;
     }
 
-    public static ValidationData invalid(String reason) {
-        return builder().valid(false).reason(reason).build();
+    @Override
+    public Instant getStartTime() {
+        return updateTime;
     }
 
+    @Override
     public boolean isValid() {
-        return valid;
-    }
-
-    public String getReason() {
-        return reason;
+        return false;
     }
 
     @Override
@@ -55,32 +55,32 @@ public class ValidationData {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ValidationData that = (ValidationData) o;
-        return valid == that.valid && Objects.equals(reason, that.reason);
+        IngestJobRejectedStatus that = (IngestJobRejectedStatus) o;
+        return Objects.equals(updateTime, that.updateTime) && Objects.equals(reason, that.reason);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(valid, reason);
+        return Objects.hash(updateTime, reason);
     }
 
     @Override
     public String toString() {
-        return "ValidationData{" +
-                "valid=" + valid +
+        return "IngestJobRejectedStatus{" +
+                "updateTime=" + updateTime +
                 ", reason='" + reason + '\'' +
                 '}';
     }
 
     public static final class Builder {
-        private boolean valid;
-        private String reason = "";
+        private Instant updateTime;
+        private String reason;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder valid(boolean valid) {
-            this.valid = valid;
+        public Builder validationTime(Instant updateTime) {
+            this.updateTime = updateTime;
             return this;
         }
 
@@ -89,8 +89,8 @@ public class ValidationData {
             return this;
         }
 
-        public ValidationData build() {
-            return new ValidationData(this);
+        public IngestJobRejectedStatus build() {
+            return new IngestJobRejectedStatus(this);
         }
     }
 }
