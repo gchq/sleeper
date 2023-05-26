@@ -167,6 +167,35 @@ public class InMemoryFileInfoStoreTest {
     }
 
     @Test
+    public void shouldReturnCorrectActiveFileList() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
+        FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
+        FileInfo file3 = factory.rootFile("file3", 200L, "e", "f");
+        FileInfo file4 = factory.rootFile("file4", 300L, "e", "h");
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.addFiles(Arrays.asList(file1, file2, file3));
+        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file3), file4);
+        store.setStatusToReadyForGarbageCollection(file3.getFilename());
+
+        // When
+        List<FileInfo> activeFileList = store.getActiveFileList();
+
+        // Then
+        List<FileInfo> expectedFileInfoList = Arrays.asList(
+                file1.cloneWithStatus(FileStatus.ACTIVE),
+                file2.cloneWithStatus(FileStatus.ACTIVE),
+                file4.cloneWithStatus(FileStatus.ACTIVE));
+        assertThat(activeFileList)
+                .containsExactlyInAnyOrder(expectedFileInfoList.toArray(new FileInfo[0]));
+    }
+
+    @Test
     public void shouldReturnCorrectFileInPartitionList() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();

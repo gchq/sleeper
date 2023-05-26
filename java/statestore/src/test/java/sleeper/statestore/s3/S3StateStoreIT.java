@@ -51,7 +51,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
@@ -64,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,13 +155,6 @@ public class S3StateStoreIT {
 
     private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
         return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
-    }
-
-    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", keyType))
-                .valueFields(new Field("value", valueType))
-                .build();
     }
 
     @Test
@@ -482,65 +473,6 @@ public class S3StateStoreIT {
         dynamoDBStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
         assertThat(readyForGCFiles).hasSize(2);
         assertThat(readyForGCFiles.stream().collect(Collectors.toSet())).containsExactlyInAnyOrder("file1", "file3");
-
-        // // Given
-        // Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
-        // StateStore stateStore = getStateStore(schema, 5);
-        // Partition partition = stateStore.getAllPartitions().get(0);
-        // //  - A file which should be garbage collected immediately
-        // FileInfo fileInfo1 = FileInfo.builder()
-        //         .rowKeyTypes(new IntType())
-        //         .filename("file1")
-        //         .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-        //         .partitionId(partition.getId())
-        //         .minRowKey(Key.create(1))
-        //         .maxRowKey(Key.create(100))
-        //         .numberOfRecords(100L)
-        //         .lastStateStoreUpdateTime(System.currentTimeMillis() - 8000)
-        //         .build();
-        // stateStore.addFile(fileInfo1);
-        // //  - An active file which should not be garbage collected
-        // FileInfo fileInfo2 = FileInfo.builder()
-        //         .rowKeyTypes(new IntType())
-        //         .filename("file2")
-        //         .fileStatus(FileInfo.FileStatus.ACTIVE)
-        //         .partitionId(partition.getId())
-        //         .minRowKey(Key.create(1))
-        //         .maxRowKey(Key.create(100))
-        //         .numberOfRecords(100L)
-        //         .lastStateStoreUpdateTime(System.currentTimeMillis())
-        //         .build();
-        // stateStore.addFile(fileInfo2);
-        // //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
-        // //      just been marked as ready for GC
-        // FileInfo fileInfo3 = FileInfo.builder()
-        //         .rowKeyTypes(new IntType())
-        //         .filename("file3")
-        //         .fileStatus(FileInfo.FileStatus.ACTIVE)
-        //         .partitionId(partition.getId())
-        //         .minRowKey(Key.create(1))
-        //         .maxRowKey(Key.create(100))
-        //         .numberOfRecords(100L)
-        //         .lastStateStoreUpdateTime(System.currentTimeMillis())
-        //         .build();
-        // // stateStore.addFile(fileInfo3);
-        // stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
-        //     Collections.singletonList(fileInfo1.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION)), fileInfo3);
-        // stateStore.setStatusToReadyForGarbageCollection(fileInfo1.getFilename());
-
-        // // When 1
-        // Thread.sleep(6000L);
-        // Iterator<String> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-
-        // // Then 1
-        // assertThat(readyForGCFilesIterator).toIterable().containsExactly(fileInfo1.getFilename());
-
-        // // When 2
-        // Thread.sleep(9000L);
-        // readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-
-        // // Then 2
-        // assertThat(readyForGCFilesIterator).toIterable().containsExactlyInAnyOrder(fileInfo1.getFilename(), fileInfo3.getFilename());
     }
 
     @Test
@@ -638,339 +570,353 @@ public class S3StateStoreIT {
         assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
-//     @Test
-//     public void shouldNotDeleteReadyForGCFileIfNotMarkedAsReadyForGC() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         FileInfo fileInfo1 = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file1")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("4")
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(1_000_000L)
-//                 .numberOfRecords(1L)
-//                 .build();
-//         FileInfo fileInfo2 = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file2")
-//                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-//                 .partitionId("5")
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(2_000_000L)
-//                 .numberOfRecords(2L)
-//                 .build();
-//         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+    @Test
+    public void shouldatomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> fileInPartitionRecordsToRemove = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            fileInPartitionRecordsToRemove.add(fileInfo);
+            stateStore.addFile(fileInfo);
+        }
+        FileInfo newFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(4L)
+                .build();
 
-//         // When
-//         assertThatThrownBy(() -> stateStore.deleteFileLifecycleEntries(Collections.singletonList(fileInfo1.getFilename())))
-//                 .isInstanceOf(StateStoreException.class);
-//     }
+        // When
+        stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(fileInPartitionRecordsToRemove, newFileInfo);
 
-//     @Test
-//     public void shouldatomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("7")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords(1L)
-//                     .build();
-//             filesToMoveToReadyForGC.add(fileInfo);
-//             stateStore.addFile(fileInfo);
-//         }
-//         FileInfo newFileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file-new")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("7")
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(10_000_000L)
-//                 .numberOfRecords(4L)
-//                 .build();
+        // Then
+        assertThat(stateStore.getFileInPartitionList()).containsExactly(newFileInfo);
+        assertThat(stateStore.getFileLifecycleList()).hasSize(5);
+    }
 
-//         // When
-//         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
+    @Test
+    public void shouldatomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFileForSplittingJob() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> fileInPartitionRecordsToRemove = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords((long) i)
+                    .build();
+            fileInPartitionRecordsToRemove.add(fileInfo);
+        }
+        stateStore.addFiles(fileInPartitionRecordsToRemove);
+        FileInfo newLeftFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-left-new")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(5L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
+        FileInfo newRightFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-right-new")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(5L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
 
-//         // Then
-//         assertThat(stateStore.getFileInPartitionList()).containsExactly(newFileInfo);
-//         assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
-//     }
+        // When
+        stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(fileInPartitionRecordsToRemove, newLeftFileInfo, newRightFileInfo);
 
-//     @Test
-//     public void shouldatomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFileForSplittingJob() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("7")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords((long) i)
-//                     .build();
-//             filesToMoveToReadyForGC.add(fileInfo);
-//         }
-//         stateStore.addFiles(filesToMoveToReadyForGC);
-//         FileInfo newLeftFileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file-left-new")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("7")
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(5L))
-//                 .lastStateStoreUpdateTime(10_000_000L)
-//                 .numberOfRecords(5L)
-//                 .build();
-//         FileInfo newRightFileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file-right-new")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("7")
-//                 .minRowKey(Key.create(5L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(10_000_000L)
-//                 .numberOfRecords(5L)
-//                 .build();
+        // Then
+        assertThat(stateStore.getFileInPartitionList()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
+        assertThat(stateStore.getFileLifecycleList()).hasSize(6);
+    }
 
-//         // When
-//         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+    @Test
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFileShouldFailIfNoFileInPartitionRecord() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> fileInPartitionRecordsToRemove = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            fileInPartitionRecordsToRemove.add(fileInfo);
+        }
+        stateStore.addFiles(fileInPartitionRecordsToRemove);
+        FileInfo newFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
+        FileInfo newFileInfo2FileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new2")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
+        //  - Remove one of the file in partition records
+        stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
+                Collections.singletonList(fileInPartitionRecordsToRemove.get(3)), newFileInfo2FileInfo);
 
-//         // Then
-//         assertThat(stateStore.getFileInPartitionList()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
-//         assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
-//     }
+        // When / Then
+        assertThatThrownBy(() ->
+                stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(fileInPartitionRecordsToRemove, newFileInfo))
+                .isInstanceOf(StateStoreException.class);
+    }
 
-//     @Test
-//     public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFileShouldFailIfFilesNotActive() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("7")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(1_000_000L)
-//                     .numberOfRecords(1L)
-//                     .build();
-//             filesToMoveToReadyForGC.add(fileInfo);
-//         }
-//         //  - One of the files is not active
-//         FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-//                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-//                 .build();
-//         filesToMoveToReadyForGC.add(3, updatedFileInfo);
-//         stateStore.addFiles(filesToMoveToReadyForGC);
-//         FileInfo newFileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file-new")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("7")
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(1_000_000L)
-//                 .numberOfRecords(1L)
-//                 .build();
+    @Test
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFileaShouldFailIfNoFileInPartitionRecord() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> fileInPartitionRecordsToRemove = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords((long) i)
+                    .build();
+            fileInPartitionRecordsToRemove.add(fileInfo);
+        }
+        stateStore.addFiles(fileInPartitionRecordsToRemove);
+        FileInfo newLeftFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-left-new")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(5L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
+        FileInfo newRightFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-right-new")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(5L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
+        FileInfo dummyFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-dummy")
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("7")
+                .minRowKey(Key.create(5L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
+        //  - Remove one of the file in partition records
+        stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
+                Collections.singletonList(fileInPartitionRecordsToRemove.get(3)), dummyFileInfo);
 
-//         // When / Then
-//         assertThatThrownBy(() ->
-//                 stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo))
-//                 .isInstanceOf(StateStoreException.class);
-//     }
+        // When / Then
+        assertThatThrownBy(() ->
+                stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(fileInPartitionRecordsToRemove, newLeftFileInfo, newRightFileInfo))
+                .isInstanceOf(StateStoreException.class);
+    }
 
-//     @Test
-//     public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFilesShouldFailIfFilesNotActive() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("7")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords((long) i)
-//                     .build();
-//             filesToMoveToReadyForGC.add(fileInfo);
-//         }
-//         stateStore.addFiles(filesToMoveToReadyForGC);
-//         FileInfo newLeftFileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file-left-new")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("7")
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(5L))
-//                 .lastStateStoreUpdateTime(10_000_000L)
-//                 .numberOfRecords(5L)
-//                 .build();
-//         FileInfo newRightFileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("file-right-new")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("7")
-//                 .minRowKey(Key.create(5L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(10_000_000L)
-//                 .numberOfRecords(5L)
-//                 .build();
-//         //  - One of the files is not active
-//         FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
-//                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-//                 .build();
-//         filesToMoveToReadyForGC.add(3, updatedFileInfo);
-//         stateStore.addFiles(filesToMoveToReadyForGC);
+    @Test
+    public void shouldAtomicallyUpdateJobStatusOfFiles() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                    .partitionId("8")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            files.add(fileInfo);
+        }
+        stateStore.addFiles(files);
+        String jobId = UUID.randomUUID().toString();
 
-//         // When / Then
-//         assertThatThrownBy(() ->
-//                 stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo))
-//                 .isInstanceOf(StateStoreException.class);
-//     }
+        // When
+        stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
 
-//     @Test
-//     public void shouldAtomicallyUpdateJobStatusOfFiles() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> files = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("8")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords(1L)
-//                     .build();
-//             files.add(fileInfo);
-//         }
-//         stateStore.addFiles(files);
-//         String jobId = UUID.randomUUID().toString();
+        // Then
+        assertThat(stateStore.getFileInPartitionList()).hasSize(4)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
+                .containsExactlyInAnyOrderElementsOf(files)
+                .extracting(FileInfo::getJobId).containsOnly(jobId);
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
+    }
 
-//         // When
-//         stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
+    @Test
+    public void shouldReturnCorrectFileInPartitionList() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                    .partitionId("8")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            files.add(fileInfo);
+        }
+        stateStore.addFiles(files);
 
-//         // Then
-//         assertThat(stateStore.getFileInPartitionList()).hasSize(4)
-//                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
-//                 .containsExactlyInAnyOrderElementsOf(files)
-//                 .extracting(FileInfo::getJobId).containsOnly(jobId);
-//         assertThat(stateStore.getReadyForGCFiles()).isExhausted();
-//     }
+        // When
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
 
-//     @Test
-//     public void shouldReturnCorrectFileInPartitionList() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> files = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                 //     .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-//                     .partitionId("8")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords(1L)
-//                     .build();
-//             files.add(fileInfo);
-//         }
-//         stateStore.addFiles(files);
+        // Then
+        assertThat(fileInPartitionList).hasSize(4)
+                .containsExactlyInAnyOrderElementsOf(files);
+    }
 
-//         // When
-//         List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
+    @Test
+    public void shouldReturnCorrectFileLifecycleList() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("8")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            files.add(fileInfo);
+        }
+        stateStore.addFiles(files);
 
-//         // Then
-//         assertThat(fileInPartitionList).hasSize(4)
-//                 .containsExactlyInAnyOrderElementsOf(files);
-//     }
+        // When
+        List<FileInfo> fileLifecycleList = stateStore.getFileLifecycleList();
 
-//     @Test
-//     public void shouldReturnCorrectFileLifecycleList() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> files = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("8")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords(1L)
-//                     .build();
-//             files.add(fileInfo);
-//         }
-//         stateStore.addFiles(files);
+        // Then
+        assertThat(fileLifecycleList).hasSize(4)
+                .containsExactlyInAnyOrderElementsOf(files);
+    }
 
-//         // When
-//         List<FileInfo> fileLifecycleList = stateStore.getFileLifecycleList();
+    @Test
+    public void shouldReturnCorrectActiveFileList() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("8")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            files.add(fileInfo);
+        }
+        stateStore.addFiles(files.subList(0, 3));
+        stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(files.get(2)), files.get(3));
+        stateStore.setStatusToReadyForGarbageCollection(files.get(2).getFilename());
 
-//         // Then
-//         assertThat(fileLifecycleList).hasSize(4)
-//                 .containsExactlyInAnyOrderElementsOf(files);
-//     }
+        // When
+        List<FileInfo> activeFileList = stateStore.getActiveFileList();
 
-//     @Test
-//     public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws IOException, StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore stateStore = getStateStore(schema);
-//         List<FileInfo> files = new ArrayList<>();
-//         for (int i = 1; i < 5; i++) {
-//             FileInfo fileInfo = FileInfo.builder()
-//                     .rowKeyTypes(new LongType())
-//                     .filename("file" + i)
-//                     .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                     .partitionId("9")
-//                     .jobId("compactionJob")
-//                     .minRowKey(Key.create(1L))
-//                     .maxRowKey(Key.create(10L))
-//                     .lastStateStoreUpdateTime(i * 1_000_000L)
-//                     .numberOfRecords(1L)
-//                     .build();
-//             files.add(fileInfo);
-//         }
-//         stateStore.addFiles(files);
-//         String jobId = UUID.randomUUID().toString();
+        // Then
+        List<FileInfo> expected = Arrays.asList(files.get(0), files.get(1), files.get(3));
+        assertThat(activeFileList).hasSize(3).containsExactlyInAnyOrderElementsOf(expected);
+    }
 
-//         // When / Then
-//         assertThatThrownBy(() -> stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files))
-//                 .isInstanceOf(StateStoreException.class);
-//     }
+    @Test
+    public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws IOException, StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore stateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("9")
+                    .jobId("compactionJob")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
+            files.add(fileInfo);
+        }
+        stateStore.addFiles(files);
+        String jobId = UUID.randomUUID().toString();
+
+        // When / Then
+        assertThatThrownBy(() -> stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files))
+                .isInstanceOf(StateStoreException.class);
+    }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws IOException, StateStoreException {
