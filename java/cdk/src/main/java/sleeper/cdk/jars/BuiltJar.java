@@ -22,6 +22,8 @@ public class BuiltJar {
     public static final BuiltJar ATHENA = fromFormat("athena-%s.jar");
     public static final BuiltJar BULK_IMPORT_STARTER = fromFormat("bulk-import-starter-%s.jar");
     public static final BuiltJar INGEST_STARTER = fromFormat("ingest-starter-%s.jar");
+    public static final BuiltJar INGEST_BATCHER_SUBMITTER = fromFormat("ingest-batcher-submitter-%s.jar");
+    public static final BuiltJar INGEST_BATCHER_JOB_CREATOR = fromFormat("ingest-batcher-job-creator-%s.jar");
     public static final BuiltJar GARBAGE_COLLECTOR = fromFormat("lambda-garbagecollector-%s.jar");
     public static final BuiltJar COMPACTION_JOB_CREATOR = fromFormat("lambda-jobSpecCreationLambda-%s.jar");
     public static final BuiltJar COMPACTION_TASK_CREATOR = fromFormat("runningjobs-%s.jar");

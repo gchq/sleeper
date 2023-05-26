@@ -59,7 +59,7 @@ public class SystemTestApp extends SleeperCdkApp {
                 getTableStack().getStateStoreStacks(),
                 systemTestProperties,
                 ingestStack == null ? null : ingestStack.getIngestJobQueue(),
-                emrBulkImportStack == null ? null : emrBulkImportStack.getEmrBulkImportJobQueue());
+                emrBulkImportStack == null ? null : emrBulkImportStack.getBulkImportJobQueue());
         systemTestProperties.getTags()
                 .forEach((key, value) -> Tags.of(systemTestStack).add(key, value));
 

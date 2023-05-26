@@ -30,6 +30,7 @@ import java.io.IOException;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
@@ -69,6 +70,9 @@ public class PauseSystem {
 
         // Rule that triggers creation of ingest tasks
         disableRule(cwClient, instanceProperties, INGEST_CLOUDWATCH_RULE);
+
+        // Rule that batches up ingest jobs from file ingest requests
+        disableRule(cwClient, instanceProperties, INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE);
 
         // Rules that trigger generation of metrics for tables
         String csvRules = instanceProperties.get(TABLE_METRICS_RULES);

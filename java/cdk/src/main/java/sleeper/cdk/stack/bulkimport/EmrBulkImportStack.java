@@ -79,7 +79,7 @@ public class EmrBulkImportStack extends NestedStack {
                 .build());
     }
 
-    public Queue getEmrBulkImportJobQueue() {
+    public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
     }
 }
