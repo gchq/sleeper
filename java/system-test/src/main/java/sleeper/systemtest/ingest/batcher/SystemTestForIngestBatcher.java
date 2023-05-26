@@ -16,16 +16,35 @@
 
 package sleeper.systemtest.ingest.batcher;
 
+import software.amazon.awssdk.services.s3.S3Client;
+
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 
 public class SystemTestForIngestBatcher {
-    private SystemTestForIngestBatcher() {
+    private final Path scriptsDir;
+    private final Path propertiesTemplate;
+    private final String instanceId;
+    private final String vpc;
+    private final String subnet;
+    private final S3Client s3Client;
+
+    private SystemTestForIngestBatcher(Builder builder) {
+        scriptsDir = builder.scriptsDir;
+        propertiesTemplate = builder.propertiesTemplate;
+        instanceId = builder.instanceId;
+        vpc = builder.vpc;
+        subnet = builder.subnet;
+        s3Client = builder.s3Client;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -40,21 +59,84 @@ public class SystemTestForIngestBatcher {
         if (args.length != 5) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
         }
-        createS3Bucket();
+        try (S3Client s3Client = S3Client.create()) {
+            builder().scriptsDir(Path.of(args[0]))
+                    .propertiesTemplate(Path.of(args[1]))
+                    .instanceId(args[2])
+                    .vpc(args[3])
+                    .subnet(args[4])
+                    .s3Client(s3Client)
+                    .build().run();
+        }
+    }
 
-        DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
-                .instancePropertiesTemplate(Path.of(args[1]))
+    public void run() throws IOException, InterruptedException {
+        String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
+        createS3Bucket(sourceBucketName);
+
+        DeployNewInstance.builder().scriptsDirectory(scriptsDir)
+                .instancePropertiesTemplate(propertiesTemplate)
                 .extraInstanceProperties(properties ->
-                        properties.setProperty(SYSTEM_TEST_REPO.getPropertyName(), args[2] + "/system-test"))
-                .instanceId(args[2])
-                .vpcId(args[3])
-                .subnetId(args[4])
+                        properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
+                .instanceId(instanceId)
+                .vpcId(vpc)
+                .subnetId(subnet)
                 .deployPaused(true)
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
 
-    private static void createS3Bucket() {
+    private static void createS3Bucket(String sourceBucketName) {
+        try (S3Client s3Client = S3Client.create()) {
+            s3Client.createBucket(builder -> builder.bucket(sourceBucketName));
+        }
+    }
+
+    public static final class Builder {
+        private Path scriptsDir;
+        private Path propertiesTemplate;
+        private String instanceId;
+        private String vpc;
+        private String subnet;
+        private S3Client s3Client;
+
+        private Builder() {
+        }
+
+
+        public Builder scriptsDir(Path scriptsDir) {
+            this.scriptsDir = scriptsDir;
+            return this;
+        }
+
+        public Builder propertiesTemplate(Path propertiesTemplate) {
+            this.propertiesTemplate = propertiesTemplate;
+            return this;
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder vpc(String vpc) {
+            this.vpc = vpc;
+            return this;
+        }
+
+        public Builder subnet(String subnet) {
+            this.subnet = subnet;
+            return this;
+        }
+
+        public Builder s3Client(S3Client s3Client) {
+            this.s3Client = s3Client;
+            return this;
+        }
+
+        public SystemTestForIngestBatcher build() {
+            return new SystemTestForIngestBatcher(this);
+        }
     }
 }
