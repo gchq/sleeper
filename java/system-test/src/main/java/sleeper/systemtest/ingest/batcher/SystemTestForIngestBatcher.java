@@ -20,7 +20,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -43,6 +45,7 @@ public class SystemTestForIngestBatcher {
     private final String subnet;
     private final AmazonS3 s3ClientV1;
     private final S3Client s3ClientV2;
+    private final CloudFormationClient cloudFormationClient;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -52,6 +55,7 @@ public class SystemTestForIngestBatcher {
         subnet = builder.subnet;
         s3ClientV1 = builder.s3ClientV1;
         s3ClientV2 = builder.s3ClientV2;
+        cloudFormationClient = builder.cloudFormationClient;
     }
 
     public static Builder builder() {
@@ -62,7 +66,8 @@ public class SystemTestForIngestBatcher {
         if (args.length != 5) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
         }
-        try (S3Client s3Client = S3Client.create()) {
+        try (S3Client s3Client = S3Client.create();
+             CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             builder().scriptsDir(Path.of(args[0]))
                     .propertiesTemplate(Path.of(args[1]))
                     .instanceId(args[2])
@@ -70,6 +75,7 @@ public class SystemTestForIngestBatcher {
                     .subnet(args[4])
                     .s3ClientV1(AmazonS3ClientBuilder.defaultClient())
                     .s3ClientV2(s3Client)
+                    .cloudFormationClient(cloudFormationClient)
                     .build().run();
         }
     }
@@ -84,19 +90,8 @@ public class SystemTestForIngestBatcher {
      */
     public void run() throws IOException, InterruptedException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
-        s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
-
-        DeployNewInstance.builder().scriptsDirectory(scriptsDir)
-                .instancePropertiesTemplate(propertiesTemplate)
-                .extraInstanceProperties(properties ->
-                        properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
-                .instanceId(instanceId)
-                .vpcId(vpc)
-                .subnetId(subnet)
-                .deployPaused(true)
-                .tableName("system-test")
-                .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                .deployWithDefaultClients();
+        createSourceBucketIfMissing(sourceBucketName);
+        createInstanceIfMissing(sourceBucketName);
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
@@ -107,6 +102,30 @@ public class SystemTestForIngestBatcher {
         writeFileWithRecords(tableProperties, sourceBucketName + "/file-2.parquet", 100);
         writeFileWithRecords(tableProperties, sourceBucketName + "/file-3.parquet", 100);
         writeFileWithRecords(tableProperties, sourceBucketName + "/file-4.parquet", 100);
+    }
+
+    private void createSourceBucketIfMissing(String sourceBucketName) {
+        try {
+            s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
+        } catch (NoSuchBucketException e) {
+            s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
+        }
+    }
+
+    private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {
+        if (!cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId)).hasStacks()) {
+            DeployNewInstance.builder().scriptsDirectory(scriptsDir)
+                    .instancePropertiesTemplate(propertiesTemplate)
+                    .extraInstanceProperties(properties ->
+                            properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
+                    .instanceId(instanceId)
+                    .vpcId(vpc)
+                    .subnetId(subnet)
+                    .deployPaused(true)
+                    .tableName("system-test")
+                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .deployWithDefaultClients();
+        }
     }
 
     private void writeFileWithRecords(TableProperties tableProperties, String filePath, int numRecords) throws IOException {
@@ -127,10 +146,10 @@ public class SystemTestForIngestBatcher {
         private String subnet;
         private AmazonS3 s3ClientV1;
         private S3Client s3ClientV2;
+        private CloudFormationClient cloudFormationClient;
 
         private Builder() {
         }
-
 
         public Builder scriptsDir(Path scriptsDir) {
             this.scriptsDir = scriptsDir;
@@ -164,6 +183,11 @@ public class SystemTestForIngestBatcher {
 
         public Builder s3ClientV2(S3Client s3ClientV2) {
             this.s3ClientV2 = s3ClientV2;
+            return this;
+        }
+
+        public Builder cloudFormationClient(CloudFormationClient cloudFormationClient) {
+            this.cloudFormationClient = cloudFormationClient;
             return this;
         }
 
