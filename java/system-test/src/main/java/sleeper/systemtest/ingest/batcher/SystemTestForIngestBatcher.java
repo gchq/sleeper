@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
@@ -113,7 +114,9 @@ public class SystemTestForIngestBatcher {
     }
 
     private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {
-        if (!cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId)).hasStacks()) {
+        try {
+            cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
+        } catch (CloudFormationException e) {
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
                     .instancePropertiesTemplate(propertiesTemplate)
                     .extraInstanceProperties(properties ->
