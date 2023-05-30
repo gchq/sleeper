@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.format;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -43,7 +44,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 class GeneratePropertiesTemplatesTest {
 
     @TempDir
-    private Path tempDir;
+    private static Path tempDir;
+
+    @BeforeAll
+    static void setUp() throws Exception {
+        GeneratePropertiesTemplates.fromRepositoryPath(tempDir);
+    }
 
     static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
         @Override
@@ -62,14 +68,11 @@ class GeneratePropertiesTemplatesTest {
     @Nested
     @DisplayName("Generate full example instance properties")
     class GenerateFullInstanceProperties {
+        private final InstanceProperties properties = loadFullExampleInstanceProperties();
 
         @ParameterizedTest
         @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
-        void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) throws Exception {
-            GeneratePropertiesTemplates.fromRepositoryPath(tempDir);
-
-            InstanceProperties properties = loadFullExampleInstanceProperties();
-
+        void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
             assertThat(properties.get(property)).isEqualTo(value);
         }
     }
