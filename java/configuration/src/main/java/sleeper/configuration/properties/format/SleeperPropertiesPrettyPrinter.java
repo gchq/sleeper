@@ -93,25 +93,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 println();
                 println(formatDescription(currentGroup));
             }
-            println();
-            println(formatDescription(property));
-            if (property.isSystemDefined()) {
-                println("# (this property is system-defined and may not be edited)");
-            }
-            String value = properties.get(property);
-            if (value != null) {
-                if (!properties.isSet(property) && commentUnsetProperties) {
-                    println("# (using default value shown below, uncomment to set a value)");
-                    print("# ");
-                }
-                printProperty(property.getPropertyName(), value);
-            } else {
-                if (commentUnsetProperties) {
-                    println("# (no value set, uncomment to set a value)");
-                    print("# ");
-                }
-                printProperty(property.getPropertyName(), "");
-            }
+            print(properties, property);
         }
         if (!hideUnknownProperties) {
             Map<String, String> unknownProperties = properties.getUnknownProperties()
@@ -125,6 +107,28 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             }
         }
         writer.flush();
+    }
+
+    private void print(SleeperProperties<T> properties, T property) {
+        println();
+        println(formatDescription(property));
+        if (property.isSystemDefined()) {
+            println("# (this property is system-defined and may not be edited)");
+        }
+        String value = properties.get(property);
+        if (value != null) {
+            if (!properties.isSet(property) && commentUnsetProperties) {
+                println("# (using default value shown below, uncomment to set a value)");
+                print("# ");
+            }
+            printProperty(property.getPropertyName(), value);
+        } else {
+            if (commentUnsetProperties) {
+                println("# (no value set, uncomment to set a value)");
+                print("# ");
+            }
+            printProperty(property.getPropertyName(), "");
+        }
     }
 
     private void println(String line) {
