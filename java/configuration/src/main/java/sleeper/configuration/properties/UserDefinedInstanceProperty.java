@@ -65,7 +65,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.infra.after.destroy")
-            .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc.,  " +
+            .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
