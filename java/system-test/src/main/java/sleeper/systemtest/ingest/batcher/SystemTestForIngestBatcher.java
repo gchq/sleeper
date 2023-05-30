@@ -124,12 +124,14 @@ public class SystemTestForIngestBatcher {
 
         List<String> files = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
 
+        LOGGER.info("Writing test ingest files to " + sourceBucketName);
         for (String file : files) {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
 
         // update table properties to use Bulk Import with EMR
+        LOGGER.info("Switching to BatchIngestMode.BULK_IMPORT_EMR");
         tableProperties.set(TableProperty.INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
         tableProperties.saveToS3(s3ClientV1);
 
@@ -137,7 +139,9 @@ public class SystemTestForIngestBatcher {
     }
 
     private void sendFilesAndTriggerJobCreation(InstanceProperties properties, String sourceBucketName, List<String> files) {
+        LOGGER.info("Sending files to ingest batcher queue");
         sendFilesToBatcherSubmitQueue(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL), sourceBucketName, files);
+        LOGGER.info("Triggering ingest batcher job creation lambda");
         InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
     }
 
