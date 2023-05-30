@@ -29,6 +29,8 @@ import java.util.Collections;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -59,6 +61,8 @@ public class GeneratePropertiesTemplates {
         // Non-mandatory properties
         properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
         properties.set(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key");
+        properties.set(BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner");
+        properties.set(ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
 
         Files.createDirectories(tempDir.resolve("example/full"));
         try (BufferedWriter writer = Files.newBufferedWriter(

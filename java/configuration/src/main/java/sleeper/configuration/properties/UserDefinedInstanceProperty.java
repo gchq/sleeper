@@ -747,7 +747,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on.\n" +
-                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html.")
+                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
             .defaultValue("X86_64")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
