@@ -509,14 +509,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures")
             .description("(Non-persistent or persistent EMR mode only) The maximum number of executor failures before YARN can fail the application. " +
                     "Used to set spark.yarn.scheduler.reporterThread.maxFailures.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
+                    "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("5")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL = Index.propertyBuilder("sleeper.bulk.import.emr.spark.storage.level")
             .description("(Non-persistent or persistent EMR mode only) The storage to use for temporary caching. " +
                     "Used to set spark.storage.level.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
+                    "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("MEMORY_AND_DISK_SER")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
