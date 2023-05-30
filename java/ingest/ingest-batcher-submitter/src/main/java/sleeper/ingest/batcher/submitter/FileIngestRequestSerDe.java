@@ -40,12 +40,12 @@ public class FileIngestRequestSerDe {
     }
 
 
-    static class Request {
+    public static class Request {
         private final String pathToFile;
         private final long fileSizeBytes;
         private final String tableName;
 
-        Request(String pathToFile, long fileSizeBytes, String tableName) {
+        public Request(String pathToFile, long fileSizeBytes, String tableName) {
             this.pathToFile = pathToFile;
             this.fileSizeBytes = fileSizeBytes;
             this.tableName = tableName;

@@ -18,27 +18,38 @@ package sleeper.systemtest.ingest.batcher;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.util.GsonConfig;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 
 public class SystemTestForIngestBatcher {
+    private static final Gson GSON = GsonConfig.standardBuilder().create();
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
     private final Path scriptsDir;
     private final Path propertiesTemplate;
     private final String instanceId;
@@ -47,6 +58,7 @@ public class SystemTestForIngestBatcher {
     private final AmazonS3 s3ClientV1;
     private final S3Client s3ClientV2;
     private final CloudFormationClient cloudFormationClient;
+    private final AmazonSQS sqsClient;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -57,6 +69,7 @@ public class SystemTestForIngestBatcher {
         s3ClientV1 = builder.s3ClientV1;
         s3ClientV2 = builder.s3ClientV2;
         cloudFormationClient = builder.cloudFormationClient;
+        sqsClient = builder.sqsClient;
     }
 
     public static Builder builder() {
@@ -77,6 +90,7 @@ public class SystemTestForIngestBatcher {
                     .s3ClientV1(AmazonS3ClientBuilder.defaultClient())
                     .s3ClientV2(s3Client)
                     .cloudFormationClient(cloudFormationClient)
+                    .sqsClient(AmazonSQSClientBuilder.defaultClient())
                     .build().run();
         }
     }
@@ -99,16 +113,21 @@ public class SystemTestForIngestBatcher {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
 
-        writeFileWithRecords(tableProperties, sourceBucketName + "/file-1.parquet", 100);
-        writeFileWithRecords(tableProperties, sourceBucketName + "/file-2.parquet", 100);
-        writeFileWithRecords(tableProperties, sourceBucketName + "/file-3.parquet", 100);
-        writeFileWithRecords(tableProperties, sourceBucketName + "/file-4.parquet", 100);
+        List<String> files = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
+
+        for (String file : files) {
+            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
+        }
+
+        sendFilesToBatcherSubmitQueue(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL), sourceBucketName, files);
     }
 
     private void createSourceBucketIfMissing(String sourceBucketName) {
         try {
             s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
+            LOGGER.info("Bucket already exists: " + sourceBucketName);
         } catch (NoSuchBucketException e) {
+            LOGGER.info("Creating bucket: " + sourceBucketName);
             s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
         }
     }
@@ -116,7 +135,9 @@ public class SystemTestForIngestBatcher {
     private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
+            LOGGER.info("Instance already exists: " + instanceId);
         } catch (CloudFormationException e) {
+            LOGGER.info("Deploying instance: " + instanceId);
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
                     .instancePropertiesTemplate(propertiesTemplate)
                     .extraInstanceProperties(properties ->
@@ -141,6 +162,17 @@ public class SystemTestForIngestBatcher {
         }
     }
 
+    private void sendFilesToBatcherSubmitQueue(String queueUrl, String sourceBucketName, List<String> files) {
+        for (String file : files) {
+            sqsClient.sendMessage(queueUrl, createFileIngestRequestMessage(sourceBucketName, file));
+        }
+    }
+
+    private String createFileIngestRequestMessage(String sourceBucketName, String file) {
+        long fileSizeBytes = s3ClientV2.headObject(builder -> builder.bucket(sourceBucketName).key(file)).contentLength();
+        return GSON.toJson(new FileIngestRequestSerDe.Request(file, fileSizeBytes, "system-test"));
+    }
+
     public static final class Builder {
         private Path scriptsDir;
         private Path propertiesTemplate;
@@ -150,6 +182,7 @@ public class SystemTestForIngestBatcher {
         private AmazonS3 s3ClientV1;
         private S3Client s3ClientV2;
         private CloudFormationClient cloudFormationClient;
+        private AmazonSQS sqsClient;
 
         private Builder() {
         }
@@ -191,6 +224,11 @@ public class SystemTestForIngestBatcher {
 
         public Builder cloudFormationClient(CloudFormationClient cloudFormationClient) {
             this.cloudFormationClient = cloudFormationClient;
+            return this;
+        }
+
+        public Builder sqsClient(AmazonSQS sqsClient) {
+            this.sqsClient = sqsClient;
             return this;
         }
 
