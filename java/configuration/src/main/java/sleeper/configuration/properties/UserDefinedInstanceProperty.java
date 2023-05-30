@@ -372,16 +372,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
-            .description("(Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes " +
-                    "in the cluster while it's running.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
-            .description("(Non-persistent or persistent EMR mode only) Specifying this security group causes the group " +
-                    "to be added to the EMR master's list of security groups.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCDKDeployWhenChanged(true).build();
+
     //  - The following properties depend on the instance type and number of instances - they have been chosen
     //          based on the default settings for the EMR and persistent EMR clusters (these are currently the
     //          same which allows the following properties to be used across both types):
@@ -443,6 +434,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     //  - Properties that are independent of the instance type and number of instances:
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
+            .description("(Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes " +
+                    "in the cluster while it's running.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
+            .description("(Non-persistent or persistent EMR mode only) Specifying this security group causes the group " +
+                    "to be added to the EMR master's list of security groups.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.cores")
             .description("(Non-persistent or persistent EMR mode only) The number of cores used by an executor. Used to set spark.executor.cores.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
