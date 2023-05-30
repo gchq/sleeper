@@ -101,6 +101,14 @@ class GeneratePropertiesTemplatesTest {
                             "sleeper.userjars=" +
                             System.lineSeparator());
         }
+
+        @Test
+        void shouldNotCommentOutParameterSetToDefaultValue() {
+            assertThat(propertiesString)
+                    .contains(System.lineSeparator() +
+                            "sleeper.stack.tag.name=DeploymentStack" +
+                            System.lineSeparator());
+        }
     }
 
     private String loadFullExampleInstancePropertiesAsString() {
