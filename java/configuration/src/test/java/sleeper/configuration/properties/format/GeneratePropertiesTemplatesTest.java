@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties.format;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -34,8 +33,12 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -47,7 +50,11 @@ class GeneratePropertiesTemplatesTest {
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
                     Arguments.of(ID, "full-example"),
-                    Arguments.of(JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars")
+                    Arguments.of(JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars"),
+                    Arguments.of(ACCOUNT, "1234567890"),
+                    Arguments.of(REGION, "eu-west-2"),
+                    Arguments.of(VPC_ID, "1234567890"),
+                    Arguments.of(SUBNET, "subnet-abcdefgh")
             );
         }
     }
@@ -58,7 +65,6 @@ class GeneratePropertiesTemplatesTest {
 
         @ParameterizedTest
         @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
-        @Disabled("TODO")
         void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) throws Exception {
             GeneratePropertiesTemplates.fromRepositoryPath(tempDir);
 

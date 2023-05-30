@@ -23,8 +23,12 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class GeneratePropertiesTemplates {
 
@@ -35,6 +39,10 @@ public class GeneratePropertiesTemplates {
         InstanceProperties properties = new InstanceProperties();
         properties.set(ID, "full-example");
         properties.set(JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars");
+        properties.set(ACCOUNT, "1234567890");
+        properties.set(REGION, "eu-west-2");
+        properties.set(VPC_ID, "1234567890");
+        properties.set(SUBNET, "subnet-abcdefgh");
         Files.createDirectories(tempDir.resolve("example/full"));
         try (BufferedWriter writer = Files.newBufferedWriter(
                 tempDir.resolve("example/full/instance.properties"))) {
