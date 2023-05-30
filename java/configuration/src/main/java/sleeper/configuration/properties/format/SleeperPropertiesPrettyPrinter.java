@@ -57,7 +57,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         this.commentUnsetProperties = commentUnsetProperties;
     }
 
-    public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> setAllProperties(
+    public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> forFullPropertiesTemplate(
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(
                 properties, groups, writer, false, false);

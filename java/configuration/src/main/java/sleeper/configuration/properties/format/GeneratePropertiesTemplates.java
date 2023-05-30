@@ -56,7 +56,7 @@ public class GeneratePropertiesTemplates {
         Files.createDirectories(tempDir.resolve("example/full"));
         try (BufferedWriter writer = Files.newBufferedWriter(
                 tempDir.resolve("example/full/instance.properties"))) {
-            SleeperPropertiesPrettyPrinter.<InstanceProperty>setAllProperties(
+            SleeperPropertiesPrettyPrinter.<InstanceProperty>forFullPropertiesTemplate(
                             Collections.unmodifiableList(UserDefinedInstanceProperty.getAll()),
                             InstancePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
