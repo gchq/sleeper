@@ -16,13 +16,18 @@
 package sleeper.configuration.properties.format;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -43,10 +48,13 @@ public class GeneratePropertiesTemplates {
         properties.set(REGION, "eu-west-2");
         properties.set(VPC_ID, "1234567890");
         properties.set(SUBNET, "subnet-abcdefgh");
+        properties.set(CONFIG_BUCKET, "test-bucket");
         Files.createDirectories(tempDir.resolve("example/full"));
         try (BufferedWriter writer = Files.newBufferedWriter(
                 tempDir.resolve("example/full/instance.properties"))) {
-            SleeperPropertiesPrettyPrinter.forInstanceProperties(new PrintWriter(writer))
+            new SleeperPropertiesPrettyPrinter<InstanceProperty>(
+                    Collections.unmodifiableList(UserDefinedInstanceProperty.getAll()),
+                    InstancePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
         }
     }

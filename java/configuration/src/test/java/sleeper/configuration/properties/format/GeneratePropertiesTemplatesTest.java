@@ -16,8 +16,10 @@
 package sleeper.configuration.properties.format;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,11 +28,14 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,6 +80,16 @@ class GeneratePropertiesTemplatesTest {
         void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
             assertThat(properties.get(property)).isEqualTo(value);
         }
+
+        @Test
+        @Disabled("TODO")
+        void shouldExcludeSystemDefinedProperties() {
+            String fullExampleString = loadFullExampleInstancePropertiesAsString();
+            assertThat(fullExampleString)
+                    .doesNotContain(SystemDefinedInstanceProperty.getAll().stream()
+                            .map(SystemDefinedInstanceProperty::getPropertyName)
+                            .collect(Collectors.toList()));
+        }
     }
 
     private InstanceProperties loadFullExampleInstanceProperties() {
@@ -85,5 +100,13 @@ class GeneratePropertiesTemplatesTest {
             throw new UncheckedIOException(e);
         }
         return properties;
+    }
+
+    private String loadFullExampleInstancePropertiesAsString() {
+        try {
+            return Files.readString(tempDir.resolve("example/full/instance.properties"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

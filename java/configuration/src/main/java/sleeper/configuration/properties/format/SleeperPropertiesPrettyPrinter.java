@@ -42,7 +42,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
     private final boolean hideUnknownProperties;
 
-    private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+    SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         this(properties, groups, writer, false);
     }
 
