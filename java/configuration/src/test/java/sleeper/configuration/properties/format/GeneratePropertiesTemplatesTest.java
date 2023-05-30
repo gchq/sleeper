@@ -18,6 +18,7 @@ package sleeper.configuration.properties.format;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -91,6 +92,14 @@ class GeneratePropertiesTemplatesTest {
         void shouldExcludeSystemDefinedProperties(SystemDefinedInstanceProperty property) {
             assertThat(propertiesString)
                     .doesNotContain(property.getPropertyName() + "=");
+        }
+
+        @Test
+        void shouldNotCommentOutUnsetParameter() {
+            assertThat(propertiesString)
+                    .contains(System.lineSeparator() +
+                            "sleeper.userjars=" +
+                            System.lineSeparator());
         }
     }
 

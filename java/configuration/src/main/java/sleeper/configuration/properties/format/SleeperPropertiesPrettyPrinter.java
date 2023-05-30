@@ -41,17 +41,26 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
     private final boolean hideUnknownProperties;
+    private final boolean commentUnsetProperties;
 
     SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
-        this(properties, groups, writer, false);
+        this(properties, groups, writer, false, true);
     }
 
     private SleeperPropertiesPrettyPrinter(
-            List<T> properties, List<PropertyGroup> groups, PrintWriter writer, boolean hideUnknownProperties) {
+            List<T> properties, List<PropertyGroup> groups, PrintWriter writer,
+            boolean hideUnknownProperties, boolean commentUnsetProperties) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
         this.writer = writer;
         this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
         this.hideUnknownProperties = hideUnknownProperties;
+        this.commentUnsetProperties = commentUnsetProperties;
+    }
+
+    public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> setAllProperties(
+            List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+        return new SleeperPropertiesPrettyPrinter<>(
+                properties, groups, writer, false, false);
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
@@ -62,7 +71,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             PrintWriter writer, PropertyGroup group) {
         return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll().stream()
                 .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()), List.of(group), writer, true);
+                .collect(Collectors.toList()), List.of(group), writer, true, true);
     }
 
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
@@ -73,7 +82,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             PrintWriter writer, PropertyGroup group) {
         return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll().stream()
                 .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()), List.of(group), writer, true);
+                .collect(Collectors.toList()), List.of(group), writer, true, true);
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -97,8 +106,10 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 }
                 printProperty(property.getPropertyName(), value);
             } else {
-                println("# (no value set, uncomment to set a value)");
-                print("# ");
+                if (commentUnsetProperties) {
+                    println("# (no value set, uncomment to set a value)");
+                    print("# ");
+                }
                 printProperty(property.getPropertyName(), "");
             }
         }
