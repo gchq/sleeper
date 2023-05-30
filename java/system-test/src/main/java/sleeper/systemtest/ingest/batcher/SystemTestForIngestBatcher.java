@@ -27,14 +27,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.InvokeLambda;
 import sleeper.clients.util.GsonConfig;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.record.Record;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -44,6 +48,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 
@@ -59,6 +64,7 @@ public class SystemTestForIngestBatcher {
     private final S3Client s3ClientV2;
     private final CloudFormationClient cloudFormationClient;
     private final AmazonSQS sqsClient;
+    private final LambdaClient lambdaClient;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -70,6 +76,7 @@ public class SystemTestForIngestBatcher {
         s3ClientV2 = builder.s3ClientV2;
         cloudFormationClient = builder.cloudFormationClient;
         sqsClient = builder.sqsClient;
+        lambdaClient = builder.lambdaClient;
     }
 
     public static Builder builder() {
@@ -91,6 +98,7 @@ public class SystemTestForIngestBatcher {
                     .s3ClientV2(s3Client)
                     .cloudFormationClient(cloudFormationClient)
                     .sqsClient(AmazonSQSClientBuilder.defaultClient())
+                    .lambdaClient(LambdaClient.create())
                     .build().run();
         }
     }
@@ -110,6 +118,7 @@ public class SystemTestForIngestBatcher {
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
+        // Using BatchIngestMode.STANDARD (standard ingest)
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
 
@@ -118,8 +127,18 @@ public class SystemTestForIngestBatcher {
         for (String file : files) {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
 
-        sendFilesToBatcherSubmitQueue(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL), sourceBucketName, files);
+        // update table properties to use Bulk Import with EMR
+        tableProperties.set(TableProperty.INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        tableProperties.saveToS3(s3ClientV1);
+
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
+    }
+
+    private void sendFilesAndTriggerJobCreation(InstanceProperties properties, String sourceBucketName, List<String> files) {
+        sendFilesToBatcherSubmitQueue(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL), sourceBucketName, files);
+        InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
     }
 
     private void createSourceBucketIfMissing(String sourceBucketName) {
@@ -183,6 +202,7 @@ public class SystemTestForIngestBatcher {
         private S3Client s3ClientV2;
         private CloudFormationClient cloudFormationClient;
         private AmazonSQS sqsClient;
+        private LambdaClient lambdaClient;
 
         private Builder() {
         }
@@ -229,6 +249,11 @@ public class SystemTestForIngestBatcher {
 
         public Builder sqsClient(AmazonSQS sqsClient) {
             this.sqsClient = sqsClient;
+            return this;
+        }
+
+        public Builder lambdaClient(LambdaClient lambdaClient) {
+            this.lambdaClient = lambdaClient;
             return this;
         }
 
