@@ -775,6 +775,43 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
+            .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
+            .defaultValue("FARGATE")
+            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
+            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
+            .defaultValue("t3.xlarge")
+            .validationPredicate(Utils::isNonNullNonEmptyString)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.minimum")
+            .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
+            .defaultValue("0")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = Index.propertyBuilder("sleeper.compaction.ec2.pool.desired")
+            .description("The initial desired number of instances for the EC2 cluster (when using EC2-based compactions).\n" +
+                    "Can be set by dividing initial maximum containers by number that should fit on instance type.")
+            .defaultValue("0")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.maximum")
+            .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
+            .defaultValue("75")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_ROOT_SIZE = Index.propertyBuilder("sleeper.compaction.ec2.root.size")
+            .description("The size in GiB of the root EBS volume attached to the EC2 instances (when using EC2-based compactions).")
+            .defaultValue("50")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
     UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.compaction.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
@@ -817,44 +854,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
-    UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
-            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
-            .defaultValue("t3.xlarge")
-            .validationPredicate(Utils::isNonNullNonEmptyString)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.minimum")
-            .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
-            .defaultValue("0")
-            .validationPredicate(Utils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = Index.propertyBuilder("sleeper.compaction.ec2.pool.desired")
-            .description("The initial desired number of instances for the EC2 cluster (when using EC2-based compactions)." +
-                    "Can be set by dividing initial maximum containers by number that should fit on instance type.")
-            .defaultValue("0")
-            .validationPredicate(Utils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.maximum")
-            .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
-            .defaultValue("75")
-            .validationPredicate(Utils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_ROOT_SIZE = Index.propertyBuilder("sleeper.compaction.ec2.root.size")
-            .description("The size in GiB of the root EBS volume attached to the EC2 instancesn (when using EC2-based compactions).")
-            .defaultValue("50")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
-            .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
-            .defaultValue("FARGATE")
-            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
 
     // Query
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES = Index.propertyBuilder("sleeper.query.s3.max-connections")
