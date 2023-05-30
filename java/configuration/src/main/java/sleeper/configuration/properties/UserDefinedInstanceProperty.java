@@ -93,7 +93,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ENDPOINT_CHECK = Index.propertyBuilder("sleeper.vpc.endpoint.check")
-            .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint.")
+            .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint. " +
+                    "If there is no S3 endpoint then the NAT costs can be very significant.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty SUBNET = Index.propertyBuilder("sleeper.subnet")
@@ -116,13 +117,17 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = Index.propertyBuilder("sleeper.log.retention.days")
-            .description("The length of time in days that CloudWatch logs are retained.")
+            .description("The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are retained.\n" +
+                    "See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.\n" +
+                    "Use -1 to indicate infinite retention.")
             .defaultValue("30")
             .validationPredicate(Utils::isValidLogRetention)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = Index.propertyBuilder("sleeper.s3.max-connections")
-            .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.")
+            .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the " +
+                    "maximum number of http connections to S3.\n" +
+                    "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
             .defaultValue("25")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
@@ -181,12 +186,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isValidFadvise)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_CPU = Index.propertyBuilder("sleeper.ingest.task.cpu")
-            .description("The amount of CPU used by Fargate tasks that perform ingest jobs.")
+            .description("The amount of CPU used by Fargate tasks that perform ingest jobs.\n" +
+                    "Note that only certain combinations of CPU and memory are valid.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_TASK_MEMORY = Index.propertyBuilder("sleeper.ingest.task.memory")
-            .description("The amount of memory used by Fargate tasks that perform ingest jobs.")
+            .description("The amount of memory used by Fargate tasks that perform ingest jobs.\n" +
+                    "Note that only certain combinations of CPU and memory are valid.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
