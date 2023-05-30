@@ -40,6 +40,10 @@ public class GeneratePropertiesTemplates {
     private GeneratePropertiesTemplates() {
     }
 
+    public static void main(String[] args) throws IOException {
+        fromRepositoryPath(Path.of(args[0]));
+    }
+
     public static void fromRepositoryPath(Path tempDir) throws IOException {
         InstanceProperties properties = new InstanceProperties();
         properties.set(ID, "full-example");
