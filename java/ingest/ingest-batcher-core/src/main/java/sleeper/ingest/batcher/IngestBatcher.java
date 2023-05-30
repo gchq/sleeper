@@ -91,6 +91,7 @@ public class IngestBatcher {
                 totalBytes(inputFiles) >= minBytes)
                 || inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime))) {
             String jobQueueUrl = jobQueueUrl(properties).orElse(null);
+            LOGGER.info("Creating batches for {} input files", inputFiles.size());
             createBatches(properties, inputFiles)
                     .forEach(batch -> sendBatch(tableName, jobQueueUrl, batch));
         }
@@ -109,6 +110,7 @@ public class IngestBatcher {
             if (jobQueueUrl == null) {
                 LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
             } else {
+                LOGGER.info("Sending ingest job with {} files to queue {}", job.getFiles().size(), jobQueueUrl);
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
