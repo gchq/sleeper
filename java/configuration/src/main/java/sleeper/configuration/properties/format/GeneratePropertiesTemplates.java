@@ -29,6 +29,7 @@ import java.util.Collections;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
@@ -53,6 +54,7 @@ public class GeneratePropertiesTemplates {
         properties.set(VPC_ID, "1234567890");
         properties.set(SUBNET, "subnet-abcdefgh");
         properties.set(CONFIG_BUCKET, "test-bucket");
+        properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
         Files.createDirectories(tempDir.resolve("example/full"));
         try (BufferedWriter writer = Files.newBufferedWriter(
                 tempDir.resolve("example/full/instance.properties"))) {
