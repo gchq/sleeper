@@ -259,13 +259,13 @@ class SleeperPropertiesPrettyPrinterTest {
         void shouldPrintPropertyGroupDescriptions() throws IOException {
             // When / Then
             assertThat(printEmptyInstanceProperties())
-                    .contains("# The following properties are commonly used throughout Sleeper\n\n")
-                    .contains("# The following properties relate to standard ingest\n\n")
-                    .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
-                            "# or EKS.\n\n")
-                    .contains("# The following properties relate to the splitting of partitions\n\n")
-                    .contains("# The following properties relate to compactions.\n\n")
-                    .contains("# The following properties relate to queries.\n\n");
+                    .contains("## The following properties are commonly used throughout Sleeper.\n\n")
+                    .contains("## The following properties relate to standard ingest.\n\n")
+                    .contains("## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
+                            "## or EKS.\n\n")
+                    .contains("## The following properties relate to the splitting of partitions.\n\n")
+                    .contains("## The following properties relate to compactions.\n\n")
+                    .contains("## The following properties relate to queries.\n\n");
         }
 
         @Test

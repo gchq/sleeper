@@ -148,15 +148,11 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private static String formatDescription(SleeperProperty property) {
-        return formatDescription(property.getDescription());
+        return formatDescription("# ", property.getDescription());
     }
 
     private static String formatDescription(PropertyGroup group) {
-        return formatDescription(group.getDescription());
-    }
-
-    private static String formatDescription(String description) {
-        return formatDescription("# ", description);
+        return formatDescription("## ", group.getDescription());
     }
 
     public static String formatDescription(String lineStart, String description) {
