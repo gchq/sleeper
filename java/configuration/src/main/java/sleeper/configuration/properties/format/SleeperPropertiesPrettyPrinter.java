@@ -91,6 +91,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             if (currentGroup == null || !currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
                 println();
+                println();
                 println(formatDescription(currentGroup));
             }
             printProperty(properties, property);
