@@ -48,8 +48,10 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePr
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
@@ -173,9 +175,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
         void shouldEditAProperty() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            before.set(FARGATE_VERSION, "1.4.1");
             InstanceProperties after = createValidInstanceProperties();
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
+            after.set(FARGATE_VERSION, "1.4.2");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
@@ -184,10 +186,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.s3.max-connections\n" +
-                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                    "Before: 123\n" +
-                    "After: 456\n" +
+                    "sleeper.fargate.version\n" +
+                    "The version of Fargate to use.\n" +
+                    "Before: 1.4.1\n" +
+                    "After: 1.4.2\n" +
                     "\n"));
         }
 
@@ -196,7 +198,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
+            after.set(FARGATE_VERSION, "1.4.1");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
@@ -205,10 +207,10 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             assertThat(output).isEqualTo(outputWithSaveChangesDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.s3.max-connections\n" +
-                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                    "Unset before, default value: 25\n" +
-                    "After: 123\n" +
+                    "sleeper.fargate.version\n" +
+                    "The version of Fargate to use.\n" +
+                    "Unset before, default value: 1.4.0\n" +
+                    "After: 1.4.1\n" +
                     "\n"));
         }
 
@@ -304,7 +306,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -313,13 +315,13 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.s3.max-connections\n" +
-                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                    "Unset before, default value: 25\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "Found invalid properties:\n" +
-                    "sleeper.s3.max-connections\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
                     "\n"));
         }
 
@@ -328,7 +330,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -343,7 +345,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = createValidInstanceProperties();
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
             after.set(DEFAULT_S3A_READAHEAD_RANGE, "def");
 
             // When
@@ -353,9 +355,9 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             assertThat(output).isEqualTo(outputWithValidationDisplayWhenDiscardingChanges("" +
                     "Found changes to properties:\n" +
                     "\n" +
-                    "sleeper.s3.max-connections\n" +
-                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                    "Unset before, default value: 25\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "sleeper.default.fs.s3a.readahead.range\n" +
@@ -365,7 +367,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "After (not valid, please change): def\n" +
                     "\n" +
                     "Found invalid properties:\n" +
-                    "sleeper.s3.max-connections\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
                     "sleeper.default.fs.s3a.readahead.range\n" +
                     "\n"));
         }
@@ -402,7 +404,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             before.set(VPC_ID, "before-vpc");
             InstanceProperties after = createValidInstanceProperties();
             after.set(VPC_ID, "after-vpc");
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -416,14 +418,14 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "Before: before-vpc\n" +
                     "After (cannot be changed, please undo): after-vpc\n" +
                     "\n" +
-                    "sleeper.s3.max-connections\n" +
-                    "Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.\n" +
-                    "Unset before, default value: 25\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "The timeout for the lambda that creates compaction jobs in seconds.\n" +
+                    "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.vpc\n" +
-                    "sleeper.s3.max-connections\n" +
+                    "sleeper.compaction.job.creation.timeout.seconds\n" +
                     "\n"));
         }
 
