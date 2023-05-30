@@ -37,8 +37,6 @@ import sleeper.clients.util.GsonConfig;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.record.Record;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -129,13 +127,6 @@ public class SystemTestForIngestBatcher {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
-
-        // update table properties to use Bulk Import with EMR
-        LOGGER.info("Switching to BatchIngestMode.BULK_IMPORT_EMR");
-        tableProperties.set(TableProperty.INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
-        tableProperties.saveToS3(s3ClientV1);
-
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
     }
 
     private void sendFilesAndTriggerJobCreation(InstanceProperties properties, String sourceBucketName, List<String> files) {
@@ -193,7 +184,7 @@ public class SystemTestForIngestBatcher {
 
     private String createFileIngestRequestMessage(String sourceBucketName, String file) {
         long fileSizeBytes = s3ClientV2.headObject(builder -> builder.bucket(sourceBucketName).key(file)).contentLength();
-        return GSON.toJson(new FileIngestRequestSerDe.Request(file, fileSizeBytes, "system-test"));
+        return GSON.toJson(new FileIngestRequestSerDe.Request(sourceBucketName + "/" + file, fileSizeBytes, "system-test"));
     }
 
     public static final class Builder {
