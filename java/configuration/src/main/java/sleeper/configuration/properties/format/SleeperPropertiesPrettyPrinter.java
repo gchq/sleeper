@@ -93,7 +93,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 println();
                 println(formatDescription(currentGroup));
             }
-            print(properties, property);
+            printProperty(properties, property);
         }
         if (!hideUnknownProperties) {
             Map<String, String> unknownProperties = properties.getUnknownProperties()
@@ -103,13 +103,13 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 println();
                 println("# The following properties are not recognised by Sleeper.");
                 unknownProperties.keySet().stream().sorted().forEach(name ->
-                        printProperty(name, unknownProperties.get(name)));
+                        printSetPropertyValue(name, unknownProperties.get(name)));
             }
         }
         writer.flush();
     }
 
-    private void print(SleeperProperties<T> properties, T property) {
+    private void printProperty(SleeperProperties<T> properties, T property) {
         println();
         println(formatDescription(property));
         if (property.isSystemDefined()) {
@@ -121,13 +121,13 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 println("# (using default value shown below, uncomment to set a value)");
                 print("# ");
             }
-            printProperty(property.getPropertyName(), value);
+            printSetPropertyValue(property.getPropertyName(), value);
         } else {
             if (commentUnsetProperties) {
                 println("# (no value set, uncomment to set a value)");
                 print("# ");
             }
-            printProperty(property.getPropertyName(), "");
+            printSetPropertyValue(property.getPropertyName(), "");
         }
     }
 
@@ -143,7 +143,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         writer.print(value);
     }
 
-    private void printProperty(String name, String value) {
+    private void printSetPropertyValue(String name, String value) {
         try {
             propertiesWriter.writeProperty(name, value);
         } catch (IOException e) {
