@@ -16,10 +16,8 @@
 package sleeper.configuration.properties.format;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,7 +33,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +55,7 @@ class GeneratePropertiesTemplatesTest {
 
     static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        public Stream<Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
                     Arguments.of(ID, "full-example"),
                     Arguments.of(JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars"),
@@ -70,36 +67,31 @@ class GeneratePropertiesTemplatesTest {
         }
     }
 
+    static class SystemDefinedInstanceProperties implements ArgumentsProvider {
+        @Override
+        public Stream<Arguments> provideArguments(ExtensionContext context) {
+            return SystemDefinedInstanceProperty.getAll().stream()
+                    .map(Arguments::of);
+        }
+    }
+
     @Nested
     @DisplayName("Generate full example instance properties")
     class GenerateFullInstanceProperties {
-        private final InstanceProperties properties = loadFullExampleInstanceProperties();
+        private final String propertiesString = loadFullExampleInstancePropertiesAsString();
 
         @ParameterizedTest
         @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
         void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
-            assertThat(properties.get(property)).isEqualTo(value);
+            assertThat(instancePropertiesFromString(propertiesString).get(property)).isEqualTo(value);
         }
 
-        @Test
-        @Disabled("TODO")
-        void shouldExcludeSystemDefinedProperties() {
-            String fullExampleString = loadFullExampleInstancePropertiesAsString();
-            assertThat(fullExampleString)
-                    .doesNotContain(SystemDefinedInstanceProperty.getAll().stream()
-                            .map(SystemDefinedInstanceProperty::getPropertyName)
-                            .collect(Collectors.toList()));
+        @ParameterizedTest
+        @ArgumentsSource(SystemDefinedInstanceProperties.class)
+        void shouldExcludeSystemDefinedProperties(SystemDefinedInstanceProperty property) {
+            assertThat(propertiesString)
+                    .doesNotContain(property.getPropertyName() + "=");
         }
-    }
-
-    private InstanceProperties loadFullExampleInstanceProperties() {
-        InstanceProperties properties = new InstanceProperties();
-        try {
-            properties.load(tempDir.resolve("example/full/instance.properties"));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return properties;
     }
 
     private String loadFullExampleInstancePropertiesAsString() {
@@ -108,5 +100,15 @@ class GeneratePropertiesTemplatesTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private InstanceProperties instancePropertiesFromString(String propertiesString) {
+        InstanceProperties properties = new InstanceProperties();
+        try {
+            properties.loadFromString(propertiesString);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return properties;
     }
 }
