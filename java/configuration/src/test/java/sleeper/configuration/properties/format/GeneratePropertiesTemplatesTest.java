@@ -109,6 +109,12 @@ class GeneratePropertiesTemplatesTest {
                             "sleeper.stack.tag.name=DeploymentStack" +
                             System.lineSeparator());
         }
+
+        @Test
+        void shouldExcludeTagsProperty() {
+            assertThat(propertiesString)
+                    .doesNotContain("sleeper.tags=");
+        }
     }
 
     private String loadFullExampleInstancePropertiesAsString() {

@@ -57,7 +57,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty TAGS = Index.propertyBuilder("sleeper.tags")
             .description("A list of tags for the project.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")

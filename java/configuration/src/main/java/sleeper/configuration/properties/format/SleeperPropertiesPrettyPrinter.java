@@ -41,26 +41,26 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final PrintWriter writer;
     private final PropertiesConfiguration.PropertiesWriter propertiesWriter;
     private final boolean hideUnknownProperties;
-    private final boolean commentUnsetProperties;
+    private final boolean printTemplate;
 
-    SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
-        this(properties, groups, writer, false, true);
+    private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
+        this(properties, groups, writer, false, false);
     }
 
     private SleeperPropertiesPrettyPrinter(
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer,
-            boolean hideUnknownProperties, boolean commentUnsetProperties) {
+            boolean hideUnknownProperties, boolean printTemplate) {
         this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
         this.writer = writer;
         this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
         this.hideUnknownProperties = hideUnknownProperties;
-        this.commentUnsetProperties = commentUnsetProperties;
+        this.printTemplate = printTemplate;
     }
 
     public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> forFullPropertiesTemplate(
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, writer, false, false);
+                properties, groups, writer, false, true);
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
@@ -71,7 +71,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             PrintWriter writer, PropertyGroup group) {
         return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll().stream()
                 .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()), List.of(group), writer, true, true);
+                .collect(Collectors.toList()), List.of(group), writer, true, false);
     }
 
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
@@ -82,7 +82,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             PrintWriter writer, PropertyGroup group) {
         return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll().stream()
                 .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()), List.of(group), writer, true, true);
+                .collect(Collectors.toList()), List.of(group), writer, true, false);
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -110,6 +110,9 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private void printProperty(SleeperProperties<T> properties, T property) {
+        if (printTemplate && !property.isIncludedInTemplate()) {
+            return;
+        }
         println();
         println(formatDescription(property));
         if (property.isSystemDefined()) {
@@ -117,13 +120,13 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         }
         String value = properties.get(property);
         if (value != null) {
-            if (!properties.isSet(property) && commentUnsetProperties) {
+            if (!properties.isSet(property) && !printTemplate) {
                 println("# (using default value shown below, uncomment to set a value)");
                 print("# ");
             }
             printSetPropertyValue(property.getPropertyName(), value);
         } else {
-            if (commentUnsetProperties) {
+            if (!printTemplate) {
                 println("# (no value set, uncomment to set a value)");
                 print("# ");
             }

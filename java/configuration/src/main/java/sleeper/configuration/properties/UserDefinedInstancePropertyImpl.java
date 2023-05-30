@@ -30,6 +30,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final PropertyGroup propertyGroup;
     private final boolean runCDKDeployWhenChanged;
     private final boolean editable;
+    private final boolean includedInTemplate;
 
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -39,6 +40,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
         editable = builder.editable;
+        includedInTemplate = builder.includedInTemplate;
     }
 
     public static Builder builder() {
@@ -88,6 +90,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         return editable;
     }
 
+    @Override
+    public boolean isIncludedInTemplate() {
+        return includedInTemplate;
+    }
+
     static final class Builder {
         private String propertyName;
         private String defaultValue;
@@ -96,6 +103,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private PropertyGroup propertyGroup;
         private boolean runCDKDeployWhenChanged;
         private boolean editable = true;
+        private boolean includedInTemplate = true;
         private Consumer<UserDefinedInstanceProperty> addToIndex;
 
         private Builder() {
@@ -133,6 +141,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder editable(boolean editable) {
             this.editable = editable;
+            return this;
+        }
+
+        public Builder includedInTemplate(boolean includedInTemplate) {
+            this.includedInTemplate = includedInTemplate;
             return this;
         }
 

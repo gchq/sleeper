@@ -58,4 +58,7 @@ public interface SleeperProperty {
      */
     boolean isRunCDKDeployWhenChanged();
 
+    default boolean isIncludedInTemplate() {
+        return false;
+    }
 }
