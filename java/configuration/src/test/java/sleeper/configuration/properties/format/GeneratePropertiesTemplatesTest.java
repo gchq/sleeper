@@ -154,7 +154,7 @@ class GeneratePropertiesTemplatesTest {
         void shouldGenerateValidInstanceProperties() {
             assertThat(instancePropertiesFromString(propertiesString)
                     .get(ID))
-                    .isEqualTo("full-example");
+                    .isEqualTo("basic-example");
         }
     }
 

@@ -59,7 +59,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class GeneratePropertiesTemplates {
 
     private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
-            ID, "full-example",
+            ID, "basic-example",
             JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars",
             ACCOUNT, "1234567890",
             REGION, "eu-west-2",
@@ -103,6 +103,7 @@ public class GeneratePropertiesTemplates {
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
         InstanceProperties properties = new InstanceProperties();
         BASIC_INSTANCE_EXAMPLE_VALUES.forEach(properties::set);
+        properties.set(ID, "full-example");
 
         // Non-mandatory properties
         properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
