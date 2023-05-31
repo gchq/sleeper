@@ -43,6 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
@@ -99,6 +100,7 @@ public class GeneratePropertiesTemplates {
         // Non-mandatory properties
         properties.set(ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator");
         properties.set(ITERATOR_CONFIG, "b,3600000");
+        properties.set(SPLIT_POINTS_FILE, "example/full/splits.txt");
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(
