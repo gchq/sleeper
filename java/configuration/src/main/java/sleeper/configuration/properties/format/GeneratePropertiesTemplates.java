@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
@@ -83,8 +84,8 @@ public class GeneratePropertiesTemplates {
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
-            SleeperPropertiesPrettyPrinter.<InstanceProperty>forFullPropertiesTemplate(
-                            Collections.unmodifiableList(UserDefinedInstanceProperty.getAll()),
+            SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(
+                            templateInstanceProperties(),
                             InstancePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
         }
@@ -104,9 +105,21 @@ public class GeneratePropertiesTemplates {
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(
-                            TableProperty.getUserDefined(),
+                            templateTableProperties(),
                             TablePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
         }
+    }
+
+    private static List<InstanceProperty> templateInstanceProperties() {
+        return UserDefinedInstanceProperty.getAll().stream()
+                .filter(UserDefinedInstanceProperty::isIncludedInTemplate)
+                .collect(Collectors.toList());
+    }
+
+    private static List<TableProperty> templateTableProperties() {
+        return TableProperty.getUserDefined().stream()
+                .filter(TableProperty::isIncludedInTemplate)
+                .collect(Collectors.toList());
     }
 }

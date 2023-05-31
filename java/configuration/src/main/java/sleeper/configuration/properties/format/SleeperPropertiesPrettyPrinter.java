@@ -111,9 +111,6 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private void printProperty(SleeperProperties<T> properties, T property) {
-        if (printTemplate && !property.isIncludedInTemplate()) {
-            return;
-        }
         println();
         println(formatDescription(property));
         if (property.isSystemDefined()) {
