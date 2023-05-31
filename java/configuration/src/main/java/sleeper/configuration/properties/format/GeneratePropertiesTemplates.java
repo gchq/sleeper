@@ -46,9 +46,14 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
@@ -91,6 +96,8 @@ public class GeneratePropertiesTemplates {
         Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
         writeInstancePropertiesTemplate(
                 scriptsTemplateDir.resolve("instanceproperties.template"));
+        writeTablePropertiesTemplate(
+                scriptsTemplateDir.resolve("tableproperties.template"));
     }
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
@@ -157,6 +164,29 @@ public class GeneratePropertiesTemplates {
             writer.println("##################");
             SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
                             defaultProperties, InstancePropertyGroup.getAll(), writer)
+                    .print(properties);
+        }
+    }
+
+    private static void writeTablePropertiesTemplate(Path templateFile) throws IOException {
+        TableProperties properties = new TableProperties(new InstanceProperties());
+        properties.set(TABLE_NAME, "changeme");
+
+        List<TableProperty> templateProperties = List.of(
+                TABLE_NAME, ROW_GROUP_SIZE, PAGE_SIZE, COMPRESSION_CODEC,
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, STATESTORE_CLASSNAME);
+
+        try (BufferedWriter bufferedWriter = Files.newBufferedWriter(templateFile)) {
+            PrintWriter writer = new PrintWriter(bufferedWriter);
+            writer.println("#################################################################################");
+            writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
+            writer.println("#################################################################################");
+            writer.println();
+            writer.println("###################");
+            writer.println("# Template Values #");
+            writer.println("###################");
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            templateProperties, TablePropertyGroup.getAll(), writer)
                     .print(properties);
         }
     }

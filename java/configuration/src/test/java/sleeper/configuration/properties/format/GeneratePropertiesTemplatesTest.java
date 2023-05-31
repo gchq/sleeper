@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.format;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -214,14 +213,13 @@ class GeneratePropertiesTemplatesTest {
 
     @Nested
     @DisplayName("Generate table properties template")
-    @Disabled("TODO")
     class GenerateTablePropertiesTemplate {
         private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
 
         @Test
-        void shouldGenerateValidInstanceProperties() {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .get(ID))
+        void shouldGenerateValidTableProperties() {
+            assertThat(tablePropertiesFromString(propertiesString)
+                    .get(TABLE_NAME))
                     .isEqualTo("changeme");
         }
     }
