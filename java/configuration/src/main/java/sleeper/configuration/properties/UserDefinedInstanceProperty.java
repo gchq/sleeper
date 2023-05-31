@@ -53,7 +53,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
                     "bucket contains two iterator jars called iterator1.jar and iterator2.jar then the " +
                     "property should be 'sleeper.userjars=iterator1.jar,iterator2.jar'.")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty TAGS = Index.propertyBuilder("sleeper.tags")
             .description("A list of tags for the project.")
             .propertyGroup(InstancePropertyGroup.COMMON)
@@ -71,12 +72,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy.")
             .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)
@@ -109,7 +112,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = Index.propertyBuilder("sleeper.errors.email")
             .description("An email address used by the TopicStack to publish SNS notifications of errors.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.queue.visibility.timeout.seconds")
             .description("The visibility timeout on the queues used in compactions, partition splitting, etc.")
             .defaultValue("900")

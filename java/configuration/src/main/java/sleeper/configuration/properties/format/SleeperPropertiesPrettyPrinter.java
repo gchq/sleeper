@@ -57,7 +57,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         this.printTemplate = printTemplate;
     }
 
-    public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> forFullPropertiesTemplate(
+    public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> forPropertiesTemplate(
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
         return new SleeperPropertiesPrettyPrinter<>(
                 properties, groups, writer, false, true);

@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -66,12 +65,31 @@ public class GeneratePropertiesTemplates {
     }
 
     public static void fromRepositoryPath(Path repositoryRoot) throws IOException {
-        Path fullExampleDir = repositoryRoot.resolve("example/full");
-        Files.createDirectories(fullExampleDir);
+
+        Path basicExampleDir = Files.createDirectories(repositoryRoot.resolve("example/basic"));
+        writeExampleBasicInstanceProperties(
+                basicExampleDir.resolve("instance.properties"));
+
+        Path fullExampleDir = Files.createDirectories(repositoryRoot.resolve("example/full"));
         writeExampleFullInstanceProperties(
                 fullExampleDir.resolve("instance.properties"));
         writeExampleFullTableProperties(
                 fullExampleDir.resolve("table.properties"));
+    }
+
+    private static void writeExampleBasicInstanceProperties(Path exampleFile) throws IOException {
+        InstanceProperties properties = new InstanceProperties();
+        MANDATORY_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            UserDefinedInstanceProperty.getAll().stream()
+                                    .filter(UserDefinedInstanceProperty::isIncludedInTemplate)
+                                    .filter(UserDefinedInstanceProperty::isIncludedInBasicTemplate)
+                                    .collect(Collectors.<InstanceProperty>toList()),
+                            InstancePropertyGroup.getAll(), new PrintWriter(writer))
+                    .print(properties);
+        }
     }
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
@@ -86,8 +104,10 @@ public class GeneratePropertiesTemplates {
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
-            SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(
-                            templateInstanceProperties(),
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            UserDefinedInstanceProperty.getAll().stream()
+                                    .filter(UserDefinedInstanceProperty::isIncludedInTemplate)
+                                    .collect(Collectors.<InstanceProperty>toList()),
                             InstancePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
         }
@@ -106,22 +126,12 @@ public class GeneratePropertiesTemplates {
         properties.set(SPLIT_POINTS_FILE, "example/full/splits.txt");
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
-            SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(
-                            templateTableProperties(),
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            TableProperty.getUserDefined().stream()
+                                    .filter(TableProperty::isIncludedInTemplate)
+                                    .collect(Collectors.toList()),
                             TablePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
         }
-    }
-
-    private static List<InstanceProperty> templateInstanceProperties() {
-        return UserDefinedInstanceProperty.getAll().stream()
-                .filter(UserDefinedInstanceProperty::isIncludedInTemplate)
-                .collect(Collectors.toList());
-    }
-
-    private static List<TableProperty> templateTableProperties() {
-        return TableProperty.getUserDefined().stream()
-                .filter(TableProperty::isIncludedInTemplate)
-                .collect(Collectors.toList());
     }
 }

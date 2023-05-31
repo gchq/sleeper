@@ -142,6 +142,19 @@ class GeneratePropertiesTemplatesTest {
         }
     }
 
+    @Nested
+    @DisplayName("Generate basic example instance properties")
+    class GenerateBasicInstanceProperties {
+        private final String propertiesString = loadFileAsString("example/basic/instance.properties");
+
+        @Test
+        void shouldGenerateValidInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)
+                    .get(ID))
+                    .isEqualTo("full-example");
+        }
+    }
+
     private String loadFileAsString(String path) {
         try {
             return Files.readString(tempDir.resolve(path));
