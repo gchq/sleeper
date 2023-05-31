@@ -151,6 +151,7 @@ public class SystemTestForIngestBatcher {
         if (bulkImportEmrQueueMessageCount != 2) {
             LOGGER.error("Some ingest jobs did not appear on the bulk import EMR job queue. Expected {}, got {}",
                     2, bulkImportEmrQueueMessageCount);
+            return;
         }
         LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
     }
