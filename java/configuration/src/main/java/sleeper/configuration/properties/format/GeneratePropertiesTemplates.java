@@ -48,7 +48,12 @@ public class GeneratePropertiesTemplates {
         fromRepositoryPath(Path.of(args[0]));
     }
 
-    public static void fromRepositoryPath(Path tempDir) throws IOException {
+    public static void fromRepositoryPath(Path repositoryRoot) throws IOException {
+        writeExampleFullInstanceProperties(
+                repositoryRoot.resolve("example/full/instance.properties"));
+    }
+
+    private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
         InstanceProperties properties = new InstanceProperties();
 
         // Mandatory properties
@@ -66,9 +71,8 @@ public class GeneratePropertiesTemplates {
         properties.set(ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
 
-        Files.createDirectories(tempDir.resolve("example/full"));
-        try (BufferedWriter writer = Files.newBufferedWriter(
-                tempDir.resolve("example/full/instance.properties"))) {
+        Files.createDirectories(exampleFile.getParent());
+        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.<InstanceProperty>forFullPropertiesTemplate(
                             Collections.unmodifiableList(UserDefinedInstanceProperty.getAll()),
                             InstancePropertyGroup.getAll(), new PrintWriter(writer))
