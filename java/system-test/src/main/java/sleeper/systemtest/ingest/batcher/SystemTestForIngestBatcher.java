@@ -41,7 +41,6 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.record.Record;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
@@ -55,10 +54,12 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.ingest.batcher.IngestBatcher.jobQueueUrlProperty;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 
 public class SystemTestForIngestBatcher {
     private static final Gson GSON = GsonConfig.standardBuilder().create();
@@ -128,31 +129,45 @@ public class SystemTestForIngestBatcher {
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
-
+        LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
-        BatchIngestMode batchIngestMode = BatchIngestMode.valueOf(tableProperties.get(TableProperty.INGEST_BATCHER_INGEST_MODE));
-        InstanceProperty queueProperty = jobQueueUrlProperty(batchIngestMode);
-        if (queueProperty == null) {
-            return;
-        }
-        LOGGER.info("Testing ingest batcher mode: {}", batchIngestMode);
 
-        List<String> files = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
-        LOGGER.info("Writing test ingest files to {} for {} test", sourceBucketName, batchIngestMode);
-        for (String file : files) {
+        List<String> standardIngestFiles = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
+        LOGGER.info("Writing test ingest files to {} for standard ingest test", sourceBucketName);
+        for (String file : standardIngestFiles) {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
 
-        waitForIngestJobQueue(instanceProperties, queueProperty);
-        int queueMessageCount = getQueueMessageCount(instanceProperties.get(queueProperty));
-        if (queueMessageCount != 2) {
-            LOGGER.error("Some ingest jobs did not appear on the {} job queue. Expected {}, got {}",
-                    batchIngestMode, 2, queueMessageCount);
+        waitForIngestJobQueue(instanceProperties, INGEST_JOB_QUEUE_URL);
+        int standardIngestQueueMessageCount = getQueueMessageCount(instanceProperties.get(INGEST_JOB_QUEUE_URL));
+        if (standardIngestQueueMessageCount != 2) {
+            LOGGER.error("Some ingest jobs did not appear on the standard ingest job queue. Expected {}, got {}",
+                    2, standardIngestQueueMessageCount);
             return;
         }
-        LOGGER.info("Successfully batched files with ingest batcher mode: {}", batchIngestMode);
+        LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
+
+        LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        tableProperties.saveToS3(s3ClientV1);
+
+        List<String> bulkImportFiles = List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet");
+        LOGGER.info("Writing test ingest files to {} for bulk import test", sourceBucketName);
+        for (String file : bulkImportFiles) {
+            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
+        }
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, bulkImportFiles);
+
+        waitForIngestJobQueue(instanceProperties, BULK_IMPORT_EMR_JOB_QUEUE_URL);
+        int bulkImportEmrQueueMessageCount = getQueueMessageCount(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL));
+        if (bulkImportEmrQueueMessageCount != 2) {
+            LOGGER.error("Some ingest jobs did not appear on the bulk import EMR job queue. Expected {}, got {}",
+                    2, bulkImportEmrQueueMessageCount);
+            return;
+        }
+        LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
     }
 
     private void waitForIngestJobQueue(InstanceProperties properties, InstanceProperty queueProperty) throws InterruptedException {

@@ -131,7 +131,7 @@ public class IngestBatcher {
                 .orElse(null);
     }
 
-    public static InstanceProperty jobQueueUrlProperty(BatchIngestMode mode) {
+    private static InstanceProperty jobQueueUrlProperty(BatchIngestMode mode) {
         switch (mode) {
             case STANDARD_INGEST:
                 return INGEST_JOB_QUEUE_URL;
