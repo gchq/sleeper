@@ -26,5 +26,20 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick -Dmaven.repo.local=.m2/repository
+        run: mvn --batch-mode install -Pquick -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'aws'
+          path: './java'
+          format: 'HTML'
+          out: 'reports' # this is the default, no need to specify unless you wish to override it
+          args: >
+            --failOnCVSS 7
+            --enableRetired
+      - name: Upload Test results
+        uses: actions/upload-artifact@master
+        with:
+          name: Dependency check report
+          path: ${{github.workspace}}/reports
