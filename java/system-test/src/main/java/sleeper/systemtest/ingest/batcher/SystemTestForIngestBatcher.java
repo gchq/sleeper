@@ -18,6 +18,8 @@ package sleeper.systemtest.ingest.batcher;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -48,6 +50,7 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.bulkimport.WaitForEMRClusters;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
 import sleeper.systemtest.ingest.WaitForIngestTasks;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
@@ -77,6 +80,7 @@ public class SystemTestForIngestBatcher {
     private final AmazonSQS sqsClient;
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDB;
+    private final AmazonElasticMapReduce emrClient;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -90,6 +94,7 @@ public class SystemTestForIngestBatcher {
         sqsClient = builder.sqsClient;
         lambdaClient = builder.lambdaClient;
         dynamoDB = builder.dynamoDB;
+        emrClient = builder.emrClient;
     }
 
     public static Builder builder() {
@@ -113,6 +118,7 @@ public class SystemTestForIngestBatcher {
                     .sqsClient(AmazonSQSClientBuilder.defaultClient())
                     .lambdaClient(LambdaClient.create())
                     .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
+                    .emrClient(AmazonElasticMapReduceClientBuilder.defaultClient())
                     .build().run();
         }
     }
@@ -147,6 +153,11 @@ public class SystemTestForIngestBatcher {
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
 
+        InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
+        WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
+                new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
+        waitForIngestTasks.pollUntilFinished();
+
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
         tableProperties.saveToS3(s3ClientV1);
@@ -158,10 +169,8 @@ public class SystemTestForIngestBatcher {
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, bulkImportFiles);
 
-        InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
-        WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
-                new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
-        waitForIngestTasks.pollUntilFinished();
+        WaitForEMRClusters waitForEMRClusters = new WaitForEMRClusters(emrClient, instanceProperties);
+        waitForEMRClusters.pollUntilFinished();
 
         int activeFileCountAfter = countActiveFiles(instanceProperties, tableProperties);
         if (activeFileCountAfter - activeFileCountBefore != 8) {
@@ -251,6 +260,7 @@ public class SystemTestForIngestBatcher {
         private AmazonSQS sqsClient;
         private LambdaClient lambdaClient;
         private AmazonDynamoDB dynamoDB;
+        private AmazonElasticMapReduce emrClient;
 
         private Builder() {
         }
@@ -311,6 +321,11 @@ public class SystemTestForIngestBatcher {
 
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
+            return this;
+        }
+
+        public Builder emrClient(AmazonElasticMapReduce emrClient) {
+            this.emrClient = emrClient;
             return this;
         }
 
