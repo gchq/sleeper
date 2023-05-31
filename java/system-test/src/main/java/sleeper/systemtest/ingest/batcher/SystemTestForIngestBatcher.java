@@ -29,7 +29,9 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.InvokeLambda;
@@ -45,6 +47,7 @@ import sleeper.systemtest.ingest.RandomRecordSupplier;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
@@ -139,7 +142,13 @@ public class SystemTestForIngestBatcher {
     private void createSourceBucketIfMissing(String sourceBucketName) {
         try {
             s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
-            LOGGER.info("Bucket already exists: " + sourceBucketName);
+            LOGGER.info("Bucket already exists, clearing bucket");
+            List<ObjectIdentifier> objects = s3ClientV2.listObjectVersions(builder -> builder.bucket(sourceBucketName))
+                    .versions().stream()
+                    .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
+                    .collect(Collectors.toList());
+            s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName).delete(Delete.builder()
+                    .objects(objects).build()));
         } catch (NoSuchBucketException e) {
             LOGGER.info("Creating bucket: " + sourceBucketName);
             s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
