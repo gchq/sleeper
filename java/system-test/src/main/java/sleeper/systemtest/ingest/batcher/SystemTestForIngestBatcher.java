@@ -133,7 +133,7 @@ public class SystemTestForIngestBatcher {
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
 
-        // Switch to Bulk Import EMR and send again
+        LOGGER.info("Switching to ingest batcher mode {}", BatchIngestMode.BULK_IMPORT_EMR);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
         tableProperties.saveToS3(s3ClientV1);
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
