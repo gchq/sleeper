@@ -181,6 +181,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         private Builder() {
         }
 
+        @SuppressWarnings("unchecked")
         public <P extends SleeperProperty> Builder<P> sortedProperties(List<P> sortedProperties) {
             this.sortedProperties = (List<T>) sortedProperties;
             return (Builder<P>) this;
