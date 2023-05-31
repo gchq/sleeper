@@ -88,7 +88,11 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     public void print(SleeperProperties<T> properties) {
         PropertyGroup currentGroup = null;
         for (T property : sortedProperties) {
-            if (currentGroup == null || !currentGroup.equals(property.getPropertyGroup())) {
+            if (currentGroup == null) {
+                currentGroup = property.getPropertyGroup();
+                println();
+                println(formatDescription(currentGroup));
+            } else if (!currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
                 println();
                 println();
