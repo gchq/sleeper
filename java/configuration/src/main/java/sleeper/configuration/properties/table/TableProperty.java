@@ -75,6 +75,15 @@ public interface TableProperty extends SleeperProperty {
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .editable(false)
             .includedInTemplate(false).build();
+    TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
+            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
+                    "Defaults to nothing.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
+            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
     TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
@@ -120,15 +129,6 @@ public interface TableProperty extends SleeperProperty {
             .description("The compression codec to use for this table. Defaults to the value in the instance properties.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
-            .build();
-    TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
-            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
-                    "Defaults to nothing.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
-    TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
