@@ -79,16 +79,17 @@ public interface TableProperty extends SleeperProperty {
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
                     "Defaults to nothing.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
+            .includedInBasicTemplate(true).build();
     TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
             .description("Iterator configuration. An iterator will be initialised with the following configuration.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
+            .includedInBasicTemplate(true).build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
                     "table will be created with a single root partition.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)

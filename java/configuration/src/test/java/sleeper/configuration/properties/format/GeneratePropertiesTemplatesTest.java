@@ -44,6 +44,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -152,6 +153,32 @@ class GeneratePropertiesTemplatesTest {
             assertThat(instancePropertiesFromString(propertiesString)
                     .get(ID))
                     .isEqualTo("full-example");
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate basic example table properties")
+    class GenerateBasicTableProperties {
+        private final String propertiesString = loadFileAsString("example/basic/table.properties");
+
+        @Test
+        void shouldGenerateValidTableProperties() {
+            assertThat(tablePropertiesFromString(propertiesString)
+                    .get(TABLE_NAME))
+                    .isEqualTo("example-table");
+        }
+
+        @Test
+        void shouldNotIncludePropertyDefaultedFromNonMandatoryInstanceProperty() {
+            assertThat(propertiesString)
+                    .doesNotContain("sleeper.table.compression.codec");
+        }
+
+        @Test
+        void shouldIncludeSpecificallySetProperty() {
+            assertThat(tablePropertiesFromString(propertiesString)
+                    .get(ITERATOR_CLASS_NAME))
+                    .isEqualTo("sleeper.core.iterator.impl.AgeOffIterator");
         }
     }
 

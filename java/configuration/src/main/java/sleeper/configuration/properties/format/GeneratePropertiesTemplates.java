@@ -49,13 +49,19 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
 
-    private static final Map<InstanceProperty, String> MANDATORY_INSTANCE_TEMPLATE_VALUES = Map.of(
+    private static final Map<InstanceProperty, String> BASIC_INSTANCE_TEMPLATE_VALUES = Map.of(
             ID, "full-example",
             JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars",
             ACCOUNT, "1234567890",
             REGION, "eu-west-2",
             VPC_ID, "1234567890",
             SUBNET, "subnet-abcdefgh");
+
+    private static final Map<TableProperty, String> BASIC_TABLE_TEMPLATE_VALUES = Map.of(
+            TABLE_NAME, "example-table",
+            ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator",
+            ITERATOR_CONFIG, "b,3600000",
+            SPLIT_POINTS_FILE, "example/full/splits.txt");
 
     private GeneratePropertiesTemplates() {
     }
@@ -69,6 +75,8 @@ public class GeneratePropertiesTemplates {
         Path basicExampleDir = Files.createDirectories(repositoryRoot.resolve("example/basic"));
         writeExampleBasicInstanceProperties(
                 basicExampleDir.resolve("instance.properties"));
+        writeExampleBasicTableProperties(
+                basicExampleDir.resolve("table.properties"));
 
         Path fullExampleDir = Files.createDirectories(repositoryRoot.resolve("example/full"));
         writeExampleFullInstanceProperties(
@@ -79,7 +87,7 @@ public class GeneratePropertiesTemplates {
 
     private static void writeExampleBasicInstanceProperties(Path exampleFile) throws IOException {
         InstanceProperties properties = new InstanceProperties();
-        MANDATORY_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
+        BASIC_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
@@ -92,9 +100,25 @@ public class GeneratePropertiesTemplates {
         }
     }
 
+    private static void writeExampleBasicTableProperties(Path exampleFile) throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties properties = new TableProperties(instanceProperties);
+        BASIC_TABLE_TEMPLATE_VALUES.forEach(properties::set);
+
+        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            TableProperty.getUserDefined().stream()
+                                    .filter(TableProperty::isIncludedInTemplate)
+                                    .filter(TableProperty::isIncludedInBasicTemplate)
+                                    .collect(Collectors.toList()),
+                            TablePropertyGroup.getAll(), new PrintWriter(writer))
+                    .print(properties);
+        }
+    }
+
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
         InstanceProperties properties = new InstanceProperties();
-        MANDATORY_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
+        BASIC_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
 
         // Non-mandatory properties
         properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
@@ -116,14 +140,7 @@ public class GeneratePropertiesTemplates {
     private static void writeExampleFullTableProperties(Path exampleFile) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties properties = new TableProperties(instanceProperties);
-
-        // Mandatory properties
-        properties.set(TABLE_NAME, "example-table");
-
-        // Non-mandatory properties
-        properties.set(ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator");
-        properties.set(ITERATOR_CONFIG, "b,3600000");
-        properties.set(SPLIT_POINTS_FILE, "example/full/splits.txt");
+        BASIC_TABLE_TEMPLATE_VALUES.forEach(properties::set);
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
