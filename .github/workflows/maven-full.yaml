@@ -41,7 +41,8 @@ jobs:
           args: >
             --failOnCVSS 7
             --enableRetired
-      - name: Upload Test results
+      - name: Upload dependency check report
+        if: ${{ always() }}
         uses: actions/upload-artifact@master
         with:
           name: Dependency check report
