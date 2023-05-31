@@ -18,7 +18,9 @@ package sleeper.configuration.properties.format;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.InstancePropertyGroup;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;
@@ -28,8 +30,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
@@ -72,48 +76,17 @@ public class GeneratePropertiesTemplates {
 
     public static void fromRepositoryPath(Path repositoryRoot) throws IOException {
 
-        Path basicExampleDir = Files.createDirectories(repositoryRoot.resolve("example/basic"));
-        writeExampleBasicInstanceProperties(
-                basicExampleDir.resolve("instance.properties"));
-        writeExampleBasicTableProperties(
-                basicExampleDir.resolve("table.properties"));
-
         Path fullExampleDir = Files.createDirectories(repositoryRoot.resolve("example/full"));
         writeExampleFullInstanceProperties(
                 fullExampleDir.resolve("instance.properties"));
         writeExampleFullTableProperties(
                 fullExampleDir.resolve("table.properties"));
-    }
 
-    private static void writeExampleBasicInstanceProperties(Path exampleFile) throws IOException {
-        InstanceProperties properties = new InstanceProperties();
-        BASIC_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
-
-        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
-            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                            UserDefinedInstanceProperty.getAll().stream()
-                                    .filter(UserDefinedInstanceProperty::isIncludedInTemplate)
-                                    .filter(UserDefinedInstanceProperty::isIncludedInBasicTemplate)
-                                    .collect(Collectors.<InstanceProperty>toList()),
-                            InstancePropertyGroup.getAll(), new PrintWriter(writer))
-                    .print(properties);
-        }
-    }
-
-    private static void writeExampleBasicTableProperties(Path exampleFile) throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        TableProperties properties = new TableProperties(instanceProperties);
-        BASIC_TABLE_TEMPLATE_VALUES.forEach(properties::set);
-
-        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
-            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                            TableProperty.getUserDefined().stream()
-                                    .filter(TableProperty::isIncludedInTemplate)
-                                    .filter(TableProperty::isIncludedInBasicTemplate)
-                                    .collect(Collectors.toList()),
-                            TablePropertyGroup.getAll(), new PrintWriter(writer))
-                    .print(properties);
-        }
+        Path basicExampleDir = Files.createDirectories(repositoryRoot.resolve("example/basic"));
+        writeExampleBasicInstanceProperties(
+                basicExampleDir.resolve("instance.properties"));
+        writeExampleBasicTableProperties(
+                basicExampleDir.resolve("table.properties"));
     }
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
@@ -127,27 +100,55 @@ public class GeneratePropertiesTemplates {
         properties.set(ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
 
-        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
-            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                            UserDefinedInstanceProperty.getAll().stream()
-                                    .filter(UserDefinedInstanceProperty::isIncludedInTemplate)
-                                    .collect(Collectors.<InstanceProperty>toList()),
-                            InstancePropertyGroup.getAll(), new PrintWriter(writer))
-                    .print(properties);
-        }
+        writeFullPropertiesTemplate(exampleFile, properties, InstancePropertyGroup.getAll());
     }
 
     private static void writeExampleFullTableProperties(Path exampleFile) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties properties = new TableProperties(instanceProperties);
         BASIC_TABLE_TEMPLATE_VALUES.forEach(properties::set);
+        writeFullPropertiesTemplate(exampleFile, properties, TablePropertyGroup.getAll());
+    }
 
-        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
+    private static void writeExampleBasicInstanceProperties(Path exampleFile) throws IOException {
+        writeBasicPropertiesTemplate(exampleFile,
+                new InstanceProperties(),
+                InstancePropertyGroup.getAll(),
+                BASIC_INSTANCE_TEMPLATE_VALUES);
+    }
+
+    private static void writeExampleBasicTableProperties(Path exampleFile) throws IOException {
+        writeBasicPropertiesTemplate(exampleFile,
+                new TableProperties(new InstanceProperties()),
+                TablePropertyGroup.getAll(),
+                BASIC_TABLE_TEMPLATE_VALUES);
+    }
+
+    private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
+            Path file, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) throws IOException {
+        writePropertiesTemplate(file, properties,
+                properties.getPropertiesIndex().getUserDefined().stream(),
+                propertyGroups);
+    }
+
+    private static <T extends SleeperProperty> void writeBasicPropertiesTemplate(
+            Path file, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups, Map<T, String> basicValues) throws IOException {
+        basicValues.forEach(properties::set);
+        writePropertiesTemplate(file, properties,
+                properties.getPropertiesIndex().getUserDefined().stream()
+                        .filter(property -> property.isIncludedInBasicTemplate()
+                                || basicValues.containsKey(property)),
+                propertyGroups);
+    }
+
+    private static <T extends SleeperProperty> void writePropertiesTemplate(
+            Path file, SleeperProperties<T> properties,
+            Stream<T> propertyDefinitions, List<PropertyGroup> propertyGroups) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                            TableProperty.getUserDefined().stream()
-                                    .filter(TableProperty::isIncludedInTemplate)
+                            propertyDefinitions.filter(SleeperProperty::isIncludedInTemplate)
                                     .collect(Collectors.toList()),
-                            TablePropertyGroup.getAll(), new PrintWriter(writer))
+                            propertyGroups, new PrintWriter(writer))
                     .print(properties);
         }
     }
