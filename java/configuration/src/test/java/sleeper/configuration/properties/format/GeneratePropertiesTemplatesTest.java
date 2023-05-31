@@ -36,8 +36,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static java.util.regex.Pattern.DOTALL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -185,7 +187,6 @@ class GeneratePropertiesTemplatesTest {
 
     @Nested
     @DisplayName("Generate instance properties template")
-    @Disabled("TODO")
     class GenerateInstancePropertiesTemplate {
         private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
 
@@ -194,6 +195,20 @@ class GeneratePropertiesTemplatesTest {
             assertThat(instancePropertiesFromString(propertiesString)
                     .get(ID))
                     .isEqualTo("changeme");
+        }
+
+        @Test
+        void shouldGenerateHeadersForTemplatedPropertiesAndDefaultedProperties() {
+            assertThat(propertiesString).containsSubsequence(
+                    "# Template Values #",
+                    "changeme",
+                    "# Default Values #");
+        }
+
+        @Test
+        void shouldNotIncludeAnyTemplatedPropertiesUnderDefaultValues() {
+            assertThat(propertiesString).doesNotMatch(
+                    Pattern.compile(".*# Default Values #.+changeme.*", DOTALL));
         }
     }
 

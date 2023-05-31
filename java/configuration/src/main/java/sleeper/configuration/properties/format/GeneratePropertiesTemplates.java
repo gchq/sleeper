@@ -87,6 +87,10 @@ public class GeneratePropertiesTemplates {
                 basicExampleDir.resolve("instance.properties"));
         writeExampleBasicTableProperties(
                 basicExampleDir.resolve("table.properties"));
+
+        Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
+        writeInstancePropertiesTemplate(
+                scriptsTemplateDir.resolve("instanceproperties.template"));
     }
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
@@ -122,6 +126,39 @@ public class GeneratePropertiesTemplates {
                 new TableProperties(new InstanceProperties()),
                 TablePropertyGroup.getAll(),
                 BASIC_TABLE_EXAMPLE_VALUES);
+    }
+
+    private static void writeInstancePropertiesTemplate(Path templateFile) throws IOException {
+        InstanceProperties properties = new InstanceProperties();
+        BASIC_INSTANCE_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
+
+        Map<Boolean, List<InstanceProperty>> propertiesByIsSet = properties.getPropertiesIndex()
+                .getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate)
+                .collect(Collectors.groupingBy(BASIC_INSTANCE_EXAMPLE_VALUES::containsKey));
+        List<InstanceProperty> templateProperties = propertiesByIsSet.get(true);
+        List<InstanceProperty> defaultProperties = propertiesByIsSet.get(false);
+
+        try (BufferedWriter bufferedWriter = Files.newBufferedWriter(templateFile)) {
+            PrintWriter writer = new PrintWriter(bufferedWriter);
+            writer.println("#################################################################################");
+            writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
+            writer.println("#################################################################################");
+            writer.println();
+            writer.println("###################");
+            writer.println("# Template Values #");
+            writer.println("###################");
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            templateProperties, InstancePropertyGroup.getAll(), writer)
+                    .print(properties);
+            writer.println();
+            writer.println();
+            writer.println("##################");
+            writer.println("# Default Values #");
+            writer.println("##################");
+            SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+                            defaultProperties, InstancePropertyGroup.getAll(), writer)
+                    .print(properties);
+        }
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
