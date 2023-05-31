@@ -90,14 +90,14 @@ public class IngestBatcher {
         if ((inputFiles.size() >= minFiles &&
                 totalBytes(inputFiles) >= minBytes)
                 || inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime))) {
-            String jobQueueUrl = jobQueueUrl(properties).orElse(null);
+            BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
             LOGGER.info("Creating batches for {} input files", inputFiles.size());
             createBatches(properties, inputFiles)
-                    .forEach(batch -> sendBatch(tableName, jobQueueUrl, batch));
+                    .forEach(batch -> sendBatch(tableName, batchIngestMode, batch));
         }
     }
 
-    private void sendBatch(String tableName, String jobQueueUrl, List<FileIngestRequest> batch) {
+    private void sendBatch(String tableName, BatchIngestMode batchIngestMode, List<FileIngestRequest> batch) {
         IngestJob job = IngestJob.builder()
                 .id(jobIdSupplier.get())
                 .tableName(tableName)
@@ -107,10 +107,11 @@ public class IngestBatcher {
                 .build();
         try {
             store.assignJob(job.getId(), batch);
+            String jobQueueUrl = jobQueueUrl(batchIngestMode);
             if (jobQueueUrl == null) {
                 LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
             } else {
-                LOGGER.info("Sending ingest job with {} files to queue {}", job.getFiles().size(), jobQueueUrl);
+                LOGGER.info("Sending ingest job with {} files to {}", job.getFiles().size(), batchIngestMode);
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
@@ -118,11 +119,16 @@ public class IngestBatcher {
         }
     }
 
-    private Optional<String> jobQueueUrl(TableProperties properties) {
+    private Optional<BatchIngestMode> batchIngestMode(TableProperties properties) {
         return Optional.ofNullable(properties.get(INGEST_BATCHER_INGEST_MODE))
-                .map(mode -> EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode))
+                .map(mode -> EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode));
+    }
+
+    private String jobQueueUrl(BatchIngestMode batchIngestMode) {
+        return Optional.ofNullable(batchIngestMode)
                 .map(IngestBatcher::jobQueueUrlProperty)
-                .map(instanceProperties::get);
+                .map(instanceProperties::get)
+                .orElse(null);
     }
 
     private static InstanceProperty jobQueueUrlProperty(BatchIngestMode mode) {
