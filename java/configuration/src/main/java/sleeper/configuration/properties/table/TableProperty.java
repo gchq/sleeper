@@ -84,6 +84,22 @@ public interface TableProperty extends SleeperProperty {
             .description("Iterator configuration. An iterator will be initialised with the following configuration.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
+    TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
+            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
+                    "table will be created with a single root partition.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
+    TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
+    TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
+            .description("Partitions in this table with more than the following number of records in will be split.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
     TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
@@ -130,17 +146,6 @@ public interface TableProperty extends SleeperProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
-            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
-                    "table will be created with a single root partition.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
-    TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
-            .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
     TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.seconds")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
             .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
@@ -166,11 +171,6 @@ public interface TableProperty extends SleeperProperty {
                     "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html\n" +
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-    TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
-            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
-            .description("Partitions in this table with more than the following number of records in will be split.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
