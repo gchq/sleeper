@@ -50,6 +50,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
 import sleeper.systemtest.ingest.WaitForIngestTasks;
+import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 
@@ -156,6 +158,7 @@ public class SystemTestForIngestBatcher {
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, bulkImportFiles);
 
+        InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
         WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
                 new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
         waitForIngestTasks.pollUntilFinished();
