@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -49,6 +50,14 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
 
+    private static final Map<InstanceProperty, String> MANDATORY_INSTANCE_TEMPLATE_VALUES = Map.of(
+            ID, "full-example",
+            JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars",
+            ACCOUNT, "1234567890",
+            REGION, "eu-west-2",
+            VPC_ID, "1234567890",
+            SUBNET, "subnet-abcdefgh");
+
     private GeneratePropertiesTemplates() {
     }
 
@@ -67,14 +76,7 @@ public class GeneratePropertiesTemplates {
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
         InstanceProperties properties = new InstanceProperties();
-
-        // Mandatory properties
-        properties.set(ID, "full-example");
-        properties.set(JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars");
-        properties.set(ACCOUNT, "1234567890");
-        properties.set(REGION, "eu-west-2");
-        properties.set(VPC_ID, "1234567890");
-        properties.set(SUBNET, "subnet-abcdefgh");
+        MANDATORY_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
 
         // Non-mandatory properties
         properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
