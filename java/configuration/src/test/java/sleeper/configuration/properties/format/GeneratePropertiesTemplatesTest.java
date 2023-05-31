@@ -16,6 +16,7 @@
 package sleeper.configuration.properties.format;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -179,6 +180,34 @@ class GeneratePropertiesTemplatesTest {
             assertThat(tablePropertiesFromString(propertiesString)
                     .get(ITERATOR_CLASS_NAME))
                     .isEqualTo("sleeper.core.iterator.impl.AgeOffIterator");
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate instance properties template")
+    @Disabled("TODO")
+    class GenerateInstancePropertiesTemplate {
+        private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
+
+        @Test
+        void shouldGenerateValidInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)
+                    .get(ID))
+                    .isEqualTo("changeme");
+        }
+    }
+
+    @Nested
+    @DisplayName("Generate table properties template")
+    @Disabled("TODO")
+    class GenerateTablePropertiesTemplate {
+        private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
+
+        @Test
+        void shouldGenerateValidInstanceProperties() {
+            assertThat(instancePropertiesFromString(propertiesString)
+                    .get(ID))
+                    .isEqualTo("changeme");
         }
     }
 

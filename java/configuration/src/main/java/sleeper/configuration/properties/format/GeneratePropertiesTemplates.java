@@ -53,7 +53,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
 
-    private static final Map<InstanceProperty, String> BASIC_INSTANCE_TEMPLATE_VALUES = Map.of(
+    private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
             ID, "full-example",
             JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars",
             ACCOUNT, "1234567890",
@@ -61,7 +61,7 @@ public class GeneratePropertiesTemplates {
             VPC_ID, "1234567890",
             SUBNET, "subnet-abcdefgh");
 
-    private static final Map<TableProperty, String> BASIC_TABLE_TEMPLATE_VALUES = Map.of(
+    private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
             ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator",
             ITERATOR_CONFIG, "b,3600000",
@@ -91,7 +91,7 @@ public class GeneratePropertiesTemplates {
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
         InstanceProperties properties = new InstanceProperties();
-        BASIC_INSTANCE_TEMPLATE_VALUES.forEach(properties::set);
+        BASIC_INSTANCE_EXAMPLE_VALUES.forEach(properties::set);
 
         // Non-mandatory properties
         properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
@@ -106,7 +106,7 @@ public class GeneratePropertiesTemplates {
     private static void writeExampleFullTableProperties(Path exampleFile) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties properties = new TableProperties(instanceProperties);
-        BASIC_TABLE_TEMPLATE_VALUES.forEach(properties::set);
+        BASIC_TABLE_EXAMPLE_VALUES.forEach(properties::set);
         writeFullPropertiesTemplate(exampleFile, properties, TablePropertyGroup.getAll());
     }
 
@@ -114,14 +114,14 @@ public class GeneratePropertiesTemplates {
         writeBasicPropertiesTemplate(exampleFile,
                 new InstanceProperties(),
                 InstancePropertyGroup.getAll(),
-                BASIC_INSTANCE_TEMPLATE_VALUES);
+                BASIC_INSTANCE_EXAMPLE_VALUES);
     }
 
     private static void writeExampleBasicTableProperties(Path exampleFile) throws IOException {
         writeBasicPropertiesTemplate(exampleFile,
                 new TableProperties(new InstanceProperties()),
                 TablePropertyGroup.getAll(),
-                BASIC_TABLE_TEMPLATE_VALUES);
+                BASIC_TABLE_EXAMPLE_VALUES);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
