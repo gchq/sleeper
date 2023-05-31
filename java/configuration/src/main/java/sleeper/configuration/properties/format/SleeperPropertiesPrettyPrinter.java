@@ -43,46 +43,48 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final boolean hideUnknownProperties;
     private final boolean printTemplate;
 
-    private SleeperPropertiesPrettyPrinter(List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
-        this(properties, groups, writer, false, false);
+    private SleeperPropertiesPrettyPrinter(Builder<T> builder) {
+        sortedProperties = builder.sortedProperties;
+        writer = builder.writer;
+        propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
+        hideUnknownProperties = builder.hideUnknownProperties;
+        printTemplate = builder.printTemplate;
     }
 
-    private SleeperPropertiesPrettyPrinter(
-            List<T> properties, List<PropertyGroup> groups, PrintWriter writer,
-            boolean hideUnknownProperties, boolean printTemplate) {
-        this.sortedProperties = PropertyGroup.sortPropertiesByGroup(properties, groups);
-        this.writer = writer;
-        this.propertiesWriter = PropertiesUtils.buildPropertiesWriter(writer);
-        this.hideUnknownProperties = hideUnknownProperties;
-        this.printTemplate = printTemplate;
+    private static Builder<?> builder() {
+        return new Builder<>();
     }
 
     public static <T extends SleeperProperty> SleeperPropertiesPrettyPrinter<T> forPropertiesTemplate(
             List<T> properties, List<PropertyGroup> groups, PrintWriter writer) {
-        return new SleeperPropertiesPrettyPrinter<>(
-                properties, groups, writer, false, true);
+        return builder().properties(properties, groups)
+                .writer(writer).printTemplate(true).build();
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstanceProperties(PrintWriter writer) {
-        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll(), InstancePropertyGroup.getAll(), writer);
+        return builder().properties(InstanceProperty.getAll(), InstancePropertyGroup.getAll())
+                .writer(writer).build();
     }
 
     public static SleeperPropertiesPrettyPrinter<InstanceProperty> forInstancePropertiesWithGroup(
             PrintWriter writer, PropertyGroup group) {
-        return new SleeperPropertiesPrettyPrinter<>(InstanceProperty.getAll().stream()
-                .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()), List.of(group), writer, true, false);
+        return builder().sortedProperties(InstanceProperty.getAll().stream()
+                        .filter(property -> property.getPropertyGroup().equals(group))
+                        .collect(Collectors.toList()))
+                .writer(writer).hideUnknownProperties(true).build();
     }
 
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTableProperties(PrintWriter writer) {
-        return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll(), TablePropertyGroup.getAll(), writer);
+        return builder().properties(TableProperty.getAll(), TablePropertyGroup.getAll())
+                .writer(writer).build();
     }
 
     public static SleeperPropertiesPrettyPrinter<TableProperty> forTablePropertiesWithGroup(
             PrintWriter writer, PropertyGroup group) {
-        return new SleeperPropertiesPrettyPrinter<>(TableProperty.getAll().stream()
-                .filter(property -> property.getPropertyGroup().equals(group))
-                .collect(Collectors.toList()), List.of(group), writer, true, false);
+        return builder().sortedProperties(TableProperty.getAll().stream()
+                        .filter(property -> property.getPropertyGroup().equals(group))
+                        .collect(Collectors.toList()))
+                .writer(writer).hideUnknownProperties(true).build();
     }
 
     public void print(SleeperProperties<T> properties) {
@@ -168,5 +170,43 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         return Arrays.stream(description.split("\n")).
                 map(line -> lineStart + WordUtils.wrap(line, 100).replace("\n", "\n" + lineStart))
                 .collect(Collectors.joining("\n"));
+    }
+
+    public static final class Builder<T extends SleeperProperty> {
+        private List<T> sortedProperties;
+        private PrintWriter writer;
+        private boolean hideUnknownProperties;
+        private boolean printTemplate;
+
+        private Builder() {
+        }
+
+        public <P extends SleeperProperty> Builder<P> sortedProperties(List<P> sortedProperties) {
+            this.sortedProperties = (List<T>) sortedProperties;
+            return (Builder<P>) this;
+        }
+
+        public <P extends SleeperProperty> Builder<P> properties(List<P> properties, List<PropertyGroup> groups) {
+            return sortedProperties(PropertyGroup.sortPropertiesByGroup(properties, groups));
+        }
+
+        public Builder<T> writer(PrintWriter writer) {
+            this.writer = writer;
+            return this;
+        }
+
+        public Builder<T> hideUnknownProperties(boolean hideUnknownProperties) {
+            this.hideUnknownProperties = hideUnknownProperties;
+            return this;
+        }
+
+        public Builder<T> printTemplate(boolean printTemplate) {
+            this.printTemplate = printTemplate;
+            return this;
+        }
+
+        public SleeperPropertiesPrettyPrinter<T> build() {
+            return new SleeperPropertiesPrettyPrinter<>(this);
+        }
     }
 }
