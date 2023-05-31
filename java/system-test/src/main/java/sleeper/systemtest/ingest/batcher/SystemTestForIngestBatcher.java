@@ -129,9 +129,11 @@ public class SystemTestForIngestBatcher {
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
-        LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
+        LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+        tableProperties.saveToS3(s3ClientV1);
 
         List<String> standardIngestFiles = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
         LOGGER.info("Writing test ingest files to {} for standard ingest test", sourceBucketName);
