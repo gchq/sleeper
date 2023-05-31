@@ -36,8 +36,10 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.PollWithRetries;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.record.Record;
@@ -45,6 +47,7 @@ import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -61,6 +64,8 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 public class SystemTestForIngestBatcher {
     private static final Gson GSON = GsonConfig.standardBuilder().create();
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
+    private static final long JOBS_ESTIMATE_POLL_INTERVAL_MILLIS = 5000;
+    private static final int JOBS_ESTIMATE_MAX_POLLS = 12;
     private final Path scriptsDir;
     private final Path propertiesTemplate;
     private final String instanceId;
@@ -135,6 +140,8 @@ public class SystemTestForIngestBatcher {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
+
+        waitForIngestJobQueue(instanceProperties, INGEST_JOB_QUEUE_URL);
         int standardIngestQueueMessageCount = getQueueMessageCount(instanceProperties.get(INGEST_JOB_QUEUE_URL));
         if (standardIngestQueueMessageCount != 2) {
             LOGGER.error("Some ingest jobs did not appear on the standard ingest job queue. Expected {}, got {}",
@@ -147,6 +154,7 @@ public class SystemTestForIngestBatcher {
         tableProperties.saveToS3(s3ClientV1);
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
 
+        waitForIngestJobQueue(instanceProperties, BULK_IMPORT_EMR_JOB_QUEUE_URL);
         int bulkImportEmrQueueMessageCount = getQueueMessageCount(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL));
         if (bulkImportEmrQueueMessageCount != 2) {
             LOGGER.error("Some ingest jobs did not appear on the bulk import EMR job queue. Expected {}, got {}",
@@ -154,6 +162,12 @@ public class SystemTestForIngestBatcher {
             return;
         }
         LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
+    }
+
+    private void waitForIngestJobQueue(InstanceProperties properties, InstanceProperty queueProperty) throws InterruptedException {
+        WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient), properties, queueProperty,
+                        PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
+                .pollUntilFinished();
     }
 
     private int getQueueMessageCount(String queueUrl) {
