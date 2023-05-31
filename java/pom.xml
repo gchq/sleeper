@@ -127,6 +127,7 @@
         <spotbugs.version>4.7.3</spotbugs.version>
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
+        <dependency-check.plugin.version>8.2.1</dependency-check.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
@@ -508,6 +509,10 @@
                 <artifactId>go-offline-maven-plugin</artifactId>
                 <version>${go-offline.plugin.version}</version>
             </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -657,6 +662,18 @@
                             <goals>
                                 <goal>integration-test</goal>
                                 <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
                             </goals>
                         </execution>
                     </executions>
