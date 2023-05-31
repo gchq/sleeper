@@ -44,7 +44,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -130,7 +132,13 @@ class GeneratePropertiesTemplatesTest {
         void shouldGenerateValidTableProperties() {
             assertThat(tablePropertiesFromString(propertiesString)
                     .get(TABLE_NAME))
-                    .isEqualTo("full-example");
+                    .isEqualTo("example-table");
+        }
+
+        @Test
+        void shouldNotSetSchemaInFile() {
+            assertThat(propertiesString)
+                    .doesNotContain(SCHEMA.getPropertyName());
         }
     }
 
@@ -155,6 +163,7 @@ class GeneratePropertiesTemplatesTest {
     private TableProperties tablePropertiesFromString(String propertiesString) {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties properties = new TableProperties(instanceProperties);
+        properties.setSchema(schemaWithKey("key"));
         try {
             properties.loadFromString(propertiesString);
         } catch (IOException e) {
