@@ -126,24 +126,24 @@ public class GeneratePropertiesTemplates {
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
             Path file, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) throws IOException {
-        writePropertiesTemplate(file, properties,
-                properties.getPropertiesIndex().getUserDefined().stream(),
-                propertyGroups);
+        writePropertiesTemplate(file, properties, propertyGroups,
+                properties.getPropertiesIndex().getUserDefined().stream());
     }
 
     private static <T extends SleeperProperty> void writeBasicPropertiesTemplate(
             Path file, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups, Map<T, String> basicValues) throws IOException {
         basicValues.forEach(properties::set);
-        writePropertiesTemplate(file, properties,
+        writePropertiesTemplate(file, properties, propertyGroups,
                 properties.getPropertiesIndex().getUserDefined().stream()
                         .filter(property -> property.isIncludedInBasicTemplate()
-                                || basicValues.containsKey(property)),
-                propertyGroups);
+                                || basicValues.containsKey(property)));
     }
 
     private static <T extends SleeperProperty> void writePropertiesTemplate(
-            Path file, SleeperProperties<T> properties,
-            Stream<T> propertyDefinitions, List<PropertyGroup> propertyGroups) throws IOException {
+            Path file,
+            SleeperProperties<T> properties,
+            List<PropertyGroup> propertyGroups,
+            Stream<T> propertyDefinitions) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
                             propertyDefinitions.filter(SleeperProperty::isIncludedInTemplate)
