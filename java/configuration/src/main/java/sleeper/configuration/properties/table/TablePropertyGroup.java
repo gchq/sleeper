@@ -37,13 +37,13 @@ public class TablePropertyGroup {
             .description("The following table properties relate to the storage of data inside a table.").build();
     public static final PropertyGroup COMPACTION = tableGroup("Compaction")
             .description("The following table properties relate to compactions.").build();
+    public static final PropertyGroup METADATA = tableGroup("Metadata")
+            .description("The following table properties relate to storing and retrieving metadata for tables.").build();
     public static final PropertyGroup BULK_IMPORT = tableGroup("Bulk Import")
             .description("The following table properties relate to bulk import, " +
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.").build();
     public static final PropertyGroup INGEST_BATCHER = tableGroup("Ingest Batcher")
             .description("The following table properties relate to the ingest batcher.").build();
-    public static final PropertyGroup METADATA = tableGroup("Metadata")
-            .description("The following table properties relate to storing and retrieving metadata for tables.").build();
 
     private static PropertyGroup.Builder tableGroup(String name) {
         return group(name).afterBuild(ALL::add);
