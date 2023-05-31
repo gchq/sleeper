@@ -133,13 +133,12 @@ public class SystemTestForIngestBatcher {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
 
-        List<String> files = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
-
-        LOGGER.info("Writing test ingest files to {}", sourceBucketName);
-        for (String file : files) {
+        List<String> standardIngestFiles = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
+        LOGGER.info("Writing test ingest files to {} for standard ingest test", sourceBucketName);
+        for (String file : standardIngestFiles) {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
 
         waitForIngestJobQueue(instanceProperties, INGEST_JOB_QUEUE_URL);
         int standardIngestQueueMessageCount = getQueueMessageCount(instanceProperties.get(INGEST_JOB_QUEUE_URL));
@@ -149,10 +148,17 @@ public class SystemTestForIngestBatcher {
             return;
         }
         LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
+
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
         tableProperties.saveToS3(s3ClientV1);
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
+
+        List<String> bulkImportFiles = List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet");
+        LOGGER.info("Writing test ingest files to {} for bulk import test", sourceBucketName);
+        for (String file : bulkImportFiles) {
+            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
+        }
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, bulkImportFiles);
 
         waitForIngestJobQueue(instanceProperties, BULK_IMPORT_EMR_JOB_QUEUE_URL);
         int bulkImportEmrQueueMessageCount = getQueueMessageCount(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL));
