@@ -22,7 +22,6 @@ import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -38,7 +37,6 @@ class TablePropertyImpl implements TableProperty {
     private final boolean systemDefined;
     private final boolean editable;
     private final boolean includedInTemplate;
-    private final boolean includedInBasicTemplate;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -51,8 +49,6 @@ class TablePropertyImpl implements TableProperty {
         systemDefined = builder.systemDefined;
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
-        includedInBasicTemplate = Optional.ofNullable(builder.includedInBasicTemplate)
-                .orElseGet(TableProperty.super::isIncludedInBasicTemplate);
     }
 
     static Builder builder() {
@@ -113,20 +109,6 @@ class TablePropertyImpl implements TableProperty {
         return includedInTemplate;
     }
 
-    @Override
-    public boolean isIncludedInBasicTemplate() {
-        return includedInBasicTemplate;
-    }
-
-    @Override
-    public boolean isMandatory() {
-        if (defaultProperty != null) {
-            return !validationPredicate.test(defaultProperty.getDefaultValue());
-        } else {
-            return TableProperty.super.isMandatory();
-        }
-    }
-
     public String toString() {
         return propertyName;
     }
@@ -143,7 +125,6 @@ class TablePropertyImpl implements TableProperty {
         private boolean systemDefined;
         private boolean editable = true;
         private boolean includedInTemplate = true;
-        private Boolean includedInBasicTemplate;
 
         private Builder() {
         }
@@ -185,11 +166,6 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder includedInTemplate(boolean includedInTemplate) {
             this.includedInTemplate = includedInTemplate;
-            return this;
-        }
-
-        public Builder includedInBasicTemplate(boolean includedInBasicTemplate) {
-            this.includedInBasicTemplate = includedInBasicTemplate;
             return this;
         }
 

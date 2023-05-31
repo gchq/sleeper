@@ -63,10 +63,7 @@ public interface SleeperProperty {
     }
 
     default boolean isIncludedInBasicTemplate() {
-        return isMandatory();
+        return false;
     }
 
-    default boolean isMandatory() {
-        return !validationPredicate().test(getDefaultValue());
-    }
 }
