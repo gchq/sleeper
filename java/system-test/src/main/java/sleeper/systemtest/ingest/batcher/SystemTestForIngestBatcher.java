@@ -39,6 +39,7 @@ import sleeper.clients.util.GsonConfig;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.record.Record;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 
 public class SystemTestForIngestBatcher {
     private static final Gson GSON = GsonConfig.standardBuilder().create();
@@ -129,6 +131,11 @@ public class SystemTestForIngestBatcher {
         for (String file : files) {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
+
+        // Switch to Bulk Import EMR and send again
+        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        tableProperties.saveToS3(s3ClientV1);
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
     }
 
