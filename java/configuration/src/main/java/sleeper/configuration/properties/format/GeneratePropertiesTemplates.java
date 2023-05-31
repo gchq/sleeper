@@ -41,6 +41,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
@@ -93,6 +95,10 @@ public class GeneratePropertiesTemplates {
 
         // Mandatory properties
         properties.set(TABLE_NAME, "example-table");
+
+        // Non-mandatory properties
+        properties.set(ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator");
+        properties.set(ITERATOR_CONFIG, "b,3600000");
 
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(

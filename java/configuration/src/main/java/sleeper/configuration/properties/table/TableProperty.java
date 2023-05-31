@@ -76,7 +76,7 @@ public interface TableProperty extends SleeperProperty {
             .editable(false)
             .includedInTemplate(false).build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
-            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
+            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
                     "Defaults to nothing.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
