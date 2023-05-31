@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,6 +44,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class GeneratePropertiesTemplatesTest {
 
@@ -79,12 +81,14 @@ class GeneratePropertiesTemplatesTest {
     @Nested
     @DisplayName("Generate full example instance properties")
     class GenerateFullInstanceProperties {
-        private final String propertiesString = loadFullExampleInstancePropertiesAsString();
+        private final String propertiesString = loadFileAsString("example/full/instance.properties");
 
         @ParameterizedTest
         @ArgumentsSource(MandatoryInstancePropertyTemplateValues.class)
         void shouldSetMandatoryParameters(UserDefinedInstanceProperty property, String value) {
-            assertThat(instancePropertiesFromString(propertiesString).get(property)).isEqualTo(value);
+            assertThat(instancePropertiesFromString(propertiesString)
+                    .get(property))
+                    .isEqualTo(value);
         }
 
         @ParameterizedTest
@@ -117,9 +121,22 @@ class GeneratePropertiesTemplatesTest {
         }
     }
 
-    private String loadFullExampleInstancePropertiesAsString() {
+    @Nested
+    @DisplayName("Generate full example table properties")
+    class GenerateFullTableProperties {
+        private final String propertiesString = loadFileAsString("example/full/table.properties");
+
+        @Test
+        void shouldGenerateValidTableProperties() {
+            assertThat(tablePropertiesFromString(propertiesString)
+                    .get(TABLE_NAME))
+                    .isEqualTo("full-example");
+        }
+    }
+
+    private String loadFileAsString(String path) {
         try {
-            return Files.readString(tempDir.resolve("example/full/instance.properties"));
+            return Files.readString(tempDir.resolve(path));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -127,6 +144,17 @@ class GeneratePropertiesTemplatesTest {
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
         InstanceProperties properties = new InstanceProperties();
+        try {
+            properties.loadFromString(propertiesString);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return properties;
+    }
+
+    private TableProperties tablePropertiesFromString(String propertiesString) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties properties = new TableProperties(instanceProperties);
         try {
             properties.loadFromString(propertiesString);
         } catch (IOException e) {

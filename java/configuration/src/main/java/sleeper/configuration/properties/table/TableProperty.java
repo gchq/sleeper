@@ -73,7 +73,8 @@ public interface TableProperty extends SleeperProperty {
             .validationPredicate(Objects::nonNull)
             .description("The schema representing the structure of this table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .editable(false).build();
+            .editable(false)
+            .includedInTemplate(false).build();
     TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
@@ -342,6 +343,10 @@ public interface TableProperty extends SleeperProperty {
 
     static List<TableProperty> getSystemDefined() {
         return Index.INSTANCE.getSystemDefined();
+    }
+
+    static List<TableProperty> getUserDefined() {
+        return Index.INSTANCE.getUserDefined();
     }
 
     static boolean has(String propertyName) {

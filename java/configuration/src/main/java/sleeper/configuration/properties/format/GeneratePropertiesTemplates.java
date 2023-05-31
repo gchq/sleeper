@@ -19,6 +19,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -38,6 +41,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class GeneratePropertiesTemplates {
 
@@ -49,8 +53,12 @@ public class GeneratePropertiesTemplates {
     }
 
     public static void fromRepositoryPath(Path repositoryRoot) throws IOException {
+        Path fullExampleDir = repositoryRoot.resolve("example/full");
+        Files.createDirectories(fullExampleDir);
         writeExampleFullInstanceProperties(
-                repositoryRoot.resolve("example/full/instance.properties"));
+                fullExampleDir.resolve("instance.properties"));
+        writeExampleFullTableProperties(
+                fullExampleDir.resolve("table.properties"));
     }
 
     private static void writeExampleFullInstanceProperties(Path exampleFile) throws IOException {
@@ -71,11 +79,25 @@ public class GeneratePropertiesTemplates {
         properties.set(ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
 
-        Files.createDirectories(exampleFile.getParent());
         try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
             SleeperPropertiesPrettyPrinter.<InstanceProperty>forFullPropertiesTemplate(
                             Collections.unmodifiableList(UserDefinedInstanceProperty.getAll()),
                             InstancePropertyGroup.getAll(), new PrintWriter(writer))
+                    .print(properties);
+        }
+    }
+
+    private static void writeExampleFullTableProperties(Path exampleFile) throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties properties = new TableProperties(instanceProperties);
+
+        // Mandatory properties
+        properties.set(TABLE_NAME, "example-table");
+
+        try (BufferedWriter writer = Files.newBufferedWriter(exampleFile)) {
+            SleeperPropertiesPrettyPrinter.forFullPropertiesTemplate(
+                            TableProperty.getUserDefined(),
+                            TablePropertyGroup.getAll(), new PrintWriter(writer))
                     .print(properties);
         }
     }
