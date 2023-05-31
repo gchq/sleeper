@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.ingest.batcher;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -36,36 +38,32 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.clients.util.GsonConfig;
-import sleeper.clients.util.PollWithRetries;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.record.Record;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.job.common.QueueMessageCount;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
-import sleeper.systemtest.util.WaitForQueueEstimate;
+import sleeper.systemtest.ingest.WaitForIngestTasks;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 
 public class SystemTestForIngestBatcher {
     private static final Gson GSON = GsonConfig.standardBuilder().create();
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
-    private static final long JOBS_ESTIMATE_POLL_INTERVAL_MILLIS = 5000;
-    private static final int JOBS_ESTIMATE_MAX_POLLS = 12;
     private final Path scriptsDir;
     private final Path propertiesTemplate;
     private final String instanceId;
@@ -76,6 +74,7 @@ public class SystemTestForIngestBatcher {
     private final CloudFormationClient cloudFormationClient;
     private final AmazonSQS sqsClient;
     private final LambdaClient lambdaClient;
+    private final AmazonDynamoDB dynamoDB;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -88,13 +87,14 @@ public class SystemTestForIngestBatcher {
         cloudFormationClient = builder.cloudFormationClient;
         sqsClient = builder.sqsClient;
         lambdaClient = builder.lambdaClient;
+        dynamoDB = builder.dynamoDB;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, StateStoreException {
         if (args.length != 5) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
         }
@@ -110,6 +110,7 @@ public class SystemTestForIngestBatcher {
                     .cloudFormationClient(cloudFormationClient)
                     .sqsClient(AmazonSQSClientBuilder.defaultClient())
                     .lambdaClient(LambdaClient.create())
+                    .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
                     .build().run();
         }
     }
@@ -122,7 +123,7 @@ public class SystemTestForIngestBatcher {
      * Trigger the ingest batcher to create jobs
      * Test ingest via both standard ingest and bulk import
      */
-    public void run() throws IOException, InterruptedException {
+    public void run() throws IOException, InterruptedException, StateStoreException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
         createSourceBucketIfMissing(sourceBucketName);
         createInstanceIfMissing(sourceBucketName);
@@ -131,6 +132,8 @@ public class SystemTestForIngestBatcher {
         instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
+
+        int activeFileCountBefore = countActiveFiles(instanceProperties, tableProperties);
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
         tableProperties.saveToS3(s3ClientV1);
@@ -141,15 +144,6 @@ public class SystemTestForIngestBatcher {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
-
-        waitForIngestJobQueue(instanceProperties, INGEST_JOB_QUEUE_URL);
-        int standardIngestQueueMessageCount = getQueueMessageCount(instanceProperties.get(INGEST_JOB_QUEUE_URL));
-        if (standardIngestQueueMessageCount != 2) {
-            LOGGER.error("Some ingest jobs did not appear on the standard ingest job queue. Expected {}, got {}",
-                    2, standardIngestQueueMessageCount);
-            return;
-        }
-        LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
 
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
@@ -162,26 +156,20 @@ public class SystemTestForIngestBatcher {
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, bulkImportFiles);
 
-        waitForIngestJobQueue(instanceProperties, BULK_IMPORT_EMR_JOB_QUEUE_URL);
-        int bulkImportEmrQueueMessageCount = getQueueMessageCount(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL));
-        if (bulkImportEmrQueueMessageCount != 2) {
-            LOGGER.error("Some ingest jobs did not appear on the bulk import EMR job queue. Expected {}, got {}",
-                    2, bulkImportEmrQueueMessageCount);
-            return;
+        WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
+                new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
+        waitForIngestTasks.pollUntilFinished();
+
+        int activeFileCountAfter = countActiveFiles(instanceProperties, tableProperties);
+        if (activeFileCountAfter - activeFileCountBefore != 8) {
+            LOGGER.error("Some files were not ingested correctly. Expected {} files but found {}",
+                    8, activeFileCountAfter - activeFileCountBefore);
         }
-        LOGGER.info("Successfully batched files with ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
     }
 
-    private void waitForIngestJobQueue(InstanceProperties properties, InstanceProperty queueProperty) throws InterruptedException {
-        WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient), properties, queueProperty,
-                        PollWithRetries.intervalAndMaxPolls(JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
-                .pollUntilFinished();
-    }
-
-    private int getQueueMessageCount(String queueUrl) {
-        return QueueMessageCount.withSqsClient(sqsClient)
-                .getQueueMessageCount(queueUrl)
-                .getApproximateNumberOfMessages();
+    private int countActiveFiles(InstanceProperties properties, TableProperties tableProperties) throws StateStoreException {
+        StateStoreProvider provider = new StateStoreProvider(dynamoDB, properties);
+        return provider.getStateStore(tableProperties).getActiveFiles().size();
     }
 
     private void sendFilesAndTriggerJobCreation(InstanceProperties properties, String sourceBucketName, List<String> files) {
@@ -259,8 +247,13 @@ public class SystemTestForIngestBatcher {
         private CloudFormationClient cloudFormationClient;
         private AmazonSQS sqsClient;
         private LambdaClient lambdaClient;
+        private AmazonDynamoDB dynamoDB;
 
         private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder scriptsDir(Path scriptsDir) {
@@ -310,6 +303,11 @@ public class SystemTestForIngestBatcher {
 
         public Builder lambdaClient(LambdaClient lambdaClient) {
             this.lambdaClient = lambdaClient;
+            return this;
+        }
+
+        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+            this.dynamoDB = dynamoDB;
             return this;
         }
 
