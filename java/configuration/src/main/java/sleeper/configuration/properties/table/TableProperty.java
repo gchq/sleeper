@@ -172,6 +172,18 @@ public interface TableProperty extends SleeperProperty {
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
+    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
+            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
+            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
+                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
+            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
+            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
+                    "concurrently per partition.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
             .description("The name of the class used for the metadata store. The default is DynamoDBStateStore. " +
@@ -286,20 +298,6 @@ public interface TableProperty extends SleeperProperty {
                     "new data.\n" +
                     "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
-
-    // Size ratio compaction strategy
-    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
-            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
-            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
-                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
-            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
-            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
-                    "concurrently per partition.")
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
 
     // System defined
     TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
