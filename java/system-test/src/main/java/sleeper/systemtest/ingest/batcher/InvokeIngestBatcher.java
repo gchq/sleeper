@@ -152,7 +152,9 @@ public class InvokeIngestBatcher {
     }
 
     private List<String> getBatcherJobIds() {
-        return batcherStore.getAllFilesNewestFirst().stream()
+        List<FileIngestRequest> allFilesNewestFirst = batcherStore.getAllFilesNewestFirst();
+        LOGGER.info("Batcher store contents: {}", allFilesNewestFirst);
+        return allFilesNewestFirst.stream()
                 .map(FileIngestRequest::getJobId)
                 .filter(Objects::nonNull)
                 .distinct()
