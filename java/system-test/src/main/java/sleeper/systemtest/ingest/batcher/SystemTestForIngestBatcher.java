@@ -69,6 +69,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 
 public class SystemTestForIngestBatcher {
     private static final Gson GSON = GsonConfig.standardBuilder().create();
@@ -145,7 +146,7 @@ public class SystemTestForIngestBatcher {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
 
-        int activeFileCountBefore = countActiveFiles(instanceProperties, tableProperties);
+        int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
         tableProperties.saveToS3(s3ClientV1);
@@ -162,15 +163,16 @@ public class SystemTestForIngestBatcher {
 
         InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
 
-        WaitForQueueEstimate waitForConsumed = WaitForQueueEstimate.isConsumed(QueueMessageCount.withSqsClient(sqsClient),
-                instanceProperties, INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
-        waitForConsumed.pollUntilFinished();
         WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
                 new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
         waitForIngestTasks.pollUntilFinished();
 
+        int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+        checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
+
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
+        tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
         tableProperties.saveToS3(s3ClientV1);
 
         List<String> bulkImportFiles = List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet");
@@ -183,10 +185,15 @@ public class SystemTestForIngestBatcher {
         WaitForEMRClusters waitForEMRClusters = new WaitForEMRClusters(emrClient, instanceProperties);
         waitForEMRClusters.pollUntilFinished();
 
-        int activeFileCountAfter = countActiveFiles(instanceProperties, tableProperties);
-        if (activeFileCountAfter - activeFileCountBefore != 8) {
-            LOGGER.error("Some files were not ingested correctly. Expected {} files but found {}",
-                    8, activeFileCountAfter - activeFileCountBefore);
+        checkActiveFilesChanged(activeFileCountAfterStandardIngest,
+                countActiveFiles(instanceProperties, tableProperties), 1);
+    }
+
+    private void checkActiveFilesChanged(int activeFileCountBefore, int activeFileCountAfter, int expected) {
+        int actualFiles = activeFileCountAfter - activeFileCountBefore;
+        if (actualFiles != expected) {
+            throw new IllegalStateException("Some files were not ingested correctly." +
+                    "Expected " + expected + " files but found " + actualFiles);
         }
     }
 
