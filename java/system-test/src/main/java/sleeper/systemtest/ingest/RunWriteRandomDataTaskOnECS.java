@@ -19,7 +19,6 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
-import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
@@ -33,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.job.common.RunECSTasks;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.ingest.json.TasksJson;
 
@@ -46,7 +46,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
@@ -97,19 +96,7 @@ public class RunWriteRandomDataTaskOnECS {
                 .withPlatformVersion(systemTestProperties.get(FARGATE_VERSION));
 
         List<RunTaskResult> results = new ArrayList<>();
-        for (int i = 0; i < systemTestProperties.getInt(NUMBER_OF_WRITERS); i++) {
-            // Rate limit for Fargate tasks is 100 burst, 20 sustained:
-            // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
-            if (i > 0) {
-                sleepForSustainedRatePerSecond(10);
-            }
-            RunTaskResult result = ecsClient.runTask(runTaskRequest);
-            List<Failure> failures = result.getFailures();
-            if (!failures.isEmpty()) {
-                throw new ECSFailureException("Failures running task " + i + ": " + failures);
-            }
-            results.add(result);
-        }
+        RunECSTasks.runTasksOrThrow(ecsClient, runTaskRequest, systemTestProperties.getInt(NUMBER_OF_WRITERS), () -> true, results::add);
         LOGGER.debug("Ran {} tasks", systemTestProperties.getInt(NUMBER_OF_WRITERS));
         return results;
     }
