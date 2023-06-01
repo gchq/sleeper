@@ -115,7 +115,7 @@ public class InvokeIngestBatcher {
 
         lambdaClient.invokeLambda(INGEST_LAMBDA_FUNCTION);
 
-        waitForJobsToFinish(jobIds);
+        waitForJobsToFinish(PollWithRetries.intervalAndMaxPolls(10000, 10), jobIds);
     }
 
     public void runBulkImportEMR() throws IOException, InterruptedException {
@@ -127,7 +127,8 @@ public class InvokeIngestBatcher {
 
         List<String> jobIds = sendFilesGetJobIds(List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet"));
 
-        waitForJobsToFinish(jobIds);
+        waitForJobsToFinish(PollWithRetries.intervalAndPollingTimeout(
+                30000, 1000L * 60L * 10L), jobIds);
     }
 
     private List<String> sendFilesGetJobIds(List<String> fileNames) throws IOException {
@@ -150,13 +151,12 @@ public class InvokeIngestBatcher {
                 .collect(Collectors.toList());
     }
 
-    private void waitForJobsToFinish(List<String> jobIds) throws InterruptedException {
-        PollWithRetries.intervalAndMaxPolls(10000, 10)
-                .pollUntil("ingest jobs are finished", () ->
-                        jobIds.stream().allMatch(jobId ->
-                                ingestStatusStore.getJob(jobId)
-                                        .filter(IngestJobStatus::isFinished)
-                                        .isPresent()));
+    private void waitForJobsToFinish(PollWithRetries poll, List<String> jobIds) throws InterruptedException {
+        poll.pollUntil("ingest jobs are finished", () ->
+                jobIds.stream().allMatch(jobId ->
+                        ingestStatusStore.getJob(jobId)
+                                .filter(IngestJobStatus::isFinished)
+                                .isPresent()));
     }
 
 }
