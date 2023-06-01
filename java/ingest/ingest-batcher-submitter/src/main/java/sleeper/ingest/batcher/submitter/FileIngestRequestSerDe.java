@@ -16,6 +16,7 @@
 
 package sleeper.ingest.batcher.submitter;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -39,13 +40,18 @@ public class FileIngestRequestSerDe {
                 .build();
     }
 
+    public static String toJson(AmazonS3 s3, String bucketName, String key, String tableName) {
+        long fileSizeBytes = s3.getObjectMetadata(bucketName, key).getContentLength();
+        return GSON.toJson(new Request(bucketName + "/" + key, fileSizeBytes, tableName));
+    }
 
-    public static class Request {
+
+    private static class Request {
         private final String pathToFile;
         private final long fileSizeBytes;
         private final String tableName;
 
-        public Request(String pathToFile, long fileSizeBytes, String tableName) {
+        Request(String pathToFile, long fileSizeBytes, String tableName) {
             this.pathToFile = pathToFile;
             this.fileSizeBytes = fileSizeBytes;
             this.tableName = tableName;

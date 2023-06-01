@@ -18,61 +18,34 @@ package sleeper.systemtest.ingest.batcher;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.google.gson.Gson;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.InvokeLambda;
-import sleeper.clients.util.GsonConfig;
-import sleeper.clients.util.PollWithRetries;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.BatchIngestMode;
-import sleeper.core.record.Record;
-import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.job.common.QueueMessageCount;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.bulkimport.WaitForEMRClusters;
-import sleeper.systemtest.ingest.RandomRecordSupplier;
-import sleeper.systemtest.ingest.WaitForIngestTasks;
-import sleeper.systemtest.util.InvokeSystemTestLambda;
-import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 
 public class SystemTestForIngestBatcher {
-    private static final Gson GSON = GsonConfig.standardBuilder().create();
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
     private final Path scriptsDir;
     private final Path propertiesTemplate;
@@ -85,7 +58,6 @@ public class SystemTestForIngestBatcher {
     private final AmazonSQS sqsClient;
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDB;
-    private final AmazonElasticMapReduce emrClient;
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
@@ -99,7 +71,6 @@ public class SystemTestForIngestBatcher {
         sqsClient = builder.sqsClient;
         lambdaClient = builder.lambdaClient;
         dynamoDB = builder.dynamoDB;
-        emrClient = builder.emrClient;
     }
 
     public static Builder builder() {
@@ -123,7 +94,6 @@ public class SystemTestForIngestBatcher {
                     .sqsClient(AmazonSQSClientBuilder.defaultClient())
                     .lambdaClient(LambdaClient.create())
                     .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
-                    .emrClient(AmazonElasticMapReduceClientBuilder.defaultClient())
                     .build().run();
         }
     }
@@ -145,61 +115,17 @@ public class SystemTestForIngestBatcher {
         instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3ClientV1, "system-test");
+        InvokeIngestBatcher invoke = new InvokeIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
+                s3ClientV1, dynamoDB, sqsClient, lambdaClient);
 
         int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
-        runTestWithStandardIngest(instanceProperties, tableProperties, sourceBucketName);
+        invoke.runStandardIngest();
         int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
         checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
 
-        runTestWithBulkImportEMR(instanceProperties, tableProperties, sourceBucketName);
+        invoke.runBulkImportEMR();
         checkActiveFilesChanged(activeFileCountAfterStandardIngest,
                 countActiveFiles(instanceProperties, tableProperties), 1);
-    }
-
-    private void runTestWithStandardIngest(
-            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName)
-            throws IOException, InterruptedException {
-        LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
-        tableProperties.saveToS3(s3ClientV1);
-
-        writeFilesAndSendToBatcher(instanceProperties, tableProperties, sourceBucketName,
-                List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet"));
-
-        WaitForQueueEstimate waitForNotEmpty = WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient),
-                instanceProperties, INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
-        waitForNotEmpty.pollUntilFinished();
-
-        InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
-
-        WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
-                new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
-        waitForIngestTasks.pollUntilFinished();
-    }
-
-    private void runTestWithBulkImportEMR(
-            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName)
-            throws IOException, InterruptedException {
-        LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
-        tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
-        tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
-        tableProperties.saveToS3(s3ClientV1);
-
-        writeFilesAndSendToBatcher(instanceProperties, tableProperties, sourceBucketName,
-                List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet"));
-
-        WaitForEMRClusters waitForEMRClusters = new WaitForEMRClusters(emrClient, instanceProperties);
-        waitForEMRClusters.pollUntilFinished();
-    }
-
-    private void writeFilesAndSendToBatcher(
-            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName, List<String> files)
-            throws IOException {
-        LOGGER.info("Writing test ingest files to {}", sourceBucketName);
-        for (String file : files) {
-            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
-        }
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
     }
 
     private void checkActiveFilesChanged(int activeFileCountBefore, int activeFileCountAfter, int expected) {
@@ -215,13 +141,6 @@ public class SystemTestForIngestBatcher {
         return provider.getStateStore(tableProperties).getActiveFiles().size();
     }
 
-    private void sendFilesAndTriggerJobCreation(InstanceProperties properties, String sourceBucketName, List<String> files) {
-        LOGGER.info("Sending files to ingest batcher queue");
-        sendFilesToBatcherSubmitQueue(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL), sourceBucketName, files);
-        LOGGER.info("Triggering ingest batcher job creation lambda");
-        InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
-    }
-
     private void createSourceBucketIfMissing(String sourceBucketName) {
         try {
             s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
@@ -230,10 +149,10 @@ public class SystemTestForIngestBatcher {
                     .versions().stream()
                     .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
                     .collect(Collectors.toList());
-            s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName).delete(Delete.builder()
-                    .objects(objects).build()));
+            s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName)
+                    .delete(deleteBuilder -> deleteBuilder.objects(objects)));
         } catch (NoSuchBucketException e) {
-            LOGGER.info("Creating bucket: " + sourceBucketName);
+            LOGGER.info("Creating bucket: {}", sourceBucketName);
             s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
         }
     }
@@ -241,9 +160,9 @@ public class SystemTestForIngestBatcher {
     private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
-            LOGGER.info("Instance already exists: " + instanceId);
+            LOGGER.info("Instance already exists: {}", instanceId);
         } catch (CloudFormationException e) {
-            LOGGER.info("Deploying instance: " + instanceId);
+            LOGGER.info("Deploying instance: {}", instanceId);
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
                     .instancePropertiesTemplate(propertiesTemplate)
                     .extraInstanceProperties(properties ->
@@ -258,27 +177,6 @@ public class SystemTestForIngestBatcher {
         }
     }
 
-    private void writeFileWithRecords(TableProperties tableProperties, String filePath, int numRecords) throws IOException {
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new org.apache.hadoop.fs.Path("s3a://" + filePath), tableProperties, new Configuration())) {
-            RandomRecordSupplier supplier = new RandomRecordSupplier(tableProperties.getSchema());
-            for (int i = 0; i < numRecords; i++) {
-                writer.write(supplier.get());
-            }
-        }
-    }
-
-    private void sendFilesToBatcherSubmitQueue(String queueUrl, String sourceBucketName, List<String> files) {
-        for (String file : files) {
-            sqsClient.sendMessage(queueUrl, createFileIngestRequestMessage(sourceBucketName, file));
-        }
-    }
-
-    private String createFileIngestRequestMessage(String sourceBucketName, String file) {
-        long fileSizeBytes = s3ClientV2.headObject(builder -> builder.bucket(sourceBucketName).key(file)).contentLength();
-        return GSON.toJson(new FileIngestRequestSerDe.Request(sourceBucketName + "/" + file, fileSizeBytes, "system-test"));
-    }
-
     public static final class Builder {
         private Path scriptsDir;
         private Path propertiesTemplate;
@@ -291,7 +189,6 @@ public class SystemTestForIngestBatcher {
         private AmazonSQS sqsClient;
         private LambdaClient lambdaClient;
         private AmazonDynamoDB dynamoDB;
-        private AmazonElasticMapReduce emrClient;
 
         private Builder() {
         }
@@ -352,11 +249,6 @@ public class SystemTestForIngestBatcher {
 
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
-            return this;
-        }
-
-        public Builder emrClient(AmazonElasticMapReduce emrClient) {
-            this.emrClient = emrClient;
             return this;
         }
 
