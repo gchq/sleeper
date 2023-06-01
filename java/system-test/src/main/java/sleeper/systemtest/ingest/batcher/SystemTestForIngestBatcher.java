@@ -156,13 +156,15 @@ public class SystemTestForIngestBatcher {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
-        WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
-                INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
+        WaitForQueueEstimate waitForNotEmpty = WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient),
+                instanceProperties, INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
+        waitForNotEmpty.pollUntilFinished();
 
         InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
 
-        WaitForQueueEstimate.isConsumed(QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
-                INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
+        WaitForQueueEstimate waitForConsumed = WaitForQueueEstimate.isConsumed(QueueMessageCount.withSqsClient(sqsClient),
+                instanceProperties, INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
+        waitForConsumed.pollUntilFinished();
         WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
                 new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
         waitForIngestTasks.pollUntilFinished();
