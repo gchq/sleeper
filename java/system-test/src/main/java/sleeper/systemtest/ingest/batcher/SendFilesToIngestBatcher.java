@@ -24,9 +24,12 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
+import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
@@ -45,23 +48,25 @@ public class SendFilesToIngestBatcher {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final String sourceBucketName;
+    private final IngestBatcherStore batcherStore;
     private final AmazonS3 s3;
     private final AmazonSQS sqs;
     private final LambdaClient lambda;
 
     public SendFilesToIngestBatcher(
             InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName,
-            AmazonS3 s3, AmazonSQS sqs, LambdaClient lambda) {
+            IngestBatcherStore batcherStore, AmazonS3 s3, AmazonSQS sqs, LambdaClient lambda) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.sourceBucketName = sourceBucketName;
+        this.batcherStore = batcherStore;
         this.s3 = s3;
         this.sqs = sqs;
         this.lambda = lambda;
     }
 
     public void writeFilesAndSendToBatcher(List<String> files)
-            throws IOException {
+            throws IOException, InterruptedException {
         LOGGER.info("Writing test ingest files to {}", sourceBucketName);
         for (String file : files) {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
@@ -79,21 +84,21 @@ public class SendFilesToIngestBatcher {
         }
     }
 
-    private void sendFilesAndTriggerJobCreation(InstanceProperties properties, String sourceBucketName, List<String> files) {
-        LOGGER.info("Sending files to ingest batcher queue");
-        sendFilesToBatcherSubmitQueue(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL), sourceBucketName, files);
+    private void sendFilesAndTriggerJobCreation(
+            InstanceProperties properties, String sourceBucketName, List<String> files) throws InterruptedException {
+        LOGGER.info("Sending {} files to ingest batcher queue", files.size());
+        for (String file : files) {
+            sqs.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
+                    FileIngestRequestSerDe.toJson(s3, sourceBucketName, file, "system-test"));
+        }
+        PollWithRetries.intervalAndPollingTimeout(5000, 1000L * 60L * 2L)
+                .pollUntil("files appear in batcher store", () -> {
+                    List<FileIngestRequest> pending = batcherStore.getPendingFilesOldestFirst();
+                    LOGGER.info("Found pending files in batcher store: {}", pending);
+                    return pending.size() == files.size();
+                });
         LOGGER.info("Triggering ingest batcher job creation lambda");
         InvokeLambda.invokeWith(lambda, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
-    }
-
-    private void sendFilesToBatcherSubmitQueue(String queueUrl, String sourceBucketName, List<String> files) {
-        for (String file : files) {
-            sqs.sendMessage(queueUrl, createFileIngestRequestMessage(sourceBucketName, file));
-        }
-    }
-
-    private String createFileIngestRequestMessage(String sourceBucketName, String file) {
-        return FileIngestRequestSerDe.toJson(s3, sourceBucketName, file, "system-test");
     }
 
 }

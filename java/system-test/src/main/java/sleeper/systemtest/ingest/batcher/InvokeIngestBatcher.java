@@ -45,6 +45,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
@@ -65,12 +66,20 @@ public class InvokeIngestBatcher {
     public InvokeIngestBatcher(
             InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName,
             AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, LambdaClient lambda) {
-        this(instanceProperties,
-                tablePropertiesUpdater(tableProperties, s3),
-                new SendFilesToIngestBatcher(instanceProperties, tableProperties, sourceBucketName, s3, sqs, lambda),
+        this(instanceProperties, tableProperties, sourceBucketName,
                 new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
                         new TablePropertiesProvider(s3, instanceProperties)),
-                new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties),
+                s3, dynamoDB, sqs, lambda);
+    }
+
+    private InvokeIngestBatcher(
+            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName,
+            IngestBatcherStore batcherStore, AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, LambdaClient lambda) {
+        this(instanceProperties,
+                tablePropertiesUpdater(tableProperties, s3),
+                new SendFilesToIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
+                        batcherStore, s3, sqs, lambda),
+                batcherStore, new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties),
                 InvokeSystemTestLambda.client(instanceProperties),
                 QueueMessageCount.withSqsClient(sqs));
     }
@@ -104,8 +113,10 @@ public class InvokeIngestBatcher {
 
     public void runStandardIngest() throws InterruptedException, IOException {
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
-        updateTableProperties.accept(tableProperties ->
-                tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString()));
+        updateTableProperties.accept(tableProperties -> {
+            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
+        });
 
         List<String> jobIds = sendFilesGetJobIds(List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet"));
 
@@ -146,12 +157,16 @@ public class InvokeIngestBatcher {
 
     private List<String> getBatcherJobIds() {
         List<FileIngestRequest> allFilesNewestFirst = batcherStore.getAllFilesNewestFirst();
-        LOGGER.info("Batcher store contents: {}", allFilesNewestFirst);
-        return allFilesNewestFirst.stream()
+        List<String> jobIds = allFilesNewestFirst.stream()
                 .map(FileIngestRequest::getJobId)
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
+        long pending = allFilesNewestFirst.stream()
+                .filter(not(FileIngestRequest::isAssignedToJob)).count();
+        LOGGER.info("Batcher store contains {} entries, {} pending files, {} jobs",
+                allFilesNewestFirst.size(), pending, jobIds.size());
+        return jobIds;
     }
 
     private void waitForJobsToFinish(PollWithRetries poll, List<String> jobIds) throws InterruptedException {
