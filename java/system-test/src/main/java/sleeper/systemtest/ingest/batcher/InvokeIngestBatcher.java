@@ -108,6 +108,7 @@ public class InvokeIngestBatcher {
                 tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString()));
 
         List<String> jobIds = sendFilesGetJobIds(List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet"));
+        LOGGER.info("Job IDs for files: {}", jobIds);
 
         WaitForQueueEstimate waitForNotEmpty = WaitForQueueEstimate.notEmpty(queueClient,
                 instanceProperties, INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));

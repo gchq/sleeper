@@ -131,7 +131,7 @@ public class SystemTestForIngestBatcher {
     private void checkActiveFilesChanged(int activeFileCountBefore, int activeFileCountAfter, int expected) {
         int actualFiles = activeFileCountAfter - activeFileCountBefore;
         if (actualFiles != expected) {
-            throw new IllegalStateException("Some files were not ingested correctly." +
+            throw new IllegalStateException("Some files were not ingested correctly. " +
                     "Expected " + expected + " files but found " + actualFiles);
         }
     }
