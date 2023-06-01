@@ -1,0 +1,11 @@
+name: Dependency Check on change
+on:
+  push:
+    paths:
+      - '.github/workflows/dependency-check-changes.yaml'
+      - '.github/workflows/dependency-check.yaml'
+      - 'java/**/pom.xml'
+
+jobs:
+  build-cli:
+    uses: ./.github/workflows/dependency-check.yaml
