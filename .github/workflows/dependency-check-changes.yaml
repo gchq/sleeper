@@ -1,4 +1,4 @@
-name: Dependency Check on change
+name: Dependency Check Changes
 on:
   push:
     paths:
