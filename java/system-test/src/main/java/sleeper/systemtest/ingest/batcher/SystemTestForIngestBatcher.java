@@ -40,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.clients.util.GsonConfig;
+import sleeper.clients.util.PollWithRetries;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -48,12 +49,14 @@ import sleeper.core.record.Record;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.bulkimport.WaitForEMRClusters;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
 import sleeper.systemtest.ingest.WaitForIngestTasks;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -62,6 +65,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
@@ -152,8 +156,13 @@ public class SystemTestForIngestBatcher {
             writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
         }
         sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
+        WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
 
         InvokeSystemTestLambda.forInstance(instanceId, INGEST_LAMBDA_FUNCTION);
+
+        WaitForQueueEstimate.isConsumed(QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
         WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
                 new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
         waitForIngestTasks.pollUntilFinished();
