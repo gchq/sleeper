@@ -147,16 +147,25 @@ public class SystemTestForIngestBatcher {
         tableProperties.loadFromS3(s3ClientV1, "system-test");
 
         int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+        runTestWithStandardIngest(instanceProperties, tableProperties, sourceBucketName);
+        int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+        checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
+
+        runTestWithBulkImportEMR(instanceProperties, tableProperties, sourceBucketName);
+        checkActiveFilesChanged(activeFileCountAfterStandardIngest,
+                countActiveFiles(instanceProperties, tableProperties), 1);
+    }
+
+    private void runTestWithStandardIngest(
+            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName)
+            throws IOException, InterruptedException {
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
         tableProperties.saveToS3(s3ClientV1);
 
-        List<String> standardIngestFiles = List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet");
-        LOGGER.info("Writing test ingest files to {} for standard ingest test", sourceBucketName);
-        for (String file : standardIngestFiles) {
-            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
-        }
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, standardIngestFiles);
+        writeFilesAndSendToBatcher(instanceProperties, tableProperties, sourceBucketName,
+                List.of("file-1.parquet", "file-2.parquet", "file-3.parquet", "file-4.parquet"));
+
         WaitForQueueEstimate waitForNotEmpty = WaitForQueueEstimate.notEmpty(QueueMessageCount.withSqsClient(sqsClient),
                 instanceProperties, INGEST_JOB_QUEUE_URL, PollWithRetries.intervalAndMaxPolls(10000, 10));
         waitForNotEmpty.pollUntilFinished();
@@ -166,27 +175,31 @@ public class SystemTestForIngestBatcher {
         WaitForIngestTasks waitForIngestTasks = new WaitForIngestTasks(instanceProperties, sqsClient,
                 new DynamoDBIngestTaskStatusStore(dynamoDB, instanceProperties));
         waitForIngestTasks.pollUntilFinished();
+    }
 
-        int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
-        checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
-
+    private void runTestWithBulkImportEMR(
+            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName)
+            throws IOException, InterruptedException {
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
         tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
         tableProperties.saveToS3(s3ClientV1);
 
-        List<String> bulkImportFiles = List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet");
-        LOGGER.info("Writing test ingest files to {} for bulk import test", sourceBucketName);
-        for (String file : bulkImportFiles) {
-            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
-        }
-        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, bulkImportFiles);
+        writeFilesAndSendToBatcher(instanceProperties, tableProperties, sourceBucketName,
+                List.of("file-5.parquet", "file-6.parquet", "file-7.parquet", "file-8.parquet"));
 
         WaitForEMRClusters waitForEMRClusters = new WaitForEMRClusters(emrClient, instanceProperties);
         waitForEMRClusters.pollUntilFinished();
+    }
 
-        checkActiveFilesChanged(activeFileCountAfterStandardIngest,
-                countActiveFiles(instanceProperties, tableProperties), 1);
+    private void writeFilesAndSendToBatcher(
+            InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName, List<String> files)
+            throws IOException {
+        LOGGER.info("Writing test ingest files to {}", sourceBucketName);
+        for (String file : files) {
+            writeFileWithRecords(tableProperties, sourceBucketName + "/" + file, 100);
+        }
+        sendFilesAndTriggerJobCreation(instanceProperties, sourceBucketName, files);
     }
 
     private void checkActiveFilesChanged(int activeFileCountBefore, int activeFileCountAfter, int expected) {
