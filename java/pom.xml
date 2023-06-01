@@ -670,6 +670,9 @@
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${dependency-check.plugin.version}</version>
+                    <configuration>
+                        <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
