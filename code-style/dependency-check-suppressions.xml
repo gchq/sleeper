@@ -20,7 +20,7 @@
         Spark is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*@3\.3\.1$</packageUrl>
         <cpe>cpe:/a:apache:spark</cpe>
     </suppress>
 </suppressions>
