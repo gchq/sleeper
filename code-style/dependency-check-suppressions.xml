@@ -40,6 +40,6 @@
         several shaded dependencies.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*@3\.3\.2$</packageUrl>
-        <vulnerabilityName regex="true"></vulnerabilityName>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
 </suppressions>
