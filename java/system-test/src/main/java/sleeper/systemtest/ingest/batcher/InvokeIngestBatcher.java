@@ -132,16 +132,23 @@ public class InvokeIngestBatcher {
                 30000, 1000L * 60L * 10L), jobIds);
     }
 
-    private List<String> sendFilesGetJobIds(List<String> fileNames) throws IOException {
+    private List<String> sendFilesGetJobIds(List<String> fileNames) throws IOException, InterruptedException {
 
         List<String> jobIdsBefore = getBatcherJobIds();
 
         sendFiles.writeFilesAndSendToBatcher(fileNames);
+        waitForAllFilesToBeAssignedToJobs(PollWithRetries.intervalAndPollingTimeout(
+                10000, 1000L * 60L * 5L));
 
         List<String> jobIdsAfter = getBatcherJobIds();
         List<String> newJobIds = new ArrayList<>(jobIdsAfter);
         newJobIds.removeAll(jobIdsBefore);
         return newJobIds;
+    }
+
+    private void waitForAllFilesToBeAssignedToJobs(PollWithRetries poll) throws InterruptedException {
+        poll.pollUntil("all files are assigned jobs", () ->
+                batcherStore.getAllFilesNewestFirst().stream().allMatch(FileIngestRequest::isAssignedToJob));
     }
 
     private List<String> getBatcherJobIds() {
