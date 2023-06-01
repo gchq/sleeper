@@ -61,6 +61,10 @@ public class DynamoDBAttributes {
         }
     }
 
+    public static AttributeValue createBooleanAttribute(boolean bool) {
+        return new AttributeValue().withBOOL(bool);
+    }
+
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
         return new AttributeValue().withB(ByteBuffer.wrap(bytes));
     }
@@ -71,6 +75,10 @@ public class DynamoDBAttributes {
 
     public static String getNumberAttribute(Map<String, AttributeValue> item, String name) {
         return getAttribute(item, name, AttributeValue::getN);
+    }
+
+    public static boolean getBooleanAttribute(Map<String, AttributeValue> item, String name) {
+        return Boolean.TRUE.equals(getAttribute(item, name, AttributeValue::getBOOL));
     }
 
     public static int getIntAttribute(Map<String, AttributeValue> item, String name, int defaultValue) {
