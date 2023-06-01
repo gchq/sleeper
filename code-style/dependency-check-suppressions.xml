@@ -19,7 +19,7 @@
         <notes><![CDATA[
         Spark is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
-   ]]></notes>
+        ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
         <cpe>cpe:/a:apache:spark:3.3.1</cpe>
     </suppress>
@@ -27,8 +27,19 @@
         <notes><![CDATA[
         Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
-   ]]></notes>
+        ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*$</packageUrl>
         <cpe>cpe:/a:apache:hadoop:3.3.2</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+
+        Some of the Hadoop dependencies were not identified by the Hadoop CPE, so we've added this to catch
+        several shaded dependencies.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*@3\.3\.2$</packageUrl>
+        <vulnerabilityName regex="true"></vulnerabilityName>
     </suppress>
 </suppressions>
