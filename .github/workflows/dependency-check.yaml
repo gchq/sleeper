@@ -23,24 +23,11 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=../.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode install -Pquick -Dmaven.repo.local=../.m2/repository
+        run: mvn --batch-mode verify dependency-check:aggregate -Pquick -Dmaven.repo.local=../.m2/repository
         working-directory: ./java
-      - name: Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        env:
-          # actions/setup-java changes JAVA_HOME so it needs to be reset to match the depcheck image
-          JAVA_HOME: /opt/jdk
-        with:
-          project: 'Sleeper'
-          path: './java'
-          format: 'HTML'
-          out: 'reports' # this is the default, no need to specify unless you wish to override it
-          args: >
-            --failOnCVSS 7
-            --enableRetired
       - name: Upload dependency check report
         if: ${{ always() }}
         uses: actions/upload-artifact@master
         with:
           name: Dependency check report
-          path: ${{github.workspace}}/reports
+          path: java/target/dependency-check-report.html
