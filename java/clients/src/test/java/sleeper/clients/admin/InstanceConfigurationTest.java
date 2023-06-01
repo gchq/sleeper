@@ -56,6 +56,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -530,7 +531,7 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
             TableProperties after = createValidTableProperties(properties);
-            after.set(ROW_GROUP_SIZE, "123");
+            after.set(ITERATOR_CONFIG, "TestIterator");
 
             // When
             String output = editTableConfiguration(properties, before, after)
@@ -620,6 +621,41 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                     "sleeper.table.data.bucket\n" +
                     "\n" +
                     PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
+        }
+
+        @Test
+        void shouldEditAPropertyThatWasPreviouslyUnsetButHadADefaultProperty() throws Exception {
+            // Given
+            InstanceProperties properties = createValidInstanceProperties();
+            TableProperties before = createValidTableProperties(properties);
+            TableProperties after = createValidTableProperties(properties);
+            after.set(ROW_GROUP_SIZE, "123");
+
+            // When
+            String output = editTableConfiguration(properties, before, after)
+                    .enterPrompts(SaveChangesScreen.SAVE_CHANGES_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+
+            // Then
+            assertThat(output).startsWith(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN)
+                    .contains("Found changes to properties:\n" +
+                            "\n" +
+                            "sleeper.table.rowgroup.size\n" +
+                            "The size of the row group in the Parquet files - defaults to the value in the instance properties.\n" +
+                            "Unset before, default value: 8388608\n" +
+                            "After: 123\n")
+                    .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
+
+            InOrder order = Mockito.inOrder(in.mock, editor, store);
+            order.verify(in.mock).promptLine(any());
+            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
+            // See https://github.com/mockito/mockito/issues/2957
+            order.verify(in.mock).promptLine(any());
+            order.verify(editor).openPropertiesFile(before);
+            order.verify(in.mock).promptLine(any());
+            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
+            order.verify(in.mock).promptLine(any());
+            order.verifyNoMoreInteractions();
         }
     }
 

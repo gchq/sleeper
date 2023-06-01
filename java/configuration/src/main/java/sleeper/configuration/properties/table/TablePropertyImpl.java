@@ -139,6 +139,7 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder defaultProperty(SleeperProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
+            this.defaultValue = defaultProperty.getDefaultValue();
             return validationPredicate(defaultProperty.validationPredicate());
         }
 
