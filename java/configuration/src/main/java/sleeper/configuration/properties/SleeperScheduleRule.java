@@ -34,35 +34,39 @@ public class SleeperScheduleRule {
 
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();
     // Rule that creates compaction jobs
-    public static final SleeperScheduleRule COMPACTION_JOB_CREATION = new SleeperScheduleRule(
+    public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
             COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule");
     // Rules that create compaction and splitting compaction tasks
-    public static final SleeperScheduleRule COMPACTION_TASK_CREATION = new SleeperScheduleRule(
+    public static final SleeperScheduleRule COMPACTION_TASK_CREATION = add(
             COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule");
-    public static final SleeperScheduleRule SPLITTING_COMPACTION_TASK_CREATION = new SleeperScheduleRule(
+    public static final SleeperScheduleRule SPLITTING_COMPACTION_TASK_CREATION = add(
             SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-SplittingCompactionTasksCreationRule");
     // Rule that looks for partitions that need splitting
-    public static final SleeperScheduleRule PARTITION_SPLITTING = new SleeperScheduleRule(
+    public static final SleeperScheduleRule PARTITION_SPLITTING = add(
             PARTITION_SPLITTING_CLOUDWATCH_RULE, "%s-FindPartitionsToSplitPeriodicTrigger");
     // Rule that triggers garbage collector lambda
-    public static final SleeperScheduleRule GARBAGE_COLLECTOR = new SleeperScheduleRule(
+    public static final SleeperScheduleRule GARBAGE_COLLECTOR = add(
             GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "%s-GarbageCollectorPeriodicTrigger");
     // Rule that triggers creation of ingest tasks
-    public static final SleeperScheduleRule INGEST = new SleeperScheduleRule(
+    public static final SleeperScheduleRule INGEST = add(
             INGEST_CLOUDWATCH_RULE, "%s-IngestTasksCreationRule");
     // Rule that batches up ingest jobs from file ingest requests
-    public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = new SleeperScheduleRule(
+    public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(
             INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule");
-    public static final SleeperScheduleRule TABLE_METRICS = new SleeperScheduleRule(
-            TABLE_METRICS_RULES, null);
+    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULES, null);
 
     private final InstanceProperty property;
     private final String nameFormat;
 
+    private static SleeperScheduleRule add(InstanceProperty property, String nameFormat) {
+        SleeperScheduleRule rule = new SleeperScheduleRule(property, nameFormat);
+        RULES.add(rule);
+        return rule;
+    }
+
     private SleeperScheduleRule(InstanceProperty property, String nameFormat) {
         this.property = property;
         this.nameFormat = nameFormat;
-        RULES.add(this);
     }
 
     public static Stream<Value> getCloudWatchRules(InstanceProperties properties) {
