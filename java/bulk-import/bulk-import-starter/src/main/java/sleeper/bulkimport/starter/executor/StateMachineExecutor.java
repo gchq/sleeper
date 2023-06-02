@@ -29,10 +29,13 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
@@ -83,7 +86,19 @@ public class StateMachineExecutor extends Executor {
                                 StateStoreProvider stateStoreProvider,
                                 IngestJobStatusStore ingestJobStatusStore,
                                 AmazonS3 s3Client) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, s3Client);
+        this(stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                s3Client, UUID.randomUUID().toString(), Instant::now);
+    }
+
+    public StateMachineExecutor(AWSStepFunctions stepFunctions,
+                                InstanceProperties instanceProperties,
+                                TablePropertiesProvider tablePropertiesProvider,
+                                StateStoreProvider stateStoreProvider,
+                                IngestJobStatusStore ingestJobStatusStore,
+                                AmazonS3 s3Client, String taskId,
+                                Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, s3Client,
+                taskId, validationTimeSupplier);
         this.stepFunctions = stepFunctions;
     }
 

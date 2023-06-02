@@ -27,11 +27,13 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
@@ -48,14 +50,19 @@ public abstract class Executor {
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
+    protected final String taskId;
+    protected final Supplier<Instant> validationTimeSupplier;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-                    StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client) {
+                    StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
+                    String taskId, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.s3Client = s3Client;
+        this.taskId = taskId;
+        this.validationTimeSupplier = validationTimeSupplier;
     }
 
     public void runJob(BulkImportJob bulkImportJob) {
@@ -64,7 +71,9 @@ public abstract class Executor {
             return;
         }
         LOGGER.info("Validating job: {}", bulkImportJob);
-        validateJob(bulkImportJob);
+        if (!validateJob(bulkImportJob)) {
+            return;
+        }
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
@@ -100,7 +109,7 @@ public abstract class Executor {
         return args;
     }
 
-    private void validateJob(BulkImportJob bulkImportJob) {
+    private boolean validateJob(BulkImportJob bulkImportJob) {
         List<String> failedChecks = new ArrayList<>();
         String id = bulkImportJob.getId();
         if (null == id) {
@@ -120,20 +129,25 @@ public abstract class Executor {
             failedChecks.add("The table name must be set to a non-null value.");
         } else if (!doesTableExist(bulkImportJob.getTableName())) {
             failedChecks.add("Table does not exist.");
+        } else if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+            failedChecks.add("The minimum partition count was not reached");
         }
 
         if (null == bulkImportJob.getFiles() || bulkImportJob.getFiles().isEmpty()) {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
         }
-        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
-            failedChecks.add("The minimum partition count was not reached");
-        }
+
 
         if (!failedChecks.isEmpty()) {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
-
-            throw new IllegalArgumentException(errorMessage);
+            LOGGER.warn(errorMessage);
+            ingestJobStatusStore.jobRejected(taskId, bulkImportJob.toIngestJob(), validationTimeSupplier.get(),
+                    String.join("\n", failedChecks));
+            return false;
+        } else {
+            ingestJobStatusStore.jobAccepted(taskId, bulkImportJob.toIngestJob(), validationTimeSupplier.get());
+            return true;
         }
     }
 

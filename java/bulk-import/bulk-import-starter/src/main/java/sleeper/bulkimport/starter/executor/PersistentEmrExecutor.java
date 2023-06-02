@@ -34,6 +34,9 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
+import java.util.function.Supplier;
+
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
@@ -52,8 +55,10 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore ingestJobStatusStore,
-            AmazonS3 amazonS3) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
+            AmazonS3 amazonS3, String taskId,
+            Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
+                taskId, validationTimeSupplier);
         this.emrClient = emrClient;
         this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);

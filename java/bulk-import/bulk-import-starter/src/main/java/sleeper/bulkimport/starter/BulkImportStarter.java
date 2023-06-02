@@ -34,6 +34,9 @@ import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * The {@link BulkImportStarter} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
@@ -54,7 +57,13 @@ public class BulkImportStarter implements RequestHandler<SQSEvent, Void> {
 
     public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
                              AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
-        this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor());
+        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, UUID.randomUUID().toString(), Instant::now);
+    }
+
+    public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+                             AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB,
+                             String taskId, Supplier<Instant> validationTimeSupplier) throws IOException {
+        this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB, taskId, validationTimeSupplier).createExecutor());
     }
 
     public BulkImportStarter(Executor executor) {

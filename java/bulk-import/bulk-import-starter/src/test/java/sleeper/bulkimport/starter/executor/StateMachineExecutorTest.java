@@ -33,11 +33,12 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -48,6 +49,8 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class StateMachineExecutorTest {
@@ -148,23 +151,26 @@ class StateMachineExecutorTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenInputFilesAreNull() {
+    void shouldFailValidationWhenInputFilesAreNull() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
                 stepFunctions, instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, ingestJobStatusStore, amazonS3);
+                stateStoreProvider, ingestJobStatusStore, amazonS3,
+                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
                 .build();
 
-        // When / Then
-        String expectedMessage = "The bulk import job failed validation with the following checks failing: \n"
-                + "The input files must be set to a non-null and non-empty value.";
-        assertThatThrownBy(() -> stateMachineExecutor.runJob(myJob))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(expectedMessage);
+        // When
+        stateMachineExecutor.runJob(myJob);
+
+        // Then
+        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+                .containsExactly(jobStatus(myJob.toIngestJob(),
+                        rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                                "The input files must be set to a non-null and non-empty value.")));
     }
 
     @Test
@@ -282,7 +288,7 @@ class StateMachineExecutorTest {
     }
 
     @Test
-    void shouldNotStartExecutionIfMinimumPartitionCountNotReached() {
+    void shouldFailValidationIfMinimumPartitionCountNotReached() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         when(tablePropertiesProvider.getTableProperties(any()))
@@ -294,16 +300,22 @@ class StateMachineExecutorTest {
 
         StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(
                 stepFunctions, instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, ingestJobStatusStore, amazonS3);
+                stateStoreProvider, ingestJobStatusStore, amazonS3,
+                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
 
-        // When / Then
-        assertThatThrownBy(() -> stateMachineExecutor.runJob(myJob))
-                .isInstanceOf(IllegalArgumentException.class);
+        // When
+        stateMachineExecutor.runJob(myJob);
+
+        // Then
+        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+                .containsExactly(jobStatus(myJob.toIngestJob(),
+                        rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                                "The minimum partition count was not reached")));
     }
 
 }

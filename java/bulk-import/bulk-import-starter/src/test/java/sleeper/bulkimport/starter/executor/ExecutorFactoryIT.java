@@ -30,6 +30,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,7 +64,7 @@ public class ExecutorFactoryIT {
     private ExecutorFactory executorFactory(AmazonS3 s3Client) throws IOException {
         return new ExecutorFactory(s3Client,
                 mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class), mock(AmazonDynamoDB.class),
-                environment::get);
+                "test-task", Instant::now, environment::get);
     }
 
     @Test

@@ -50,11 +50,14 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -77,8 +80,20 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
+                       AmazonS3 s3Client) {
+        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                s3Client, UUID.randomUUID().toString(), Instant::now);
+    }
+
+    public EmrExecutor(AmazonElasticMapReduce emrClient,
+                       InstanceProperties instanceProperties,
+                       TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider,
+                       IngestJobStatusStore ingestJobStatusStore,
+                       AmazonS3 amazonS3, String taskId,
+                       Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
+                taskId, validationTimeSupplier);
         this.emrClient = emrClient;
     }
 
