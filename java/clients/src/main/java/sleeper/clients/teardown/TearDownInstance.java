@@ -25,18 +25,16 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.status.update.DownloadConfig;
+import sleeper.clients.deploy.GenerateInstanceProperties;
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.CdkFailedException;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
-import sleeper.core.SleeperVersion;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -59,6 +57,7 @@ public class TearDownInstance {
     private final AmazonECS ecs;
     private final AmazonECR ecr;
     private final AmazonElasticMapReduce emr;
+    private final CloudFormationClient cloudFormation;
     private final Path scriptsDir;
     private final Path generatedDir;
     private final String instanceIdArg;
@@ -72,6 +71,7 @@ public class TearDownInstance {
         ecs = Objects.requireNonNull(builder.ecs, "ecs must not be null");
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         emr = Objects.requireNonNull(builder.emr, "emr must not be null");
+        cloudFormation = Objects.requireNonNull(builder.cloudFormation, "cloudFormation must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
@@ -103,15 +103,11 @@ public class TearDownInstance {
         new ShutdownSystemProcesses(cloudWatch, ecs, emr)
                 .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
 
-        LOGGER.info("Running cdk destroy to remove the system");
+        LOGGER.info("Deleting deployed CloudFormation stack");
         try {
-            InvokeCdkForInstance.builder()
-                    .instancePropertiesFile(generatedDir.resolve("instance.properties"))
-                    .jarsDirectory(scriptsDir.resolve("jars"))
-                    .version(SleeperVersion.getVersion()).build()
-                    .invokeInferringType(instanceProperties, CdkCommand.destroy());
-        } catch (CdkFailedException e) {
-            LOGGER.warn("Failed invoking CDK", e);
+            cloudFormation.deleteStack(builder -> builder.stackName(instanceProperties.get(ID)));
+        } catch (Exception e) {
+            LOGGER.warn("Failed deleting stack", e);
         }
 
         LOGGER.info("Removing the Jars bucket and docker containers");
@@ -136,9 +132,15 @@ public class TearDownInstance {
         } else {
             instanceId = instanceIdArg;
         }
-        LOGGER.info("Updating configuration for instance {}", instanceId);
-        return DownloadConfig.overwriteTargetDirectoryGenerateDefaultsIfMissing(
-                s3, instanceId, generatedDir, Path.of("/tmp/sleeper/generated"));
+        LOGGER.info("Loading configuration for instance {}", instanceId);
+        try {
+            InstanceProperties properties = new InstanceProperties();
+            properties.loadFromS3GivenInstanceId(s3, instanceId);
+            return properties;
+        } catch (AmazonS3Exception e) {
+            LOGGER.info("Failed to download configuration, using default properties");
+            return GenerateInstanceProperties.generateDefaultsFromInstanceId(instanceId);
+        }
     }
 
     public static final class Builder {
@@ -148,6 +150,7 @@ public class TearDownInstance {
         private AmazonECS ecs;
         private AmazonECR ecr;
         private AmazonElasticMapReduce emr;
+        private CloudFormationClient cloudFormation;
         private Path scriptsDir;
         private String instanceId;
         private Function<InstanceProperties, List<String>> getExtraEcsClusters = properties -> List.of();
@@ -186,6 +189,11 @@ public class TearDownInstance {
             return this;
         }
 
+        public Builder cloudFormation(CloudFormationClient cloudFormation) {
+            this.cloudFormation = cloudFormation;
+            return this;
+        }
+
         public Builder scriptsDir(Path scriptsDir) {
             this.scriptsDir = scriptsDir;
             return this;
@@ -211,13 +219,15 @@ public class TearDownInstance {
         }
 
         public void tearDownWithDefaultClients() throws IOException, InterruptedException {
-            try (S3Client s3v2Client = S3Client.create()) {
+            try (S3Client s3v2Client = S3Client.create();
+                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
                 s3(AmazonS3ClientBuilder.defaultClient());
                 s3v2(s3v2Client);
                 cloudWatch(AmazonCloudWatchEventsClientBuilder.defaultClient());
                 ecs(AmazonECSClientBuilder.defaultClient());
                 ecr(AmazonECRClientBuilder.defaultClient());
                 emr(AmazonElasticMapReduceClientBuilder.defaultClient());
+                cloudFormation(cloudFormationClient);
                 build().tearDown();
             }
         }
