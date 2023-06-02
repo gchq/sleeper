@@ -29,17 +29,6 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*$</packageUrl>
-        <cpe>cpe:/a:apache:hadoop:3.3.2</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
-        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
-
-        Some of the Hadoop dependencies were not identified by the Hadoop CPE, so we've added this to catch
-        several shaded dependencies.
-        ]]></notes>
-        <filePath regex="true">^.*/hadoop-.*-3\.3\.2\.jar/.*$</filePath>
-        <vulnerabilityName regex="true">.*</vulnerabilityName>
+        <cpe>cpe:/a:apache:hadoop:3.3.3</cpe>
     </suppress>
 </suppressions>
