@@ -45,6 +45,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -64,7 +65,7 @@ public class TearDownInstance {
     private final Path scriptsDir;
     private final Path generatedDir;
     private final String instanceIdArg;
-    private final List<InstanceProperty> extraEcsClusters;
+    private final Function<InstanceProperties, List<String>> getExtraEcsClusters;
     private final List<InstanceProperty> extraEcrRepositories;
 
     private TearDownInstance(Builder builder) {
@@ -75,7 +76,7 @@ public class TearDownInstance {
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         emr = Objects.requireNonNull(builder.emr, "emr must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        extraEcsClusters = Objects.requireNonNull(builder.extraEcsClusters, "extraEcsClusters must not be null");
+        getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         extraEcrRepositories = Objects.requireNonNull(builder.extraEcrRepositories, "extraEcrRepositories must not be null");
         instanceIdArg = builder.instanceId;
         generatedDir = scriptsDir.resolve("generated");
@@ -102,7 +103,8 @@ public class TearDownInstance {
         LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
         LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
 
-        new ShutdownSystemProcesses(cloudWatch, ecs, emr).shutdown(instanceProperties, extraEcsClusters);
+        new ShutdownSystemProcesses(cloudWatch, ecs, emr)
+                .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
 
         LOGGER.info("Running cdk destroy to remove the system");
         InvokeCdkForInstance.builder()
@@ -154,7 +156,7 @@ public class TearDownInstance {
         private AmazonElasticMapReduce emr;
         private Path scriptsDir;
         private String instanceId;
-        private List<InstanceProperty> extraEcsClusters = List.of();
+        private Function<InstanceProperties, List<String>> getExtraEcsClusters = properties -> List.of();
         private List<InstanceProperty> extraEcrRepositories = List.of();
 
         private Builder() {
@@ -200,8 +202,8 @@ public class TearDownInstance {
             return this;
         }
 
-        public Builder extraEcsClusters(List<InstanceProperty> extraEcsClusters) {
-            this.extraEcsClusters = extraEcsClusters;
+        public Builder getExtraEcsClusters(Function<InstanceProperties, List<String>> getExtraEcsClusters) {
+            this.getExtraEcsClusters = getExtraEcsClusters;
             return this;
         }
 

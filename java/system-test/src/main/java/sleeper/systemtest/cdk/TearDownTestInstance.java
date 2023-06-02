@@ -37,7 +37,7 @@ public class TearDownTestInstance {
         TearDownInstance.builder()
                 .scriptsDir(Path.of(args[0]))
                 .instanceId(optionalArgument(args, 1).orElse(null))
-                .extraEcsClusters(List.of(SYSTEM_TEST_CLUSTER_NAME))
+                .getExtraEcsClusters(properties -> List.of(properties.get(SYSTEM_TEST_CLUSTER_NAME)))
                 .extraEcrRepositories(List.of(SYSTEM_TEST_REPO))
                 .tearDownWithDefaultClients();
     }
