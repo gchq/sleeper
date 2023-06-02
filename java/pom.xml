@@ -59,7 +59,7 @@
         <!--
         The Spark and Hadoop versions must match the EMR release we use for bulk import.
         See the versions listed in the documentation:
-        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-690-release.html
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-6100-release.html
         -->
         <spark.version>3.3.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
