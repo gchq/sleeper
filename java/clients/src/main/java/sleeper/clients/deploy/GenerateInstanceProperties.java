@@ -74,6 +74,10 @@ public class GenerateInstanceProperties {
         return instanceProperties;
     }
 
+    public static InstanceProperties generateDefaultsFromInstanceId(String instanceId) {
+        return generateDefaultsFromInstanceId(new Properties(), instanceId);
+    }
+
     public static InstanceProperties generateDefaultsFromInstanceId(Properties properties, String instanceId) {
         InstanceProperties instanceProperties = new InstanceProperties(properties);
         instanceProperties.set(ID, instanceId);

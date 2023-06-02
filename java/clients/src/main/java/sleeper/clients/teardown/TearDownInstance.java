@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -141,9 +140,7 @@ public class TearDownInstance {
                     s3, instanceId, generatedDir, Path.of("/tmp/sleeper/generated"));
         } catch (NoSuchBucketException e) {
             LOGGER.info("Failed to update configuration, using default properties");
-            Properties properties = new Properties();
-            properties.setProperty("sleeper.systemtest.repo", instanceIdArg + "/system-test");
-            return GenerateInstanceProperties.generateDefaultsFromInstanceId(properties, instanceIdArg);
+            return GenerateInstanceProperties.generateDefaultsFromInstanceId(instanceId);
         }
     }
 
