@@ -39,7 +39,7 @@
         Some of the Hadoop dependencies were not identified by the Hadoop CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*@3\.3\.2$</packageUrl>
+        <filePath regex="true">^.*/hadoop-.*-3\.3\.2\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
 </suppressions>
