@@ -21,6 +21,7 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -76,6 +77,8 @@ public class GenerateInstanceProperties {
 
     public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
         InstanceProperties instanceProperties = generateDefaultsFromInstanceId(new Properties(), instanceId);
+        SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
+                .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getPropertyValue()));
         return instanceProperties;
     }
 

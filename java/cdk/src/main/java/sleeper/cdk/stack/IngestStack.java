@@ -54,6 +54,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.Arrays;
@@ -314,10 +315,9 @@ public class IngestStack extends NestedStack {
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
-        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestTasksCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "IngestTasksCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.INGEST.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the ingest tasks lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
