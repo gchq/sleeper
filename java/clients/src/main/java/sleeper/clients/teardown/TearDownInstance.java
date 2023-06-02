@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.status.update.DownloadConfig;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkFailedException;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
@@ -109,10 +110,8 @@ public class TearDownInstance {
                     .jarsDirectory(scriptsDir.resolve("jars"))
                     .version(SleeperVersion.getVersion()).build()
                     .invokeInferringType(instanceProperties, CdkCommand.destroy());
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            LOGGER.warn("Failed invoking CDK");
+        } catch (CdkFailedException e) {
+            LOGGER.warn("Failed invoking CDK", e);
         }
 
         LOGGER.info("Removing the Jars bucket and docker containers");
