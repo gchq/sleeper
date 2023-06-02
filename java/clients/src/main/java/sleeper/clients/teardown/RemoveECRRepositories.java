@@ -18,6 +18,7 @@ package sleeper.clients.teardown;
 
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
+import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
@@ -38,6 +40,16 @@ public class RemoveECRRepositories {
     private RemoveECRRepositories() {
     }
 
+    public static void removeWithInstanceId(AmazonECR ecr, String instanceId) {
+        List<String> repositories = Stream.of("/compaction-job-execution", "/ingest",
+                        "/bulk-import-runner", "/system-test")
+                .map(repoPath -> instanceId + repoPath)
+                .collect(Collectors.toList());
+        ecr.describeRepositories(new DescribeRepositoriesRequest().withRepositoryNames(repositories))
+                .getRepositories().forEach(repository ->
+                        deleteRepository(ecr, repository.getRepositoryName()));
+    }
+
     public static void remove(AmazonECR ecr, InstanceProperties properties, List<InstanceProperty> extraRepositories) {
         Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO), extraRepositories.stream())
                 .filter(properties::isSet)
@@ -46,6 +58,10 @@ public class RemoveECRRepositories {
 
     private static void deleteRepository(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {
         String repositoryName = properties.get(property);
+        deleteRepository(ecr, repositoryName);
+    }
+
+    private static void deleteRepository(AmazonECR ecr, String repositoryName) {
         LOGGER.info("Deleting repository {}", repositoryName);
         try {
             ecr.deleteRepository(new DeleteRepositoryRequest()
