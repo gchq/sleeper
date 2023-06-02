@@ -65,16 +65,21 @@ public class GenerateInstanceProperties {
     }
 
     public InstanceProperties generate() {
-        InstanceProperties instanceProperties = new InstanceProperties(properties);
+        InstanceProperties instanceProperties = generateDefaultsFromInstanceId(properties, instanceId);
         instanceProperties.loadTags(tagsProperties);
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
-        instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ACCOUNT, accountSupplier.get());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
         instanceProperties.set(VPC_ID, vpcId);
         instanceProperties.set(SUBNET, subnetId);
+        return instanceProperties;
+    }
+
+    public static InstanceProperties generateDefaultsFromInstanceId(Properties properties, String instanceId) {
+        InstanceProperties instanceProperties = new InstanceProperties(properties);
+        instanceProperties.set(ID, instanceId);
+        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
+        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
         instanceProperties.set(ECR_INGEST_REPO, instanceId + "/ingest");
         instanceProperties.set(BULK_IMPORT_REPO, instanceId + "/bulk-import-runner");
