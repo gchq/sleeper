@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.GenerateInstanceProperties.generateDefaultsFromInstanceId;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -88,6 +89,45 @@ public class DownloadConfigIT {
 
         // When
         InstanceProperties found = DownloadConfig.overwriteTargetDirectoryIfDownloadSuccessful(s3, properties.get(ID), targetDir, tempDir);
+
+        // Then
+        assertThat(found).isEqualTo(properties);
+        assertThat(Files.walk(targetDir)).containsExactlyInAnyOrder(
+                targetDir,
+                targetDir.resolve("instance.properties"),
+                targetDir.resolve("tags.properties"),
+                targetDir.resolve("configBucket.txt"));
+        assertThat(tempDir).isEmptyDirectory();
+    }
+
+    @Test
+    void shouldGenerateDefaultsIfMissing() throws IOException {
+
+        // When
+        InstanceProperties found = DownloadConfig.overwriteTargetDirectoryGenerateDefaultsIfMissing(s3, "test-instance", targetDir, tempDir);
+
+        // Then
+        assertThat(found).isEqualTo(generateDefaultsFromInstanceId("test-instance"));
+        assertThat(Files.walk(targetDir)).containsExactlyInAnyOrder(
+                targetDir,
+                targetDir.resolve("instance.properties"),
+                targetDir.resolve("tags.properties"),
+                targetDir.resolve("configBucket.txt"),
+                targetDir.resolve("queryResultsBucket.txt"));
+        assertThat(tempDir).isEmptyDirectory();
+    }
+
+    @Test
+    void shouldClearDirectoryAndDownloadInstancePropertiesInsteadOfGeneratingDefaultsIfPresent() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties(s3);
+        Files.createDirectories(targetDir);
+        Files.writeString(targetDir.resolve("test1.txt"), "data");
+        Files.createDirectories(tempDir);
+        Files.writeString(tempDir.resolve("test2.txt"), "data");
+
+        // When
+        InstanceProperties found = DownloadConfig.overwriteTargetDirectoryGenerateDefaultsIfMissing(s3, properties.get(ID), targetDir, tempDir);
 
         // Then
         assertThat(found).isEqualTo(properties);

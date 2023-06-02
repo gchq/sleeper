@@ -17,10 +17,10 @@ package sleeper.clients.status.update;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.clients.deploy.GenerateInstanceProperties;
 import sleeper.configuration.properties.InstanceProperties;
@@ -71,8 +71,8 @@ public class DownloadConfig {
                 properties.loadFromS3GivenInstanceId(s3, instanceId);
                 save.save(properties, TableProperties.streamTablesFromS3(s3, properties));
                 return properties;
-            } catch (NoSuchBucketException e) {
-                LOGGER.info("Failed to update configuration, using default properties");
+            } catch (AmazonS3Exception e) {
+                LOGGER.info("Failed to download configuration, using default properties");
                 InstanceProperties properties = GenerateInstanceProperties.generateDefaultsFromInstanceId(instanceId);
                 save.save(properties, Stream.empty());
                 return properties;
