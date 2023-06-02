@@ -26,6 +26,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -63,6 +64,24 @@ class GeneratePropertiesTest {
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "aws-global");
+
+        assertThat(properties).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateTearDownDefaultInstancePropertiesCorrectly() {
+        // Given/When
+        InstanceProperties properties = generateTearDownDefaultsFromInstanceId("test-instance");
+
+        // Then
+        InstanceProperties expected = new InstanceProperties();
+        expected.set(ID, "test-instance");
+        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
+        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
+        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
+        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
+        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
 
         assertThat(properties).isEqualTo(expected);
     }

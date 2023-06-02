@@ -139,7 +139,7 @@ public class TearDownInstance {
             return properties;
         } catch (AmazonS3Exception e) {
             LOGGER.info("Failed to download configuration, using default properties");
-            return GenerateInstanceProperties.generateDefaultsFromInstanceId(instanceId);
+            return GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
         }
     }
 
