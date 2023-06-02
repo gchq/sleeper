@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -50,8 +51,9 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
+            IngestJobStatusStore ingestJobStatusStore,
             AmazonS3 amazonS3) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
         this.emrClient = emrClient;
         this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);

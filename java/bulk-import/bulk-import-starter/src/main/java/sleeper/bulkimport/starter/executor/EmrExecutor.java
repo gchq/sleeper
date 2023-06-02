@@ -47,6 +47,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
@@ -74,8 +75,10 @@ public class EmrExecutor extends AbstractEmrExecutor {
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+                       StateStoreProvider stateStoreProvider,
+                       IngestJobStatusStore ingestJobStatusStore,
+                       AmazonS3 amazonS3) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
         this.emrClient = emrClient;
     }
 

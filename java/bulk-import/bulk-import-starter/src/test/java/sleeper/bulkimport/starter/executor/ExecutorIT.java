@@ -15,6 +15,8 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
@@ -33,6 +35,8 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -51,7 +55,7 @@ class ExecutorIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -60,7 +64,16 @@ class ExecutorIT {
                 .build();
     }
 
+    private AmazonDynamoDB createDynamoDBClient() {
+        return AmazonDynamoDBClientBuilder.standard()
+                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
+                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .build();
+    }
+
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    private final AmazonDynamoDB dynamoDB = createDynamoDBClient();
+
 
     @Test
     void shouldCallRunOnPlatformIfJobIsValid() {
@@ -223,7 +236,8 @@ class ExecutorIT {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
-        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider, s3);
+        IngestJobStatusStore ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
+        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, s3);
     }
 
     private ExecutorMock buildExecutorWithTable(String tableName) {
@@ -235,7 +249,8 @@ class ExecutorIT {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
-        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider, null);
+        IngestJobStatusStore ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
+        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, null);
     }
 
     private static class ExecutorMock extends Executor {
@@ -248,8 +263,9 @@ class ExecutorIT {
         ExecutorMock(InstanceProperties instanceProperties,
                      TablePropertiesProvider tablePropertiesProvider,
                      StateStoreProvider stateStoreProvider,
+                     IngestJobStatusStore ingestJobStatusStore,
                      AmazonS3 s3) {
-            super(instanceProperties, tablePropertiesProvider, stateStoreProvider, s3);
+            super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, s3);
         }
 
         @Override

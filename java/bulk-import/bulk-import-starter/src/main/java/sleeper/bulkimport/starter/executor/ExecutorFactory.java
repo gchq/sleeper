@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -38,6 +40,7 @@ public class ExecutorFactory {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final IngestJobStatusStore ingestJobStatusStore;
     private final AmazonS3 s3Client;
     private final AmazonElasticMapReduce emrClient;
     private final AWSStepFunctions stepFunctionsClient;
@@ -63,17 +66,21 @@ public class ExecutorFactory {
         this.emrClient = emrClient;
         this.stepFunctionsClient = stepFunctionsClient;
         this.bulkImportPlatform = getEnvironmentVariable.apply(BULK_IMPORT_PLATFORM);
+        this.ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
         LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
     }
 
     public Executor createExecutor() {
         switch (bulkImportPlatform) {
             case "NonPersistentEMR":
-                return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider,
+                        stateStoreProvider, ingestJobStatusStore, s3Client);
             case "EKS":
-                return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider,
+                        stateStoreProvider, ingestJobStatusStore, s3Client);
             case "PersistentEMR":
-                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider,
+                        stateStoreProvider, ingestJobStatusStore, s3Client);
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }

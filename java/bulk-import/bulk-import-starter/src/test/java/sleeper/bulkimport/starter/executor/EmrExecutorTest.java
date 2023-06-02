@@ -36,6 +36,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -64,6 +67,7 @@ class EmrExecutorTest {
     private AmazonS3 amazonS3;
     private StateStoreProvider stateStoreProvider;
     private InstanceProperties instanceProperties;
+    private IngestJobStatusStore ingestJobStatusStore;
 
     @BeforeEach
     public void setUpEmr() {
@@ -83,13 +87,15 @@ class EmrExecutorTest {
         stateStoreProvider = mock(StateStoreProvider.class);
         when(stateStoreProvider.getStateStore(any())).thenReturn(
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
+        ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
     }
 
     @Test
     void shouldCreateAClusterOfThreeMachinesByDefault() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -113,7 +119,8 @@ class EmrExecutorTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -135,7 +142,8 @@ class EmrExecutorTest {
     void shouldUseDefaultMarketType() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -156,7 +164,8 @@ class EmrExecutorTest {
     void shouldUseMarketTypeDefinedInConfig() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
         tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
@@ -186,7 +195,8 @@ class EmrExecutorTest {
     void shouldUseMarketTypeDefinedInRequest() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
         tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
@@ -219,7 +229,8 @@ class EmrExecutorTest {
     void shouldEnableEMRManagedClusterScaling() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -241,7 +252,8 @@ class EmrExecutorTest {
     void shouldUseUserProvidedConfigIfValuesOverrideDefaults() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -277,18 +289,16 @@ class EmrExecutorTest {
                     return tableProperties;
                 });
 
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
 
-        // When
-        emrExecutor.runJob(myJob);
-
-        // Then
-        assertThat(requested.get())
-                .isNull();
+        // When / Then
+        assertThatThrownBy(() -> emrExecutor.runJob(myJob))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

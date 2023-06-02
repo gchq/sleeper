@@ -24,6 +24,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
@@ -45,14 +46,16 @@ public abstract class Executor {
     protected final InstanceProperties instanceProperties;
     protected final TablePropertiesProvider tablePropertiesProvider;
     protected final StateStoreProvider stateStoreProvider;
+    protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
 
-    protected Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3Client) {
+    public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+                    StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.s3Client = amazonS3Client;
+        this.ingestJobStatusStore = ingestJobStatusStore;
+        this.s3Client = s3Client;
     }
 
     public void runJob(BulkImportJob bulkImportJob) {
@@ -64,9 +67,6 @@ public abstract class Executor {
         validateJob(bulkImportJob);
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
-        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
-            return;
-        }
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         runJobOnPlatform(bulkImportJob);
         LOGGER.info("Successfully submitted job");
@@ -124,6 +124,9 @@ public abstract class Executor {
 
         if (null == bulkImportJob.getFiles() || bulkImportJob.getFiles().isEmpty()) {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
+        }
+        if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+            failedChecks.add("The minimum partition count was not reached");
         }
 
         if (!failedChecks.isEmpty()) {
