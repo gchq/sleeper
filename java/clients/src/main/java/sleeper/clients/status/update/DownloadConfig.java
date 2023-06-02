@@ -20,13 +20,17 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
+import sleeper.clients.deploy.GenerateInstanceProperties;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 public class DownloadConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(DownloadConfig.class);
@@ -46,18 +50,54 @@ public class DownloadConfig {
             SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
             LOGGER.info("Download complete");
         } catch (IOException e) {
-            LOGGER.error("Download failed: " + e.getMessage());
+            LOGGER.error("Download failed: {}", e.getMessage());
         }
     }
 
     public static InstanceProperties overwriteTargetDirectoryIfDownloadSuccessful(AmazonS3 s3, String instanceId, Path targetDir, Path tempDir) throws IOException {
+        return overwriteTargetDirectoryIfSuccessful(targetDir, tempDir, save -> {
+            InstanceProperties properties = new InstanceProperties();
+            properties.loadFromS3GivenInstanceId(s3, instanceId);
+            save.save(properties, TableProperties.streamTablesFromS3(s3, properties));
+            return properties;
+        });
+    }
+
+    public static InstanceProperties overwriteTargetDirectoryGenerateDefaultsIfMissing(
+            AmazonS3 s3, String instanceId, Path targetDir, Path tempDir) throws IOException {
+        return overwriteTargetDirectoryIfSuccessful(targetDir, tempDir, save -> {
+            try {
+                InstanceProperties properties = new InstanceProperties();
+                properties.loadFromS3GivenInstanceId(s3, instanceId);
+                save.save(properties, TableProperties.streamTablesFromS3(s3, properties));
+                return properties;
+            } catch (NoSuchBucketException e) {
+                LOGGER.info("Failed to update configuration, using default properties");
+                InstanceProperties properties = GenerateInstanceProperties.generateDefaultsFromInstanceId(instanceId);
+                save.save(properties, Stream.empty());
+                return properties;
+            }
+        });
+    }
+
+    public static InstanceProperties overwriteTargetDirectoryIfSuccessful(
+            Path targetDir, Path tempDir, LoadInstanceProperties loadProperties) throws IOException {
         Files.createDirectories(tempDir);
         PathUtils.cleanDirectory(tempDir);
-        InstanceProperties properties = SaveLocalProperties.saveFromS3(s3, instanceId, tempDir);
+        InstanceProperties instanceProperties = loadProperties.load((properties, tables) ->
+                SaveLocalProperties.saveToDirectory(tempDir, properties, tables));
         Files.createDirectories(targetDir);
         PathUtils.cleanDirectory(targetDir);
         PathUtils.copyDirectory(tempDir, targetDir);
         PathUtils.cleanDirectory(tempDir);
-        return properties;
+        return instanceProperties;
+    }
+
+    interface LoadInstanceProperties {
+        InstanceProperties load(SaveInstanceProperties save) throws IOException;
+    }
+
+    interface SaveInstanceProperties {
+        void save(InstanceProperties properties, Stream<TableProperties> tables) throws IOException;
     }
 }

@@ -28,9 +28,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
-import sleeper.clients.deploy.GenerateInstanceProperties;
 import sleeper.clients.status.update.DownloadConfig;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
@@ -134,13 +132,8 @@ public class TearDownInstance {
             instanceId = instanceIdArg;
         }
         LOGGER.info("Updating configuration for instance {}", instanceId);
-        try {
-            return DownloadConfig.overwriteTargetDirectoryIfDownloadSuccessful(
-                    s3, instanceId, generatedDir, Path.of("/tmp/sleeper/generated"));
-        } catch (NoSuchBucketException e) {
-            LOGGER.info("Failed to update configuration, using default properties");
-            return GenerateInstanceProperties.generateDefaultsFromInstanceId(instanceId);
-        }
+        return DownloadConfig.overwriteTargetDirectoryGenerateDefaultsIfMissing(
+                s3, instanceId, generatedDir, Path.of("/tmp/sleeper/generated"));
     }
 
     public static final class Builder {
