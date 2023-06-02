@@ -99,7 +99,7 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
-        statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
+        statusStore.jobStartedWithValidation(taskId, job.toIngestJob(), startTime);
 
         BulkImportJobOutput output;
         try {

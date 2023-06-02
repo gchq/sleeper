@@ -48,6 +48,10 @@ public class IngestJobStatusTestData {
         return jobStatus(job, finishedIngestRun(job, taskId, summary));
     }
 
+    public static IngestJobStatus finishedIngestJobWithValidation(IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
+        return jobStatus(job, acceptedRunWhichFinished(job, taskId, validationTime, summary));
+    }
+
     public static ProcessRun acceptedRunWhichStarted(
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
         return ProcessRun.builder()
@@ -57,6 +61,20 @@ public class IngestJobStatusTestData {
                         IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
                                 .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
+                .build();
+    }
+
+    public static ProcessRun acceptedRunWhichFinished(
+            IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
+                .statusUpdate(
+                        IngestJobStartedStatus.withStartOfRun(false)
+                                .inputFileCount(job.getFiles().size())
+                                .startTime(summary.getStartTime()).updateTime(defaultUpdateTime(summary.getStartTime())).build())
+                .finishedStatus(ProcessFinishedStatus
+                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
                 .build();
     }
 
