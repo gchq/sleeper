@@ -31,10 +31,6 @@ public class RemoveJarsBucket {
     private RemoveJarsBucket() {
     }
 
-    public static void removeWithInstanceId(S3Client s3, String instanceId) {
-        remove(s3, "sleeper-" + instanceId + "-jars");
-    }
-
     public static void remove(S3Client s3, String bucketName) {
         LOGGER.info("Emptying bucket {}", bucketName);
         s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))

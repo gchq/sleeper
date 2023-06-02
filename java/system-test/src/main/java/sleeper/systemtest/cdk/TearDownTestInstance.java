@@ -43,7 +43,9 @@ public class TearDownTestInstance {
                 .getExtraEcsClusters(properties -> List.of(
                         Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
                                 .orElseGet(() -> generateSystemTestClusterName(properties.get(ID)))))
-                .extraEcrRepositories(List.of(SYSTEM_TEST_REPO))
+                .getExtraEcrRepositories(properties -> List.of(
+                        Optional.ofNullable(properties.get(SYSTEM_TEST_REPO))
+                                .orElseGet(() -> properties.get(ID) + "/system-test")))
                 .tearDownWithDefaultClients();
     }
 }

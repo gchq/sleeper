@@ -36,7 +36,6 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.core.SleeperVersion;
 
@@ -65,7 +64,7 @@ public class TearDownInstance {
     private final Path generatedDir;
     private final String instanceIdArg;
     private final Function<InstanceProperties, List<String>> getExtraEcsClusters;
-    private final List<InstanceProperty> extraEcrRepositories;
+    private final Function<InstanceProperties, List<String>> getExtraEcrRepositories;
 
     private TearDownInstance(Builder builder) {
         s3 = Objects.requireNonNull(builder.s3, "s3 must not be null");
@@ -76,7 +75,7 @@ public class TearDownInstance {
         emr = Objects.requireNonNull(builder.emr, "emr must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
-        extraEcrRepositories = Objects.requireNonNull(builder.extraEcrRepositories, "extraEcrRepositories must not be null");
+        getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
         instanceIdArg = builder.instanceId;
         generatedDir = scriptsDir.resolve("generated");
     }
@@ -114,7 +113,7 @@ public class TearDownInstance {
 
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));
-        RemoveECRRepositories.remove(ecr, instanceProperties, extraEcrRepositories);
+        RemoveECRRepositories.remove(ecr, instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
 
         LOGGER.info("Removing generated files");
         ClientUtils.clearDirectory(generatedDir);
@@ -154,7 +153,7 @@ public class TearDownInstance {
         private Path scriptsDir;
         private String instanceId;
         private Function<InstanceProperties, List<String>> getExtraEcsClusters = properties -> List.of();
-        private List<InstanceProperty> extraEcrRepositories = List.of();
+        private Function<InstanceProperties, List<String>> getExtraEcrRepositories = properties -> List.of();
 
         private Builder() {
         }
@@ -204,8 +203,8 @@ public class TearDownInstance {
             return this;
         }
 
-        public Builder extraEcrRepositories(List<InstanceProperty> extraEcrRepositories) {
-            this.extraEcrRepositories = extraEcrRepositories;
+        public Builder getExtraEcrRepositories(Function<InstanceProperties, List<String>> getExtraEcrRepositories) {
+            this.getExtraEcrRepositories = getExtraEcrRepositories;
             return this;
         }
 
