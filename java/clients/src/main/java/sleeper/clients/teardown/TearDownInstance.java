@@ -103,11 +103,17 @@ public class TearDownInstance {
                 .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
 
         LOGGER.info("Running cdk destroy to remove the system");
-        InvokeCdkForInstance.builder()
-                .instancePropertiesFile(generatedDir.resolve("instance.properties"))
-                .jarsDirectory(scriptsDir.resolve("jars"))
-                .version(SleeperVersion.getVersion()).build()
-                .invokeInferringType(instanceProperties, CdkCommand.destroy());
+        try {
+            InvokeCdkForInstance.builder()
+                    .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                    .jarsDirectory(scriptsDir.resolve("jars"))
+                    .version(SleeperVersion.getVersion()).build()
+                    .invokeInferringType(instanceProperties, CdkCommand.destroy());
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.warn("Failed invoking CDK");
+        }
 
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));
@@ -116,7 +122,7 @@ public class TearDownInstance {
         LOGGER.info("Removing generated files");
         ClientUtils.clearDirectory(generatedDir);
 
-        LOGGER.info("Successfully torn down");
+        LOGGER.info("Finished tear down");
     }
 
     public static Builder builder() {
