@@ -87,7 +87,7 @@ public class RunECSTasks {
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
             resultConsumer.accept(runTaskResult);
             if (checkFailure(runTaskResult)) {
-                return;
+                throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
 
             if (checkAbort.getAsBoolean()) {

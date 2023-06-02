@@ -183,12 +183,50 @@ class RunECSTasksIT {
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
                     .isInstanceOf(AmazonClientException.class);
         }
+
+        @Test
+        void shouldThrowECSFailureExceptionIfResponseHasFailures(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseWithFailures();
+            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
+            RunTaskRequest request = new RunTaskRequest()
+                    .withCluster("test-cluster");
+
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 1))
+                    .isInstanceOf(ECSFailureException.class);
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 1));
+        }
+
+        @Test
+        void shouldExitEarlyIfResponseHasFailures(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseWithFailures();
+            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
+            RunTaskRequest request = new RunTaskRequest()
+                    .withCluster("test-cluster");
+
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 20))
+                    .isInstanceOf(ECSFailureException.class);
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
     }
 
     private static void stubResponseStatus(int status) {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
                 .willReturn(aResponse().withStatus(status)));
+    }
+
+    private static void stubResponseWithFailures() {
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{" +
+                                "\"failures\":[{" +
+                                "\"arn\":\"test-arn\"," +
+                                "\"reason\":\"test-reason\"," +
+                                "\"detail\":\"test-detail\"" +
+                                "}]}")));
     }
 
     private static void stubInvalidParameter() {
