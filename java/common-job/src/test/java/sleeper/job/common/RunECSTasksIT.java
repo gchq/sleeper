@@ -19,6 +19,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.InvalidParameterException;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
+import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -27,6 +28,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -37,6 +41,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 
@@ -198,7 +203,7 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldExitEarlyIfResponseHasFailures(WireMockRuntimeInfo runtimeInfo) {
+        void shouldExitEarlyIfResultHasFailures(WireMockRuntimeInfo runtimeInfo) {
             stubResponseWithFailures();
             AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
             RunTaskRequest request = new RunTaskRequest()
@@ -208,6 +213,19 @@ class RunECSTasksIT {
                     .isInstanceOf(ECSFailureException.class);
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
+
+        @Test
+        void shouldNotConsumeResultsWithFailures(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseWithFailures();
+            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
+            RunTaskRequest request = new RunTaskRequest()
+                    .withCluster("test-cluster");
+            List<RunTaskResult> results = new ArrayList<>();
+
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 20, () -> false, results::add))
+                    .isInstanceOf(ECSFailureException.class);
+            assertThat(results).isEmpty();
         }
     }
 

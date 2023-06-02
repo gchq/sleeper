@@ -85,10 +85,11 @@ public class RunECSTasks {
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
-            resultConsumer.accept(runTaskResult);
+
             if (checkFailure(runTaskResult)) {
                 throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
+            resultConsumer.accept(runTaskResult);
 
             if (checkAbort.getAsBoolean()) {
                 LOGGER.info("Aborting running ECS tasks");
