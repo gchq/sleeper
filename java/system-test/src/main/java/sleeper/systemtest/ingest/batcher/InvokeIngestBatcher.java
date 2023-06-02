@@ -56,7 +56,7 @@ public class InvokeIngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(InvokeIngestBatcher.class);
 
     private final InstanceProperties instanceProperties;
-    private final Consumer<Consumer<TableProperties>> updateTableProperties;
+    private final TablePropertiesUpdater tablePropertiesUpdater;
     private final SendFilesToIngestBatcher sendFiles;
     private final IngestBatcherStore batcherStore;
     private final IngestJobStatusStore ingestStatusStore;
@@ -85,13 +85,13 @@ public class InvokeIngestBatcher {
     }
 
     public InvokeIngestBatcher(InstanceProperties instanceProperties,
-                               Consumer<Consumer<TableProperties>> updateTableProperties,
+                               TablePropertiesUpdater tablePropertiesUpdater,
                                SendFilesToIngestBatcher sendFiles, IngestBatcherStore batcherStore,
                                IngestJobStatusStore ingestStatusStore,
                                InvokeSystemTestLambda.Client lambdaClient,
                                QueueMessageCount.Client queueClient) {
         this.instanceProperties = instanceProperties;
-        this.updateTableProperties = updateTableProperties;
+        this.tablePropertiesUpdater = tablePropertiesUpdater;
         this.sendFiles = sendFiles;
         this.batcherStore = batcherStore;
         this.ingestStatusStore = ingestStatusStore;
@@ -99,7 +99,7 @@ public class InvokeIngestBatcher {
         this.queueClient = queueClient;
     }
 
-    public static Consumer<Consumer<TableProperties>> tablePropertiesUpdater(
+    public static TablePropertiesUpdater tablePropertiesUpdater(
             TableProperties tableProperties, AmazonS3 s3) {
         return update -> {
             update.accept(tableProperties);
@@ -113,7 +113,7 @@ public class InvokeIngestBatcher {
 
     public void runStandardIngest() throws InterruptedException, IOException {
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.STANDARD_INGEST);
-        updateTableProperties.accept(tableProperties -> {
+        tablePropertiesUpdater.applyUpdates(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
         });
@@ -131,7 +131,7 @@ public class InvokeIngestBatcher {
 
     public void runBulkImportEMR() throws IOException, InterruptedException {
         LOGGER.info("Testing ingest batcher mode: {}", BatchIngestMode.BULK_IMPORT_EMR);
-        updateTableProperties.accept(tableProperties -> {
+        tablePropertiesUpdater.applyUpdates(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
         });
@@ -180,4 +180,7 @@ public class InvokeIngestBatcher {
         });
     }
 
+    interface TablePropertiesUpdater {
+        void applyUpdates(Consumer<TableProperties> updates);
+    }
 }
