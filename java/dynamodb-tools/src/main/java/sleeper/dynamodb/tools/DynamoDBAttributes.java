@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.LongFunction;
 import java.util.stream.Collectors;
@@ -73,7 +72,11 @@ public class DynamoDBAttributes {
     }
 
     public static AttributeValue createListAttribute(List<AttributeValue> values) {
-        return new AttributeValue().withL(values);
+        if (values == null) {
+            return null;
+        } else {
+            return new AttributeValue().withL(values);
+        }
     }
 
     public static String getStringAttribute(Map<String, AttributeValue> item, String name) {
@@ -133,8 +136,12 @@ public class DynamoDBAttributes {
     }
 
     private static <T> List<T> getListAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
-        return Objects.requireNonNull(getAttribute(item, name, AttributeValue::getL)).stream()
-                .map(getter).collect(Collectors.toList());
+        List<AttributeValue> list = getAttribute(item, name, AttributeValue::getL);
+        if (list == null) {
+            return null;
+        } else {
+            return list.stream().map(getter).collect(Collectors.toList());
+        }
     }
 
     private static <T> T getAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {

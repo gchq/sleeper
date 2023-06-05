@@ -21,9 +21,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBAttributesTest {
     private static final String TEST_KEY = "test-key";
@@ -31,7 +34,7 @@ class DynamoDBAttributesTest {
     @Test
     void shouldCreateStringAttribute() {
         // Given we have a string attribute
-        AttributeValue value = DynamoDBAttributes.createStringAttribute("test-value");
+        AttributeValue value = createStringAttribute("test-value");
         // When we construct a record with a key for the attribute value
         Map<String, AttributeValue> item = new HashMap<>();
         item.put(TEST_KEY, value);
@@ -41,7 +44,7 @@ class DynamoDBAttributesTest {
 
     @Test
     void shouldCreateStringAttributeWithNull() {
-        assertThat(DynamoDBAttributes.createStringAttribute(null)).isNull();
+        assertThat(createStringAttribute(null)).isNull();
     }
 
     @Test
@@ -113,5 +116,27 @@ class DynamoDBAttributesTest {
         // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
                 .isZero();
+    }
+
+    @Test
+    void shouldGetStringListAttribute() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, createListAttribute(List.of(
+                createStringAttribute("test1"), createStringAttribute("test2"))));
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getStringListAttribute(item, TEST_KEY))
+                .isEqualTo(List.of("test1", "test2"));
+    }
+
+    @Test
+    void shouldNotGetStringListAttributeWithNull() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, null);
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getStringListAttribute(item, TEST_KEY)).isNull();
     }
 }
