@@ -74,6 +74,11 @@ public class GeneratePropertiesTemplates {
             VPC_ID, "1234567890",
             SUBNET, "subnet-abcdefgh");
 
+    private static final Map<InstanceProperty, String> EMR_REPOSITORY_EXAMPLE_VALUES = Map.of(
+            ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest",
+            BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner",
+            ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
+
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
             ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator",
@@ -114,10 +119,8 @@ public class GeneratePropertiesTemplates {
         properties.set(ID, "full-example");
 
         // Non-mandatory properties
-        properties.set(ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest");
+        EMR_REPOSITORY_EXAMPLE_VALUES.forEach(properties::set);
         properties.set(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME, "my-key");
-        properties.set(BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner");
-        properties.set(ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
         properties.set(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION, "100000");
         properties.set(LOGGING_LEVEL, "INFO");
         properties.set(ROOT_LOGGING_LEVEL, "INFO");
@@ -131,6 +134,7 @@ public class GeneratePropertiesTemplates {
     private static InstanceProperties generateTemplateInstanceProperties() {
         InstanceProperties properties = new InstanceProperties();
         BASIC_INSTANCE_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
+        EMR_REPOSITORY_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
         return properties;
     }
 
