@@ -197,6 +197,12 @@ public interface TableProperty extends SleeperProperty {
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
+    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
+                    "the DynamoDBStateStore is used.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .runCDKDeployWhenChanged(true).build();
     TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for the revision table if " +
@@ -322,13 +328,6 @@ public interface TableProperty extends SleeperProperty {
     TableProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
-                    "the DynamoDBStateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true)
             .systemDefined(true).build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.revision.table")
