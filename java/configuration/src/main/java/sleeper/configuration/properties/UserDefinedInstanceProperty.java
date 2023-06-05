@@ -476,7 +476,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED = Index.propertyBuilder("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled")
             .description("(Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
-                    "Used to set spark.dynamicAllocation.enabled\n" +
+                    "Used to set spark.dynamicAllocation.enabled.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -834,7 +834,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.default.compaction.strategy.class")
-            .description("\"The name of the class that defines how compaction jobs should be created. " +
+            .description("The name of the class that defines how compaction jobs should be created. " +
                     "This should implement sleeper.compaction.strategy.CompactionStrategy. The value of this property is the " +
                     "default value which can be overridden on a per-table basis.")
             .defaultValue("sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
@@ -1018,7 +1018,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
-                    "If this minimum has not been reached, bulk import jobs will refuse to start")
+                    "If this minimum has not been reached, bulk import jobs will refuse to start.")
             .defaultValue("64")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
