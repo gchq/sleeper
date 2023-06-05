@@ -25,6 +25,7 @@ import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -233,7 +234,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         }
 
         @Test
-        void shouldReportJobWithValidationFailures() {
+        void shouldReportJobWithOneValidationFailure() {
             // Given
             String tableName = "test-table";
             String taskId = "test-task";
@@ -241,11 +242,30 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobRejected(taskId, job, validationTime, "Test validation reason");
+            store.jobRejected(taskId, job, validationTime, List.of("Test validation reason"));
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(taskId, validationTime, "Test validation reason")));
+                    .containsExactly(jobStatus(job, rejectedRun(taskId,
+                            validationTime, "Test validation reason")));
+        }
+
+        @Test
+        void shouldReportJobWithMultipleValidationFailures() {
+            // Given
+            String tableName = "test-table";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+
+            // When
+            store.jobRejected(taskId, job, validationTime,
+                    List.of("Test validation reason 1", "Test validation reason 2"));
+
+            // Then
+            assertThat(store.getAllJobs(tableName))
+                    .containsExactly(jobStatus(job, rejectedRun(taskId, validationTime,
+                            List.of("Test validation reason 1", "Test validation reason 2"))));
         }
     }
 }

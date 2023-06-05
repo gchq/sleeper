@@ -44,9 +44,10 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+    public void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobRejectedStatus.builder().validationTime(validationTime).reason(reason).build(), taskId);
+                IngestJobRejectedStatus.builder().validationTime(validationTime)
+                        .reasons(reasons).build(), taskId);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);

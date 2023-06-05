@@ -25,6 +25,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
@@ -33,8 +34,10 @@ import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getBooleanAttribute;
@@ -42,6 +45,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringListAttribute;
 
 public class DynamoDBIngestJobStatusFormat {
 
@@ -52,7 +56,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String VALIDATION_TIME = "ValidationTime";
     public static final String VALIDATION_RESULT = "Result";
-    public static final String VALIDATION_REASON = "ValidationReason";
+    public static final String VALIDATION_REASONS = "ValidationReason";
 
     public static final String TABLE_NAME = "TableName";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
@@ -85,11 +89,13 @@ public class DynamoDBIngestJobStatusFormat {
     }
 
     public Map<String, AttributeValue> createJobRejectedRecord(
-            IngestJob job, Instant validationTime, String reason, String taskId) {
+            IngestJob job, Instant validationTime, List<String> reasons, String taskId) {
         return createJobRecord(job, UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, validationTime.toEpochMilli())
                 .bool(VALIDATION_RESULT, false)
-                .string(VALIDATION_REASON, reason)
+                .list(VALIDATION_REASONS, reasons.stream()
+                        .map(DynamoDBAttributes::createStringAttribute)
+                        .collect(Collectors.toList()))
                 .string(TASK_ID, taskId)
                 .build();
     }
@@ -146,7 +152,7 @@ public class DynamoDBIngestJobStatusFormat {
                 } else {
                     return IngestJobRejectedStatus.builder()
                             .validationTime(getInstantAttribute(item, VALIDATION_TIME))
-                            .reason(getStringAttribute(item, VALIDATION_REASON))
+                            .reasons(getStringListAttribute(item, VALIDATION_REASONS))
                             .build();
                 }
             case UPDATE_TYPE_STARTED:

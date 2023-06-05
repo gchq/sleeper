@@ -22,6 +22,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
@@ -49,18 +50,36 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     }
 
     @Test
-    void shouldReportIngestJobWithValidationFailure() {
+    void shouldReportIngestJobWithOneValidationFailure() {
         // Given
         IngestJob job = jobWithFiles("file1");
         Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
 
         // When
-        store.jobRejected(DEFAULT_TASK_ID, job, validationTime, "Test failure");
+        store.jobRejected(DEFAULT_TASK_ID, job, validationTime, List.of("Test failure"));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
                         rejectedRun(DEFAULT_TASK_ID, validationTime, "Test failure")));
+    }
+
+    @Test
+    void shouldReportJobWithMultipleValidationFailures() {
+        // Given
+        IngestJob job = jobWithFiles("file1");
+        Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
+
+        // When
+        store.jobRejected(DEFAULT_TASK_ID, job, validationTime,
+                List.of("Test validation reason 1", "Test validation reason 2"));
+
+        // Then
+        assertThat(store.getAllJobs(tableName))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(jobStatus(job,
+                        rejectedRun(DEFAULT_TASK_ID, validationTime,
+                                List.of("Test validation reason 1", "Test validation reason 2"))));
     }
 }

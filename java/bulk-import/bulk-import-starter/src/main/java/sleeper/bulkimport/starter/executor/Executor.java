@@ -142,11 +142,12 @@ public abstract class Executor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobStatusStore.jobRejected(taskId, bulkImportJob.toIngestJob(), validationTimeSupplier.get(),
-                    String.join("\n", failedChecks));
+            ingestJobStatusStore.jobRejected(taskId, bulkImportJob.toIngestJob(),
+                    validationTimeSupplier.get(), failedChecks);
             return false;
         } else {
-            ingestJobStatusStore.jobAccepted(taskId, bulkImportJob.toIngestJob(), validationTimeSupplier.get());
+            ingestJobStatusStore.jobAccepted(taskId, bulkImportJob.toIngestJob(),
+                    validationTimeSupplier.get());
             return true;
         }
     }

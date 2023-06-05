@@ -84,9 +84,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+    public void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
         try {
-            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reason, taskId));
+            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reasons, taskId));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

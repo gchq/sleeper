@@ -30,7 +30,7 @@ public interface IngestJobStatusStore {
     default void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
     }
 
-    default void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+    default void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
     }
 
     default void jobStarted(String taskId, IngestJob job, Instant startTime) {
