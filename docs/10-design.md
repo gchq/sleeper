@@ -11,6 +11,8 @@ new files in order to ensure that the number of files remains small. This is cal
 large-scale system, data is also range-partitioned by key. Over time partitions can be split if they become larger
 than a threshold.
 
+![High level design diagram](diagrams/high-level-design.png)
+
 ## A Sleeper instance
 
 An instance of Sleeper is identified by a string id that should be globally unique across AWS. A Sleeper

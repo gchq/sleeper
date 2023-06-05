@@ -1,0 +1,58 @@
+<mxfile host="Electron" modified="2023-06-07T08:14:21.917Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.165 Electron/24.2.0 Safari/537.36" etag="dMQOy6m2itJY7Q7jIm4k" version="21.2.8" type="device">
+  <diagram name="Page-1" id="adKYDT99F6B7E5xMw55L">
+    <mxGraphModel dx="1514" dy="1563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Rk-sRMgESW7lityPaCxd-5" value="" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="520" y="-240" width="210" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Rk-sRMgESW7lityPaCxd-4" value="" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
+          <mxGeometry x="290" y="-240" width="210" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Rk-sRMgESW7lityPaCxd-3" value="" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
+          <mxGeometry x="60" y="-240" width="210" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Rk-sRMgESW7lityPaCxd-2" value="" style="rounded=0;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="-170" y="-240" width="210" height="400" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-6" value="Ingest (SQS/Lambda/&lt;br&gt;ECS/Fargate)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="-140" y="-210" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-7" value="Bulk Import&lt;br&gt;(SQS/Lambda/&lt;br&gt;EMR/Spark)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="-140" y="-90" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-8" value="Table Data&lt;br&gt;(S3, Parquet, Hadoop FS)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="90" y="-90" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-9" value="Partitions &amp;amp; Files&lt;br&gt;State Store&lt;br&gt;(DynamoDB)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="90" y="-210" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-10" value="Compaction/GC (SQS/Lambda/&lt;br&gt;ECS/Fargate)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="550" y="-210" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-11" value="Query (SQS/Lambda/&lt;br&gt;API Gateway)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="320" y="-210" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-12" value="1. Application adds data to Sleeper tables" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=16;size=19;spacingLeft=0;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="-160" y="40" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-13" value="2. Sleeper sorts and partitions the data with log-structured merge-trees" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=16;size=19;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="70" y="40" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-14" value="4. Sleeper keeps a low number of files in manageable partitions" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=16;size=19;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="530" y="40" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-15" value="3. Sleeper serves queries" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=16;size=19;spacing=10;" parent="1" vertex="1">
+          <mxGeometry x="300" y="40" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-16" value="Partition Splitting (SQS/Lambda)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="550" y="-90" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="mWQFwd1Rc4pRQvDEe7nl-18" value="SQL&lt;br&gt;(Athena, Trino)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="320" y="-90" width="150" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
