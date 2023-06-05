@@ -115,7 +115,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.queue.visibility.timeout.seconds")
-            .description("The visibility timeout on the queues used in compactions, partition splitting, etc.")
+            .description("The visibility timeout on the queues used in ingest, query, etc.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON)
@@ -719,7 +719,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
-                    "This should be less than the value of sleeper.queue.visibility.timeout.seconds.")
+                    "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
