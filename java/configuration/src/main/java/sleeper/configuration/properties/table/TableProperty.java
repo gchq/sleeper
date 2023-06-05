@@ -325,7 +325,7 @@ public interface TableProperty extends SleeperProperty {
             .systemDefined(true).build();
     TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
+            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
                     "the DynamoDBStateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .runCDKDeployWhenChanged(true)
