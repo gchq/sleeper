@@ -54,6 +54,7 @@ runTest() {
 runTest bulkImportPerformance "bulk-imprt-$START_TIME"
 runTest compactionPerformance "compaction-$START_TIME"
 runTest partitionSplitting "splitting-$START_TIME"
+runTest ingestBatcher "ingst-batch-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
