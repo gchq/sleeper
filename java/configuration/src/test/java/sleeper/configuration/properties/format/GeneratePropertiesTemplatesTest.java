@@ -104,15 +104,15 @@ class GeneratePropertiesTemplatesTest {
         }
 
         @Test
-        void shouldNotCommentOutUnsetParameter() {
+        void shouldCommentOutUnsetParameterWithNoDefaultValue() {
             assertThat(propertiesString)
                     .contains(System.lineSeparator() +
-                            "sleeper.userjars=" +
+                            "# sleeper.userjars=" +
                             System.lineSeparator());
         }
 
         @Test
-        void shouldNotCommentOutParameterSetToDefaultValue() {
+        void shouldWriteDefaultValueForUnsetParameter() {
             assertThat(propertiesString)
                     .contains(System.lineSeparator() +
                             "sleeper.stack.tag.name=DeploymentStack" +

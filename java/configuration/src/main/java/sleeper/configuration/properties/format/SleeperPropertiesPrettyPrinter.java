@@ -132,8 +132,8 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         } else {
             if (!printTemplate) {
                 println("# (no value set, uncomment to set a value)");
-                print("# ");
             }
+            print("# ");
             printSetPropertyValue(property.getPropertyName(), "");
         }
     }
