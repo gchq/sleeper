@@ -985,7 +985,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.default.compression.codec")
             .description("The compression codec to use in the Parquet files.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
-            .defaultValue("ZSTD")
+            .defaultValue("zstd")
             .validationPredicate(Utils::isValidCompressionCodec)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS = Index.propertyBuilder("sleeper.default.parquet.dictionary.encoding.rowkey.fields")
