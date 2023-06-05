@@ -67,7 +67,9 @@ public class IngestJobStatus {
 
     public int getInputFilesCount() {
         return jobRuns.getLatestRun()
-                .map(run -> (IngestJobStartedStatus) run.getStartedStatus())
+                .map(ProcessRun::getStartedStatus)
+                .filter(startedUpdate -> startedUpdate instanceof IngestJobStartedStatus)
+                .map(startedUpdate -> (IngestJobStartedStatus) startedUpdate)
                 .map(IngestJobStartedStatus::getInputFileCount)
                 .orElse(0);
     }

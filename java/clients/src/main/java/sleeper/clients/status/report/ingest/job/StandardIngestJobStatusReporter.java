@@ -25,6 +25,8 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.io.PrintStream;
@@ -142,10 +144,20 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
-            row.value(stateField, StandardProcessRunReporter.getState(run));
+            row.value(stateField, getState(run));
             runReporter.writeRunFields(run, row);
         }));
 
+    }
+
+    private String getState(ProcessRun run) {
+        if (run.getStartedStatus() instanceof IngestJobAcceptedStatus) {
+            return "ACCEPTED";
+        } else if (run.getStartedStatus() instanceof IngestJobRejectedStatus) {
+            return "REJECTED";
+        } else {
+            return StandardProcessRunReporter.getState(run);
+        }
     }
 
     private void writeJobFields(IngestJobStatus job, TableRow.Builder builder) {

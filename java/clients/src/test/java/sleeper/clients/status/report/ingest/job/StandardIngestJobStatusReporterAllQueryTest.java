@@ -22,10 +22,12 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.ingest.job.status.IngestJobStatus;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
@@ -81,5 +83,15 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         // When / Then
         Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, noJobs, 0, stepCount))
                 .hasToString(example("reports/ingest/job/standard/all/noJobsWithEmrStepsUnfinished.txt"));
+    }
+
+    @Test
+    void shouldReportPendingBulkImportJobWithValidationAccepted() throws IOException {
+        // Given
+        List<IngestJobStatus> acceptedJob = acceptedJob();
+
+        // When / Then
+        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, acceptedJob, 0)).hasToString(
+                example("reports/ingest/job/standard/all/acceptedBulkImportJob.txt"));
     }
 }

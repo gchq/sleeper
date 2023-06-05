@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
@@ -89,6 +90,11 @@ public class IngestJobStatusReporterTestData {
                 finishedIngestJob(createJob(3, 1), "task-id", summary(startTime3, Duration.ofMinutes(1), 1_000_600L, 500_300L)),
                 finishedIngestJob(createJob(2, 1), "task-id", summary(startTime2, Duration.ofHours(2), 1_000_600L, 500_300L)),
                 finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000)));
+    }
+
+    public static List<IngestJobStatus> acceptedJob() {
+        return List.of(jobStatus(createJob(1, 2),
+                acceptedRun("test-task", Instant.parse("2023-06-05T17:20:00Z"))));
     }
 
     private static IngestJob createJob(int jobNum, int inputFileCount) {
