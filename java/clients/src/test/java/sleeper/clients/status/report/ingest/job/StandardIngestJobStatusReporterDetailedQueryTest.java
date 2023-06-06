@@ -88,7 +88,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
 
             // When / Then
             Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.DETAILED, acceptedJob, 0)).hasToString(
-                    example("reports/ingest/job/standard/detailed/acceptedBulkImportJob.txt"));
+                    example("reports/ingest/job/standard/detailed/bulkImport/acceptedBulkImportJob.txt"));
         }
 
         @Test
@@ -98,7 +98,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
 
             // When / Then
             Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.DETAILED, rejectedJob, 0)).hasToString(
-                    example("reports/ingest/job/standard/detailed/rejectedBulkImportJobWithOneReason.txt"));
+                    example("reports/ingest/job/standard/detailed/bulkImport/rejectedBulkImportJobWithOneReason.txt"));
         }
     }
 }
