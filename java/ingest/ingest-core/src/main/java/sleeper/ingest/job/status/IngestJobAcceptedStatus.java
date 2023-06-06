@@ -26,11 +26,7 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     private final Instant updateTime;
     private final int inputFileCount;
 
-    public IngestJobAcceptedStatus(int inputFileCount, Instant updateTime) {
-        this(inputFileCount, updateTime, updateTime);
-    }
-
-    public IngestJobAcceptedStatus(int inputFileCount, Instant validationTime, Instant updateTime) {
+    private IngestJobAcceptedStatus(int inputFileCount, Instant validationTime, Instant updateTime) {
         this.validationTime = validationTime;
         this.updateTime = updateTime;
         this.inputFileCount = inputFileCount;
