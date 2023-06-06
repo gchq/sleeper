@@ -56,6 +56,7 @@ import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -115,9 +116,9 @@ public class S3StateStoreIT {
         return tableName;
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions,
-                                     int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions,
+                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
         String bucket = createTempDirectory(folder, null).toString();
         String dynamoTableName = createDynamoTable();
         S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient, new Configuration());
@@ -125,20 +126,20 @@ public class S3StateStoreIT {
         return stateStore;
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions) throws IOException, StateStoreException {
         return getStateStore(schema, partitions, 0);
     }
 
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws IOException, StateStoreException {
+    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws IOException, StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
-    private StateStore getStateStore(Schema schema) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema) throws IOException, StateStoreException {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
@@ -424,8 +425,13 @@ public class S3StateStoreIT {
     @Test
     public void testGetFilesThatAreReadyForGC() throws IOException, InterruptedException, StateStoreException {
         // Given
+        Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
+        Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
+        Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
+        Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
+        Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
         Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
-        StateStore stateStore = getStateStore(schema, 5);
+        S3StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
         FileInfo fileInfo1 = FileInfo.builder()
@@ -436,7 +442,7 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8 * 60 * 1000)
+                .lastStateStoreUpdateTime(file1Time)
                 .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
@@ -448,7 +454,7 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .lastStateStoreUpdateTime(file2Time)
                 .build();
         stateStore.addFile(fileInfo2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
@@ -461,18 +467,19 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .lastStateStoreUpdateTime(file3Time)
                 .build();
         stateStore.addFile(fileInfo3);
 
         // When 1
+        stateStore.fixTime(file1GCTime);
         Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
 
         // Then 1
         assertThat(readyForGCFilesIterator).toIterable().containsExactly(fileInfo1);
 
         // When 2
-        Thread.sleep(9000L);
+        stateStore.fixTime(file3GCTime);
         readyForGCFilesIterator = stateStore.getReadyForGCFiles();
 
         // Then 2

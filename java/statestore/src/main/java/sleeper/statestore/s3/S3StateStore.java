@@ -24,6 +24,8 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.StateStoreException;
 
+import java.time.Instant;
+
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -93,5 +95,9 @@ public class S3StateStore extends DelegatingStateStore {
             versionString.insert(0, "0");
         }
         return versionString.toString();
+    }
+
+    public void fixTime(Instant now) {
+        ((S3FileInfoStore) fileInfoStore).fixTime(now);
     }
 }

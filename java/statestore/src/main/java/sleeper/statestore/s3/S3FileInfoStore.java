@@ -42,6 +42,9 @@ import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,6 +76,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private final Schema fileSchema;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
+    private Clock clock = Clock.systemUTC();
 
     private S3FileInfoStore(Builder builder) {
         this.fs = Objects.requireNonNull(builder.fs, "fs must not be null");
@@ -286,7 +290,7 @@ public class S3FileInfoStore implements FileInfoStore {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
             long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
-            long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+            long deleteTime = clock.millis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             List<FileInfo> filesReadyForGC = fileInfos.stream().filter(f -> {
                 if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
@@ -503,6 +507,10 @@ public class S3FileInfoStore implements FileInfoStore {
         }
         recordReader.close();
         return fileInfos;
+    }
+
+    public void fixTime(Instant now) {
+        clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
     public static final class Builder {

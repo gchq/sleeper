@@ -21,6 +21,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
 
+import java.time.Instant;
+
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -63,5 +65,14 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
                 .build());
+    }
+
+    /**
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param now Time to set to be the current time
+     */
+    public void fixTime(Instant now) {
+        ((DynamoDBFileInfoStore) fileInfoStore).fixTime(now);
     }
 }

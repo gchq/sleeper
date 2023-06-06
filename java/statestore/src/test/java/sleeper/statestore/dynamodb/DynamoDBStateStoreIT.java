@@ -46,6 +46,7 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,30 +84,30 @@ public class DynamoDBStateStoreIT {
         dynamoDBClient.shutdown();
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions,
-                                     int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions,
+                                             int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         String id = UUID.randomUUID().toString();
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient);
-        StateStore stateStore = dynamoDBStateStoreCreator.create();
+        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
         stateStore.initialise(partitions);
         return stateStore;
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions) throws StateStoreException {
         return getStateStore(schema, partitions, 0);
     }
 
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
+    private DynamoDBStateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
-    private StateStore getStateStore(Schema schema) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema) throws StateStoreException {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
@@ -336,10 +337,15 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void testGetFilesThatAreReadyForGC() throws InterruptedException, StateStoreException {
+    public void testGetFilesThatAreReadyForGC() throws StateStoreException {
         // Given
+        Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
+        Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
+        Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
+        Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
+        Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
         Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
-        StateStore stateStore = getStateStore(schema, 5);
+        DynamoDBStateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
         FileInfo fileInfo1 = FileInfo.builder()
@@ -350,7 +356,7 @@ public class DynamoDBStateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8 * 60 * 1000)
+                .lastStateStoreUpdateTime(file1Time)
                 .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
@@ -362,7 +368,7 @@ public class DynamoDBStateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .lastStateStoreUpdateTime(file2Time)
                 .build();
         stateStore.addFile(fileInfo2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
@@ -375,15 +381,16 @@ public class DynamoDBStateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .lastStateStoreUpdateTime(file3Time)
                 .build();
         stateStore.addFile(fileInfo3);
 
         // When / Then 1
+        stateStore.fixTime(file1GCTime);
         assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1);
 
         // When / Then 2
-        Thread.sleep(9000L);
+        stateStore.fixTime(file3GCTime);
         assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1, fileInfo3);
     }
 
