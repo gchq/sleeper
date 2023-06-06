@@ -22,16 +22,22 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
+    private final Instant validationTime;
     private final Instant updateTime;
     private final int inputFileCount;
 
     public IngestJobAcceptedStatus(int inputFileCount, Instant updateTime) {
+        this(inputFileCount, updateTime, updateTime);
+    }
+
+    public IngestJobAcceptedStatus(int inputFileCount, Instant validationTime, Instant updateTime) {
+        this.validationTime = validationTime;
         this.updateTime = updateTime;
         this.inputFileCount = inputFileCount;
     }
 
-    public static IngestJobAcceptedStatus from(IngestJob job, Instant validationTime) {
-        return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime);
+    public static IngestJobAcceptedStatus from(IngestJob job, Instant validationTime, Instant updateTime) {
+        return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime, updateTime);
     }
 
     public static IngestJobAcceptedStatus validationTime(Instant updateTime) {
@@ -40,7 +46,7 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
 
     @Override
     public Instant getStartTime() {
-        return updateTime;
+        return validationTime;
     }
 
     @Override
