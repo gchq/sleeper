@@ -16,18 +16,26 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.ingest.job.IngestJob;
+
 import java.time.Instant;
 import java.util.Objects;
 
 public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     private final Instant updateTime;
+    private final int inputFileCount;
 
-    private IngestJobAcceptedStatus(Instant updateTime) {
+    public IngestJobAcceptedStatus(int inputFileCount, Instant updateTime) {
         this.updateTime = updateTime;
+        this.inputFileCount = inputFileCount;
+    }
+
+    public static IngestJobAcceptedStatus from(IngestJob job, Instant validationTime) {
+        return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime);
     }
 
     public static IngestJobAcceptedStatus validationTime(Instant updateTime) {
-        return new IngestJobAcceptedStatus(updateTime);
+        return new IngestJobAcceptedStatus(0, updateTime);
     }
 
     @Override
@@ -38,6 +46,10 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     @Override
     public Instant getUpdateTime() {
         return updateTime;
+    }
+
+    public int getInputFileCount() {
+        return inputFileCount;
     }
 
     @Override
@@ -54,18 +66,19 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobAcceptedStatus that = (IngestJobAcceptedStatus) o;
-        return Objects.equals(updateTime, that.updateTime);
+        return inputFileCount == that.inputFileCount && Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime);
+        return Objects.hash(updateTime, inputFileCount);
     }
 
     @Override
     public String toString() {
         return "IngestJobAcceptedStatus{" +
                 "updateTime=" + updateTime +
+                ", inputFileCount=" + inputFileCount +
                 '}';
     }
 }

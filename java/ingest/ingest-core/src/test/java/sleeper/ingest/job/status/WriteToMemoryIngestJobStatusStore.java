@@ -37,7 +37,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobAcceptedStatus.validationTime(validationTime), taskId);
+                IngestJobAcceptedStatus.from(job, validationTime), taskId);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
@@ -46,8 +46,10 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobRejectedStatus.builder().validationTime(validationTime)
-                        .reasons(reasons).build(), taskId);
+                IngestJobRejectedStatus.builder().validationTime(validationTime).reasons(reasons)
+                        .inputFileCount(Optional.ofNullable(job.getFiles())
+                                .map(List::size).orElse(0))
+                        .build(), taskId);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);

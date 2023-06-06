@@ -22,10 +22,12 @@ import java.util.Objects;
 
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     private final Instant updateTime;
+    private final int inputFileCount;
     private final List<String> reasons;
 
     private IngestJobRejectedStatus(Builder builder) {
         updateTime = builder.updateTime;
+        inputFileCount = builder.inputFileCount;
         reasons = builder.reasons;
     }
 
@@ -41,6 +43,11 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     @Override
     public Instant getStartTime() {
         return updateTime;
+    }
+
+    @Override
+    public int getInputFileCount() {
+        return inputFileCount;
     }
 
     @Override
@@ -75,6 +82,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
 
     public static final class Builder {
         private Instant updateTime;
+        private int inputFileCount = 0;
         private List<String> reasons;
 
         private Builder() {
@@ -99,5 +107,14 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         }
 
 
+        public Builder updateTime(Instant updateTime) {
+            this.updateTime = updateTime;
+            return this;
+        }
+
+        public Builder inputFileCount(int inputFileCount) {
+            this.inputFileCount = inputFileCount;
+            return this;
+        }
     }
 }

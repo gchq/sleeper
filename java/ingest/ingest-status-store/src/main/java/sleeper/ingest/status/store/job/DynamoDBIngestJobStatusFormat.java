@@ -84,6 +84,7 @@ public class DynamoDBIngestJobStatusFormat {
         return createJobRecord(job, UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, validationTime.toEpochMilli())
                 .bool(VALIDATION_RESULT, true)
+                .number(INPUT_FILES_COUNT, job.getFiles().size())
                 .string(TASK_ID, taskId)
                 .build();
     }
@@ -96,6 +97,7 @@ public class DynamoDBIngestJobStatusFormat {
                 .list(VALIDATION_REASONS, reasons.stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
+                .number(INPUT_FILES_COUNT, job.getFiles().size())
                 .string(TASK_ID, taskId)
                 .build();
     }
@@ -147,8 +149,9 @@ public class DynamoDBIngestJobStatusFormat {
             case UPDATE_TYPE_VALIDATED:
                 boolean accepted = getBooleanAttribute(item, VALIDATION_RESULT);
                 if (accepted) {
-                    return IngestJobAcceptedStatus
-                            .validationTime(getInstantAttribute(item, VALIDATION_TIME));
+                    return new IngestJobAcceptedStatus(
+                            getIntAttribute(item, INPUT_FILES_COUNT, 0), getInstantAttribute(item, VALIDATION_TIME)
+                    );
                 } else {
                     return IngestJobRejectedStatus.builder()
                             .validationTime(getInstantAttribute(item, VALIDATION_TIME))

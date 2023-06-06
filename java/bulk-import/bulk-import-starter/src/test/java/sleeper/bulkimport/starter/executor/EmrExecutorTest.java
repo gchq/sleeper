@@ -304,7 +304,7 @@ class EmrExecutorTest {
         emrExecutor.runJob(myJob);
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), "test-task", Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 }

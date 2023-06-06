@@ -93,8 +93,9 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static List<IngestJobStatus> acceptedJob() {
-        return List.of(jobStatus(createJob(1, 2),
-                acceptedRun("test-task", Instant.parse("2023-06-05T17:20:00Z"))));
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                acceptedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"))));
     }
 
     private static IngestJob createJob(int jobNum, int inputFileCount) {

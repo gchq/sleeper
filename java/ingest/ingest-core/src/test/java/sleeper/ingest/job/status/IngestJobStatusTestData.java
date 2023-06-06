@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class IngestJobStatusTestData {
@@ -56,7 +57,7 @@ public class IngestJobStatusTestData {
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
+                .startedStatus(IngestJobAcceptedStatus.from(job, validationTime))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
@@ -68,33 +69,37 @@ public class IngestJobStatusTestData {
             IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
+                .startedStatus(IngestJobAcceptedStatus.from(job, validationTime))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
-                                .startTime(summary.getStartTime()).updateTime(defaultUpdateTime(summary.getStartTime())).build())
+                                .startTime(summary.getStartTime())
+                                .updateTime(defaultUpdateTime(summary.getStartTime())).build())
                 .finishedStatus(ProcessFinishedStatus
                         .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
                 .build();
     }
 
-    public static ProcessRun acceptedRun(String taskId, Instant validationTime) {
+    public static ProcessRun acceptedRun(IngestJob job, String taskId, Instant validationTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.validationTime(validationTime))
+                .startedStatus(IngestJobAcceptedStatus.from(job, validationTime))
                 .build();
     }
 
-    public static ProcessRun rejectedRun(String taskId, Instant validationTime, String reason) {
-        return rejectedRun(taskId, validationTime, List.of(reason));
+    public static ProcessRun rejectedRun(IngestJob job, String taskId, Instant validationTime, String reason) {
+        return rejectedRun(job, taskId, validationTime, List.of(reason));
     }
 
-    public static ProcessRun rejectedRun(String taskId, Instant validationTime, List<String> reasons) {
+    public static ProcessRun rejectedRun(IngestJob job, String taskId, Instant validationTime, List<String> reasons) {
         return ProcessRun.builder()
                 .taskId(taskId)
                 .startedStatus(IngestJobRejectedStatus.builder()
                         .validationTime(validationTime)
-                        .reasons(reasons).build())
+                        .reasons(reasons)
+                        .inputFileCount(Optional.ofNullable(job.getFiles())
+                                .map(List::size).orElse(0))
+                        .build())
                 .build();
     }
 

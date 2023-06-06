@@ -121,7 +121,8 @@ class ExecutorIT {
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
-                            rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), "test-task",
+                                    Instant.parse("2023-06-02T15:41:00Z"),
                                     "The input files must be set to a non-null and non-empty value.")));
             s3.shutdown();
         }
@@ -147,7 +148,8 @@ class ExecutorIT {
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
                     .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
-                            rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), "test-task",
+                                    Instant.parse("2023-06-02T15:41:00Z"),
                                     "Table does not exist.")));
             s3.shutdown();
         }
@@ -168,7 +170,8 @@ class ExecutorIT {
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
                     .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
-                            rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), "test-task",
+                                    Instant.parse("2023-06-02T15:41:00Z"),
                                     "The table name must be set to a non-null value.")));
         }
 
@@ -190,7 +193,8 @@ class ExecutorIT {
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
-                            rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), "test-task",
+                                    Instant.parse("2023-06-02T15:41:00Z"),
                                     "Job IDs are only allowed to be up to 63 characters long.")));
         }
 
@@ -212,7 +216,8 @@ class ExecutorIT {
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
-                            rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                            rejectedRun(importJob.toIngestJob(), "test-task",
+                                    Instant.parse("2023-06-02T15:41:00Z"),
                                     "Job Ids must only contain lowercase alphanumerics and dashes.")));
         }
     }
@@ -242,7 +247,8 @@ class ExecutorIT {
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
-                        acceptedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"))));
+                        acceptedRun(importJob.toIngestJob(), "test-task",
+                                Instant.parse("2023-06-02T15:41:00Z"))));
         s3.shutdown();
     }
 
@@ -269,7 +275,8 @@ class ExecutorIT {
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
-                        acceptedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"))));
+                        acceptedRun(importJob.toIngestJob(), "test-task",
+                                Instant.parse("2023-06-02T15:41:00Z"))));
         s3.shutdown();
     }
 
