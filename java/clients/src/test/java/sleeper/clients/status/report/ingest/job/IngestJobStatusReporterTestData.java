@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
@@ -99,8 +100,23 @@ public class IngestJobStatusReporterTestData {
                 acceptedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"))));
     }
 
+    public static List<IngestJobStatus> acceptedJobWhichStarted() {
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                acceptedRunWhichStarted(job, "test-task",
+                        Instant.parse("2023-06-05T17:20:00Z"),
+                        Instant.parse("2023-06-05T18:20:00Z"))));
+    }
+
     public static List<IngestJobStatus> rejectedJobWithOneReason() {
         List<String> reasons = List.of("Test validation reason");
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                rejectedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"), reasons)));
+    }
+
+    public static List<IngestJobStatus> rejectedJobWithMultipleReasons() {
+        List<String> reasons = List.of("Test validation reason 1", "Test validation reason 2", "Test validation reason 3");
         IngestJob job = createJob(1, 2);
         return List.of(jobStatus(job,
                 rejectedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"), reasons)));

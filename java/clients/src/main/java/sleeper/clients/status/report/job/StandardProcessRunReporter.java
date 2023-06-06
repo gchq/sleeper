@@ -81,7 +81,7 @@ public class StandardProcessRunReporter {
         if (run.isFinished()) {
             out.printf("Finish Time: %s%n", run.getFinishTime());
             out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
-            out.printf("Duration: %s%n", getDurationInSeconds(run));
+            out.printf("Duration: %s%n", getDurationInSeconds(run)); // Duration from job started in driver or job accepted in executor?
             out.printf("Records Read: %s%n", getRecordsRead(run));
             out.printf("Records Written: %s%n", getRecordsWritten(run));
             out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));

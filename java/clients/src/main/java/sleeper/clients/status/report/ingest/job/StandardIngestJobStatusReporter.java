@@ -148,8 +148,10 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         }
         run.getStatusUpdates().stream()
                 .filter(update -> update instanceof IngestJobStartedStatus)
-                .findFirst().ifPresent(statusUpdate ->
-                        runReporter.printProcessJobRun(run, (IngestJobStartedStatus) statusUpdate));
+                .findFirst().ifPresent(statusUpdate -> {
+                    out.println();
+                    runReporter.printProcessJobRun(run, (IngestJobStartedStatus) statusUpdate);
+                });
 
     }
 
