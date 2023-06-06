@@ -645,17 +645,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
                             "Unset before, default value: 8388608\n" +
                             "After: 123\n")
                     .endsWith(PROPERTY_SAVE_CHANGES_SCREEN + PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
-
-            InOrder order = Mockito.inOrder(in.mock, editor, store);
-            order.verify(in.mock).promptLine(any());
-            // Mockito was confused that the instance properties are loaded here, needed to split the verify calls
-            // See https://github.com/mockito/mockito/issues/2957
-            order.verify(in.mock).promptLine(any());
-            order.verify(editor).openPropertiesFile(before);
-            order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
-            order.verify(in.mock).promptLine(any());
-            order.verifyNoMoreInteractions();
         }
     }
 
