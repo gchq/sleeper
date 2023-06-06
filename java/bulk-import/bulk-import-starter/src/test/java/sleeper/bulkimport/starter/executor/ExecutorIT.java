@@ -64,8 +64,9 @@ import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStor
 
 @Testcontainers
 class ExecutorIT {
-    protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("expiryDate").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("expiryDate")
+            .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
@@ -119,7 +120,7 @@ class ExecutorIT {
             // When
             executorMock.runJob(importJob);
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
-                    .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), "test-task",
                                     Instant.parse("2023-06-02T15:41:00Z"),
@@ -146,7 +147,7 @@ class ExecutorIT {
 
             // Then
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
-                    .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
+                    .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), "test-task",
                                     Instant.parse("2023-06-02T15:41:00Z"),
@@ -168,7 +169,7 @@ class ExecutorIT {
 
             // Then
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
-                    .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
+                    .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), "test-task",
                                     Instant.parse("2023-06-02T15:41:00Z"),
@@ -191,7 +192,7 @@ class ExecutorIT {
 
             // Then
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
-                    .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), "test-task",
                                     Instant.parse("2023-06-02T15:41:00Z"),
@@ -214,7 +215,7 @@ class ExecutorIT {
 
             // Then
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
-                    .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), "test-task",
                                     Instant.parse("2023-06-02T15:41:00Z"),
@@ -245,7 +246,7 @@ class ExecutorIT {
         // Then
         assertThat(executorMock.isRunJobOnPlatformCalled()).isTrue();
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), "test-task",
                                 Instant.parse("2023-06-02T15:41:00Z"))));
@@ -273,7 +274,7 @@ class ExecutorIT {
         // Then
         assertThat(executorMock.isRunJobOnPlatformCalled()).isTrue();
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), "test-task",
                                 Instant.parse("2023-06-02T15:41:00Z"))));
