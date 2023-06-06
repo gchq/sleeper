@@ -62,7 +62,6 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunOneTask(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
@@ -74,7 +73,6 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoTasks(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
@@ -86,7 +84,6 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatches(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
@@ -98,7 +95,6 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatchesAndTwoMoreTasks(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
@@ -111,7 +107,6 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunMoreTasksThanCanBeCreatedInOneRequest(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
@@ -124,7 +119,6 @@ class RunECSTasksIT {
 
         @Test
         void shouldAbortAfterOneRequest(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
@@ -132,6 +126,18 @@ class RunECSTasksIT {
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
+
+        @Test
+        void shouldConsumeResults(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseStatus(200);
+            List<RunTaskResult> results = new ArrayList<>();
+
+            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+                    new RunTaskRequest()
+                            .withCluster("test-cluster"),
+                    1, () -> false, results::add);
+            assertThat(results).isNotEmpty();
         }
     }
 
