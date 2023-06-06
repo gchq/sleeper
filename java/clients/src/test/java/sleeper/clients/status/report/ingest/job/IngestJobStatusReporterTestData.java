@@ -33,6 +33,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
@@ -96,6 +97,13 @@ public class IngestJobStatusReporterTestData {
         IngestJob job = createJob(1, 2);
         return List.of(jobStatus(job,
                 acceptedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"))));
+    }
+
+    public static List<IngestJobStatus> rejectedJobWithOneReason() {
+        List<String> reasons = List.of("Test validation reason");
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                rejectedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"), reasons)));
     }
 
     private static IngestJob createJob(int jobNum, int inputFileCount) {
