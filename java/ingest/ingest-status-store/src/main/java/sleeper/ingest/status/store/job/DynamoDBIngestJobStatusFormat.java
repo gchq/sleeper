@@ -150,10 +150,12 @@ public class DynamoDBIngestJobStatusFormat {
                 boolean accepted = getBooleanAttribute(item, VALIDATION_RESULT);
                 if (accepted) {
                     return new IngestJobAcceptedStatus(
-                            getIntAttribute(item, INPUT_FILES_COUNT, 0), getInstantAttribute(item, VALIDATION_TIME)
+                            getIntAttribute(item, INPUT_FILES_COUNT, 0),
+                            getInstantAttribute(item, VALIDATION_TIME)
                     );
                 } else {
                     return IngestJobRejectedStatus.builder()
+                            .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                             .validationTime(getInstantAttribute(item, VALIDATION_TIME))
                             .reasons(getStringListAttribute(item, VALIDATION_REASONS))
                             .build();
