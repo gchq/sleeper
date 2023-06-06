@@ -40,8 +40,8 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
         return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime, updateTime);
     }
 
-    public static IngestJobAcceptedStatus validationTime(Instant updateTime) {
-        return new IngestJobAcceptedStatus(0, updateTime);
+    public static IngestJobAcceptedStatus from(int inputFileCount, Instant validationTime, Instant updateTime) {
+        return new IngestJobAcceptedStatus(inputFileCount, validationTime, updateTime);
     }
 
     @Override
@@ -72,18 +72,21 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobAcceptedStatus that = (IngestJobAcceptedStatus) o;
-        return inputFileCount == that.inputFileCount && Objects.equals(updateTime, that.updateTime);
+        return inputFileCount == that.inputFileCount
+                && Objects.equals(validationTime, that.validationTime)
+                && Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, inputFileCount);
+        return Objects.hash(validationTime, updateTime, inputFileCount);
     }
 
     @Override
     public String toString() {
         return "IngestJobAcceptedStatus{" +
-                "updateTime=" + updateTime +
+                "validationTime=" + validationTime +
+                ", updateTime=" + updateTime +
                 ", inputFileCount=" + inputFileCount +
                 '}';
     }
