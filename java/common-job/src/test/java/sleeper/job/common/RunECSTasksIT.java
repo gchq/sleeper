@@ -136,8 +136,9 @@ class RunECSTasksIT {
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
                     new RunTaskRequest()
                             .withCluster("test-cluster"),
-                    1, () -> false, results::add);
-            assertThat(results).isNotEmpty();
+                    1, results::add);
+            assertThat(results)
+                    .containsExactly(new RunTaskResult().withTasks().withFailures());
         }
     }
 
@@ -229,7 +230,8 @@ class RunECSTasksIT {
                     .withCluster("test-cluster");
             List<RunTaskResult> results = new ArrayList<>();
 
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 20, () -> false, results::add))
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request,
+                    20, results::add))
                     .isInstanceOf(ECSFailureException.class);
             assertThat(results).isEmpty();
         }

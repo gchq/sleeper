@@ -66,6 +66,12 @@ public class RunECSTasks {
     }
 
     public static void runTasksOrThrow(
+            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, Consumer<RunTaskResult> resultConsumer)
+            throws AmazonClientException {
+        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false, resultConsumer);
+    }
+
+    private static void runTasksOrThrow(
             AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort, Consumer<RunTaskResult> resultConsumer)
             throws AmazonClientException {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
