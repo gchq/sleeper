@@ -20,19 +20,21 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
+    private final Instant validationTime;
     private final Instant updateTime;
 
-    private IngestJobAcceptedStatus(Instant updateTime) {
+    private IngestJobAcceptedStatus(Instant validationTime, Instant updateTime) {
+        this.validationTime = validationTime;
         this.updateTime = updateTime;
     }
 
-    public static IngestJobAcceptedStatus validationTime(Instant updateTime) {
-        return new IngestJobAcceptedStatus(updateTime);
+    public static IngestJobAcceptedStatus from(Instant validationTime, Instant updateTime) {
+        return new IngestJobAcceptedStatus(validationTime, updateTime);
     }
 
     @Override
     public Instant getStartTime() {
-        return updateTime;
+        return validationTime;
     }
 
     @Override
@@ -54,18 +56,20 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobAcceptedStatus that = (IngestJobAcceptedStatus) o;
-        return Objects.equals(updateTime, that.updateTime);
+        return Objects.equals(validationTime, that.validationTime)
+                && Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime);
+        return Objects.hash(validationTime, updateTime);
     }
 
     @Override
     public String toString() {
         return "IngestJobAcceptedStatus{" +
-                "updateTime=" + updateTime +
+                "validationTime=" + validationTime +
+                ", updateTime=" + updateTime +
                 '}';
     }
 }

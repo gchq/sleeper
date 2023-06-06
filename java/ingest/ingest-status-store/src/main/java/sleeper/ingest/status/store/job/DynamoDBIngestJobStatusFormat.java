@@ -147,11 +147,13 @@ public class DynamoDBIngestJobStatusFormat {
             case UPDATE_TYPE_VALIDATED:
                 boolean accepted = getBooleanAttribute(item, VALIDATION_RESULT);
                 if (accepted) {
-                    return IngestJobAcceptedStatus
-                            .validationTime(getInstantAttribute(item, VALIDATION_TIME));
+                    return IngestJobAcceptedStatus.from(
+                            getInstantAttribute(item, VALIDATION_TIME),
+                            getInstantAttribute(item, UPDATE_TIME));
                 } else {
                     return IngestJobRejectedStatus.builder()
                             .validationTime(getInstantAttribute(item, VALIDATION_TIME))
+                            .updateTime(getInstantAttribute(item, UPDATE_TIME))
                             .reasons(getStringListAttribute(item, VALIDATION_REASONS))
                             .build();
                 }
