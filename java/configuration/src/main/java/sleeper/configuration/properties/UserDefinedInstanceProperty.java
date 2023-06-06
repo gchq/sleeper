@@ -229,32 +229,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "is large.")
             .defaultValue("direct")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.submitter.memory.mb")
-            .description("The amount of memory in MB for the lambda that receives submitted requests to ingest files.")
-            .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.submitter.timeout.seconds")
-            .description("The timeout in seconds for the lambda that receives submitted requests to ingest files.")
-            .defaultValue("20")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.memory.mb")
-            .description("The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest requests.")
-            .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.timeout.seconds")
-            .description("The timeout in seconds for the lambda that creates ingest jobs from submitted file ingest requests.")
-            .defaultValue("900")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
-            .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
-            .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
 
     // ArrayList ingest
     UserDefinedInstanceProperty MAX_RECORDS_TO_WRITE_LOCALLY = Index.propertyBuilder("sleeper.ingest.max.local.records")
@@ -272,6 +246,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "(arraylist-based ingest only)")
             .defaultValue("1000000")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+
     // Arrow ingest
     UserDefinedInstanceProperty ARROW_INGEST_WORKING_BUFFER_BYTES = Index.propertyBuilder("sleeper.ingest.arrow.working.buffer.bytes")
             .description("The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and other sundry " +
@@ -328,6 +303,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveDouble)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+
     // Status Store
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.ingest.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
@@ -340,13 +316,40 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.task.status.ttl")
             .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+
+    // Batcher
+    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.submitter.memory.mb")
+            .description("The amount of memory in MB for the lambda that receives submitted requests to ingest files.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.submitter.timeout.seconds")
+            .description("The timeout in seconds for the lambda that receives submitted requests to ingest files.")
+            .defaultValue("20")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.memory.mb")
+            .description("The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest requests.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.timeout.seconds")
+            .description("The timeout in seconds for the lambda that creates ingest jobs from submitted file ingest requests.")
+            .defaultValue("900")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
+            .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
 
     // Bulk Import - properties that are applicable to all bulk import platforms
     UserDefinedInstanceProperty BULK_IMPORT_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.class.name")
