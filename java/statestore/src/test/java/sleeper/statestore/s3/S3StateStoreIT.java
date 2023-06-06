@@ -117,10 +117,10 @@ public class S3StateStoreIT {
 
     private StateStore getStateStore(Schema schema,
                                      List<Partition> partitions,
-                                     int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
+                                     int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
         String bucket = createTempDirectory(folder, null).toString();
         String dynamoTableName = createDynamoTable();
-        S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, dynamoDBClient, new Configuration());
+        S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient, new Configuration());
         stateStore.initialise(partitions);
         return stateStore;
     }
@@ -130,16 +130,12 @@ public class S3StateStoreIT {
         return getStateStore(schema, partitions, 0);
     }
 
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints, int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), garbageCollectorDelayBeforeDeletionInSeconds);
-    }
-
     private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws IOException, StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST, garbageCollectorDelayBeforeDeletionInSeconds);
+    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
     private StateStore getStateStore(Schema schema) throws IOException, StateStoreException {
@@ -440,7 +436,7 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8000)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8 * 60 * 1000)
                 .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected

@@ -75,7 +75,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     private final String activeTablename;
     private final String readyForGCTablename;
     private final boolean stronglyConsistentReads;
-    private final int garbageCollectorDelayBeforeDeletionInSeconds;
+    private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
 
     private DynamoDBFileInfoStore(Builder builder) {
@@ -84,7 +84,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         activeTablename = Objects.requireNonNull(builder.activeTablename, "activeTablename must not be null");
         readyForGCTablename = Objects.requireNonNull(builder.readyForGCTablename, "readyForGCTablename must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        garbageCollectorDelayBeforeDeletionInSeconds = builder.garbageCollectorDelayBeforeDeletionInSeconds;
+        garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(schema);
     }
 
@@ -301,7 +301,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public Iterator<FileInfo> getReadyForGCFiles() {
-        long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
+        long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
         long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(readyForGCTablename)
@@ -381,7 +381,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         private String activeTablename;
         private String readyForGCTablename;
         private boolean stronglyConsistentReads;
-        private int garbageCollectorDelayBeforeDeletionInSeconds;
+        private int garbageCollectorDelayBeforeDeletionInMinutes;
 
         private Builder() {
         }
@@ -411,8 +411,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInSeconds(int garbageCollectorDelayBeforeDeletionInSeconds) {
-            this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
+        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+            this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 

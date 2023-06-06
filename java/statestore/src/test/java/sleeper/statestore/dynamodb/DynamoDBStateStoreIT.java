@@ -85,9 +85,9 @@ public class DynamoDBStateStoreIT {
 
     private StateStore getStateStore(Schema schema,
                                      List<Partition> partitions,
-                                     int garbageCollectorDelayBeforeDeletionInSeconds) throws StateStoreException {
+                                     int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, garbageCollectorDelayBeforeDeletionInSeconds, dynamoDBClient);
+        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient);
         StateStore stateStore = dynamoDBStateStoreCreator.create();
         stateStore.initialise(partitions);
         return stateStore;
@@ -98,16 +98,12 @@ public class DynamoDBStateStoreIT {
         return getStateStore(schema, partitions, 0);
     }
 
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints, int garbageCollectorDelayBeforeDeletionInSeconds) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), garbageCollectorDelayBeforeDeletionInSeconds);
-    }
-
     private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInSeconds) throws StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST, garbageCollectorDelayBeforeDeletionInSeconds);
+    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
     private StateStore getStateStore(Schema schema) throws StateStoreException {
@@ -354,7 +350,7 @@ public class DynamoDBStateStoreIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8000)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8 * 60 * 1000)
                 .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected

@@ -64,7 +64,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
     private final List<PrimitiveType> rowKeyTypes;
-    private final int garbageCollectorDelayBeforeDeletionInSeconds;
+    private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final KeySerDe keySerDe;
     private final String fs;
     private final String s3Bucket;
@@ -79,7 +79,7 @@ public class S3FileInfoStore implements FileInfoStore {
         this.s3Bucket = Objects.requireNonNull(builder.s3Bucket, "s3Bucket must not be null");
         this.dynamoRevisionIdTable = Objects.requireNonNull(builder.dynamoRevisionIdTable, "dynamoRevisionIdTable must not be null");
         this.rowKeyTypes = builder.rowKeyTypes;
-        this.garbageCollectorDelayBeforeDeletionInSeconds = builder.garbageCollectorDelayBeforeDeletionInSeconds;
+        this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         this.dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         this.keySerDe = new KeySerDe(rowKeyTypes);
         this.fileSchema = initialiseFileInfoSchema();
@@ -285,7 +285,7 @@ public class S3FileInfoStore implements FileInfoStore {
     public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
-            long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
+            long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
             long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             List<FileInfo> filesReadyForGC = fileInfos.stream().filter(f -> {
@@ -511,7 +511,7 @@ public class S3FileInfoStore implements FileInfoStore {
         private List<PrimitiveType> rowKeyTypes;
         private String fs;
         private String s3Bucket;
-        private int garbageCollectorDelayBeforeDeletionInSeconds;
+        private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
 
         public Builder() {
@@ -546,8 +546,8 @@ public class S3FileInfoStore implements FileInfoStore {
             return new S3FileInfoStore(this);
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInSeconds(int garbageCollectorDelayBeforeDeletionInSeconds) {
-            this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
+        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+            this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 

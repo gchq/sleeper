@@ -31,7 +31,7 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 
 /**
- * An implementation of {@link StateStore} that stores the information in Parquet files in S3. A DynamoDB table is
+ * An implementation of StateStore that stores the information in Parquet files in S3. A DynamoDB table is
  * used as a lightweight consistency layer. The table stores a revision id for the current version of the files
  * information. This Dynamo value is conditionally updated when the state store is updated. If this conditional update
  * fails then the update is retried.
@@ -62,7 +62,7 @@ public class S3StateStore extends DelegatingStateStore {
                         String s3Bucket,
                         String dynamoRevisionIdTable,
                         Schema tableSchema,
-                        int garbageCollectorDelayBeforeDeletionInSeconds,
+                        int garbageCollectorDelayBeforeDeletionInMinutes,
                         AmazonDynamoDB dynamoDB,
                         Configuration conf) {
         super(S3FileInfoStore.builder()
@@ -70,7 +70,7 @@ public class S3StateStore extends DelegatingStateStore {
                 .s3Bucket(s3Bucket)
                 .dynamoRevisionIdTable(dynamoRevisionIdTable)
                 .rowKeyTypes(tableSchema.getRowKeyTypes())
-                .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
+                .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
                 .dynamoDB(dynamoDB)
                 .conf(conf)
                 .build(), S3PartitionStore.builder()

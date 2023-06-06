@@ -147,9 +147,9 @@ public interface TableProperty extends SleeperProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.seconds")
+    TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.minutes")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
-            .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
+            .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")

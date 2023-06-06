@@ -28,7 +28,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
 /**
- * An implementation of {@link StateStore} that uses DynamoDB to store the state.
+ * An implementation of StateStore that uses DynamoDB to store the state.
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
 
@@ -51,14 +51,14 @@ public class DynamoDBStateStore extends DelegatingStateStore {
             String readyForGCFileInfoTablename,
             String partitionTablename,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInSeconds,
+            int garbageCollectorDelayBeforeDeletionInMinutes,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
-                .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
+                .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
                 .build(), DynamoDBPartitionStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
