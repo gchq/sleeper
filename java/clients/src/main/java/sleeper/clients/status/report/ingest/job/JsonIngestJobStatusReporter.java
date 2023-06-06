@@ -26,15 +26,18 @@ import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.GsonConfig;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobValidatedStatus;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
-
-import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunJsonSerializer;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
@@ -90,6 +93,39 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
         jsonObject.addProperty("inputFileCount", startedUpdate.getInputFileCount());
         jsonObject.addProperty("startTime", startedUpdate.getStartTime().toString());
         jsonObject.addProperty("updateTime", startedUpdate.getUpdateTime().toString());
+        return jsonObject;
+    }
+
+    public static JsonSerializer<ProcessRun> processRunJsonSerializer() {
+        return ((processRun, type, context) -> createProcessRunJson(processRun, context));
+    }
+
+    private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("taskId", run.getTaskId());
+        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+            if (update instanceof IngestJobValidatedStatus) {
+                jsonObject.add("validatedStatus",
+                        processValidatedStatus((IngestJobValidatedStatus) update, context));
+            } else if (update instanceof IngestJobStartedStatus) {
+                jsonObject.add("startedStatus", context.serialize(update));
+            } else if (update instanceof ProcessFinishedStatus) {
+                jsonObject.add("finishedStatus", context.serialize(update));
+            }
+        }
+        return jsonObject;
+    }
+
+    private static JsonElement processValidatedStatus(IngestJobValidatedStatus update, JsonSerializationContext context) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("isValid", update instanceof IngestJobAcceptedStatus);
+        jsonObject.add("inputFileCount", context.serialize(update.getInputFileCount()));
+        jsonObject.add("validatedTime", context.serialize(update.getStartTime()));
+        jsonObject.add("updateTime", context.serialize(update.getUpdateTime()));
+        if (update instanceof IngestJobRejectedStatus) {
+            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) update;
+            jsonObject.add("reasons", context.serialize(rejectedStatus.getReasons()));
+        }
         return jsonObject;
     }
 }
