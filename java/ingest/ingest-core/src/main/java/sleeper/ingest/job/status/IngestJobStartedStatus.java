@@ -15,13 +15,12 @@
  */
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
+public class IngestJobStartedStatus implements IngestJobInfoStatus {
 
     private final int inputFileCount;
     private final Instant startTime;
