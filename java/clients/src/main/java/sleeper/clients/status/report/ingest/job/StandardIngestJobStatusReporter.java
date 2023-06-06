@@ -27,11 +27,14 @@ import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
+import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobValidatedStatus;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -103,11 +106,51 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
-        out.printf("State: %s%n", status.isFinished() ? StandardProcessRunReporter.STATE_FINISHED : StandardProcessRunReporter.STATE_IN_PROGRESS);
+        out.printf("State: %s%n", getJobState(status));
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
+            printProcessJobRun(run);
+        }
+    }
+
+    private String getJobState(IngestJobStatus status) {
+        if (status.isFinished()) {
+            return StandardProcessRunReporter.STATE_FINISHED;
+        } else {
+            Optional<ProcessRun> runOpt = status.getJobRuns().stream().findFirst();
+            if (runOpt.isPresent()) {
+                if (runOpt.get().getStartedStatus() instanceof IngestJobRejectedStatus) {
+                    return "REJECTED";
+                }
+            }
+        }
+        return StandardProcessRunReporter.STATE_IN_PROGRESS;
+    }
+
+    private void printProcessJobRun(ProcessRun run) {
+        if (run.getStartedStatus() instanceof IngestJobValidatedStatus) {
+            printValidatedJobRun(run);
+        } else {
             runReporter.printProcessJobRun(run);
         }
+    }
+
+    private void printValidatedJobRun(ProcessRun run) {
+        IngestJobValidatedStatus validatedStatus = (IngestJobValidatedStatus) run.getStartedStatus();
+        out.println();
+        out.printf("Run on task %s%n", run.getTaskId());
+        out.printf("Validation Time: %s%n", validatedStatus.getStartTime());
+        out.printf("Validation Update Time: %s%n", validatedStatus.getUpdateTime());
+        out.printf("Job was %s%n", validatedStatus.isValid() ? "accepted" : "rejected with reasons:");
+        if (!validatedStatus.isValid()) {
+            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) validatedStatus;
+            rejectedStatus.getReasons().forEach(reason -> out.printf("- %s%n", reason));
+        }
+        run.getStatusUpdates().stream()
+                .filter(update -> update instanceof IngestJobStartedStatus)
+                .findFirst().ifPresent(statusUpdate ->
+                        runReporter.printProcessJobRun(run, (IngestJobStartedStatus) statusUpdate));
+
     }
 
     private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,

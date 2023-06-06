@@ -20,6 +20,7 @@ import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -71,8 +72,12 @@ public class StandardProcessRunReporter {
     public void printProcessJobRun(ProcessRun run) {
         out.println();
         out.printf("Run on task %s%n", run.getTaskId());
-        out.printf("Start Time: %s%n", run.getStartTime());
-        out.printf("Start Update Time: %s%n", run.getStartUpdateTime());
+        printProcessJobRun(run, run.getStartedStatus());
+    }
+
+    public void printProcessJobRun(ProcessRun run, ProcessRunStartedUpdate startedUpdate) {
+        out.printf("Start Time: %s%n", startedUpdate.getStartTime());
+        out.printf("Start Update Time: %s%n", startedUpdate.getUpdateTime());
         if (run.isFinished()) {
             out.printf("Finish Time: %s%n", run.getFinishTime());
             out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());

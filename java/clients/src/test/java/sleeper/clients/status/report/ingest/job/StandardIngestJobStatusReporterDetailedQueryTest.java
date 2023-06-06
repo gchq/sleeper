@@ -16,6 +16,9 @@
 
 package sleeper.clients.status.report.ingest.job;
 
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
@@ -25,9 +28,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithOneReason;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.replaceBracketedJobIds;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -71,5 +76,29 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         // When / Then
         assertThat(getStandardReport(JobQuery.Type.DETAILED, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
+    }
+
+    @Nested
+    @DisplayName("Bulk Import job reporting")
+    class BulkImportJobReporting {
+        @Test
+        void shouldReportPendingBulkImportJobWithValidationAccepted() throws Exception {
+            // Given
+            List<IngestJobStatus> acceptedJob = acceptedJob();
+
+            // When / Then
+            Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.DETAILED, acceptedJob, 0)).hasToString(
+                    example("reports/ingest/job/standard/detailed/acceptedBulkImportJob.txt"));
+        }
+
+        @Test
+        void shouldReportRejectedBulkImportJobWithOneReason() throws Exception {
+            // Given
+            List<IngestJobStatus> rejectedJob = rejectedJobWithOneReason();
+
+            // When / Then
+            Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.DETAILED, rejectedJob, 0)).hasToString(
+                    example("reports/ingest/job/standard/detailed/rejectedBulkImportJobWithOneReason.txt"));
+        }
     }
 }
