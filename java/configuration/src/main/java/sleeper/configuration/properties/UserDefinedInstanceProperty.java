@@ -647,7 +647,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     // Partition splitting
     UserDefinedInstanceProperty PARTITION_SPLITTING_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
             .description("The frequency in minutes with which the lambda that finds partitions that need splitting runs.")
-            .defaultValue("2")
+            .defaultValue("30")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB = Index.propertyBuilder("sleeper.partition.splitting.files.maximum")
