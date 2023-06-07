@@ -32,10 +32,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudFormationClient;
 
 @WireMockTest
-public class WaitForStackToDeleteIT {
+class WaitForStackToDeleteIT {
+
     @Test
     void shouldFinishWaitingWhenStackIsDeleted(WireMockRuntimeInfo runtimeInfo) {
         // Given
@@ -45,6 +47,31 @@ public class WaitForStackToDeleteIT {
         // When/Then
         assertThatCode(() -> waitForStacksToDelete(runtimeInfo, "test-stack"))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldFinishWaitingWhenStackIsNotFound(WireMockRuntimeInfo runtimeInfo) {
+        // See AWS documentation - it the stack is deleted it will not be found by its stack name:
+        // https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DescribeStacks.html
+
+        // Given
+        stubFor(describeStacksRequestWithStackName("not-a-stack")
+                .willReturn(stackDoesNotExistResponse("not-a-stack")));
+
+        // When/Then
+        assertThatCode(() -> waitForStacksToDelete(runtimeInfo, "not-a-stack"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldTimeOutWhenStackIsDeleting(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(describeStacksRequestWithStackName("test-stack")
+                .willReturn(aResponseWithStackName("test-stack", StackStatus.DELETE_IN_PROGRESS)));
+
+        // When/Then
+        assertThatThrownBy(() -> waitForStacksToDelete(runtimeInfo, "test-stack"))
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
     private static void waitForStacksToDelete(WireMockRuntimeInfo runtimeInfo, String stackName) throws InterruptedException {
@@ -67,5 +94,14 @@ public class WaitForStackToDeleteIT {
                         "<StackName>" + stackName + "</StackName>" +
                         "<StackStatus>" + stackStatus + "</StackStatus>" +
                         "</member></Stacks></DescribeStacksResult></DescribeStacksResponse>");
+    }
+
+    private static ResponseDefinitionBuilder stackDoesNotExistResponse(String stackName) {
+        return aResponse().withStatus(400)
+                .withBody("<ErrorResponse xmlns=\"http://cloudformation.amazonaws.com/doc/2010-05-15/\"><Error>" +
+                        "<Type>Sender</Type>" +
+                        "<Code>ValidationError</Code>" +
+                        "<Message>Stack with id " + stackName + " does not exist</Message>" +
+                        "</Error></ErrorResponse>");
     }
 }

@@ -19,6 +19,7 @@ package sleeper.clients.teardown;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
@@ -53,9 +54,14 @@ public class WaitForStackToDelete {
     }
 
     private boolean hasStackDeleted() {
-        Stack stack = cloudFormationClient.describeStacks(builder -> builder.stackName(stackName)).stacks()
-                .stream().findFirst().orElseThrow();
-        LOGGER.info("Stack {} is currently in state {}", stackName, stack.stackStatus().toString());
-        return stack.stackStatus().equals(StackStatus.DELETE_COMPLETE);
+        try {
+            Stack stack = cloudFormationClient.describeStacks(builder -> builder.stackName(stackName)).stacks()
+                    .stream().findFirst().orElseThrow();
+            LOGGER.info("Stack {} is currently in state {}", stackName, stack.stackStatus());
+            return stack.stackStatus().equals(StackStatus.DELETE_COMPLETE);
+        } catch (CloudFormationException e) {
+            LOGGER.info("Exception checking status of stack {}: {}", stackName, e.getMessage());
+            return true;
+        }
     }
 }

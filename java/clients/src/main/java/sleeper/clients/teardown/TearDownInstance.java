@@ -117,6 +117,9 @@ public class TearDownInstance {
         LOGGER.info("Removing generated files");
         ClientUtils.clearDirectory(generatedDir);
 
+        LOGGER.info("Waiting for CloudFormation stack to delete");
+        WaitForStackToDelete.from(cloudFormation, instanceProperties.get(ID)).pollUntilFinished();
+
         LOGGER.info("Finished tear down");
     }
 
