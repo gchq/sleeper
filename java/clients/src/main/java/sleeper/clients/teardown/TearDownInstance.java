@@ -106,9 +106,12 @@ public class TearDownInstance {
         LOGGER.info("Deleting deployed CloudFormation stack");
         try {
             cloudFormation.deleteStack(builder -> builder.stackName(instanceProperties.get(ID)));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
+
+        LOGGER.info("Waiting for CloudFormation stack to delete");
+        WaitForStackToDelete.from(cloudFormation, instanceProperties.get(ID)).pollUntilFinished();
 
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));
@@ -116,9 +119,6 @@ public class TearDownInstance {
 
         LOGGER.info("Removing generated files");
         ClientUtils.clearDirectory(generatedDir);
-
-        LOGGER.info("Waiting for CloudFormation stack to delete");
-        WaitForStackToDelete.from(cloudFormation, instanceProperties.get(ID)).pollUntilFinished();
 
         LOGGER.info("Finished tear down");
     }
