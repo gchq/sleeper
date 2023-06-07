@@ -48,6 +48,21 @@ runCompactionTest() {
   "$SCRIPTS_DIR/utility/compactionJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
 }
 
+runIngestTest() {
+  TEST_NAME=$1
+  INSTANCE_ID=$2
+  runTest "$TEST_NAME" "$INSTANCE_ID" 
+  "$SCRIPTS_DIR/utility/ingestTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+  "$SCRIPTS_DIR/utility/ingestJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+}
+
+runPartitionTest() {
+  TEST_NAME=$1
+  INSTANCE_ID=$2
+  runTest "$TEST_NAME" "$INSTANCE_ID"
+  "$SCRIPTS_DIR/utility/partitionStatusReport.sh" "$INSTANCE_ID" "system-test" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+}
+
 runTest() {
   TEST_NAME=$1
   INSTANCE_ID=$2
@@ -59,10 +74,10 @@ runTest() {
   echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runTest bulkImportPerformance "bulk-imprt-$START_TIME"
+runIngestTest bulkImportPerformance "bulk-imprt-$START_TIME"
 runCompactionTest compactionPerformance "compaction-$START_TIME"
-runTest partitionSplitting "splitting-$START_TIME"
-runTest ingestBatcher "ingst-batch-$START_TIME"
+runPartitionTest partitionSplitting "splitting-$START_TIME"
+runIngestTest ingestBatcher "ingst-batch-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
