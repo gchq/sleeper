@@ -40,6 +40,14 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
+runCompactionTest() {
+  TEST_NAME=$1
+  INSTANCE_ID=$2
+  runTest "$TEST_NAME" "$INSTANCE_ID" 
+  "$SCRIPTS_DIR/utility/compactionTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+  "$SCRIPTS_DIR/utility/compactionJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+}
+
 runTest() {
   TEST_NAME=$1
   INSTANCE_ID=$2
@@ -52,7 +60,7 @@ runTest() {
 }
 
 runTest bulkImportPerformance "bulk-imprt-$START_TIME"
-runTest compactionPerformance "compaction-$START_TIME"
+runCompactionTest compactionPerformance "compaction-$START_TIME"
 runTest partitionSplitting "splitting-$START_TIME"
 runTest ingestBatcher "ingst-batch-$START_TIME"
 
