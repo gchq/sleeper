@@ -73,7 +73,34 @@ public interface TableProperty extends SleeperProperty {
             .validationPredicate(Objects::nonNull)
             .description("The schema representing the structure of this table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .editable(false).build();
+            .editable(false)
+            .includedInTemplate(false).build();
+    TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
+            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
+                    "Defaults to nothing.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
+            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
+            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
+                    "table will be created with a single root partition.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
+    TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
+            .description("Partitions in this table with more than the following number of records in will be split.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
     TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
@@ -120,29 +147,9 @@ public interface TableProperty extends SleeperProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
-            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
-                    "Defaults to nothing.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
-    TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
-    TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
-            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
-                    "table will be created with a single root partition.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
-    TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
-            .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
-    TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.seconds")
+    TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.minutes")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
-            .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
+            .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")
@@ -166,10 +173,17 @@ public interface TableProperty extends SleeperProperty {
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
-    TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
-            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
-            .description("Partitions in this table with more than the following number of records in will be split.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
+            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
+            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
+                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
+            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
+            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
+                    "concurrently per partition.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
@@ -183,6 +197,12 @@ public interface TableProperty extends SleeperProperty {
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
+    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
+                    "the DynamoDBStateStore is used.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .runCDKDeployWhenChanged(true).build();
     TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for the revision table if " +
@@ -286,20 +306,6 @@ public interface TableProperty extends SleeperProperty {
                     "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
-    // Size ratio compaction strategy
-    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
-            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
-            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
-                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
-            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
-            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
-                    "concurrently per partition.")
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-
     // System defined
     TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
@@ -322,13 +328,6 @@ public interface TableProperty extends SleeperProperty {
     TableProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
-                    "the DynamoDBStateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true)
             .systemDefined(true).build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.revision.table")

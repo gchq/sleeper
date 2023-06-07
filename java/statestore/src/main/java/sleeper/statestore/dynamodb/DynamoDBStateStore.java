@@ -21,6 +21,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
 
+import java.time.Instant;
+
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -28,7 +30,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
 /**
- * An implementation of {@link StateStore} that uses DynamoDB to store the state.
+ * An implementation of StateStore that uses DynamoDB to store the state.
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
 
@@ -51,17 +53,26 @@ public class DynamoDBStateStore extends DelegatingStateStore {
             String readyForGCFileInfoTablename,
             String partitionTablename,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInSeconds,
+            int garbageCollectorDelayBeforeDeletionInMinutes,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
-                .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
+                .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
                 .build(), DynamoDBPartitionStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
                 .build());
+    }
+
+    /**
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param now Time to set to be the current time
+     */
+    public void fixTime(Instant now) {
+        ((DynamoDBFileInfoStore) fileInfoStore).fixTime(now);
     }
 }

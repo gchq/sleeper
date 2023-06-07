@@ -6,20 +6,33 @@
 # Template Values #
 ###################
 
-# The name of the table
+## The following table properties relate to the definition of data inside a table.
+
+# A unique name identifying this table.
 sleeper.table.name=changeme
 
-# The size of the row group in the Parquet files
-sleeper.table.rowgroup.size=4194304
 
-# The size of the pages in the Parquet files
-sleeper.table.page.size=1048576
+## The following table properties relate to the storage of data inside a table.
 
-# The compression codec to use in the Parquet files
+# The size of the row group in the Parquet files - defaults to the value in the instance properties.
+sleeper.table.rowgroup.size=8388608
+
+# The size of the page in the Parquet files - defaults to the value in the instance properties.
+sleeper.table.page.size=131072
+
+# The compression codec to use for this table. Defaults to the value in the instance properties.
+# Valid values are: [uncompressed, snappy, gzip, lzo, brotli, lz4, zstd]
 sleeper.table.compression.codec=zstd
 
-# The minimum time, in seconds, after a file is marked as ready for garbage collection before it can be deleted
-sleeper.gc.delay.seconds=60
+# A file will not be deleted until this number of minutes have passed after it has been marked as
+# ready for garbage collection. The reason for not deleting files immediately after they have been
+# marked as ready for garbage collection is that they may still be in use by queries. Defaults to the
+# value set in the instance properties.
+sleeper.table.gc.delay.minutes=15
 
-# The name of the class used for the metadata store
+
+## The following table properties relate to storing and retrieving metadata for tables.
+
+# The name of the class used for the metadata store. The default is DynamoDBStateStore. An alternative
+# option is the S3StateStore.
 sleeper.table.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore

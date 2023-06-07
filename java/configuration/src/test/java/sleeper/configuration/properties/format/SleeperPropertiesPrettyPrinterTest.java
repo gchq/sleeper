@@ -73,12 +73,12 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithMultipleLines() throws Exception {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.default.gc.delay.seconds=123"))
-                    .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
+            assertThat(printInstanceProperties("sleeper.default.gc.delay.minutes=123"))
+                    .contains("# A file will not be deleted until this number of minutes have passed after it has been marked as\n" +
                             "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                             "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
                             "# can be overridden on a per-table basis.\n" +
-                            "sleeper.default.gc.delay.seconds");
+                            "sleeper.default.gc.delay.minutes");
         }
 
         @Test
@@ -255,48 +255,57 @@ class SleeperPropertiesPrettyPrinterTest {
     @Nested
     @DisplayName("Print groups")
     class PrintGroups {
+        private final String output = printEmptyInstanceProperties();
+
         @Test
-        void shouldPrintPropertyGroupDescriptions() throws IOException {
-            // When / Then
-            assertThat(printEmptyInstanceProperties())
-                    .contains("# The following properties are commonly used throughout Sleeper\n\n")
-                    .contains("# The following properties relate to standard ingest\n\n")
-                    .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
-                            "# or EKS.\n\n")
-                    .contains("# The following properties relate to the splitting of partitions\n\n")
-                    .contains("# The following properties relate to compactions.\n\n")
-                    .contains("# The following properties relate to queries.\n\n");
+        void shouldPrintPropertyGroupDescriptions() {
+            assertThat(output)
+                    .contains("## The following properties are commonly used throughout Sleeper.\n\n")
+                    .contains("## The following properties relate to standard ingest.\n\n")
+                    .contains("## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
+                            "## or EKS.\n\n")
+                    .contains("## The following properties relate to the splitting of partitions.\n\n")
+                    .contains("## The following properties relate to compactions.\n\n")
+                    .contains("## The following properties relate to queries.\n\n");
         }
 
         @Test
-        void shouldPrintPropertyGroupsInTheCorrectOrder() throws IOException {
-            // When
-            String output = printEmptyInstanceProperties();
-
-            // Then
-            assertThat(output.indexOf("The following properties relate to standard ingest"))
-                    .isLessThan(output.indexOf("The following properties relate to bulk import"));
-            assertThat(output.indexOf("The following properties relate to garbage collection"))
-                    .isLessThan(output.indexOf("The following properties relate to compactions"));
-            assertThat(output.indexOf("The following properties relate to compactions"))
-                    .isLessThan(output.indexOf("The following properties relate to queries"));
+        void shouldPrintPropertyGroupsInTheCorrectOrder() {
+            assertThat(output).containsSubsequence(
+                    "The following properties are commonly used throughout Sleeper",
+                    "The following properties relate to standard ingest",
+                    "The following properties relate to bulk import",
+                    "The following properties relate to garbage collection",
+                    "The following properties relate to compactions",
+                    "The following properties relate to queries");
         }
 
         @Test
-        void shouldDisplayPropertiesInTheCorrectGroup() throws IOException {
-            // When
-            String output = printEmptyInstanceProperties();
+        void shouldDisplayUserDefinedPropertyInTheCorrectGroup() {
+            assertThat(output).containsSubsequence(
+                    "The following properties are commonly used throughout Sleeper",
+                    "sleeper.id",
+                    "The following properties relate to standard ingest");
+        }
 
-            // Then check that one UserDefinedInstanceProperty is in the correct group
-            assertThat(output.indexOf("sleeper.id"))
-                    .isBetween(
-                            output.indexOf("The following properties are commonly used throughout Sleeper"),
-                            output.indexOf("The following properties relate to standard ingest"));
-            // Then check that one SystemDefinedInstanceProperty is in the correct group
-            assertThat(output.indexOf("sleeper.config.bucket"))
-                    .isBetween(
-                            output.indexOf("The following properties are commonly used throughout Sleeper"),
-                            output.indexOf("The following properties relate to standard ingest"));
+        @Test
+        void shouldDisplaySystemDefinedPropertyInTheCorrectGroup() {
+            assertThat(output).containsSubsequence(
+                    "The following properties are commonly used throughout Sleeper",
+                    "sleeper.config.bucket",
+                    "The following properties relate to standard ingest");
+        }
+
+        @Test
+        void shouldPrintOneNewLineBeforeFirstHeader() {
+            assertThat(output).startsWith("\n" +
+                    "## The following properties are commonly used throughout Sleeper");
+        }
+
+        @Test
+        void shouldPrintTwoNewLinesBeforeOtherHeaders() {
+            assertThat(output).contains("\n\n" +
+                    "## The following properties relate to standard ingest");
         }
     }
 
@@ -349,8 +358,8 @@ class SleeperPropertiesPrettyPrinterTest {
         }
     }
 
-    private static String printEmptyInstanceProperties() throws IOException {
-        return printInstanceProperties("");
+    private static String printEmptyInstanceProperties() {
+        return printInstanceProperties(new InstanceProperties());
     }
 
     private static String printInstanceProperties(String properties) throws IOException {
