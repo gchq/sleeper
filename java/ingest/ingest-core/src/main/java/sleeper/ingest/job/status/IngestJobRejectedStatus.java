@@ -59,18 +59,21 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobRejectedStatus that = (IngestJobRejectedStatus) o;
-        return Objects.equals(updateTime, that.updateTime) && Objects.equals(reasons, that.reasons);
+        return Objects.equals(validateTime, that.validateTime)
+                && Objects.equals(updateTime, that.updateTime)
+                && Objects.equals(reasons, that.reasons);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, reasons);
+        return Objects.hash(validateTime, updateTime, reasons);
     }
 
     @Override
     public String toString() {
         return "IngestJobRejectedStatus{" +
-                "updateTime=" + updateTime +
+                "validateTime=" + validateTime +
+                ", updateTime=" + updateTime +
                 ", reasons=" + reasons +
                 '}';
     }
