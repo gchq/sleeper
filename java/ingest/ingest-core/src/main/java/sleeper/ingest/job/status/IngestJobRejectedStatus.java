@@ -27,10 +27,10 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     private final List<String> reasons;
 
     private IngestJobRejectedStatus(Builder builder) {
-        validationTime = builder.validationTime;
-        updateTime = builder.updateTime;
+        validationTime = Objects.requireNonNull(builder.validationTime, "validateTime must not be null");
+        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         inputFileCount = builder.inputFileCount;
-        reasons = builder.reasons;
+        reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
     }
 
     public static Builder builder() {
