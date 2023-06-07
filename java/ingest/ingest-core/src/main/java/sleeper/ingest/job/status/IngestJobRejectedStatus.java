@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.Objects;
 
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
-    private final Instant validateTime;
+    private final Instant validationTime;
     private final Instant updateTime;
     private final List<String> reasons;
 
     private IngestJobRejectedStatus(Builder builder) {
-        this.validateTime = Objects.requireNonNull(builder.validateTime, "validateTime must not be null");
-        this.updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
-        reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
+        validationTime = builder.validationTime;
+        updateTime = builder.updateTime;
+        reasons = builder.reasons;
     }
 
     public static Builder builder() {
@@ -37,7 +37,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
 
     @Override
     public Instant getStartTime() {
-        return validateTime;
+        return validationTime;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     public static final class Builder {
         private Instant updateTime;
         private List<String> reasons;
-        private Instant validateTime;
+        private Instant validationTime;
 
         private Builder() {
         }
@@ -90,8 +90,8 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
             return new Builder();
         }
 
-        public Builder validationTime(Instant validateTime) {
-            this.validateTime = validateTime;
+        public Builder validationTime(Instant validationTime) {
+            this.validationTime = validationTime;
             return this;
         }
 
