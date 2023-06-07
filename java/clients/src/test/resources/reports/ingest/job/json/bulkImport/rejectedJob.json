@@ -10,9 +10,9 @@
           "taskId": "test-task",
           "validatedStatus": {
             "isValid": false,
+            "inputFileCount": 2,
             "validatedTime": "2023-06-05T17:20:00Z",
             "updateTime": "2023-06-05T17:20:00.123Z",
-            "inputFileCount": 2,
             "reasons": [
               "Test validation reason 1",
               "Test validation reason 2",
