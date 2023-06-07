@@ -218,7 +218,7 @@ public class QueryExecutor {
                     CloseableIterator<Record> it = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
                     return it;
                 } catch (QueryException e) {
-                    throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery + ": " + e);
+                    throw new RuntimeException("Exception returning records for leaf partition " + leafPartitionQuery, e);
                 }
             });
         }
