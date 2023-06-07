@@ -28,7 +28,7 @@ import sleeper.clients.util.PollWithRetries;
 public class WaitForStackToDelete {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForStackToDelete.class);
     private static final long STACK_DELETED_POLL_INTERVAL_MILLIS = 30000;
-    private static final int STACK_DELETED_TIMEOUT_MILLIS = 5 * 60 * 1000;
+    private static final int STACK_DELETED_TIMEOUT_MILLIS = 30 * 60 * 1000;
     private final PollWithRetries poll;
     private final CloudFormationClient cloudFormationClient;
     private final String stackName;
