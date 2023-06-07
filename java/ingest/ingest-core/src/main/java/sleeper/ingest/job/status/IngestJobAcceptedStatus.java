@@ -24,8 +24,8 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     private final Instant updateTime;
 
     private IngestJobAcceptedStatus(Instant validationTime, Instant updateTime) {
-        this.validationTime = validationTime;
-        this.updateTime = updateTime;
+        this.validationTime = Objects.requireNonNull(validationTime, "validationTime must not be null");
+        this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
     }
 
     public static IngestJobAcceptedStatus from(Instant validationTime, Instant updateTime) {

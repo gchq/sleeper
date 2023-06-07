@@ -26,9 +26,9 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     private final List<String> reasons;
 
     private IngestJobRejectedStatus(Builder builder) {
-        validationTime = builder.validationTime;
-        updateTime = builder.updateTime;
-        reasons = builder.reasons;
+        validationTime = Objects.requireNonNull(builder.validationTime, "validateTime must not be null");
+        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
+        reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
     }
 
     public static Builder builder() {
@@ -59,20 +59,20 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobRejectedStatus that = (IngestJobRejectedStatus) o;
-        return Objects.equals(validateTime, that.validateTime)
+        return Objects.equals(validationTime, that.validationTime)
                 && Objects.equals(updateTime, that.updateTime)
                 && Objects.equals(reasons, that.reasons);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(validateTime, updateTime, reasons);
+        return Objects.hash(validationTime, updateTime, reasons);
     }
 
     @Override
     public String toString() {
         return "IngestJobRejectedStatus{" +
-                "validateTime=" + validateTime +
+                "validationTime=" + validationTime +
                 ", updateTime=" + updateTime +
                 ", reasons=" + reasons +
                 '}';
