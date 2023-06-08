@@ -108,24 +108,28 @@ public class SystemTestForIngestBatcher {
      */
     public void run() throws IOException, InterruptedException, StateStoreException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
-        createSourceBucketIfMissing(sourceBucketName);
-        createInstanceIfMissing(sourceBucketName);
+        try {
+            createSourceBucketIfMissing(sourceBucketName);
+            createInstanceIfMissing(sourceBucketName);
 
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3ClientV1, "system-test");
-        InvokeIngestBatcher invoke = new InvokeIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
-                s3ClientV1, dynamoDB, sqsClient, lambdaClient);
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.loadFromS3(s3ClientV1, "system-test");
+            InvokeIngestBatcher invoke = new InvokeIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
+                    s3ClientV1, dynamoDB, sqsClient, lambdaClient);
 
-        int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
-        invoke.runStandardIngest();
-        int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
-        checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
+            int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+            invoke.runStandardIngest();
+            int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+            checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
 
-        invoke.runBulkImportEMR();
-        checkActiveFilesChanged(activeFileCountAfterStandardIngest,
-                countActiveFiles(instanceProperties, tableProperties), 1);
+            invoke.runBulkImportEMR();
+            checkActiveFilesChanged(activeFileCountAfterStandardIngest,
+                    countActiveFiles(instanceProperties, tableProperties), 1);
+        } finally {
+            deleteSourceBucket(sourceBucketName);
+        }
     }
 
     private void checkActiveFilesChanged(int activeFileCountBefore, int activeFileCountAfter, int expected) {
@@ -145,12 +149,7 @@ public class SystemTestForIngestBatcher {
         try {
             s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
             LOGGER.info("Bucket already exists, clearing bucket");
-            List<ObjectIdentifier> objects = s3ClientV2.listObjectVersions(builder -> builder.bucket(sourceBucketName))
-                    .versions().stream()
-                    .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
-                    .collect(Collectors.toList());
-            s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName)
-                    .delete(deleteBuilder -> deleteBuilder.objects(objects)));
+            clearBucket(sourceBucketName);
         } catch (NoSuchBucketException e) {
             LOGGER.info("Creating bucket: {}", sourceBucketName);
             s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
@@ -175,6 +174,20 @@ public class SystemTestForIngestBatcher {
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .deployWithDefaultClients();
         }
+    }
+
+    private void deleteSourceBucket(String sourceBucketName) {
+        clearBucket(sourceBucketName);
+        s3ClientV2.deleteBucket(builder -> builder.bucket(sourceBucketName));
+    }
+
+    private void clearBucket(String sourceBucketName) {
+        List<ObjectIdentifier> objects = s3ClientV2.listObjectVersions(builder -> builder.bucket(sourceBucketName))
+                .versions().stream()
+                .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
+                .collect(Collectors.toList());
+        s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName)
+                .delete(deleteBuilder -> deleteBuilder.objects(objects)));
     }
 
     public static final class Builder {
