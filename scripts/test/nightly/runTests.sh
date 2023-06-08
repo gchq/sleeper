@@ -41,24 +41,23 @@ SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
 runReport() {
-  TEST_NAME=$1
-  INSTANCE_ID=$2
-  shift 2
+  INSTANCE_ID=$1
+  shift 1
   for REPORT_TYPE in "$@" 
   do 
     case "$REPORT_TYPE" in
       "compaction")
-        "$SCRIPTS_DIR/utility/compactionTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
-        "$SCRIPTS_DIR/utility/compactionJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+        "$SCRIPTS_DIR/utility/compactionTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a"
+        "$SCRIPTS_DIR/utility/compactionJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a"
         continue;
         ;;
       "ingest")
-        "$SCRIPTS_DIR/utility/ingestTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
-        "$SCRIPTS_DIR/utility/ingestJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+        "$SCRIPTS_DIR/utility/ingestTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a"
+        "$SCRIPTS_DIR/utility/ingestJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a"
         continue;
         ;;
       "partition")
-        "$SCRIPTS_DIR/utility/partitionsStatusReport.sh" "$INSTANCE_ID" "system-test" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+        "$SCRIPTS_DIR/utility/partitionsStatusReport.sh" "$INSTANCE_ID" "system-test"
         continue;
         ;;
       *)
@@ -76,7 +75,7 @@ runTest() {
   echo "[$(time_str)] Running $TEST_NAME test"
   "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/$TEST_NAME.log"
   EXIT_CODE=$?
-  runReport "$TEST_NAME" "$INSTANCE_ID" "${REPORT_TYPES[@]}"
+  runReport "$INSTANCE_ID" "${REPORT_TYPES[@]}"  &>> "$OUTPUT_DIR/$TEST_NAME.log"
   ./tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
   echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
