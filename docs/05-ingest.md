@@ -476,7 +476,7 @@ This may be deployed by adding `IngestBatcherStack` to the list of optional stac
 `sleeper.optional.stacks`.
 
 Files to be ingested must be accessible to the ingest system you will use. See above for ways to provide access to an
-ingest source bucket, eg. by setting the property `sleeper.ingest.source.bucket`.
+ingest source bucket, e.g. by setting the property `sleeper.ingest.source.bucket`.
 
 Files can be submitted as messages to the batcher submission SQS queue. You can find the URL of this queue in the
 system-defined property `sleeper.ingest.batcher.submit.queue.url`. 
