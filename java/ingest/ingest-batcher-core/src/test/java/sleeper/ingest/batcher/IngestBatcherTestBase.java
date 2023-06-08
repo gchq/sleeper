@@ -77,9 +77,9 @@ public class IngestBatcherTestBase {
                 .build();
     }
 
-    protected FileIngestRequest addFileToStore(String pathToFile) {
+    protected FileIngestRequest addFileToStore(String file) {
         return addFileToStore(ingestRequest()
-                .pathToFile(pathToFile).build());
+                .file(file).build());
     }
 
     protected FileIngestRequest.Builder ingestRequest() {

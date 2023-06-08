@@ -102,8 +102,8 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
         TableProperties bulkImportTable = createTableProperties("bulk-import-table");
         ingestTable.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.STANDARD_INGEST.toString());
         bulkImportTable.set(INGEST_BATCHER_INGEST_MODE, BatchIngestMode.BULK_IMPORT_EMR.toString());
-        addFileToStore(builder -> builder.pathToFile("test-bucket/ingest.parquet").tableName("ingest-table"));
-        addFileToStore(builder -> builder.pathToFile("test-bucket/bulk-import.parquet").tableName("bulk-import-table"));
+        addFileToStore(builder -> builder.file("test-bucket/ingest.parquet").tableName("ingest-table"));
+        addFileToStore(builder -> builder.file("test-bucket/bulk-import.parquet").tableName("bulk-import-table"));
 
         // When
         batchFilesWithTablesAndJobIds(List.of(ingestTable, bulkImportTable), List.of("test-job-1", "test-job-2"));

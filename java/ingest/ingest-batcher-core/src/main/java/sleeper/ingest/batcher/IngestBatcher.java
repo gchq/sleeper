@@ -102,7 +102,7 @@ public class IngestBatcher {
                 .id(jobIdSupplier.get())
                 .tableName(tableName)
                 .files(batch.stream()
-                        .map(FileIngestRequest::getPathToFile)
+                        .map(FileIngestRequest::getFile)
                         .collect(toList()))
                 .build();
         try {

@@ -73,8 +73,8 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             TableProperties table2 = createTableProperties("test-table-2");
             table1.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             table2.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
-            addFileToStore(builder -> builder.tableName("test-table-1").pathToFile("test-bucket/test-1.parquet"));
-            addFileToStore(builder -> builder.tableName("test-table-2").pathToFile("test-bucket/test-2.parquet"));
+            addFileToStore(builder -> builder.tableName("test-table-1").file("test-bucket/test-1.parquet"));
+            addFileToStore(builder -> builder.tableName("test-table-2").file("test-bucket/test-2.parquet"));
 
             // When
             batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of("test-job-id"));
@@ -116,7 +116,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .fileSizeBytes(2048));
 
             // When
@@ -133,7 +133,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .fileSizeBytes(512));
 
             // When
@@ -151,9 +151,9 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             table1.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             table2.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             addFileToStore(builder -> builder.tableName("test-table-1").fileSizeBytes(2048)
-                    .pathToFile("test-bucket/test-1.parquet"));
+                    .file("test-bucket/test-1.parquet"));
             addFileToStore(builder -> builder.tableName("test-table-2").fileSizeBytes(600)
-                    .pathToFile("test-bucket/test-2.parquet"));
+                    .file("test-bucket/test-2.parquet"));
 
             // When
             batchFilesWithTablesAndJobIds(List.of(table1, table2), List.of("test-job-id"));
@@ -172,10 +172,10 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(600));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(600));
 
             // When
@@ -199,7 +199,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .fileSizeBytes(2048));
 
             // When
@@ -215,7 +215,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .fileSizeBytes(512));
 
             // When
@@ -231,7 +231,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .fileSizeBytes(2048));
 
             // When
@@ -255,7 +255,7 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "2");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test.parquet").fileSizeBytes(256)
+                    .file("test-bucket/test.parquet").fileSizeBytes(256)
                     .receivedTime(Instant.parse("2023-05-22T11:11:00Z")).build());
             Instant batchTime = Instant.parse("2023-05-22T11:11:10.001Z");
 
@@ -276,10 +276,10 @@ class IngestBatcherMinBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "3");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet").fileSizeBytes(256)
+                    .file("test-bucket/test-1.parquet").fileSizeBytes(256)
                     .receivedTime(Instant.parse("2023-05-22T11:11:00Z")).build());
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet").fileSizeBytes(256)
+                    .file("test-bucket/test-2.parquet").fileSizeBytes(256)
                     .receivedTime(Instant.parse("2023-05-22T11:11:05Z")).build());
             Instant batchTime = Instant.parse("2023-05-22T11:11:10.001Z");
 

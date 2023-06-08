@@ -21,12 +21,12 @@ import java.util.Objects;
 
 public class IngestBatcherStateStoreKeyFields {
 
-    private final String pathToFile;
+    private final String file;
     private final String tableName;
     private final String jobId;
 
     private IngestBatcherStateStoreKeyFields(FileIngestRequest request) {
-        pathToFile = request.getPathToFile();
+        file = request.getFile();
         tableName = request.getTableName();
         jobId = request.getJobId();
     }
@@ -46,7 +46,7 @@ public class IngestBatcherStateStoreKeyFields {
 
         IngestBatcherStateStoreKeyFields that = (IngestBatcherStateStoreKeyFields) o;
 
-        if (!pathToFile.equals(that.pathToFile)) {
+        if (!file.equals(that.file)) {
             return false;
         }
         if (!tableName.equals(that.tableName)) {
@@ -57,7 +57,7 @@ public class IngestBatcherStateStoreKeyFields {
 
     @Override
     public int hashCode() {
-        int result = pathToFile.hashCode();
+        int result = file.hashCode();
         result = 31 * result + tableName.hashCode();
         result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
         return result;
@@ -66,7 +66,7 @@ public class IngestBatcherStateStoreKeyFields {
     @Override
     public String toString() {
         return "IngestBatcherStateStoreKeyFields{" +
-                "filePath='" + pathToFile + '\'' +
+                "filePath='" + file + '\'' +
                 ", tableName='" + tableName + '\'' +
                 ", jobId='" + jobId + '\'' +
                 '}';

@@ -485,7 +485,7 @@ An example message is shown below:
 
 ```json
 {
-    "pathToFile": "source-bucket-name/file.parquet",
+    "file": "source-bucket-name/file.parquet",
     "fileSizeBytes": 1024,
     "tableName": "target-table"
 }
