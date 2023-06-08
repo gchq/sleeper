@@ -32,6 +32,9 @@ Note that all ingest into Sleeper is done in batches - there is currently no opt
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
 the cost, with lower latency generally costing more.
 
+An ingest batcher is also available to automatically group smaller files into jobs of a configurable size. These jobs
+will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
+
 ## What ingest rate does Sleeper support?
 
 In theory, an arbitrary number of ingest jobs can run simultaneously. If the limits on your AWS account allowed
@@ -491,7 +494,12 @@ An example message is shown below:
 Each message is a request to ingest a single file into a Sleeper table. The size of the file must be specified in order
 to compute the size of a batch. The batcher will not read the bucket directly.
 
-The batcher will then track these files and group them into jobs periodically, based on the configuration.
+The batcher will then track these files and group them into jobs periodically, based on the configuration. The
+configuration specifies minimum and maximum size of a batch, and a maximum age for files.
+
+The minimum batch size determines whether any jobs will be created. The maximum batch size splits the tracked files
+into multiple jobs. The maximum file age overrides the minimum batch size, so that when any file exceeds that age, a job
+will be created with all currently tracked files.
 
 If you submit requests to ingest files with the same path into the same table, this will overwrite the previous request
 for that file, unless it has already been added to a job. When a file has been added to a job, further requests for a
