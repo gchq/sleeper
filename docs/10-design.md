@@ -219,10 +219,14 @@ The other EMR-based approach uses a persistent, i.e. long running, EMR cluster. 
 of the cluster monitors a queue and when a job appears submits it to YARN for execution. The EMR cluster can
 either be of fixed size or use EMR managed scaling.
 
-### Ingest batcher (WIP)
+### Ingest batcher
 
-This is a work-in-progress system which will take files from an S3 bucket and automatically batch and send 
-ingest jobs to either standard ingest or bulk import. An outline of the design of this system is shown below:
+The ingest batcher consumes ingest request messages from an SQS queue. Each message specifies a file to be ingested.
+These files need to be in either the table bucket or a bucket configured as an ingest source. The batcher is then 
+triggered periodically to group files into jobs and send them to the ingest queue configured for the table. 
+The number of jobs created is determined by the configuration of the batcher.
+
+An outline of the design of this system is shown below:
 
 ![Ingest Batcher design diagram](diagrams/ingest-batcher.png)
 
