@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.clients.util.BucketUtils.doesBucketExist;
 
 class RemoveJarsBucketIT extends JarsBucketITBase {
@@ -66,5 +67,11 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
 
         // Then
         assertThat(doesBucketExist(s3, bucketName)).isFalse();
+    }
+
+    @Test
+    void shouldIgnoreIfBucketDoesNotExist() {
+        assertThatCode(() -> RemoveJarsBucket.remove(s3, "not-a-bucket"))
+                .doesNotThrowAnyException();
     }
 }
