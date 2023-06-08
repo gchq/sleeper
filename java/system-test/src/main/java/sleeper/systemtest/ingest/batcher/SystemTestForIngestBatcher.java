@@ -97,14 +97,6 @@ public class SystemTestForIngestBatcher {
         }
     }
 
-    /**
-     * Create an S3 bucket
-     * Add it as an ingest source bucket in a Sleeper instance
-     * Deploy instance
-     * Submit files to the ingest batcher
-     * Trigger the ingest batcher to create jobs
-     * Test ingest via both standard ingest and bulk import
-     */
     public void run() throws IOException, InterruptedException, StateStoreException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
         LOGGER.info("Creating bucket: {}", sourceBucketName);
