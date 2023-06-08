@@ -492,7 +492,7 @@ An example message is shown below:
 ```
 
 Each message is a request to ingest a single file into a Sleeper table. The size of the file must be specified in order
-to compute the size of a batch. The batcher will not read the bucket directly.
+to compute the size of a batch, as the batcher will not read the bucket directly.
 
 The batcher will then track these files and group them into jobs periodically, based on the configuration. The
 configuration specifies minimum and maximum size of a batch, and a maximum age for files.
