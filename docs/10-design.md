@@ -221,10 +221,11 @@ either be of fixed size or use EMR managed scaling.
 
 ### Ingest batcher
 
-The ingest batcher consumes ingest request messages from an SQS queue. Each message specifies a file to be ingested.
-These files need to be in either the table bucket or a bucket configured as an ingest source. The batcher is then 
-triggered periodically to group files into jobs and send them to the ingest queue configured for the table. 
-The number of jobs created is determined by the configuration of the batcher.
+The ingest batcher groups ingest requests for individual files into ingest or bulk import jobs. File ingest requests are
+submitted to an SQS queue. The batcher is then triggered periodically to group files into jobs and send them to the
+ingest queue configured for the table. The number of jobs created is determined by the configuration of the batcher.
+
+The files need to be accessible to the relevant ingest system, but are not read directly by the batcher. 
 
 An outline of the design of this system is shown below:
 
