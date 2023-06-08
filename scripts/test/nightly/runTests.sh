@@ -49,16 +49,13 @@ runReport() {
       "compaction")
         "$SCRIPTS_DIR/utility/compactionTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a"
         "$SCRIPTS_DIR/utility/compactionJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a"
-        continue;
         ;;
       "ingest")
         "$SCRIPTS_DIR/utility/ingestTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a"
         "$SCRIPTS_DIR/utility/ingestJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a"
-        continue;
         ;;
       "partition")
         "$SCRIPTS_DIR/utility/partitionsStatusReport.sh" "$INSTANCE_ID" "system-test"
-        continue;
         ;;
       *)
         echo "unknown report type: $REPORT_TYPE";
