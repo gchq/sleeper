@@ -72,7 +72,7 @@ runTest() {
   echo "[$(time_str)] Running $TEST_NAME test"
   "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/$TEST_NAME.log"
   EXIT_CODE=$?
-  runReport "$INSTANCE_ID" "${REPORT_TYPES[@]}"  &>> "$OUTPUT_DIR/$TEST_NAME.log"
+  runReport "$INSTANCE_ID" "${REPORT_TYPES[@]}"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
   ./tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
   echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
