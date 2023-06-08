@@ -58,7 +58,7 @@ runReport() {
         continue;
         ;;
       "partition")
-        "$SCRIPTS_DIR/utility/partitionStatusReport.sh" "$INSTANCE_ID" "system-test" &>> "$OUTPUT_DIR/$TEST_NAME.log"
+        "$SCRIPTS_DIR/utility/partitionsStatusReport.sh" "$INSTANCE_ID" "system-test" &>> "$OUTPUT_DIR/$TEST_NAME.log"
         continue;
         ;;
       *)
