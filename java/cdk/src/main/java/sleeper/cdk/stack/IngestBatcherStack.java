@@ -41,6 +41,7 @@ import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
@@ -166,10 +167,9 @@ public class IngestBatcherStack extends NestedStack {
                 .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
-        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestBatcherJobCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "IngestBatcherJobCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the ingest batcher job creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))

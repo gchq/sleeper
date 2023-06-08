@@ -25,9 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.DummyInstanceProperty;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
 
 import java.util.List;
 
@@ -81,8 +79,8 @@ class ShutdownSystemProcessesIT {
         shutdown.shutdown(instanceProperties, List.of());
     }
 
-    private void shutdown(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) throws Exception {
-        shutdown.shutdown(instanceProperties, extraClusters);
+    private void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws Exception {
+        shutdown.shutdown(instanceProperties, extraECSClusters);
     }
 
     @Test
@@ -126,9 +124,7 @@ class ShutdownSystemProcessesIT {
         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
         properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
         properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
-
-        InstanceProperty extraClusterProperty = new DummyInstanceProperty("sleeper.systemtest.cluster");
-        properties.set(extraClusterProperty, "test-system-test-cluster");
+        List<String> extraECSClusters = List.of("test-system-test-cluster");
 
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
@@ -137,7 +133,7 @@ class ShutdownSystemProcessesIT {
                 .willReturn(aResponseWithNumRunningClusters(0)));
 
         // When
-        shutdown(properties, List.of(extraClusterProperty));
+        shutdown(properties, extraECSClusters);
 
         // Then
         verify(5, postRequestedFor(urlEqualTo("/")));

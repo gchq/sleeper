@@ -26,8 +26,16 @@ import sleeper.core.schema.SchemaSerDe;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
@@ -63,6 +71,31 @@ class GeneratePropertiesTest {
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "aws-global");
+
+        assertThat(properties).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateTearDownDefaultInstancePropertiesCorrectly() {
+        // Given/When
+        InstanceProperties properties = generateTearDownDefaultsFromInstanceId("test-instance");
+
+        // Then
+        InstanceProperties expected = new InstanceProperties();
+        expected.set(ID, "test-instance");
+        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
+        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
+        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
+        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
+        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
+        expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
+        expected.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionTasksCreationRule");
+        expected.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-SplittingCompactionTasksCreationRule");
+        expected.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-instance-FindPartitionsToSplitPeriodicTrigger");
+        expected.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-instance-GarbageCollectorPeriodicTrigger");
+        expected.set(INGEST_CLOUDWATCH_RULE, "test-instance-IngestTasksCreationRule");
+        expected.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-IngestBatcherJobCreationRule");
 
         assertThat(properties).isEqualTo(expected);
     }
