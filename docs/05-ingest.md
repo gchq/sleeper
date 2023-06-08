@@ -464,3 +464,20 @@ kubectl logs pods/my-job-name
 kubectl port-forward my-job-name 4040:4040
 ```
 
+## Ingest Batcher
+
+An alternative to creating ingest jobs directly is to use the ingest batcher. 
+
+By placing files to be ingested in a configured ingest source bucket or table bucket, you can send an ingest request to the ingest batcher. 
+You can find the URL of this queue in the system-defined property `sleeper.ingest.batcher.submit.queue.url`. 
+An example ingest request message is shown below:
+```json
+{
+    "pathToFile": "bucket/file.parquet",
+    "fileSizeBytes": 1024,
+    "tableName": "test-table"
+}
+```
+
+The batcher will then track these files and group them into jobs periodically, based on the configuration.
+
