@@ -51,7 +51,7 @@ class WaitForStackToDeleteIT {
 
     @Test
     void shouldFinishWaitingWhenStackIsNotFound(WireMockRuntimeInfo runtimeInfo) {
-        // See AWS documentation - it the stack is deleted it will not be found by its stack name:
+        // See AWS documentation - if the stack is deleted it will not be found by its stack name:
         // https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DescribeStacks.html
 
         // Given
