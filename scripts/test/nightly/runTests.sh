@@ -62,7 +62,7 @@ runReport() {
         continue;
         ;;
       *)
-        echo -n "unknown report type: $REPORT_TYPE";
+        echo "unknown report type: $REPORT_TYPE";
         ;;
     esac
   done;
