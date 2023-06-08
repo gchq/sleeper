@@ -32,7 +32,7 @@ public class FileIngestRequestTestHelper {
         return FileIngestRequest.builder()
                 .fileSizeBytes(1024)
                 .tableName(DEFAULT_TABLE_NAME)
-                .pathToFile("test-bucket/auto-named-file-" + requestNum + ".parquet")
+                .file("test-bucket/auto-named-file-" + requestNum + ".parquet")
                 .receivedTime(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(requestIndex)));
     }
 

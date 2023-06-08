@@ -47,7 +47,7 @@ public class DynamoDBIngestRequestFormat {
             TablePropertiesProvider tablePropertiesProvider, FileIngestRequest fileIngestRequest) {
         TableProperties properties = tablePropertiesProvider.getTableProperties(fileIngestRequest.getTableName());
         return new DynamoDBRecordBuilder()
-                .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getPathToFile())
+                .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getFile())
                 .number(FILE_SIZE, fileIngestRequest.getFileSizeBytes())
                 .string(JOB_ID, getJobIdOrUnassigned(fileIngestRequest))
                 .number(RECEIVED_TIME, fileIngestRequest.getReceivedTime().toEpochMilli())
@@ -61,7 +61,7 @@ public class DynamoDBIngestRequestFormat {
         String tableName = fullPath.substring(0, pathSeparatorIndex);
         String filePath = fullPath.substring(pathSeparatorIndex + 1);
         return FileIngestRequest.builder()
-                .pathToFile(filePath)
+                .file(filePath)
                 .fileSizeBytes(getLongAttribute(item, FILE_SIZE, 0L))
                 .tableName(tableName)
                 .jobId(getJobIdAttribute(item))
@@ -72,7 +72,7 @@ public class DynamoDBIngestRequestFormat {
     public static Map<String, AttributeValue> createUnassignedKey(FileIngestRequest fileIngestRequest) {
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, NOT_ASSIGNED_TO_JOB)
-                .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getPathToFile())
+                .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getFile())
                 .build();
     }
 
