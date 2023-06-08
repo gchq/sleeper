@@ -28,7 +28,6 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.clients.deploy.DeployNewInstance;
@@ -108,8 +107,9 @@ public class SystemTestForIngestBatcher {
      */
     public void run() throws IOException, InterruptedException, StateStoreException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
+        LOGGER.info("Creating bucket: {}", sourceBucketName);
+        s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
         try {
-            createSourceBucketIfMissing(sourceBucketName);
             createInstanceIfMissing(sourceBucketName);
 
             InstanceProperties instanceProperties = new InstanceProperties();
@@ -128,7 +128,8 @@ public class SystemTestForIngestBatcher {
             checkActiveFilesChanged(activeFileCountAfterStandardIngest,
                     countActiveFiles(instanceProperties, tableProperties), 1);
         } finally {
-            deleteSourceBucket(sourceBucketName);
+            clearBucket(sourceBucketName);
+            s3ClientV2.deleteBucket(builder -> builder.bucket(sourceBucketName));
         }
     }
 
@@ -143,17 +144,6 @@ public class SystemTestForIngestBatcher {
     private int countActiveFiles(InstanceProperties properties, TableProperties tableProperties) throws StateStoreException {
         StateStoreProvider provider = new StateStoreProvider(dynamoDB, properties);
         return provider.getStateStore(tableProperties).getActiveFiles().size();
-    }
-
-    private void createSourceBucketIfMissing(String sourceBucketName) {
-        try {
-            s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
-            LOGGER.info("Bucket already exists, clearing bucket");
-            clearBucket(sourceBucketName);
-        } catch (NoSuchBucketException e) {
-            LOGGER.info("Creating bucket: {}", sourceBucketName);
-            s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
-        }
     }
 
     private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {
@@ -174,11 +164,6 @@ public class SystemTestForIngestBatcher {
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .deployWithDefaultClients();
         }
-    }
-
-    private void deleteSourceBucket(String sourceBucketName) {
-        clearBucket(sourceBucketName);
-        s3ClientV2.deleteBucket(builder -> builder.bucket(sourceBucketName));
     }
 
     private void clearBucket(String sourceBucketName) {
