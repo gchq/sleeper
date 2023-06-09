@@ -28,7 +28,6 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -227,7 +226,6 @@ class RunECSTasksIT {
     class RetryTasks {
 
         @Test
-        @Disabled("TODO")
         void shouldRetryWhenCapacityIsUnavailable() {
             // Given
             stubFor(runTaskWillReturnCapacityUnavailable()

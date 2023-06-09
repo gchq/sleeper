@@ -26,6 +26,9 @@ import com.amazonaws.services.ecs.model.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.PollWithRetries;
+
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -91,7 +94,13 @@ public class RunECSTasks {
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
-
+            if (runTaskResult.getFailures().stream().anyMatch(RunECSTasks::isCapacityUnavailable)) {
+                try {
+                    runTaskResult = retryTaskUntilCapacityAvailable(ecsClient, runTaskRequest);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Failed to retry task", e);
+                }
+            }
             if (checkFailure(runTaskResult)) {
                 throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
@@ -102,6 +111,16 @@ public class RunECSTasks {
                 return;
             }
         }
+    }
+
+    private static RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request) throws InterruptedException {
+        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(30000, 20);
+        AtomicReference<RunTaskResult> result = new AtomicReference<>();
+        poll.pollUntil("capacity was available", () -> {
+            result.set(ecsClient.runTask(request));
+            return result.get().getFailures().stream().noneMatch(RunECSTasks::isCapacityUnavailable);
+        });
+        return result.get();
     }
 
     private static class ContainerName {
@@ -149,5 +168,9 @@ public class RunECSTasks {
             return true;
         }
         return false;
+    }
+
+    private static boolean isCapacityUnavailable(Failure failure) {
+        return failure.getReason().equals("Capacity is unavailable at this time. Please try again later or in a different availability zone");
     }
 }
