@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.compaction;
 
-import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.util.PollWithRetries;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;

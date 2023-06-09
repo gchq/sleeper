@@ -19,10 +19,10 @@ package sleeper.systemtest.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
+import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Objects;
