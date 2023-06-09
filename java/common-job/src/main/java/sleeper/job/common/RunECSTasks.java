@@ -36,6 +36,8 @@ import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class RunECSTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunECSTasks.class);
+    private static final int CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS = 30000;
+    private static final int CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS = 10;
 
     private RunECSTasks() {
     }
@@ -95,7 +97,7 @@ public class RunECSTasks {
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
             if (runTaskResult.getFailures().stream().anyMatch(RunECSTasks::isCapacityUnavailable)) {
-                LOGGER.info("No capacity was available, retrying runTask request until there is");
+                LOGGER.info("No capacity was available, retrying request until there is");
                 try {
                     runTaskResult = retryTaskUntilCapacityAvailable(ecsClient, runTaskRequest);
                 } catch (InterruptedException e) {
@@ -115,7 +117,8 @@ public class RunECSTasks {
     }
 
     private static RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request) throws InterruptedException {
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(30000, 20);
+        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(
+                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS);
         AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
         poll.pollUntil("capacity was available", () -> {
             RunTaskResult result = ecsClient.runTask(request);
