@@ -30,6 +30,7 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -49,6 +50,11 @@ public class ExecutorFactory {
     private final String bulkImportPlatform;
     private final String taskId;
     private final Supplier<Instant> validationTimeSupplier;
+
+    public ExecutorFactory(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+                           AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
+        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, UUID.randomUUID().toString(), Instant::now);
+    }
 
     public ExecutorFactory(AmazonS3 s3Client,
                            AmazonElasticMapReduce emrClient,
@@ -94,5 +100,25 @@ public class ExecutorFactory {
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }
+    }
+
+    public static EmrExecutor createEmrExecutor(AmazonElasticMapReduce emrClient,
+                                                InstanceProperties instanceProperties,
+                                                TablePropertiesProvider tablePropertiesProvider,
+                                                StateStoreProvider stateStoreProvider,
+                                                IngestJobStatusStore ingestJobStatusStore,
+                                                AmazonS3 s3Client) {
+        return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                ingestJobStatusStore, s3Client, UUID.randomUUID().toString(), Instant::now);
+    }
+
+    public static StateMachineExecutor createStateMachineExecutor(AWSStepFunctions stepFunctionsClient,
+                                                                  InstanceProperties instanceProperties,
+                                                                  TablePropertiesProvider tablePropertiesProvider,
+                                                                  StateStoreProvider stateStoreProvider,
+                                                                  IngestJobStatusStore ingestJobStatusStore,
+                                                                  AmazonS3 s3Client) {
+        return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                ingestJobStatusStore, s3Client, UUID.randomUUID().toString(), Instant::now);
     }
 }

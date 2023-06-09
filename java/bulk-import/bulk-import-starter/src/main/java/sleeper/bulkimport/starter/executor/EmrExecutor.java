@@ -56,7 +56,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -74,16 +73,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
     private final AmazonElasticMapReduce emrClient;
-
-    public EmrExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider,
-                       IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 s3Client) {
-        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                s3Client, UUID.randomUUID().toString(), Instant::now);
-    }
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
