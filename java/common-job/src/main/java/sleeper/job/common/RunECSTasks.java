@@ -95,6 +95,7 @@ public class RunECSTasks {
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
             if (runTaskResult.getFailures().stream().anyMatch(RunECSTasks::isCapacityUnavailable)) {
+                LOGGER.info("No capacity was available, retrying runTask request until there is");
                 try {
                     runTaskResult = retryTaskUntilCapacityAvailable(ecsClient, runTaskRequest);
                 } catch (InterruptedException e) {
@@ -115,12 +116,15 @@ public class RunECSTasks {
 
     private static RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request) throws InterruptedException {
         PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(30000, 20);
-        AtomicReference<RunTaskResult> result = new AtomicReference<>();
+        AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
         poll.pollUntil("capacity was available", () -> {
-            result.set(ecsClient.runTask(request));
-            return result.get().getFailures().stream().noneMatch(RunECSTasks::isCapacityUnavailable);
+            RunTaskResult result = ecsClient.runTask(request);
+            LOGGER.info("Retried task with failures: {}", result.getFailures());
+            atomicResult.set(result);
+            return result.getFailures().stream().noneMatch(RunECSTasks::isCapacityUnavailable);
         });
-        return result.get();
+        LOGGER.info("Capacity was available");
+        return atomicResult.get();
     }
 
     private static class ContainerName {

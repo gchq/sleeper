@@ -226,7 +226,7 @@ class RunECSTasksIT {
     class RetryTasks {
 
         @Test
-        void shouldRetryWhenCapacityIsUnavailable() {
+        void shouldRetryWhenCapacityIsUnavailableThenSuccessfullyRunTask() {
             // Given
             stubFor(runTaskWillReturnCapacityUnavailable()
                     .inScenario("retry capacity")
@@ -241,6 +241,32 @@ class RunECSTasksIT {
             RunECSTasks.runTasksOrThrow(ecsClient, request, 10);
 
             // Then
+            verify(2, anyRequest());
+            verify(2, runTasksRequestedFor("test-cluster", 10));
+        }
+
+        @Test
+        void shouldRetryWhenCapacityIsUnavailableThenFailForOtherReason() {
+            // Given
+            stubFor(runTaskWillReturnCapacityUnavailable()
+                    .inScenario("retry capacity")
+                    .whenScenarioStateIs(Scenario.STARTED)
+                    .willSetStateTo("request-2"));
+            stubFor(runTaskWillReturn(aResponse().withStatus(200)
+                    .withBody("{" +
+                            "\"failures\":[{" +
+                            "\"arn\":\"test-arn\"," +
+                            "\"reason\":\"test-reason\"," +
+                            "\"detail\":\"test-detail\"" +
+                            "}]}"))
+                    .inScenario("retry capacity")
+                    .whenScenarioStateIs("request-2"));
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            // When/Then
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 10))
+                    .isInstanceOf(ECSFailureException.class)
+                    .hasMessageContaining("test-reason");
             verify(2, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
         }
