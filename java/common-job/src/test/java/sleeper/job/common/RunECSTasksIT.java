@@ -20,11 +20,15 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.InvalidParameterException;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,6 +55,13 @@ class RunECSTasksIT {
     private static final String OPERATION_HEADER = "X-Amz-Target";
     private static final StringValuePattern MATCHING_RUN_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.RunTask");
 
+    private AmazonECS ecsClient;
+
+    @BeforeEach
+    void setUp(WireMockRuntimeInfo runtimeInfo) {
+        ecsClient = wiremockEcsClient(runtimeInfo);
+    }
+
     @Nested
     @DisplayName("Run tasks")
     class RunTasks {
@@ -61,8 +72,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldRunOneTask(WireMockRuntimeInfo runtimeInfo) {
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+        void shouldRunOneTask() {
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 1);
 
             verify(1, anyRequest());
@@ -70,8 +81,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldRunTwoTasks(WireMockRuntimeInfo runtimeInfo) {
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+        void shouldRunTwoTasks() {
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 2);
 
             verify(1, anyRequest());
@@ -79,8 +90,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldRunTwoBatches(WireMockRuntimeInfo runtimeInfo) {
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+        void shouldRunTwoBatches() {
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 20);
 
             verify(2, anyRequest());
@@ -88,8 +99,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldRunTwoBatchesAndTwoMoreTasks(WireMockRuntimeInfo runtimeInfo) {
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+        void shouldRunTwoBatchesAndTwoMoreTasks() {
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 22);
 
             verify(3, anyRequest());
@@ -98,8 +109,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldRunMoreTasksThanCanBeCreatedInOneRequest(WireMockRuntimeInfo runtimeInfo) {
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+        void shouldRunMoreTasksThanCanBeCreatedInOneRequest() {
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(2, anyRequest());
@@ -108,8 +119,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldAbortAfterOneRequest(WireMockRuntimeInfo runtimeInfo) {
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+        void shouldAbortAfterOneRequest() {
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 11, () -> true);
 
             verify(1, anyRequest());
@@ -117,11 +128,11 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldConsumeResults(WireMockRuntimeInfo runtimeInfo) {
+        void shouldConsumeResults() {
             stubResponseStatus(200);
             List<RunTaskResult> results = new ArrayList<>();
 
-            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+            RunECSTasks.runTasksOrThrow(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 1, results::add);
             assertThat(results)
                     .containsExactly(new RunTaskResult().withTasks().withFailures());
@@ -133,10 +144,10 @@ class RunECSTasksIT {
     class StopOnFailure {
 
         @Test
-        void shouldNotMakeASecondRequestWhenFirstOneFailsOnServerAfterRetries(WireMockRuntimeInfo runtimeInfo) {
+        void shouldNotMakeASecondRequestWhenFirstOneFailsOnServerAfterRetries() {
             stubResponseStatus(500);
 
-            RunECSTasks.runTasks(wiremockEcsClient(runtimeInfo),
+            RunECSTasks.runTasks(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(4, anyRequest());
@@ -144,10 +155,10 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldNotMakeASecondRequestWhenFirstOneFailsWithInvalidParameter(WireMockRuntimeInfo runtimeInfo) {
+        void shouldNotMakeASecondRequestWhenFirstOneFailsWithInvalidParameter() {
             stubInvalidParameter();
 
-            RunECSTasks.runTasks(wiremockEcsClient(runtimeInfo),
+            RunECSTasks.runTasks(ecsClient,
                     new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(1, anyRequest());
@@ -155,10 +166,9 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldThrowInvalidParameterException(WireMockRuntimeInfo runtimeInfo) {
+        void shouldThrowInvalidParameterException() {
             stubInvalidParameter();
 
-            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
@@ -166,10 +176,9 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldThrowAmazonClientException(WireMockRuntimeInfo runtimeInfo) {
+        void shouldThrowAmazonClientException() {
             stubResponseStatus(500);
 
-            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
@@ -177,9 +186,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldThrowECSFailureExceptionIfResponseHasFailures(WireMockRuntimeInfo runtimeInfo) {
+        void shouldThrowECSFailureExceptionIfResponseHasFailures() {
             stubResponseWithFailures();
-            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 1))
@@ -189,9 +197,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldExitEarlyIfResultHasFailures(WireMockRuntimeInfo runtimeInfo) {
+        void shouldExitEarlyIfResultHasFailures() {
             stubResponseWithFailures();
-            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 20))
@@ -201,9 +208,8 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldNotConsumeResultsWithFailures(WireMockRuntimeInfo runtimeInfo) {
+        void shouldNotConsumeResultsWithFailures() {
             stubResponseWithFailures();
-            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
             List<RunTaskResult> results = new ArrayList<>();
 
@@ -212,31 +218,67 @@ class RunECSTasksIT {
                     .isInstanceOf(ECSFailureException.class);
             assertThat(results).isEmpty();
         }
+
+        // TODO don't throw ECSFailureException from runTasks without orThrow
+    }
+
+    @Nested
+    @DisplayName("Retry running tasks")
+    class RetryTasks {
+
+        @Test
+        @Disabled("TODO")
+        void shouldRetryWhenCapacityIsUnavailable() {
+            // Given
+            stubFor(runTaskWillReturnCapacityUnavailable()
+                    .inScenario("retry capacity")
+                    .whenScenarioStateIs(Scenario.STARTED)
+                    .willSetStateTo("request-2"));
+            stubFor(runTaskWillReturn(aResponse().withStatus(200))
+                    .inScenario("retry capacity")
+                    .whenScenarioStateIs("request-2"));
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            // When
+            RunECSTasks.runTasksOrThrow(ecsClient, request, 10);
+
+            // Then
+            verify(2, anyRequest());
+            verify(2, runTasksRequestedFor("test-cluster", 10));
+        }
     }
 
     private static void stubResponseStatus(int status) {
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
-                .willReturn(aResponse().withStatus(status)));
+        stubFor(runTaskWillReturn(aResponse().withStatus(status)));
     }
 
     private static void stubResponseWithFailures() {
-        stubFor(post("/")
+        stubFor(runTaskWillReturn(aResponse().withStatus(200)
+                .withBody("{" +
+                        "\"failures\":[{" +
+                        "\"arn\":\"test-arn\"," +
+                        "\"reason\":\"test-reason\"," +
+                        "\"detail\":\"test-detail\"" +
+                        "}]}")));
+    }
+
+    private static MappingBuilder runTaskWillReturnCapacityUnavailable() {
+        return runTaskWillReturn(aResponse().withStatus(200)
+                .withBody("{" +
+                        "\"failures\":[{" +
+                        "\"reason\":\"Capacity is unavailable at this time. Please try again later or in a different availability zone\"" +
+                        "}]}"));
+    }
+
+    private static MappingBuilder runTaskWillReturn(ResponseDefinitionBuilder response) {
+        return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
-                .willReturn(aResponse().withStatus(200)
-                        .withBody("{" +
-                                "\"failures\":[{" +
-                                "\"arn\":\"test-arn\"," +
-                                "\"reason\":\"test-reason\"," +
-                                "\"detail\":\"test-detail\"" +
-                                "}]}")));
+                .willReturn(response);
     }
 
     private static void stubInvalidParameter() {
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
-                .willReturn(aResponse().withStatus(400)
-                        .withHeader("x-amzn-ErrorType", "InvalidParameterException")));
+        stubFor(runTaskWillReturn(aResponse().withStatus(400)
+                .withHeader("x-amzn-ErrorType", "InvalidParameterException")));
     }
 
     private static RequestPatternBuilder anyRequest() {
