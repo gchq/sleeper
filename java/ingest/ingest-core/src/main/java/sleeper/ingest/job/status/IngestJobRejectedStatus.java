@@ -86,10 +86,6 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         private Builder() {
         }
 
-        public static Builder builder() {
-            return new Builder();
-        }
-
         public Builder validationTime(Instant validationTime) {
             this.validationTime = validationTime;
             return this;
