@@ -28,7 +28,6 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.clients.deploy.DeployNewInstance;
@@ -98,34 +97,32 @@ public class SystemTestForIngestBatcher {
         }
     }
 
-    /**
-     * Create an S3 bucket
-     * Add it as an ingest source bucket in a Sleeper instance
-     * Deploy instance
-     * Submit files to the ingest batcher
-     * Trigger the ingest batcher to create jobs
-     * Test ingest via both standard ingest and bulk import
-     */
     public void run() throws IOException, InterruptedException, StateStoreException {
         String sourceBucketName = "sleeper-" + instanceId + "-ingest-source";
-        createSourceBucketIfMissing(sourceBucketName);
-        createInstanceIfMissing(sourceBucketName);
+        LOGGER.info("Creating bucket: {}", sourceBucketName);
+        s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
+        try {
+            createInstanceIfMissing(sourceBucketName);
 
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3ClientV1, "system-test");
-        InvokeIngestBatcher invoke = new InvokeIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
-                s3ClientV1, dynamoDB, sqsClient, lambdaClient);
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3ClientV1, instanceId);
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.loadFromS3(s3ClientV1, "system-test");
+            InvokeIngestBatcher invoke = new InvokeIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
+                    s3ClientV1, dynamoDB, sqsClient, lambdaClient);
 
-        int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
-        invoke.runStandardIngest();
-        int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
-        checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
+            int activeFileCountBeforeStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+            invoke.runStandardIngest();
+            int activeFileCountAfterStandardIngest = countActiveFiles(instanceProperties, tableProperties);
+            checkActiveFilesChanged(activeFileCountBeforeStandardIngest, activeFileCountAfterStandardIngest, 2);
 
-        invoke.runBulkImportEMR();
-        checkActiveFilesChanged(activeFileCountAfterStandardIngest,
-                countActiveFiles(instanceProperties, tableProperties), 1);
+            invoke.runBulkImportEMR();
+            checkActiveFilesChanged(activeFileCountAfterStandardIngest,
+                    countActiveFiles(instanceProperties, tableProperties), 1);
+        } finally {
+            clearBucket(sourceBucketName);
+            s3ClientV2.deleteBucket(builder -> builder.bucket(sourceBucketName));
+        }
     }
 
     private void checkActiveFilesChanged(int activeFileCountBefore, int activeFileCountAfter, int expected) {
@@ -139,22 +136,6 @@ public class SystemTestForIngestBatcher {
     private int countActiveFiles(InstanceProperties properties, TableProperties tableProperties) throws StateStoreException {
         StateStoreProvider provider = new StateStoreProvider(dynamoDB, properties);
         return provider.getStateStore(tableProperties).getActiveFiles().size();
-    }
-
-    private void createSourceBucketIfMissing(String sourceBucketName) {
-        try {
-            s3ClientV2.headBucket(builder -> builder.bucket(sourceBucketName));
-            LOGGER.info("Bucket already exists, clearing bucket");
-            List<ObjectIdentifier> objects = s3ClientV2.listObjectVersions(builder -> builder.bucket(sourceBucketName))
-                    .versions().stream()
-                    .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
-                    .collect(Collectors.toList());
-            s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName)
-                    .delete(deleteBuilder -> deleteBuilder.objects(objects)));
-        } catch (NoSuchBucketException e) {
-            LOGGER.info("Creating bucket: {}", sourceBucketName);
-            s3ClientV2.createBucket(builder -> builder.bucket(sourceBucketName));
-        }
     }
 
     private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {
@@ -175,6 +156,15 @@ public class SystemTestForIngestBatcher {
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .deployWithDefaultClients();
         }
+    }
+
+    private void clearBucket(String sourceBucketName) {
+        List<ObjectIdentifier> objects = s3ClientV2.listObjectVersions(builder -> builder.bucket(sourceBucketName))
+                .versions().stream()
+                .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
+                .collect(Collectors.toList());
+        s3ClientV2.deleteObjects(builder -> builder.bucket(sourceBucketName)
+                .delete(deleteBuilder -> deleteBuilder.objects(objects)));
     }
 
     public static final class Builder {
