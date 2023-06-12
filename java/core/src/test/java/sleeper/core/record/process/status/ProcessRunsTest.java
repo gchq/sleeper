@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -220,25 +221,22 @@ class ProcessRunsTest {
             ProcessStartedStatus validated1 = startedStatusForRun("run-1", Instant.parse("2022-09-24T09:23:30.001Z"));
             ProcessStartedStatus validated2 = startedStatusForRun("run-2", Instant.parse("2022-09-24T09:24:30.001Z"));
 
-            // TODO maybe add finished statuses?
             ProcessStartedStatusWithStartOfRunFlag started1 = startedStatusForRunNotStartOfRun(
                     "run-1", Instant.parse("2022-09-24T10:23:30Z"));
             ProcessStartedStatusWithStartOfRunFlag started2 = startedStatusForRunNotStartOfRun(
                     "run-2", Instant.parse("2022-09-24T10:24:30Z"));
 
             // When
-            // TODO decide whether to use one task or two
             ProcessRuns runs = runsFromUpdates(
                     onNoTask(validated1, validated2),
                     onTask("some-task", started1, started2));
 
             // Then
-            // TODO fix assertion
             assertThat(runs.getRunList())
-                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
                     .containsExactly(
-                            tuple(DEFAULT_TASK_ID, validated1, null),
-                            tuple(DEFAULT_TASK_ID, validated2, null));
+                            tuple("some-task", List.of(validated1, started1)),
+                            tuple("some-task", List.of(validated2, started2)));
             assertThat(runs.isFinished()).isFalse();
         }
     }
