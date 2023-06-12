@@ -237,6 +237,27 @@ class ProcessRunsTest {
                             tuple("some-task", List.of(validated1, started1)));
             assertThat(runs.isFinished()).isFalse();
         }
+
+        @Test
+        void shouldIgnoreExtraFinishedStatus() {
+            // Given
+            ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
+            ProcessFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
+
+            // When
+            ProcessRuns runs = runsFromUpdates(
+                    forRunOnTask("run-1", "some-task", started),
+                    forRunOnTask("run-1", "some-task", finished1),
+                    forRunOnTask("run-1", "some-task", finished2));
+
+            // Then
+            assertThat(runs.getRunList())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                    .containsExactly(
+                            tuple("some-task", started, finished1));
+            assertThat(runs.isFinished()).isTrue();
+        }
     }
 
     @DisplayName("Report task assignment")
