@@ -49,7 +49,12 @@ public class TestProcessStatusUpdateRecords {
 
     public static TaskUpdates forJobOnTask(
             String jobId, String taskId, ProcessStatusUpdate... updates) {
-        return new TaskUpdates(jobId, taskId,
+        return forJobRunOnTask(jobId, null, taskId, updates);
+    }
+
+    public static TaskUpdates forJobRunOnTask(
+            String jobId, String runId, String taskId, ProcessStatusUpdate... updates) {
+        return new TaskUpdates(jobId, runId, taskId,
                 Stream.of(updates)
                         .map(update -> new UpdateWithExpiry(update, DEFAULT_EXPIRY))
                         .collect(Collectors.toList()));
@@ -75,6 +80,18 @@ public class TestProcessStatusUpdateRecords {
         return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
     }
 
+    public static TaskUpdates onNoTask(ProcessStatusUpdate... updates) {
+        return forJobOnTask(DEFAULT_JOB_ID, null, updates);
+    }
+
+    public static TaskUpdates forRunOnTask(String runId, String taskId, ProcessStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, runId, taskId, updates);
+    }
+
+    public static TaskUpdates forRunOnNoTask(String runId, ProcessStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, runId, null, updates);
+    }
+
     public static UpdateWithExpiry withExpiry(Instant expiryTime, ProcessStatusUpdate update) {
         return new UpdateWithExpiry(update, expiryTime);
     }
@@ -85,18 +102,24 @@ public class TestProcessStatusUpdateRecords {
 
     public static class TaskUpdates {
         private final String jobId;
+        private final String runId;
         private final String taskId;
         private final List<UpdateWithExpiry> statusUpdates;
 
         private TaskUpdates(String jobId, String taskId, List<UpdateWithExpiry> statusUpdates) {
+            this(jobId, null, taskId, statusUpdates);
+        }
+
+        private TaskUpdates(String jobId, String runId, String taskId, List<UpdateWithExpiry> statusUpdates) {
             this.jobId = jobId;
+            this.runId = runId;
             this.taskId = taskId;
             this.statusUpdates = statusUpdates;
         }
 
         public Stream<ProcessStatusUpdateRecord> records() {
             return statusUpdates.stream()
-                    .map(update -> new ProcessStatusUpdateRecord(jobId, update.expiryTime, update.statusUpdate, taskId));
+                    .map(update -> new ProcessStatusUpdateRecord(jobId, update.expiryTime, update.statusUpdate, runId, taskId));
         }
     }
 

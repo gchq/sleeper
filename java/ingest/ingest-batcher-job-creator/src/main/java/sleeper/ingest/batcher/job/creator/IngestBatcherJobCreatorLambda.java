@@ -42,8 +42,13 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
  */
 @SuppressWarnings("unused")
 public class IngestBatcherJobCreatorLambda {
+    private final AmazonS3 s3Client;
+    private final String configBucket;
 
-    private final IngestBatcher batcher;
+    private final AmazonSQS sqs;
+    private final AmazonDynamoDB dynamoDB;
+    private final Supplier<Instant> timeSupplier;
+    private final Supplier<String> jobIdSupplier;
 
     public IngestBatcherJobCreatorLambda() {
         this(AmazonS3ClientBuilder.defaultClient(), getConfigBucket(),
@@ -54,20 +59,12 @@ public class IngestBatcherJobCreatorLambda {
     public IngestBatcherJobCreatorLambda(AmazonS3 s3, String configBucket,
                                          AmazonSQS sqs, AmazonDynamoDB dynamoDB,
                                          Supplier<Instant> timeSupplier, Supplier<String> jobIdSupplier) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.loadFromS3(s3, configBucket);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-        batcher = IngestBatcher.builder()
-                .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .store(new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties, tablePropertiesProvider))
-                .queueClient(new SQSIngestBatcherQueueClient(sqs))
-                .timeSupplier(timeSupplier).jobIdSupplier(jobIdSupplier)
-                .build();
+        this.s3Client = s3;
+        this.configBucket = configBucket;
+        this.sqs = sqs;
+        this.dynamoDB = dynamoDB;
+        this.timeSupplier = timeSupplier;
+        this.jobIdSupplier = jobIdSupplier;
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
@@ -75,6 +72,20 @@ public class IngestBatcherJobCreatorLambda {
     }
 
     public void batchFiles() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        try {
+            instanceProperties.loadFromS3(s3Client, configBucket);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        IngestBatcher batcher = IngestBatcher.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .store(new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties, tablePropertiesProvider))
+                .queueClient(new SQSIngestBatcherQueueClient(sqs))
+                .timeSupplier(timeSupplier).jobIdSupplier(jobIdSupplier)
+                .build();
         batcher.batchFiles();
     }
 

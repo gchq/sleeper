@@ -21,6 +21,7 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -65,16 +66,28 @@ public class GenerateInstanceProperties {
     }
 
     public InstanceProperties generate() {
-        InstanceProperties instanceProperties = new InstanceProperties(properties);
+        InstanceProperties instanceProperties = generateDefaultsFromInstanceId(properties, instanceId);
         instanceProperties.loadTags(tagsProperties);
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
-        instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ACCOUNT, accountSupplier.get());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
         instanceProperties.set(VPC_ID, vpcId);
         instanceProperties.set(SUBNET, subnetId);
+        return instanceProperties;
+    }
+
+    public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
+        InstanceProperties instanceProperties = generateDefaultsFromInstanceId(new Properties(), instanceId);
+        SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
+                .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getPropertyValue()));
+        return instanceProperties;
+    }
+
+    public static InstanceProperties generateDefaultsFromInstanceId(Properties properties, String instanceId) {
+        InstanceProperties instanceProperties = new InstanceProperties(properties);
+        instanceProperties.set(ID, instanceId);
+        instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
+        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
         instanceProperties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
         instanceProperties.set(ECR_INGEST_REPO, instanceId + "/ingest");
         instanceProperties.set(BULK_IMPORT_REPO, instanceId + "/bulk-import-runner");

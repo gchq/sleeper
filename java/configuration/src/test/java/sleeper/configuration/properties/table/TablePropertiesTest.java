@@ -50,6 +50,21 @@ class TablePropertiesTest {
     }
 
     @Test
+    void shouldGetDefaultValueFromDefaultProperty() {
+        // Given
+        InstanceProperties instanceProperties = new InstanceProperties();
+
+        // When
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+
+        // Then
+        assertThat(tableProperties.get(PAGE_SIZE))
+                .isEqualTo("" + (128 * 1024));
+        assertThat(PAGE_SIZE.getDefaultValue())
+                .isEqualTo("" + (128 * 1024));
+    }
+
+    @Test
     void shouldDefaultToAnotherTablePropertyIfConfigured() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());

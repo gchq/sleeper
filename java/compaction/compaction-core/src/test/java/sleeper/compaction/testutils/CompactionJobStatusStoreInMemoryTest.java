@@ -27,7 +27,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
@@ -36,6 +35,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summar
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 class CompactionJobStatusStoreInMemoryTest {
 

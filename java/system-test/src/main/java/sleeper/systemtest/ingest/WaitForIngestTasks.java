@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.PollWithRetries;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
@@ -54,12 +55,12 @@ public class WaitForIngestTasks {
             TASKS_FINISHED_POLL_INTERVAL_MILLIS, TASKS_FINISHED_TIMEOUT_MILLIS);
 
     public WaitForIngestTasks(
-            SystemTestProperties systemTestProperties,
+            InstanceProperties instanceProperties,
             AmazonSQS sqsClient,
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
         this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(
-                withSqsClient(sqsClient), systemTestProperties, INGEST_JOB_QUEUE_URL,
+                withSqsClient(sqsClient), instanceProperties, INGEST_JOB_QUEUE_URL,
                 PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
     }
 

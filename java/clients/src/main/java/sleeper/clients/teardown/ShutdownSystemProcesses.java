@@ -52,18 +52,18 @@ public class ShutdownSystemProcesses {
 
     public void shutdown(
             InstanceProperties instanceProperties,
-            List<InstanceProperty> extraECSClusters) throws InterruptedException {
+            List<String> extraECSClusters) throws InterruptedException {
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
         stopEMRClusters(instanceProperties);
     }
 
-    private void stopECSTasks(InstanceProperties instanceProperties, List<InstanceProperty> extraClusters) {
+    private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
         stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
         stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
         stopTasks(ecs, instanceProperties, SPLITTING_COMPACTION_CLUSTER);
-        extraClusters.forEach(clusterName -> stopTasks(ecs, instanceProperties, clusterName));
+        extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
     }
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
@@ -74,7 +74,10 @@ public class ShutdownSystemProcesses {
         if (!properties.isSet(property)) {
             return;
         }
-        String clusterName = properties.get(property);
+        stopTasks(ecs, properties.get(property));
+    }
+
+    private static void stopTasks(AmazonECS ecs, String clusterName) {
         LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
         forEachTaskArn(ecs, clusterName, taskArn -> {
             // Rate limit for ECS StopTask is 100 burst, 40 sustained:

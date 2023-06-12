@@ -84,7 +84,7 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
         // Given
         tableProperties.set(TABLE_NAME, "fail-table");
         FileIngestRequest request = addFileToStore(builder -> builder
-                .pathToFile("test-bucket/fail.parquet")
+                .file("test-bucket/fail.parquet")
                 .tableName("fail-table"));
         IngestJob expectedJob = IngestJob.builder()
                 .id("fail-job-id")

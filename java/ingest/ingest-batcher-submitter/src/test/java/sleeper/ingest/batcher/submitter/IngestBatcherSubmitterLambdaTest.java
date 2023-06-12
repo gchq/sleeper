@@ -43,7 +43,7 @@ class IngestBatcherSubmitterLambdaTest {
     void shouldStoreFileIngestRequestFromJson() {
         // Given
         String json = "{" +
-                "\"pathToFile\":\"test-bucket/test-file-1.parquet\"," +
+                "\"file\":\"test-bucket/test-file-1.parquet\"," +
                 "\"fileSizeBytes\":1024," +
                 "\"tableName\":\"test-table\"" +
                 "}";
@@ -55,7 +55,7 @@ class IngestBatcherSubmitterLambdaTest {
         // Then
         assertThat(store.getAllFilesNewestFirst())
                 .containsExactly(FileIngestRequest.builder()
-                        .pathToFile("test-bucket/test-file-1.parquet")
+                        .file("test-bucket/test-file-1.parquet")
                         .fileSizeBytes(1024)
                         .tableName("test-table")
                         .receivedTime(receivedTime)
@@ -79,7 +79,7 @@ class IngestBatcherSubmitterLambdaTest {
     void shouldIgnoreAndLogMessageWithNoFileSize() {
         // Given
         String json = "{" +
-                "\"pathToFile\":\"test-bucket/test-file-1.parquet\"," +
+                "\"file\":\"test-bucket/test-file-1.parquet\"," +
                 "\"tableName\":\"test-table\"" +
                 "}";
         Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
@@ -95,7 +95,7 @@ class IngestBatcherSubmitterLambdaTest {
     void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
         // Given
         String json = "{" +
-                "\"pathToFile\":\"test-bucket/test-file-1.parquet\"," +
+                "\"file\":\"test-bucket/test-file-1.parquet\"," +
                 "\"fileSizeBytes\":1024," +
                 "\"tableName\":\"not-a-table\"" +
                 "}";
