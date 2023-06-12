@@ -163,7 +163,7 @@ class StateMachineExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
     }
 
@@ -296,7 +296,7 @@ class StateMachineExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun("test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
