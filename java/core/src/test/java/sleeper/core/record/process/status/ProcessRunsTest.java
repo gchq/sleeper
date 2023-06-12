@@ -196,86 +196,91 @@ class ProcessRunsTest {
         assertThat(runs.isFinished()).isTrue();
     }
 
-    @Test
-    void shouldNotCreateProcessRunIfStatusUpdateNotFlaggedAsStartOfRun() {
-        // Given
-        ProcessStatusUpdate notStartedUpdate = () -> Instant.parse("2022-09-24T09:23:30.001Z");
+    @DisplayName("Flag updates as part/start of a run")
+    @Nested
+    class FlagUpdatesAsPartOrStartOfRun {
 
-        // When
-        ProcessRuns runs = runsFromUpdates(notStartedUpdate);
+        @Test
+        void shouldNotCreateProcessRunIfStatusUpdateNotFlaggedAsStartOfRun() {
+            // Given
+            ProcessStatusUpdate notStartedUpdate = () -> Instant.parse("2022-09-24T09:23:30.001Z");
 
-        // Then
-        assertThat(runs.getRunList()).isEmpty();
-    }
+            // When
+            ProcessRuns runs = runsFromUpdates(notStartedUpdate);
 
-    @Test
-    void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsAfterTheOther() {
-        // Given
-        ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
-                Instant.parse("2022-09-24T08:23:30Z"), Instant.parse("2022-09-24T08:23:30.001Z"));
-        ProcessStartedStatus startedStatus = updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            // Then
+            assertThat(runs.getRunList()).isEmpty();
+        }
 
-        // When
-        ProcessRuns runs = runsFromUpdates(startedStatusNotStartOfRun, startedStatus);
+        @Test
+        void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsAfterTheOther() {
+            // Given
+            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
+                    Instant.parse("2022-09-24T08:23:30Z"), Instant.parse("2022-09-24T08:23:30.001Z"));
+            ProcessStartedStatus startedStatus = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
 
-        // Then
-        assertThat(runs.getRunList())
-                .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
-    }
+            // When
+            ProcessRuns runs = runsFromUpdates(startedStatusNotStartOfRun, startedStatus);
 
-    @Test
-    void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsBeforeTheOther() {
-        // Given
-        ProcessStartedStatus startedStatus = updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
-                Instant.parse("2022-09-24T10:23:30Z"), Instant.parse("2022-09-24T10:23:30.001Z"));
+            // Then
+            assertThat(runs.getRunList())
+                    .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+        }
 
-        // When
-        ProcessRuns runs = runsFromUpdates(startedStatus, startedStatusNotStartOfRun);
+        @Test
+        void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsBeforeTheOther() {
+            // Given
+            ProcessStartedStatus startedStatus = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = updateAndStartTimeNotStartOfRun(
+                    Instant.parse("2022-09-24T10:23:30Z"), Instant.parse("2022-09-24T10:23:30.001Z"));
 
-        // Then
-        assertThat(runs.getRunList())
-                .containsExactly(ProcessRun.builder()
-                        .taskId(DEFAULT_TASK_ID)
-                        .startedStatus(startedStatus)
-                        .statusUpdate(startedStatusNotStartOfRun)
-                        .build());
-    }
+            // When
+            ProcessRuns runs = runsFromUpdates(startedStatus, startedStatusNotStartOfRun);
 
-    @Test
-    void shouldCreateProcessRunWithCustomStatusUpdatePartOfRun() {
-        // Given
-        ProcessStartedStatus startedStatus = updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
-        CustomProcessStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            // Then
+            assertThat(runs.getRunList())
+                    .containsExactly(ProcessRun.builder()
+                            .taskId(DEFAULT_TASK_ID)
+                            .startedStatus(startedStatus)
+                            .statusUpdate(startedStatusNotStartOfRun)
+                            .build());
+        }
 
-        // When
-        ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+        @Test
+        void shouldCreateProcessRunWithCustomStatusUpdatePartOfRun() {
+            // Given
+            ProcessStartedStatus startedStatus = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            CustomProcessStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
-        // Then
-        assertThat(runs.getRunList())
-                .containsExactly(ProcessRun.builder()
-                        .taskId(DEFAULT_TASK_ID)
-                        .startedStatus(startedStatus)
-                        .statusUpdate(customStatus)
-                        .build());
-    }
+            // When
+            ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
 
-    @Test
-    void shouldCreateProcessRunWithCustomStatusUpdateNotPartOfRun() {
-        // Given
-        ProcessStartedStatus startedStatus = updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
-        CustomProcessStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            // Then
+            assertThat(runs.getRunList())
+                    .containsExactly(ProcessRun.builder()
+                            .taskId(DEFAULT_TASK_ID)
+                            .startedStatus(startedStatus)
+                            .statusUpdate(customStatus)
+                            .build());
+        }
 
-        // When
-        ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+        @Test
+        void shouldCreateProcessRunWithCustomStatusUpdateNotPartOfRun() {
+            // Given
+            ProcessStartedStatus startedStatus = updateAndStartTime(
+                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            CustomProcessStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
-        // Then
-        assertThat(runs.getRunList())
-                .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+            // When
+            ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
+
+            // Then
+            assertThat(runs.getRunList())
+                    .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+        }
     }
 
     @Nested
