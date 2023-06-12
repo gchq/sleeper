@@ -51,7 +51,7 @@ import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
- * A {@link Stack} to deploy the system test components.
+ * A {@link NestedStack} to deploy the system test components.
  */
 public class SystemTestStack extends NestedStack {
     public static final String SYSTEM_TEST_CLUSTER_NAME = "systemTestClusterName";
@@ -78,8 +78,7 @@ public class SystemTestStack extends NestedStack {
                 .vpcId(systemTestProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
-        String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                systemTestProperties.get(ID).toLowerCase(Locale.ROOT), "system-test-cluster"));
+        String clusterName = generateSystemTestClusterName(systemTestProperties.get(ID));
         Cluster cluster = Cluster.Builder
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)
@@ -125,5 +124,10 @@ public class SystemTestStack extends NestedStack {
         if (null != emrBulkImportJobQueue) {
             emrBulkImportJobQueue.grantSendMessages(taskDefinition.getTaskRole());
         }
+    }
+
+    public static String generateSystemTestClusterName(String instanceId) {
+        return Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceId.toLowerCase(Locale.ROOT), "system-test-cluster"));
     }
 }

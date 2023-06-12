@@ -35,6 +35,7 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -162,8 +163,7 @@ class StateMachineExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun(myJob.toIngestJob(), "test-task",
-                                Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
     }
 
@@ -234,7 +234,7 @@ class StateMachineExecutorTest {
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "myStateMachine");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        StateMachineExecutor stateMachineExecutor = createExecutor("test-run", Instant::now);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -247,7 +247,7 @@ class StateMachineExecutorTest {
         // Then
         assertThatJson(requested.get().getInput())
                 .inPath("$.args").isArray().extracting(Objects::toString)
-                .endsWith("myConfigBucket", "my-job", "myStateMachine");
+                .endsWith("myConfigBucket", "my-job", "myStateMachine", "test-run");
     }
 
     @Test
@@ -296,14 +296,12 @@ class StateMachineExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun(myJob.toIngestJob(), "test-task",
-                                Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
     private StateMachineExecutor createExecutorWithDefaults() {
-        return ExecutorFactory.createStateMachineExecutor(stepFunctions,
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
+        return createExecutor(UUID.randomUUID().toString(), Instant::now);
     }
 
     private StateMachineExecutor createExecutor(String taskId, Supplier<Instant> validationTimeSupplier) {

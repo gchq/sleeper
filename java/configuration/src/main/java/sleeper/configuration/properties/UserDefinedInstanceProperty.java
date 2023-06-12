@@ -53,11 +53,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
                     "bucket contains two iterator jars called iterator1.jar and iterator2.jar then the " +
                     "property should be 'sleeper.userjars=iterator1.jar,iterator2.jar'.")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty TAGS = Index.propertyBuilder("sleeper.tags")
             .description("A list of tags for the project.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")
@@ -65,17 +67,19 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.infra.after.destroy")
-            .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc.,  " +
+            .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy.")
             .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
             .validationPredicate(Objects::nonNull)
@@ -92,7 +96,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ENDPOINT_CHECK = Index.propertyBuilder("sleeper.vpc.endpoint.check")
-            .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint.")
+            .description("Whether to check that the VPC that the instance is deployed to has an S3 endpoint. " +
+                    "If there is no S3 endpoint then the NAT costs can be very significant.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty SUBNET = Index.propertyBuilder("sleeper.subnet")
@@ -107,21 +112,26 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = Index.propertyBuilder("sleeper.errors.email")
             .description("An email address used by the TopicStack to publish SNS notifications of errors.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCDKDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.queue.visibility.timeout.seconds")
-            .description("The visibility timeout on the queues used in compactions, partition splitting, etc.")
+            .description("The visibility timeout on the queues used in ingest, query, etc.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = Index.propertyBuilder("sleeper.log.retention.days")
-            .description("The length of time in days that CloudWatch logs are retained.")
+            .description("The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are retained.\n" +
+                    "See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.\n" +
+                    "Use -1 to indicate infinite retention.")
             .defaultValue("30")
             .validationPredicate(Utils::isValidLogRetention)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = Index.propertyBuilder("sleeper.s3.max-connections")
-            .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration.")
+            .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the " +
+                    "maximum number of http connections to S3.\n" +
+                    "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
             .defaultValue("25")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
@@ -180,12 +190,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isValidFadvise)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_CPU = Index.propertyBuilder("sleeper.ingest.task.cpu")
-            .description("The amount of CPU used by Fargate tasks that perform ingest jobs.")
+            .description("The amount of CPU used by Fargate tasks that perform ingest jobs.\n" +
+                    "Note that only certain combinations of CPU and memory are valid.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_TASK_MEMORY = Index.propertyBuilder("sleeper.ingest.task.memory")
-            .description("The amount of memory used by Fargate tasks that perform ingest jobs.")
+            .description("The amount of memory used by Fargate tasks that perform ingest jobs.\n" +
+                    "Note that only certain combinations of CPU and memory are valid.\n" +
+                    "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
@@ -215,32 +229,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "is large.")
             .defaultValue("direct")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.submitter.memory.mb")
-            .description("The amount of memory in MB for the lambda that receives submitted requests to ingest files.")
-            .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.submitter.timeout.seconds")
-            .description("The timeout in seconds for the lambda that receives submitted requests to ingest files.")
-            .defaultValue("20")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.memory.mb")
-            .description("The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest requests.")
-            .defaultValue("1024")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.timeout.seconds")
-            .description("The timeout in seconds for the lambda that creates ingest jobs from submitted file ingest requests.")
-            .defaultValue("900")
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
-            .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
-            .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
 
     // ArrayList ingest
     UserDefinedInstanceProperty MAX_RECORDS_TO_WRITE_LOCALLY = Index.propertyBuilder("sleeper.ingest.max.local.records")
@@ -258,6 +246,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "(arraylist-based ingest only)")
             .defaultValue("1000000")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+
     // Arrow ingest
     UserDefinedInstanceProperty ARROW_INGEST_WORKING_BUFFER_BYTES = Index.propertyBuilder("sleeper.ingest.arrow.working.buffer.bytes")
             .description("The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and other sundry " +
@@ -314,6 +303,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("10")
             .validationPredicate(Utils::isPositiveDouble)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+
     // Status Store
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.ingest.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
@@ -326,13 +316,40 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.task.status.ttl")
             .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+
+    // Batcher
+    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.submitter.memory.mb")
+            .description("The amount of memory in MB for the lambda that receives submitted requests to ingest files.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.submitter.timeout.seconds")
+            .description("The timeout in seconds for the lambda that receives submitted requests to ingest files.")
+            .defaultValue("20")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.memory.mb")
+            .description("The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest requests.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.timeout.seconds")
+            .description("The timeout in seconds for the lambda that creates ingest jobs from submitted file ingest requests.")
+            .defaultValue("900")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.period.minutes")
+            .description("The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
 
     // Bulk Import - properties that are applicable to all bulk import platforms
     UserDefinedInstanceProperty BULK_IMPORT_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.class.name")
@@ -362,16 +379,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
-            .description("(Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes " +
-                    "in the cluster while it's running.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
-            .description("(Non-persistent or persistent EMR mode only) Specifying this security group causes the group " +
-                    "to be added to the EMR master's list of security groups.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .runCDKDeployWhenChanged(true).build();
+
     //  - The following properties depend on the instance type and number of instances - they have been chosen
     //          based on the default settings for the EMR and persistent EMR clusters (these are currently the
     //          same which allows the following properties to be used across both types):
@@ -409,13 +417,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead")
-            .description("The memory overhead for the driver. Used to set spark.yarn.driver.memoryOverhead.\n" +
+            .description("The memory overhead for an executor. Used to set spark.yarn.executor.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("2g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead")
-            .description("The memory overhead for an executor. Used to set spark.yarn.executor.memoryOverhead.\n" +
+            .description("The memory overhead for the driver. Used to set spark.yarn.driver.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -433,6 +441,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     //  - Properties that are independent of the instance type and number of instances:
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
+            .description("(Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes " +
+                    "in the cluster while it's running.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
+            .description("(Non-persistent or persistent EMR mode only) Specifying this security group causes the group " +
+                    "to be added to the EMR master's list of security groups.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.cores")
             .description("(Non-persistent or persistent EMR mode only) The number of cores used by an executor. Used to set spark.executor.cores.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -461,7 +479,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED = Index.propertyBuilder("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled")
             .description("(Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
-                    "Used to set spark.dynamicAllocation.enabled\n" +
+                    "Used to set spark.dynamicAllocation.enabled.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -498,14 +516,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures")
             .description("(Non-persistent or persistent EMR mode only) The maximum number of executor failures before YARN can fail the application. " +
                     "Used to set spark.yarn.scheduler.reporterThread.maxFailures.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
+                    "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("5")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL = Index.propertyBuilder("sleeper.bulk.import.emr.spark.storage.level")
             .description("(Non-persistent or persistent EMR mode only) The storage to use for temporary caching. " +
                     "Used to set spark.storage.level.\n" +
-                    "See https://spark.apache.org/docs/latest/configuration.html.")
+                    "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("MEMORY_AND_DISK_SER")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
@@ -632,7 +650,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     // Partition splitting
     UserDefinedInstanceProperty PARTITION_SPLITTING_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
             .description("The frequency in minutes with which the lambda that finds partitions that need splitting runs.")
-            .defaultValue("2")
+            .defaultValue("30")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB = Index.propertyBuilder("sleeper.partition.splitting.files.maximum")
@@ -682,12 +700,12 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("The size of the batch of files ready for garbage collection requested from the State Store.")
             .defaultValue("2000")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
-    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.seconds")
-            .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
+    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.minutes")
+            .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. This property can be overridden on a per-table " +
                     "basis.")
-            .defaultValue("600")
+            .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
 
     // Compaction
@@ -704,7 +722,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
-                    "This should be less than the value of sleeper.queue.visibility.timeout.seconds.")
+                    "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
@@ -736,7 +754,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on.\n" +
-                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html.")
+                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
             .defaultValue("X86_64")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
@@ -764,6 +782,43 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
+            .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
+            .defaultValue("FARGATE")
+            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
+            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
+            .defaultValue("t3.xlarge")
+            .validationPredicate(Utils::isNonNullNonEmptyString)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.minimum")
+            .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
+            .defaultValue("0")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = Index.propertyBuilder("sleeper.compaction.ec2.pool.desired")
+            .description("The initial desired number of instances for the EC2 cluster (when using EC2-based compactions).\n" +
+                    "Can be set by dividing initial maximum containers by number that should fit on instance type.")
+            .defaultValue("0")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.maximum")
+            .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
+            .defaultValue("75")
+            .validationPredicate(Utils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    UserDefinedInstanceProperty COMPACTION_EC2_ROOT_SIZE = Index.propertyBuilder("sleeper.compaction.ec2.root.size")
+            .description("The size in GiB of the root EBS volume attached to the EC2 instances (when using EC2-based compactions).")
+            .defaultValue("50")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
     UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.compaction.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
@@ -782,7 +837,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.default.compaction.strategy.class")
-            .description("\"The name of the class that defines how compaction jobs should be created. " +
+            .description("The name of the class that defines how compaction jobs should be created. " +
                     "This should implement sleeper.compaction.strategy.CompactionStrategy. The value of this property is the " +
                     "default value which can be overridden on a per-table basis.")
             .defaultValue("sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy")
@@ -806,44 +861,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
-    UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
-            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
-            .defaultValue("t3.xlarge")
-            .validationPredicate(Utils::isNonNullNonEmptyString)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MINIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.minimum")
-            .description("The minimum number of instances for the EC2 cluster (when using EC2-based compactions).")
-            .defaultValue("0")
-            .validationPredicate(Utils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = Index.propertyBuilder("sleeper.compaction.ec2.pool.desired")
-            .description("The initial desired number of instances for the EC2 cluster (when using EC2-based compactions)." +
-                    "Can be set by dividing initial maximum containers by number that should fit on instance type.")
-            .defaultValue("0")
-            .validationPredicate(Utils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.maximum")
-            .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
-            .defaultValue("75")
-            .validationPredicate(Utils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_ROOT_SIZE = Index.propertyBuilder("sleeper.compaction.ec2.root.size")
-            .description("The size in GiB of the root EBS volume attached to the EC2 instancesn (when using EC2-based compactions).")
-            .defaultValue("50")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
-    UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
-            .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
-            .defaultValue("FARGATE")
-            .validationPredicate(Arrays.asList("EC2", "FARGATE")::contains)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
 
     // Query
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES = Index.propertyBuilder("sleeper.query.s3.max-connections")
@@ -971,7 +988,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty DEFAULT_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.default.compression.codec")
             .description("The compression codec to use in the Parquet files.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
-            .defaultValue("ZSTD")
+            .defaultValue("zstd")
             .validationPredicate(Utils::isValidCompressionCodec)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS = Index.propertyBuilder("sleeper.default.parquet.dictionary.encoding.rowkey.fields")
@@ -1004,7 +1021,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
-                    "If this minimum has not been reached, bulk import jobs will refuse to start")
+                    "If this minimum has not been reached, bulk import jobs will refuse to start.")
             .defaultValue("64")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();

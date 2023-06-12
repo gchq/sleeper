@@ -97,7 +97,7 @@ public class IngestBatcherJobCreatorLambdaIT {
     void shouldSendOneFileFromStore() {
         // Given
         store.addFile(FileIngestRequest.builder()
-                .pathToFile("some-bucket/some-file.parquet")
+                .file("some-bucket/some-file.parquet")
                 .tableName(tableProperties.get(TABLE_NAME))
                 .fileSizeBytes(1024)
                 .receivedTime(Instant.parse("2023-05-25T14:43:00Z"))

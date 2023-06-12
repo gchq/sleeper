@@ -86,10 +86,10 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(600));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(600));
 
             // When
@@ -107,10 +107,10 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(1024));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(512));
 
             // When
@@ -128,10 +128,10 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(2048));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(2048));
 
             // When
@@ -154,16 +154,16 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(256));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(256));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-3.parquet")
+                    .file("test-bucket/test-3.parquet")
                     .fileSizeBytes(2048));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-4.parquet")
+                    .file("test-bucket/test-4.parquet")
                     .fileSizeBytes(512));
 
             // When
@@ -187,16 +187,16 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "2");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(2048));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(256));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-3.parquet")
+                    .file("test-bucket/test-3.parquet")
                     .fileSizeBytes(256));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-4.parquet")
+                    .file("test-bucket/test-4.parquet")
                     .fileSizeBytes(512));
 
             // When
@@ -223,13 +223,13 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(256));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(1024));
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-3.parquet")
+                    .file("test-bucket/test-3.parquet")
                     .fileSizeBytes(256));
 
             // When
@@ -250,16 +250,16 @@ public class IngestBatcherMaxBatchSizeTest extends IngestBatcherTestBase {
             // Given
             tableProperties.set(INGEST_BATCHER_MAX_JOB_SIZE, "1K");
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .fileSizeBytes(512).build());
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .fileSizeBytes(1024).build());
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-3.parquet")
+                    .file("test-bucket/test-3.parquet")
                     .fileSizeBytes(512).build());
             addFileToStore(builder -> builder
-                    .pathToFile("test-bucket/test-4.parquet")
+                    .file("test-bucket/test-4.parquet")
                     .fileSizeBytes(256).build());
 
             // When

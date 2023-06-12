@@ -16,6 +16,7 @@ on:
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/ingest/ingest-batcher-core/**'
+      - 'java/ingest/ingest-batcher-submitter/**'
       - 'java/clients/**'
       - 'java/query/**'
       - 'java/compaction/compaction-job-creation/**'

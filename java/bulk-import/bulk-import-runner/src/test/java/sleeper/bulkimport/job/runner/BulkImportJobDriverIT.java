@@ -123,6 +123,7 @@ class BulkImportJobDriverIT {
     private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
     private final Schema schema = getSchema();
     private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
+    private final String runId = "test-run";
     private final String taskId = "test-bulk-import-spark-cluster";
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
@@ -309,11 +310,11 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        statusStore.jobAccepted(taskId, job.toIngestJob(), validationTime);
+        statusStore.jobAccepted(runId, job.toIngestJob(), validationTime);
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
-        driver.run(job, taskId);
+        driver.run(job, runId, taskId);
     }
 
     @ParameterizedTest

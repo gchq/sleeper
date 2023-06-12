@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+
 public class IngestJobStatusTestData {
 
     private IngestJobStatusTestData() {
@@ -82,21 +84,19 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
-    public static ProcessRun acceptedRun(IngestJob job, String taskId, Instant validationTime) {
+    public static ProcessRun acceptedRun(IngestJob job, Instant validationTime) {
         return ProcessRun.builder()
-                .taskId(taskId)
                 .startedStatus(IngestJobAcceptedStatus.from(job,
                         validationTime, defaultUpdateTime(validationTime)))
                 .build();
     }
 
-    public static ProcessRun rejectedRun(IngestJob job, String taskId, Instant validationTime, String reason) {
-        return rejectedRun(job, taskId, validationTime, List.of(reason));
+    public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String reason) {
+        return rejectedRun(taskId, validationTime, List.of(reason));
     }
 
-    public static ProcessRun rejectedRun(IngestJob job, String taskId, Instant validationTime, List<String> reasons) {
+    public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {
         return ProcessRun.builder()
-                .taskId(taskId)
                 .startedStatus(IngestJobRejectedStatus.builder()
                         .validationTime(validationTime)
                         .updateTime(defaultUpdateTime(validationTime))
@@ -118,11 +118,6 @@ public class IngestJobStatusTestData {
                 IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
-
-    public static Instant defaultUpdateTime(Instant startTime) {
-        return startTime.with(ChronoField.MILLI_OF_SECOND, 123);
-    }
-
     public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
         return IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
     }

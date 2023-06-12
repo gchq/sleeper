@@ -31,6 +31,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +98,7 @@ public class GarbageCollectorStack extends NestedStack {
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "GarbageCollectorPeriodicTrigger")
-                .ruleName(instanceProperties.get(ID) + "-GarbageCollectorPeriodicTrigger")
+                .ruleName(SleeperScheduleRule.GARBAGE_COLLECTOR.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the garbage collector")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))

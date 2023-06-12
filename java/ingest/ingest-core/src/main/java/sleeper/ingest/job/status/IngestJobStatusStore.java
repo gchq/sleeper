@@ -27,25 +27,27 @@ public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {
     };
 
-    default void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
+    default void jobAccepted(String runId, IngestJob job, Instant validationTime) {
     }
 
-    default void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
+    default void jobRejected(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
     }
 
     default void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, true);
+        jobStarted(null, taskId, job, startTime, true);
     }
 
-    default void jobStartedWithValidation(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(taskId, job, startTime, false);
+    default void jobStartedWithValidation(String runId, String taskId, IngestJob job, Instant startTime) {
+        jobStarted(runId, taskId, job, startTime, false);
     }
 
-    default void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
+    default void jobStarted(String runId, String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
     }
-
 
     default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+    }
+
+    default void jobFinished(String runId, String taskId, IngestJob job, RecordsProcessedSummary summary) {
     }
 
     default List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant start, Instant end) {

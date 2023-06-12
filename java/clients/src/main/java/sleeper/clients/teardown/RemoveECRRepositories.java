@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -38,14 +37,15 @@ public class RemoveECRRepositories {
     private RemoveECRRepositories() {
     }
 
-    public static void remove(AmazonECR ecr, InstanceProperties properties, List<InstanceProperty> extraRepositories) {
-        Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO), extraRepositories.stream())
-                .filter(properties::isSet)
-                .parallel().forEach(property -> deleteRepository(ecr, properties, property));
+    public static void remove(AmazonECR ecr, InstanceProperties properties, List<String> extraRepositories) {
+        Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO)
+                                .filter(properties::isSet)
+                                .map(properties::get),
+                        extraRepositories.stream())
+                .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
     }
 
-    private static void deleteRepository(AmazonECR ecr, InstanceProperties properties, InstanceProperty property) {
-        String repositoryName = properties.get(property);
+    private static void deleteRepository(AmazonECR ecr, String repositoryName) {
         LOGGER.info("Deleting repository {}", repositoryName);
         try {
             ecr.deleteRepository(new DeleteRepositoryRequest()

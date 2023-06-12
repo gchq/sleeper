@@ -44,6 +44,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -53,7 +54,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
@@ -296,17 +300,44 @@ class EmrExecutorTest {
         emrExecutor.runJob(myJob);
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun(myJob.toIngestJob(), "test-task", Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
-    private EmrExecutor createExecutorWithDefaults() {
-        return ExecutorFactory.createEmrExecutor(emr, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
+    @Test
+    void shouldConstructArgs() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
+        instanceProperties.set(JARS_BUCKET, "jarsBucket");
+        instanceProperties.set(CONFIG_BUCKET, "configBucket");
+        instanceProperties.set(VERSION, "1.2.3");
+        EmrExecutor executor = createExecutor(
+                "test-run", () -> Instant.parse("2023-06-12T17:30:00Z"));
+        BulkImportJob myJob = new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+        assertThat(executor.constructArgs(myJob, "test-task"))
+                .containsExactly("spark-submit",
+                        "--deploy-mode",
+                        "cluster",
+                        "--class",
+                        "sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
+                        "s3a://jarsBucket/bulk-import-runner-1.2.3.jar",
+                        "configBucket",
+                        "my-job",
+                        "test-task",
+                        "test-run");
+
     }
 
-    private EmrExecutor createExecutor(String taskId, Supplier<Instant> validationTimeSupplier) {
+    private EmrExecutor createExecutorWithDefaults() {
+        return createExecutor(UUID.randomUUID().toString(), Instant::now);
+    }
+
+    private EmrExecutor createExecutor(String runId, Supplier<Instant> validationTimeSupplier) {
         return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, ingestJobStatusStore, amazonS3, taskId, validationTimeSupplier);
+                stateStoreProvider, ingestJobStatusStore, amazonS3, runId, validationTimeSupplier);
     }
 }

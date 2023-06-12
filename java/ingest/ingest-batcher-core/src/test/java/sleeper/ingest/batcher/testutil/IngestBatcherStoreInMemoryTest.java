@@ -42,7 +42,7 @@ class IngestBatcherStoreInMemoryTest {
         void shouldTrackOneFile() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table").build();
 
             // When
@@ -59,11 +59,11 @@ class IngestBatcherStoreInMemoryTest {
         void shouldOverwriteTrackingInformationWhenAddingTheSameFileTwice() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table")
                     .fileSizeBytes(1024).build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table")
                     .fileSizeBytes(2048).build();
 
@@ -82,10 +82,10 @@ class IngestBatcherStoreInMemoryTest {
         void shouldTrackTheSameFileForMultipleTables() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table-2").build();
 
             // When
@@ -108,10 +108,10 @@ class IngestBatcherStoreInMemoryTest {
         void shouldTrackJobWasCreatedWithTwoFiles() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
-                    .pathToFile("test-bucket/test-1.parquet")
+                    .file("test-bucket/test-1.parquet")
                     .tableName("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
-                    .pathToFile("test-bucket/test-2.parquet")
+                    .file("test-bucket/test-2.parquet")
                     .tableName("test-table-1").build();
 
             // When
@@ -130,10 +130,10 @@ class IngestBatcherStoreInMemoryTest {
         void shouldSendSameFileTwiceIfFirstRequestAssignedToJob() {
             // Given
             FileIngestRequest fileIngestRequest1 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table-1").build();
             FileIngestRequest fileIngestRequest2 = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .tableName("test-table-1").build();
 
             // When
@@ -152,7 +152,7 @@ class IngestBatcherStoreInMemoryTest {
         void shouldRetainAllFileRequestParametersAfterAssigningToJob() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
-                    .pathToFile("test-bucket/test.parquet")
+                    .file("test-bucket/test.parquet")
                     .fileSizeBytes(1234L)
                     .tableName("test-table")
                     .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
@@ -165,7 +165,7 @@ class IngestBatcherStoreInMemoryTest {
             // Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     fileRequest()
-                            .pathToFile("test-bucket/test.parquet")
+                            .file("test-bucket/test.parquet")
                             .fileSizeBytes(1234L)
                             .tableName("test-table")
                             .receivedTime(Instant.parse("2023-05-19T15:40:12Z"))
@@ -179,13 +179,13 @@ class IngestBatcherStoreInMemoryTest {
     class OrderFilesReturnedFromStore {
 
         final FileIngestRequest fileIngestRequest1 = fileRequest()
-                .pathToFile("test-bucket/first.parquet")
+                .file("test-bucket/first.parquet")
                 .tableName("test-table").build();
         final FileIngestRequest fileIngestRequest2 = fileRequest()
-                .pathToFile("test-bucket/another.parquet")
+                .file("test-bucket/another.parquet")
                 .tableName("test-table").build();
         final FileIngestRequest fileIngestRequest3 = fileRequest()
-                .pathToFile("test-bucket/last.parquet")
+                .file("test-bucket/last.parquet")
                 .tableName("test-table").build();
 
         @BeforeEach

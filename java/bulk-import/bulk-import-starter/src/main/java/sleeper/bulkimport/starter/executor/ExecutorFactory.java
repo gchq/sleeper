@@ -101,24 +101,4 @@ public class ExecutorFactory {
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }
     }
-
-    public static EmrExecutor createEmrExecutor(AmazonElasticMapReduce emrClient,
-                                                InstanceProperties instanceProperties,
-                                                TablePropertiesProvider tablePropertiesProvider,
-                                                StateStoreProvider stateStoreProvider,
-                                                IngestJobStatusStore ingestJobStatusStore,
-                                                AmazonS3 s3Client) {
-        return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3Client, UUID.randomUUID().toString(), Instant::now);
-    }
-
-    public static StateMachineExecutor createStateMachineExecutor(AWSStepFunctions stepFunctionsClient,
-                                                                  InstanceProperties instanceProperties,
-                                                                  TablePropertiesProvider tablePropertiesProvider,
-                                                                  StateStoreProvider stateStoreProvider,
-                                                                  IngestJobStatusStore ingestJobStatusStore,
-                                                                  AmazonS3 s3Client) {
-        return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3Client, UUID.randomUUID().toString(), Instant::now);
-    }
 }

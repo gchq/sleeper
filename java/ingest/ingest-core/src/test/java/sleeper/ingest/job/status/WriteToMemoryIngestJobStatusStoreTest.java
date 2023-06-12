@@ -202,30 +202,31 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
-            String taskId = "test-task";
+            String runId = "run-1";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobAccepted(taskId, job, validationTime);
+            store.jobAccepted(runId, job, validationTime);
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, acceptedRun(job, taskId, validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRun(job, runId, validationTime)));
         }
 
         @Test
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
+            String runId = "run-1";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobAccepted(taskId, job, validationTime);
-            store.jobStartedWithValidation(taskId, job, startTime);
+            store.jobAccepted(runId, job, validationTime);
+            store.jobStarted(runId, taskId, job, startTime, false);
 
             // Then
             assertThat(store.getAllJobs(tableName))
@@ -237,16 +238,16 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportJobWithOneValidationFailure() {
             // Given
             String tableName = "test-table";
-            String taskId = "test-task";
+            String runId = "run-1";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobRejected(taskId, job, validationTime, List.of("Test validation reason"));
+            store.jobRejected(runId, job, validationTime, List.of("Test validation reason"));
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(job, taskId,
+                    .containsExactly(jobStatus(job, rejectedRun(job, runId,
                             validationTime, "Test validation reason")));
         }
 
@@ -254,17 +255,17 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportJobWithMultipleValidationFailures() {
             // Given
             String tableName = "test-table";
-            String taskId = "test-task";
+            String runId = "run-1";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobRejected(taskId, job, validationTime,
+            store.jobRejected(runId, job, validationTime,
                     List.of("Test validation reason 1", "Test validation reason 2"));
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(job, taskId, validationTime,
+                    .containsExactly(jobStatus(job, rejectedRun(job, runId, validationTime,
                             List.of("Test validation reason 1", "Test validation reason 2"))));
         }
     }

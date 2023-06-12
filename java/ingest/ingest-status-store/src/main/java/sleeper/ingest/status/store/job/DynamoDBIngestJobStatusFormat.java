@@ -65,6 +65,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
+    public static final String RUN_ID = "RunId";
     public static final String TASK_ID = "TaskId";
     public static final String EXPIRY_DATE = "ExpiryDate";
     public static final String UPDATE_TYPE_VALIDATED = "validated";
@@ -80,17 +81,17 @@ public class DynamoDBIngestJobStatusFormat {
     }
 
     public Map<String, AttributeValue> createJobAcceptedRecord(
-            IngestJob job, Instant validationTime, String taskId) {
+            IngestJob job, Instant validationTime, String runId) {
         return createJobRecord(job, UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, validationTime.toEpochMilli())
                 .bool(VALIDATION_RESULT, true)
                 .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .string(TASK_ID, taskId)
+                .string(RUN_ID, runId)
                 .build();
     }
 
     public Map<String, AttributeValue> createJobRejectedRecord(
-            IngestJob job, Instant validationTime, List<String> reasons, String taskId) {
+            IngestJob job, Instant validationTime, List<String> reasons, String runId) {
         return createJobRecord(job, UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, validationTime.toEpochMilli())
                 .bool(VALIDATION_RESULT, false)
@@ -98,13 +99,15 @@ public class DynamoDBIngestJobStatusFormat {
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
                 .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .string(TASK_ID, taskId)
+                .string(RUN_ID, runId)
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime, String taskId, boolean startOfRun) {
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime,
+                                                              String runId, String taskId, boolean startOfRun) {
         return createJobRecord(job, UPDATE_TYPE_STARTED)
                 .number(START_TIME, startTime.toEpochMilli())
+                .string(RUN_ID, runId)
                 .string(TASK_ID, taskId)
                 .number(INPUT_FILES_COUNT, job.getFiles().size())
                 .bool(START_OF_RUN, startOfRun)
@@ -141,6 +144,7 @@ public class DynamoDBIngestJobStatusFormat {
                 getStringAttribute(item, JOB_ID),
                 getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
                 getStatusUpdate(item),
+                getStringAttribute(item, RUN_ID),
                 getStringAttribute(item, TASK_ID));
     }
 

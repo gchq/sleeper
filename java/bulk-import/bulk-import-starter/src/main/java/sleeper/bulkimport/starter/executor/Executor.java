@@ -50,18 +50,18 @@ public abstract class Executor {
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
-    protected final String taskId;
+    protected final String runId;
     protected final Supplier<Instant> validationTimeSupplier;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
                     StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                    String taskId, Supplier<Instant> validationTimeSupplier) {
+                    String runId, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.s3Client = s3Client;
-        this.taskId = taskId;
+        this.runId = runId;
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
@@ -105,7 +105,7 @@ public abstract class Executor {
         args.add(instanceProperties.get(CONFIG_BUCKET));
         args.add(bulkImportJob.getId());
         args.add(taskId);
-
+        args.add(runId);
         return args;
     }
 
@@ -142,11 +142,11 @@ public abstract class Executor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobStatusStore.jobRejected(taskId, bulkImportJob.toIngestJob(),
+            ingestJobStatusStore.jobRejected(runId, bulkImportJob.toIngestJob(),
                     validationTimeSupplier.get(), failedChecks);
             return false;
         } else {
-            ingestJobStatusStore.jobAccepted(taskId, bulkImportJob.toIngestJob(),
+            ingestJobStatusStore.jobAccepted(runId, bulkImportJob.toIngestJob(),
                     validationTimeSupplier.get());
             return true;
         }

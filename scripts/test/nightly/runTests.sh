@@ -40,20 +40,59 @@ VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 set +e
 
+runReport() {
+  INSTANCE_ID=$1
+  shift 1
+  for REPORT_TYPE in "$@" 
+  do 
+    case "$REPORT_TYPE" in
+      "compaction")
+        "$SCRIPTS_DIR/utility/compactionTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a"
+        "$SCRIPTS_DIR/utility/compactionJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a"
+        ;;
+      "ingest")
+        "$SCRIPTS_DIR/utility/ingestTaskStatusReport.sh" "$INSTANCE_ID" "standard" "-a"
+        "$SCRIPTS_DIR/utility/ingestJobStatusReport.sh" "$INSTANCE_ID" "system-test" "standard" "-a"
+        ;;
+      "partition")
+        "$SCRIPTS_DIR/utility/partitionsStatusReport.sh" "$INSTANCE_ID" "system-test"
+        ;;
+      *)
+        echo "unknown report type: $REPORT_TYPE";
+        ;;
+    esac
+  done;
+}
 runTest() {
   TEST_NAME=$1
   INSTANCE_ID=$2
+  shift 2
+  REPORT_TYPES=( "$@" )
 
   echo "[$(time_str)] Running $TEST_NAME test"
   "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/$TEST_NAME.log"
   EXIT_CODE=$?
-  ./tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+  runReport "$INSTANCE_ID" "${REPORT_TYPES[@]}"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
   echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runTest bulkImportPerformance "bulk-imprt-$START_TIME"
-runTest compactionPerformance "compaction-$START_TIME"
-runTest partitionSplitting "splitting-$START_TIME"
+runSystemTest() {
+    TEST_NAME=$1
+    INSTANCE_ID=$2
+    runTest "$@"
+    ./tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+}
+runStandardTest() {
+    TEST_NAME=$1
+    INSTANCE_ID=$2
+    runTest "$@"
+    ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+}
+
+runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
+runSystemTest compactionPerformance "compaction-$START_TIME" "compaction" 
+runSystemTest partitionSplitting "splitting-$START_TIME" "partition"
+runStandardTest ingestBatcher "ingst-batch-$START_TIME" "ingest"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
