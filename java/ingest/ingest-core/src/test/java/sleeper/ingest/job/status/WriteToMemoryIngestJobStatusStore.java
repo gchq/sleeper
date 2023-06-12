@@ -35,20 +35,20 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
 
     @Override
-    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
+    public void jobAccepted(String runId, IngestJob job, Instant validationTime) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobAcceptedStatus.from(validationTime, defaultUpdateTime(validationTime)), taskId);
+                IngestJobAcceptedStatus.from(validationTime, defaultUpdateTime(validationTime)), runId, null);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
     }
 
     @Override
-    public void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
+    public void jobRejected(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 IngestJobRejectedStatus.builder().validationTime(validationTime)
                         .updateTime(defaultUpdateTime(validationTime))
-                        .reasons(reasons).build(), taskId);
+                        .reasons(reasons).build(), runId, null);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
@@ -64,9 +64,28 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
+    public void jobStarted(String runId, String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
+        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                IngestJobStartedStatus.withStartOfRun(startOfRun).inputFileCount(job.getFiles().size())
+                        .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build(), runId, taskId);
+        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+    }
+
+    @Override
     public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
+        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
+                .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
+                .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));
+        jobRecords.add(updateRecord);
+    }
+
+    @Override
+    public void jobFinished(String runId, String taskId, IngestJob job, RecordsProcessedSummary summary) {
+        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), runId, null);
         List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));

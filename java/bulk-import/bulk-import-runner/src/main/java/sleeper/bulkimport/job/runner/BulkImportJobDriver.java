@@ -44,6 +44,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -95,17 +96,17 @@ public class BulkImportJobDriver {
                 getTime);
     }
 
-    public void run(BulkImportJob job, String taskId) throws IOException {
+    public void run(BulkImportJob job, String runId, String taskId) throws IOException {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
-        statusStore.jobStartedWithValidation(taskId, job.toIngestJob(), startTime);
+        statusStore.jobStarted(runId, taskId, job.toIngestJob(), startTime, false);
 
         BulkImportJobOutput output;
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+            statusStore.jobFinished(runId, taskId, job.toIngestJob(), new RecordsProcessedSummary(
                     new RecordsProcessed(0, 0), startTime, getTime.get()));
             throw e;
         }
@@ -115,7 +116,7 @@ public class BulkImportJobDriver {
                     .addFiles(output.fileInfos());
             LOGGER.info("Added {} files to statestore", output.numFiles());
         } catch (Exception e) {
-            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+            statusStore.jobFinished(runId, taskId, job.toIngestJob(), new RecordsProcessedSummary(
                     new RecordsProcessed(0, 0), startTime, getTime.get()));
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
@@ -127,7 +128,7 @@ public class BulkImportJobDriver {
         long numRecords = output.numRecords();
         double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
-        statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
+        statusStore.jobFinished(runId, taskId, job.toIngestJob(), new RecordsProcessedSummary(
                 new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
 
         // Calling this manually stops it potentially timing out after 10 seconds.
@@ -191,6 +192,6 @@ public class BulkImportJobDriver {
 
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        driver.run(bulkImportJob, taskId);
+        driver.run(bulkImportJob, UUID.randomUUID().toString(), taskId);
     }
 }
