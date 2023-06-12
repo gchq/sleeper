@@ -19,20 +19,28 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+
 public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStartedUpdate {
 
+    private final String runId;
     private final Instant updateTime;
     private final Instant startTime;
     private final boolean isStartOfRun;
 
-    private ProcessStartedStatusWithStartOfRunFlag(Instant updateTime, Instant startTime, boolean isStartOfRun) {
+    private ProcessStartedStatusWithStartOfRunFlag(String runId, Instant updateTime, Instant startTime, boolean isStartOfRun) {
+        this.runId = runId;
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
         this.isStartOfRun = isStartOfRun;
     }
 
-    public static ProcessStartedStatusWithStartOfRunFlag updateAndStartTimeNotStartOfRun(Instant updateTime, Instant startTime) {
-        return new ProcessStartedStatusWithStartOfRunFlag(updateTime, startTime, false);
+    public static ProcessStartedStatusWithStartOfRunFlag startTimeNotStartOfRun(Instant startTime) {
+        return new ProcessStartedStatusWithStartOfRunFlag(null, defaultUpdateTime(startTime), startTime, false);
+    }
+
+    public static ProcessStartedStatusWithStartOfRunFlag runAndStartTimeNotStartOfRun(String runId, Instant startTime) {
+        return new ProcessStartedStatusWithStartOfRunFlag(runId, defaultUpdateTime(startTime), startTime, false);
     }
 
     @Override

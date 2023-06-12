@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoField;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase {
 

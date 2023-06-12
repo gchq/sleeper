@@ -24,9 +24,9 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
+import sleeper.core.record.process.status.TestRunStatusUpdates;
 
 import java.time.Instant;
-import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.List;
 
@@ -55,15 +55,11 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobStartedStatus startedCompactionStatus(Instant startTime) {
-        return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
+        return CompactionJobStartedStatus.startAndUpdateTime(startTime, TestRunStatusUpdates.defaultUpdateTime(startTime));
     }
 
     public static ProcessFinishedStatus finishedCompactionStatus(RecordsProcessedSummary summary) {
-        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary);
-    }
-
-    public static Instant defaultUpdateTime(Instant time) {
-        return time.with(ChronoField.MILLI_OF_SECOND, 123);
+        return ProcessFinishedStatus.updateTimeAndSummary(TestRunStatusUpdates.defaultUpdateTime(summary.getFinishTime()), summary);
     }
 
     public static CompactionJobStatus jobStatusFromUpdates(ProcessStatusUpdate... updates) {
