@@ -73,9 +73,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
+    public void jobAccepted(String runId, IngestJob job, Instant validationTime) {
         try {
-            PutItemResult result = putItem(format.createJobAcceptedRecord(job, validationTime, taskId));
+            PutItemResult result = putItem(format.createJobAcceptedRecord(job, validationTime, runId));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -84,9 +84,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobRejected(String taskId, IngestJob job, Instant validationTime, List<String> reasons) {
+    public void jobRejected(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
         try {
-            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reasons, taskId));
+            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reasons, runId));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -95,9 +95,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
+    public void jobStarted(String runId, String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId, startOfRun));
+            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, runId, taskId, startOfRun));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

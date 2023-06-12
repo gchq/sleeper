@@ -38,8 +38,8 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobAccepted(DEFAULT_TASK_ID, job, validationTime);
-        store.jobStartedWithValidation(DEFAULT_TASK_ID, job, startedTime);
+        store.jobAccepted(DEFAULT_RUN_ID, job, validationTime);
+        store.jobStartedWithValidation(DEFAULT_RUN_ID, DEFAULT_TASK_ID, job, startedTime);
 
         // Then
         assertThat(getAllJobStatuses())
@@ -56,13 +56,13 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
 
         // When
-        store.jobRejected(DEFAULT_TASK_ID, job, validationTime, List.of("Test failure"));
+        store.jobRejected(DEFAULT_RUN_ID, job, validationTime, List.of("Test failure"));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
-                        rejectedRun(DEFAULT_TASK_ID, validationTime, "Test failure")));
+                        rejectedRun(DEFAULT_RUN_ID, validationTime, "Test failure")));
     }
 
     @Test
