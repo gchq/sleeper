@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 class ProcessRunsBuilder {
@@ -33,7 +34,7 @@ class ProcessRunsBuilder {
         ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
         if (isStartedUpdateAndStartOfRun(statusUpdate)) {
             ProcessRun.Builder builder = ProcessRun.builder()
-                    .startedStatus(((ProcessRunStartedUpdate) statusUpdate))
+                    .startedStatus((ProcessRunStartedUpdate) statusUpdate)
                     .taskId(taskId);
             if (runId != null) {
                 runBuilders.put(runId, builder);
@@ -42,25 +43,27 @@ class ProcessRunsBuilder {
             }
             orderedBuilders.add(builder);
         } else if (runBuilders.containsKey(runId)) {
-            ProcessRun.Builder builder = null;
-            if (statusUpdate instanceof ProcessFinishedStatus) {
-                builder = runBuilders.remove(runId)
-                        .finishedStatus((ProcessFinishedStatus) statusUpdate);
-            } else if (statusUpdate.isPartOfRun()) {
-                builder = runBuilders.get(runId)
-                        .statusUpdate(statusUpdate);
-            }
-            if (builder != null && taskId != null) {
-                builder.taskId(taskId);
-            }
+            addToBuilderByKey(statusUpdate, runBuilders, runId)
+                    .ifPresent(builder -> {
+                        if (taskId != null) {
+                            builder.taskId(taskId);
+                        }
+                    });
         } else if (taskBuilders.containsKey(taskId)) {
-            if (statusUpdate instanceof ProcessFinishedStatus) {
-                taskBuilders.remove(taskId)
-                        .finishedStatus((ProcessFinishedStatus) statusUpdate);
-            } else if (statusUpdate.isPartOfRun()) {
-                taskBuilders.get(taskId).statusUpdate(statusUpdate);
-            }
+            addToBuilderByKey(statusUpdate, taskBuilders, taskId);
         }
+    }
+
+    private Optional<ProcessRun.Builder> addToBuilderByKey(
+            ProcessStatusUpdate statusUpdate, Map<String, ProcessRun.Builder> builderMap, String key) {
+        if (statusUpdate instanceof ProcessFinishedStatus) {
+            return Optional.of(builderMap.remove(key)
+                    .finishedStatus((ProcessFinishedStatus) statusUpdate));
+        } else if (statusUpdate.isPartOfRun()) {
+            return Optional.of(builderMap.get(key)
+                    .statusUpdate(statusUpdate));
+        }
+        return Optional.empty();
     }
 
     ProcessRuns build() {
