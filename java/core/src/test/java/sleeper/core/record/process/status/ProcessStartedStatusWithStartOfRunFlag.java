@@ -23,24 +23,18 @@ import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpd
 
 public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStartedUpdate {
 
-    private final String runId;
     private final Instant updateTime;
     private final Instant startTime;
     private final boolean isStartOfRun;
 
-    private ProcessStartedStatusWithStartOfRunFlag(String runId, Instant updateTime, Instant startTime, boolean isStartOfRun) {
-        this.runId = runId;
+    private ProcessStartedStatusWithStartOfRunFlag(Instant updateTime, Instant startTime, boolean isStartOfRun) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
         this.isStartOfRun = isStartOfRun;
     }
 
     public static ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun(Instant startTime) {
-        return new ProcessStartedStatusWithStartOfRunFlag(null, defaultUpdateTime(startTime), startTime, false);
-    }
-
-    public static ProcessStartedStatusWithStartOfRunFlag startedStatusForRunNotStartOfRun(String runId, Instant startTime) {
-        return new ProcessStartedStatusWithStartOfRunFlag(runId, defaultUpdateTime(startTime), startTime, false);
+        return new ProcessStartedStatusWithStartOfRunFlag(defaultUpdateTime(startTime), startTime, false);
     }
 
     @Override

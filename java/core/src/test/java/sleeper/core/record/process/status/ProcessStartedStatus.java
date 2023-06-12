@@ -20,22 +20,16 @@ import java.util.Objects;
 
 public class ProcessStartedStatus implements ProcessRunStartedUpdate {
 
-    private final String runId;
     private final Instant updateTime;
     private final Instant startTime;
 
-    private ProcessStartedStatus(String runId, Instant updateTime, Instant startTime) {
-        this.runId = runId;
+    private ProcessStartedStatus(Instant updateTime, Instant startTime) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
     public static ProcessStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
-        return new ProcessStartedStatus(null, updateTime, startTime);
-    }
-
-    public static ProcessStartedStatus runUpdateAndStartTime(String runId, Instant updateTime, Instant startTime) {
-        return new ProcessStartedStatus(runId, updateTime, startTime);
+        return new ProcessStartedStatus(updateTime, startTime);
     }
 
     @Override

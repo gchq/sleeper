@@ -29,17 +29,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.core.record.process.status.CustomProcessStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.CustomProcessStatus.partOfRunWithUpdateTime;
-import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusForRunNotStartOfRun;
 import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusNotStartOfRun;
 import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_2;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatusForRun;
 
 class ProcessRunsTest {
 
@@ -218,18 +218,18 @@ class ProcessRunsTest {
         @Disabled("TODO")
         void shouldReportTwoRunsLatestFirstWhenAnEventHappensForBothBeforeEitherAreOnATask() {
             // Given
-            ProcessStartedStatus validated1 = startedStatusForRun("run-1", Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessStartedStatus validated2 = startedStatusForRun("run-2", Instant.parse("2022-09-24T09:24:30.001Z"));
+            ProcessStartedStatus validated1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus validated2 = startedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
 
-            ProcessStartedStatusWithStartOfRunFlag started1 = startedStatusForRunNotStartOfRun(
-                    "run-1", Instant.parse("2022-09-24T10:23:30Z"));
-            ProcessStartedStatusWithStartOfRunFlag started2 = startedStatusForRunNotStartOfRun(
-                    "run-2", Instant.parse("2022-09-24T10:24:30Z"));
+            ProcessStartedStatusWithStartOfRunFlag started1 = startedStatusNotStartOfRun(Instant.parse("2022-09-24T10:23:30Z"));
+            ProcessStartedStatusWithStartOfRunFlag started2 = startedStatusNotStartOfRun(Instant.parse("2022-09-24T10:24:30Z"));
 
             // When
             ProcessRuns runs = runsFromUpdates(
-                    onNoTask(validated1, validated2),
-                    onTask("some-task", started1, started2));
+                    forRunOnNoTask("run-1", validated1),
+                    forRunOnNoTask("run-2", validated2),
+                    forRunOnTask("run-1", "some-task", started1),
+                    forRunOnTask("run-2", "some-task", started2));
 
             // Then
             assertThat(runs.getRunList())
