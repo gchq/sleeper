@@ -28,9 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.core.record.process.status.CustomProcessStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.CustomProcessStatus.partOfRunWithUpdateTime;
-import static sleeper.core.record.process.status.ProcessStartedStatus.updateAndStartTime;
-import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.runAndStartTimeNotStartOfRun;
-import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startTimeNotStartOfRun;
+import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusForRunNotStartOfRun;
+import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusNotStartOfRun;
 import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
@@ -38,8 +37,8 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.runStartedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatusForRun;
 
 class ProcessRunsTest {
 
@@ -218,14 +217,14 @@ class ProcessRunsTest {
         @Disabled("TODO")
         void shouldReportTwoRunsLatestFirstWhenAnEventHappensForBothBeforeEitherAreOnATask() {
             // Given
-            ProcessStartedStatus validated1 = runStartedStatus("run-1", Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessStartedStatus validated2 = runStartedStatus("run-2", Instant.parse("2022-09-24T09:24:30.001Z"));
+            ProcessStartedStatus validated1 = startedStatusForRun("run-1", Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus validated2 = startedStatusForRun("run-2", Instant.parse("2022-09-24T09:24:30.001Z"));
 
-            // TODO set run ID, maybe add finished statuses?
-            ProcessStartedStatusWithStartOfRunFlag started1 = runAndStartTimeNotStartOfRun("run-1",
-                    Instant.parse("2022-09-24T10:23:30Z"));
-            ProcessStartedStatusWithStartOfRunFlag started2 = runAndStartTimeNotStartOfRun("run-2",
-                    Instant.parse("2022-09-24T10:24:30Z"));
+            // TODO maybe add finished statuses?
+            ProcessStartedStatusWithStartOfRunFlag started1 = startedStatusForRunNotStartOfRun(
+                    "run-1", Instant.parse("2022-09-24T10:23:30Z"));
+            ProcessStartedStatusWithStartOfRunFlag started2 = startedStatusForRunNotStartOfRun(
+                    "run-2", Instant.parse("2022-09-24T10:24:30Z"));
 
             // When
             // TODO decide whether to use one task or two
@@ -263,10 +262,10 @@ class ProcessRunsTest {
         @Test
         void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsAfterTheOther() {
             // Given
-            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startTimeNotStartOfRun(
+            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startedStatusNotStartOfRun(
                     Instant.parse("2022-09-24T08:23:30Z"));
-            ProcessStartedStatus startedStatus = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus startedStatus = startedStatus(
+                    Instant.parse("2022-09-24T09:23:30Z"));
 
             // When
             ProcessRuns runs = runsFromUpdates(startedStatusNotStartOfRun, startedStatus);
@@ -279,9 +278,9 @@ class ProcessRunsTest {
         @Test
         void shouldCreateProcessRunFromTwoStartedUpdatesWhenStartOfRunIsBeforeTheOther() {
             // Given
-            ProcessStartedStatus startedStatus = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startTimeNotStartOfRun(
+            ProcessStartedStatus startedStatus = startedStatus(
+                    Instant.parse("2022-09-24T09:23:30Z"));
+            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startedStatusNotStartOfRun(
                     Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
@@ -299,8 +298,7 @@ class ProcessRunsTest {
         @Test
         void shouldCreateProcessRunWithCustomStatusUpdatePartOfRun() {
             // Given
-            ProcessStartedStatus startedStatus = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
             CustomProcessStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
@@ -318,8 +316,7 @@ class ProcessRunsTest {
         @Test
         void shouldCreateProcessRunWithCustomStatusUpdateNotPartOfRun() {
             // Given
-            ProcessStartedStatus startedStatus = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
             CustomProcessStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
@@ -337,8 +334,7 @@ class ProcessRunsTest {
         @Test
         void shouldReturnLastStatusUpdateByClass() {
             // Given
-            ProcessStartedStatus startedStatus = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
             CustomProcessStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
@@ -353,8 +349,7 @@ class ProcessRunsTest {
         @Test
         void shouldReturnLastStatusUpdateByClassWithMultipleUpdatesForClass() {
             // Given
-            ProcessStartedStatus startedStatus = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
             CustomProcessStatus customStatus1 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
             CustomProcessStatus customStatus2 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:25:30Z"));
 
@@ -369,9 +364,9 @@ class ProcessRunsTest {
 
         @Test
         void shouldReturnLastStatusUpdateByInterface() {
-            ProcessStartedStatus startedUpdate = updateAndStartTime(
-                    Instant.parse("2022-09-24T09:23:30Z"), Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startTimeNotStartOfRun(
+            ProcessStartedStatus startedUpdate = startedStatus(
+                    Instant.parse("2022-09-24T09:23:30Z"));
+            ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startedStatusNotStartOfRun(
                     Instant.parse("2022-09-24T10:23:30Z"));
 
             // When

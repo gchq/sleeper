@@ -35,11 +35,11 @@ public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStarted
         this.isStartOfRun = isStartOfRun;
     }
 
-    public static ProcessStartedStatusWithStartOfRunFlag startTimeNotStartOfRun(Instant startTime) {
+    public static ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun(Instant startTime) {
         return new ProcessStartedStatusWithStartOfRunFlag(null, defaultUpdateTime(startTime), startTime, false);
     }
 
-    public static ProcessStartedStatusWithStartOfRunFlag runAndStartTimeNotStartOfRun(String runId, Instant startTime) {
+    public static ProcessStartedStatusWithStartOfRunFlag startedStatusForRunNotStartOfRun(String runId, Instant startTime) {
         return new ProcessStartedStatusWithStartOfRunFlag(runId, defaultUpdateTime(startTime), startTime, false);
     }
 
