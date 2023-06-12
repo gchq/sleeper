@@ -24,13 +24,13 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
-import sleeper.core.record.process.status.TestRunStatusUpdates;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {
@@ -55,11 +55,11 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobStartedStatus startedCompactionStatus(Instant startTime) {
-        return CompactionJobStartedStatus.startAndUpdateTime(startTime, TestRunStatusUpdates.defaultUpdateTime(startTime));
+        return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
     public static ProcessFinishedStatus finishedCompactionStatus(RecordsProcessedSummary summary) {
-        return ProcessFinishedStatus.updateTimeAndSummary(TestRunStatusUpdates.defaultUpdateTime(summary.getFinishTime()), summary);
+        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary);
     }
 
     public static CompactionJobStatus jobStatusFromUpdates(ProcessStatusUpdate... updates) {

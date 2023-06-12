@@ -20,13 +20,14 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
-import sleeper.core.record.process.status.TestRunStatusUpdates;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class IngestJobStatusTestData {
 
@@ -56,7 +57,7 @@ public class IngestJobStatusTestData {
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
-                                .startTime(startTime).updateTime(TestRunStatusUpdates.defaultUpdateTime(startTime)).build())
+                                .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
                 .build();
     }
 
@@ -78,14 +79,14 @@ public class IngestJobStatusTestData {
 
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return ProcessRun.started(taskId,
-                IngestJobStartedStatus.startAndUpdateTime(job, startTime, TestRunStatusUpdates.defaultUpdateTime(startTime)));
+                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
     }
 
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), TestRunStatusUpdates.defaultUpdateTime(summary.getStartTime())),
-                ProcessFinishedStatus.updateTimeAndSummary(TestRunStatusUpdates.defaultUpdateTime(summary.getFinishTime()), summary));
+                IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
+                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 
     public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
