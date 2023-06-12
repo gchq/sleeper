@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
@@ -78,16 +77,6 @@ public class StateMachineExecutor extends Executor {
                 WebIdentityTokenCredentialsProvider.class.getName());
         defaultConf.put("spark.hadoop.fs.s3a.experimental.input.fadvise", "sequential");
         DEFAULT_CONFIG = Collections.unmodifiableMap(defaultConf);
-    }
-
-    public StateMachineExecutor(AWSStepFunctions stepFunctions,
-                                InstanceProperties instanceProperties,
-                                TablePropertiesProvider tablePropertiesProvider,
-                                StateStoreProvider stateStoreProvider,
-                                IngestJobStatusStore ingestJobStatusStore,
-                                AmazonS3 s3Client) {
-        this(stepFunctions, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                s3Client, UUID.randomUUID().toString(), Instant::now);
     }
 
     public StateMachineExecutor(AWSStepFunctions stepFunctions,

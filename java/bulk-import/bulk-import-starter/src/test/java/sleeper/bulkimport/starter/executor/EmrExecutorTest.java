@@ -44,6 +44,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -301,8 +302,7 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor createExecutorWithDefaults() {
-        return ExecutorFactory.createEmrExecutor(emr, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
+        return createExecutor(UUID.randomUUID().toString(), Instant::now);
     }
 
     private EmrExecutor createExecutor(String taskId, Supplier<Instant> validationTimeSupplier) {

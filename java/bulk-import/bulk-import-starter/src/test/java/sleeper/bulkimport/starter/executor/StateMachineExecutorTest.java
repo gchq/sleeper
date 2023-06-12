@@ -35,6 +35,7 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -300,8 +301,7 @@ class StateMachineExecutorTest {
     }
 
     private StateMachineExecutor createExecutorWithDefaults() {
-        return ExecutorFactory.createStateMachineExecutor(stepFunctions,
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3);
+        return createExecutor(UUID.randomUUID().toString(), Instant::now);
     }
 
     private StateMachineExecutor createExecutor(String taskId, Supplier<Instant> validationTimeSupplier) {
