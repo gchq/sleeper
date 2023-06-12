@@ -23,26 +23,42 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 class ProcessRunsBuilder {
+    private final Map<String, ProcessRun.Builder> runBuilders = new HashMap<>();
     private final Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
     private final List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(ProcessStatusUpdateRecord record) {
+        String runId = record.getRunId();
         String taskId = record.getTaskId();
         ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
         if (isStartedUpdateAndStartOfRun(statusUpdate)) {
             ProcessRun.Builder builder = ProcessRun.builder()
                     .startedStatus(((ProcessRunStartedUpdate) statusUpdate))
                     .taskId(taskId);
-            taskBuilders.put(taskId, builder);
+            if (runId != null) {
+                runBuilders.put(runId, builder);
+            } else {
+                taskBuilders.put(taskId, builder);
+            }
             orderedBuilders.add(builder);
-        } else if (statusUpdate.isPartOfRun() && taskBuilders.containsKey(taskId)) {
+        } else if (runBuilders.containsKey(runId)) {
+            ProcessRun.Builder builder = null;
+            if (statusUpdate instanceof ProcessFinishedStatus) {
+                builder = runBuilders.remove(runId)
+                        .finishedStatus((ProcessFinishedStatus) statusUpdate);
+            } else if (statusUpdate.isPartOfRun()) {
+                builder = runBuilders.get(runId)
+                        .statusUpdate(statusUpdate);
+            }
+            if (builder != null && taskId != null) {
+                builder.taskId(taskId);
+            }
+        } else if (taskBuilders.containsKey(taskId)) {
             if (statusUpdate instanceof ProcessFinishedStatus) {
                 taskBuilders.remove(taskId)
-                        .finishedStatus((ProcessFinishedStatus) statusUpdate)
-                        .taskId(taskId);
-            } else {
-                taskBuilders.get(taskId)
-                        .statusUpdate(statusUpdate);
+                        .finishedStatus((ProcessFinishedStatus) statusUpdate);
+            } else if (statusUpdate.isPartOfRun()) {
+                taskBuilders.get(taskId).statusUpdate(statusUpdate);
             }
         }
     }

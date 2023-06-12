@@ -16,7 +16,6 @@
 
 package sleeper.core.record.process.status;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -215,7 +214,6 @@ class ProcessRunsTest {
     class CorrelateRunsById {
 
         @Test
-        @Disabled("TODO")
         void shouldReportTwoRunsLatestFirstWhenAnEventHappensForBothBeforeEitherAreOnATask() {
             // Given
             ProcessStartedStatus validated1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
@@ -235,8 +233,8 @@ class ProcessRunsTest {
             assertThat(runs.getRunList())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
                     .containsExactly(
-                            tuple("some-task", List.of(validated1, started1)),
-                            tuple("some-task", List.of(validated2, started2)));
+                            tuple("some-task", List.of(validated2, started2)),
+                            tuple("some-task", List.of(validated1, started1)));
             assertThat(runs.isFinished()).isFalse();
         }
     }
