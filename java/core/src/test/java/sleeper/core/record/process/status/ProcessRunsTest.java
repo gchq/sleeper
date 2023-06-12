@@ -37,10 +37,10 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
-public class ProcessRunsTest {
+class ProcessRunsTest {
 
     @Test
-    public void shouldReportNoFinishedStatusWhenJobNotFinished() {
+    void shouldReportNoFinishedStatusWhenJobNotFinished() {
         // Given
         ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
@@ -56,7 +56,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldReportRunWhenJobFinished() {
+    void shouldReportRunWhenJobFinished() {
         // Given
         ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
@@ -73,7 +73,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldReportTwoRunsLatestFirstByStartTimeOnSameTask() {
+    void shouldReportTwoRunsLatestFirstByStartTimeOnSameTask() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
@@ -91,7 +91,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
+    void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
@@ -111,7 +111,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldReportTwoTasksWithTwoRunsEachForSameJobWithInterleavingStartTimes() {
+    void shouldReportTwoTasksWithTwoRunsEachForSameJobWithInterleavingStartTimes() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
@@ -135,7 +135,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldReportTwoTasksWithOneFinishedRunEach() {
+    void shouldReportTwoTasksWithOneFinishedRunEach() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
@@ -157,7 +157,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldReportRunsOnDifferentTasksWhenJobRunStartedAndFinishedDuringAnotherRun() {
+    void shouldReportRunsOnDifferentTasksWhenJobRunStartedAndFinishedDuringAnotherRun() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:00.001Z"));
         ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
@@ -179,7 +179,7 @@ public class ProcessRunsTest {
     }
 
     @Test
-    public void shouldIgnoreExtraFinishedStatus() {
+    void shouldIgnoreExtraFinishedStatus() {
         // Given
         ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
