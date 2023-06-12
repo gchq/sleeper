@@ -31,6 +31,11 @@ public class TestRunStatusUpdates {
         return ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime);
     }
 
+    public static ProcessStartedStatus startedStatus(String runId, Instant startTime) {
+        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
+        return ProcessStartedStatus.runUpdateAndStartTime(runId, startUpdateTime, startTime);
+    }
+
     public static ProcessFinishedStatus finishedStatus(
             ProcessRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
         return finishedStatus(startedStatus.getStartTime(), runDuration, recordsRead, recordsWritten);

@@ -16,6 +16,7 @@
 
 package sleeper.core.record.process.status;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_2;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
@@ -203,6 +205,40 @@ class ProcessRunsTest {
                             tuple(TASK_ID_2, started2, finished2),
                             tuple(TASK_ID_1, started1, finished1));
             assertThat(runs.isFinished()).isTrue();
+        }
+    }
+
+    @DisplayName("Correlate process runs by run ID")
+    @Nested
+    class CorrelateRunsById {
+
+        @Test
+        @Disabled("TODO")
+        void shouldReportTwoRunsLatestFirstWhenAnEventHappensForBothBeforeEitherAreOnATask() {
+            // Given
+            ProcessStartedStatus validated1 = startedStatus("run-1", Instant.parse("2022-09-24T09:23:30.001Z"));
+            ProcessStartedStatus validated2 = startedStatus("run-2", Instant.parse("2022-09-24T09:24:30.001Z"));
+
+            // TODO set run ID, maybe add finished statuses?
+            ProcessStartedStatusWithStartOfRunFlag started1 = updateAndStartTimeNotStartOfRun(
+                    Instant.parse("2022-09-24T10:23:30Z"), Instant.parse("2022-09-24T10:23:30.001Z"));
+            ProcessStartedStatusWithStartOfRunFlag started2 = updateAndStartTimeNotStartOfRun(
+                    Instant.parse("2022-09-24T10:23:30Z"), Instant.parse("2022-09-24T10:23:30.001Z"));
+
+            // When
+            // TODO decide whether to use one task or two
+            ProcessRuns runs = runsFromUpdates(
+                    onNoTask(validated1, validated2),
+                    onTask("some-task", started1, started2));
+
+            // Then
+            // TODO fix assertion
+            assertThat(runs.getRunList())
+                    .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                    .containsExactly(
+                            tuple(DEFAULT_TASK_ID, validated1, null),
+                            tuple(DEFAULT_TASK_ID, validated2, null));
+            assertThat(runs.isFinished()).isFalse();
         }
     }
 
