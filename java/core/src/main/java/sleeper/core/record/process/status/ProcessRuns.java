@@ -82,7 +82,7 @@ public class ProcessRuns {
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return latestFirst.stream().anyMatch(run -> run.getTaskId().equals(taskId));
+        return latestFirst.stream().anyMatch(run -> taskId.equals(run.getTaskId()));
     }
 
     public Optional<Instant> lastTime() {

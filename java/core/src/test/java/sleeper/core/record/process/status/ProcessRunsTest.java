@@ -241,6 +241,50 @@ class ProcessRunsTest {
         }
     }
 
+    @DisplayName("Report task assignment")
+    @Nested
+    class ReportTaskAssignment {
+
+        @Test
+        void shouldReportAssignedToTask() {
+            // Given
+            ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(onTask("some-task", started));
+
+            // Then
+            assertThat(runs.isTaskIdAssigned("some-task"))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldReportNotAssignedToTaskWhenOnAnotherTask() {
+            // Given
+            ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(onTask("other-task", started));
+
+            // Then
+            assertThat(runs.isTaskIdAssigned("some-task"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldReportNotAssignedToTaskWhenOnNoTask() {
+            // Given
+            ProcessStartedStatus validated = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(onNoTask(validated));
+
+            // Then
+            assertThat(runs.isTaskIdAssigned("some-task"))
+                    .isFalse();
+        }
+    }
+
     @DisplayName("Flag updates as part/start of a run")
     @Nested
     class FlagUpdatesAsPartOrStartOfRun {
