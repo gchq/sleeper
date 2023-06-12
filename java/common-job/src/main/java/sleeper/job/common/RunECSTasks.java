@@ -101,7 +101,7 @@ public class RunECSTasks {
                 try {
                     runTaskResult = retryTaskUntilCapacityAvailable(ecsClient, runTaskRequest);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed to retry task", e);
+                    throw new RuntimeException("Failed to retry task ", e);
                 }
             }
             if (checkFailure(runTaskResult)) {
@@ -126,7 +126,7 @@ public class RunECSTasks {
             atomicResult.set(result);
             return result.getFailures().stream().noneMatch(RunECSTasks::isCapacityUnavailable);
         });
-        LOGGER.info("Capacity was available");
+        LOGGER.info("Capacity is available");
         return atomicResult.get();
     }
 
