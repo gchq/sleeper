@@ -7,7 +7,6 @@
       "jobId": "job11111-1111-1111-1111-111111111111",
       "jobRunList": [
         {
-          "taskId": "test-task",
           "validatedStatus": {
             "isValid": false,
             "inputFileCount": 2,

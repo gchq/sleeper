@@ -211,7 +211,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, acceptedRun(job, runId, validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
         }
 
         @Test
@@ -247,7 +247,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(job, runId,
+                    .containsExactly(jobStatus(job, rejectedRun(job,
                             validationTime, "Test validation reason")));
         }
 
@@ -265,7 +265,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(job, runId, validationTime,
+                    .containsExactly(jobStatus(job, rejectedRun(job, validationTime,
                             List.of("Test validation reason 1", "Test validation reason 2"))));
         }
     }

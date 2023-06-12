@@ -138,7 +138,9 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printValidatedJobRun(ProcessRun run) {
         IngestJobValidatedStatus validatedStatus = (IngestJobValidatedStatus) run.getStartedStatus();
         out.println();
-        out.printf("Run on task %s%n", run.getTaskId());
+        if (run.getTaskId() != null) {
+            out.printf("Run on task %s%n", run.getTaskId());
+        }
         out.printf("Validation Time: %s%n", validatedStatus.getStartTime());
         out.printf("Validation Update Time: %s%n", validatedStatus.getUpdateTime());
         out.printf("Job was %s%n", validatedStatus.isValid() ? "accepted" : "rejected with reasons:");

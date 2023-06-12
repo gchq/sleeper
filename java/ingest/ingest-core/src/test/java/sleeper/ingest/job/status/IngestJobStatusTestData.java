@@ -23,7 +23,6 @@ import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
-import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -92,7 +91,7 @@ public class IngestJobStatusTestData {
     }
 
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String reason) {
-        return rejectedRun(taskId, validationTime, List.of(reason));
+        return rejectedRun(job, validationTime, List.of(reason));
     }
 
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {
@@ -118,6 +117,7 @@ public class IngestJobStatusTestData {
                 IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
+
     public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
         return IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
     }

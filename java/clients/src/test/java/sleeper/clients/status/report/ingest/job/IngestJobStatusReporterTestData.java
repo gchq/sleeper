@@ -97,7 +97,7 @@ public class IngestJobStatusReporterTestData {
     public static List<IngestJobStatus> acceptedJob() {
         IngestJob job = createJob(1, 2);
         return List.of(jobStatus(job,
-                acceptedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"))));
+                acceptedRun(job, Instant.parse("2023-06-05T17:20:00Z"))));
     }
 
     public static List<IngestJobStatus> acceptedJobWhichStarted() {
@@ -112,14 +112,14 @@ public class IngestJobStatusReporterTestData {
         List<String> reasons = List.of("Test validation reason");
         IngestJob job = createJob(1, 2);
         return List.of(jobStatus(job,
-                rejectedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"), reasons)));
+                rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
     }
 
     public static List<IngestJobStatus> rejectedJobWithMultipleReasons() {
         List<String> reasons = List.of("Test validation reason 1", "Test validation reason 2", "Test validation reason 3");
         IngestJob job = createJob(1, 2);
         return List.of(jobStatus(job,
-                rejectedRun(job, "test-task", Instant.parse("2023-06-05T17:20:00Z"), reasons)));
+                rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
     }
 
     private static IngestJob createJob(int jobNum, int inputFileCount) {
