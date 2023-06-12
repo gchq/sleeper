@@ -44,7 +44,6 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -142,12 +141,14 @@ public class BulkImportJobDriver {
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
-        if (args.length != 3) {
-            throw new IllegalArgumentException("Expected 3 arguments: <config bucket name> <bulk import job ID> <bulk import task ID>");
+        if (args.length != 4) {
+            throw new IllegalArgumentException("Expected 4 arguments:" +
+                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID>");
         }
         String configBucket = args[0];
         String jobId = args[1];
         String taskId = args[2];
+        String runId = args[3];
 
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
@@ -192,6 +193,6 @@ public class BulkImportJobDriver {
 
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        driver.run(bulkImportJob, UUID.randomUUID().toString(), taskId);
+        driver.run(bulkImportJob, runId, taskId);
     }
 }

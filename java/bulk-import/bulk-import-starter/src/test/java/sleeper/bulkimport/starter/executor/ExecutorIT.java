@@ -336,7 +336,7 @@ class ExecutorIT {
 
         @Override
         protected String getJarLocation() {
-            return null;
+            return "test-bucket";
         }
     }
 

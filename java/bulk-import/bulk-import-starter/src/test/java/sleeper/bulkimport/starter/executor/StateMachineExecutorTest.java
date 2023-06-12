@@ -234,7 +234,7 @@ class StateMachineExecutorTest {
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "myStateMachine");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        StateMachineExecutor stateMachineExecutor = createExecutor("test-run", Instant::now);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -247,7 +247,7 @@ class StateMachineExecutorTest {
         // Then
         assertThatJson(requested.get().getInput())
                 .inPath("$.args").isArray().extracting(Objects::toString)
-                .endsWith("myConfigBucket", "my-job", "myStateMachine");
+                .endsWith("myConfigBucket", "my-job", "myStateMachine", "test-run");
     }
 
     @Test
