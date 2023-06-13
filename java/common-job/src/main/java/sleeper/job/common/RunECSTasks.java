@@ -67,34 +67,10 @@ public class RunECSTasks {
                 .numberOfTasksToCreate(numberOfTasksToCreate));
     }
 
-    public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
-        runTasks(builder -> builder.ecsClient(ecsClient)
-                .runTaskRequest(runTaskRequest)
-                .numberOfTasksToCreate(numberOfTasksToCreate)
-                .checkAbort(checkAbort));
-    }
-
     public static void runTasks(Consumer<RunECSTasks.Builder> configuration) {
         Builder builder = builder();
         configuration.accept(builder);
         builder.build().runTasks();
-    }
-
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate)
-            throws AmazonClientException {
-        runTasksOrThrow(builder -> builder.ecsClient(ecsClient)
-                .runTaskRequest(runTaskRequest)
-                .numberOfTasksToCreate(numberOfTasksToCreate));
-    }
-
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, Consumer<RunTaskResult> resultConsumer)
-            throws AmazonClientException {
-        runTasksOrThrow(builder -> builder.ecsClient(ecsClient)
-                .runTaskRequest(runTaskRequest)
-                .numberOfTasksToCreate(numberOfTasksToCreate)
-                .resultConsumer(resultConsumer));
     }
 
     public static void runTasksOrThrow(Consumer<RunECSTasks.Builder> configuration) {

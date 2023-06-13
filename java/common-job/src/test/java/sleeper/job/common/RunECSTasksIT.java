@@ -75,9 +75,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunOneTask() {
-            runTasksOrThrow(builder -> builder
-                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
-                    .numberOfTasksToCreate(1));
+            runTasksOrThrow(new RunTaskRequest().withCluster("test-cluster"), 1);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 1));
@@ -85,9 +83,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoTasks() {
-            runTasksOrThrow(builder -> builder
-                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
-                    .numberOfTasksToCreate(2));
+            runTasksOrThrow(new RunTaskRequest().withCluster("test-cluster"), 2);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 2));
@@ -95,9 +91,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatches() {
-            runTasksOrThrow(builder -> builder
-                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
-                    .numberOfTasksToCreate(20));
+            runTasksOrThrow(new RunTaskRequest().withCluster("test-cluster"), 20);
 
             verify(2, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
@@ -105,9 +99,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatchesAndTwoMoreTasks() {
-            runTasksOrThrow(builder -> builder
-                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
-                    .numberOfTasksToCreate(22));
+            runTasksOrThrow(new RunTaskRequest().withCluster("test-cluster"), 22);
 
             verify(3, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
@@ -116,9 +108,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunMoreTasksThanCanBeCreatedInOneRequest() {
-            runTasksOrThrow(builder -> builder
-                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
-                    .numberOfTasksToCreate(11));
+            runTasksOrThrow(new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(2, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -157,9 +147,7 @@ class RunECSTasksIT {
         void shouldNotMakeASecondRequestWhenFirstOneFailsOnServerAfterRetries() {
             stubResponseStatus(500);
 
-            runTasks(builder -> builder
-                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
-                    .numberOfTasksToCreate(11));
+            runTasks(new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(4, anyRequest());
             verify(4, runTasksRequestedFor("test-cluster", 10));
@@ -169,8 +157,7 @@ class RunECSTasksIT {
         void shouldNotMakeASecondRequestWhenFirstOneFailsWithInvalidParameter() {
             stubInvalidParameter();
 
-            RunECSTasks.runTasks(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 11);
+            runTasks(new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -182,7 +169,7 @@ class RunECSTasksIT {
 
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
+            assertThatThrownBy(() -> runTasksOrThrow(request, 11))
                     .isInstanceOf(InvalidParameterException.class);
         }
 
@@ -192,7 +179,7 @@ class RunECSTasksIT {
 
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
+            assertThatThrownBy(() -> runTasksOrThrow(request, 11))
                     .isInstanceOf(AmazonECSException.class)
                     .hasFieldOrPropertyWithValue("statusCode", 500);
         }
@@ -202,7 +189,7 @@ class RunECSTasksIT {
             stubResponseWithFailures();
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 1))
+            assertThatThrownBy(() -> runTasksOrThrow(request, 1))
                     .isInstanceOf(ECSFailureException.class);
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 1));
@@ -213,7 +200,7 @@ class RunECSTasksIT {
             stubResponseWithFailures();
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 20))
+            assertThatThrownBy(() -> runTasksOrThrow(request, 20))
                     .isInstanceOf(ECSFailureException.class);
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -225,8 +212,11 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
             List<RunTaskResult> results = new ArrayList<>();
 
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request,
-                    20, results::add))
+            Consumer<RunECSTasks.Builder> configuration = builder -> builder
+                    .runTaskRequest(request)
+                    .numberOfTasksToCreate(20)
+                    .resultConsumer(results::add);
+            assertThatThrownBy(() -> runTasksOrThrow(configuration))
                     .isInstanceOf(ECSFailureException.class);
             assertThat(results).isEmpty();
         }
@@ -251,9 +241,9 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             // When
-            builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2))
-                    .build().runTasksOrThrow();
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(request).numberOfTasksToCreate(10)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2)));
 
             // Then
             verify(2, anyRequest());
@@ -279,9 +269,10 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             // When/Then
-            RunECSTasks run = builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10)
-                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2)).build();
-            assertThatThrownBy(run::runTasksOrThrow)
+            Consumer<RunECSTasks.Builder> configuration = builder -> builder
+                    .runTaskRequest(request).numberOfTasksToCreate(10)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2));
+            assertThatThrownBy(() -> runTasksOrThrow(configuration))
                     .isInstanceOf(ECSFailureException.class)
                     .hasMessageContaining("test-reason");
             verify(2, anyRequest());
@@ -289,20 +280,34 @@ class RunECSTasksIT {
         }
     }
 
+    private void runTasks(RunTaskRequest request, int numberOfTasksToCreate) {
+        runTasks(builder -> builder
+                .runTaskRequest(request)
+                .numberOfTasksToCreate(numberOfTasksToCreate));
+    }
+
     private void runTasks(Consumer<RunECSTasks.Builder> configuration) {
-        RunECSTasks.Builder builder = builderWithDefaults();
-        configuration.accept(builder);
-        builder.build().runTasks();
+        RunECSTasks.runTasks(builder -> {
+            setDefaults(builder);
+            configuration.accept(builder);
+        });
+    }
+
+    private void runTasksOrThrow(RunTaskRequest request, int numberOfTasksToCreate) {
+        runTasksOrThrow(builder -> builder
+                .runTaskRequest(request)
+                .numberOfTasksToCreate(numberOfTasksToCreate));
     }
 
     private void runTasksOrThrow(Consumer<RunECSTasks.Builder> configuration) {
-        RunECSTasks.Builder builder = builderWithDefaults();
-        configuration.accept(builder);
-        builder.build().runTasksOrThrow();
+        RunECSTasks.runTasksOrThrow(builder -> {
+            setDefaults(builder);
+            configuration.accept(builder);
+        });
     }
 
-    private RunECSTasks.Builder builderWithDefaults() {
-        return RunECSTasks.builder().ecsClient(ecsClient)
+    private void setDefaults(RunECSTasks.Builder builder) {
+        builder.ecsClient(ecsClient)
                 .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
                 .sleepForSustainedRatePerSecond(rate -> {
                 });
