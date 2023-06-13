@@ -85,8 +85,9 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoTasks() {
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 2);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(2));
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 2));
@@ -94,8 +95,9 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatches() {
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 20);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(20));
 
             verify(2, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
@@ -103,8 +105,9 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatchesAndTwoMoreTasks() {
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 22);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(22));
 
             verify(3, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
@@ -113,8 +116,9 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunMoreTasksThanCanBeCreatedInOneRequest() {
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 11);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(11));
 
             verify(2, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -123,8 +127,10 @@ class RunECSTasksIT {
 
         @Test
         void shouldAbortAfterOneRequest() {
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 11, () -> true);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(11)
+                    .checkAbort(() -> true));
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -135,8 +141,9 @@ class RunECSTasksIT {
             stubResponseStatus(200);
             List<RunTaskResult> results = new ArrayList<>();
 
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 1, results::add);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(1).resultConsumer(results::add));
             assertThat(results)
                     .containsExactly(new RunTaskResult().withTasks().withFailures());
         }
@@ -150,8 +157,9 @@ class RunECSTasksIT {
         void shouldNotMakeASecondRequestWhenFirstOneFailsOnServerAfterRetries() {
             stubResponseStatus(500);
 
-            RunECSTasks.runTasks(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 11);
+            runTasks(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(11));
 
             verify(4, anyRequest());
             verify(4, runTasksRequestedFor("test-cluster", 10));
@@ -279,6 +287,12 @@ class RunECSTasksIT {
             verify(2, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
         }
+    }
+
+    private void runTasks(Consumer<RunECSTasks.Builder> configuration) {
+        RunECSTasks.Builder builder = builderWithDefaults();
+        configuration.accept(builder);
+        builder.build().runTasks();
     }
 
     private void runTasksOrThrow(Consumer<RunECSTasks.Builder> configuration) {
