@@ -27,12 +27,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.RateLimitUtils;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
+import java.util.function.DoubleConsumer;
 
 public class RunECSTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunECSTasks.class);
@@ -44,6 +44,7 @@ public class RunECSTasks {
     private final int numberOfTasksToCreate;
     private final BooleanSupplier checkAbort;
     private final Consumer<RunTaskResult> resultConsumer;
+    private final DoubleConsumer sleepForSustainedRatePerSecond;
     private final PollWithRetries retryWhenNoCapacity;
 
     private RunECSTasks(Builder builder) {
@@ -52,6 +53,7 @@ public class RunECSTasks {
         numberOfTasksToCreate = builder.numberOfTasksToCreate;
         checkAbort = builder.checkAbort;
         resultConsumer = builder.resultConsumer;
+        sleepForSustainedRatePerSecond = builder.sleepForSustainedRatePerSecond;
         retryWhenNoCapacity = builder.retryWhenNoCapacity;
     }
 
@@ -124,7 +126,7 @@ public class RunECSTasks {
                 // To stay below this limit we create 10 tasks once per second.
                 // See documentation:
                 // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
-                sleepForSustainedRatePerSecond(1);
+                sleepForSustainedRatePerSecond.accept(1);
             }
             int remainingTasksToCreate = numberOfTasksToCreate - i;
             int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
@@ -220,6 +222,7 @@ public class RunECSTasks {
         private BooleanSupplier checkAbort = () -> false;
         private Consumer<RunTaskResult> resultConsumer = result -> {
         };
+        private DoubleConsumer sleepForSustainedRatePerSecond = RateLimitUtils::sleepForSustainedRatePerSecond;
         private PollWithRetries retryWhenNoCapacity = PollWithRetries.intervalAndMaxPolls(
                 CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS);
 
@@ -248,6 +251,11 @@ public class RunECSTasks {
 
         public Builder resultConsumer(Consumer<RunTaskResult> resultConsumer) {
             this.resultConsumer = resultConsumer;
+            return this;
+        }
+
+        public Builder sleepForSustainedRatePerSecond(DoubleConsumer sleepForSustainedRatePerSecond) {
+            this.sleepForSustainedRatePerSecond = sleepForSustainedRatePerSecond;
             return this;
         }
 

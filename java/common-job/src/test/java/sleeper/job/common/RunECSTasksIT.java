@@ -36,6 +36,7 @@ import sleeper.core.util.PollWithRetries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -74,8 +75,9 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunOneTask() {
-            RunECSTasks.runTasksOrThrow(ecsClient,
-                    new RunTaskRequest().withCluster("test-cluster"), 1);
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(new RunTaskRequest().withCluster("test-cluster"))
+                    .numberOfTasksToCreate(1));
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 1));
@@ -279,9 +281,17 @@ class RunECSTasksIT {
         }
     }
 
+    private void runTasksOrThrow(Consumer<RunECSTasks.Builder> configuration) {
+        RunECSTasks.Builder builder = builderWithDefaults();
+        configuration.accept(builder);
+        builder.build().runTasksOrThrow();
+    }
+
     private RunECSTasks.Builder builderWithDefaults() {
         return RunECSTasks.builder().ecsClient(ecsClient)
-                .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1));
+                .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
+                .sleepForSustainedRatePerSecond(rate -> {
+                });
     }
 
     private static void stubResponseStatus(int status) {
