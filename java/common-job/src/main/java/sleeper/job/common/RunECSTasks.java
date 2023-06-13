@@ -30,7 +30,6 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.RateLimitUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -106,17 +105,10 @@ public class RunECSTasks {
             int remainingTasksToCreate = numberOfTasksToCreate - i;
             int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
 
-            RunTaskResult runTaskResult;
             try {
-                runTaskResult = retryTaskUntilCapacityAvailable(tasksToCreateThisRound);
+                retryTaskUntilCapacityAvailable(tasksToCreateThisRound);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Failed to retry task ", e);
-            }
-            LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                    runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
-                    new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
-            if (checkFailure(runTaskResult)) {
-                throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
 
             if (checkAbort.getAsBoolean()) {
@@ -126,20 +118,27 @@ public class RunECSTasks {
         }
     }
 
-    private RunTaskResult retryTaskUntilCapacityAvailable(int numberOfTasksToCreate) throws InterruptedException {
+    private void retryTaskUntilCapacityAvailable(int numberOfTasksToCreate) throws InterruptedException {
         AtomicInteger numberOfTasksLeft = new AtomicInteger(numberOfTasksToCreate);
-        AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
         retryWhenNoCapacity.pollUntil("capacity was available", () -> {
             RunTaskResult result = ecsClient.runTask(runTaskRequest.withCount(numberOfTasksLeft.get()));
             resultConsumer.accept(result);
-            LOGGER.info("Found failures: {}", result.getFailures());
+
             int capacityUnavailableFailures = (int) result.getFailures().stream()
                     .filter(RunECSTasks::isCapacityUnavailable).count();
             numberOfTasksLeft.set(capacityUnavailableFailures);
-            atomicResult.set(result);
+
+            LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                    runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
+                    new ContainerName(result), new TaskDefinitionArn(result));
+            LOGGER.info("Created {} tasks", result.getTasks().size());
+            LOGGER.info("Found failures: {}", result.getFailures());
+            if (result.getFailures().size() - capacityUnavailableFailures > 0) {
+                throw new ECSFailureException("Failures running task: " + result.getFailures());
+            }
+
             return capacityUnavailableFailures == 0;
         });
-        return atomicResult.get();
     }
 
     private static class ContainerName {
@@ -169,24 +168,6 @@ public class RunECSTasks {
                     .map(Task::getTaskDefinitionArn)
                     .findFirst().orElse("none");
         }
-    }
-
-    /**
-     * Checks for failures in run task results.
-     *
-     * @param runTaskResult result from recent run_tasks API call.
-     * @return true if a task launch failure occurs
-     */
-    private static boolean checkFailure(RunTaskResult runTaskResult) {
-        if (!runTaskResult.getFailures().isEmpty()) {
-            LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
-            for (Failure f : runTaskResult.getFailures()) {
-                LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
-                        f.getDetail());
-            }
-            return true;
-        }
-        return false;
     }
 
     private static boolean isCapacityUnavailable(Failure failure) {

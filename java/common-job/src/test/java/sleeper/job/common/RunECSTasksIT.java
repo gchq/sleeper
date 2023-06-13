@@ -299,6 +299,27 @@ class RunECSTasksIT {
             verify(1, runTasksRequestedFor("test-cluster", 10));
             assertThat(results).hasSize(1);
         }
+
+        @Test
+        void shouldFailWhenTerminalFailureAndCapacityUnavailableHappenedInSameRequest() {
+            // Given
+            stubFor(runTaskWillReturnCapacityUnavailableAndOtherFailure());
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+            List<RunTaskResult> results = new ArrayList<>();
+
+            // When
+            Consumer<RunECSTasks.Builder> configuration = builder -> builder
+                    .runTaskRequest(request).numberOfTasksToCreate(10)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
+                    .resultConsumer(results::add);
+            assertThatThrownBy(() -> runTasksOrThrow(configuration))
+                    .isInstanceOf(ECSFailureException.class);
+
+            // Then
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+            assertThat(results).hasSize(1);
+        }
     }
 
     private void runTasks(RunTaskRequest request, int numberOfTasksToCreate) {
@@ -354,6 +375,19 @@ class RunECSTasksIT {
                         "\"failures\":[{" +
                         "\"reason\":\"Capacity is unavailable at this time. Please try again later or in a different availability zone\"" +
                         "}]}"));
+    }
+
+    private static MappingBuilder runTaskWillReturnCapacityUnavailableAndOtherFailure() {
+        return runTaskWillReturn(aResponse().withStatus(200)
+                .withBody("{\"failures\":[" +
+                        "{" +
+                        "\"reason\":\"Capacity is unavailable at this time. Please try again later or in a different availability zone\"" +
+                        "},{" +
+                        "\"arn\":\"test-arn\"," +
+                        "\"reason\":\"test-reason\"," +
+                        "\"detail\":\"test-detail\"" +
+                        "}" +
+                        "]}"));
     }
 
     private static MappingBuilder runTaskWillReturn(ResponseDefinitionBuilder response) {
