@@ -86,7 +86,7 @@ public class RunECSTasks {
         } catch (InvalidParameterException e) {
             LOGGER.error("Couldn't launch tasks due to InvalidParameterException. " +
                     "This error is expected if there are no EC2 container instances in the cluster.");
-        } catch (AmazonClientException e) {
+        } catch (AmazonClientException | PollWithRetries.TimedOutException e) {
             LOGGER.error("Couldn't launch tasks", e);
         }
     }
@@ -108,8 +108,7 @@ public class RunECSTasks {
 
             RunTaskResult runTaskResult;
             try {
-                runTaskResult = retryTaskUntilCapacityAvailable(ecsClient,
-                        runTaskRequest, tasksToCreateThisRound);
+                runTaskResult = retryTaskUntilCapacityAvailable(tasksToCreateThisRound);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Failed to retry task ", e);
             }
@@ -119,7 +118,6 @@ public class RunECSTasks {
             if (checkFailure(runTaskResult)) {
                 throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
-            resultConsumer.accept(runTaskResult);
 
             if (checkAbort.getAsBoolean()) {
                 LOGGER.info("Aborting running ECS tasks");
@@ -128,11 +126,12 @@ public class RunECSTasks {
         }
     }
 
-    private RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request, int numberOfTasksToCreate) throws InterruptedException {
+    private RunTaskResult retryTaskUntilCapacityAvailable(int numberOfTasksToCreate) throws InterruptedException {
         AtomicInteger numberOfTasksLeft = new AtomicInteger(numberOfTasksToCreate);
         AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
         retryWhenNoCapacity.pollUntil("capacity was available", () -> {
-            RunTaskResult result = ecsClient.runTask(request.withCount(numberOfTasksLeft.get()));
+            RunTaskResult result = ecsClient.runTask(runTaskRequest.withCount(numberOfTasksLeft.get()));
+            resultConsumer.accept(result);
             LOGGER.info("Found failures: {}", result.getFailures());
             int capacityUnavailableFailures = (int) result.getFailures().stream()
                     .filter(RunECSTasks::isCapacityUnavailable).count();

@@ -207,7 +207,7 @@ class RunECSTasksIT {
         }
 
         @Test
-        void shouldNotConsumeResultsWithFailures() {
+        void shouldConsumeResultsWithFailures() {
             stubResponseWithFailures();
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
             List<RunTaskResult> results = new ArrayList<>();
@@ -218,7 +218,7 @@ class RunECSTasksIT {
                     .resultConsumer(results::add);
             assertThatThrownBy(() -> runTasksOrThrow(configuration))
                     .isInstanceOf(ECSFailureException.class);
-            assertThat(results).isEmpty();
+            assertThat(results).hasSize(1);
         }
 
         // TODO don't throw ECSFailureException from runTasks without orThrow
@@ -279,6 +279,25 @@ class RunECSTasksIT {
             verify(2, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
             verify(1, runTasksRequestedFor("test-cluster", 1));
+        }
+
+        @Test
+        void shouldConsumeSuccessfulTaskRequestsWhenSomeRequestsFailedDueToUnavailableCapacity() {
+            // Given
+            stubFor(runTaskWillReturnCapacityUnavailable());
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+            List<RunTaskResult> results = new ArrayList<>();
+
+            // When
+            runTasks(builder -> builder
+                    .runTaskRequest(request).numberOfTasksToCreate(10)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1))
+                    .resultConsumer(results::add));
+
+            // Then
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+            assertThat(results).hasSize(1);
         }
     }
 
