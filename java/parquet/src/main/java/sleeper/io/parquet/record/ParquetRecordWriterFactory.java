@@ -31,12 +31,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class ParquetRecordWriterFactory {
 
@@ -65,7 +67,9 @@ public class ParquetRecordWriterFactory {
                 .withPageSize(tableProperties.getInt(PAGE_SIZE))
                 .withDictionaryEncodingForRowKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS))
                 .withDictionaryEncodingForSortKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS))
-                .withDictionaryEncodingForValueFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+                .withDictionaryEncodingForValueFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS))
+                .withColumnIndexTruncateLength(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH))
+                .withStatisticsTruncateLength(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
     }
 
     public static class Builder extends ParquetWriter.Builder<Record, Builder> {

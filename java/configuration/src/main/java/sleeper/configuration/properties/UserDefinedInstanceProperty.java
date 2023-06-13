@@ -1006,6 +1006,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.columnindex.truncate.length")
+            .description("The length in bytes to truncate binary values if possible in a binary column index.")
+            .defaultValue("" + Integer.MAX_VALUE)
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.statistics.truncate.length")
+            .description("The length in bytes to truncate the min/max binary values in row groups.")
+            .defaultValue("64")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED = Index.propertyBuilder("sleeper.default.table.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is turned on for DynamoDB tables. This default can " +
                     "be overridden by a table property.")

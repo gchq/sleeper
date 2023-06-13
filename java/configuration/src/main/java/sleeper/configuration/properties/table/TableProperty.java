@@ -34,6 +34,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
@@ -56,6 +57,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 
 /**
  * These contain the table properties which are stored separately to the instance properties.
@@ -136,6 +138,14 @@ public interface TableProperty extends SleeperProperty {
             .description("Whether dictionary encoding should be used for value columns in the Parquet files.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
+    TableProperty COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.columnindex.truncate.length")
+            .defaultProperty(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH)
+            .description("The length in bytes to truncate binary values if possible in a binary column index.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.statistics.truncate.length")
+            .defaultProperty(DEFAULT_STATISTICS_TRUNCATE_LENGTH)
+            .description("The length in bytes to truncate the min/max binary values in row groups.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
