@@ -48,6 +48,9 @@ import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,8 +78,9 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     private final String activeTablename;
     private final String readyForGCTablename;
     private final boolean stronglyConsistentReads;
-    private final int garbageCollectorDelayBeforeDeletionInSeconds;
+    private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
+    private Clock clock = Clock.systemUTC();
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
@@ -84,7 +88,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         activeTablename = Objects.requireNonNull(builder.activeTablename, "activeTablename must not be null");
         readyForGCTablename = Objects.requireNonNull(builder.readyForGCTablename, "readyForGCTablename must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        garbageCollectorDelayBeforeDeletionInSeconds = builder.garbageCollectorDelayBeforeDeletionInSeconds;
+        garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(schema);
     }
 
@@ -301,8 +305,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public Iterator<FileInfo> getReadyForGCFiles() {
-        long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
-        long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+        long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
+        long deleteTime = clock.millis() - delayInMilliseconds;
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(readyForGCTablename)
                 .withConsistentRead(stronglyConsistentReads)
@@ -375,13 +379,22 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     public void initialise() throws StateStoreException {
     }
 
+    /**
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param now Time to set to be the current time
+     */
+    public void fixTime(Instant now) {
+        clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
     public static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private Schema schema;
         private String activeTablename;
         private String readyForGCTablename;
         private boolean stronglyConsistentReads;
-        private int garbageCollectorDelayBeforeDeletionInSeconds;
+        private int garbageCollectorDelayBeforeDeletionInMinutes;
 
         private Builder() {
         }
@@ -411,8 +424,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInSeconds(int garbageCollectorDelayBeforeDeletionInSeconds) {
-            this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
+        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+            this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 

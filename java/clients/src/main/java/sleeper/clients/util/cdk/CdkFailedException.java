@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.ingest;
+package sleeper.clients.util.cdk;
 
-public class ECSFailureException extends RuntimeException {
+import java.io.IOException;
 
-    public ECSFailureException(String message) {
-        super(message);
+public class CdkFailedException extends IOException {
+
+    public CdkFailedException(int exitCode) {
+        super("Exit code from CDK: " + exitCode);
     }
-
 }

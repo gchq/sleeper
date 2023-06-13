@@ -32,6 +32,9 @@ Note that all ingest into Sleeper is done in batches - there is currently no opt
 that makes it immediately available to queries. There is a trade-off between the latency of data being visible and
 the cost, with lower latency generally costing more.
 
+An ingest batcher is also available to automatically group smaller files into jobs of a configurable size. These jobs
+will be submitted to either standard ingest or bulk import, based on the configuration of the Sleeper table.
+
 ## What ingest rate does Sleeper support?
 
 In theory, an arbitrary number of ingest jobs can run simultaneously. If the limits on your AWS account allowed
@@ -464,3 +467,46 @@ kubectl logs pods/my-job-name
 kubectl port-forward my-job-name 4040:4040
 ```
 
+## Ingest Batcher
+
+An alternative to creating ingest jobs directly is to use the ingest batcher. This lets you submit one file at a time,
+and Sleeper will group them into jobs for you.
+
+This may be deployed by adding `IngestBatcherStack` to the list of optional stacks in the instance property
+`sleeper.optional.stacks`.
+
+Files to be ingested must be accessible to the ingest system you will use. See above for ways to provide access to an
+ingest source bucket, e.g. by setting the property `sleeper.ingest.source.bucket`.
+
+Files can be submitted as messages to the batcher submission SQS queue. You can find the URL of this queue in the
+system-defined property `sleeper.ingest.batcher.submit.queue.url`. 
+
+An example message is shown below:
+
+```json
+{
+    "file": "source-bucket-name/file.parquet",
+    "fileSizeBytes": 1024,
+    "tableName": "target-table"
+}
+```
+
+Each message is a request to ingest a single file into a Sleeper table. The size of the file must be specified in order
+to compute the size of a batch, as the batcher will not read the bucket directly.
+
+The batcher will then track these files and group them into jobs periodically, based on the configuration. The
+configuration specifies minimum and maximum size of a batch, and a maximum age for files.
+
+The minimum batch size determines whether any jobs will be created. The maximum batch size splits the tracked files
+into multiple jobs. The maximum file age overrides the minimum batch size, so that when any file exceeds that age, a job
+will be created with all currently tracked files.
+
+If you submit requests to ingest files with the same path into the same table, this will overwrite the previous request
+for that file, unless it has already been added to a job. When a file has been added to a job, further requests for a
+file at that path will be treated as a new file.
+
+For details of the batcher configuration, see the property descriptions in the example
+[table.properties](../example/full/table.properties) and
+[instance.properties](../example/full/instance.properties) files. The relevant table properties are under
+`sleeper.table.ingest.batcher`. The relevant instance properties are under `sleeper.ingest.batcher` and
+`sleeper.default.ingest.batcher`.

@@ -67,7 +67,7 @@ public class Utils {
     }
 
     public static boolean isTrueOrFalse(String string) {
-        return string.equalsIgnoreCase("true") || string.equalsIgnoreCase("false");
+        return "true".equalsIgnoreCase(string) || "false".equalsIgnoreCase(string);
     }
 
     public static boolean isValidLambdaTimeout(String timeout) {

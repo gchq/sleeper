@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
@@ -60,6 +61,19 @@ public class RunECSTasks {
     public static void runTasksOrThrow(
             AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort)
             throws AmazonClientException {
+        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, checkAbort, result -> {
+        });
+    }
+
+    public static void runTasksOrThrow(
+            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, Consumer<RunTaskResult> resultConsumer)
+            throws AmazonClientException {
+        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false, resultConsumer);
+    }
+
+    private static void runTasksOrThrow(
+            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort, Consumer<RunTaskResult> resultConsumer)
+            throws AmazonClientException {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
         for (int i = 0; i < numberOfTasksToCreate; i += 10) {
             if (i > 0) {
@@ -79,8 +93,9 @@ public class RunECSTasks {
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
 
             if (checkFailure(runTaskResult)) {
-                return;
+                throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
+            resultConsumer.accept(runTaskResult);
 
             if (checkAbort.getAsBoolean()) {
                 LOGGER.info("Aborting running ECS tasks");

@@ -19,6 +19,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.InvalidParameterException;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
+import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -27,6 +28,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -37,6 +41,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 
@@ -57,11 +62,8 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunOneTask(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    1);
+                    new RunTaskRequest().withCluster("test-cluster"), 1);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 1));
@@ -69,11 +71,8 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoTasks(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    2);
+                    new RunTaskRequest().withCluster("test-cluster"), 2);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 2));
@@ -81,11 +80,8 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatches(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    20);
+                    new RunTaskRequest().withCluster("test-cluster"), 20);
 
             verify(2, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
@@ -93,11 +89,8 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunTwoBatchesAndTwoMoreTasks(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    22);
+                    new RunTaskRequest().withCluster("test-cluster"), 22);
 
             verify(3, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
@@ -106,11 +99,8 @@ class RunECSTasksIT {
 
         @Test
         void shouldRunMoreTasksThanCanBeCreatedInOneRequest(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    11);
+                    new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(2, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -119,14 +109,22 @@ class RunECSTasksIT {
 
         @Test
         void shouldAbortAfterOneRequest(WireMockRuntimeInfo runtimeInfo) {
-
             RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    11, () -> true);
+                    new RunTaskRequest().withCluster("test-cluster"), 11, () -> true);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
+
+        @Test
+        void shouldConsumeResults(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseStatus(200);
+            List<RunTaskResult> results = new ArrayList<>();
+
+            RunECSTasks.runTasksOrThrow(wiremockEcsClient(runtimeInfo),
+                    new RunTaskRequest().withCluster("test-cluster"), 1, results::add);
+            assertThat(results)
+                    .containsExactly(new RunTaskResult().withTasks().withFailures());
         }
     }
 
@@ -139,9 +137,7 @@ class RunECSTasksIT {
             stubResponseStatus(500);
 
             RunECSTasks.runTasks(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    11);
+                    new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(4, anyRequest());
             verify(4, runTasksRequestedFor("test-cluster", 10));
@@ -152,9 +148,7 @@ class RunECSTasksIT {
             stubInvalidParameter();
 
             RunECSTasks.runTasks(wiremockEcsClient(runtimeInfo),
-                    new RunTaskRequest()
-                            .withCluster("test-cluster"),
-                    11);
+                    new RunTaskRequest().withCluster("test-cluster"), 11);
 
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
@@ -165,8 +159,7 @@ class RunECSTasksIT {
             stubInvalidParameter();
 
             AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
-            RunTaskRequest request = new RunTaskRequest()
-                    .withCluster("test-cluster");
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
                     .isInstanceOf(InvalidParameterException.class);
@@ -177,11 +170,47 @@ class RunECSTasksIT {
             stubResponseStatus(500);
 
             AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
-            RunTaskRequest request = new RunTaskRequest()
-                    .withCluster("test-cluster");
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
                     .isInstanceOf(AmazonClientException.class);
+        }
+
+        @Test
+        void shouldThrowECSFailureExceptionIfResponseHasFailures(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseWithFailures();
+            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 1))
+                    .isInstanceOf(ECSFailureException.class);
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 1));
+        }
+
+        @Test
+        void shouldExitEarlyIfResultHasFailures(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseWithFailures();
+            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 20))
+                    .isInstanceOf(ECSFailureException.class);
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
+
+        @Test
+        void shouldNotConsumeResultsWithFailures(WireMockRuntimeInfo runtimeInfo) {
+            stubResponseWithFailures();
+            AmazonECS ecsClient = wiremockEcsClient(runtimeInfo);
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+            List<RunTaskResult> results = new ArrayList<>();
+
+            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request,
+                    20, results::add))
+                    .isInstanceOf(ECSFailureException.class);
+            assertThat(results).isEmpty();
         }
     }
 
@@ -189,6 +218,18 @@ class RunECSTasksIT {
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
                 .willReturn(aResponse().withStatus(status)));
+    }
+
+    private static void stubResponseWithFailures() {
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_RUN_TASK_OPERATION)
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{" +
+                                "\"failures\":[{" +
+                                "\"arn\":\"test-arn\"," +
+                                "\"reason\":\"test-reason\"," +
+                                "\"detail\":\"test-detail\"" +
+                                "}]}")));
     }
 
     private static void stubInvalidParameter() {

@@ -651,7 +651,7 @@ public class ReinitialiseTableIT {
         String revisionTableName = createRevisionDynamoTable(tableProperties.get(REVISION_TABLENAME));
         S3StateStore s3StateStore = new S3StateStore(instanceProperties.get(FILE_SYSTEM), 5,
                 tableProperties.get(DATA_BUCKET), revisionTableName,
-                tableProperties.getSchema(), 600,
+                tableProperties.getSchema(), 10,
                 dynamoDBClient, new Configuration());
         s3StateStore.initialise();
 

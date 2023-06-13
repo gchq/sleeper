@@ -40,7 +40,7 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
 
     private StateStore getStateStore(Schema schema) throws StateStoreException {
         String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, 10000, dynamoDBClient);
+        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
         return dynamoDBStateStoreCreator.create();
     }
 

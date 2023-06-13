@@ -33,7 +33,7 @@ public class FileIngestRequestSerDe {
     public static FileIngestRequest fromJson(String json, Instant receivedTime) {
         Request request = GSON.fromJson(json, Request.class);
         return FileIngestRequest.builder()
-                .pathToFile(request.pathToFile)
+                .file(request.file)
                 .fileSizeBytes(request.fileSizeBytes)
                 .tableName(request.tableName)
                 .receivedTime(receivedTime)
@@ -47,12 +47,12 @@ public class FileIngestRequestSerDe {
 
 
     private static class Request {
-        private final String pathToFile;
+        private final String file;
         private final long fileSizeBytes;
         private final String tableName;
 
-        Request(String pathToFile, long fileSizeBytes, String tableName) {
-            this.pathToFile = pathToFile;
+        Request(String file, long fileSizeBytes, String tableName) {
+            this.file = file;
             this.fileSizeBytes = fileSizeBytes;
             this.tableName = tableName;
         }

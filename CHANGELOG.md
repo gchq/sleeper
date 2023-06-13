@@ -4,6 +4,36 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/12-performance-test.md)
 
+## Version 0.17.0
+
+This contains the following improvements:
+
+Ingest batcher:
+- Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md) and [docs/10-design.md](./docs/10-design.md) for more information.
+
+Bulk Import:
+- Upgrade EMR version to 6.10.0.
+- Upgrade Spark version to 3.3.1.
+
+Development:
+- Added devcontainers support.
+- Added a script to regenerate properties templates from property definitions.
+- Added OWASP Dependency-Check Maven plugin.
+
+Tests:
+- Added a way to automatically run system tests and upload the results to an S3 bucket.
+- Increase rate at which Fargate tasks are started in system tests.
+
+Misc:
+- Upgrade parquet-mr version to 1.13.0.
+- Rename `LINES` to `RECORDS` in reports and throughout the project.
+- Update properties templates.
+
+Bugfixes:
+- Fixed an issue where ingest tasks reported an ingest rate of NaN when exiting immediately.
+- Fixed an issue where the default value for a table property did not display when confirming changes in the admin client if the property was unset.
+- Fixed an issue where tearing down an instance would fail if the config bucket was empty.
+
 ## Version 0.16.0
 
 This contains the following improvements:
