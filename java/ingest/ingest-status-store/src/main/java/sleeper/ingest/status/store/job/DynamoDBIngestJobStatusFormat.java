@@ -29,7 +29,9 @@ import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
+import sleeper.ingest.job.status.IngestJobStartedData;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -101,24 +103,23 @@ public class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime,
-                                                              String runId, String taskId, boolean startOfRun) {
-        return createJobRecord(job, UPDATE_TYPE_STARTED)
-                .number(START_TIME, startTime.toEpochMilli())
-                .string(RUN_ID, runId)
-                .string(TASK_ID, taskId)
-                .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .bool(START_OF_RUN, startOfRun)
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedData startedData) {
+        return createJobRecord(startedData.getJob(), UPDATE_TYPE_STARTED)
+                .number(START_TIME, startedData.getStartTime().toEpochMilli())
+                .string(RUN_ID, startedData.getRunId())
+                .string(TASK_ID, startedData.getTaskId())
+                .number(INPUT_FILES_COUNT, startedData.getJob().getFiles().size())
+                .bool(START_OF_RUN, startedData.isStartOfRun())
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobFinishedRecord(IngestJob job, RecordsProcessedSummary summary, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_FINISHED)
-                .number(START_TIME, summary.getStartTime().toEpochMilli())
-                .string(TASK_ID, taskId)
-                .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, summary.getRecordsRead())
-                .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+    public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedData finishedData) {
+        return createJobRecord(finishedData.getJob(), UPDATE_TYPE_FINISHED)
+                .number(START_TIME, finishedData.getSummary().getStartTime().toEpochMilli())
+                .string(TASK_ID, finishedData.getTaskId())
+                .number(FINISH_TIME, finishedData.getSummary().getFinishTime().toEpochMilli())
+                .number(RECORDS_READ, finishedData.getSummary().getRecordsRead())
+                .number(RECORDS_WRITTEN, finishedData.getSummary().getRecordsWritten())
                 .build();
     }
 

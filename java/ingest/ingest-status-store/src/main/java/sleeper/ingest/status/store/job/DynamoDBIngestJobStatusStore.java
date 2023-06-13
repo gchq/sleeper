@@ -98,11 +98,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobStarted(IngestJobStartedData startedData) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(startedData.getJob(),
-                    startedData.getStartTime(),
-                    startedData.getRunId(),
-                    startedData.getTaskId(),
-                    startedData.isStartOfRun()));
+            PutItemResult result = putItem(format.createJobStartedRecord(startedData));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     startedData.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -113,8 +109,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobFinished(IngestJobFinishedData finishedData) {
         try {
-            PutItemResult result = putItem(format.createJobFinishedRecord(
-                    finishedData.getJob(), finishedData.getSummary(), finishedData.getTaskId()));
+            PutItemResult result = putItem(format.createJobFinishedRecord(finishedData));
             LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",
                     finishedData.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
