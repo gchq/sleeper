@@ -221,7 +221,15 @@ class RunECSTasksIT {
             assertThat(results).hasSize(1);
         }
 
-        // TODO don't throw ECSFailureException from runTasks without orThrow
+        @Test
+        void shouldEndOnFailureIfNotThrowing() {
+            stubResponseWithFailures();
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            runTasks(request, 20);
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
     }
 
     @Nested
