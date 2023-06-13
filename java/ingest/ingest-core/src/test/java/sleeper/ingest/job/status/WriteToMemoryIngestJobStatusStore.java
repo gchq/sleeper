@@ -66,19 +66,12 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+    public void jobFinished(IngestJobFinishedData finishedData) {
+        IngestJob job = finishedData.getJob();
+        RecordsProcessedSummary summary = finishedData.getSummary();
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
-        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
-                .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
-                .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));
-        jobRecords.add(updateRecord);
-    }
-
-    @Override
-    public void jobFinished(String runId, String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), runId, null);
+                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary),
+                finishedData.getRunId(), finishedData.getTaskId());
         List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));

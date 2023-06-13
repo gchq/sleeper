@@ -33,6 +33,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobStartedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -100,20 +101,18 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
-        statusStore.jobStarted(IngestJobStartedData.builder()
-                .runId(runId)
-                .taskId(taskId)
-                .job(job.toIngestJob())
-                .startTime(startTime)
-                .startOfRun(false)
-                .build());
+        statusStore.jobStarted(IngestJobStartedData.builder().runId(runId).taskId(taskId)
+                .job(job.toIngestJob()).startTime(startTime).startOfRun(false).build());
 
         BulkImportJobOutput output;
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            statusStore.jobFinished(runId, taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get()));
+            statusStore.jobFinished(IngestJobFinishedData.builder()
+                    .runId(runId).taskId(taskId).job(job.toIngestJob())
+                    .summary(new RecordsProcessedSummary(
+                            new RecordsProcessed(0, 0), startTime, getTime.get()))
+                    .build());
             throw e;
         }
 
@@ -122,8 +121,11 @@ public class BulkImportJobDriver {
                     .addFiles(output.fileInfos());
             LOGGER.info("Added {} files to statestore", output.numFiles());
         } catch (Exception e) {
-            statusStore.jobFinished(runId, taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get()));
+            statusStore.jobFinished(IngestJobFinishedData.builder()
+                    .runId(runId).taskId(taskId).job(job.toIngestJob())
+                    .summary(new RecordsProcessedSummary(
+                            new RecordsProcessed(0, 0), startTime, getTime.get()))
+                    .build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
@@ -134,8 +136,11 @@ public class BulkImportJobDriver {
         long numRecords = output.numRecords();
         double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
-        statusStore.jobFinished(runId, taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
+        statusStore.jobFinished(IngestJobFinishedData.builder()
+                .runId(runId).taskId(taskId).job(job.toIngestJob())
+                .summary(new RecordsProcessedSummary(
+                        new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+                .build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
