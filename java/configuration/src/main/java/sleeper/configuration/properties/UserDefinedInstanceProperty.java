@@ -1007,7 +1007,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.columnindex.truncate.length")
-            .description("The length in bytes to truncate binary values if possible in a binary column index.")
+            .description("The length in bytes to truncate binary values if possible in a column index.")
             .defaultValue("" + Integer.MAX_VALUE)
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();

@@ -140,7 +140,7 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.columnindex.truncate.length")
             .defaultProperty(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH)
-            .description("The length in bytes to truncate binary values if possible in a binary column index.")
+            .description("The length in bytes to truncate binary values if possible in a column index.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.statistics.truncate.length")
             .defaultProperty(DEFAULT_STATISTICS_TRUNCATE_LENGTH)
