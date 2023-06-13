@@ -247,7 +247,8 @@ class RunECSTasksIT {
 
             // Then
             verify(2, anyRequest());
-            verify(2, runTasksRequestedFor("test-cluster", 10));
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+            verify(1, runTasksRequestedFor("test-cluster", 1));
         }
 
         @Test
@@ -276,7 +277,8 @@ class RunECSTasksIT {
                     .isInstanceOf(ECSFailureException.class)
                     .hasMessageContaining("test-reason");
             verify(2, anyRequest());
-            verify(2, runTasksRequestedFor("test-cluster", 10));
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+            verify(1, runTasksRequestedFor("test-cluster", 1));
         }
     }
 

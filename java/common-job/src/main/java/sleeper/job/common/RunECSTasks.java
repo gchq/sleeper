@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.RateLimitUtils;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -108,7 +109,7 @@ public class RunECSTasks {
             RunTaskResult runTaskResult;
             try {
                 runTaskResult = retryTaskUntilCapacityAvailable(ecsClient,
-                        runTaskRequest.withCount(tasksToCreateThisRound));
+                        runTaskRequest, tasksToCreateThisRound);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Failed to retry task ", e);
             }
@@ -127,13 +128,17 @@ public class RunECSTasks {
         }
     }
 
-    private RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request) throws InterruptedException {
+    private RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request, int numberOfTasksToCreate) throws InterruptedException {
+        AtomicInteger numberOfTasksLeft = new AtomicInteger(numberOfTasksToCreate);
         AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
         retryWhenNoCapacity.pollUntil("capacity was available", () -> {
-            RunTaskResult result = ecsClient.runTask(request);
+            RunTaskResult result = ecsClient.runTask(request.withCount(numberOfTasksLeft.get()));
             LOGGER.info("Found failures: {}", result.getFailures());
+            int capacityUnavailableFailures = (int) result.getFailures().stream()
+                    .filter(RunECSTasks::isCapacityUnavailable).count();
+            numberOfTasksLeft.set(capacityUnavailableFailures);
             atomicResult.set(result);
-            return result.getFailures().stream().noneMatch(RunECSTasks::isCapacityUnavailable);
+            return capacityUnavailableFailures == 0;
         });
         return atomicResult.get();
     }
