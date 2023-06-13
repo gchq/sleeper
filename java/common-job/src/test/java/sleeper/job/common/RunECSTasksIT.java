@@ -242,6 +242,7 @@ class RunECSTasksIT {
 
             // When
             builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2))
                     .build().runTasksOrThrow();
 
             // Then
@@ -268,7 +269,8 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             // When/Then
-            RunECSTasks run = builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10).build();
+            RunECSTasks run = builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2)).build();
             assertThatThrownBy(run::runTasksOrThrow)
                     .isInstanceOf(ECSFailureException.class)
                     .hasMessageContaining("test-reason");

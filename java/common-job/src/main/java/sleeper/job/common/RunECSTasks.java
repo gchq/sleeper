@@ -129,18 +129,16 @@ public class RunECSTasks {
             int remainingTasksToCreate = numberOfTasksToCreate - i;
             int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
 
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest.withCount(tasksToCreateThisRound));
+            RunTaskResult runTaskResult;
+            try {
+                runTaskResult = retryTaskUntilCapacityAvailable(ecsClient,
+                        runTaskRequest.withCount(tasksToCreateThisRound));
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Failed to retry task ", e);
+            }
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
-            if (runTaskResult.getFailures().stream().anyMatch(RunECSTasks::isCapacityUnavailable)) {
-                LOGGER.info("No capacity was available, retrying request until there is");
-                try {
-                    runTaskResult = retryTaskUntilCapacityAvailable(ecsClient, runTaskRequest);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed to retry task ", e);
-                }
-            }
             if (checkFailure(runTaskResult)) {
                 throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
             }
@@ -157,11 +155,10 @@ public class RunECSTasks {
         AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
         retryWhenNoCapacity.pollUntil("capacity was available", () -> {
             RunTaskResult result = ecsClient.runTask(request);
-            LOGGER.info("Retried task with failures: {}", result.getFailures());
+            LOGGER.info("Found failures: {}", result.getFailures());
             atomicResult.set(result);
             return result.getFailures().stream().noneMatch(RunECSTasks::isCapacityUnavailable);
         });
-        LOGGER.info("Capacity is available");
         return atomicResult.get();
     }
 
