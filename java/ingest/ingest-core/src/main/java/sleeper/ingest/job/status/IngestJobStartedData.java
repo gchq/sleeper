@@ -40,6 +40,10 @@ public class IngestJobStartedData {
         return new Builder();
     }
 
+    public static IngestJobStartedData startOfRun(String taskId, IngestJob job, Instant startTime) {
+        return builder().taskId(taskId).job(job).startTime(startTime).startOfRun(true).build();
+    }
+
     public String getRunId() {
         return runId;
     }
