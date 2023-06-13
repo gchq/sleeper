@@ -32,6 +32,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.PollWithRetries;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -239,7 +241,8 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             // When
-            RunECSTasks.runTasksOrThrow(ecsClient, request, 10);
+            builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10)
+                    .build().runTasksOrThrow();
 
             // Then
             verify(2, anyRequest());
@@ -265,12 +268,18 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             // When/Then
-            assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 10))
+            RunECSTasks run = builderWithDefaults().runTaskRequest(request).numberOfTasksToCreate(10).build();
+            assertThatThrownBy(run::runTasksOrThrow)
                     .isInstanceOf(ECSFailureException.class)
                     .hasMessageContaining("test-reason");
             verify(2, anyRequest());
             verify(2, runTasksRequestedFor("test-cluster", 10));
         }
+    }
+
+    private RunECSTasks.Builder builderWithDefaults() {
+        return RunECSTasks.builder().ecsClient(ecsClient)
+                .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 1));
     }
 
     private static void stubResponseStatus(int status) {

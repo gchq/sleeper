@@ -44,6 +44,7 @@ public class RunECSTasks {
     private final int numberOfTasksToCreate;
     private final BooleanSupplier checkAbort;
     private final Consumer<RunTaskResult> resultConsumer;
+    private final PollWithRetries retryWhenNoCapacity;
 
     private RunECSTasks(Builder builder) {
         ecsClient = builder.ecsClient;
@@ -51,6 +52,7 @@ public class RunECSTasks {
         numberOfTasksToCreate = builder.numberOfTasksToCreate;
         checkAbort = builder.checkAbort;
         resultConsumer = builder.resultConsumer;
+        retryWhenNoCapacity = builder.retryWhenNoCapacity;
     }
 
     public static Builder builder() {
@@ -151,11 +153,9 @@ public class RunECSTasks {
         }
     }
 
-    private static RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request) throws InterruptedException {
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(
-                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS);
+    private RunTaskResult retryTaskUntilCapacityAvailable(AmazonECS ecsClient, RunTaskRequest request) throws InterruptedException {
         AtomicReference<RunTaskResult> atomicResult = new AtomicReference<>();
-        poll.pollUntil("capacity was available", () -> {
+        retryWhenNoCapacity.pollUntil("capacity was available", () -> {
             RunTaskResult result = ecsClient.runTask(request);
             LOGGER.info("Retried task with failures: {}", result.getFailures());
             atomicResult.set(result);
@@ -223,6 +223,8 @@ public class RunECSTasks {
         private BooleanSupplier checkAbort = () -> false;
         private Consumer<RunTaskResult> resultConsumer = result -> {
         };
+        private PollWithRetries retryWhenNoCapacity = PollWithRetries.intervalAndMaxPolls(
+                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS);
 
         private Builder() {
         }
@@ -249,6 +251,11 @@ public class RunECSTasks {
 
         public Builder resultConsumer(Consumer<RunTaskResult> resultConsumer) {
             this.resultConsumer = resultConsumer;
+            return this;
+        }
+
+        public Builder retryWhenNoCapacity(PollWithRetries retryWhenNoCapacity) {
+            this.retryWhenNoCapacity = retryWhenNoCapacity;
             return this;
         }
 
