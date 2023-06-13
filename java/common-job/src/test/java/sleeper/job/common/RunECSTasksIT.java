@@ -15,8 +15,8 @@
  */
 package sleeper.job.common;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.model.AmazonECSException;
 import com.amazonaws.services.ecs.model.InvalidParameterException;
 import com.amazonaws.services.ecs.model.RunTaskRequest;
 import com.amazonaws.services.ecs.model.RunTaskResult;
@@ -181,7 +181,8 @@ class RunECSTasksIT {
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> RunECSTasks.runTasksOrThrow(ecsClient, request, 11))
-                    .isInstanceOf(AmazonClientException.class);
+                    .isInstanceOf(AmazonECSException.class)
+                    .hasFieldOrPropertyWithValue("statusCode", 500);
         }
 
         @Test
