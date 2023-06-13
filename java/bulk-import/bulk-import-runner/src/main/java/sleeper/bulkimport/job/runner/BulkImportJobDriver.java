@@ -33,6 +33,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.ingest.job.status.IngestJobStartedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStore;
@@ -99,7 +100,13 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
-        statusStore.jobStarted(runId, taskId, job.toIngestJob(), startTime, false);
+        statusStore.jobStarted(IngestJobStartedData.builder()
+                .runId(runId)
+                .taskId(taskId)
+                .job(job.toIngestJob())
+                .startTime(startTime)
+                .startOfRun(false)
+                .build());
 
         BulkImportJobOutput output;
         try {

@@ -34,14 +34,12 @@ public interface IngestJobStatusStore {
     }
 
     default void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(null, taskId, job, startTime, true);
+        jobStarted(IngestJobStartedData.builder().runId(null).taskId(taskId)
+                .job(job).startTime(startTime).startOfRun(true)
+                .build());
     }
 
-    default void jobStartedWithValidation(String runId, String taskId, IngestJob job, Instant startTime) {
-        jobStarted(runId, taskId, job, startTime, false);
-    }
-
-    default void jobStarted(String runId, String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
+    default void jobStarted(IngestJobStartedData startedData) {
     }
 
     default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
