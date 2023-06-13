@@ -38,6 +38,10 @@ public class IngestJobFinishedData {
         return new Builder();
     }
 
+    public static IngestJobFinishedData from(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+        return builder().taskId(taskId).job(job).summary(summary).build();
+    }
+
     public String getRunId() {
         return runId;
     }
@@ -52,6 +56,33 @@ public class IngestJobFinishedData {
 
     public RecordsProcessedSummary getSummary() {
         return summary;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IngestJobFinishedData that = (IngestJobFinishedData) o;
+        return Objects.equals(runId, that.runId) && Objects.equals(taskId, that.taskId) && Objects.equals(job, that.job) && Objects.equals(summary, that.summary);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(runId, taskId, job, summary);
+    }
+
+    @Override
+    public String toString() {
+        return "IngestJobFinishedData{" +
+                "runId='" + runId + '\'' +
+                ", taskId='" + taskId + '\'' +
+                ", job=" + job +
+                ", summary=" + summary +
+                '}';
     }
 
     public static final class Builder {

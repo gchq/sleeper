@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
@@ -41,7 +42,7 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
 
         // When
         store.jobStarted(startOfRun(DEFAULT_TASK_ID, job, startedTime));
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
+        store.jobFinished(IngestJobFinishedData.from(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -62,8 +63,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         // When
         store.jobStarted(startOfRun(DEFAULT_TASK_ID, job, startTime1));
         store.jobStarted(startOfRun(DEFAULT_TASK_ID_2, job, startTime2));
-        store.jobFinished(DEFAULT_TASK_ID, job, new RecordsProcessedSummary(processed, startTime1, finishTime1));
-        store.jobFinished(DEFAULT_TASK_ID_2, job, new RecordsProcessedSummary(processed, startTime2, finishTime2));
+        store.jobFinished(IngestJobFinishedData.from(DEFAULT_TASK_ID, job, new RecordsProcessedSummary(processed, startTime1, finishTime1)));
+        store.jobFinished(IngestJobFinishedData.from(DEFAULT_TASK_ID_2, job, new RecordsProcessedSummary(processed, startTime2, finishTime2)));
 
         // Then
         assertThat(getAllJobStatuses())

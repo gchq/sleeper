@@ -19,6 +19,7 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
@@ -58,7 +59,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(startTime), defaultUpdateTime(finishTime));
         store.jobStarted(startOfRun(DEFAULT_TASK_ID, job, startTime));
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime));
+        store.jobFinished(IngestJobFinishedData.from(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime)));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())

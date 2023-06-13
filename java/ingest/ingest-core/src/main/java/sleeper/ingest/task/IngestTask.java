@@ -25,6 +25,7 @@ import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
+import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreException;
 
@@ -93,7 +94,7 @@ public class IngestTask {
         } finally {
             Instant finishTime = getTimeNow.get();
             RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
-            jobStatusStore.jobFinished(taskId, job, summary);
+            jobStatusStore.jobFinished(IngestJobFinishedData.from(taskId, job, summary));
             taskBuilder.addJobSummary(summary);
         }
 

@@ -18,6 +18,7 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
@@ -110,7 +111,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
 
         // When
         store.jobStarted(startOfRun(DEFAULT_TASK_ID, job, startedTime));
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
+        store.jobFinished(IngestJobFinishedData.from(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
