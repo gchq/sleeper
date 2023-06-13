@@ -39,16 +39,71 @@ public class RunECSTasks {
     private static final int CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS = 30000;
     private static final int CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS = 10;
 
-    private RunECSTasks() {
+    private final AmazonECS ecsClient;
+    private final RunTaskRequest runTaskRequest;
+    private final int numberOfTasksToCreate;
+    private final BooleanSupplier checkAbort;
+    private final Consumer<RunTaskResult> resultConsumer;
+
+    private RunECSTasks(Builder builder) {
+        ecsClient = builder.ecsClient;
+        runTaskRequest = builder.runTaskRequest;
+        numberOfTasksToCreate = builder.numberOfTasksToCreate;
+        checkAbort = builder.checkAbort;
+        resultConsumer = builder.resultConsumer;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate) {
-        runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false);
+        builder().ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .build().runTasks();
     }
 
     public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+        builder().ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .checkAbort(checkAbort)
+                .build().runTasks();
+    }
+
+    public static void runTasksOrThrow(
+            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate)
+            throws AmazonClientException {
+        builder().ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .build().runTasksOrThrow();
+    }
+
+    public static void runTasksOrThrow(
+            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort)
+            throws AmazonClientException {
+        builder().ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .checkAbort(checkAbort)
+                .build().runTasksOrThrow();
+    }
+
+    public static void runTasksOrThrow(
+            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, Consumer<RunTaskResult> resultConsumer)
+            throws AmazonClientException {
+        builder().ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .resultConsumer(resultConsumer)
+                .build().runTasksOrThrow();
+    }
+
+    public void runTasks() {
         try {
-            runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, checkAbort);
+            runTasksOrThrow();
         } catch (InvalidParameterException e) {
             LOGGER.error("Couldn't launch tasks due to InvalidParameterException. " +
                     "This error is expected if there are no EC2 container instances in the cluster.");
@@ -57,27 +112,7 @@ public class RunECSTasks {
         }
     }
 
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate)
-            throws AmazonClientException {
-        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false);
-    }
-
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort)
-            throws AmazonClientException {
-        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, checkAbort, result -> {
-        });
-    }
-
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, Consumer<RunTaskResult> resultConsumer)
-            throws AmazonClientException {
-        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false, resultConsumer);
-    }
-
-    private static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort, Consumer<RunTaskResult> resultConsumer)
+    public void runTasksOrThrow()
             throws AmazonClientException {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
         for (int i = 0; i < numberOfTasksToCreate; i += 10) {
@@ -179,5 +214,46 @@ public class RunECSTasks {
 
     private static boolean isCapacityUnavailable(Failure failure) {
         return failure.getReason().equals("Capacity is unavailable at this time. Please try again later or in a different availability zone");
+    }
+
+    public static final class Builder {
+        private AmazonECS ecsClient;
+        private RunTaskRequest runTaskRequest;
+        private int numberOfTasksToCreate;
+        private BooleanSupplier checkAbort = () -> false;
+        private Consumer<RunTaskResult> resultConsumer = result -> {
+        };
+
+        private Builder() {
+        }
+
+        public Builder ecsClient(AmazonECS ecsClient) {
+            this.ecsClient = ecsClient;
+            return this;
+        }
+
+        public Builder runTaskRequest(RunTaskRequest runTaskRequest) {
+            this.runTaskRequest = runTaskRequest;
+            return this;
+        }
+
+        public Builder numberOfTasksToCreate(int numberOfTasksToCreate) {
+            this.numberOfTasksToCreate = numberOfTasksToCreate;
+            return this;
+        }
+
+        public Builder checkAbort(BooleanSupplier checkAbort) {
+            this.checkAbort = checkAbort;
+            return this;
+        }
+
+        public Builder resultConsumer(Consumer<RunTaskResult> resultConsumer) {
+            this.resultConsumer = resultConsumer;
+            return this;
+        }
+
+        public RunECSTasks build() {
+            return new RunECSTasks(this);
+        }
     }
 }
