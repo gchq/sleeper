@@ -25,5 +25,6 @@ USERNAME="$1"
 environment setuser
 environment connect sudo adduser --disabled-password --gecos "-" "$USERNAME" \
   "&&" sudo passwd -d "$USERNAME" \
-  "&&" sudo usermod -aG sudo "$USERNAME"
+  "&&" sudo usermod -aG sudo "$USERNAME" \
+  "&&" sudo usermod -aG docker "$USERNAME"
 environment setuser "$USERNAME"
