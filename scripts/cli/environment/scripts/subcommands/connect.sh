@@ -37,11 +37,18 @@ TEMP_KEY_PATH="$TEMP_KEY_DIR/$RANDOM"
 mkdir -p "$TEMP_KEY_DIR"
 rm -f "$TEMP_KEY_DIR/*"
 
+print_time() {
+  date -u +"%T UTC"
+}
+
+echo "[$(print_time)] Generating temporary SSH key..."
 ssh-keygen -q -t rsa -N '' -f "$TEMP_KEY_PATH"
+echo "[$(print_time)] Uploading public key..."
 aws ec2-instance-connect send-ssh-public-key \
   --instance-id "$INSTANCE_ID" \
   --instance-os-user "$USER" \
   --ssh-public-key "file://$TEMP_KEY_PATH.pub"
+echo "[$(print_time)] Connecting..."
 ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t "$USER@$EC2_IP" "${SSH_PARAMS[@]}"
 
 rm -f "$TEMP_KEY_DIR/*"
