@@ -35,7 +35,6 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.util.MyIpUtil;
 
 import java.util.Collections;
 
@@ -86,7 +85,7 @@ public class BuildEC2Stack extends Stack {
                 .description("Allow SSH inbound traffic")
                 .allowAllOutbound(true)
                 .build();
-        allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
+        allowSsh.addIngressRule(Peer.anyIpv4(), Port.tcp(22));
         return allowSsh;
     }
 
