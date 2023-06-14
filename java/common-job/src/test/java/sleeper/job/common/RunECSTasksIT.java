@@ -186,7 +186,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldThrowECSFailureExceptionIfResponseHasFailures() {
-            stubResponseWithFailures();
+            stubFor(runTaskWillReturnFatalFailure());
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> runTasksOrThrow(request, 1))
@@ -197,7 +197,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldExitEarlyIfResultHasFailures() {
-            stubResponseWithFailures();
+            stubFor(runTaskWillReturnFatalFailure());
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             assertThatThrownBy(() -> runTasksOrThrow(request, 20))
@@ -208,7 +208,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldConsumeResultsWithFailures() {
-            stubResponseWithFailures();
+            stubFor(runTaskWillReturnFatalFailure());
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
             List<RunTaskResult> results = new ArrayList<>();
 
@@ -223,7 +223,7 @@ class RunECSTasksIT {
 
         @Test
         void shouldEndOnFailureIfNotThrowing() {
-            stubResponseWithFailures();
+            stubFor(runTaskWillReturnFatalFailure());
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
 
             runTasks(request, 20);
@@ -233,8 +233,8 @@ class RunECSTasksIT {
     }
 
     @Nested
-    @DisplayName("Retry running tasks")
-    class RetryTasks {
+    @DisplayName("Retry running tasks when capacity is unavailable")
+    class RetryTasksWaitingForCapacity {
 
         @Test
         void shouldRetryWhenCapacityIsUnavailableThenSuccessfullyRunTask() {
@@ -266,13 +266,7 @@ class RunECSTasksIT {
                     .inScenario("retry capacity")
                     .whenScenarioStateIs(Scenario.STARTED)
                     .willSetStateTo("request-2"));
-            stubFor(runTaskWillReturn(aResponse().withStatus(200)
-                    .withBody("{" +
-                            "\"failures\":[{" +
-                            "\"arn\":\"test-arn\"," +
-                            "\"reason\":\"test-reason\"," +
-                            "\"detail\":\"test-detail\"" +
-                            "}]}"))
+            stubFor(runTaskWillReturnFatalFailure()
                     .inScenario("retry capacity")
                     .whenScenarioStateIs("request-2"));
             RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
@@ -328,6 +322,22 @@ class RunECSTasksIT {
             verify(1, runTasksRequestedFor("test-cluster", 10));
             assertThat(results).hasSize(1);
         }
+
+        @Test
+        void shouldAbortBetweenCapacityUnavailableRequests() {
+            // Given
+            stubFor(runTaskWillReturnCapacityUnavailable());
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            // When
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(request).numberOfTasksToCreate(10)
+                    .checkAbort(() -> true));
+
+            // Then
+            verify(1, anyRequest());
+            verify(1, runTasksRequestedFor("test-cluster", 10));
+        }
     }
 
     private void runTasks(RunTaskRequest request, int numberOfTasksToCreate) {
@@ -367,14 +377,14 @@ class RunECSTasksIT {
         stubFor(runTaskWillReturn(aResponse().withStatus(status)));
     }
 
-    private static void stubResponseWithFailures() {
-        stubFor(runTaskWillReturn(aResponse().withStatus(200)
+    private static MappingBuilder runTaskWillReturnFatalFailure() {
+        return runTaskWillReturn(aResponse().withStatus(200)
                 .withBody("{" +
                         "\"failures\":[{" +
                         "\"arn\":\"test-arn\"," +
                         "\"reason\":\"test-reason\"," +
                         "\"detail\":\"test-detail\"" +
-                        "}]}")));
+                        "}]}"));
     }
 
     private static MappingBuilder runTaskWillReturnCapacityUnavailable() {

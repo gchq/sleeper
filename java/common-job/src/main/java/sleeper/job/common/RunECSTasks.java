@@ -93,28 +93,27 @@ public class RunECSTasks {
     public void runTasksOrThrow()
             throws AmazonClientException {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        for (int i = 0; i < numberOfTasksToCreate; i += 10) {
-            if (i > 0) {
-                // Rate limit for Fargate tasks is 100 burst, 20 sustained.
-                // Rate limit for ECS task creation API is 20 burst, 20 sustained.
-                // To stay below this limit we create 10 tasks once per second.
-                // See documentation:
-                // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
-                sleepForSustainedRatePerSecond.accept(1);
-            }
-            int remainingTasksToCreate = numberOfTasksToCreate - i;
-            int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
+        try {
+            for (int i = 0; i < numberOfTasksToCreate; i += 10) {
+                if (i > 0) {
+                    // Rate limit for Fargate tasks is 100 burst, 20 sustained.
+                    // Rate limit for ECS task creation API is 20 burst, 20 sustained.
+                    // To stay below this limit we create 10 tasks once per second.
+                    // See documentation:
+                    // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
+                    sleepForSustainedRatePerSecond.accept(1);
+                }
+                int remainingTasksToCreate = numberOfTasksToCreate - i;
+                int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
 
-            try {
-                retryTaskUntilCapacityAvailable(tasksToCreateThisRound);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Failed to retry task ", e);
+                try {
+                    retryTaskUntilCapacityAvailable(tasksToCreateThisRound);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Failed to retry task ", e);
+                }
             }
-
-            if (checkAbort.getAsBoolean()) {
-                LOGGER.info("Aborting running ECS tasks");
-                return;
-            }
+        } catch (ECSAbortException e) {
+            LOGGER.info("Aborted running ECS tasks");
         }
     }
 
@@ -123,6 +122,9 @@ public class RunECSTasks {
         retryWhenNoCapacity.pollUntil("capacity was available", () -> {
             RunTaskResult result = ecsClient.runTask(runTaskRequest.withCount(numberOfTasksLeft.get()));
             resultConsumer.accept(result);
+            if (checkAbort.getAsBoolean()) {
+                throw new ECSAbortException();
+            }
 
             int capacityUnavailableFailures = (int) result.getFailures().stream()
                     .filter(RunECSTasks::isCapacityUnavailable).count();
