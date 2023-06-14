@@ -128,16 +128,19 @@ public class RunECSTasks {
                 throw new ECSAbortException();
             }
 
+            int failures = result.getFailures().size();
             int capacityUnavailableFailures = (int) result.getFailures().stream()
                     .filter(RunECSTasks::isCapacityUnavailable).count();
-            remainingTasksObj.updateAndGet(tasks -> tasks - (tasksThisRound - capacityUnavailableFailures));
+            int fatalFailures = failures - capacityUnavailableFailures;
+            int successfulTaskRuns = tasksThisRound - failures;
+            remainingTasksObj.updateAndGet(tasks -> tasks - successfulTaskRuns);
 
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(result), new TaskDefinitionArn(result));
             LOGGER.info("Created {} tasks", result.getTasks().size());
             LOGGER.info("Found failures: {}", result.getFailures());
-            if (result.getFailures().size() - capacityUnavailableFailures > 0) {
+            if (fatalFailures > 0) {
                 throw new ECSFailureException("Failures running task: " + result.getFailures());
             }
 
