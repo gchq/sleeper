@@ -25,6 +25,7 @@ if [ "$#" -lt 1 ]; then
   echo "Setting default user: $USERNAME"
 else
   USERNAME=$1
+  echo "Setting user: $USERNAME"
 fi
 
 echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
