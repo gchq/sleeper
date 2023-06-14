@@ -26,5 +26,6 @@ environment setuser
 environment connect sudo adduser --disabled-password --gecos "-" "$USERNAME" \
   "&&" sudo passwd -d "$USERNAME" \
   "&&" sudo usermod -aG sudo "$USERNAME" \
-  "&&" sudo usermod -aG docker "$USERNAME"
+  "&&" sudo usermod -aG docker "$USERNAME" \
+  "&&" sudo -u "$USERNAME" git clone "https://github.com/gchq/sleeper.git" "/home/$USERNAME/.sleeper/builder/sleeper"
 environment setuser "$USERNAME"
