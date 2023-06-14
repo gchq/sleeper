@@ -23,13 +23,15 @@ else
   SSH_PARAMS=(screen -d -RR)
 fi
 
+echo "SSH_PARAMS: " "${SSH_PARAMS[@]}"
+
 ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+USERNAME=$(cat "$ENVIRONMENTS_DIR/currentUser.txt")
 
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
 
-USER=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
 EC2_IP=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
 INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
 TEMP_KEY_DIR=/tmp/sleeper/temp_keys
@@ -46,9 +48,9 @@ ssh-keygen -q -t rsa -N '' -f "$TEMP_KEY_PATH"
 echo "[$(print_time)] Uploading public key..."
 aws ec2-instance-connect send-ssh-public-key \
   --instance-id "$INSTANCE_ID" \
-  --instance-os-user "$USER" \
+  --instance-os-user "$USERNAME" \
   --ssh-public-key "file://$TEMP_KEY_PATH.pub"
 echo "[$(print_time)] Connecting..."
-ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t "$USER@$EC2_IP" "${SSH_PARAMS[@]}"
+ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t "$USERNAME@$EC2_IP" "${SSH_PARAMS[@]}"
 
 rm -f "$TEMP_KEY_DIR/*"

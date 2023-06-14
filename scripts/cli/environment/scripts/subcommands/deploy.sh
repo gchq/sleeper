@@ -42,7 +42,10 @@ pushd "$CDK_ROOT_DIR" > /dev/null
 cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
 popd > /dev/null
 
+USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+
 echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
+echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
 
 # If an EC2 was created, save SSH details
 INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
