@@ -76,6 +76,12 @@ The Sleeper Git repository will also be cloned, and you can access it by running
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
 
+If you want someone else to be able to access the same environment EC2, they can run `sleeper environment deploy <id>`
+with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
+can set up separate users with `sleeper environment adduser <username>`, and switch users with
+`sleeper environment setuser <username>`. If you call `sleeper environment setuser` with no arguments, you'll switch
+back to the original default user for the EC2.
+
 ### System test
 
 To run the system test, set the environment variable `ID` to be a globally unique string. This is the instance id. It
