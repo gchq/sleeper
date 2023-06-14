@@ -21,14 +21,12 @@ if [ "$#" -lt 1 ]; then
 fi
 
 USERNAME="$1"
-ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
 environment setuser
-LOGIN_USER=$(cat "$ENVIRONMENTS_DIR/currentUser.txt")
 environment connect sudo adduser --disabled-password --gecos "-" "$USERNAME" \
   "&&" sudo passwd -d "$USERNAME" \
   "&&" sudo usermod -aG sudo "$USERNAME" \
   "&&" sudo usermod -aG docker "$USERNAME" \
-  "&&" sudo runuser --login "$USERNAME" -c "/home/$LOGIN_USER/sleeper-install.sh" \
-  "&&" sudo runuser --login "$USERNAME" -c '"sleeper builder git clone https://github.com/gchq/sleeper.git"'
+  "&&" sudo runuser --login "$USERNAME" -c '"git clone https://github.com/gchq/sleeper.git ~/.sleeper/builder/sleeper"' \
+  "&&" sudo runuser --login "$USERNAME" -c '"~/.sleeper/builder/sleeper/scripts/cli/install.sh"'
 environment setuser "$USERNAME"
