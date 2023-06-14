@@ -28,9 +28,20 @@ ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
-PRIVATE_KEY_FILE="$ENVIRONMENT_DIR/BuildEC2.pem"
 
 USER=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
 EC2_IP=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
+TEMP_KEY_DIR=/tmp/sleeper/temp_keys
+TEMP_KEY_PATH="$TEMP_KEY_DIR/$RANDOM"
+mkdir -p "$TEMP_KEY_DIR"
+rm -f "$TEMP_KEY_DIR/*"
 
-ssh -i "$PRIVATE_KEY_FILE" -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -t "$USER@$EC2_IP" "${SSH_PARAMS[@]}"
+ssh-keygen -q -t rsa -N '' -f "$TEMP_KEY_PATH"
+aws ec2-instance-connect send-ssh-public-key \
+  --instance-id "$INSTANCE_ID" \
+  --instance-os-user "$USER" \
+  --ssh-public-key "file://$TEMP_KEY_PATH.pub"
+ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t "$USER@$EC2_IP" "${SSH_PARAMS[@]}"
+
+rm -f "$TEMP_KEY_DIR/*"
