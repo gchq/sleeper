@@ -45,8 +45,8 @@ sleeper cdk bootstrap
 sleeper environment deploy TestEnvironment
 ```
 
-The `sleeper environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
-You can then SSH to it with this command:
+The `sleeper environment deploy` command will wait for the EC2 instance to be deployed.
+You can then SSH to it with EC2 Instance Connect, using this command:
 
 ```bash
 sleeper environment connect
