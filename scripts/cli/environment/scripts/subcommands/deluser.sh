@@ -20,7 +20,8 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 USERNAME="$1"
 
-environment setuser
-environment connect sudo deluser --remove-home "$USERNAME"
+"$THIS_DIR/setuser.sh"
+"$THIS_DIR/connect.sh" sudo deluser --remove-home "$USERNAME"

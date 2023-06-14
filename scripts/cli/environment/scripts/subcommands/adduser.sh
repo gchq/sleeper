@@ -20,13 +20,14 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 USERNAME="$1"
 
-environment setuser
-environment connect sudo adduser --disabled-password --gecos "-" "$USERNAME" \
+"$THIS_DIR/setuser.sh"
+"$THIS_DIR/connect.sh" sudo adduser --disabled-password --gecos "-" "$USERNAME" \
   "&&" sudo passwd -d "$USERNAME" \
   "&&" sudo usermod -aG sudo "$USERNAME" \
   "&&" sudo usermod -aG docker "$USERNAME" \
   "&&" sudo runuser --login "$USERNAME" -c '"git clone https://github.com/gchq/sleeper.git ~/.sleeper/builder/sleeper"' \
   "&&" sudo runuser --login "$USERNAME" -c '"~/.sleeper/builder/sleeper/scripts/cli/install.sh"'
-environment setuser "$USERNAME"
+"$THIS_DIR/setuser.sh" "$USERNAME"
