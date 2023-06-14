@@ -138,8 +138,8 @@ public class RunECSTasks {
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
                     new ContainerName(result), new TaskDefinitionArn(result));
-            LOGGER.info("Created {} tasks, {} remaining to create", result.getTasks().size(), remainingTasksAfter);
             LOGGER.info("Found failures: {}", result.getFailures());
+            LOGGER.info("Created {} tasks, {} remaining to create", result.getTasks().size(), remainingTasksAfter);
             if (fatalFailures > 0) {
                 throw new ECSFailureException("Failures running task: " + result.getFailures());
             }
