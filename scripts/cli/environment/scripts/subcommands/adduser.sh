@@ -23,5 +23,7 @@ fi
 USERNAME="$1"
 
 environment setuser
-environment connect sudo adduser --disabled-password --gecos "-" "$USERNAME"
+environment connect sudo adduser --disabled-password --gecos "-" "$USERNAME" \
+  "&&" sudo passwd -d "$USERNAME" \
+  "&&" sudo usermod -aG sudo "$USERNAME"
 environment setuser "$USERNAME"
