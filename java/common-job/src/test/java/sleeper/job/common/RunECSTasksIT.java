@@ -338,6 +338,28 @@ class RunECSTasksIT {
             verify(1, anyRequest());
             verify(1, runTasksRequestedFor("test-cluster", 10));
         }
+
+        @Test
+        void shouldRetryAFullBatchWhenCapacityUnavailableAndAFullBatchIsLeftToCreate() {
+            // Given
+            stubFor(runTaskWillReturnCapacityUnavailable()
+                    .inScenario("retry capacity")
+                    .whenScenarioStateIs(Scenario.STARTED)
+                    .willSetStateTo("request-2"));
+            stubFor(runTaskWillReturn(aResponse().withStatus(200))
+                    .inScenario("retry capacity")
+                    .whenScenarioStateIs("request-2"));
+            RunTaskRequest request = new RunTaskRequest().withCluster("test-cluster");
+
+            // When
+            runTasksOrThrow(builder -> builder
+                    .runTaskRequest(request).numberOfTasksToCreate(19)
+                    .retryWhenNoCapacity(PollWithRetries.intervalAndMaxPolls(0, 2)));
+
+            // Then
+            verify(2, anyRequest());
+            verify(2, runTasksRequestedFor("test-cluster", 10));
+        }
     }
 
     private void runTasks(RunTaskRequest request, int numberOfTasksToCreate) {

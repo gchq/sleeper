@@ -94,22 +94,23 @@ public class RunECSTasks {
             throws AmazonClientException {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
         try {
-            for (int i = 0; i < numberOfTasksToCreate; i += 10) {
-                if (i > 0) {
+            int remainingTasks = numberOfTasksToCreate;
+            while (true) {
+
+                try {
+                    remainingTasks = retryTaskUntilCapacityAvailable(remainingTasks);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Failed to retry task ", e);
+                }
+                if (remainingTasks > 0) {
                     // Rate limit for Fargate tasks is 100 burst, 20 sustained.
                     // Rate limit for ECS task creation API is 20 burst, 20 sustained.
                     // To stay below this limit we create 10 tasks once per second.
                     // See documentation:
                     // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
                     sleepForSustainedRatePerSecond.accept(1);
-                }
-                int remainingTasksToCreate = numberOfTasksToCreate - i;
-                int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
-
-                try {
-                    retryTaskUntilCapacityAvailable(tasksToCreateThisRound);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed to retry task ", e);
+                } else {
+                    break;
                 }
             }
         } catch (ECSAbortException e) {
@@ -117,10 +118,11 @@ public class RunECSTasks {
         }
     }
 
-    private void retryTaskUntilCapacityAvailable(int numberOfTasksToCreate) throws InterruptedException {
-        AtomicInteger numberOfTasksLeft = new AtomicInteger(numberOfTasksToCreate);
+    private int retryTaskUntilCapacityAvailable(int remainingTasks) throws InterruptedException {
+        AtomicInteger remainingTasksObj = new AtomicInteger(remainingTasks);
         retryWhenNoCapacity.pollUntil("capacity was available", () -> {
-            RunTaskResult result = ecsClient.runTask(runTaskRequest.withCount(numberOfTasksLeft.get()));
+            int tasksThisRound = Math.min(10, remainingTasksObj.get());
+            RunTaskResult result = ecsClient.runTask(runTaskRequest.withCount(tasksThisRound));
             resultConsumer.accept(result);
             if (checkAbort.getAsBoolean()) {
                 throw new ECSAbortException();
@@ -128,7 +130,7 @@ public class RunECSTasks {
 
             int capacityUnavailableFailures = (int) result.getFailures().stream()
                     .filter(RunECSTasks::isCapacityUnavailable).count();
-            numberOfTasksLeft.set(capacityUnavailableFailures);
+            remainingTasksObj.updateAndGet(tasks -> tasks - (tasksThisRound - capacityUnavailableFailures));
 
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
@@ -141,6 +143,7 @@ public class RunECSTasks {
 
             return capacityUnavailableFailures == 0;
         });
+        return remainingTasksObj.get();
     }
 
     private static class ContainerName {
