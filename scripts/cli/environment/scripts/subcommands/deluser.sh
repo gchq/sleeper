@@ -16,8 +16,8 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment deluser <username>"
-	exit 1
+  echo "Usage: environment deluser <username>"
+  exit 1
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)

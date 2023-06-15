@@ -16,15 +16,15 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
-	exit 1
+  echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
+  exit 1
 fi
 
 ENVIRONMENT_ID=$1
 shift
 
 if [ "$#" -lt 2 ]; then
-	CDK_PARAMS=("--all")
+  CDK_PARAMS=("--all")
 else
   CDK_PARAMS=("$@")
 fi

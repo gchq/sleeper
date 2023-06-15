@@ -36,15 +36,13 @@ echo "Scanning $EC2_IP"
 RETRY_NUM=30
 RETRY_EVERY=10
 NUM=$RETRY_NUM
-until ssh-keyscan -H "$EC2_IP" > "$KNOWN_HOSTS_FILE"
-do
-  1>&2 echo "Failed SSH scan with status $?, retrying $NUM more times, next in $RETRY_EVERY seconds"
+until ssh-keyscan -H "$EC2_IP" > "$KNOWN_HOSTS_FILE"; do
+  echo 1>&2 "Failed SSH scan with status $?, retrying $NUM more times, next in $RETRY_EVERY seconds"
   sleep $RETRY_EVERY
   ((NUM--))
 
-  if [ $NUM -eq 0 ]
-  then
-    1>&2 echo "SSH scan unsuccessful after $RETRY_NUM tries"
+  if [ $NUM -eq 0 ]; then
+    echo 1>&2 "SSH scan unsuccessful after $RETRY_NUM tries"
     exit 1
   fi
 done
