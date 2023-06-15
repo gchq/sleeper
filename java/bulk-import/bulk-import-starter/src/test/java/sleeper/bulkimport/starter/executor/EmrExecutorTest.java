@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.ToIntFunction;
+import java.util.function.IntUnaryOperator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -93,7 +93,7 @@ class EmrExecutorTest {
         return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
     }
 
-    private EmrExecutor executorWithRandomSubnetFunction(ToIntFunction<List<String>> randomSubnet) {
+    private EmrExecutor executorWithRandomSubnetFunction(IntUnaryOperator randomSubnet) {
         return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3, randomSubnet);
     }
 
@@ -316,7 +316,7 @@ class EmrExecutorTest {
                 .build();
 
         // When
-        executorWithRandomSubnetFunction(subnets -> 1).runJob(myJob);
+        executorWithRandomSubnetFunction(numSubnets -> 1).runJob(myJob);
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();

@@ -55,7 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.ToIntFunction;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -72,21 +72,21 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
     private final AmazonElasticMapReduce emrClient;
-    private final ToIntFunction<List<String>> randomSubnet;
+    private final IntUnaryOperator randomSubnet;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
         this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
-                randomSubnetFunction());
+                new Random()::nextInt);
     }
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3,
-                       ToIntFunction<List<String>> randomSubnet) {
+                       IntUnaryOperator randomSubnet) {
         super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
         this.randomSubnet = randomSubnet;
@@ -196,12 +196,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
     private String randomSubnet() {
         List<String> subnets = instanceProperties.getList(UserDefinedInstanceProperty.SUBNETS);
-        return subnets.get(randomSubnet.applyAsInt(subnets));
-    }
-
-    private static ToIntFunction<List<String>> randomSubnetFunction() {
-        Random random = new Random();
-        return subnets -> random.nextInt(subnets.size());
+        return subnets.get(randomSubnet.applyAsInt(subnets.size()));
     }
 
     private List<Configuration> getConfigurations() {
