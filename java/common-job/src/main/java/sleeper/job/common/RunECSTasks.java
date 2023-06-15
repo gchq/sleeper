@@ -36,8 +36,8 @@ import java.util.function.DoubleConsumer;
 
 public class RunECSTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunECSTasks.class);
-    private static final int CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS = 30000;
-    private static final int CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS = 10;
+    private static final long CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS = 5000;
+    private static final long CAPACITY_UNAVAILABLE_RETRY_TIMEOUT_MILLIS = 60000;
 
     private final AmazonECS ecsClient;
     private final RunTaskRequest runTaskRequest;
@@ -190,8 +190,8 @@ public class RunECSTasks {
         private Consumer<RunTaskResult> resultConsumer = result -> {
         };
         private DoubleConsumer sleepForSustainedRatePerSecond = RateLimitUtils::sleepForSustainedRatePerSecond;
-        private PollWithRetries retryWhenNoCapacity = PollWithRetries.intervalAndMaxPolls(
-                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_MAX_POLLS);
+        private PollWithRetries retryWhenNoCapacity = PollWithRetries.intervalAndPollingTimeout(
+                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_TIMEOUT_MILLIS);
 
         private Builder() {
         }
