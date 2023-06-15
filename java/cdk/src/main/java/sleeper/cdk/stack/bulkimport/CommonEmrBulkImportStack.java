@@ -52,6 +52,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
@@ -149,7 +150,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
         String vpc = instanceProperties.get(VPC_ID);
-        String subnet = instanceProperties.get(SUBNETS);
+        List<String> subnets = instanceProperties.getList(SUBNETS);
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
@@ -175,7 +176,9 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                                 "ec2:CreateLaunchTemplate",
                                                 "ec2:CreateLaunchTemplateVersion"))
                                         .effect(Effect.ALLOW)
-                                        .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet))
+                                        .resources(subnets.stream()
+                                                .map(subnet -> "arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet)
+                                                .collect(Collectors.toList()))
                                         .build()),
                                 new PolicyStatement(PolicyStatementProps.builder()
                                         .sid("PassEc2Role")

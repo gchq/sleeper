@@ -129,7 +129,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetId(instanceProperties.get(SUBNETS))
+                .ec2SubnetIds(instanceProperties.getList(SUBNETS))
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
                 .coreInstanceGroup(coreInstanceGroupConfigProperty);
 

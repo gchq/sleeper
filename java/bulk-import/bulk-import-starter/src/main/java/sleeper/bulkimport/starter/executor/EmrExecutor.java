@@ -130,7 +130,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
         JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(instanceProperties.get(UserDefinedInstanceProperty.SUBNETS));
+                .withEc2SubnetIds(instanceProperties.getList(UserDefinedInstanceProperty.SUBNETS));
 
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
