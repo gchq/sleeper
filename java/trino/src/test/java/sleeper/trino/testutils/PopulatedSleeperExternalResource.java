@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -77,7 +76,7 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * This class is a JUnit {@link ExternalResource} which starts a local S3 and DynamoDB within a Docker
+ * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
  * LocalStackContainer. Sleeper tables are created, with the data files themselves stored in a temporary directory on
  * the local disk.
  * <p>
