@@ -80,7 +80,7 @@ public class InvokeIngestBatcher {
                 new SendFilesToIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
                         batcherStore, s3, sqs, lambda),
                 batcherStore, new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties),
-                InvokeSystemTestLambda.client(instanceProperties),
+                InvokeSystemTestLambda.client(lambda, instanceProperties),
                 QueueMessageCount.withSqsClient(sqs));
     }
 
