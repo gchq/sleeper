@@ -33,16 +33,12 @@ public class InvokeSystemTestLambda {
 
     public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
         try (LambdaClient lambdaClient = LambdaClient.create()) {
-            client(lambdaClient, instanceId).invokeLambda(lambdaFunctionProperty);
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            SystemTestProperties systemTestProperties = new SystemTestProperties();
+            systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            s3Client.shutdown();
+            client(lambdaClient, systemTestProperties).invokeLambda(lambdaFunctionProperty);
         }
-    }
-
-    public static Client client(LambdaClient lambdaClient, String instanceId) throws IOException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        s3Client.shutdown();
-        return client(lambdaClient, systemTestProperties);
     }
 
     public static Client client(LambdaClient lambdaClient, InstanceProperties instanceProperties) {
