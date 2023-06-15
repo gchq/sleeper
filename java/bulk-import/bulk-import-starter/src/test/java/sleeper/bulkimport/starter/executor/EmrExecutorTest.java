@@ -309,6 +309,7 @@ class EmrExecutorTest {
     void shouldSetRandomSubnetForInstanceGroupWhenMultipleSubnetsSpecified() {
         // Given
         instanceProperties.set(SUBNETS, "test-subnet-1,test-subnet-2,test-subnet-3");
+        int randomSubnetIndex = 1;
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -316,7 +317,7 @@ class EmrExecutorTest {
                 .build();
 
         // When
-        executorWithRandomSubnetFunction(numSubnets -> 1).runJob(myJob);
+        executorWithRandomSubnetFunction(numSubnets -> randomSubnetIndex).runJob(myJob);
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
