@@ -30,12 +30,6 @@ import sleeper.core.ContainerConstants;
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
  * A lambda function to execute {@link RunTasks}.
@@ -53,19 +47,9 @@ public class RunTasksLambda {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        String containerName = ContainerConstants.INGEST_CONTAINER_NAME;
-        String taskDefinition = instanceProperties.get(INGEST_TASK_DEFINITION_FAMILY);
-
         this.runTasks = new RunTasks(sqsClient,
-                ecsClient,
-                instanceProperties.get(INGEST_JOB_QUEUE_URL),
-                instanceProperties.get(INGEST_CLUSTER),
-                containerName,
-                taskDefinition,
-                instanceProperties.getInt(MAXIMUM_CONCURRENT_INGEST_TASKS),
-                instanceProperties.get(SUBNETS),
-                s3Bucket,
-                instanceProperties.get(FARGATE_VERSION));
+                ecsClient, instanceProperties,
+                ContainerConstants.INGEST_CONTAINER_NAME);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) throws InterruptedException {
