@@ -52,7 +52,7 @@ public class RunTasksLambda {
                 ContainerConstants.INGEST_CONTAINER_NAME);
     }
 
-    public void eventHandler(ScheduledEvent event, Context context) throws InterruptedException {
+    public void eventHandler(ScheduledEvent event, Context context) {
         runTasks.run();
     }
 
