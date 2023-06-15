@@ -56,7 +56,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
@@ -114,7 +114,7 @@ public class RunTasks {
             throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
         }
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
-        this.subnet = instanceProperties.get(SUBNET);
+        this.subnet = instanceProperties.get(SUBNETS);
         this.fargateVersion = instanceProperties.get(FARGATE_VERSION);
         this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 

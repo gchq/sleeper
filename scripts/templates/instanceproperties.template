@@ -25,7 +25,7 @@ sleeper.region=changeme
 sleeper.vpc=changeme
 
 # The subnet to deploy ECS tasks to.
-sleeper.subnet=changeme
+sleeper.subnets=changeme
 
 
 ## The following properties relate to standard ingest.

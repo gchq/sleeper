@@ -39,7 +39,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class GenerateInstanceProperties {
@@ -71,7 +71,7 @@ public class GenerateInstanceProperties {
         instanceProperties.set(ACCOUNT, accountSupplier.get());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
         instanceProperties.set(VPC_ID, vpcId);
-        instanceProperties.set(SUBNET, subnetId);
+        instanceProperties.set(SUBNETS, subnetId);
         return instanceProperties;
     }
 

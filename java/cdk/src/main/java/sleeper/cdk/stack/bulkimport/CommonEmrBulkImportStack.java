@@ -59,7 +59,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class CommonEmrBulkImportStack extends NestedStack {
@@ -149,7 +149,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
         String vpc = instanceProperties.get(VPC_ID);
-        String subnet = instanceProperties.get(SUBNET);
+        String subnet = instanceProperties.get(SUBNETS);
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(

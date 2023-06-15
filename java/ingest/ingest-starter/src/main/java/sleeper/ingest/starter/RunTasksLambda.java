@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
  * A lambda function to execute {@link RunTasks}.
@@ -63,7 +63,7 @@ public class RunTasksLambda {
                 containerName,
                 taskDefinition,
                 instanceProperties.getInt(MAXIMUM_CONCURRENT_INGEST_TASKS),
-                instanceProperties.get(SUBNET),
+                instanceProperties.get(SUBNETS),
                 s3Bucket,
                 instanceProperties.get(FARGATE_VERSION));
     }
