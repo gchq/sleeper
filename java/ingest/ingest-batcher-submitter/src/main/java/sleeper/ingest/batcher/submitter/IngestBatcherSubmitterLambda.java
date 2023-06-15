@@ -56,9 +56,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client) {
-        this.s3Client = s3Client;
         this.store = store;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.s3Client = s3Client;
     }
 
     @Override

@@ -32,6 +32,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda.isRequestForDirectory;
 
 @Testcontainers
 public class IngestBatcherSubmitterLambdaIT {
@@ -61,6 +62,7 @@ public class IngestBatcherSubmitterLambdaIT {
 
     @Test
     void shouldDetectThatRequestIsForDirectory() {
+        // Given
         s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
         FileIngestRequest request = FileIngestRequest.builder()
                 .file(TEST_BUCKET + "/test-directory")
@@ -68,6 +70,7 @@ public class IngestBatcherSubmitterLambdaIT {
                 .tableName("test-table")
                 .receivedTime(Instant.parse("2023-06-15T15:30:00Z")).build();
 
-        assertThat(IngestBatcherSubmitterLambda.isRequestForDirectory(s3, request)).isTrue();
+        // When/Then
+        assertThat(isRequestForDirectory(s3, request)).isTrue();
     }
 }
