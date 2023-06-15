@@ -55,7 +55,7 @@ class GeneratePropertiesTest {
     void shouldGenerateInstancePropertiesCorrectly() {
         // Given/When
         InstanceProperties properties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().generate();
 
         // Then
@@ -104,7 +104,7 @@ class GeneratePropertiesTest {
     void shouldGenerateTablePropertiesCorrectly() {
         // Given
         InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().generate();
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
                 new SchemaSerDe().toJson(schemaWithKey("key")),
@@ -124,7 +124,7 @@ class GeneratePropertiesTest {
     void shouldRetainWhitespaceInSchema() {
         // Given
         InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().generate();
         String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
                 "\"name\":\"key\",\"type\":\"LongType\"\n" +

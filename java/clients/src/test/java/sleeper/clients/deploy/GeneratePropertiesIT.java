@@ -119,6 +119,6 @@ public class GeneratePropertiesIT {
 
     private GenerateInstanceProperties.Builder generateInstancePropertiesBuilder() {
         return GenerateInstanceProperties.builder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet");
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }
