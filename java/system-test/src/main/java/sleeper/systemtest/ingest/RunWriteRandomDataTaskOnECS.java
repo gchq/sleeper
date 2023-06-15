@@ -81,7 +81,7 @@ public class RunWriteRandomDataTaskOnECS {
                 .withContainerOverrides(containerOverride);
 
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(systemTestProperties.get(SUBNETS));
+                .withSubnets(systemTestProperties.getList(SUBNETS));
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);
