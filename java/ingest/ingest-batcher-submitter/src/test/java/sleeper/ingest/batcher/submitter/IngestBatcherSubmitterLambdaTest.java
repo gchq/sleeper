@@ -16,6 +16,7 @@
 
 package sleeper.ingest.batcher.submitter;
 
+import com.amazonaws.services.s3.AmazonS3;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -28,6 +29,7 @@ import sleeper.ingest.batcher.testutil.IngestBatcherStoreInMemory;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -37,7 +39,8 @@ class IngestBatcherSubmitterLambdaTest {
     private static final String TEST_TABLE = "test-table";
     private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties());
-    private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(store, tablePropertiesProvider);
+    private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
+            store, tablePropertiesProvider, mock(AmazonS3.class));
 
     @Test
     void shouldStoreFileIngestRequestFromJson() {

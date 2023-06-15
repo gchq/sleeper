@@ -37,6 +37,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
+    private final AmazonS3 s3Client;
     private final IngestBatcherStore store;
     private final TablePropertiesProvider tablePropertiesProvider;
 
@@ -45,16 +46,17 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        s3Client = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3, s3Bucket);
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
                 instanceProperties, tablePropertiesProvider);
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store, TablePropertiesProvider tablePropertiesProvider) {
+    public IngestBatcherSubmitterLambda(IngestBatcherStore store, TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client) {
+        this.s3Client = s3Client;
         this.store = store;
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
@@ -74,7 +76,6 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
-
         // Table properties are needed to set the expiry time on DynamoDB records in the store.
         // To avoid that failing, we can discard the message here if the table does not exist.
         if (tablePropertiesProvider.getTablePropertiesIfExists(request.getTableName())
@@ -84,5 +85,13 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         }
         LOGGER.info("Adding {} to store", request.getFile());
         store.addFile(request);
+    }
+
+    public static boolean isRequestForDirectory(AmazonS3 s3Client, FileIngestRequest request) {
+        int pathSeparatorIndex = request.getFile().indexOf('/');
+        String bucketName = request.getFile().substring(0, pathSeparatorIndex);
+        String filePath = request.getFile().substring(pathSeparatorIndex + 1);
+        return s3Client.listObjects(bucketName).getObjectSummaries().stream()
+                .anyMatch(summary -> summary.getKey().startsWith(filePath + "/"));
     }
 }
