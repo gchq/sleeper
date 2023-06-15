@@ -92,6 +92,10 @@ class EmrExecutorTest {
         return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
     }
 
+    private EmrExecutor executorWithSubnetIndex(int subnetIndex) {
+        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3, list -> subnetIndex);
+    }
+
     @Test
     void shouldCreateAClusterOfThreeMachinesByDefault() {
         // Given
@@ -280,5 +284,41 @@ class EmrExecutorTest {
         // Then
         assertThat(requested.get())
                 .isNull();
+    }
+
+    @Test
+    void shouldSetSingleSubnetForInstanceGroup() {
+        // Given
+        instanceProperties.set(SUBNETS, "test-subnet");
+        BulkImportJob myJob = new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+
+        // When
+        executor().runJob(myJob);
+
+        // Then
+        JobFlowInstancesConfig config = requested.get().getInstances();
+        assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet");
+    }
+
+    @Test
+    void shouldSetRandomSubnetForInstanceGroupWhenMultipleSubnetsSpecified() {
+        // Given
+        instanceProperties.set(SUBNETS, "test-subnet-1,test-subnet-2,test-subnet-3");
+        BulkImportJob myJob = new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+
+        // When
+        executorWithSubnetIndex(1).runJob(myJob);
+
+        // Then
+        JobFlowInstancesConfig config = requested.get().getInstances();
+        assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet-2");
     }
 }
