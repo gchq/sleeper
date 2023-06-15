@@ -275,7 +275,8 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executorWithRandomSubnetFunction(IntUnaryOperator randomSubnet) {
-        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3, randomSubnet);
+        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
+                new EmrInstanceGroups(instanceProperties, randomSubnet));
     }
 
     private BulkImportJob singleFileJob() {

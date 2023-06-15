@@ -20,22 +20,15 @@ import com.amazonaws.services.elasticmapreduce.model.Application;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.Configuration;
-import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
-import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
-import com.amazonaws.services.elasticmapreduce.model.MarketType;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
 import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.elasticmapreduce.model.Tag;
-import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,27 +36,18 @@ import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
@@ -72,24 +56,24 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
     private final AmazonElasticMapReduce emrClient;
-    private final IntUnaryOperator randomSubnet;
+    private final EmrInstanceConfiguration instanceConfiguration;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
         this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
-                new Random()::nextInt);
+                new EmrInstanceGroups(instanceProperties));
     }
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3,
-                       IntUnaryOperator randomSubnet) {
+                       EmrInstanceConfiguration instanceConfiguration) {
         super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
-        this.randomSubnet = randomSubnet;
+        this.instanceConfiguration = instanceConfiguration;
     }
 
     @Override
@@ -142,62 +126,9 @@ public class EmrExecutor extends AbstractEmrExecutor {
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
-        JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(randomSubnet());
-
-        Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
-        String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
-        String executorInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE, platformSpec, tableProperties);
-        Integer initialNumberOfExecutors = Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties));
-
-        String marketTypeOfExecutors = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, platformSpec, tableProperties);
-        if (marketTypeOfExecutors == null) {
-            marketTypeOfExecutors = "SPOT";
-        }
-
-        VolumeSpecification volumeSpecification = new VolumeSpecification()
-//                .withIops(null) // TODO Add property to control this
-                .withSizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
-                .withVolumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE));
-        EbsBlockDeviceConfig ebsBlockDeviceConfig = new EbsBlockDeviceConfig()
-                .withVolumeSpecification(volumeSpecification)
-                .withVolumesPerInstance(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE));
-        EbsConfiguration ebsConfiguration = new EbsConfiguration()
-                .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
-                .withEbsOptimized(true);
-
-        config.setInstanceGroups(Lists.newArrayList(
-                new InstanceGroupConfig()
-                        .withName("Executors")
-                        .withInstanceType(executorInstanceType)
-                        .withInstanceRole(InstanceRoleType.CORE)
-                        .withInstanceCount(initialNumberOfExecutors)
-                        .withEbsConfiguration(ebsConfiguration)
-                        .withMarket(MarketType.fromValue(marketTypeOfExecutors)),
-                new InstanceGroupConfig()
-                        .withName("Driver")
-                        .withInstanceType(driverInstanceType)
-                        .withInstanceRole(InstanceRoleType.MASTER)
-                        .withInstanceCount(1)
-                        .withEbsConfiguration(ebsConfiguration)
-        ));
-
-        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
-        if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
-            config.setEc2KeyName(ec2KeyName);
-        }
-        String additionalSecurityGroup = instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
-        if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
-            config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
-        }
-
-        return config;
+        return instanceConfiguration.createJobFlowInstancesConfig(new BulkImportPlatformSpec(tableProperties, bulkImportJob));
     }
 
-    private String randomSubnet() {
-        List<String> subnets = instanceProperties.getList(UserDefinedInstanceProperty.SUBNETS);
-        return subnets.get(randomSubnet.applyAsInt(subnets.size()));
-    }
 
     private List<Configuration> getConfigurations() {
         List<Configuration> configurations = new ArrayList<>();
