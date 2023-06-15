@@ -89,25 +89,10 @@ class EmrExecutorTest {
         instanceProperties.set(SUBNETS, "subnet-abc");
     }
 
-    private EmrExecutor executor() {
-        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
-    }
-
-    private EmrExecutor executorWithRandomSubnetFunction(IntUnaryOperator randomSubnet) {
-        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3, randomSubnet);
-    }
-
     @Test
     void shouldCreateAClusterOfThreeMachinesByDefault() {
-        // Given
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
         // When
-        executor().runJob(myJob);
+        executor().runJob(singleFileJob());
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
@@ -140,15 +125,8 @@ class EmrExecutorTest {
 
     @Test
     void shouldUseDefaultMarketType() {
-        // Given
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
         // When
-        executor().runJob(myJob);
+        executor().runJob(singleFileJob());
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
@@ -168,15 +146,8 @@ class EmrExecutorTest {
         when(tablePropertiesProvider.getTableProperties(anyString()))
                 .then((Answer<TableProperties>) x -> tableProperties);
 
-
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
         // When
-        executor().runJob(myJob);
+        executor().runJob(singleFileJob());
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
@@ -199,12 +170,8 @@ class EmrExecutorTest {
         Map<String, String> platformSpec = new HashMap<>();
         platformSpec.put(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "SPOT");
 
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .platformSpec(platformSpec)
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
+        BulkImportJob myJob = singleFileJobBuilder()
+                .platformSpec(platformSpec).build();
 
         // When
         executor().runJob(myJob);
@@ -219,10 +186,7 @@ class EmrExecutorTest {
     @Test
     void shouldEnableEMRManagedClusterScaling() {
         // Given
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
+        BulkImportJob myJob = singleFileJobBuilder()
                 .platformSpec(ImmutableMap.of(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getPropertyName(), "r5.xlarge"))
                 .build();
 
@@ -239,10 +203,7 @@ class EmrExecutorTest {
     @Test
     void shouldUseUserProvidedConfigIfValuesOverrideDefaults() {
         // Given
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
+        BulkImportJob myJob = singleFileJobBuilder()
                 .sparkConf(ImmutableMap.of("spark.hadoop.fs.s3a.connection.maximum", "100"))
                 .platformSpec(ImmutableMap.of(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getPropertyName(), "r5.xlarge"))
                 .build();
@@ -273,14 +234,8 @@ class EmrExecutorTest {
                     return tableProperties;
                 });
 
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
         // When
-        executor().runJob(myJob);
+        executor().runJob(singleFileJob());
 
         // Then
         assertThat(requested.get())
@@ -291,14 +246,9 @@ class EmrExecutorTest {
     void shouldSetSingleSubnetForInstanceGroup() {
         // Given
         instanceProperties.set(SUBNETS, "test-subnet");
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
 
         // When
-        executor().runJob(myJob);
+        executor().runJob(singleFileJob());
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
@@ -310,17 +260,32 @@ class EmrExecutorTest {
         // Given
         instanceProperties.set(SUBNETS, "test-subnet-1,test-subnet-2,test-subnet-3");
         int randomSubnetIndex = 1;
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
 
         // When
-        executorWithRandomSubnetFunction(numSubnets -> randomSubnetIndex).runJob(myJob);
+        executorWithRandomSubnetFunction(numSubnets -> randomSubnetIndex)
+                .runJob(singleFileJob());
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
         assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet-2");
+    }
+
+    private EmrExecutor executor() {
+        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+    }
+
+    private EmrExecutor executorWithRandomSubnetFunction(IntUnaryOperator randomSubnet) {
+        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3, randomSubnet);
+    }
+
+    private BulkImportJob singleFileJob() {
+        return singleFileJobBuilder().build();
+    }
+
+    private BulkImportJob.Builder singleFileJobBuilder() {
+        return new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"));
     }
 }
