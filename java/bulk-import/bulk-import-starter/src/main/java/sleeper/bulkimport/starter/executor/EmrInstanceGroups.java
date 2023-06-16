@@ -51,28 +51,20 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
     public JobFlowInstancesConfig createJobFlowInstancesConfig(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
 
-        String driverInstanceType = platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
-        String executorInstanceType = platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE);
-        Integer initialNumberOfExecutors = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
-
-        String marketTypeOfExecutors = platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE);
-        if (marketTypeOfExecutors == null) {
-            marketTypeOfExecutors = "SPOT";
-        }
-
         return new JobFlowInstancesConfig()
                 .withEc2SubnetId(randomSubnet())
                 .withInstanceGroups(
                         new InstanceGroupConfig()
                                 .withName("Executors")
-                                .withInstanceType(executorInstanceType)
+                                .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE))
                                 .withInstanceRole(InstanceRoleType.CORE)
-                                .withInstanceCount(initialNumberOfExecutors)
+                                .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS))
                                 .withEbsConfiguration(ebsConfiguration)
-                                .withMarket(MarketType.fromValue(marketTypeOfExecutors)),
+                                .withMarket(MarketType.fromValue(platformSpec.getOrDefault(
+                                        BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT"))),
                         new InstanceGroupConfig()
                                 .withName("Driver")
-                                .withInstanceType(driverInstanceType)
+                                .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE))
                                 .withInstanceRole(InstanceRoleType.MASTER)
                                 .withInstanceCount(1)
                                 .withEbsConfiguration(ebsConfiguration));

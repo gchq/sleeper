@@ -49,17 +49,15 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private InstanceFleetConfig executorFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        String executorInstanceType = platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE);
         InstanceFleetConfig config = new InstanceFleetConfig()
                 .withName("Executors")
                 .withInstanceFleetType(InstanceFleetType.CORE)
                 .withInstanceTypeConfigs(new InstanceTypeConfig()
-                        .withInstanceType(executorInstanceType)
+                        .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE))
                         .withEbsConfiguration(ebsConfiguration));
 
-        String marketTypeOfExecutors = platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE);
         int initialNumberOfExecutors = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
-        if ("ON_DEMAND".equals(marketTypeOfExecutors)) {
+        if ("ON_DEMAND".equals(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE))) {
             config.setTargetOnDemandCapacity(initialNumberOfExecutors);
         } else {
             config.setTargetSpotCapacity(initialNumberOfExecutors);
@@ -69,12 +67,11 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private InstanceFleetConfig driverFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        String driverInstanceType = platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
         return new InstanceFleetConfig()
                 .withName("Driver")
                 .withInstanceFleetType(InstanceFleetType.MASTER)
                 .withInstanceTypeConfigs(new InstanceTypeConfig()
-                        .withInstanceType(driverInstanceType)
+                        .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE))
                         .withEbsConfiguration(ebsConfiguration))
                 .withTargetOnDemandCapacity(1);
     }

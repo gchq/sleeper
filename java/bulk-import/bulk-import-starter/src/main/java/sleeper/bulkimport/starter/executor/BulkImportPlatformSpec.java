@@ -41,4 +41,13 @@ public class BulkImportPlatformSpec {
     public int getInt(TableProperty property) {
         return Integer.parseInt(get(property));
     }
+
+    public String getOrDefault(TableProperty property, String defaultValue) {
+        String value = get(property);
+        if (value == null) {
+            return defaultValue;
+        } else {
+            return value;
+        }
+    }
 }
