@@ -141,6 +141,21 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
+
+        @Test
+        void shouldIgnoreMessageIfFilesNotProvided() {
+            // Given
+            String json = "{" +
+                    "\"files\":[]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
     }
 
     @Nested
@@ -246,6 +261,27 @@ public class IngestBatcherSubmitterLambdaIT {
                     .containsExactly(
                             fileRequest("test-bucket/test-file-2.parquet"),
                             fileRequest("test-bucket/test-file-1.parquet"));
+        }
+
+        @Test
+        void shouldSkipFileIfNotFound() {
+            // Given
+            uploadFileToS3("test-file-2.parquet");
+            String json = "{" +
+                    "\"files\":[" +
+                    "\"test-bucket/not-found.parquet\"," +
+                    "\"test-bucket/test-file-2.parquet\"" +
+                    "]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest("test-bucket/test-file-2.parquet"));
         }
     }
 
