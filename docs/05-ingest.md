@@ -469,8 +469,8 @@ kubectl port-forward my-job-name 4040:4040
 
 ## Ingest Batcher
 
-An alternative to creating ingest jobs directly is to use the ingest batcher. This lets you submit one file at a time,
-and Sleeper will group them into jobs for you.
+An alternative to creating ingest jobs directly is to use the ingest batcher. This lets you submit a list of 
+files or directories, and Sleeper will group them into jobs for you.
 
 This may be deployed by adding `IngestBatcherStack` to the list of optional stacks in the instance property
 `sleeper.optional.stacks`.
@@ -485,14 +485,15 @@ An example message is shown below:
 
 ```json
 {
-    "file": "source-bucket-name/file.parquet",
-    "fileSizeBytes": 1024,
-    "tableName": "target-table"
+    "tableName": "target-table",
+    "files": [
+      "source-bucket-name/file.parquet"
+    ]
 }
 ```
 
-Each message is a request to ingest a single file into a Sleeper table. The size of the file must be specified in order
-to compute the size of a batch, as the batcher will not read the bucket directly.
+Each message is a request to ingest a collection of files into a Sleeper table. If you provide a directory in S3 
+instead of a file directly, the batcher will look in all subdirectories and track any files found in them.
 
 The batcher will then track these files and group them into jobs periodically, based on the configuration. The
 configuration specifies minimum and maximum size of a batch, and a maximum age for files.
