@@ -56,7 +56,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                 .withInstanceGroups(
                         new InstanceGroupConfig()
                                 .withName("Executors")
-                                .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE))
+                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE).get(0))
                                 .withInstanceRole(InstanceRoleType.CORE)
                                 .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS))
                                 .withEbsConfiguration(ebsConfiguration)

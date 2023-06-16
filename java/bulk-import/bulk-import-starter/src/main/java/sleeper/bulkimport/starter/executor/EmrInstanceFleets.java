@@ -23,6 +23,8 @@ import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.stream.Collectors;
+
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -52,9 +54,11 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         InstanceFleetConfig config = new InstanceFleetConfig()
                 .withName("Executors")
                 .withInstanceFleetType(InstanceFleetType.CORE)
-                .withInstanceTypeConfigs(new InstanceTypeConfig()
-                        .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE))
-                        .withEbsConfiguration(ebsConfiguration));
+                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE).stream()
+                        .map(type -> new InstanceTypeConfig()
+                                .withInstanceType(type)
+                                .withEbsConfiguration(ebsConfiguration))
+                        .collect(Collectors.toList()));
 
         int initialNumberOfExecutors = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
         if ("ON_DEMAND".equals(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE))) {

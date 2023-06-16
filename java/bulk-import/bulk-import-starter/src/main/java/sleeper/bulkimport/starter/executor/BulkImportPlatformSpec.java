@@ -19,7 +19,10 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
+import java.util.List;
 import java.util.Map;
+
+import static sleeper.configuration.properties.SleeperProperties.readList;
 
 public class BulkImportPlatformSpec {
 
@@ -40,6 +43,10 @@ public class BulkImportPlatformSpec {
 
     public int getInt(TableProperty property) {
         return Integer.parseInt(get(property));
+    }
+
+    public List<String> getList(TableProperty property) {
+        return readList(get(property));
     }
 
     public String getOrDefault(TableProperty property, String defaultValue) {
