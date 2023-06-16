@@ -35,9 +35,8 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -64,7 +63,6 @@ class EmrExecutorTest {
     private AmazonElasticMapReduce emr;
     private AtomicReference<RunJobFlowRequest> requested;
     private AmazonS3 amazonS3;
-    private StateStoreProvider stateStoreProvider;
     private InstanceProperties instanceProperties;
 
     @BeforeEach
@@ -79,9 +77,6 @@ class EmrExecutorTest {
                 });
         instanceProperties = new InstanceProperties();
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
-        stateStoreProvider = mock(StateStoreProvider.class);
-        when(stateStoreProvider.getStateStore(any())).thenReturn(
-                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(SUBNETS, "subnet-abc");
     }
@@ -258,16 +253,28 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executor() {
-        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider(), stateStoreProvider, amazonS3);
+        return executorWithTableProperties(tableProperties());
     }
 
     private EmrExecutor executorWithTableProperties(TableProperties tableProperties) {
-        return new EmrExecutor(emr, instanceProperties, new FixedTablePropertiesProvider(tableProperties), stateStoreProvider, amazonS3);
+        return new EmrExecutor(emr, instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties,
+                        inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
+                amazonS3);
     }
 
     private EmrExecutor executorWithRandomSubnetFunction(IntUnaryOperator randomSubnet) {
-        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider(),
-                stateStoreProvider, amazonS3, new EmrInstanceGroups(instanceProperties, randomSubnet));
+        return executorWithInstanceConfiguration(new EmrInstanceGroups(instanceProperties, randomSubnet));
+    }
+
+    private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
+        TableProperties tableProperties = tableProperties();
+        return new EmrExecutor(emr, instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties,
+                        inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
+                amazonS3, configuration);
     }
 
     private BulkImportJob singleFileJob() {
@@ -285,9 +292,5 @@ class EmrExecutorTest {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "myTable");
         return tableProperties;
-    }
-
-    private TablePropertiesProvider tablePropertiesProvider() {
-        return new FixedTablePropertiesProvider(tableProperties());
     }
 }
