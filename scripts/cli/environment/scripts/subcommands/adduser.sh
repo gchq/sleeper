@@ -29,5 +29,6 @@ USERNAME="$1"
   "&&" sudo usermod -aG sudo "$USERNAME" \
   "&&" sudo usermod -aG docker "$USERNAME" \
   "&&" sudo runuser --login "$USERNAME" -c '"git clone https://github.com/gchq/sleeper.git ~/.sleeper/builder/sleeper"' \
-  "&&" sudo runuser --login "$USERNAME" -c '"~/.sleeper/builder/sleeper/scripts/cli/install.sh"'
+  "&&" sudo runuser --login "$USERNAME" -c '"~/.sleeper/builder/sleeper/scripts/cli/install.sh"' \
+  "&&" sudo runuser --login "$USERNAME" -c '"sleeper builder chown -R root:root ."'
 "$THIS_DIR/setuser.sh" "$USERNAME"
