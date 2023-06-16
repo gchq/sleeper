@@ -22,6 +22,8 @@ import com.google.gson.GsonBuilder;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class FileIngestRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
@@ -29,26 +31,28 @@ public class FileIngestRequestSerDe {
     private FileIngestRequestSerDe() {
     }
 
-    public static FileIngestRequest fromJson(String json, Instant receivedTime) {
+    public static List<FileIngestRequest> fromJson(String json, Instant receivedTime) {
         Request request = GSON.fromJson(json, Request.class);
-        return FileIngestRequest.builder()
-                .file(request.file)
-                .tableName(request.tableName)
-                .receivedTime(receivedTime)
-                .build();
+        return request.files.stream().map(file ->
+                FileIngestRequest.builder()
+                        .file(file)
+                        .tableName(request.tableName)
+                        .receivedTime(receivedTime)
+                        .build()
+        ).collect(Collectors.toList());
     }
 
-    public static String toJson(String bucketName, String key, String tableName) {
-        return GSON.toJson(new Request(bucketName + "/" + key, tableName));
+    public static String toJson(String bucketName, List<String> keys, String tableName) {
+        return GSON.toJson(new Request(bucketName, keys, tableName));
     }
 
 
     private static class Request {
-        private final String file;
+        private final List<String> files;
         private final String tableName;
 
-        Request(String file, String tableName) {
-            this.file = file;
+        Request(String bucketName, List<String> keys, String tableName) {
+            this.files = keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList());
             this.tableName = tableName;
         }
     }

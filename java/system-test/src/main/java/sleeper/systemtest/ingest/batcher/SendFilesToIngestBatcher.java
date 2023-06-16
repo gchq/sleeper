@@ -84,10 +84,8 @@ public class SendFilesToIngestBatcher {
     private void sendFilesAndTriggerJobCreation(
             InstanceProperties properties, String sourceBucketName, List<String> files) throws InterruptedException {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
-        for (String file : files) {
-            sqs.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                    FileIngestRequestSerDe.toJson(sourceBucketName, file, "system-test"));
-        }
+        sqs.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
+                FileIngestRequestSerDe.toJson(sourceBucketName, files, "system-test"));
         PollWithRetries.intervalAndPollingTimeout(5000, 1000L * 60L * 2L)
                 .pollUntil("files appear in batcher store", () -> {
                     List<FileIngestRequest> pending = batcherStore.getPendingFilesOldestFirst();

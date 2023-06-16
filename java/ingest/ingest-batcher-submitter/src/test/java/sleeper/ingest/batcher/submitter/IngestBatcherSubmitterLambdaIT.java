@@ -87,7 +87,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-file-1.parquet");
             String json = "{" +
-                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-file-1.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -116,7 +116,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"files\":\"[" + TEST_BUCKET + "/test-file-1.parquet\"]," +
                     "\"tableName\":\"not-a-table\"" +
                     "}";
 
@@ -131,7 +131,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreMessageIfFileDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"file\":\"test-bucket/not-exists.parquet\"," +
+                    "\"files\":\"[" + TEST_BUCKET + "/not-exists.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -151,7 +151,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
-                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
@@ -171,7 +171,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/test-file-1.parquet");
             uploadFileToS3("test-directory/test-file-2.parquet");
             String json = "{" +
-                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
@@ -191,7 +191,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
-                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
@@ -210,7 +210,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/nested-1/test-file-1.parquet");
             uploadFileToS3("test-directory/nested-2/test-file-2.parquet");
             String json = "{" +
-                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
@@ -223,6 +223,33 @@ public class IngestBatcherSubmitterLambdaIT {
                     .containsExactly(
                             fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"),
                             fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Store files from multiple file paths")
+    class StoreFilesFromMultipleFilePaths {
+        @Test
+        void shouldStoreFilesWhenJsonHasMultipleFilePaths() {
+            // Given
+            uploadFileToS3("test-file-1.parquet");
+            uploadFileToS3("test-file-2.parquet");
+            String json = "{" +
+                    "\"files\":[" +
+                    "\"test-bucket/test-file-1.parquet\"," +
+                    "\"test-bucket/test-file-2.parquet\"" +
+                    "]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest("test-bucket/test-file-2.parquet"),
+                            fileRequest("test-bucket/test-file-1.parquet"));
         }
     }
 

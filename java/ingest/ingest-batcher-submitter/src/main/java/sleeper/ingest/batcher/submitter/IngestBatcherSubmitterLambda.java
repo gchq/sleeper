@@ -34,6 +34,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -72,22 +73,22 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     public void handleMessage(String json, Instant receivedTime) {
-        FileIngestRequest request;
+        List<FileIngestRequest> requests;
         try {
-            request = FileIngestRequestSerDe.fromJson(json, receivedTime);
+            requests = FileIngestRequestSerDe.fromJson(json, receivedTime);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
         // Table properties are needed to set the expiry time on DynamoDB records in the store.
         // To avoid that failing, we can discard the message here if the table does not exist.
-        if (tablePropertiesProvider.getTablePropertiesIfExists(request.getTableName())
+        if (tablePropertiesProvider.getTablePropertiesIfExists(requests.get(0).getTableName())
                 .isEmpty()) {
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
         // always look in s3, that way we dont need fileSizeBytes from json
-        storeFiles(request, receivedTime);
+        requests.forEach(request -> storeFiles(request, receivedTime));
     }
 
     private void storeFiles(FileIngestRequest request, Instant receivedTime) {
