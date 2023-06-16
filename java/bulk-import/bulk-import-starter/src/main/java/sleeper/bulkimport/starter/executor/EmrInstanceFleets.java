@@ -36,11 +36,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
-public class EmrInstanceFleet implements EmrInstanceConfiguration {
+public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private final InstanceProperties instanceProperties;
 
-    public EmrInstanceFleet(InstanceProperties instanceProperties) {
+    public EmrInstanceFleets(InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
     }
 
