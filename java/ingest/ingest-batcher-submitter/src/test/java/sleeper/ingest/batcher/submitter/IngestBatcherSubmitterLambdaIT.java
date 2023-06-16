@@ -75,10 +75,8 @@ public class IngestBatcherSubmitterLambdaIT {
         s3.deleteBucket(TEST_BUCKET);
     }
 
-    private static TableProperties createTableProperties() {
-        TableProperties properties = createTestTableProperties(createTestInstanceProperties(), schemaWithKey("key"));
-        properties.set(TABLE_NAME, TEST_TABLE);
-        return properties;
+    private void uploadFileToS3(String filePath) {
+        s3.putObject(TEST_BUCKET, filePath, "test");
     }
 
     @Nested
@@ -90,7 +88,6 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-file-1.parquet");
             String json = "{" +
                     "\"file\":\"test-bucket/test-file-1.parquet\"," +
-                    "\"fileSizeBytes\":4," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -117,27 +114,10 @@ public class IngestBatcherSubmitterLambdaIT {
         }
 
         @Test
-        void shouldIgnoreAndLogMessageWithNoFileSize() {
-            // Given
-            String json = "{" +
-                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-            Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
-
-            // When
-            lambda.handleMessage(json, receivedTime);
-
-            // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
-        }
-
-        @Test
         void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
             // Given
             String json = "{" +
                     "\"file\":\"test-bucket/test-file-1.parquet\"," +
-                    "\"fileSizeBytes\":1024," +
                     "\"tableName\":\"not-a-table\"" +
                     "}";
             Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
@@ -212,15 +192,17 @@ public class IngestBatcherSubmitterLambdaIT {
         }
     }
 
-    private void uploadFileToS3(String filePath) {
-        s3.putObject(TEST_BUCKET, filePath, "test");
-    }
-
     private static FileIngestRequest fileRequest(String filePath) {
         return FileIngestRequest.builder()
                 .file(filePath)
                 .fileSizeBytes(4)
                 .tableName(TEST_TABLE)
                 .receivedTime(RECEIVED_TIME).build();
+    }
+
+    private static TableProperties createTableProperties() {
+        TableProperties properties = createTestTableProperties(createTestInstanceProperties(), schemaWithKey("key"));
+        properties.set(TABLE_NAME, TEST_TABLE);
+        return properties;
     }
 }
