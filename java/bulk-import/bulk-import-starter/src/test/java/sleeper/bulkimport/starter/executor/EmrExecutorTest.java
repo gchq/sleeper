@@ -127,8 +127,8 @@ class EmrExecutorTest {
             executorWithInstanceGroups().runJob(singleFileJob());
 
             // Then
-            assertThat(requestedInstanceGroups(InstanceRoleType.CORE)
-                    .map(InstanceGroupConfig::getMarket))
+            assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
+                    .extracting(InstanceGroupConfig::getMarket)
                     .containsExactly("SPOT");
         }
 
@@ -143,8 +143,8 @@ class EmrExecutorTest {
             executorWithInstanceGroups().runJob(singleFileJob());
 
             // Then
-            assertThat(requestedInstanceGroups(InstanceRoleType.CORE)
-                    .map(InstanceGroupConfig::getMarket))
+            assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
+                    .extracting(InstanceGroupConfig::getMarket)
                     .containsExactly("ON_DEMAND");
         }
 
@@ -165,8 +165,8 @@ class EmrExecutorTest {
             executorWithInstanceGroups().runJob(myJob);
 
             // Then
-            assertThat(requestedInstanceGroups(InstanceRoleType.CORE)
-                    .map(InstanceGroupConfig::getMarket))
+            assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
+                    .extracting(InstanceGroupConfig::getMarket)
                     .containsExactly("SPOT");
         }
 
