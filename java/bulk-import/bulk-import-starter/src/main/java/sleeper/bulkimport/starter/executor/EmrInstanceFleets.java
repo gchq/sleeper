@@ -22,9 +22,12 @@ import com.amazonaws.services.elasticmapreduce.model.InstanceTypeConfig;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperty;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
@@ -46,7 +49,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private InstanceFleetConfig executorFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        String executorInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE);
+        String executorInstanceType = platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE);
         InstanceFleetConfig config = new InstanceFleetConfig()
                 .withName("Executors")
                 .withInstanceFleetType(InstanceFleetType.CORE)
@@ -54,8 +57,8 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                         .withInstanceType(executorInstanceType)
                         .withEbsConfiguration(ebsConfiguration));
 
-        String marketTypeOfExecutors = platformSpec.get(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE);
-        int initialNumberOfExecutors = platformSpec.getInt(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
+        String marketTypeOfExecutors = platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE);
+        int initialNumberOfExecutors = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
         if ("ON_DEMAND".equals(marketTypeOfExecutors)) {
             config.setTargetOnDemandCapacity(initialNumberOfExecutors);
         } else {
@@ -66,7 +69,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private InstanceFleetConfig driverFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        String driverInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
+        String driverInstanceType = platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
         return new InstanceFleetConfig()
                 .withName("Driver")
                 .withInstanceFleetType(InstanceFleetType.MASTER)
