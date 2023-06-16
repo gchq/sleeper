@@ -74,9 +74,11 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         return new InstanceFleetConfig()
                 .withName("Driver")
                 .withInstanceFleetType(InstanceFleetType.MASTER)
-                .withInstanceTypeConfigs(new InstanceTypeConfig()
-                        .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE))
-                        .withEbsConfiguration(ebsConfiguration))
+                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE).stream()
+                        .map(type -> new InstanceTypeConfig()
+                                .withInstanceType(type)
+                                .withEbsConfiguration(ebsConfiguration))
+                        .collect(Collectors.toList()))
                 .withTargetOnDemandCapacity(1);
     }
 }

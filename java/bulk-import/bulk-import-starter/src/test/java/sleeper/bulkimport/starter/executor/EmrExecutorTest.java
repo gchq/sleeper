@@ -60,6 +60,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -212,6 +213,20 @@ class EmrExecutorTest {
                     .extracting(InstanceGroupConfig::getInstanceType)
                     .containsExactly("m5.4xlarge");
         }
+
+        @Test
+        void shouldUseFirstInstanceTypeForDriverWhenMoreThanOneIsSpecified() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, "m5.xlarge,m5a.xlarge");
+
+            // When
+            executorWithInstanceGroups().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedInstanceGroups(InstanceRoleType.MASTER))
+                    .extracting(InstanceGroupConfig::getInstanceType)
+                    .containsExactly("m5.xlarge");
+        }
     }
 
     @Nested
@@ -294,6 +309,21 @@ class EmrExecutorTest {
                     .flatExtracting(InstanceFleetConfig::getInstanceTypeConfigs)
                     .extracting(InstanceTypeConfig::getInstanceType)
                     .containsExactly("m5.4xlarge", "m5a.4xlarge");
+        }
+
+        @Test
+        void shouldUseMultipleInstanceTypesForDriverWhenSpecified() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, "m5.xlarge,m5a.xlarge");
+
+            // When
+            executorWithInstanceFleets().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedInstanceFleets(InstanceFleetType.MASTER))
+                    .flatExtracting(InstanceFleetConfig::getInstanceTypeConfigs)
+                    .extracting(InstanceTypeConfig::getInstanceType)
+                    .containsExactly("m5.xlarge", "m5a.xlarge");
         }
     }
 

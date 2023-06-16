@@ -64,7 +64,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                                         BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT"))),
                         new InstanceGroupConfig()
                                 .withName("Driver")
-                                .withInstanceType(platformSpec.get(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE))
+                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE).get(0))
                                 .withInstanceRole(InstanceRoleType.MASTER)
                                 .withInstanceCount(1)
                                 .withEbsConfiguration(ebsConfiguration));

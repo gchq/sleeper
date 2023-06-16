@@ -211,16 +211,22 @@ public interface TableProperty extends SleeperProperty {
             .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
-            .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+            .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. " +
+                    "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +
+                    "One will be chosen depending on the capacity available. " +
+                    "When deploying with instance groups, only the first instance type will be used. " +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE)
-            .description("(EMR mode only) The EC2 instance type to be used for the executor nodes of the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+            .description("(EMR mode only) The EC2 instance type to be used for the executor nodes of the EMR cluster. " +
+                    "If instance fleets are used, multiple instance types can be specified separated by commas. " +
+                    "Instances will be used with types that have capacity available. " +
+                    "When deploying with instance groups, only the first instance type will be used. " +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.market.type")

@@ -578,6 +578,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.instance.type")
             .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master node of the EMR cluster. " +
+                    "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +
+                    "One will be chosen depending on the capacity available. " +
+                    "When deploying with instance groups, only the first instance type will be used. " +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
@@ -588,6 +591,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.instance.type")
             .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor nodes of the EMR cluster. " +
+                    "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +
+                    "Instances will be used with types that have capacity available. " +
+                    "When deploying with instance groups, only the first instance type will be used. " +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
