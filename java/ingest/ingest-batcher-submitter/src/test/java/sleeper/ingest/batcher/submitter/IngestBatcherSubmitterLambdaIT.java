@@ -178,7 +178,8 @@ public class IngestBatcherSubmitterLambdaIT {
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactly(fileRequest(TEST_BUCKET + "/test-directory/nested/test-file-1.parquet"));
+                    .containsExactly(
+                            fileRequest(TEST_BUCKET + "/test-directory/nested/test-file-1.parquet"));
         }
 
         @Test
