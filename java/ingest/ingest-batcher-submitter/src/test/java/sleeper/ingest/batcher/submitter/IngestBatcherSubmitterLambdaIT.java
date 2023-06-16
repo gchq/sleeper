@@ -131,7 +131,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreMessageIfFileDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"file\":\"test-bucket/not-exists.parquet\"," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -169,7 +169,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldStoreMultipleFilesInDirectory() {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
-            s3.putObject(TEST_BUCKET, "test-directory/test-file-2.parquet", "test");
+            uploadFileToS3("test-directory/test-file-2.parquet");
             String json = "{" +
                     "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
                     "\"fileSizeBytes\":100," +
@@ -202,6 +202,27 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(fileRequest(TEST_BUCKET + "/test-directory/nested/test-file-1.parquet"));
+        }
+
+        @Test
+        void shouldStoreFileAcrossMultipleDirectories() {
+            // Given
+            uploadFileToS3("test-directory/nested-1/test-file-1.parquet");
+            uploadFileToS3("test-directory/nested-2/test-file-2.parquet");
+            String json = "{" +
+                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"fileSizeBytes\":100," +
+                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"));
         }
     }
 
