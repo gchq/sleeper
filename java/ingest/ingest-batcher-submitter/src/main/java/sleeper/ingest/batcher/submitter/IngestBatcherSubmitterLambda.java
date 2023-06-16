@@ -87,7 +87,6 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
-        // always look in s3, that way we dont need fileSizeBytes from json
         requests.forEach(request -> storeFiles(request, receivedTime));
     }
 

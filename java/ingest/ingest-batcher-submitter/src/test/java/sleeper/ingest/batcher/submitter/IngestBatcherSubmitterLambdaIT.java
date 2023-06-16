@@ -152,7 +152,6 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
                     "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -172,7 +171,6 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/test-file-2.parquet");
             String json = "{" +
                     "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -192,7 +190,6 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
                     "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -211,7 +208,6 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/nested-2/test-file-2.parquet");
             String json = "{" +
                     "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"fileSizeBytes\":100," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
