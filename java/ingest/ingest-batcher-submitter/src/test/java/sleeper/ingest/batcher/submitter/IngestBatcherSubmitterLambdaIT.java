@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -128,9 +127,10 @@ public class IngestBatcherSubmitterLambdaIT {
     @Nested
     @DisplayName("Store all files in directory")
     class StoreFilesInDirectory {
+        private final Instant receivedTime = Instant.parse("2023-06-16T10:57:00Z");
+
         @Test
-        @Disabled("TODO")
-        void shouldStoreFilesInDirectory() {
+        void shouldStoreOneFileInDirectory() {
             // Given
             s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
             String json = "{" +
@@ -139,14 +139,60 @@ public class IngestBatcherSubmitterLambdaIT {
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
-            lambda.handleMessage(json, Instant.parse("2023-06-16T10:57:00Z"));
+            // When
+            lambda.handleMessage(json, receivedTime);
 
+            // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactly(FileIngestRequest.builder()
-                            .file("test-directory/test-1.parquet")
-                            .fileSizeBytes(2)
-                            .tableName(TEST_TABLE)
-                            .receivedTime(Instant.parse("2023-06-16T10:57:00Z")).build());
+                    .containsExactly(
+                            fileRequest("test-directory/test-1.parquet", receivedTime));
+        }
+
+        @Test
+        void shouldStoreMultipleFilesInDirectory() {
+            // Given
+            s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
+            s3.putObject(TEST_BUCKET, "test-directory/test-2.parquet", "test");
+            String json = "{" +
+                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"fileSizeBytes\":100," +
+                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, receivedTime);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest("test-directory/test-2.parquet", receivedTime),
+                            fileRequest("test-directory/test-1.parquet", receivedTime));
+        }
+
+        @Test
+        void shouldStoreFileInNestedDirectories() {
+            // Given
+            s3.putObject(TEST_BUCKET, "test-directory/nested/test-1.parquet", "test");
+            String json = "{" +
+                    "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
+                    "\"fileSizeBytes\":100," +
+                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, receivedTime);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(fileRequest("test-directory/nested/test-1.parquet", receivedTime));
+        }
+
+        FileIngestRequest fileRequest(String filePath, Instant receivedTime) {
+            return FileIngestRequest.builder()
+                    .file(filePath)
+                    .fileSizeBytes(4)
+                    .tableName(TEST_TABLE)
+                    .receivedTime(receivedTime).build();
         }
     }
 }

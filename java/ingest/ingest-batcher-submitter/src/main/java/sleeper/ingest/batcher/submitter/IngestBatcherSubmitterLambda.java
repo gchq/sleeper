@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -89,33 +90,40 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             return;
         }
         if (isRequestForDirectory(s3Client, request)) {
-            storeAllFilesInDirectory(request);
+            storeAllFilesInDirectory(request, receivedTime);
         } else {
             LOGGER.info("Adding {} to store", request.getFile());
             store.addFile(request);
         }
     }
 
-    private void storeAllFilesInDirectory(FileIngestRequest request) {
+    private void storeAllFilesInDirectory(FileIngestRequest request, Instant receivedTime) {
         String bucketName = getBucketName(request);
         String filePath = getFilePath(request);
         ObjectListing result = s3Client.listObjects(bucketName, filePath);
-        // Common prefix = directory with prefix you have defined
-        // e.g foo/bar would have foo/bar/baz/ as a common prefix
         List<String> directoriesToCheck = new ArrayList<>();
         directoriesToCheck.add(filePath);
         directoriesToCheck.addAll(result.getCommonPrefixes());
         directoriesToCheck.forEach(directory ->
-                getFilesInDirectory(s3Client, bucketName, filePath).forEach(store::addFile));
+                getFilesInDirectory(s3Client, bucketName, filePath)
+                        .map(summary -> FileIngestRequest.builder()
+                                .file(summary.getKey())
+                                .fileSizeBytes(summary.getSize())
+                                .tableName(request.getTableName())
+                                .receivedTime(receivedTime)
+                                .build())
+                        .forEach(store::addFile));
     }
 
-    private static List<FileIngestRequest> getFilesInDirectory(AmazonS3 s3Client, String bucketName, String filePath) {
-        return List.of();
+    private static Stream<S3ObjectSummary> getFilesInDirectory(AmazonS3 s3Client, String bucketName, String filePath) {
+        return s3Client.listObjectsV2(new ListObjectsV2Request().withBucketName(bucketName).withPrefix(filePath))
+                .getObjectSummaries().stream();
     }
 
     public static boolean isRequestForDirectory(AmazonS3 s3Client, FileIngestRequest request) {
         return s3Client.listObjectsV2(new ListObjectsV2Request().withBucketName(getBucketName(request))
-                        .withPrefix(getFilePath(request))).getObjectSummaries().stream()
+                        .withPrefix(getFilePath(request))
+                        .withMaxKeys(1)).getObjectSummaries().stream()
                 .map(S3ObjectSummary::getKey)
                 .noneMatch(getFilePath(request)::equals);
     }
