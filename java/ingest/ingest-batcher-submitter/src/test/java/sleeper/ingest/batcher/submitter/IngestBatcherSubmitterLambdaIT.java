@@ -104,10 +104,9 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreAndLogMessageWithInvalidJson() {
             // Given
             String json = "{";
-            Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
 
             // When
-            lambda.handleMessage(json, receivedTime);
+            lambda.handleMessage(json, RECEIVED_TIME);
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
@@ -120,10 +119,24 @@ public class IngestBatcherSubmitterLambdaIT {
                     "\"file\":\"test-bucket/test-file-1.parquet\"," +
                     "\"tableName\":\"not-a-table\"" +
                     "}";
-            Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
 
             // When
-            lambda.handleMessage(json, receivedTime);
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldIgnoreMessageIfFileDoesNotExist() {
+            // Given
+            String json = "{" +
+                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).isEmpty();

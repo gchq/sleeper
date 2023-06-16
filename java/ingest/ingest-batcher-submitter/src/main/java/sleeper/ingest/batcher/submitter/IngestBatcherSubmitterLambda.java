@@ -34,8 +34,6 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -101,9 +99,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
                 .forEach(store::addFile);
         if (result.getObjectSummaries() != null && result.getObjectSummaries().stream()
                 .noneMatch(summary -> summary.getKey().equals(getFilePath(request)))) {
-            List<String> directoriesToCheck = new ArrayList<>(result.getCommonPrefixes());
-            directoriesToCheck.forEach(direrctory ->
-                    streamFilesInDirectory(s3Client, bucketName, direrctory)
+            result.getCommonPrefixes().forEach(directory ->
+                    streamFilesInDirectory(s3Client, bucketName, directory)
                             .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
                             .forEach(store::addFile));
         }
