@@ -80,8 +80,8 @@ public class IngestBatcherSubmitterLambdaIT {
     }
 
     @Nested
-    @DisplayName("Handle json messages")
-    class HandleJsonMessages {
+    @DisplayName("Store single file")
+    class StoreSingleFile {
         @Test
         void shouldStoreFileIngestRequestFromJson() {
             // Given
@@ -101,60 +101,25 @@ public class IngestBatcherSubmitterLambdaIT {
         }
 
         @Test
-        void shouldIgnoreAndLogMessageWithInvalidJson() {
+        void shouldStoreFileWithCustomSize() {
             // Given
-            String json = "{";
-
-            // When
-            lambda.handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
-        }
-
-        @Test
-        void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
-            // Given
+            s3.putObject(TEST_BUCKET, "test-file-1.parquet", "a".repeat(123));
             String json = "{" +
-                    "\"files\":\"[" + TEST_BUCKET + "/test-file-1.parquet\"]," +
-                    "\"tableName\":\"not-a-table\"" +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-file-1.parquet\"]," +
+                    "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
             // When
             lambda.handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
-        }
-
-        @Test
-        void shouldIgnoreMessageIfFileDoesNotExist() {
-            // Given
-            String json = "{" +
-                    "\"files\":\"[" + TEST_BUCKET + "/not-exists.parquet\"]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            lambda.handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
-        }
-
-        @Test
-        void shouldIgnoreMessageIfFilesNotProvided() {
-            // Given
-            String json = "{" +
-                    "\"files\":[]," +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            lambda.handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(FileIngestRequest.builder()
+                            .file(TEST_BUCKET + "/test-file-1.parquet")
+                            .fileSizeBytes(123)
+                            .tableName(TEST_TABLE)
+                            .receivedTime(RECEIVED_TIME)
+                            .build());
         }
     }
 
@@ -282,6 +247,68 @@ public class IngestBatcherSubmitterLambdaIT {
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
                             fileRequest("test-bucket/test-file-2.parquet"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle errors in messages")
+    class HandleErrorsInMessage {
+
+        @Test
+        void shouldIgnoreAndLogMessageWithInvalidJson() {
+            // Given
+            String json = "{";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
+            // Given
+            String json = "{" +
+                    "\"files\":\"[" + TEST_BUCKET + "/test-file-1.parquet\"]," +
+                    "\"tableName\":\"not-a-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldIgnoreMessageIfFileDoesNotExist() {
+            // Given
+            String json = "{" +
+                    "\"files\":\"[" + TEST_BUCKET + "/not-exists.parquet\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldIgnoreMessageIfFilesNotProvided() {
+            // Given
+            String json = "{" +
+                    "\"files\":[]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
     }
 
