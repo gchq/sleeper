@@ -20,7 +20,6 @@ import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.MarketType;
-import com.google.common.collect.Lists;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -48,9 +47,6 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
     public JobFlowInstancesConfig createJobFlowInstancesConfig(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
 
-        JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(randomSubnet());
-
         String driverInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
         String executorInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE);
         Integer initialNumberOfExecutors = platformSpec.getInt(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
@@ -60,23 +56,22 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
             marketTypeOfExecutors = "SPOT";
         }
 
-        config.setInstanceGroups(Lists.newArrayList(
-                new InstanceGroupConfig()
-                        .withName("Executors")
-                        .withInstanceType(executorInstanceType)
-                        .withInstanceRole(InstanceRoleType.CORE)
-                        .withInstanceCount(initialNumberOfExecutors)
-                        .withEbsConfiguration(ebsConfiguration)
-                        .withMarket(MarketType.fromValue(marketTypeOfExecutors)),
-                new InstanceGroupConfig()
-                        .withName("Driver")
-                        .withInstanceType(driverInstanceType)
-                        .withInstanceRole(InstanceRoleType.MASTER)
-                        .withInstanceCount(1)
-                        .withEbsConfiguration(ebsConfiguration)
-        ));
-
-        return config;
+        return new JobFlowInstancesConfig()
+                .withEc2SubnetId(randomSubnet())
+                .withInstanceGroups(
+                        new InstanceGroupConfig()
+                                .withName("Executors")
+                                .withInstanceType(executorInstanceType)
+                                .withInstanceRole(InstanceRoleType.CORE)
+                                .withInstanceCount(initialNumberOfExecutors)
+                                .withEbsConfiguration(ebsConfiguration)
+                                .withMarket(MarketType.fromValue(marketTypeOfExecutors)),
+                        new InstanceGroupConfig()
+                                .withName("Driver")
+                                .withInstanceType(driverInstanceType)
+                                .withInstanceRole(InstanceRoleType.MASTER)
+                                .withInstanceCount(1)
+                                .withEbsConfiguration(ebsConfiguration));
     }
 
     private String randomSubnet() {
