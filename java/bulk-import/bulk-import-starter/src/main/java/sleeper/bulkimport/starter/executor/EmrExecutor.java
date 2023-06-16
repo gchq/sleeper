@@ -20,6 +20,8 @@ import com.amazonaws.services.elasticmapreduce.model.Application;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.Configuration;
+import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
+import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
@@ -28,6 +30,7 @@ import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
 import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.elasticmapreduce.model.Tag;
+import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +45,18 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
@@ -126,7 +135,30 @@ public class EmrExecutor extends AbstractEmrExecutor {
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
-        return instanceConfiguration.createJobFlowInstancesConfig(new BulkImportPlatformSpec(tableProperties, bulkImportJob));
+
+        VolumeSpecification volumeSpecification = new VolumeSpecification()
+//                .withIops(null) // TODO Add property to control this
+                .withSizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
+                .withVolumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE));
+        EbsBlockDeviceConfig ebsBlockDeviceConfig = new EbsBlockDeviceConfig()
+                .withVolumeSpecification(volumeSpecification)
+                .withVolumesPerInstance(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE));
+        EbsConfiguration ebsConfiguration = new EbsConfiguration()
+                .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
+                .withEbsOptimized(true);
+
+        JobFlowInstancesConfig config = instanceConfiguration.createJobFlowInstancesConfig(
+                ebsConfiguration, new BulkImportPlatformSpec(tableProperties, bulkImportJob));
+
+        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
+        if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
+            config.setEc2KeyName(ec2KeyName);
+        }
+        String additionalSecurityGroup = instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
+        if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
+            config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
+        }
+        return config;
     }
 
 

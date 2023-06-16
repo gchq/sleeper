@@ -15,29 +15,20 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.MarketType;
-import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
 import com.google.common.collect.Lists;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperty;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.function.IntUnaryOperator;
-
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 
 public class EmrInstanceGroups implements EmrInstanceConfiguration {
 
@@ -54,7 +45,9 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
         this.randomSubnet = randomSubnet;
     }
 
-    public JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportPlatformSpec platformSpec) {
+    public JobFlowInstancesConfig createJobFlowInstancesConfig(
+            EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
+
         JobFlowInstancesConfig config = new JobFlowInstancesConfig()
                 .withEc2SubnetId(randomSubnet());
 
@@ -66,17 +59,6 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
         if (marketTypeOfExecutors == null) {
             marketTypeOfExecutors = "SPOT";
         }
-
-        VolumeSpecification volumeSpecification = new VolumeSpecification()
-//                .withIops(null) // TODO Add property to control this
-                .withSizeInGB(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
-                .withVolumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE));
-        EbsBlockDeviceConfig ebsBlockDeviceConfig = new EbsBlockDeviceConfig()
-                .withVolumeSpecification(volumeSpecification)
-                .withVolumesPerInstance(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE));
-        EbsConfiguration ebsConfiguration = new EbsConfiguration()
-                .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
-                .withEbsOptimized(true);
 
         config.setInstanceGroups(Lists.newArrayList(
                 new InstanceGroupConfig()
@@ -93,15 +75,6 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                         .withInstanceCount(1)
                         .withEbsConfiguration(ebsConfiguration)
         ));
-
-        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
-        if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
-            config.setEc2KeyName(ec2KeyName);
-        }
-        String additionalSecurityGroup = instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
-        if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
-            config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
-        }
 
         return config;
     }

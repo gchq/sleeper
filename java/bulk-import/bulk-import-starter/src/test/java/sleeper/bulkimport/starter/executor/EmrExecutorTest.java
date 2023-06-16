@@ -18,6 +18,7 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
+import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
@@ -197,6 +198,24 @@ class EmrExecutorTest {
         }
     }
 
+    @Nested
+    @DisplayName("Configure instance fleets")
+    class ConfigureInstanceFleets {
+
+        @Test
+        void shouldCreateAClusterOfThreeMachinesByDefault() {
+            // When
+            executorWithInstanceFleets().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedInstanceFleets())
+                    .extracting(InstanceFleetConfig::getInstanceFleetType, InstanceFleetConfig::getTargetOnDemandCapacity)
+                    .containsExactlyInAnyOrder(
+                            tuple("MASTER", 1),
+                            tuple("CORE", 2));
+        }
+    }
+
     @Test
     void shouldEnableEMRManagedClusterScaling() {
         // Given
@@ -252,7 +271,7 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executor() {
-        return executorWithInstanceConfiguration(platformSpec -> new JobFlowInstancesConfig());
+        return executorWithInstanceConfiguration((ebsConfiguration, platformSpec) -> new JobFlowInstancesConfig());
     }
 
     private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
@@ -269,6 +288,10 @@ class EmrExecutorTest {
 
     private EmrExecutor executorWithInstanceGroupsSubnetIndexPicker(IntUnaryOperator randomSubnet) {
         return executorWithInstanceConfiguration(new EmrInstanceGroups(instanceProperties, randomSubnet));
+    }
+
+    private EmrExecutor executorWithInstanceFleets() {
+        return executorWithInstanceConfiguration(new EmrInstanceFleets(instanceProperties));
     }
 
     private BulkImportJob singleFileJob() {
@@ -293,5 +316,9 @@ class EmrExecutorTest {
 
     private String requestedInstanceGroupSubnetId() {
         return requested.get().getInstances().getEc2SubnetId();
+    }
+
+    private Stream<InstanceFleetConfig> requestedInstanceFleets() {
+        return requested.get().getInstances().getInstanceFleets().stream();
     }
 }

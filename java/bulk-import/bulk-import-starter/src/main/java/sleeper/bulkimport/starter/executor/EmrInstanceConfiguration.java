@@ -15,9 +15,12 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 
 public interface EmrInstanceConfiguration {
 
-    JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportPlatformSpec platformSpec);
+    JobFlowInstancesConfig createJobFlowInstancesConfig(
+            EbsConfiguration ebsConfiguration,
+            BulkImportPlatformSpec platformSpec);
 }
