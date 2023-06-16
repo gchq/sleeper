@@ -28,6 +28,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
@@ -82,87 +84,120 @@ class EmrExecutorTest {
         tableProperties.set(TABLE_NAME, "myTable");
     }
 
-    @Test
-    void shouldCreateAClusterOfThreeMachinesByDefault() {
-        // When
-        executor().runJob(singleFileJob());
+    @Nested
+    @DisplayName("Configure instance groups")
+    class ConfigureInstanceGroups {
 
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        Integer instanceCount = config.getInstanceGroups().stream()
-                .map(InstanceGroupConfig::getInstanceCount)
-                .reduce(Integer::sum)
-                .orElseThrow(IllegalArgumentException::new);
-        assertThat(instanceCount).isEqualTo(3);
-    }
+        @Test
+        void shouldCreateAClusterOfThreeMachinesByDefault() {
+            // When
+            executor().runJob(singleFileJob());
 
-    @Test
-    void shouldUseInstanceTypeDefinedInJob() {
-        // Given
-        BulkImportJob myJob = singleFileJobBuilder()
-                .platformSpec(ImmutableMap.of(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getPropertyName(), "r5.xlarge"))
-                .build();
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            Integer instanceCount = config.getInstanceGroups().stream()
+                    .map(InstanceGroupConfig::getInstanceCount)
+                    .reduce(Integer::sum)
+                    .orElseThrow(IllegalArgumentException::new);
+            assertThat(instanceCount).isEqualTo(3);
+        }
 
-        // When
-        executor().runJob(myJob);
+        @Test
+        void shouldUseInstanceTypeDefinedInJob() {
+            // Given
+            BulkImportJob myJob = singleFileJobBuilder()
+                    .platformSpec(ImmutableMap.of(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getPropertyName(), "r5.xlarge"))
+                    .build();
 
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        String executorInstanceType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
-                .map(InstanceGroupConfig::getInstanceType).findFirst().orElse("not-found");
-        assertThat(executorInstanceType).isEqualTo("r5.xlarge");
-    }
+            // When
+            executor().runJob(myJob);
 
-    @Test
-    void shouldUseDefaultMarketType() {
-        // When
-        executor().runJob(singleFileJob());
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            String executorInstanceType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
+                    .map(InstanceGroupConfig::getInstanceType).findFirst().orElse("not-found");
+            assertThat(executorInstanceType).isEqualTo("r5.xlarge");
+        }
 
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
-                .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
-        assertThat(executorMarketType).isEqualTo("SPOT");
-    }
+        @Test
+        void shouldUseDefaultMarketType() {
+            // When
+            executor().runJob(singleFileJob());
 
-    @Test
-    void shouldUseMarketTypeDefinedInConfig() {
-        // Given
-        tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
-        tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
-        tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
+                    .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
+            assertThat(executorMarketType).isEqualTo("SPOT");
+        }
 
-        // When
-        executor().runJob(singleFileJob());
+        @Test
+        void shouldUseMarketTypeDefinedInConfig() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
-                .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
-        assertThat(executorMarketType).isEqualTo("ON_DEMAND");
-    }
+            // When
+            executor().runJob(singleFileJob());
 
-    @Test
-    void shouldUseMarketTypeDefinedInRequest() {
-        // Given
-        tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
-        tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
-        tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
+                    .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
+            assertThat(executorMarketType).isEqualTo("ON_DEMAND");
+        }
 
-        Map<String, String> platformSpec = new HashMap<>();
-        platformSpec.put(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "SPOT");
+        @Test
+        void shouldUseMarketTypeDefinedInRequest() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
-        BulkImportJob myJob = singleFileJobBuilder()
-                .platformSpec(platformSpec).build();
+            Map<String, String> platformSpec = new HashMap<>();
+            platformSpec.put(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "SPOT");
 
-        // When
-        executor().runJob(myJob);
+            BulkImportJob myJob = singleFileJobBuilder()
+                    .platformSpec(platformSpec).build();
 
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
-                .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
-        assertThat(executorMarketType).isEqualTo("SPOT");
+            // When
+            executor().runJob(myJob);
+
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
+                    .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
+            assertThat(executorMarketType).isEqualTo("SPOT");
+        }
+
+        @Test
+        void shouldSetSingleSubnetForInstanceGroup() {
+            // Given
+            instanceProperties.set(SUBNETS, "test-subnet");
+
+            // When
+            executor().runJob(singleFileJob());
+
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet");
+        }
+
+        @Test
+        void shouldSetRandomSubnetForInstanceGroupWhenMultipleSubnetsSpecified() {
+            // Given
+            instanceProperties.set(SUBNETS, "test-subnet-1,test-subnet-2,test-subnet-3");
+            int randomSubnetIndex = 1;
+
+            // When
+            executorWithRandomSubnetFunction(numSubnets -> randomSubnetIndex)
+                    .runJob(singleFileJob());
+
+            // Then
+            JobFlowInstancesConfig config = requested.get().getInstances();
+            assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet-2");
+        }
     }
 
     @Test
@@ -219,40 +254,8 @@ class EmrExecutorTest {
                 .isNull();
     }
 
-    @Test
-    void shouldSetSingleSubnetForInstanceGroup() {
-        // Given
-        instanceProperties.set(SUBNETS, "test-subnet");
-
-        // When
-        executor().runJob(singleFileJob());
-
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet");
-    }
-
-    @Test
-    void shouldSetRandomSubnetForInstanceGroupWhenMultipleSubnetsSpecified() {
-        // Given
-        instanceProperties.set(SUBNETS, "test-subnet-1,test-subnet-2,test-subnet-3");
-        int randomSubnetIndex = 1;
-
-        // When
-        executorWithRandomSubnetFunction(numSubnets -> randomSubnetIndex)
-                .runJob(singleFileJob());
-
-        // Then
-        JobFlowInstancesConfig config = requested.get().getInstances();
-        assertThat(config.getEc2SubnetId()).isEqualTo("test-subnet-2");
-    }
-
     private EmrExecutor executor() {
-        return new EmrExecutor(emr, instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties,
-                        inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
-                amazonS3);
+        return executorWithInstanceConfiguration(new EmrInstanceGroups(instanceProperties));
     }
 
     private EmrExecutor executorWithRandomSubnetFunction(IntUnaryOperator randomSubnet) {
