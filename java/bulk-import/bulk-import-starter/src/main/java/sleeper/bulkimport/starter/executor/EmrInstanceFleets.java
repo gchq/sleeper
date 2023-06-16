@@ -24,8 +24,6 @@ import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
-import java.util.List;
-
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
@@ -39,30 +37,42 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
     public JobFlowInstancesConfig createJobFlowInstancesConfig(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
 
-        JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetIds(instanceProperties.getList(SUBNETS));
+        return new JobFlowInstancesConfig()
+                .withEc2SubnetIds(instanceProperties.getList(SUBNETS))
+                .withInstanceFleets(
+                        executorFleet(ebsConfiguration, platformSpec),
+                        driverFleet(ebsConfiguration, platformSpec));
+    }
 
-        String driverInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
+    private InstanceFleetConfig executorFleet(
+            EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
         String executorInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE);
-        Integer initialNumberOfExecutors = platformSpec.getInt(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
+        InstanceFleetConfig config = new InstanceFleetConfig()
+                .withName("Executors")
+                .withInstanceFleetType(InstanceFleetType.CORE)
+                .withInstanceTypeConfigs(new InstanceTypeConfig()
+                        .withInstanceType(executorInstanceType)
+                        .withEbsConfiguration(ebsConfiguration));
 
-        config.setInstanceFleets(List.of(
-                new InstanceFleetConfig()
-                        .withName("Executors")
-                        .withInstanceFleetType(InstanceFleetType.CORE)
-                        .withInstanceTypeConfigs(new InstanceTypeConfig()
-                                .withInstanceType(executorInstanceType)
-                                .withEbsConfiguration(ebsConfiguration))
-                        .withTargetOnDemandCapacity(initialNumberOfExecutors),
-                new InstanceFleetConfig()
-                        .withName("Driver")
-                        .withInstanceFleetType(InstanceFleetType.MASTER)
-                        .withInstanceTypeConfigs(new InstanceTypeConfig()
-                                .withInstanceType(driverInstanceType)
-                                .withEbsConfiguration(ebsConfiguration))
-                        .withTargetOnDemandCapacity(1)
-        ));
-
+        String marketTypeOfExecutors = platformSpec.get(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE);
+        int initialNumberOfExecutors = platformSpec.getInt(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
+        if ("ON_DEMAND".equals(marketTypeOfExecutors)) {
+            config.setTargetOnDemandCapacity(initialNumberOfExecutors);
+        } else {
+            config.setTargetSpotCapacity(initialNumberOfExecutors);
+        }
         return config;
+    }
+
+    private InstanceFleetConfig driverFleet(
+            EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
+        String driverInstanceType = platformSpec.get(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE);
+        return new InstanceFleetConfig()
+                .withName("Driver")
+                .withInstanceFleetType(InstanceFleetType.MASTER)
+                .withInstanceTypeConfigs(new InstanceTypeConfig()
+                        .withInstanceType(driverInstanceType)
+                        .withEbsConfiguration(ebsConfiguration))
+                .withTargetOnDemandCapacity(1);
     }
 }

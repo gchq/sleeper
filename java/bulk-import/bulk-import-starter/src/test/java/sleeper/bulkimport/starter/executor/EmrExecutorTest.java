@@ -19,6 +19,7 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceFleetType;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
@@ -209,10 +210,60 @@ class EmrExecutorTest {
 
             // Then
             assertThat(requestedInstanceFleets())
-                    .extracting(InstanceFleetConfig::getInstanceFleetType, InstanceFleetConfig::getTargetOnDemandCapacity)
+                    .extracting(InstanceFleetConfig::getInstanceFleetType,
+                            InstanceFleetConfig::getTargetOnDemandCapacity, InstanceFleetConfig::getTargetSpotCapacity)
                     .containsExactlyInAnyOrder(
-                            tuple("MASTER", 1),
-                            tuple("CORE", 2));
+                            tuple("MASTER", 1, null),
+                            tuple("CORE", null, 2));
+        }
+
+        @Test
+        void shouldUseMarketTypeDefinedInConfig() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
+
+            // When
+            executorWithInstanceFleets().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
+                    .extracting(InstanceFleetConfig::getTargetOnDemandCapacity, InstanceFleetConfig::getTargetSpotCapacity)
+                    .containsExactly(tuple(5, null));
+        }
+
+        @Test
+        void shouldUseMarketTypeDefinedInRequest() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
+
+            Map<String, String> platformSpec = new HashMap<>();
+            platformSpec.put(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "SPOT");
+
+            BulkImportJob myJob = singleFileJobBuilder()
+                    .platformSpec(platformSpec).build();
+
+            // When
+            executorWithInstanceFleets().runJob(myJob);
+
+            // Then
+            assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
+                    .extracting(InstanceFleetConfig::getTargetOnDemandCapacity, InstanceFleetConfig::getTargetSpotCapacity)
+                    .containsExactly(tuple(null, 5));
+        }
+
+        @Test
+        void shouldSetSubnetsForInstanceFleet() {
+            // Given
+            instanceProperties.set(SUBNETS, "test-subnet-1,test-subnet-2");
+
+            // When
+            executorWithInstanceFleets().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedInstanceFleetSubnetIds())
+                    .containsExactly("test-subnet-1", "test-subnet-2");
         }
     }
 
@@ -307,7 +358,7 @@ class EmrExecutorTest {
 
     private Stream<InstanceGroupConfig> requestedInstanceGroups(InstanceRoleType roleType) {
         return requestedInstanceGroups()
-                .filter(g -> g.getInstanceRole().equals(roleType.name()));
+                .filter(g -> roleType.name().equals(g.getInstanceRole()));
     }
 
     private Stream<InstanceGroupConfig> requestedInstanceGroups() {
@@ -318,7 +369,15 @@ class EmrExecutorTest {
         return requested.get().getInstances().getEc2SubnetId();
     }
 
+    private List<String> requestedInstanceFleetSubnetIds() {
+        return requested.get().getInstances().getEc2SubnetIds();
+    }
+
     private Stream<InstanceFleetConfig> requestedInstanceFleets() {
         return requested.get().getInstances().getInstanceFleets().stream();
+    }
+
+    private Stream<InstanceFleetConfig> requestedInstanceFleets(InstanceFleetType type) {
+        return requestedInstanceFleets().filter(fleet -> type.name().equals(fleet.getInstanceFleetType()));
     }
 }
