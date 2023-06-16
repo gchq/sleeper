@@ -63,7 +63,8 @@ class EmrExecutorTest {
     private AmazonElasticMapReduce emr;
     private AtomicReference<RunJobFlowRequest> requested;
     private AmazonS3 amazonS3;
-    private InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties = new InstanceProperties();
+    private final TableProperties tableProperties = new TableProperties(instanceProperties);
 
     @BeforeEach
     public void setUpEmr() {
@@ -75,10 +76,10 @@ class EmrExecutorTest {
                     requested.set(invocation.getArgument(0));
                     return new RunJobFlowResult();
                 });
-        instanceProperties = new InstanceProperties();
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(SUBNETS, "subnet-abc");
+        tableProperties.set(TABLE_NAME, "myTable");
     }
 
     @Test
@@ -98,10 +99,7 @@ class EmrExecutorTest {
     @Test
     void shouldUseInstanceTypeDefinedInJob() {
         // Given
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
+        BulkImportJob myJob = singleFileJobBuilder()
                 .platformSpec(ImmutableMap.of(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getPropertyName(), "r5.xlarge"))
                 .build();
 
@@ -130,13 +128,12 @@ class EmrExecutorTest {
     @Test
     void shouldUseMarketTypeDefinedInConfig() {
         // Given
-        TableProperties tableProperties = tableProperties();
         tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
         tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
         tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
         // When
-        executorWithTableProperties(tableProperties).runJob(singleFileJob());
+        executor().runJob(singleFileJob());
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
@@ -148,7 +145,6 @@ class EmrExecutorTest {
     @Test
     void shouldUseMarketTypeDefinedInRequest() {
         // Given
-        TableProperties tableProperties = tableProperties();
         tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
         tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
         tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
@@ -160,7 +156,7 @@ class EmrExecutorTest {
                 .platformSpec(platformSpec).build();
 
         // When
-        executorWithTableProperties(tableProperties).runJob(myJob);
+        executor().runJob(myJob);
 
         // Then
         JobFlowInstancesConfig config = requested.get().getInstances();
@@ -213,11 +209,10 @@ class EmrExecutorTest {
     @Test
     void shouldNotCreateClusterIfMinimumPartitionCountNotReached() {
         // Given
-        TableProperties tableProperties = tableProperties();
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
 
         // When
-        executorWithTableProperties(tableProperties).runJob(singleFileJob());
+        executor().runJob(singleFileJob());
 
         // Then
         assertThat(requested.get())
@@ -253,10 +248,6 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executor() {
-        return executorWithTableProperties(tableProperties());
-    }
-
-    private EmrExecutor executorWithTableProperties(TableProperties tableProperties) {
         return new EmrExecutor(emr, instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties,
@@ -269,7 +260,6 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
-        TableProperties tableProperties = tableProperties();
         return new EmrExecutor(emr, instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties,
@@ -283,14 +273,8 @@ class EmrExecutorTest {
 
     private BulkImportJob.Builder singleFileJobBuilder() {
         return new BulkImportJob.Builder()
-                .tableName("myTable")
+                .tableName(tableProperties.get(TABLE_NAME))
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"));
-    }
-
-    private TableProperties tableProperties() {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "myTable");
-        return tableProperties;
     }
 }
