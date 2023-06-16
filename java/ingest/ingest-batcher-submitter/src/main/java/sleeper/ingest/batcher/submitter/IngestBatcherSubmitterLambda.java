@@ -21,7 +21,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
@@ -89,43 +88,39 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
-        if (isRequestForDirectory(s3Client, request)) {
-            storeAllFilesInDirectory(request, receivedTime);
-        } else {
-            LOGGER.info("Adding {} to store", request.getFile());
-            store.addFile(request);
-        }
+        // always look in s3, that way we dont need fileSizeBytes from json
+        storeFiles(request, receivedTime);
     }
 
-    private void storeAllFilesInDirectory(FileIngestRequest request, Instant receivedTime) {
+    private void storeFiles(FileIngestRequest request, Instant receivedTime) {
         String bucketName = getBucketName(request);
         String filePath = getFilePath(request);
         ObjectListing result = s3Client.listObjects(bucketName, filePath);
-        List<String> directoriesToCheck = new ArrayList<>();
-        directoriesToCheck.add(filePath);
-        directoriesToCheck.addAll(result.getCommonPrefixes());
-        directoriesToCheck.forEach(directory ->
-                getFilesInDirectory(s3Client, bucketName, filePath)
-                        .map(summary -> FileIngestRequest.builder()
-                                .file(summary.getKey())
-                                .fileSizeBytes(summary.getSize())
-                                .tableName(request.getTableName())
-                                .receivedTime(receivedTime)
-                                .build())
-                        .forEach(store::addFile));
+        result.getObjectSummaries().stream()
+                .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
+                .forEach(store::addFile);
+        if (result.getObjectSummaries() != null && result.getObjectSummaries().stream()
+                .noneMatch(summary -> summary.getKey().equals(getFilePath(request)))) {
+            List<String> directoriesToCheck = new ArrayList<>(result.getCommonPrefixes());
+            directoriesToCheck.forEach(direrctory ->
+                    streamFilesInDirectory(s3Client, bucketName, direrctory)
+                            .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
+                            .forEach(store::addFile));
+        }
     }
 
-    private static Stream<S3ObjectSummary> getFilesInDirectory(AmazonS3 s3Client, String bucketName, String filePath) {
-        return s3Client.listObjectsV2(new ListObjectsV2Request().withBucketName(bucketName).withPrefix(filePath))
+    private static FileIngestRequest toRequest(S3ObjectSummary summary, String bucketName, String tableName, Instant receivedTime) {
+        return FileIngestRequest.builder()
+                .file(bucketName + "/" + summary.getKey())
+                .fileSizeBytes(summary.getSize())
+                .tableName(tableName)
+                .receivedTime(receivedTime)
+                .build();
+    }
+
+    private static Stream<S3ObjectSummary> streamFilesInDirectory(AmazonS3 s3Client, String bucketName, String filePath) {
+        return s3Client.listObjects(bucketName, filePath)
                 .getObjectSummaries().stream();
-    }
-
-    public static boolean isRequestForDirectory(AmazonS3 s3Client, FileIngestRequest request) {
-        return s3Client.listObjectsV2(new ListObjectsV2Request().withBucketName(getBucketName(request))
-                        .withPrefix(getFilePath(request))
-                        .withMaxKeys(1)).getObjectSummaries().stream()
-                .map(S3ObjectSummary::getKey)
-                .noneMatch(getFilePath(request)::equals);
     }
 
     private static String getBucketName(FileIngestRequest request) {

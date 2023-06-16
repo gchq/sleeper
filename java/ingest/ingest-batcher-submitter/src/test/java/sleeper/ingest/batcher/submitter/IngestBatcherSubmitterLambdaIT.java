@@ -43,7 +43,6 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda.isRequestForDirectory;
 
 @Testcontainers
 public class IngestBatcherSubmitterLambdaIT {
@@ -58,6 +57,7 @@ public class IngestBatcherSubmitterLambdaIT {
 
     private static final String TEST_TABLE = "test-table";
     private static final String TEST_BUCKET = "test-bucket";
+    private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
     private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties());
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
@@ -82,57 +82,81 @@ public class IngestBatcherSubmitterLambdaIT {
     }
 
     @Nested
-    @DisplayName("Check object is directory in s3")
-    class CheckObjectIsDirectory {
+    @DisplayName("Handle json messages")
+    class HandleJsonMessages {
         @Test
-        void shouldDetectThatRequestIsForDirectory() {
+        void shouldStoreFileIngestRequestFromJson() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
-            FileIngestRequest request = createFileRequest("/test-directory");
+            uploadFileToS3("test-file-1.parquet");
+            String json = "{" +
+                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"fileSizeBytes\":4," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
 
-            // When/Then
-            assertThat(isRequestForDirectory(s3, request)).isTrue();
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest("test-bucket/test-file-1.parquet"));
         }
 
         @Test
-        void shouldDetectThatRequestIsForDirectoryWhenSubdirectoriesExist() {
+        void shouldIgnoreAndLogMessageWithInvalidJson() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
-            s3.putObject(TEST_BUCKET, "test-directory/test-directory-2/test-2.parquet", "test");
-            FileIngestRequest request = createFileRequest("/test-directory");
+            String json = "{";
+            Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
 
-            // When/Then
-            assertThat(isRequestForDirectory(s3, request)).isTrue();
+            // When
+            lambda.handleMessage(json, receivedTime);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
 
         @Test
-        void shouldDetectThatRequestIsNotForDirectory() {
+        void shouldIgnoreAndLogMessageWithNoFileSize() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
-            FileIngestRequest request = createFileRequest("/test-directory/test-1.parquet");
+            String json = "{" +
+                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+            Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
 
-            // When/Then
-            assertThat(isRequestForDirectory(s3, request)).isFalse();
+            // When
+            lambda.handleMessage(json, receivedTime);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
 
-        FileIngestRequest createFileRequest(String fullPath) {
-            return FileIngestRequest.builder()
-                    .file(TEST_BUCKET + fullPath)
-                    .fileSizeBytes(123)
-                    .tableName(TEST_TABLE)
-                    .receivedTime(Instant.parse("2023-06-15T15:30:00Z")).build();
+        @Test
+        void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
+            // Given
+            String json = "{" +
+                    "\"file\":\"test-bucket/test-file-1.parquet\"," +
+                    "\"fileSizeBytes\":1024," +
+                    "\"tableName\":\"not-a-table\"" +
+                    "}";
+            Instant receivedTime = Instant.parse("2023-05-19T15:33:42Z");
+
+            // When
+            lambda.handleMessage(json, receivedTime);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
     }
 
     @Nested
     @DisplayName("Store all files in directory")
     class StoreFilesInDirectory {
-        private final Instant receivedTime = Instant.parse("2023-06-16T10:57:00Z");
-
         @Test
         void shouldStoreOneFileInDirectory() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
+            uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
                     "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
                     "\"fileSizeBytes\":100," +
@@ -140,19 +164,19 @@ public class IngestBatcherSubmitterLambdaIT {
                     "}";
 
             // When
-            lambda.handleMessage(json, receivedTime);
+            lambda.handleMessage(json, RECEIVED_TIME);
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest("test-directory/test-1.parquet", receivedTime));
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"));
         }
 
         @Test
         void shouldStoreMultipleFilesInDirectory() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-directory/test-1.parquet", "test");
-            s3.putObject(TEST_BUCKET, "test-directory/test-2.parquet", "test");
+            uploadFileToS3("test-directory/test-file-1.parquet");
+            s3.putObject(TEST_BUCKET, "test-directory/test-file-2.parquet", "test");
             String json = "{" +
                     "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
                     "\"fileSizeBytes\":100," +
@@ -160,19 +184,19 @@ public class IngestBatcherSubmitterLambdaIT {
                     "}";
 
             // When
-            lambda.handleMessage(json, receivedTime);
+            lambda.handleMessage(json, RECEIVED_TIME);
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest("test-directory/test-2.parquet", receivedTime),
-                            fileRequest("test-directory/test-1.parquet", receivedTime));
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-2.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"));
         }
 
         @Test
         void shouldStoreFileInNestedDirectories() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-directory/nested/test-1.parquet", "test");
+            uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
                     "\"file\":\"" + TEST_BUCKET + "/test-directory\"," +
                     "\"fileSizeBytes\":100," +
@@ -180,19 +204,23 @@ public class IngestBatcherSubmitterLambdaIT {
                     "}";
 
             // When
-            lambda.handleMessage(json, receivedTime);
+            lambda.handleMessage(json, RECEIVED_TIME);
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactly(fileRequest("test-directory/nested/test-1.parquet", receivedTime));
+                    .containsExactly(fileRequest(TEST_BUCKET + "/test-directory/nested/test-file-1.parquet"));
         }
+    }
 
-        FileIngestRequest fileRequest(String filePath, Instant receivedTime) {
-            return FileIngestRequest.builder()
-                    .file(filePath)
-                    .fileSizeBytes(4)
-                    .tableName(TEST_TABLE)
-                    .receivedTime(receivedTime).build();
-        }
+    private void uploadFileToS3(String filePath) {
+        s3.putObject(TEST_BUCKET, filePath, "test");
+    }
+
+    private static FileIngestRequest fileRequest(String filePath) {
+        return FileIngestRequest.builder()
+                .file(filePath)
+                .fileSizeBytes(4)
+                .tableName(TEST_TABLE)
+                .receivedTime(RECEIVED_TIME).build();
     }
 }
