@@ -87,15 +87,14 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
-        Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
+        BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties, bulkImportJob);
 
         Integer maxNumberOfExecutors = Integer.max(
-                Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties)),
-                Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, platformSpec, tableProperties))
-        );
+                platformSpec.getInt(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS),
+                platformSpec.getInt(TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS));
 
         String clusterName = String.join("-", "sleeper",
                 instanceProperties.get(ID),
@@ -107,7 +106,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
         RunJobFlowResult response = emrClient.runJobFlow(new RunJobFlowRequest()
                 .withName(clusterName)
-                .withInstances(createJobFlowInstancesConfig(bulkImportJob, tableProperties))
+                .withInstances(createJobFlowInstancesConfig(platformSpec))
                 .withVisibleToAllUsers(true)
                 .withSecurityConfiguration(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME))
                 .withManagedScalingPolicy(new ManagedScalingPolicy()
@@ -117,7 +116,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                                 .withMaximumCapacityUnits(maxNumberOfExecutors)
                                 .withMaximumCoreCapacityUnits(3)))
                 .withScaleDownBehavior(ScaleDownBehavior.TERMINATE_AT_TASK_COMPLETION)
-                .withReleaseLabel(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL, platformSpec, tableProperties))
+                .withReleaseLabel(platformSpec.get(TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL))
                 .withApplications(new Application().withName("Spark"))
                 .withLogUri(logUri)
                 .withServiceRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
@@ -134,7 +133,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
         LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
     }
 
-    private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
+    private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportPlatformSpec platformSpec) {
 
         VolumeSpecification volumeSpecification = new VolumeSpecification()
 //                .withIops(null) // TODO Add property to control this
@@ -147,8 +146,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
                 .withEbsOptimized(true);
 
-        JobFlowInstancesConfig config = instanceConfiguration.createJobFlowInstancesConfig(
-                ebsConfiguration, new BulkImportPlatformSpec(tableProperties, bulkImportJob));
+        JobFlowInstancesConfig config = instanceConfiguration.createJobFlowInstancesConfig(ebsConfiguration, platformSpec);
 
         String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
         if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
