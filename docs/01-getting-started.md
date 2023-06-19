@@ -46,7 +46,7 @@ sleeper environment deploy TestEnvironment
 ```
 
 The `sleeper environment deploy` command will wait for the EC2 instance to be deployed.
-You can then SSH to it with EC2 Instance Connect, using this command:
+You can then SSH to it with EC2 Instance Connect and SSM Session Manager, using this command:
 
 ```bash
 sleeper environment connect
