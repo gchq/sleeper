@@ -51,6 +51,8 @@ aws ec2-instance-connect send-ssh-public-key \
   --instance-os-user "$USERNAME" \
   --ssh-public-key "file://$TEMP_KEY_PATH.pub"
 echo "[$(print_time)] Connecting..."
-ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t "$USERNAME@$EC2_IP" "${SSH_PARAMS[@]}"
+ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t \
+  -o "ProxyCommand=sh -c \"aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'\"" \
+  "$USERNAME@$INSTANCE_ID" "${SSH_PARAMS[@]}"
 
 rm -f "$TEMP_KEY_DIR/*"
