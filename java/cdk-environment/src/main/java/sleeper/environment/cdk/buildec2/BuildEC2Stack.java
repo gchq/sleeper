@@ -23,8 +23,6 @@ import software.amazon.awscdk.services.ec2.Instance;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
-import software.amazon.awscdk.services.ec2.Peer;
-import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.SubnetType;
@@ -55,20 +53,16 @@ public class BuildEC2Stack extends Stack {
 
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
-                .securityGroup(createAllowSshSecurityGroup())
+                .securityGroup(createSecurityGroup())
                 .machineImage(image.machineImage())
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
-                .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
+                .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
                 .userData(UserData.custom(LoadUserDataUtil.userData(params)))
                 .userDataCausesReplacement(true)
                 .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();
         instance.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AdministratorAccess"));
 
-        CfnOutput.Builder.create(this, "PublicIP")
-                .value(instance.getInstancePublicIp())
-                .description("Public IP for build EC2 instance")
-                .build();
         CfnOutput.Builder.create(this, "LoginUser")
                 .value(image.loginUser())
                 .description("User to SSH into on build EC2 instance")
@@ -79,14 +73,12 @@ public class BuildEC2Stack extends Stack {
                 .build();
     }
 
-    private SecurityGroup createAllowSshSecurityGroup() {
-        SecurityGroup allowSsh = SecurityGroup.Builder.create(this, "AllowSsh")
+    private SecurityGroup createSecurityGroup() {
+        return SecurityGroup.Builder.create(this, "AllowOutbound")
                 .vpc(vpc)
-                .description("Allow SSH inbound traffic")
+                .description("Allow outbound traffic")
                 .allowAllOutbound(true)
                 .build();
-        allowSsh.addIngressRule(Peer.anyIpv4(), Port.tcp(22));
-        return allowSsh;
     }
 
 }
