@@ -27,7 +27,6 @@ import java.util.Locale;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class PopulateTableProperties {
@@ -50,7 +49,7 @@ public class PopulateTableProperties {
     }
 
     public static TableProperties from(InstanceProperties instanceProperties, String schemaJson, TableProperties tableProperties, String tableName) {
-        tableProperties.set(SCHEMA, schemaJson);
+        tableProperties.setSchema(new SchemaSerDe().fromJson(schemaJson));
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(DATA_BUCKET, String.join("-", "sleeper", instanceProperties.get(ID), "table", tableName).toLowerCase(Locale.ROOT));
         return tableProperties;
