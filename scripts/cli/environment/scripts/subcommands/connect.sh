@@ -43,6 +43,7 @@ print_time() {
   date -u +"%T UTC"
 }
 
+# Use EC2 Instance Connect to create an SSH key for the user we want to connect as
 echo "[$(print_time)] Generating temporary SSH key..."
 ssh-keygen -q -t rsa -N '' -f "$TEMP_KEY_PATH"
 echo "[$(print_time)] Uploading public key..."
@@ -50,6 +51,8 @@ aws ec2-instance-connect send-ssh-public-key \
   --instance-id "$INSTANCE_ID" \
   --instance-os-user "$USERNAME" \
   --ssh-public-key "file://$TEMP_KEY_PATH.pub"
+
+# Use SSM Session Manager to tunnel to the EC2 for SSH
 echo "[$(print_time)] Connecting..."
 ssh -o "UserKnownHostsFile=$KNOWN_HOSTS_FILE" -o "IdentitiesOnly=yes" -i "$TEMP_KEY_PATH" -t \
   -o "ProxyCommand=sh -c \"aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'\"" \
