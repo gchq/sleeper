@@ -721,11 +721,15 @@ sleeper.default.parquet.dictionary.encoding.sortkey.fields=false
 # Whether dictionary encoding should be used for value columns in the Parquet files.
 sleeper.default.parquet.dictionary.encoding.value.fields=false
 
-# The length in bytes to truncate binary values if possible in a column index.
-sleeper.default.parquet.columnindex.truncate.length=2147483647
+# Used to set parquet.columnindex.truncate.length, see documentation here:
+# https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
+# The length in bytes to truncate binary values in a column index.
+sleeper.default.parquet.columnindex.truncate.length=128
 
+# Used to set parquet.statistics.truncate.length, see documentation here:
+# https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
 # The length in bytes to truncate the min/max binary values in row groups.
-sleeper.default.parquet.statistics.truncate.length=64
+sleeper.default.parquet.statistics.truncate.length=2147483647
 
 # This specifies whether point in time recovery is turned on for DynamoDB tables. This default can be
 # overridden by a table property.

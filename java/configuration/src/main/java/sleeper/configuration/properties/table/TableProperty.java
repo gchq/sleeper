@@ -140,11 +140,15 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.columnindex.truncate.length")
             .defaultProperty(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH)
-            .description("The length in bytes to truncate binary values if possible in a column index.")
+            .description("Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate binary values in a column index.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.statistics.truncate.length")
             .defaultProperty(DEFAULT_STATISTICS_TRUNCATE_LENGTH)
-            .description("The length in bytes to truncate the min/max binary values in row groups.")
+            .description("Used to set parquet.statistics.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate the min/max binary values in row groups.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)

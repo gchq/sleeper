@@ -1007,13 +1007,17 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.columnindex.truncate.length")
-            .description("The length in bytes to truncate binary values if possible in a column index.")
-            .defaultValue("" + Integer.MAX_VALUE)
+            .description("Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate binary values in a column index.")
+            .defaultValue("128")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.statistics.truncate.length")
-            .description("The length in bytes to truncate the min/max binary values in row groups.")
-            .defaultValue("64")
+            .description("Used to set parquet.statistics.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate the min/max binary values in row groups.")
+            .defaultValue("2147483647")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED = Index.propertyBuilder("sleeper.default.table.dynamo.pointintimerecovery")
