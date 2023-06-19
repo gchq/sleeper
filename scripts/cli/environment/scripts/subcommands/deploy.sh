@@ -50,6 +50,6 @@ echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
 # If an EC2 was created, save SSH details
 INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
 if [ "$INSTANCE_ID" != "null" ]; then
-  # Wait for deployment, scan SSH to remember EC2 certificate
-  "$THIS_DIR/scan-ssh.sh"
+  # Wait for deployment, make a test connection to remember SSH certificate
+  "$THIS_DIR/test-connection.sh"
 fi
