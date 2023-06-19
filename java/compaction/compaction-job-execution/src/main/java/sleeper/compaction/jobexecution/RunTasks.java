@@ -190,16 +190,20 @@ public class RunTasks {
                 clusterName, launchType, fargateVersion,
                 override, networkConfiguration, defUsed);
 
-        RunECSTasks.runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> {
-            // This lambda is triggered every minute so abort once get
-            // close to 1 minute
-            if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
-                return true;
-            } else {
-                return false;
-            }
-        });
+        RunECSTasks.runTasks(builder -> builder
+                .ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .checkAbort(() -> {
+                    // This lambda is triggered every minute so abort once get
+                    // close to 1 minute
+                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                        LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }));
     }
 
     /**
