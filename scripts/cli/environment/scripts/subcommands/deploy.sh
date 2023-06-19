@@ -47,9 +47,8 @@ USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-
 echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
 echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
 
-# If an EC2 was created, save SSH details
+# If an EC2 was created, wait for deployment, make a test connection to remember SSH certificate
 INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
 if [ "$INSTANCE_ID" != "null" ]; then
-  # Wait for deployment, make a test connection to remember SSH certificate
   "$THIS_DIR/test-connection.sh"
 fi
