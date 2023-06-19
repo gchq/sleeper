@@ -493,7 +493,7 @@ An example message is shown below:
 ```
 
 Each message is a request to ingest a collection of files into a Sleeper table. If you provide a directory in S3 
-instead of a file directly, the batcher will look in all subdirectories and track any files found in them.
+instead of a file, the batcher will look in all subdirectories and track any files found in them.
 
 The batcher will then track these files and group them into jobs periodically, based on the configuration. The
 configuration specifies minimum and maximum size of a batch, and a maximum age for files.
