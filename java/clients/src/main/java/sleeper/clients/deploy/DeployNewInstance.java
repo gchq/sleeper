@@ -133,9 +133,9 @@ public class DeployNewInstance {
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
+        TableProperties tableProperties = PopulateTableProperties.from(instanceProperties,
                 Files.readString(templatesDirectory.resolve("schema.template")),
-                loadProperties(templatesDirectory.resolve("tableproperties.template")),
+                templatesDirectory.resolve("tableproperties.template"),
                 tableName);
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)

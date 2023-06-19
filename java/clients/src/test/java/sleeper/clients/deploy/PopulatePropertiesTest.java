@@ -23,8 +23,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.util.Properties;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -106,9 +104,9 @@ class PopulatePropertiesTest {
         InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
                 .build().populate();
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
+        TableProperties tableProperties = PopulateTableProperties.from(instanceProperties,
                 new SchemaSerDe().toJson(schemaWithKey("key")),
-                new Properties(),
+                new TableProperties(instanceProperties),
                 "test-table");
 
         // Then
@@ -131,9 +129,9 @@ class PopulatePropertiesTest {
                 "}],\n" +
                 "\"sortKeyFields\":[],\n" +
                 "\"valueFields\":[]}";
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
+        TableProperties tableProperties = PopulateTableProperties.from(instanceProperties,
                 schemaWithNewlines,
-                new Properties(),
+                new TableProperties(instanceProperties),
                 "test-table");
 
         // Then

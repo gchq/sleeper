@@ -108,7 +108,7 @@ public class PopulatePropertiesIT {
         InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
                 .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
                 .build().populate();
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "test-table");
+        TableProperties tableProperties = PopulateTableProperties.from(instanceProperties, schemaWithKey("key"), "test-table");
 
         // When
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(tableProperties));
