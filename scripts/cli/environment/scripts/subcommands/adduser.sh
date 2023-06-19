@@ -24,7 +24,9 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 USERNAME="$1"
 
 "$THIS_DIR/setuser.sh"
-"$THIS_DIR/connect.sh" sudo adduser --disabled-password --gecos "-" "$USERNAME" \
+"$THIS_DIR/connect.sh" \
+  cloud-init status --wait \
+  "&&" sudo adduser --disabled-password --gecos "-" "$USERNAME" \
   "&&" sudo passwd -d "$USERNAME" \
   "&&" sudo usermod -aG sudo "$USERNAME" \
   "&&" sudo usermod -aG docker "$USERNAME" \
