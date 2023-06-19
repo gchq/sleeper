@@ -38,7 +38,7 @@ public class DeployNewTestInstance {
         DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
                 .instancePropertiesTemplate(Path.of(args[1]))
                 .extraInstanceProperties(properties ->
-                        properties.setProperty(SYSTEM_TEST_REPO.getPropertyName(), args[2] + "/system-test"))
+                        properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
                 .instanceId(args[2])
                 .vpcId(args[3])
                 .subnetId(args[4])

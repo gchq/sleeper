@@ -53,8 +53,8 @@ public class DeployNewInstance {
     private final String vpcId;
     private final String subnetId;
     private final String tableName;
-    private final Path instancePropertiesTemplate;
-    private final Consumer<Properties> extraInstanceProperties;
+    private final Path instanceProperties;
+    private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
     private final Path splitPointsFile;
     private final boolean deployPaused;
@@ -68,7 +68,7 @@ public class DeployNewInstance {
         vpcId = builder.vpcId;
         subnetId = builder.subnetId;
         tableName = builder.tableName;
-        instancePropertiesTemplate = builder.instancePropertiesTemplate;
+        instanceProperties = builder.instanceProperties;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
@@ -117,7 +117,7 @@ public class DeployNewInstance {
         LOGGER.info("tableName: {}", tableName);
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
-        LOGGER.info("instancePropertiesTemplate: {}", instancePropertiesTemplate);
+        LOGGER.info("instancePropertiesTemplate: {}", instanceProperties);
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
@@ -126,12 +126,13 @@ public class DeployNewInstance {
 
         Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
         tagsProperties.setProperty("InstanceID", instanceId);
-        InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
+        InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .properties(loadInstancePropertiesTemplate())
+                .instanceProperties(this.instanceProperties)
                 .tagsProperties(tagsProperties)
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
-                .build().generate();
+                .build().populate();
+        extraInstanceProperties.accept(instanceProperties);
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
                 Files.readString(templatesDirectory.resolve("schema.template")),
                 loadProperties(templatesDirectory.resolve("tableproperties.template")),
@@ -162,12 +163,6 @@ public class DeployNewInstance {
         LOGGER.info("Finished deployment of new instance");
     }
 
-    private Properties loadInstancePropertiesTemplate() throws IOException {
-        Properties properties = loadProperties(instancePropertiesTemplate);
-        extraInstanceProperties.accept(properties);
-        return properties;
-    }
-
     public static final class Builder {
         private AWSSecurityTokenService sts;
         private AwsRegionProvider regionProvider;
@@ -177,8 +172,8 @@ public class DeployNewInstance {
         private String vpcId;
         private String subnetId;
         private String tableName;
-        private Path instancePropertiesTemplate;
-        private Consumer<Properties> extraInstanceProperties = properties -> {
+        private Path instanceProperties;
+        private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
         private Path splitPointsFile;
@@ -227,12 +222,12 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instancePropertiesTemplate(Path instancePropertiesTemplate) {
-            this.instancePropertiesTemplate = instancePropertiesTemplate;
+        public Builder instancePropertiesTemplate(Path instanceProperties) {
+            this.instanceProperties = instanceProperties;
             return this;
         }
 
-        public Builder extraInstanceProperties(Consumer<Properties> extraInstanceProperties) {
+        public Builder extraInstanceProperties(Consumer<InstanceProperties> extraInstanceProperties) {
             this.extraInstanceProperties = extraInstanceProperties;
             return this;
         }

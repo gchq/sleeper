@@ -22,14 +22,14 @@ import sleeper.configuration.properties.table.TableProperties;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class GeneratePropertiesTestHelper {
-    private GeneratePropertiesTestHelper() {
+public class PopulatePropertiesTestHelper {
+    private PopulatePropertiesTestHelper() {
     }
 
     public static InstanceProperties generateTestInstanceProperties() {
-        return GenerateInstanceProperties.builder()
+        return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet").build().generate();
+                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet").build().populate();
     }
 
     public static TableProperties generateTestTableProperties() {

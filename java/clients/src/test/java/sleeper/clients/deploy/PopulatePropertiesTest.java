@@ -26,7 +26,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId;
+import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -50,13 +50,13 @@ import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-class GeneratePropertiesTest {
+class PopulatePropertiesTest {
     @Test
     void shouldGenerateInstancePropertiesCorrectly() {
         // Given/When
-        InstanceProperties properties = generateInstancePropertiesBuilder()
+        InstanceProperties properties = populateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
-                .build().generate();
+                .build().populate();
 
         // Then
         InstanceProperties expected = new InstanceProperties();
@@ -103,9 +103,9 @@ class GeneratePropertiesTest {
     @Test
     void shouldGenerateTablePropertiesCorrectly() {
         // Given
-        InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
-                .build().generate();
+                .build().populate();
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
                 new SchemaSerDe().toJson(schemaWithKey("key")),
                 new Properties(),
@@ -123,9 +123,9 @@ class GeneratePropertiesTest {
     @Test
     void shouldRetainWhitespaceInSchema() {
         // Given
-        InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
-                .build().generate();
+                .build().populate();
         String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
                 "\"name\":\"key\",\"type\":\"LongType\"\n" +
                 "}],\n" +
@@ -146,8 +146,8 @@ class GeneratePropertiesTest {
         assertThat(tableProperties).isEqualTo(expected);
     }
 
-    private GenerateInstanceProperties.Builder generateInstancePropertiesBuilder() {
-        return GenerateInstanceProperties.builder()
+    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL);
     }
 }

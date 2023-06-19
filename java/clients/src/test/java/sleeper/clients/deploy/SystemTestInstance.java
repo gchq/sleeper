@@ -61,11 +61,11 @@ public class SystemTestInstance implements BeforeAllCallback {
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        instanceProperties = GenerateInstanceProperties.builder()
+        instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
                 .vpcId(vpcId).subnetId(subnetId)
-                .build().generate();
+                .build().populate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
         boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDir)

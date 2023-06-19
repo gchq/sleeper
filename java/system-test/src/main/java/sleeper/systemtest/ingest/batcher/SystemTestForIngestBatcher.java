@@ -147,7 +147,7 @@ public class SystemTestForIngestBatcher {
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
                     .instancePropertiesTemplate(propertiesTemplate)
                     .extraInstanceProperties(properties ->
-                            properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
+                            properties.set(INGEST_SOURCE_BUCKET, sourceBucketName))
                     .instanceId(instanceId)
                     .vpcId(vpc)
                     .subnetId(subnet)
