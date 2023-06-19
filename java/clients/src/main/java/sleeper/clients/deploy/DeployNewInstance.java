@@ -53,7 +53,6 @@ public class DeployNewInstance {
     private final String vpcId;
     private final String subnetId;
     private final String tableName;
-    private final Path instanceProperties;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
     private final Path splitPointsFile;
@@ -68,7 +67,6 @@ public class DeployNewInstance {
         vpcId = builder.vpcId;
         subnetId = builder.subnetId;
         tableName = builder.tableName;
-        instanceProperties = builder.instanceProperties;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
@@ -83,20 +81,18 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 7) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> " +
+        if (args.length < 4 || args.length > 6) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
-
         builder().scriptsDirectory(scriptsDirectory)
-                .instanceId(args[1])
-                .vpcId(args[2])
-                .subnetId(args[3])
-                .tableName(args[4])
-                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
-                .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
+                .instanceId(args[2])
+                .vpcId(args[3])
+                .subnetId(args[4])
+                .tableName(args[5])
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
@@ -117,25 +113,24 @@ public class DeployNewInstance {
         LOGGER.info("tableName: {}", tableName);
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
-        LOGGER.info("instancePropertiesTemplate: {}", instanceProperties);
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
         LOGGER.info("splitPointsFile: {}", splitPointsFile);
         LOGGER.info("deployPaused: {}", deployPaused);
 
-        Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
+        Properties tagsProperties = loadProperties(generatedDirectory.resolve("tags.properties"));
         tagsProperties.setProperty("InstanceID", instanceId);
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .instanceProperties(this.instanceProperties)
+                .instanceProperties(generatedDirectory.resolve("instance.properties"))
                 .tagsProperties(tagsProperties)
                 .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
         TableProperties tableProperties = PopulateTableProperties.from(instanceProperties,
-                Files.readString(templatesDirectory.resolve("schema.template")),
-                templatesDirectory.resolve("tableproperties.template"),
+                Files.readString(generatedDirectory.resolve("schema.json")),
+                generatedDirectory.resolve("table.properties"),
                 tableName);
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
@@ -172,7 +167,6 @@ public class DeployNewInstance {
         private String vpcId;
         private String subnetId;
         private String tableName;
-        private Path instanceProperties;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
@@ -219,11 +213,6 @@ public class DeployNewInstance {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
-            return this;
-        }
-
-        public Builder instancePropertiesTemplate(Path instanceProperties) {
-            this.instanceProperties = instanceProperties;
             return this;
         }
 

@@ -20,7 +20,20 @@ if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
   exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+GENERATED_DIR="${SCRIPTS_DIR}/generated"
+TEMPLATES_DIR="${SCRIPTS_DIR}/templates"
+VERSION=$(cat "${TEMPLATES_DIR}/version.txt")
+
+source "${SCRIPTS_DIR}/functions/propertiesUtils.sh"
+copy_all_properties "${THIS_DIR}" "${GENERATED_DIR}" "${TEMPLATES_DIR}"
 
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.DeployNewInstance "${SCRIPTS_DIR}" "$@"
+EXIT_CODE=$?
+
+if [ "${EXIT_CODE}" -eq 0 ]; then
+  rm "${THIS_DIR}/instance.properties"
+  rm "${THIS_DIR}/tags.properties"
+  rm "${THIS_DIR}/table.properties"
+  rm "${THIS_DIR}/schema.properties"
+fi;

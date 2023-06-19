@@ -163,7 +163,7 @@ It is possible to run variations on this system-test by editing the system test 
 ```bash
 sleeper deployment
 cd test/deployAll
-editor system-test-instance.properties
+editor instance.properties
 ./buildDeployTest.sh  ${ID} ${VPC} ${SUBNET}
 ```
 

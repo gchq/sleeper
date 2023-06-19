@@ -47,7 +47,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGES
 public class SystemTestForIngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
     private final Path scriptsDir;
-    private final Path propertiesTemplate;
     private final String instanceId;
     private final String vpc;
     private final String subnet;
@@ -60,7 +59,6 @@ public class SystemTestForIngestBatcher {
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
-        propertiesTemplate = builder.propertiesTemplate;
         instanceId = builder.instanceId;
         vpc = builder.vpc;
         subnet = builder.subnet;
@@ -77,16 +75,15 @@ public class SystemTestForIngestBatcher {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, StateStoreException {
-        if (args.length != 5) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
+        if (args.length != 4) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet>");
         }
         try (S3Client s3Client = S3Client.create();
              CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             builder().scriptsDir(Path.of(args[0]))
-                    .propertiesTemplate(Path.of(args[1]))
-                    .instanceId(args[2])
-                    .vpc(args[3])
-                    .subnet(args[4])
+                    .instanceId(args[1])
+                    .vpc(args[2])
+                    .subnet(args[3])
                     .s3ClientV1(AmazonS3ClientBuilder.defaultClient())
                     .s3ClientV2(s3Client)
                     .cloudFormationClient(cloudFormationClient)
@@ -145,7 +142,6 @@ public class SystemTestForIngestBatcher {
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
-                    .instancePropertiesTemplate(propertiesTemplate)
                     .extraInstanceProperties(properties ->
                             properties.set(INGEST_SOURCE_BUCKET, sourceBucketName))
                     .instanceId(instanceId)
@@ -169,7 +165,6 @@ public class SystemTestForIngestBatcher {
 
     public static final class Builder {
         private Path scriptsDir;
-        private Path propertiesTemplate;
         private String instanceId;
         private String vpc;
         private String subnet;
@@ -189,11 +184,6 @@ public class SystemTestForIngestBatcher {
 
         public Builder scriptsDir(Path scriptsDir) {
             this.scriptsDir = scriptsDir;
-            return this;
-        }
-
-        public Builder propertiesTemplate(Path propertiesTemplate) {
-            this.propertiesTemplate = propertiesTemplate;
             return this;
         }
 
