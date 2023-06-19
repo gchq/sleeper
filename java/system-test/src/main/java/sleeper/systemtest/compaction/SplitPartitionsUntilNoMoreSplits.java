@@ -23,6 +23,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -65,17 +66,20 @@ public class SplitPartitionsUntilNoMoreSplits {
         StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties)
                 .getStateStore(tableProperties);
 
-        WaitForCurrentSplitAddingMissingJobs applySplit = WaitForCurrentSplitAddingMissingJobs.from(
-                sqsClient, store, systemTestProperties, tableName);
+        try (LambdaClient lambdaClient = LambdaClient.create()) {
+            InvokeSystemTestLambda.Client lambda = InvokeSystemTestLambda.client(lambdaClient, systemTestProperties);
+            WaitForCurrentSplitAddingMissingJobs applySplit = WaitForCurrentSplitAddingMissingJobs.from(
+                    lambda, sqsClient, store, systemTestProperties, tableName);
 
-        int splittingRound = 1;
-        do {
-            WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
-                    .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
-            LOGGER.info("Splitting partitions, round {}", splittingRound);
-            splittingRound++;
-            InvokeSystemTestLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
-            waitForPartitionSplitting.pollUntilFinished(stateStore);
-        } while (applySplit.checkIfSplittingCompactionNeededAndWait()); // Repeat until no more splitting is needed
+            int splittingRound = 1;
+            do {
+                WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                        .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+                LOGGER.info("Splitting partitions, round {}", splittingRound);
+                splittingRound++;
+                lambda.invokeLambda(PARTITION_SPLITTING_LAMBDA_FUNCTION);
+                waitForPartitionSplitting.pollUntilFinished(stateStore);
+            } while (applySplit.checkIfSplittingCompactionNeededAndWait()); // Repeat until no more splitting is needed
+        }
     }
 }

@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
-import sleeper.clients.util.PollWithRetries;
+import sleeper.core.util.PollWithRetries;
 
 public class WaitForStackToDelete {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForStackToDelete.class);

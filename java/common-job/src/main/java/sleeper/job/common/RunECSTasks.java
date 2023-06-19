@@ -26,82 +26,127 @@ import com.amazonaws.services.ecs.model.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.RateLimitUtils;
+
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
+import java.util.function.DoubleConsumer;
 
 public class RunECSTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunECSTasks.class);
+    private static final long CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS = 5000;
+    private static final long CAPACITY_UNAVAILABLE_RETRY_TIMEOUT_MILLIS = 60000;
 
-    private RunECSTasks() {
+    private final AmazonECS ecsClient;
+    private final RunTaskRequest runTaskRequest;
+    private final int numberOfTasksToCreate;
+    private final BooleanSupplier checkAbort;
+    private final Consumer<RunTaskResult> resultConsumer;
+    private final DoubleConsumer sleepForSustainedRatePerSecond;
+    private final PollWithRetries retryWhenNoCapacity;
+
+    private RunECSTasks(Builder builder) {
+        ecsClient = builder.ecsClient;
+        runTaskRequest = builder.runTaskRequest;
+        numberOfTasksToCreate = builder.numberOfTasksToCreate;
+        checkAbort = builder.checkAbort;
+        resultConsumer = builder.resultConsumer;
+        sleepForSustainedRatePerSecond = builder.sleepForSustainedRatePerSecond;
+        retryWhenNoCapacity = builder.retryWhenNoCapacity;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate) {
-        runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false);
+        runTasks(builder -> builder.ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(numberOfTasksToCreate));
     }
 
-    public static void runTasks(AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+    public static void runTasks(Consumer<RunECSTasks.Builder> configuration) {
+        Builder builder = builder();
+        configuration.accept(builder);
+        builder.build().runTasks();
+    }
+
+    public static void runTasksOrThrow(Consumer<RunECSTasks.Builder> configuration) {
+        Builder builder = builder();
+        configuration.accept(builder);
+        builder.build().runTasksOrThrow();
+    }
+
+    public void runTasks() {
         try {
-            runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, checkAbort);
+            runTasksOrThrow();
         } catch (InvalidParameterException e) {
             LOGGER.error("Couldn't launch tasks due to InvalidParameterException. " +
                     "This error is expected if there are no EC2 container instances in the cluster.");
-        } catch (AmazonClientException e) {
+        } catch (AmazonClientException | PollWithRetries.TimedOutException | ECSFailureException e) {
             LOGGER.error("Couldn't launch tasks", e);
         }
     }
 
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate)
-            throws AmazonClientException {
-        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false);
-    }
-
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort)
-            throws AmazonClientException {
-        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, checkAbort, result -> {
-        });
-    }
-
-    public static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, Consumer<RunTaskResult> resultConsumer)
-            throws AmazonClientException {
-        runTasksOrThrow(ecsClient, runTaskRequest, numberOfTasksToCreate, () -> false, resultConsumer);
-    }
-
-    private static void runTasksOrThrow(
-            AmazonECS ecsClient, RunTaskRequest runTaskRequest, int numberOfTasksToCreate, BooleanSupplier checkAbort, Consumer<RunTaskResult> resultConsumer)
+    public void runTasksOrThrow()
             throws AmazonClientException {
         LOGGER.info("Creating {} tasks", numberOfTasksToCreate);
-        for (int i = 0; i < numberOfTasksToCreate; i += 10) {
-            if (i > 0) {
-                // Rate limit for Fargate tasks is 100 burst, 20 sustained.
-                // Rate limit for ECS task creation API is 20 burst, 20 sustained.
-                // To stay below this limit we create 10 tasks once per second.
-                // See documentation:
-                // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
-                sleepForSustainedRatePerSecond(1);
-            }
-            int remainingTasksToCreate = numberOfTasksToCreate - i;
-            int tasksToCreateThisRound = Math.min(10, remainingTasksToCreate);
+        try {
+            int remainingTasks = numberOfTasksToCreate;
+            while (true) {
 
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest.withCount(tasksToCreateThisRound));
+                try {
+                    remainingTasks = retryTaskUntilCapacityAvailable(remainingTasks);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Failed to retry task ", e);
+                }
+                if (remainingTasks > 0) {
+                    // Rate limit for Fargate tasks is 100 burst, 20 sustained.
+                    // Rate limit for ECS task creation API is 20 burst, 20 sustained.
+                    // To stay below this limit we create 10 tasks once per second.
+                    // See documentation:
+                    // https://docs.aws.amazon.com/AmazonECS/latest/userguide/throttling.html
+                    sleepForSustainedRatePerSecond.accept(1);
+                } else {
+                    break;
+                }
+            }
+        } catch (ECSAbortException e) {
+            LOGGER.info("Aborted running ECS tasks");
+        }
+    }
+
+    private int retryTaskUntilCapacityAvailable(int remainingTasks) throws InterruptedException {
+        AtomicInteger remainingTasksObj = new AtomicInteger(remainingTasks);
+        retryWhenNoCapacity.pollUntil("capacity was available", () -> {
+            int tasksThisRound = Math.min(10, remainingTasksObj.get());
+            RunTaskResult result = ecsClient.runTask(runTaskRequest.withCount(tasksThisRound));
+            resultConsumer.accept(result);
+            if (checkAbort.getAsBoolean()) {
+                throw new ECSAbortException();
+            }
+
+            int failures = result.getFailures().size();
+            int capacityUnavailableFailures = (int) result.getFailures().stream()
+                    .filter(RunECSTasks::isCapacityUnavailable).count();
+            int fatalFailures = failures - capacityUnavailableFailures;
+            int successfulTaskRuns = tasksThisRound - failures;
+            int remainingTasksAfter = remainingTasksObj.updateAndGet(tasks -> tasks - successfulTaskRuns);
+
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
                     runTaskRequest.getCluster(), runTaskRequest.getLaunchType(),
-                    new ContainerName(runTaskResult), new TaskDefinitionArn(runTaskResult));
-
-            if (checkFailure(runTaskResult)) {
-                throw new ECSFailureException("Failures running task " + i + ": " + runTaskResult.getFailures());
+                    new ContainerName(result), new TaskDefinitionArn(result));
+            LOGGER.info("Found failures: {}", result.getFailures());
+            LOGGER.info("Created {} tasks, {} remaining to create", result.getTasks().size(), remainingTasksAfter);
+            if (fatalFailures > 0) {
+                throw new ECSFailureException("Failures running task: " + result.getFailures());
             }
-            resultConsumer.accept(runTaskResult);
 
-            if (checkAbort.getAsBoolean()) {
-                LOGGER.info("Aborting running ECS tasks");
-                return;
-            }
-        }
+            return capacityUnavailableFailures == 0;
+        });
+        return remainingTasksObj.get();
     }
 
     private static class ContainerName {
@@ -133,21 +178,61 @@ public class RunECSTasks {
         }
     }
 
-    /**
-     * Checks for failures in run task results.
-     *
-     * @param runTaskResult result from recent run_tasks API call.
-     * @return true if a task launch failure occurs
-     */
-    private static boolean checkFailure(RunTaskResult runTaskResult) {
-        if (!runTaskResult.getFailures().isEmpty()) {
-            LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
-            for (Failure f : runTaskResult.getFailures()) {
-                LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
-                        f.getDetail());
-            }
-            return true;
+    private static boolean isCapacityUnavailable(Failure failure) {
+        return failure.getReason().equals("Capacity is unavailable at this time. Please try again later or in a different availability zone");
+    }
+
+    public static final class Builder {
+        private AmazonECS ecsClient;
+        private RunTaskRequest runTaskRequest;
+        private int numberOfTasksToCreate;
+        private BooleanSupplier checkAbort = () -> false;
+        private Consumer<RunTaskResult> resultConsumer = result -> {
+        };
+        private DoubleConsumer sleepForSustainedRatePerSecond = RateLimitUtils::sleepForSustainedRatePerSecond;
+        private PollWithRetries retryWhenNoCapacity = PollWithRetries.intervalAndPollingTimeout(
+                CAPACITY_UNAVAILABLE_RETRY_INTERVAL_MILLIS, CAPACITY_UNAVAILABLE_RETRY_TIMEOUT_MILLIS);
+
+        private Builder() {
         }
-        return false;
+
+        public Builder ecsClient(AmazonECS ecsClient) {
+            this.ecsClient = ecsClient;
+            return this;
+        }
+
+        public Builder runTaskRequest(RunTaskRequest runTaskRequest) {
+            this.runTaskRequest = runTaskRequest;
+            return this;
+        }
+
+        public Builder numberOfTasksToCreate(int numberOfTasksToCreate) {
+            this.numberOfTasksToCreate = numberOfTasksToCreate;
+            return this;
+        }
+
+        public Builder checkAbort(BooleanSupplier checkAbort) {
+            this.checkAbort = checkAbort;
+            return this;
+        }
+
+        public Builder resultConsumer(Consumer<RunTaskResult> resultConsumer) {
+            this.resultConsumer = resultConsumer;
+            return this;
+        }
+
+        public Builder sleepForSustainedRatePerSecond(DoubleConsumer sleepForSustainedRatePerSecond) {
+            this.sleepForSustainedRatePerSecond = sleepForSustainedRatePerSecond;
+            return this;
+        }
+
+        public Builder retryWhenNoCapacity(PollWithRetries retryWhenNoCapacity) {
+            this.retryWhenNoCapacity = retryWhenNoCapacity;
+            return this;
+        }
+
+        public RunECSTasks build() {
+            return new RunECSTasks(this);
+        }
     }
 }
