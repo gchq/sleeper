@@ -211,49 +211,51 @@ public interface TableProperty extends SleeperProperty {
             .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
-            .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. " +
-                    "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +
-                    "One will be chosen depending on the capacity available. " +
-                    "When deploying with instance groups, only the first instance type will be used. " +
+            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master " +
+                    "node of the EMR cluster. Multiple instance types can be specified separated by commas. One will " +
+                    "be chosen depending on the capacity available.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE)
-            .description("(EMR mode only) The EC2 instance type to be used for the executor nodes of the EMR cluster. " +
-                    "If instance fleets are used, multiple instance types can be specified separated by commas. " +
-                    "Instances will be used with types that have capacity available. " +
-                    "When deploying with instance groups, only the first instance type will be used. " +
+            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor " +
+                    "nodes of the EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "Instances will be used with types that have capacity available.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.market.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE)
-            .description("(EMR mode only) The purchasing option to be used for the executor nodes of the EMR cluster.\n" +
+            .description("(Non-persistent EMR mode only) The purchasing option to be used for the executor nodes of " +
+                    "the EMR cluster.\n" +
                     "Valid values are ON_DEMAND or SPOT.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.instances")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
-            .description("(EMR mode only) The initial number of EC2 instances to be used as executors in the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+            .description("(Non-persistent EMR mode only) The initial number of EC2 instances to be used as executors " +
+                    "in the EMR cluster.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.instances")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS)
-            .description("(EMR mode only) The maximum number of EC2 instances to be used as executors in the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+            .description("(Non-persistent EMR mode only) The maximum number of EC2 instances to be used as executors " +
+                    "in the EMR cluster.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.table.bulk.import.emr.release.label")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL)
-            .description("(EMR mode only) The EMR release label to be used when creating an EMR cluster for bulk importing data " +
-                    "using Spark running on EMR. This value overrides the default value in the instance properties. It can " +
-                    "be overridden by a value in the bulk import job specification.")
+            .description("(Non-persistent EMR mode only) The EMR release label to be used when creating an EMR " +
+                    "cluster for bulk importing data using Spark running on EMR.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.table.bulk.import.min.leaf.partitions")

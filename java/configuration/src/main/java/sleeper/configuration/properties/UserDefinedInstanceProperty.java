@@ -577,33 +577,34 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("emr-6.10.0")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.instance.type")
-            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master node of the EMR cluster. " +
-                    "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +
-                    "One will be chosen depending on the capacity available. " +
-                    "When deploying with instance groups, only the first instance type will be used. " +
+            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master " +
+                    "node of the EMR cluster. Multiple instance types can be specified separated by commas. One will " +
+                    "be chosen depending on the capacity available.\n" +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.market.type")
-            .description("(Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of the EMR cluster.\n" +
-                    "Valid values are ON_DEMAND or SPOT.")
-            .defaultValue("SPOT").validationPredicate(s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s)))
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.instance.type")
-            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor nodes of the EMR cluster. " +
-                    "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +
-                    "Instances will be used with types that have capacity available. " +
-                    "When deploying with instance groups, only the first instance type will be used. " +
+            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor " +
+                    "nodes of the EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "Instances will be used with types that have capacity available.\n" +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.market.type")
+            .description("(Non-persistent EMR mode only) The default purchasing option to be used for the executor " +
+                    "nodes of the EMR cluster.\n" +
+                    "Valid values are ON_DEMAND or SPOT.")
+            .defaultValue("SPOT").validationPredicate(s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s)))
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.initial.instances")
-            .description("(Non-persistent EMR mode only) The default initial number of EC2 instances to be used as executors in the EMR cluster. " +
+            .description("(Non-persistent EMR mode only) The default initial number of EC2 instances to be used as " +
+                    "executors in the EMR cluster.\n" +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("2")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.max.instances")
-            .description("(Non-persistent EMR mode only) The default maximum number of EC2 instances to be used as executors in the EMR cluster. " +
+            .description("(Non-persistent EMR mode only) The default maximum number of EC2 instances to be used as " +
+                    "executors in the EMR cluster.\n" +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
