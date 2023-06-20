@@ -82,7 +82,7 @@ public class IngestJobRunner implements IngestJobHandler {
         Schema schema = tableProperties.getSchema();
 
         // Create list of all files to be read
-        List<Path> paths = IngestJobUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
+        List<Path> paths = HadoopPathUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 

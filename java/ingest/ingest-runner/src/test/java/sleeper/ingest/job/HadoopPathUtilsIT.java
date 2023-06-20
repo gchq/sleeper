@@ -28,7 +28,7 @@ import java.util.List;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class IngestJobUtilsIT {
+class HadoopPathUtilsIT {
 
     @TempDir
     public java.nio.file.Path folder;
@@ -39,7 +39,7 @@ class IngestJobUtilsIT {
         Configuration conf = new Configuration();
 
         // When
-        List<Path> pathsForIngest = IngestJobUtils.getPaths(new ArrayList<>(), conf, "");
+        List<Path> pathsForIngest = HadoopPathUtils.getPaths(new ArrayList<>(), conf, "");
 
         // Then
         assertThat(pathsForIngest).isEmpty();
@@ -51,7 +51,7 @@ class IngestJobUtilsIT {
         Configuration conf = new Configuration();
 
         // When
-        List<Path> pathsForIngest = IngestJobUtils.getPaths(null, conf, "");
+        List<Path> pathsForIngest = HadoopPathUtils.getPaths(null, conf, "");
 
         // Then
         assertThat(pathsForIngest).isEmpty();
@@ -71,7 +71,7 @@ class IngestJobUtilsIT {
         }
 
         // When
-        List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
+        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
 
         // Then
         assertThat(pathsForIngest)
@@ -95,7 +95,7 @@ class IngestJobUtilsIT {
         files.add(localDir + "/file-2.csv");
 
         // When
-        List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
+        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
 
         // Then
         assertThat(pathsForIngest)
@@ -121,7 +121,7 @@ class IngestJobUtilsIT {
         }
 
         // When
-        List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
+        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
 
         // Then
         assertThat(pathsForIngest)
@@ -155,7 +155,7 @@ class IngestJobUtilsIT {
         files.add(localDir);
 
         // When
-        List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
+        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
 
         // Then
         assertThat(pathsForIngest)

@@ -28,14 +28,14 @@ import java.util.List;
 /**
  * Utility class of methods common to ingest jobs.
  */
-public class IngestJobUtils {
+public class HadoopPathUtils {
 
-    private IngestJobUtils() {
+    private HadoopPathUtils() {
     }
 
     public static List<Path> getPaths(List<String> files, Configuration conf, String fileSystemProperty) throws IOException {
         if (null == files || files.isEmpty()) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         List<Path> paths = new ArrayList<>();
