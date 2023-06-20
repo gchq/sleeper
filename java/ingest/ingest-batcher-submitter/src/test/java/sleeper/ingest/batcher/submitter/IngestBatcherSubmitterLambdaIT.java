@@ -271,7 +271,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"files\":\"[" + TEST_BUCKET + "/test-file-1.parquet\"]," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-file-1.parquet\"]," +
                     "\"tableName\":\"not-a-table\"" +
                     "}";
 
@@ -286,7 +286,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreMessageIfFileDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"files\":\"[" + TEST_BUCKET + "/not-exists.parquet\"]," +
+                    "\"files\":[\"" + TEST_BUCKET + "/not-exists.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
