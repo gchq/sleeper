@@ -576,16 +576,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "bulk import job specification.")
             .defaultValue("emr-6.10.0")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_DEPLOYMENT_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.deployment.type")
-            .description("(Non-persistent EMR mode only) The deployment type for defining instances of the EMR cluster.\n" +
-                    "When deploying with instance fleets, a subnet will be chosen for the cluster based on capacity " +
-                    "available. Multiple instance types may be specified for nodes in the cluster, which will be chosen " +
-                    "based on capacity available.\n" +
-                    "When deploying with instance groups, a subnet will be chosen at random, and only the first " +
-                    "instance type specified will be used.\n" +
-                    "This default can be overridden by a table property or by a property in the bulk import job specification.")
-            .defaultValue("INSTANCE_FLEET")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.instance.type")
             .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master node of the EMR cluster. " +
                     "When deploying with instance fleets, multiple instance types can be specified separated by commas. " +

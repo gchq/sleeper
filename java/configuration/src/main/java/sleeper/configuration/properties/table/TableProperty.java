@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_DEPLOYMENT_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
@@ -210,18 +209,6 @@ public interface TableProperty extends SleeperProperty {
                     "the S3StateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .runCDKDeployWhenChanged(true).build();
-    TableProperty BULK_IMPORT_EMR_DEPLOYMENT_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.deployment.type")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_DEPLOYMENT_TYPE)
-            .description("(Non-persistent EMR mode only) The deployment type for defining instances of the EMR cluster.\n" +
-                    "When deploying with instance fleets, a subnet will be chosen for the cluster based on capacity " +
-                    "available. Multiple instance types may be specified for nodes in the cluster, which will be chosen " +
-                    "based on capacity available.\n" +
-                    "When deploying with instance groups, a subnet will be chosen at random, and only the first " +
-                    "instance type specified will be used.\n" +
-                    "This value overrides the default value in the instance properties. " +
-                    "It can be overridden by a value in the bulk import job specification.")
-            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
-            .build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
             .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. " +

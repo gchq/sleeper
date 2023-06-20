@@ -76,7 +76,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
         this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
-                new EmrInstanceGroups(instanceProperties));
+                new EmrInstanceFleets(instanceProperties));
     }
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
