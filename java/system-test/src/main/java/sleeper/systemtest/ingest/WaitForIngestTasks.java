@@ -24,8 +24,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.util.PollWithRetries;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;

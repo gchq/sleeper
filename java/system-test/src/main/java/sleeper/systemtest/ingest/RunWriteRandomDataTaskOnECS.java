@@ -96,7 +96,11 @@ public class RunWriteRandomDataTaskOnECS {
                 .withPlatformVersion(systemTestProperties.get(FARGATE_VERSION));
 
         List<RunTaskResult> results = new ArrayList<>();
-        RunECSTasks.runTasksOrThrow(ecsClient, runTaskRequest, systemTestProperties.getInt(NUMBER_OF_WRITERS), results::add);
+        RunECSTasks.runTasksOrThrow(builder -> builder
+                .ecsClient(ecsClient)
+                .runTaskRequest(runTaskRequest)
+                .numberOfTasksToCreate(systemTestProperties.getInt(NUMBER_OF_WRITERS))
+                .resultConsumer(results::add));
         LOGGER.debug("Ran {} tasks", systemTestProperties.getInt(NUMBER_OF_WRITERS));
         return results;
     }

@@ -101,7 +101,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty SUBNETS = Index.propertyBuilder("sleeper.subnets")
-            .description("A comma separated list of subnets to deploy ECS tasks to.")
+            .description("A comma separated list of subnets to deploy to. ECS tasks will be run across multiple " +
+                    "subnets. EMR clusters will be deployed in a subnet chosen when the cluster is created.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
@@ -1016,6 +1017,20 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("Whether dictionary encoding should be used for value columns in the Parquet files.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.columnindex.truncate.length")
+            .description("Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate binary values in a column index.")
+            .defaultValue("128")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.default.parquet.statistics.truncate.length")
+            .description("Used to set parquet.statistics.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate the min/max binary values in row groups.")
+            .defaultValue("2147483647")
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED = Index.propertyBuilder("sleeper.default.table.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is turned on for DynamoDB tables. This default can " +

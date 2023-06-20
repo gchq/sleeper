@@ -23,9 +23,9 @@ list_environments() {
 }
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment set <uniqueId>"
+  echo "Usage: environment set <uniqueId>"
   list_environments
-	exit 1
+  exit 1
 fi
 
 ENVIRONMENT_ID=$1
@@ -35,5 +35,5 @@ if [ -d "$ENVIRONMENTS_DIR/$ENVIRONMENT_ID" ]; then
 else
   echo "Environment not found: $ENVIRONMENT_ID"
   list_environments
-	exit 1
+  exit 1
 fi
