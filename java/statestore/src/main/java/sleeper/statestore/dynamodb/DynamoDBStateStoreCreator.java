@@ -111,7 +111,7 @@ public class DynamoDBStateStoreCreator {
             Schema schema,
             int garbageCollectorDelayBeforeDeletionInMinutes,
             AmazonDynamoDB dynamoDB) {
-        this(tablenameStub + "-fip", tablenameStub + "-fl", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInSeconds, false, dynamoDB, Collections.EMPTY_MAP);
+        this(tablenameStub + "-fip", tablenameStub + "-fl", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInMinutes, false, dynamoDB, Collections.EMPTY_MAP);
     }
 
     public DynamoDBStateStoreCreator(
@@ -128,11 +128,7 @@ public class DynamoDBStateStoreCreator {
     public DynamoDBStateStore create() throws StateStoreException {
         createFileInfoTables();
         createPartitionInfoTable();
-<<<<<<< HEAD
-        return new DynamoDBStateStore(fileInPartitionTablename, fileLifecycleTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads, dynamoDB);
-=======
-        return new DynamoDBStateStore(activeFileInfoTablename, readyForGCFileInfoTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, stronglyConsistentReads, dynamoDB);
->>>>>>> main
+        return new DynamoDBStateStore(fileInPartitionTablename, fileLifecycleTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, stronglyConsistentReads, dynamoDB);
     }
 
     public void createFileInfoTables() {

@@ -45,7 +45,7 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getFileInPartitionList();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
@@ -81,7 +81,7 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getFileInPartitionList();
         assertThat(activeFiles).isEmpty();
     }
 }

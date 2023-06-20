@@ -246,7 +246,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // The state store which is returned may not be thread-safe either.
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToFileInPartitionMap();
         LOGGER.debug("Retrieved " + partitions.size() + " partitions from StateStore");
         return new SleeperTablePartitionStructure(asOfInstant, partitions, partitionToFileMapping);
     }

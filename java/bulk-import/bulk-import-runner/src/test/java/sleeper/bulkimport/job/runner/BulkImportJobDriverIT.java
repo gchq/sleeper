@@ -53,6 +53,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;

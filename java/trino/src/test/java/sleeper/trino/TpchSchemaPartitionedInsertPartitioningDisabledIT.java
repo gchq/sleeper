@@ -134,7 +134,7 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     @Test
     public void testMoreThanOneParquetFileInRootPartitionInUnpartitionedTable() throws IOException, StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         assertThat(stateStore.getAllPartitions().stream()
             .filter(p -> p.getId().equals("root"))
             .allMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
@@ -143,7 +143,7 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     @Test
     public void testMoreThanOneParquetFileInAnyPartitionInPartitionedTable() throws IOException, StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         assertThat(stateStore.getLeafPartitions().stream()
             .anyMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
     }

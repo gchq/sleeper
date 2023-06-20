@@ -55,7 +55,7 @@ public class CheckBulkImportRecords {
         long expectedRecords = numberOfWriters * numberOfRecordsPerWriter * numberOfBulkImportJobs;
         LOGGER.info("Expecting {} records ({} writers, {} records per writer, {} total jobs)",
                 expectedRecords, numberOfWriters, numberOfRecordsPerWriter, numberOfBulkImportJobs);
-        long recordsInStateStore = stateStore.getActiveFiles().stream()
+        long recordsInStateStore = stateStore.getFileInPartitionList().stream()
                 .mapToLong(FileInfo::getNumberOfRecords).sum();
         LOGGER.info("Found {} records across all files in table", recordsInStateStore);
         if (expectedRecords != recordsInStateStore) {

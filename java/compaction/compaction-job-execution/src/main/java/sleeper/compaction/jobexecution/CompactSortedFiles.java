@@ -377,9 +377,9 @@ public class CompactSortedFiles {
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .numberOfRecords(recordssWritten)
-                .minRowKey(linesWritten > 0 ? Key.create(minRowKey0) : null)
-                .maxRowKey(linesWritten > 0 ? Key.create(maxRowKey0) : null)
+                .numberOfRecords(recordsWritten)
+                .minRowKey(recordsWritten > 0 ? Key.create(minRowKey0) : null)
+                .maxRowKey(recordsWritten > 0 ? Key.create(maxRowKey0) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {

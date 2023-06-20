@@ -70,7 +70,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
                         summary(startTime, finishTime, 100, 100)));
-        assertThat(stateStore.getActiveFiles()).isEqualTo(outputFiles);
+        assertThat(stateStore.getFileInPartitionList()).isEqualTo(outputFiles);
     }
 
     @Test
@@ -92,7 +92,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
                         summary(startTime, finishTime, 0, 0)));
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileInPartitionList()).isEmpty();
     }
 
     @Test
@@ -114,7 +114,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
                         summary(startTime, finishTime, 0, 0)));
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileInPartitionList()).isEmpty();
     }
 
     @Test
@@ -136,7 +136,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJob(job.toIngestJob(), "test-task",
                         summary(startTime, finishTime, 0, 0)));
-        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getFileInPartitionList()).isEmpty();
     }
 
     private void runJob(BulkImportJob job, String taskId,

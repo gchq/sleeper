@@ -134,7 +134,7 @@ public class TpchSchemaPartitionedInsertPartitioningEnabledIT {
     @Test
     public void testExactlyOneParquetFileInRootPartitionInUnpartitionedTable() throws IOException, StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         assertThat(
                 stateStore.getAllPartitions().stream()
                         .filter(Partition::isLeafPartition)
@@ -144,7 +144,7 @@ public class TpchSchemaPartitionedInsertPartitioningEnabledIT {
     @Test
     public void testMaxOneParquetFilePerPartitionInPartitionedTable() throws IOException, StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
+        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToFileInPartitionMap();
         assertThat(
                 stateStore.getAllPartitions().stream()
                         .filter(Partition::isLeafPartition)

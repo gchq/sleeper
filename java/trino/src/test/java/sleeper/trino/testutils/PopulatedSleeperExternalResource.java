@@ -69,10 +69,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -174,15 +174,15 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 .toLowerCase()
                 .replaceAll("[^-a-z0-9.]", "---");
 
-        String activeTable = tableDefinition.tableName + "-af";
-        String readyForGCTable = tableDefinition.tableName + "-rfgcf";
+        String fileInPartitionTable = tableDefinition.tableName + "-fip";
+        String fileLifecycleTable = tableDefinition.tableName + "-fl";
         String partitionTable = tableDefinition.tableName + "-p";
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
         tableProperties.setSchema(tableDefinition.schema);
         tableProperties.set(DATA_BUCKET, dataBucket);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, activeTable);
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, readyForGCTable);
+        tableProperties.set(FILE_IN_PARTITION_TABLENAME, fileInPartitionTable);
+        tableProperties.set(FILE_LIFECYCLE_TABLENAME, fileLifecycleTable);
         tableProperties.set(PARTITION_TABLENAME, partitionTable);
         tableProperties.saveToS3(this.s3Client);
 

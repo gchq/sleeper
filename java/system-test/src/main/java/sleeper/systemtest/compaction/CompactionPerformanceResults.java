@@ -49,7 +49,7 @@ public class CompactionPerformanceResults {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
         return builder()
                 .numOfJobs(jobStatusStore.getAllJobs(tableName).size())
-                .numOfRecordsInRoot(stateStore.getActiveFiles().stream()
+                .numOfRecordsInRoot(stateStore.getFileInPartitionList().stream()
                         .mapToLong(FileInfo::getNumberOfRecords).sum())
                 .writeRate(AverageRecordRate.of(jobStatusStore.streamAllJobs(tableName)
                         .filter(CompactionJobStatus::isFinished)

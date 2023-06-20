@@ -122,7 +122,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
     }
@@ -163,7 +163,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        assertThat(stateStore.getActiveFiles())
+        assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L),

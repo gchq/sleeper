@@ -133,9 +133,10 @@ public class SystemTestForIngestBatcher {
         }
     }
 
+    // TODO Rename method?
     private int countActiveFiles(InstanceProperties properties, TableProperties tableProperties) throws StateStoreException {
         StateStoreProvider provider = new StateStoreProvider(dynamoDB, properties);
-        return provider.getStateStore(tableProperties).getActiveFiles().size();
+        return provider.getStateStore(tableProperties).getFileInPartitionList().size();
     }
 
     private void createInstanceIfMissing(String sourceBucketName) throws IOException, InterruptedException {

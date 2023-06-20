@@ -43,13 +43,9 @@ import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
-<<<<<<< HEAD
-import java.time.Instant;
-=======
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
->>>>>>> main
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -448,14 +444,13 @@ public class S3FileInfoStore implements FileInfoStore {
             long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
             long deleteTime = clock.millis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFileLifecyclePath(getCurrentFilesRevisionId()));
-            List<FileInfo> filesReadyForGC = fileInfos.stream().filter(f -> {
+            return fileInfos.stream().filter(f -> {
                 if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
                     return false;
                 }
                 long lastUpdateTime = f.getLastStateStoreUpdateTime();
                 return lastUpdateTime < deleteTime;
-            })
-            .collect(Collectors.toList());
+            });
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
         }
