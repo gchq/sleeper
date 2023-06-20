@@ -87,7 +87,10 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
-        requests.forEach(request -> storeFiles(request, receivedTime));
+        requests.forEach(request -> {
+            LOGGER.info("Adding {} to store", request.getFile());
+            storeFiles(request, receivedTime);
+        });
     }
 
     private void storeFiles(FileIngestRequest request, Instant receivedTime) {
