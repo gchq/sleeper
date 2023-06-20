@@ -16,24 +16,18 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 
-list_environments() {
-  "$THIS_DIR/list.sh"
-}
+# Wait for deployment, make a test connection to remember SSH certificate
+RETRY_NUM=30
+RETRY_EVERY=10
+NUM=$RETRY_NUM
+until "$THIS_DIR/connect.sh" echo '"Test connection successful"'; do
+  echo 1>&2 "Failed test connection with status $?, retrying $NUM more times, next in $RETRY_EVERY seconds"
+  sleep $RETRY_EVERY
+  ((NUM--))
 
-if [ "$#" -lt 1 ]; then
-  echo "Usage: environment set <uniqueId>"
-  list_environments
-  exit 1
-fi
-
-ENVIRONMENT_ID=$1
-
-if [ -d "$ENVIRONMENTS_DIR/$ENVIRONMENT_ID" ]; then
-  echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
-else
-  echo "Environment not found: $ENVIRONMENT_ID"
-  list_environments
-  exit 1
-fi
+  if [ $NUM -eq 0 ]; then
+    echo 1>&2 "Test connection unsuccessful after $RETRY_NUM tries"
+    exit 1
+  fi
+done

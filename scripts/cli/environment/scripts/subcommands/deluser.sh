@@ -15,25 +15,13 @@
 
 set -e
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
-
-list_environments() {
-  "$THIS_DIR/list.sh"
-}
-
 if [ "$#" -lt 1 ]; then
-  echo "Usage: environment set <uniqueId>"
-  list_environments
+  echo "Usage: environment deluser <username>"
   exit 1
 fi
 
-ENVIRONMENT_ID=$1
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+USERNAME="$1"
 
-if [ -d "$ENVIRONMENTS_DIR/$ENVIRONMENT_ID" ]; then
-  echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
-else
-  echo "Environment not found: $ENVIRONMENT_ID"
-  list_environments
-  exit 1
-fi
+"$THIS_DIR/setuser.sh"
+"$THIS_DIR/connect.sh" sudo deluser --remove-home "$USERNAME"
