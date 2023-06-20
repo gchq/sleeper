@@ -21,9 +21,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Utility class of methods common to ingest jobs.
@@ -60,5 +65,19 @@ public class HadoopPathUtils {
             }
         }
         return paths;
+    }
+
+    public static List<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
+        return files.stream()
+                .map(file -> new Path(fileSystemProperty + file))
+                .flatMap(path -> {
+                    try {
+                        return Stream.of(path.getFileSystem(conf).listStatus(path));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .filter(not(FileStatus::isDirectory))
+                .collect(Collectors.toList());
     }
 }

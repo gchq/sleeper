@@ -16,6 +16,7 @@
 package sleeper.utils;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,6 +28,7 @@ import java.util.List;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class HadoopPathUtilsIT {
 
@@ -58,17 +60,35 @@ class HadoopPathUtilsIT {
     }
 
     @Test
+    void shouldGetFileStatusesForMultipleFiles() throws Exception {
+        // Given
+        String localDir = createTempDirectory(folder, null).toString();
+        Configuration conf = new Configuration();
+        List<String> files = new ArrayList<>();
+
+        files.add(createTestFile(localDir, "file-1.parquet", 2L));
+        files.add(createTestFile(localDir, "file-2.parquet", 4L));
+
+        // When
+        List<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
+
+        // Then
+        assertThat(fileStatuses)
+                .extracting(status -> status.getPath().getName(), FileStatus::getLen)
+                .containsExactly(
+                        tuple("file-1.parquet", 2L),
+                        tuple("file-2.parquet", 4L));
+    }
+
+    @Test
     void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
         // Given
         String localDir = createTempDirectory(folder, null).toString();
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
-        for (int i = 0; i < 2; i++) {
-            String outputFile = localDir + "/file-" + i + ".parquet";
-            Files.createFile(Paths.get(outputFile));
-            files.add(outputFile);
-        }
+        files.add(createTestFile(localDir, "file-1.parquet"));
+        files.add(createTestFile(localDir, "file-2.parquet"));
 
         // When
         List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
@@ -76,7 +96,7 @@ class HadoopPathUtilsIT {
         // Then
         assertThat(pathsForIngest)
                 .extracting(path -> path.toUri().getPath())
-                .containsExactlyInAnyOrder(localDir + "/file-0.parquet", localDir + "/file-1.parquet");
+                .containsExactlyInAnyOrder(localDir + "/file-1.parquet", localDir + "/file-2.parquet");
     }
 
     @Test
@@ -86,13 +106,9 @@ class HadoopPathUtilsIT {
         Configuration conf = new Configuration();
         List<String> files = new ArrayList<>();
 
-        Files.createFile(Paths.get(localDir + "/file-0.parquet"));
-        Files.createFile(Paths.get(localDir + "/file-1.crc"));
-        Files.createFile(Paths.get(localDir + "/file-2.csv"));
-
-        files.add(localDir + "/file-0.parquet");
-        files.add(localDir + "/file-1.crc");
-        files.add(localDir + "/file-2.csv");
+        files.add(createTestFile(localDir, "file-0.parquet"));
+        files.add(createTestFile(localDir, "file-1.crc"));
+        files.add(createTestFile(localDir, "file-2.csv"));
 
         // When
         List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
@@ -164,5 +180,15 @@ class HadoopPathUtilsIT {
                         localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
                         localDir + "/dir-0/dir-nested/file-0.parquet",
                         localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet");
+    }
+
+    private static String createTestFile(String localDir, String fileName) throws Exception {
+        return createTestFile(localDir, fileName, 0);
+    }
+
+    private static String createTestFile(String localDir, String fileName, long size) throws Exception {
+        String outputFile = localDir + "/" + fileName;
+        Files.writeString(Paths.get(outputFile), "a".repeat((int) size));
+        return outputFile;
     }
 }
