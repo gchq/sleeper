@@ -21,7 +21,6 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsConfigurationProperty;
-import software.amazon.awscdk.services.emr.CfnCluster.InstanceGroupConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.JobFlowInstancesConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.ManagedScalingPolicyProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.VolumeSpecificationProperty;
@@ -116,22 +115,25 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .ebsBlockDeviceConfigs(List.of(ebsBlockDeviceConfig))
                 .ebsOptimized(true)
                 .build();
-
-        InstanceGroupConfigProperty masterInstanceGroupConfigProperty = InstanceGroupConfigProperty.builder()
-                .instanceCount(1)
-                .instanceType(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE))
-                .ebsConfiguration(ebsConf)
+        CfnCluster.InstanceFleetConfigProperty masterInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
+                .name("Driver")
+                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE).stream()
+                        .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                .instanceType(type)
+                                .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
                 .build();
-        InstanceGroupConfigProperty coreInstanceGroupConfigProperty = InstanceGroupConfigProperty.builder()
-                .instanceCount(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES))
-                .instanceType(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE))
-                .ebsConfiguration(ebsConf)
+        CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
+                .name("Executors")
+                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE).stream()
+                        .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                .instanceType(type)
+                                .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetId(instanceProperties.getList(SUBNETS).get(0))
-                .masterInstanceGroup(masterInstanceGroupConfigProperty)
-                .coreInstanceGroup(coreInstanceGroupConfigProperty);
+                .ec2SubnetIds(instanceProperties.getList(SUBNETS))
+                .masterInstanceFleet(masterInstanceFleetConfigProperty)
+                .coreInstanceFleet(coreInstanceFleetConfigProperty);
 
         String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
         if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
