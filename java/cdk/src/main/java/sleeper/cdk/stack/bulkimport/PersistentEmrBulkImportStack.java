@@ -121,6 +121,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
                                 .instanceType(type)
                                 .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
+                .targetOnDemandCapacity(1)
                 .build();
         CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Executors")
@@ -128,6 +129,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
                                 .instanceType(type)
                                 .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
+                .targetOnDemandCapacity(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES))
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
