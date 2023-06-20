@@ -616,12 +616,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.instance.type")
-            .description("(Persistent EMR mode only) The EC2 instance type used for the master of the persistent EMR cluster.")
+            .description("(Persistent EMR mode only) The EC2 instance type used for the master node of the " +
+                    "persistent EMR cluster. Multiple instance types can be specified separated by commas. One will " +
+                    "be chosen depending on the capacity available.")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.core.instance.type")
-            .description("(Persistent EMR mode only) The EC2 instance type used for the executor nodes of the persistent EMR cluster.")
+            .description("(Persistent EMR mode only) The EC2 instance type used for the executor nodes of the " +
+                    "persistent EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "Instance types will be chosen from the list based on the capacity available.")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
