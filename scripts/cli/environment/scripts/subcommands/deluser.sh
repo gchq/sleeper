@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,13 @@
 
 set -e
 
+if [ "$#" -lt 1 ]; then
+  echo "Usage: environment deluser <username>"
+  exit 1
+fi
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
+USERNAME="$1"
 
-pushd "${PROJECT_ROOT}/java"
-echo "Compiling..."
-mvn compile -Pquick -q -pl configuration -am
-
-pushd configuration
-echo "Regenerating templates..."
-mvn exec:java -q \
-  -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
-  -Dexec.args="$PROJECT_ROOT"
-
-popd
-popd
+"$THIS_DIR/setuser.sh"
+"$THIS_DIR/connect.sh" sudo deluser --remove-home "$USERNAME"
