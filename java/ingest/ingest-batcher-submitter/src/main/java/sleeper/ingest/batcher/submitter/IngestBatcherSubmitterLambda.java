@@ -22,7 +22,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,6 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -97,20 +95,10 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private void storeFiles(FileIngestRequest request, Instant receivedTime) {
         String bucketName = getBucketName(request);
         String filePath = getFilePath(request);
-        ListObjectsV2Result result = s3Client.listObjectsV2(new ListObjectsV2Request()
-                .withBucketName(bucketName)
-                .withPrefix(filePath)
-                .withDelimiter("/"));
-        result.getObjectSummaries().stream()
+        s3Client.listObjectsV2(new ListObjectsV2Request().withBucketName(bucketName).withPrefix(filePath))
+                .getObjectSummaries().stream()
                 .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
                 .forEach(store::addFile);
-        if (result.getObjectSummaries() != null && result.getObjectSummaries().stream()
-                .noneMatch(summary -> summary.getKey().equals(getFilePath(request)))) {
-            result.getCommonPrefixes().forEach(directory ->
-                    streamFilesInDirectory(s3Client, bucketName, directory)
-                            .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
-                            .forEach(store::addFile));
-        }
     }
 
     private static FileIngestRequest toRequest(S3ObjectSummary summary, String bucketName, String tableName, Instant receivedTime) {
@@ -120,14 +108,6 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
                 .tableName(tableName)
                 .receivedTime(receivedTime)
                 .build();
-    }
-
-    private static Stream<S3ObjectSummary> streamFilesInDirectory(AmazonS3 s3Client, String bucketName, String filePath) {
-        return s3Client.listObjectsV2(new ListObjectsV2Request()
-                        .withBucketName(bucketName)
-                        .withPrefix(filePath)
-                        .withDelimiter("/"))
-                .getObjectSummaries().stream();
     }
 
     private static String getBucketName(FileIngestRequest request) {

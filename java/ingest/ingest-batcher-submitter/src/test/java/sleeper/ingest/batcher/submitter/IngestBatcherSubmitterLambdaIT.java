@@ -131,7 +131,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory/\"]," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -150,7 +150,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/test-file-1.parquet");
             uploadFileToS3("test-directory/test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory/\"]," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -169,7 +169,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory/\"]," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -188,7 +188,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/nested-1/test-file-1.parquet");
             uploadFileToS3("test-directory/nested-2/test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory/\"]," +
+                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
                     "\"tableName\":\"" + TEST_TABLE + "\"" +
                     "}";
 
@@ -200,23 +200,6 @@ public class IngestBatcherSubmitterLambdaIT {
                     .containsExactly(
                             fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"),
                             fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"));
-        }
-
-        @Test
-        void shouldIgnoreNestedDirectoriesIfTrailingSlashIsMissingInJson() {
-            // Given
-            uploadFileToS3("test-directory/nested/test-file-1.parquet");
-            String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"tableName\":\"" + TEST_TABLE + "\"" +
-                    "}";
-
-            // When
-            lambda.handleMessage(json, RECEIVED_TIME);
-
-            // Then
-            assertThat(store.getAllFilesNewestFirst())
-                    .isEmpty();
         }
     }
 
