@@ -446,11 +446,14 @@ sleeper.default.bulk.import.emr.executor.max.instances=10
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 
-# (Persistent EMR mode only) The EC2 instance type used for the master of the persistent EMR cluster.
+# (Persistent EMR mode only) The EC2 instance type used for the master node of the persistent EMR
+# cluster. Multiple instance types can be specified separated by commas. One will be chosen depending
+# on the capacity available.
 sleeper.bulk.import.persistent.emr.master.instance.type=m5.xlarge
 
 # (Persistent EMR mode only) The EC2 instance type used for the executor nodes of the persistent EMR
-# cluster.
+# cluster. Multiple instance types can be specified separated by commas. Instance types will be chosen
+# from the list based on the capacity available.
 sleeper.bulk.import.persistent.emr.core.instance.type=m5.4xlarge
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
