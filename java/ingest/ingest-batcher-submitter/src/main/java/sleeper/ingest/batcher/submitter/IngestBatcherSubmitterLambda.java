@@ -21,7 +21,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +97,10 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private void storeFiles(FileIngestRequest request, Instant receivedTime) {
         String bucketName = getBucketName(request);
         String filePath = getFilePath(request);
-        ObjectListing result = s3Client.listObjects(bucketName, filePath);
+        ListObjectsV2Result result = s3Client.listObjectsV2(new ListObjectsV2Request()
+                .withBucketName(bucketName)
+                .withPrefix(filePath)
+                .withDelimiter("/"));
         result.getObjectSummaries().stream()
                 .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
                 .forEach(store::addFile);
@@ -119,7 +123,10 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     private static Stream<S3ObjectSummary> streamFilesInDirectory(AmazonS3 s3Client, String bucketName, String filePath) {
-        return s3Client.listObjects(bucketName, filePath)
+        return s3Client.listObjectsV2(new ListObjectsV2Request()
+                        .withBucketName(bucketName)
+                        .withPrefix(filePath)
+                        .withDelimiter("/"))
                 .getObjectSummaries().stream();
     }
 
