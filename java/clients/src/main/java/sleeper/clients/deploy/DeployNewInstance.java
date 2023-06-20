@@ -81,18 +81,18 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 4 || args.length > 6) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> " +
+        if (args.length < 5 || args.length > 7) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name>" +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
         builder().scriptsDirectory(scriptsDirectory)
-                .instanceId(args[2])
-                .vpcId(args[3])
-                .subnetId(args[4])
-                .tableName(args[5])
-                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
+                .instanceId(args[1])
+                .vpcId(args[2])
+                .subnetId(args[3])
+                .tableName(args[4])
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
