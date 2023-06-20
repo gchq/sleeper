@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +37,7 @@ class HadoopPathUtilsIT {
     public java.nio.file.Path folder;
 
     @Test
-    void shouldReturnEmptyListIfNoFiles() throws Exception {
+    void shouldReturnEmptyListIfNoFiles() {
         // Given
         Configuration conf = new Configuration();
 
@@ -48,7 +49,7 @@ class HadoopPathUtilsIT {
     }
 
     @Test
-    void shouldReturnEmptyListIfNull() throws Exception {
+    void shouldReturnEmptyListIfNull() {
         // Given
         Configuration conf = new Configuration();
 
@@ -70,7 +71,7 @@ class HadoopPathUtilsIT {
         files.add(createTestFile(localDir, "file-2.parquet", 4L));
 
         // When
-        List<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
+        Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
 
         // Then
         assertThat(fileStatuses)

@@ -17,18 +17,15 @@ package sleeper.utils;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.function.Predicate.not;
 
 /**
  * Utility class of methods common to ingest jobs.
@@ -38,36 +35,37 @@ public class HadoopPathUtils {
     private HadoopPathUtils() {
     }
 
-    public static List<Path> getPaths(List<String> files, Configuration conf, String fileSystemProperty) throws IOException {
+    public static List<Path> getPaths(List<String> files, Configuration conf, String fileSystemProperty) {
         if (null == files || files.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Path> paths = new ArrayList<>();
-        for (String file : files) {
-            Path path = new Path(fileSystemProperty + file);
-            FileSystem fileSystem = path.getFileSystem(conf);
-            paths.addAll(getAllPaths(fileSystem, path));
-        }
-        return paths;
+        return getFiles(files, conf, fileSystemProperty)
+                .flatMap(status -> {
+                    if (status.isDirectory()) {
+                        try {
+                            return getFilesOnPath(status.getPath(), conf, fileSystemProperty);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        if (!status.getPath().getName().endsWith(".crc")) {
+                            return Stream.of(status);
+                        }
+                    }
+                    return Stream.empty();
+                })
+                .map(FileStatus::getPath)
+                .collect(Collectors.toList());
     }
 
-    private static List<Path> getAllPaths(FileSystem fileSystem, Path path) throws IOException {
-        List<Path> paths = new ArrayList<>();
-        FileStatus[] statuses = fileSystem.listStatus(path);
-        for (FileStatus status : statuses) {
-            if (status.isDirectory()) {
-                paths.addAll(getAllPaths(fileSystem, status.getPath()));
-            } else {
-                if (!status.getPath().getName().endsWith(".crc")) {
-                    paths.add(status.getPath());
-                }
-            }
-        }
-        return paths;
+    public static Stream<FileStatus> getFilesOnPath(Path path, Configuration conf, String fileSystemProperty) throws IOException {
+        return getFiles(Arrays.stream(path.getFileSystem(conf).listStatus(path))
+                .map(status -> status.getPath().toUri().getPath())
+                .collect(Collectors.toList()), conf, fileSystemProperty);
     }
 
-    public static List<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
+    public static Stream<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
         return files.stream()
                 .map(file -> new Path(fileSystemProperty + file))
                 .flatMap(path -> {
@@ -76,8 +74,6 @@ public class HadoopPathUtils {
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }
-                })
-                .filter(not(FileStatus::isDirectory))
-                .collect(Collectors.toList());
+                });
     }
 }
