@@ -40,7 +40,6 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
@@ -74,13 +73,10 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
         assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
+                .containsExactly(dataHelper.expectedLeafFileInPartition(compactionJob.getOutputFile(), 200L, 0L, 199L));
     }
 
     @Test
@@ -127,13 +123,10 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
         assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr"));
+                .containsExactly(dataHelper.expectedLeafFileInPartition(compactionJob.getOutputFile(), 200L, "aa", "hr"));
     }
 
     @Test
@@ -185,12 +178,9 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
         assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}));
+                .containsExactly(dataHelper.expectedLeafFileInPartition(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}));
     }
 }

@@ -36,7 +36,7 @@
       "filename": "A.parquet",
       "partitionId": "A",
       "numberOfRecords": 50000001,
-      "fileStatus": "ACTIVE",
+      "fileStatus": "FILE_IN_PARTITION",
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
@@ -53,7 +53,7 @@
       "filename": "D.parquet",
       "partitionId": "D",
       "numberOfRecords": 50000002,
-      "fileStatus": "ACTIVE",
+      "fileStatus": "FILE_IN_PARTITION",
       "lastStateStoreUpdateTime": 1661178000001
     }
   ],

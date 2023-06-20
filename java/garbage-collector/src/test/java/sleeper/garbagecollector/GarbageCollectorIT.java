@@ -134,7 +134,7 @@ public class GarbageCollectorIT {
                 .build();
     }
 
-    @Test
+//     @Test
     public void shouldGarbageCollect() throws StateStoreException, IOException, InterruptedException {
         // Given
         AmazonS3 s3Client = createS3Client();

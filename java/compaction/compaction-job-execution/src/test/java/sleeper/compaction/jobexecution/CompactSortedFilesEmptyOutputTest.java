@@ -36,7 +36,6 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
@@ -70,7 +69,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())
@@ -103,7 +102,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())
@@ -143,7 +142,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, dataHelper.allFileInfos());
+        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())

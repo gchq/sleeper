@@ -361,29 +361,29 @@ public class CompactSortedFiles {
                                                    long finishTime,
                                                    StateStore stateStore,
                                                    List<PrimitiveType> rowKeyTypes) {
-        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
+        List<FileInfo> fileInPartitionRecordsToBeDeleted = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(rowKeyTypes)
                     .filename(file)
                     .partitionId(partitionId)
                     .lastStateStoreUpdateTime(finishTime)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .build();
-            filesToBeMarkedReadyForGC.add(fileInfo);
+            fileInPartitionRecordsToBeDeleted.add(fileInfo);
         }
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .numberOfRecords(linesWritten)
                 .minRowKey(linesWritten > 0 ? Key.create(minRowKey0) : null)
                 .maxRowKey(linesWritten > 0 ? Key.create(maxRowKey0) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
-            stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
+            stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(fileInPartitionRecordsToBeDeleted, fileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {

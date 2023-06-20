@@ -172,7 +172,7 @@ public class CompactSortedFilesRunnerIT {
         FileInfo fileInfo1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -181,7 +181,7 @@ public class CompactSortedFilesRunnerIT {
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
@@ -190,7 +190,7 @@ public class CompactSortedFilesRunnerIT {
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file3)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -199,7 +199,7 @@ public class CompactSortedFilesRunnerIT {
         FileInfo fileInfo4 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file4)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
@@ -243,11 +243,13 @@ public class CompactSortedFilesRunnerIT {
         writer4.close();
         // - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+        stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getFileInPartitionList().forEach(System.out::println);
+
         // - Create two compaction jobs and put on queue
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableName(tableName)
                 .jobId("job1")
-                .partitionId("root")
+                .partitionId("1")
                 .dimension(0)
                 .inputFiles(Arrays.asList(file1, file2))
                 .isSplittingJob(false)
@@ -255,7 +257,7 @@ public class CompactSortedFilesRunnerIT {
         CompactionJob compactionJob2 = CompactionJob.builder()
                 .tableName(tableName)
                 .jobId("job2")
-                .partitionId("root")
+                .partitionId("1")
                 .dimension(0)
                 .inputFiles(Arrays.asList(file3, file4))
                 .isSplittingJob(false)
@@ -288,7 +290,7 @@ public class CompactSortedFilesRunnerIT {
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
         // - Check DynamoDBStateStore has correct file in partition list
-        List<FileInfo> fileInPartitionList = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getFileInPartitionList();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList() ;//stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getFileInPartitionList();
         assertThat(fileInPartitionList)
                 .extracting(FileInfo::getFilename)
                 .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
