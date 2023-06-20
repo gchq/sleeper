@@ -118,34 +118,30 @@ public class S3StateStoreIT {
         return tableName;
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions,
-                                     int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions,
+                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
         String bucket = createTempDirectory(folder, null).toString();
         String dynamoTableName = createDynamoTable();
-        S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, dynamoDBClient, new Configuration());
+        S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient, new Configuration());
         stateStore.initialise(partitions);
         return stateStore;
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema,
+                                       List<Partition> partitions) throws IOException, StateStoreException {
         return getStateStore(schema, partitions, 0);
     }
 
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints, int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), garbageCollectorDelayBeforeDeletionInSeconds);
-    }
-
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws IOException, StateStoreException {
+    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws IOException, StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInSeconds) throws IOException, StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST, garbageCollectorDelayBeforeDeletionInSeconds);
+    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
-    private StateStore getStateStore(Schema schema) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema) throws IOException, StateStoreException {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
@@ -424,30 +420,36 @@ public class S3StateStoreIT {
     @Test
     public void testGetFilesThatAreReadyForGC() throws IOException, InterruptedException, StateStoreException {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        StateStore dynamoDBStateStore = getStateStore(schema, 4);
+        Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
+        Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
+        Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
+        Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
+        Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
+        Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
+        S3StateStore stateStore = getStateStore(schema, 5);
+        Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
-        //     (NB Need to add file, which adds file-in-partition and lifecycle enrties, then simulate a compaction
-        //      to remove the file in partition entries, then set the status to ready for GC)
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema)
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.ofEpochMilli(System.currentTimeMillis() - 8000))
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(file1Time)
                 .build();
-        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-        FileInfo file2 = factory.rootFile("file2", 100L, "a", "b");
-        dynamoDBStateStore.addFile(file1);
-        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION)),
-                file2);
-        dynamoDBStateStore.setStatusToReadyForGarbageCollection(file1.getFilename());
-        //  - An active file which should not be garbage collected immediately
-        FileInfoFactory factory2 = FileInfoFactory.builder()
-                .schema(schema)
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.ofEpochMilli(System.currentTimeMillis() + 4000L))
+        stateStore.addFile(fileInfo1);
+        //  - An active file which should not be garbage collected
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(file2Time)
                 .build();
         FileInfo file3 = factory2.rootFile("file3", 100L, "a", "b");
         dynamoDBStateStore.addFile(file3);
@@ -473,7 +475,14 @@ public class S3StateStoreIT {
         dynamoDBStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
         assertThat(readyForGCFiles).hasSize(2);
         assertThat(readyForGCFiles.stream().collect(Collectors.toSet())).containsExactlyInAnyOrder("file1", "file3");
-    }
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
 
     @Test
     public void shouldReturnOnlyActiveFilesWithNoJobId() throws IOException, StateStoreException {
@@ -499,7 +508,6 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(20L))
                 .maxRowKey(Key.create(29L))
                 .lastStateStoreUpdateTime(2_000_000L)
-                .numberOfRecords(2L)
                 .build();
         stateStore.addFile(fileInfo2);
         FileInfo fileInfo3 = FileInfo.builder()

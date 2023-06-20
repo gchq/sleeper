@@ -44,7 +44,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         setInstanceProperties(instanceProperties);
-        when(store.loadTableProperties(instanceProperties.get(ID), tableProperties.get(TABLE_NAME)))
+        when(store.loadTableProperties(instanceProperties, tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
     }
 
@@ -63,7 +63,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
         InstanceProperties properties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(properties, tableName);
         setInstanceProperties(properties);
-        when(store.loadTableProperties(properties.get(ID), tableName))
+        when(store.loadTableProperties(properties, tableName))
                 .thenReturn(tableProperties);
         when(store.loadStateStore(properties.get(ID), tableProperties))
                 .thenReturn(stateStore);

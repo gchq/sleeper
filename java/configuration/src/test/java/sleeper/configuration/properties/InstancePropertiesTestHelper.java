@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -38,7 +39,14 @@ public class InstancePropertiesTestHelper {
     }
 
     public static InstanceProperties createTestInstanceProperties(AmazonS3 s3) {
+        return createTestInstanceProperties(s3, properties -> {
+        });
+    }
+
+    public static InstanceProperties createTestInstanceProperties(
+            AmazonS3 s3, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
+        extraProperties.accept(instanceProperties);
         try {
             s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
             instanceProperties.saveToS3(s3);

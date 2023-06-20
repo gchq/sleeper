@@ -40,6 +40,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.IngestStatusStoreResources;
+import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.configuration.properties.InstanceProperties;
@@ -69,12 +71,16 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                     String id,
                                     InstanceProperties instanceProperties,
                                     BulkImportBucketStack importBucketStack,
-                                    TableStack tableStack) {
+                                    TableStack tableStack,
+                                    IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
+        IngestStatusStoreResources statusStore = statusStoreStack.getResources();
+        statusStore.grantWriteJobEvent(ec2Role);
+        statusStore.grantWriteJobEvent(emrRole);
     }
 
     private static IRole createEc2Role(

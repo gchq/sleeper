@@ -64,7 +64,7 @@ public class DynamoDBStateStoreCreator {
     private final String partitionTableName;
     private final Schema schema;
     private final List<PrimitiveType> rowKeyTypes;
-    private final int garbageCollectorDelayBeforeDeletionInSeconds;
+    private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final boolean stronglyConsistentReads;
     private final Collection<Tag> tags;
 
@@ -73,7 +73,7 @@ public class DynamoDBStateStoreCreator {
             String fileLifecycleTablename,
             String partitionTablename,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInSeconds,
+            int garbageCollectorDelayBeforeDeletionInMinutes,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB,
             Map<String, String> tags) {
@@ -85,7 +85,7 @@ public class DynamoDBStateStoreCreator {
         if (this.rowKeyTypes.isEmpty()) {
             throw new IllegalArgumentException("rowKeyTypes must not be empty");
         }
-        this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
+        this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
         this.stronglyConsistentReads = stronglyConsistentReads;
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
         if (null == tags) {
@@ -109,7 +109,7 @@ public class DynamoDBStateStoreCreator {
     public DynamoDBStateStoreCreator(
             String tablenameStub,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInSeconds,
+            int garbageCollectorDelayBeforeDeletionInMinutes,
             AmazonDynamoDB dynamoDB) {
         this(tablenameStub + "-fip", tablenameStub + "-fl", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInSeconds, false, dynamoDB, Collections.EMPTY_MAP);
     }
@@ -128,7 +128,11 @@ public class DynamoDBStateStoreCreator {
     public DynamoDBStateStore create() throws StateStoreException {
         createFileInfoTables();
         createPartitionInfoTable();
+<<<<<<< HEAD
         return new DynamoDBStateStore(fileInPartitionTablename, fileLifecycleTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads, dynamoDB);
+=======
+        return new DynamoDBStateStore(activeFileInfoTablename, readyForGCFileInfoTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, stronglyConsistentReads, dynamoDB);
+>>>>>>> main
     }
 
     public void createFileInfoTables() {

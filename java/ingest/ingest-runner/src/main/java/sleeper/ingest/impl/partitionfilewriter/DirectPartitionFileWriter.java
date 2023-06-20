@@ -52,7 +52,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final ParquetWriter<Record> parquetWriter;
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private final String rowKeyName;
-    private long linesWrittenToCurrentPartition;
+    private long recordsWrittenToCurrentPartition;
     private Object currentPartitionMinKey;
     private Object currentPartitionMaxKey;
 
@@ -90,7 +90,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
         this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
-        this.linesWrittenToCurrentPartition = 0L;
+        this.recordsWrittenToCurrentPartition = 0L;
         this.currentPartitionMinKey = null;
         this.currentPartitionMaxKey = null;
     }
@@ -113,9 +113,9 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
             currentPartitionMinKey = record.get(rowKeyName);
         }
         currentPartitionMaxKey = record.get(rowKeyName);
-        linesWrittenToCurrentPartition++;
-        if (linesWrittenToCurrentPartition % 1000000 == 0) {
-            LOGGER.info("Written {} rows to partition {}", linesWrittenToCurrentPartition, partition.getId());
+        recordsWrittenToCurrentPartition++;
+        if (recordsWrittenToCurrentPartition % 1000000 == 0) {
+            LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
         }
     }
 
@@ -129,7 +129,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     @Override
     public CompletableFuture<FileInfo> close() throws IOException {
         parquetWriter.close();
-        LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), linesWrittenToCurrentPartition);
+        LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), recordsWrittenToCurrentPartition);
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
         new SketchesSerDeToS3(sleeperSchema).saveToHadoopFS(
                 new Path(quantileSketchesFileName),
@@ -140,7 +140,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 sleeperSchema,
                 partitionParquetFileName,
                 partition.getId(),
-                linesWrittenToCurrentPartition,
+                recordsWrittenToCurrentPartition,
                 currentPartitionMinKey,
                 currentPartitionMaxKey,
                 System.currentTimeMillis());

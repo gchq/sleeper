@@ -16,27 +16,29 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.status.report.IngestJobStatusReport;
+import sleeper.clients.status.report.IngestTaskStatusReport;
+import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
+import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
+import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.util.console.ConsoleHelper;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.console.ConsoleHelper;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.MenuOption;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.status.report.IngestJobStatusReport;
-import sleeper.status.report.IngestTaskStatusReport;
-import sleeper.status.report.ingest.job.StandardIngestJobStatusReporter;
-import sleeper.status.report.ingest.task.IngestTaskQuery;
-import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
-import sleeper.status.report.job.query.JobQuery;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestStatusReportScreen {
@@ -47,10 +49,11 @@ public class IngestStatusReportScreen {
     private final AdminClientStatusStoreFactory statusStores;
     private final QueueMessageCount.Client queueClient;
     private final TableSelectHelper tableSelectHelper;
+    private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store,
-                                    AdminClientStatusStoreFactory statusStores,
-                                    QueueMessageCount.Client queueClient) {
+                                    AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient,
+                                    Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
@@ -58,27 +61,31 @@ public class IngestStatusReportScreen {
         this.statusStores = statusStores;
         this.queueClient = queueClient;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
+        this.getStepCount = getStepCount;
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
-        InstanceProperties properties = store.loadInstanceProperties(instanceId);
-        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            out.println("");
-            out.println("Ingest status store not enabled. Please enable in instance properties to access this screen");
-            confirmReturnToMainScreen(out, in);
-        } else {
-            out.clearScreen("");
-            consoleHelper.chooseOptionUntilValid("Which ingest report would you like to run",
-                    new MenuOption("Ingest Job Status Report", () ->
-                            chooseArgsForIngestJobStatusReport(properties)),
-                    new MenuOption("Ingest Task Status Report", () ->
-                            chooseArgsForIngestTaskStatusReport(properties))
-            ).run();
+        Optional<InstanceProperties> propertiesOpt = tryLoadInstanceProperties(out, in, store, instanceId);
+        if (propertiesOpt.isPresent()) {
+            InstanceProperties properties = propertiesOpt.get();
+            if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+                out.println("");
+                out.println("Ingest status store not enabled. Please enable in instance properties to access this screen");
+                confirmReturnToMainScreen(out, in);
+            } else {
+                out.clearScreen("");
+                consoleHelper.chooseOptionUntilValid("Which ingest report would you like to run",
+                        new MenuOption("Ingest Job Status Report", () ->
+                                chooseArgsForIngestJobStatusReport(properties)),
+                        new MenuOption("Ingest Task Status Report", () ->
+                                chooseArgsForIngestTaskStatusReport(properties))
+                ).run();
+            }
         }
     }
 
     private void chooseArgsForIngestJobStatusReport(InstanceProperties properties) throws InterruptedException {
-        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties.get(ID));
+        Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
             String tableName = tableOpt.get().get(TableProperty.TABLE_NAME);
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
@@ -112,7 +119,7 @@ public class IngestStatusReportScreen {
                                           JobQuery.Type queryType, String queryParameters) {
         new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), tableName, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
-                queueClient, properties).run();
+                queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);
     }
 

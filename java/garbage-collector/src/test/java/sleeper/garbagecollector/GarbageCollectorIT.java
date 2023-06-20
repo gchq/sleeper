@@ -162,7 +162,7 @@ public class GarbageCollectorIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 100000)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 20L * 60L * 1000L)
                 .build();
         ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);
         for (int i = 0; i < 100; i++) {

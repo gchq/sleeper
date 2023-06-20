@@ -25,11 +25,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DynamoDBAttributesTest {
+class DynamoDBAttributesTest {
     private static final String TEST_KEY = "test-key";
 
     @Test
-    public void shouldCreateStringAttribute() {
+    void shouldCreateStringAttribute() {
         // Given we have a string attribute
         AttributeValue value = DynamoDBAttributes.createStringAttribute("test-value");
         // When we construct a record with a key for the attribute value
@@ -40,7 +40,12 @@ public class DynamoDBAttributesTest {
     }
 
     @Test
-    public void shouldCreateNumberAttributeWithLong() {
+    void shouldCreateStringAttributeWithNull() {
+        assertThat(DynamoDBAttributes.createStringAttribute(null)).isNull();
+    }
+
+    @Test
+    void shouldCreateNumberAttributeWithLong() {
         // Given we have a long attribute
         AttributeValue value = DynamoDBAttributes.createNumberAttribute(123L);
         // When we construct a record with a key for the attribute value
@@ -51,7 +56,7 @@ public class DynamoDBAttributesTest {
     }
 
     @Test
-    public void shouldCreateNumberAttributeWithInt() {
+    void shouldCreateNumberAttributeWithInt() {
         // Given we have an integer attribute
         AttributeValue value = DynamoDBAttributes.createNumberAttribute(123);
         // When we construct a record with a key for the attribute value
@@ -62,7 +67,12 @@ public class DynamoDBAttributesTest {
     }
 
     @Test
-    public void shouldCreateNumberAttributeWithInstant() {
+    void shouldCreateNumberAttributeWithNull() {
+        assertThat(DynamoDBAttributes.createNumberAttribute(null)).isNull();
+    }
+
+    @Test
+    void shouldCreateNumberAttributeWithInstant() {
         // Given we have a long attribute based on an Instant
         Instant time = Instant.parse("2022-11-07T16:00:00.001Z");
         AttributeValue value = DynamoDBAttributes.createNumberAttribute(time.toEpochMilli());
@@ -71,5 +81,37 @@ public class DynamoDBAttributesTest {
         item.put(TEST_KEY, value);
         // Then the Instant attribute should be read from the record
         assertThat(DynamoDBAttributes.getInstantAttribute(item, TEST_KEY)).isEqualTo(time);
+    }
+
+    @Test
+    void shouldGetDoubleAttribute() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, DynamoDBAttributes.createNumberAttribute(123.456));
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
+                .isEqualTo(123.456);
+    }
+
+    @Test
+    void shouldGetDoubleAttributeWhenAttributeSetToNull() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, null);
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
+                .isEqualTo(Double.valueOf(Double.NaN));
+    }
+
+    @Test
+    void shouldNotGetDoubleAttributeWhenAttributeNotSet() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
+                .isZero();
     }
 }

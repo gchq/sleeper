@@ -42,6 +42,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
 import java.util.Collections;
@@ -161,7 +162,7 @@ public class PartitionSplittingStack extends NestedStack {
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "FindPartitionsToSplitPeriodicTrigger")
-                .ruleName(instanceProperties.get(ID) + "-FindPartitionsToSplitPeriodicTrigger")
+                .ruleName(SleeperScheduleRule.PARTITION_SPLITTING.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the lambda to look for partitions to split")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(PARTITION_SPLITTING_PERIOD_IN_MINUTES))))

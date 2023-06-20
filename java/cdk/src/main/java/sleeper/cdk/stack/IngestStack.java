@@ -54,6 +54,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.Arrays;
@@ -97,7 +98,7 @@ public class IngestStack extends NestedStack {
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreStack statusStore;
+    private final IngestStatusStoreResources statusStore;
 
     public IngestStack(
             Construct scope,
@@ -106,10 +107,11 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets,
-            Topic topic) {
+            Topic topic,
+            IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = IngestStatusStoreStack.from(scope, instanceProperties);
+        this.statusStore = statusStoreStack.getResources();
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -314,10 +316,9 @@ public class IngestStack extends NestedStack {
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
-        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestTasksCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "IngestTasksCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.INGEST.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the ingest tasks lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))

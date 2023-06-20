@@ -25,7 +25,6 @@ import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +36,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,37 +49,47 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-public class EmrExecutorTest {
+class EmrExecutorTest {
     private AmazonElasticMapReduce emr;
     private TablePropertiesProvider tablePropertiesProvider;
     private AtomicReference<RunJobFlowRequest> requested;
     private AmazonS3 amazonS3;
+    private StateStoreProvider stateStoreProvider;
+    private InstanceProperties instanceProperties;
 
     @BeforeEach
     public void setUpEmr() {
         requested = new AtomicReference<>();
-        amazonS3 = mock(AmazonS3Client.class);
+        amazonS3 = mock(AmazonS3.class);
         emr = mock(AmazonElasticMapReduce.class);
         when(emr.runJobFlow(any(RunJobFlowRequest.class)))
                 .then((Answer<RunJobFlowResult>) invocation -> {
                     requested.set(invocation.getArgument(0));
                     return new RunJobFlowResult();
                 });
+        instanceProperties = new InstanceProperties();
+        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         tablePropertiesProvider = mock(TablePropertiesProvider.class);
         when(tablePropertiesProvider.getTableProperties(anyString()))
-                .then((Answer<TableProperties>) x -> new TableProperties(new InstanceProperties()));
+                .then((Answer<TableProperties>) x -> new TableProperties(instanceProperties));
+        stateStoreProvider = mock(StateStoreProvider.class);
+        when(stateStoreProvider.getStateStore(any())).thenReturn(
+                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
     }
 
     @Test
-    public void shouldCreateAClusterOfThreeMachinesByDefault() {
+    void shouldCreateAClusterOfThreeMachinesByDefault() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -99,11 +109,11 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseInstanceTypeDefinedInJob() {
+    void shouldUseInstanceTypeDefinedInJob() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -122,11 +132,10 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseDefaultMarketType() {
+    void shouldUseDefaultMarketType() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -144,12 +153,11 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseMarketTypeDefinedInConfig() {
+    void shouldUseMarketTypeDefinedInConfig() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
         tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
         tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
@@ -175,12 +183,11 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseMarketTypeDefinedInRequest() {
+    void shouldUseMarketTypeDefinedInRequest() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
         tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
         tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
@@ -209,11 +216,10 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldEnableEMRManagedClusterScaling() {
+    void shouldEnableEMRManagedClusterScaling() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -232,11 +238,10 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldUseUserProvidedConfigIfValuesOverrideDefaults() {
+    void shouldUseUserProvidedConfigIfValuesOverrideDefaults() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, amazonS3);
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -259,5 +264,31 @@ public class EmrExecutorTest {
         }
 
         assertThat(conf).containsEntry("spark.hadoop.fs.s3a.connection.maximum", "100");
+    }
+
+    @Test
+    void shouldNotCreateClusterIfMinimumPartitionCountNotReached() {
+        // Given
+        instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
+        when(tablePropertiesProvider.getTableProperties(any()))
+                .thenAnswer((Answer<TableProperties>) x -> {
+                    TableProperties tableProperties = new TableProperties(instanceProperties);
+                    tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
+                    return tableProperties;
+                });
+
+        EmrExecutor emrExecutor = new EmrExecutor(emr, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        BulkImportJob myJob = new BulkImportJob.Builder()
+                .tableName("myTable")
+                .id("my-job")
+                .files(Lists.newArrayList("file1.parquet"))
+                .build();
+
+        // When
+        emrExecutor.runJob(myJob);
+
+        // Then
+        assertThat(requested.get())
+                .isNull();
     }
 }

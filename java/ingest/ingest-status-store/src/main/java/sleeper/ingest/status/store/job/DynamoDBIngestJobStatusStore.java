@@ -73,9 +73,31 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
+    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId));
+            PutItemResult result = putItem(format.createJobAcceptedRecord(job, validationTime, taskId));
+            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    @Override
+    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+        try {
+            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reason, taskId));
+            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    @Override
+    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
+        try {
+            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId, startOfRun));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

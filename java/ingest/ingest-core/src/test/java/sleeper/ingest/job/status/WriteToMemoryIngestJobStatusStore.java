@@ -35,9 +35,28 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
+    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
+        ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                IngestJobAcceptedStatus.validationTime(validationTime), taskId);
+        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
+                .add(validationRecord);
+    }
+
+    @Override
+    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+        ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                IngestJobRejectedStatus.builder().validationTime(validationTime).reason(reason).build(), taskId);
+        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
+                .add(validationRecord);
+    }
+
+    @Override
+    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)), taskId);
+                IngestJobStartedStatus.withStartOfRun(startOfRun).inputFileCount(job.getFiles().size())
+                        .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build(), taskId);
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
     }

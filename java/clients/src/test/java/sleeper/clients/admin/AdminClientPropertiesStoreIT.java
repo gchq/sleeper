@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -130,7 +130,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
-            assertThat(store().loadTableProperties(INSTANCE_ID, "test-table").getInt(ROW_GROUP_SIZE))
+            assertThat(store().loadTableProperties(instanceProperties, "test-table").getInt(ROW_GROUP_SIZE))
                     .isEqualTo(123);
         }
 
@@ -307,7 +307,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // Then
             verifyPropertiesDeployedWithCdk();
-            assertThat(store().loadTableProperties(INSTANCE_ID, "test-table")
+            assertThat(store().loadTableProperties(instanceProperties, "test-table")
                     .getBoolean(ENCRYPTED))
                     .isTrue();
         }
@@ -352,7 +352,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
-        TableProperties properties = store().loadTableProperties(instanceId, tableName);
+        TableProperties properties = store().loadTableProperties(instanceProperties, tableName);
         String valueBefore = properties.get(property);
         properties.set(property, value);
         store().saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));

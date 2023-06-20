@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,13 +39,21 @@ public class WaitForCompactionJobs {
 
     private final CompactionJobStatusStore statusStore;
     private final String tableName;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll;
 
     public WaitForCompactionJobs(
             CompactionJobStatusStore statusStore,
             String tableName) {
+        this(statusStore, tableName, PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS));
+    }
+
+    public WaitForCompactionJobs(
+            CompactionJobStatusStore statusStore,
+            String tableName,
+            PollWithRetries poll) {
         this.statusStore = statusStore;
         this.tableName = tableName;
+        this.poll = poll;
     }
 
     public void pollUntilFinished() throws InterruptedException {

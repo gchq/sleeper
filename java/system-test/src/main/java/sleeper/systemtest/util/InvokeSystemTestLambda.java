@@ -17,8 +17,10 @@ package sleeper.systemtest.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 
@@ -30,11 +32,21 @@ public class InvokeSystemTestLambda {
     }
 
     public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        s3Client.shutdown();
+        try (LambdaClient lambdaClient = LambdaClient.create()) {
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            SystemTestProperties systemTestProperties = new SystemTestProperties();
+            systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            s3Client.shutdown();
+            client(lambdaClient, systemTestProperties).invokeLambda(lambdaFunctionProperty);
+        }
+    }
 
-        InvokeLambda.invoke(systemTestProperties.get(lambdaFunctionProperty));
+    public static Client client(LambdaClient lambdaClient, InstanceProperties instanceProperties) {
+        return lambdaFunctionProperty ->
+                InvokeLambda.invokeWith(lambdaClient, instanceProperties.get(lambdaFunctionProperty));
+    }
+
+    public interface Client {
+        void invokeLambda(InstanceProperty lambdaFunctionProperty);
     }
 }

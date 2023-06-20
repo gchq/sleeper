@@ -21,8 +21,9 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
@@ -31,26 +32,21 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
     public static final String TEST_VALUE = "test-value";
     public static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
 
+    @BeforeEach
+    void setup() {
+        createTable();
+    }
+
     @AfterEach
     public void tearDown() {
         dynamoDBClient.deleteTable(TEST_TABLE_NAME);
     }
 
-    public static void createStringTable() {
-        createTable(ScalarAttributeType.S);
-    }
-
-    public static void createNumericTable() {
-        createTable(ScalarAttributeType.N);
-    }
-
-    public static void createTable(ScalarAttributeType valueType) {
+    public static void createTable() {
         initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
-                Arrays.asList(
-                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S),
-                        new AttributeDefinition(TEST_VALUE, valueType)),
-                Arrays.asList(
-                        new KeySchemaElement(TEST_KEY, KeyType.HASH),
-                        new KeySchemaElement(TEST_VALUE, KeyType.RANGE)));
+                List.of(
+                        new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
+                List.of(
+                        new KeySchemaElement(TEST_KEY, KeyType.HASH)));
     }
 }

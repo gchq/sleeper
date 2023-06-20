@@ -23,7 +23,6 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.DummyInstanceProperty;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.List;
@@ -38,7 +37,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static sleeper.ClientWiremockTestHelper.wiremockEcrClient;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
@@ -85,14 +84,12 @@ class RemoveECRRepositoriesIT {
     }
 
     @Test
-    void shouldRemoveExtraRepositoriesWhenSetInProperties(WireMockRuntimeInfo runtimeInfo) {
+    void shouldRemoveExtraRepositoriesWhenSet(WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
-        DummyInstanceProperty extraRepository = new DummyInstanceProperty("extra.repo");
-        properties.set(extraRepository, "test-extra-repo");
 
         // When
-        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of(extraRepository));
+        RemoveECRRepositories.remove(wiremockEcrClient(runtimeInfo), properties, List.of("test-extra-repo"));
 
         // Then
         verify(1, deleteRequestedFor("test-extra-repo"));

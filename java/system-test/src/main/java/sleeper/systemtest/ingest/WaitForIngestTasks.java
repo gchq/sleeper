@@ -24,33 +24,44 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.PollWithRetries;
 import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class WaitForIngestTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
+    private static final long TASKS_FINISHED_POLL_INTERVAL_MILLIS = 30000;
+    private static final int TASKS_FINISHED_TIMEOUT_MILLIS = 15 * 60 * 1000;
+
+    // There's a common case where Fargate doesn't have capacity to create a task for every ingest job.
+    // In that case we need to wait for the running tasks to finish their jobs and pick up another one.
+    // To accommodate this, the poll rate is set low and the timeout is set high.
+    private static final long QUEUE_EMPTY_POLL_INTERVAL_MILLIS = 60000;
+    private static final int QUEUE_EMPTY_TIMEOUT_MILLIS = 60 * 60 * 1000;
 
     private final IngestTaskStatusStore taskStatusStore;
     private final WaitForQueueEstimate waitForEmptyQueue;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+    private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
+            TASKS_FINISHED_POLL_INTERVAL_MILLIS, TASKS_FINISHED_TIMEOUT_MILLIS);
 
     public WaitForIngestTasks(
-            SystemTestProperties systemTestProperties,
+            InstanceProperties instanceProperties,
             AmazonSQS sqsClient,
             IngestTaskStatusStore taskStatusStore) {
         this.taskStatusStore = taskStatusStore;
-        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(sqsClient, systemTestProperties, INGEST_JOB_QUEUE_URL);
+        this.waitForEmptyQueue = WaitForQueueEstimate.isEmpty(
+                withSqsClient(sqsClient), instanceProperties, INGEST_JOB_QUEUE_URL,
+                PollWithRetries.intervalAndPollingTimeout(QUEUE_EMPTY_POLL_INTERVAL_MILLIS, QUEUE_EMPTY_TIMEOUT_MILLIS));
     }
 
     public void pollUntilFinished() throws InterruptedException {

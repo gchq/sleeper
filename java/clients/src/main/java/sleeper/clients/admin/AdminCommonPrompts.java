@@ -15,9 +15,14 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.menu.ConsoleChoice;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.menu.ConsoleChoice;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class AdminCommonPrompts {
     private AdminCommonPrompts() {
@@ -29,5 +34,39 @@ public class AdminCommonPrompts {
         out.println("\n\n----------------------------------");
         out.println("Hit enter to return to main screen");
         in.waitForLine();
+    }
+
+    public static Optional<InstanceProperties> tryLoadInstanceProperties(
+            ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, String instanceId) {
+        return tryLoadInstanceProperties(out, in, () -> store.loadInstanceProperties(instanceId));
+    }
+
+    public static Optional<InstanceProperties> tryLoadInstanceProperties(
+            ConsoleOutput out, ConsoleInput in, Supplier<InstanceProperties> loadInstanceProperties) {
+        try {
+            return Optional.of(loadInstanceProperties.get());
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            out.println();
+            e.print(out);
+            confirmReturnToMainScreen(out, in);
+            return Optional.empty();
+        }
+    }
+
+    public static Optional<TableProperties> tryLoadTableProperties(
+            ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, InstanceProperties properties, String tableName) {
+        return tryLoadTableProperties(out, in, () -> store.loadTableProperties(properties, tableName));
+    }
+
+    public static Optional<TableProperties> tryLoadTableProperties(
+            ConsoleOutput out, ConsoleInput in, Supplier<TableProperties> loadTableProperties) {
+        try {
+            return Optional.of(loadTableProperties.get());
+        } catch (AdminClientPropertiesStore.CouldNotLoadTableProperties e) {
+            out.println();
+            e.print(out);
+        }
+        confirmReturnToMainScreen(out, in);
+        return Optional.empty();
     }
 }

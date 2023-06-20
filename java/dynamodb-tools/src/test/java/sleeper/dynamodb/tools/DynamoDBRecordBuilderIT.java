@@ -28,65 +28,117 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
+class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
     @Test
-    public void shouldCreateRecordWithStringAttribute() {
-        // Given we have a table in dynamodb that accepts strings
-        createStringTable();
-        // When we create a record with string attributes
+    void shouldCreateRecordWithStringAttribute() {
+        // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .string(TEST_VALUE, "value").build();
-        // And save that record to dynamodb
+        // When
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
-        // Then we should be able to retrieve the record from dynamodb
+        // Then
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
         assertThat(result.getItems()).containsExactly(record);
     }
 
 
     @Test
-    public void shouldCreateRecordWithIntAttribute() {
-        // Given we have a table in dynamodb that accepts strings
-        createNumericTable();
-        // When we create a record with string attributes
+    void shouldCreateRecordWithIntAttribute() {
+        // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .number(TEST_VALUE, 123).build();
-        // And save that record to dynamodb
+        // When
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
-        // Then we should be able to retrieve the record from dynamodb
+        // Then
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
         assertThat(result.getItems()).containsExactly(record);
     }
 
     @Test
-    public void shouldCreateRecordWithLongAttribute() {
-        // Given we have a table in dynamodb that accepts strings
-        createNumericTable();
-        // When we create a record with string attributes
+    void shouldCreateRecordWithLongAttribute() {
+        // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .number(TEST_VALUE, 123L).build();
-        // And save that record to dynamodb
+        // When
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
-        // Then we should be able to retrieve the record from dynamodb
+        // Then
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
         assertThat(result.getItems()).containsExactly(record);
     }
 
     @Test
-    public void shouldCreateRecordWithInstantAttribute() {
-        // Given we have a table in dynamodb that accepts strings
-        createNumericTable();
-        // When we create a record with string attributes
+    void shouldCreateRecordWithInstantAttribute() {
+        // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .number(TEST_VALUE, Instant.now().toEpochMilli()).build();
-        // And save that record to dynamodb
+        // When
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
-        // Then we should be able to retrieve the record from dynamodb
+        // Then
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
         assertThat(result.getItems()).containsExactly(record);
+    }
+
+    @Test
+    void shouldCreateRecordWithNaN() {
+        // Given
+        String key = UUID.randomUUID().toString();
+        Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key)
+                .number(TEST_VALUE, Double.NaN).build();
+        // When
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
+        // Then
+        ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
+        assertThat(result.getItems()).containsExactly(record);
+    }
+
+    @Test
+    void shouldCreateRecordWithNullNumber() {
+        // Given
+        String key = UUID.randomUUID().toString();
+        Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key)
+                .number(TEST_VALUE, null).build();
+        // When
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
+        // Then
+        ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
+        assertThat(result.getItems()).containsExactly(record);
+    }
+
+    @Test
+    void shouldUnsetExistingNumberAttributeWhenProvidingNull() {
+        // Given
+        String key = UUID.randomUUID().toString();
+        Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key)
+                .number(TEST_VALUE, 123)
+                .number(TEST_VALUE, null).build();
+        // When
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
+        // Then
+        ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
+        assertThat(result.getItems()).containsExactly(new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key).build());
+    }
+
+    @Test
+    void shouldUnsetExistingStringAttributeWhenProvidingNull() {
+        // Given
+        String key = UUID.randomUUID().toString();
+        Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key)
+                .string(TEST_VALUE, "abc")
+                .string(TEST_VALUE, null).build();
+        // When
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
+        // Then
+        ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
+        assertThat(result.getItems()).containsExactly(new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key).build());
     }
 }

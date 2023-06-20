@@ -47,6 +47,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,16 +69,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
  */
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
-
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final AmazonElasticMapReduce emrClient;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instancePropeties,
+                       InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
-                       AmazonS3 amazonS3) {
-        super(instancePropeties, tablePropertiesProvider, amazonS3);
-        this.tablePropertiesProvider = tablePropertiesProvider;
+                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
     }
 
@@ -121,12 +119,13 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
-                        .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar").withArgs(constructArgs(bulkImportJob))))
+                        .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
+                                .withArgs(constructArgs(bulkImportJob, clusterName + "-EMR"))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));
 
-        LOGGER.info("Cluster created with ARN " + response.getClusterArn());
+        LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
     }
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {

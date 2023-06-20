@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
+import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -33,7 +34,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper;
 
 import java.time.Instant;
 import java.util.List;
@@ -57,11 +57,11 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.job.common.QueueMessageCountsInMemory.singleQueueVisibleMessages;
+import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest job status report")
@@ -71,7 +71,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
         private final InstanceProperties instanceProperties = createInstancePropertiesWithJobQueueUrl();
         private final TableProperties tableProperties = createValidTableProperties(instanceProperties, "test-table");
-        private final QueueMessageCount.Client queueCounts = singleQueueVisibleMessages(INGEST_JOB_QUEUE_URL, 10);
+        private final QueueMessageCount.Client queueCounts = visibleMessages(INGEST_JOB_QUEUE_URL, 10);
 
         @Test
         void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {
@@ -89,7 +89,8 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
-                            "Total jobs waiting in queue (excluded from report): 10\n" +
+                            "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in progress: 1\n" +
                             "Total jobs finished: 0");
 
@@ -112,7 +113,8 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
-                            "Total jobs waiting in queue (excluded from report): 10\n" +
+                            "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in progress: 1\n" +
                             "-");
 
@@ -158,7 +160,8 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                     .contains("" +
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
-                            "Total jobs waiting in queue (excluded from report): 10\n" +
+                            "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in defined range: 1\n");
 
             verifyWithNumberOfInvocations(6);

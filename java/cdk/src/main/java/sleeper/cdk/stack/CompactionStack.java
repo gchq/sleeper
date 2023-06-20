@@ -80,6 +80,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.core.ContainerConstants;
 
@@ -369,10 +370,9 @@ public class CompactionStack extends NestedStack {
         compactionSplittingMergeJobsQueue.grantSendMessages(handler);
 
         // Cloudwatch rule to trigger this lambda
-        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionJobCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "CompactionJobCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the job creation lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
@@ -761,10 +761,9 @@ public class CompactionStack extends NestedStack {
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
-        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionTasksCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "CompactionMergeTasksCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the compaction tasks lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
@@ -816,11 +815,9 @@ public class CompactionStack extends NestedStack {
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
-        String ruleName = Utils
-                .truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionTasksCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "CompactionSplittingMergeTasksCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.SPLITTING_COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the splitting compaction tasks lambda")
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))

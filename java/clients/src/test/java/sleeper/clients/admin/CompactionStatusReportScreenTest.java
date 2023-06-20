@@ -52,10 +52,10 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SC
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
+import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.console.TestConsoleInput.CONFIRM_PROMPT;
-import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
@@ -70,9 +70,9 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             TableProperties tableProperties = createValidTableProperties(properties, "test-table");
             setInstanceProperties(properties, tableProperties);
             exampleJob = CompactionJobTestDataHelper.forTable("test-table").singleFileCompaction();
-            statusStore.fixTime(Instant.parse("2023-03-15T17:52:12.001Z"));
+            statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:52:12.001Z"));
             statusStore.jobCreated(exampleJob);
-            statusStore.fixTime(Instant.parse("2023-03-15T17:53:12.123Z"));
+            statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:53:12.123Z"));
             statusStore.jobStarted(exampleJob, Instant.parse("2023-03-15T17:53:12.001Z"), "test-task-1");
         }
 

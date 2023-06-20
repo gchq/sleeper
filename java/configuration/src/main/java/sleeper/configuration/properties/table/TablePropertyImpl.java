@@ -36,6 +36,7 @@ class TablePropertyImpl implements TableProperty {
     private final boolean runCDKDeployWhenChanged;
     private final boolean systemDefined;
     private final boolean editable;
+    private final boolean includedInTemplate;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -47,8 +48,8 @@ class TablePropertyImpl implements TableProperty {
         runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
         systemDefined = builder.systemDefined;
         editable = builder.editable;
+        includedInTemplate = builder.includedInTemplate;
     }
-
 
     static Builder builder() {
         return new Builder();
@@ -103,6 +104,11 @@ class TablePropertyImpl implements TableProperty {
         return editable && !systemDefined;
     }
 
+    @Override
+    public boolean isIncludedInTemplate() {
+        return includedInTemplate;
+    }
+
     public String toString() {
         return propertyName;
     }
@@ -118,6 +124,7 @@ class TablePropertyImpl implements TableProperty {
         private Consumer<TableProperty> addToIndex;
         private boolean systemDefined;
         private boolean editable = true;
+        private boolean includedInTemplate = true;
 
         private Builder() {
         }
@@ -139,6 +146,7 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder defaultProperty(SleeperProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
+            this.defaultValue = defaultProperty.getDefaultValue();
             return validationPredicate(defaultProperty.validationPredicate());
         }
 
@@ -154,6 +162,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder editable(boolean editable) {
             this.editable = editable;
+            return this;
+        }
+
+        public Builder includedInTemplate(boolean includedInTemplate) {
+            this.includedInTemplate = includedInTemplate;
             return this;
         }
 

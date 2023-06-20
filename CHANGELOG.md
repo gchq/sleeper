@@ -4,6 +4,76 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/12-performance-test.md)
 
+## Version 0.17.0
+
+This contains the following improvements:
+
+Ingest batcher:
+- Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md) and [docs/10-design.md](./docs/10-design.md) for more information.
+
+Bulk Import:
+- Upgrade EMR version to 6.10.0.
+- Upgrade Spark version to 3.3.1.
+
+Development:
+- Added devcontainers support.
+- Added a script to regenerate properties templates from property definitions.
+- Added OWASP Dependency-Check Maven plugin.
+
+Tests:
+- Added a way to automatically run system tests and upload the results to an S3 bucket.
+- Increase rate at which Fargate tasks are started in system tests.
+
+Misc:
+- Upgrade parquet-mr version to 1.13.0.
+- Rename `LINES` to `RECORDS` in reports and throughout the project.
+- Update properties templates.
+
+Bugfixes:
+- Fixed an issue where ingest tasks reported an ingest rate of NaN when exiting immediately.
+- Fixed an issue where the default value for a table property did not display when confirming changes in the admin client if the property was unset.
+- Fixed an issue where tearing down an instance would fail if the config bucket was empty.
+
+## Version 0.16.0
+
+This contains the following improvements:
+
+Trino:
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/13-trino.md). This is an experimental feature.
+
+Bulk Import:
+- Improve observability of bulk import jobs by including them in ingest job status reports.
+- Added table property for minimum leaf partition count. If the minimum is not met, bulk import jobs will not be run.
+
+Scripts:
+- Added logging output to `DownloadConfig` class.
+- Added ability to define splitpoints file in `deploy.sh`.
+- Added runnable class to remove log groups left over from old instances (`CleanUpLogGroups`).
+
+CDK:
+- Added the flag `deployPaused` to deploy the system in a paused state.
+- Add the tag `InstanceId` to all AWS resources when they are deployed.
+- Pre-authenticate the environment EC2 instance with AWS.
+
+Clients:
+- Added count of input files to compaction job report.
+- For persistent EMR bulk import, report on steps that have not started yet in the ingest status report.
+- Avoid loading properties unnecessarily in the admin client.
+- Refactor compaction and ingest reports to remove unnecessary wrapping of arguments.
+
+Tests:
+- Simplify `compactionPerformance` system test to only perform merge compactions.
+- Assert output of `compactionPerformance` system test to detect failures
+- Create `partitionSplitting` system test, which do not perform merge compactions and only perform splitting compactions.
+- Create `bulkImportPerformance` system test, which performs a bulk import and does no merge/splitting compactions.
+- Reduce code duplication in Arrow ingest test helpers.
+- Introduce test fakes for querying properties and status stores in the admin client and reports.
+
+Bugfixes:
+- Fixed issue where the queue estimates sometimes did not update before invoking the compaction task lambda in the `compactionPerformance` system test.
+- Fixed issue where the `tearDown` script failed if non-persistent EMR clusters were still running.
+- Fixed issue where `WaitForGenerateData` was excluding 1 task from checks, causing it to not wait if the number of tasks was 1.
+
 ## Version 0.15.0
 
 This contains the following improvements:

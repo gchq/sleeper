@@ -21,6 +21,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
 
+import java.time.Instant;
+
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
@@ -28,12 +30,11 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 
 /**
- * An implementation of {@link StateStore} that uses DynamoDB to store the state.
+ * An implementation of StateStore that uses DynamoDB to store the state.
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
     public static final String FILE_NAME = DynamoDBFileInfoFormat.NAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
-
 
     public DynamoDBStateStore(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(FILE_IN_PARTITION_TABLENAME),
@@ -50,7 +51,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
             String fileLifecycleTablename,
             String partitionTablename,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInSeconds,
+            int garbageCollectorDelayBeforeDeletionInMinutes,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
@@ -58,12 +59,21 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                 .fileInPartitionTablename(fileInPartitionTablename)
                 .fileLifecycleTablename(fileLifecycleTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
-                .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
+                .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
                 .build(),
             DynamoDBPartitionStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
                 .build());
+    }
+
+    /**
+     * Used to set the current time. Should only be called during tests.
+     *
+     * @param now Time to set to be the current time
+     */
+    public void fixTime(Instant now) {
+        ((DynamoDBFileInfoStore) fileInfoStore).fixTime(now);
     }
 }

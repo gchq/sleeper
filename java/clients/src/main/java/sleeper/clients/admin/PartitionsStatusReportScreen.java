@@ -16,12 +16,12 @@
 
 package sleeper.clients.admin;
 
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
+import sleeper.clients.status.report.partitions.PartitionsStatus;
+import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.UserExitedException;
 import sleeper.statestore.StateStoreException;
-import sleeper.status.report.partitions.PartitionsStatus;
-import sleeper.status.report.partitions.PartitionsStatusReporter;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
@@ -39,7 +39,7 @@ public class PartitionsStatusReportScreen {
     }
 
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+        tableSelectHelper.chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> {
             try {
                 new PartitionsStatusReporter(out.printStream()).report(
                         PartitionsStatus.from(tableProperties, store.loadStateStore(instanceId, tableProperties)));

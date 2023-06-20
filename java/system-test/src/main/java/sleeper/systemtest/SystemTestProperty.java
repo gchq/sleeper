@@ -18,6 +18,7 @@ package sleeper.systemtest;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.Utils;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.systemtest.ingest.IngestMode;
@@ -35,11 +36,20 @@ public interface SystemTestProperty extends InstanceProperty {
             .description("The number of random records that each container should write")
             .validationPredicate(Objects::nonNull).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
-            .description("The ingest mode to write random data. This should be either 'direct' or 'queue'.\n" +
-                    "'Direct' means that the data is written directly.\n" +
+            .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
+                    "'Direct' means that the data is written directly using an ingest coordinator.\n" +
                     "'Queue' means that the data is written to a Parquet file and an ingest job is created " +
-                    "and posted to the ingest queue.")
+                    "and posted to the ingest queue.\n" +
+                    "'Generate_only' means that the data is written to a Parquet file in the table data bucket, " +
+                    "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
+    SystemTestProperty NUMBER_OF_BULK_IMPORT_JOBS = Index.propertyBuilder("sleeper.systemtest.bulkimport.jobs")
+            .description("The number of jobs that should be sent to the bulk import queue. " +
+                    "Only applies when sending bulk import jobs with the SendBulkImportJobs class.\n" +
+                    "When using the ingest mode 'generate_only', this will take all generated data files, and send a " +
+                    "number of bulk import jobs that each import all of those files.")
+            .defaultValue("1")
+            .validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
             .description("The name of the cluster to use when performing system tests").build();
     SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")

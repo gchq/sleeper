@@ -68,7 +68,7 @@ Here's an example:
 ```bash
 # Retry up to 1000 messages on the ingest dead letter queue
 sleeper deployment java -cp jars/clients-*-utility.jar \
-sleeper.status.report.RetryMessages ${INSTANCE_ID} ingest 1000
+sleeper.clients.status.report.RetryMessages ${INSTANCE_ID} ingest 1000
 ```
 
 ## Pausing and Restarting the System

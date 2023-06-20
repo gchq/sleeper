@@ -18,5 +18,6 @@ package sleeper.systemtest.ingest;
 public enum IngestMode {
     DIRECT,
     QUEUE,
-    BULK_IMPORT_QUEUE
+    BULK_IMPORT_QUEUE,
+    GENERATE_ONLY
 }

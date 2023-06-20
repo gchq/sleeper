@@ -20,12 +20,14 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 public class CompactionJobTestDataHelper {
 
     public static final String KEY_FIELD = "key";
+    public static final String DEFAULT_TASK_ID = "test-task";
     public static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(new Field(KEY_FIELD, new StringType()))
             .build();
@@ -66,6 +69,20 @@ public class CompactionJobTestDataHelper {
             throw new IllegalStateException("Partition tree already initialised");
         }
         setPartitions(createPartitions(config));
+    }
+
+    public void reportStartedJob(Instant startTime, CompactionJobStatusStore statusStore) {
+        CompactionJob job = singleFileCompaction();
+        statusStore.jobCreated(job);
+        statusStore.jobStarted(job, startTime, DEFAULT_TASK_ID);
+    }
+
+    public CompactionJob reportFinishedJob(RecordsProcessedSummary summary, CompactionJobStatusStore statusStore) {
+        CompactionJob job = singleFileCompaction();
+        statusStore.jobCreated(job);
+        statusStore.jobStarted(job, summary.getStartTime(), DEFAULT_TASK_ID);
+        statusStore.jobFinished(job, summary, DEFAULT_TASK_ID);
+        return job;
     }
 
     public CompactionJob singleFileCompaction() {

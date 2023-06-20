@@ -16,11 +16,11 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.util.RunCommand;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.RunCommand;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.utils.RunCommandTestHelper.commandRunOn;
 
 public class UpdatePropertiesWithNanoTestHelper {
     private final Path tempDir;

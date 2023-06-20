@@ -24,10 +24,10 @@ public class RateLimitUtils {
     private RateLimitUtils() {
     }
 
-    public static void sleepForSustainedRatePerSecond(long ratePerSecond) {
+    public static void sleepForSustainedRatePerSecond(double ratePerSecond) {
         try {
             long millisecondsToSleep = calculateMillisSleepForSustainedRatePerSecond(ratePerSecond);
-            LOGGER.info("Sleeping for {} ", millisecondsToSleep);
+            LOGGER.trace("Sleeping for {} ", millisecondsToSleep);
             Thread.sleep(millisecondsToSleep);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -35,7 +35,7 @@ public class RateLimitUtils {
         }
     }
 
-    public static long calculateMillisSleepForSustainedRatePerSecond(long ratePerSecond) {
+    public static long calculateMillisSleepForSustainedRatePerSecond(double ratePerSecond) {
         return (long) Math.ceil(1000.0 / ratePerSecond);
     }
 }

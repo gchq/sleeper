@@ -19,15 +19,15 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.console.UserExitedException;
+import sleeper.clients.util.console.UserExitedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
 class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test
@@ -48,6 +48,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test
     void shouldReturnToMainMenuIfMenuOptionSelected() {
         // Given
+        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(RETURN_TO_MAIN_SCREEN_OPTION);
 
         // When
@@ -61,6 +62,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
     @Test
     void shouldExitIfMenuOptionSelected() {
         // Given
+        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts(EXIT_OPTION);
 
         // When/Then
@@ -70,7 +72,7 @@ class TableSelectHelperTest extends AdminClientMockStoreBase {
 
     private String runTableSelectHelperGetOutput() {
         new TableSelectHelper(out.consoleOut(), in.consoleIn(), store)
-                .chooseTableIfExistsThen(INSTANCE_ID, tableProperties ->
+                .chooseTableOrReturnToMain(INSTANCE_ID).ifPresent(tableProperties ->
                         out.consoleOut().println("\n" +
                                 "Found table " + tableProperties.get(TABLE_NAME)));
         return out.toString();

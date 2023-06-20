@@ -89,34 +89,30 @@ public class DynamoDBStateStoreIT {
         dynamoDBClient.shutdown();
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions,
-                                     int garbageCollectorDelayBeforeDeletionInSeconds) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions,
+                                             int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, garbageCollectorDelayBeforeDeletionInSeconds, dynamoDBClient);
-        StateStore stateStore = dynamoDBStateStoreCreator.create();
+        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient);
+        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
         stateStore.initialise(partitions);
         return stateStore;
     }
 
-    private StateStore getStateStore(Schema schema,
-                                     List<Partition> partitions) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema,
+                                             List<Partition> partitions) throws StateStoreException {
         return getStateStore(schema, partitions, 0);
     }
 
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints, int garbageCollectorDelayBeforeDeletionInSeconds) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), garbageCollectorDelayBeforeDeletionInSeconds);
-    }
-
-    private StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
+    private DynamoDBStateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInSeconds) throws StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST, garbageCollectorDelayBeforeDeletionInSeconds);
+    private DynamoDBStateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
-    private StateStore getStateStore(Schema schema) throws StateStoreException {
+    private DynamoDBStateStore getStateStore(Schema schema) throws StateStoreException {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
@@ -356,38 +352,61 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void shouldSetStatusToReadyForGarbageCollection() throws Exception {
+    public void testGetFilesThatAreReadyForGC() throws StateStoreException {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema)
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.ofEpochMilli(0L))
+        Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
+        Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
+        Instant file3Time = Instant.parse("2023-06-06T15:02:00Z");
+        Instant file1GCTime = Instant.parse("2023-06-06T15:05:30Z");
+        Instant file3GCTime = Instant.parse("2023-06-06T15:07:30Z");
+        Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
+        DynamoDBStateStore stateStore = getStateStore(schema, 5);
+        Partition partition = stateStore.getAllPartitions().get(0);
+        //  - A file which should be garbage collected immediately
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(file1Time)
                 .build();
-        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-        FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
-        FileInfo file3 = factory.rootFile("file3", 200L, "e", "f");
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        dynamoDBStateStore.addFiles(Arrays.asList(file1, file2));
-        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(file1, file2), file3);
-
-        // When
-        dynamoDBStateStore.setStatusToReadyForGarbageCollection(file2.getFilename());
-
-        // Then
-        FileInfo expectedFileInfoForFile2 = file2.cloneWithStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        List<FileInfo> fileLifecyclesForFile2 = dynamoDBStateStore.getFileLifecycleList().stream()
-                .filter(f -> f.getFilename().equals(file2.getFilename()))
-                .collect(Collectors.toList());
-        assertThat(fileLifecyclesForFile2).hasSize(1);
-        assertThat(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime()).isGreaterThan(0L);
-        expectedFileInfoForFile2 = expectedFileInfoForFile2.toBuilder()
-                .lastStateStoreUpdateTime(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime())
+        stateStore.addFile(fileInfo1);
+        //  - An active file which should not be garbage collected
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(file2Time)
                 .build();
-        assertThat(expectedFileInfoForFile2).isEqualTo(fileLifecyclesForFile2.get(0));
+        stateStore.addFile(fileInfo2);
+        //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
+        //      just been marked as ready for GC
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(file3Time)
+                .build();
+        stateStore.addFile(fileInfo3);
+
+        // When / Then 1
+        stateStore.fixTime(file1GCTime);
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1);
+
+        // When / Then 2
+        stateStore.fixTime(file3GCTime);
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1, fileInfo3);
     }
 
     @Test

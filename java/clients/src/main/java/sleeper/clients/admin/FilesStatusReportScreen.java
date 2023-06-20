@@ -16,12 +16,12 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.status.report.FilesStatusReport;
+import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
 import sleeper.statestore.StateStoreException;
-import sleeper.status.report.FilesStatusReport;
-import sleeper.status.report.filestatus.StandardFileStatusReporter;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
@@ -39,7 +39,7 @@ public class FilesStatusReportScreen {
     }
 
     public void chooseTableAndPrint(String instanceId) {
-        tableSelectHelper.chooseTableIfExistsThen(instanceId, tableProperties -> {
+        tableSelectHelper.chooseTableOrReturnToMain(instanceId).ifPresent(tableProperties -> {
             chooseOptionalArgsAndPrint(instanceId, tableProperties);
             confirmReturnToMainScreen(out, in);
         });

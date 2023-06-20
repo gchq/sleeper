@@ -79,4 +79,19 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
                 .isNull();
     }
 
+    @Test
+    public void shouldReportIngestTaskFinishedWithZeroDuration() {
+        // Given
+        IngestTaskStatus taskStatus = finishedTaskWithNoJobsAndZeroDuration();
+
+        // When
+        store.taskStarted(taskStatus);
+        store.taskFinished(taskStatus);
+
+        // Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
+                .isEqualTo(taskStatus);
+    }
+
 }

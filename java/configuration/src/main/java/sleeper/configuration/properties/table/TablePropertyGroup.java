@@ -31,17 +31,19 @@ public class TablePropertyGroup {
     private static final List<PropertyGroup> ALL = new ArrayList<>();
     public static final PropertyGroup DATA_DEFINITION = tableGroup("Data Definition")
             .description("The following table properties relate to the definition of data inside a table.").build();
+    public static final PropertyGroup PARTITION_SPLITTING = tableGroup("Partition Splitting")
+            .description("The following table properties relate to partition splitting.").build();
     public static final PropertyGroup DATA_STORAGE = tableGroup("Data Storage")
             .description("The following table properties relate to the storage of data inside a table.").build();
     public static final PropertyGroup COMPACTION = tableGroup("Compaction")
             .description("The following table properties relate to compactions.").build();
-    public static final PropertyGroup PARTITION_SPLITTING = tableGroup("Partition Splitting")
-            .description("The following table properties relate to partition splitting.").build();
+    public static final PropertyGroup METADATA = tableGroup("Metadata")
+            .description("The following table properties relate to storing and retrieving metadata for tables.").build();
     public static final PropertyGroup BULK_IMPORT = tableGroup("Bulk Import")
             .description("The following table properties relate to bulk import, " +
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.").build();
-    public static final PropertyGroup METADATA = tableGroup("Metadata")
-            .description("The following table properties relate to storing and retrieving metadata for tables.").build();
+    public static final PropertyGroup INGEST_BATCHER = tableGroup("Ingest Batcher")
+            .description("The following table properties relate to the ingest batcher.").build();
 
     private static PropertyGroup.Builder tableGroup(String name) {
         return group(name).afterBuild(ALL::add);
