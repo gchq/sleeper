@@ -101,7 +101,8 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty SUBNETS = Index.propertyBuilder("sleeper.subnets")
-            .description("A comma separated list of subnets to deploy ECS tasks to.")
+            .description("A comma separated list of subnets to deploy to. ECS tasks will be run across multiple " +
+                    "subnets. EMR clusters will be deployed in a subnet chosen when the cluster is created.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
