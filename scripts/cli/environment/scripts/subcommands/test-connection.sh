@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,17 +16,18 @@
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
-pushd "${PROJECT_ROOT}/java"
-echo "Compiling..."
-mvn compile -Pquick -q -pl configuration -am
+# Wait for deployment, make a test connection to remember SSH certificate
+RETRY_NUM=30
+RETRY_EVERY=10
+NUM=$RETRY_NUM
+until "$THIS_DIR/connect.sh" echo '"Test connection successful"'; do
+  echo 1>&2 "Failed test connection with status $?, retrying $NUM more times, next in $RETRY_EVERY seconds"
+  sleep $RETRY_EVERY
+  ((NUM--))
 
-pushd configuration
-echo "Regenerating templates..."
-mvn exec:java -q \
-  -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
-  -Dexec.args="$PROJECT_ROOT"
-
-popd
-popd
+  if [ $NUM -eq 0 ]; then
+    echo 1>&2 "Test connection unsuccessful after $RETRY_NUM tries"
+    exit 1
+  fi
+done

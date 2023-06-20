@@ -18,12 +18,12 @@ package sleeper.systemtest.compaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
 
 import java.time.Duration;
