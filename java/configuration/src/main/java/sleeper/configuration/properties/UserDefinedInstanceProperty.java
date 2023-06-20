@@ -586,7 +586,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.instance.type")
             .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor " +
                     "nodes of the EMR cluster. Multiple instance types can be specified separated by commas. " +
-                    "Instances will be used with types that have capacity available.\n" +
+                    "Instance types will be chosen from the list based on the capacity available.\n" +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();

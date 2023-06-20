@@ -211,18 +211,18 @@ public interface TableProperty extends SleeperProperty {
             .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
-            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the master " +
-                    "node of the EMR cluster. Multiple instance types can be specified separated by commas. One will " +
-                    "be chosen depending on the capacity available.\n" +
+            .description("(Non-persistent EMR mode only) The EC2 instance type to be used for the master node of the " +
+                    "EMR cluster. Multiple instance types can be specified separated by commas. One will be chosen " +
+                    "depending on the capacity available.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE)
-            .description("(Non-persistent EMR mode only) The default EC2 instance type to be used for the executor " +
-                    "nodes of the EMR cluster. Multiple instance types can be specified separated by commas. " +
-                    "Instances will be used with types that have capacity available.\n" +
+            .description("(Non-persistent EMR mode only) The EC2 instance type to be used for the executor nodes of " +
+                    "the EMR cluster. Multiple instance types can be specified separated by commas. Instance types " +
+                    "will be chosen from the list based on the capacity available.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
