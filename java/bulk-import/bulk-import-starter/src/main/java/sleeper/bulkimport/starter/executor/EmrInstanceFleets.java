@@ -81,11 +81,15 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private static List<InstanceTypeConfig> readExecutorInstanceTypes(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        InstanceTypeConfig config = new InstanceTypeConfig();
+        InstanceTypeConfig config = null;
         List<InstanceTypeConfig> configs = new ArrayList<>();
         for (String entry : platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES)) {
             try {
-                config.withWeightedCapacity(Integer.parseInt(entry));
+                int capacity = Integer.parseInt(entry);
+                if (config == null) {
+                    throw new IllegalArgumentException("Instance type capacity given without an instance type: " + entry);
+                }
+                config.withWeightedCapacity(capacity);
             } catch (NumberFormatException e) {
                 config = new InstanceTypeConfig()
                         .withInstanceType(entry)
