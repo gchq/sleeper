@@ -21,8 +21,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +41,9 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final AmazonS3 s3Client;
     private final IngestBatcherStore store;
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final Configuration configuration;
 
     public IngestBatcherSubmitterLambda() throws IOException {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
@@ -53,15 +54,20 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
                 instanceProperties, tablePropertiesProvider);
+        this.configuration = new Configuration();
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store, TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client) {
+    public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
+                                        TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client, Configuration conf) {
         this.store = store;
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.s3Client = s3Client;
+        this.configuration = conf;
     }
 
     @Override
@@ -74,7 +80,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     public void handleMessage(String json, Instant receivedTime) {
         List<FileIngestRequest> requests;
         try {
-            requests = FileIngestRequestSerDe.fromJson(json, receivedTime);
+            requests = FileIngestRequestSerDe.fromJson(json, instanceProperties, configuration, receivedTime);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
@@ -88,33 +94,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         }
         requests.forEach(request -> {
             LOGGER.info("Adding {} to store", request.getFile());
-            storeFiles(request, receivedTime);
+            store.addFile(request);
         });
-    }
-
-    private void storeFiles(FileIngestRequest request, Instant receivedTime) {
-        String bucketName = getBucketName(request);
-        String filePath = getFilePath(request);
-        s3Client.listObjectsV2(new ListObjectsV2Request().withBucketName(bucketName).withPrefix(filePath))
-                .getObjectSummaries().stream()
-                .map(summary -> toRequest(summary, bucketName, request.getTableName(), receivedTime))
-                .forEach(store::addFile);
-    }
-
-    private static FileIngestRequest toRequest(S3ObjectSummary summary, String bucketName, String tableName, Instant receivedTime) {
-        return FileIngestRequest.builder()
-                .file(bucketName + "/" + summary.getKey())
-                .fileSizeBytes(summary.getSize())
-                .tableName(tableName)
-                .receivedTime(receivedTime)
-                .build();
-    }
-
-    private static String getBucketName(FileIngestRequest request) {
-        return request.getFile().substring(0, request.getFile().indexOf('/'));
-    }
-
-    private static String getFilePath(FileIngestRequest request) {
-        return request.getFile().substring(request.getFile().indexOf('/') + 1);
     }
 }

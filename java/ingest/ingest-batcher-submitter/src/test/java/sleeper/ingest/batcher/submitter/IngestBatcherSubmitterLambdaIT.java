@@ -18,6 +18,7 @@ package sleeper.ingest.batcher.submitter;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -59,13 +61,22 @@ public class IngestBatcherSubmitterLambdaIT {
     private static final String TEST_BUCKET = "test-bucket";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
     private final IngestBatcherStore store = new IngestBatcherStoreInMemory();
-    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties(instanceProperties));
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, tablePropertiesProvider, s3);
+            store, instanceProperties, tablePropertiesProvider, s3, buildConfiguration());
 
     @BeforeEach
     void setup() {
         s3.createBucket(TEST_BUCKET);
+    }
+
+    private static Configuration buildConfiguration() {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.bucket.test-bucket.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
+        conf.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
+        return conf;
     }
 
     @AfterEach
@@ -230,7 +241,7 @@ public class IngestBatcherSubmitterLambdaIT {
         }
 
         @Test
-        void shouldSkipFileIfNotFound() {
+        void shouldNotStoreFilesIfFileNotFound() {
             // Given
             uploadFileToS3("test-file-2.parquet");
             String json = "{" +
@@ -246,8 +257,7 @@ public class IngestBatcherSubmitterLambdaIT {
 
             // Then
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactly(
-                            fileRequest("test-bucket/test-file-2.parquet"));
+                    .isEmpty();
         }
     }
 
@@ -321,8 +331,8 @@ public class IngestBatcherSubmitterLambdaIT {
                 .receivedTime(RECEIVED_TIME).build();
     }
 
-    private static TableProperties createTableProperties() {
-        TableProperties properties = createTestTableProperties(createTestInstanceProperties(), schemaWithKey("key"));
+    private static TableProperties createTableProperties(InstanceProperties instanceProperties) {
+        TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         properties.set(TABLE_NAME, TEST_TABLE);
         return properties;
     }
