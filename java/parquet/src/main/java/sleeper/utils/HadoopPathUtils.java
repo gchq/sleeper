@@ -21,7 +21,6 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,33 +45,27 @@ public class HadoopPathUtils {
     }
 
     public static Stream<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
-        return files.stream()
-                .map(file -> new Path(fileSystemProperty + file))
-                .flatMap(path -> {
-                    try {
-                        return Stream.of(path.getFileSystem(conf).listStatus(path));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }).flatMap(status -> {
-                    if (status.isDirectory()) {
-                        try {
-                            return getFilesOnPath(status.getPath(), conf, fileSystemProperty);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        if (!status.getPath().getName().endsWith(".crc")) {
-                            return Stream.of(status);
-                        }
-                    }
-                    return Stream.empty();
-                });
+        return getFiles(
+                files.stream().map(file -> new Path(fileSystemProperty + file)),
+                conf);
     }
 
-    public static Stream<FileStatus> getFilesOnPath(Path path, Configuration conf, String fileSystemProperty) throws IOException {
-        return getFiles(Arrays.stream(path.getFileSystem(conf).listStatus(path))
-                .map(status -> status.getPath().toUri().getPath())
-                .collect(Collectors.toList()), conf, fileSystemProperty);
+    private static Stream<FileStatus> getFiles(Stream<Path> paths, Configuration conf) {
+        return paths.flatMap(path -> {
+            try {
+                return Stream.of(path.getFileSystem(conf).listStatus(path));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }).flatMap(status -> {
+            if (status.isDirectory()) {
+                return getFiles(Stream.of(status.getPath()), conf);
+            } else {
+                if (!status.getPath().getName().endsWith(".crc")) {
+                    return Stream.of(status);
+                }
+            }
+            return Stream.empty();
+        });
     }
 }
