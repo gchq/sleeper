@@ -27,11 +27,11 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -223,21 +223,32 @@ public interface TableProperty extends SleeperProperty {
                     "the S3StateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .runCDKDeployWhenChanged(true).build();
-    TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.type")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
-            .description("(Non-persistent EMR mode only) The EC2 instance type to be used for the master node of the " +
+    TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 instance types to be used for the master node of the " +
                     "EMR cluster. Multiple instance types can be specified separated by commas. One will be chosen " +
                     "depending on the capacity available.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.type")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE)
-            .description("(Non-persistent EMR mode only) The EC2 instance type to be used for the executor nodes of " +
+    TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 instance types to be used for the executor nodes of " +
                     "the EMR cluster. Multiple instance types can be specified separated by commas. Instance types " +
                     "will be chosen from the list based on the capacity available.\n" +
-                    "This value overrides the default value in the instance properties. " +
+                    "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
+                    "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
+                    "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
+                    "For example:\n" +
+                    " sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge\n" +
+                    "The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the " +
+                    "capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, " +
+                    "so is defaulted to 1.\n" +
+                    "In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one " +
+                    "instance of m5.4xlarge, or 3 instances of m5.xlarge.\n" +
+                    "See also: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options\n" +
+                    "This property overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
@@ -248,18 +259,24 @@ public interface TableProperty extends SleeperProperty {
                     "Valid values are ON_DEMAND or SPOT.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.instances")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
-            .description("(Non-persistent EMR mode only) The initial number of EC2 instances to be used as executors " +
-                    "in the EMR cluster.\n" +
+    TableProperty BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.capacity")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY)
+            .description("(Non-persistent EMR mode only) The initial number of capacity units to provision as EC2 " +
+                    "instances for executors in the EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.instances")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS)
-            .description("(Non-persistent EMR mode only) The maximum number of EC2 instances to be used as executors " +
-                    "in the EMR cluster.\n" +
+    TableProperty BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.capacity")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY)
+            .description("(Non-persistent EMR mode only) The maximum number of capacity units to provision as EC2 " +
+                    "instances for executors in the EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)

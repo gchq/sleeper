@@ -15,6 +15,8 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
@@ -28,10 +30,11 @@ import java.util.Random;
 import java.util.function.IntUnaryOperator;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 
 public class EmrInstanceGroups implements EmrInstanceConfiguration {
 
@@ -56,18 +59,30 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                 .withInstanceGroups(
                         new InstanceGroupConfig()
                                 .withName("Executors")
-                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE).get(0))
+                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES).get(0))
                                 .withInstanceRole(InstanceRoleType.CORE)
-                                .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS))
+                                .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
                                 .withEbsConfiguration(ebsConfiguration)
                                 .withMarket(MarketType.fromValue(platformSpec.getOrDefault(
                                         BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT"))),
                         new InstanceGroupConfig()
                                 .withName("Driver")
-                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE).get(0))
+                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES).get(0))
                                 .withInstanceRole(InstanceRoleType.MASTER)
                                 .withInstanceCount(1)
                                 .withEbsConfiguration(ebsConfiguration));
+    }
+
+    @Override
+    public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
+
+        Integer maxNumberOfExecutors = Integer.max(
+                platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY),
+                platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY));
+        return new ComputeLimits()
+                .withUnitType(ComputeLimitsUnitType.Instances)
+                .withMinimumCapacityUnits(1)
+                .withMaximumCapacityUnits(maxNumberOfExecutors);
     }
 
     private String randomSubnet() {
