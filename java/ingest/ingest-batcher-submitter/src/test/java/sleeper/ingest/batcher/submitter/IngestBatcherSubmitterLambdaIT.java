@@ -98,7 +98,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-file-1.parquet\"]," +
+                    "\"files\":[\"test-bucket/test-file-1.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
