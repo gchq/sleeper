@@ -63,4 +63,60 @@ public class DeployInstanceConfigurationIT {
                             .build());
         }
     }
+
+    @Nested
+    @DisplayName("Load from instance properties")
+    class LoadFromInstanceProperties {
+        @Test
+        void shouldLoadTablePropertiesAndSchemaIfFoundNearInstanceProperties() throws Exception {
+            // Given
+            Path templateDir = tempDir.resolve("templates");
+            Files.createDirectories(templateDir);
+            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=test-table");
+            Files.writeString(tempDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
+
+            // When
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstanceProperties(
+                    tempDir.resolve("instance.properties"), templateDir);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+            expectedInstanceProperties.set(ID, "test-instance");
+            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "test-table");
+            expectedTableProperties.setSchema(schemaWithKey("key"));
+            assertThat(instanceConfiguration)
+                    .isEqualTo(DeployInstanceConfiguration.builder()
+                            .instanceProperties(expectedInstanceProperties)
+                            .tableProperties(expectedTableProperties)
+                            .build());
+        }
+
+        @Test
+        void shouldLoadFromTemplateDirectoryIfNotFoundNearInstanceProperties() throws Exception {
+            // Given
+            Path templateDir = tempDir.resolve("templates");
+            Files.createDirectories(templateDir);
+            Files.writeString(templateDir.resolve("tableproperties.template"), "sleeper.table.name=test-table");
+            Files.writeString(templateDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("key")));
+            Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
+
+            // When
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstanceProperties(
+                    tempDir.resolve("instance.properties"), templateDir);
+
+            // Then
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+            expectedInstanceProperties.set(ID, "test-instance");
+            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
+            expectedTableProperties.set(TABLE_NAME, "test-table");
+            expectedTableProperties.setSchema(schemaWithKey("key"));
+            assertThat(instanceConfiguration)
+                    .isEqualTo(DeployInstanceConfiguration.builder()
+                            .instanceProperties(expectedInstanceProperties)
+                            .tableProperties(expectedTableProperties)
+                            .build());
+        }
+    }
 }

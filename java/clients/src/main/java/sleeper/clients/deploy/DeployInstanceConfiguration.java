@@ -53,6 +53,29 @@ public class DeployInstanceConfiguration {
                 .tableProperties(tableProperties).build();
     }
 
+    public static DeployInstanceConfiguration fromInstanceProperties(Path instancePropertiesPath, Path templateDir) throws IOException {
+        Path rootDir = instancePropertiesPath.getParent();
+        InstanceProperties instanceProperties = new InstanceProperties(
+                loadProperties(instancePropertiesPath));
+        Properties properties;
+        if (Files.exists(rootDir.resolve("table.properties"))) {
+            properties = loadProperties(rootDir.resolve("table.properties"));
+        } else {
+            properties = loadProperties(templateDir.resolve("tableproperties.template"));
+        }
+        if (Files.exists(rootDir.resolve("schema.json"))) {
+            properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
+                    Files.readString(rootDir.resolve("schema.json")));
+        } else {
+            properties.setProperty(TableProperty.SCHEMA.getPropertyName(),
+                    Files.readString(templateDir.resolve("schema.template")));
+        }
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+        return builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties).build();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
