@@ -64,19 +64,11 @@ public class IngestBatcherSubmitterLambdaIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties(instanceProperties));
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tablePropertiesProvider, buildHadoopConfig());
+            store, instanceProperties, tablePropertiesProvider, createHadoopConfiguration());
 
     @BeforeEach
     void setup() {
         s3.createBucket(TEST_BUCKET);
-    }
-
-    private static Configuration buildHadoopConfig() {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.bucket.test-bucket.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
-        conf.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
-        return conf;
     }
 
     @AfterEach
@@ -84,10 +76,6 @@ public class IngestBatcherSubmitterLambdaIT {
         s3.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
                 s3.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
         s3.deleteBucket(TEST_BUCKET);
-    }
-
-    private void uploadFileToS3(String filePath) {
-        s3.putObject(TEST_BUCKET, filePath, "test");
     }
 
     @Nested
@@ -343,12 +331,24 @@ public class IngestBatcherSubmitterLambdaIT {
         }
     }
 
+    private void uploadFileToS3(String filePath) {
+        s3.putObject(TEST_BUCKET, filePath, "test");
+    }
+
     private static FileIngestRequest fileRequest(String filePath) {
         return FileIngestRequest.builder()
                 .file(filePath)
                 .fileSizeBytes(4)
                 .tableName(TEST_TABLE)
                 .receivedTime(RECEIVED_TIME).build();
+    }
+
+    private static Configuration createHadoopConfiguration() {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.bucket.test-bucket.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
+        conf.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
+        return conf;
     }
 
     private static TableProperties createTableProperties(InstanceProperties instanceProperties) {
