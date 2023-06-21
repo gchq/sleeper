@@ -225,6 +225,12 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
+    // Bulk import using EMR Serverless
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.cluster.name")
+            .description("The name of the cluster used for EMR Severless bulk import jobs.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+
     // Bulk import using persistent EMR
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using persistent EMR.")
@@ -238,7 +244,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The public DNS name of the cluster's master node for bulk import using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-
     // Bulk import using EKS
     SystemDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.url")
             .description("The URL of the queue for bulk import jobs using EKS.")

@@ -27,7 +27,7 @@ VERSION=$3
 IFS="," read -r -a STACKS <<< "$4"
 BASE_DOCKERFILE_DIR=$5
 REGION=$(echo "${DOCKER_REGISTRY}" | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
-DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
+DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack","EmrServerlessImportStack")
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
 FUNCTIONS_DIR=$(cd "$(dirname "$0")" && cd "../functions" && pwd)
 source "${FUNCTIONS_DIR}/arrayUtils.sh"
@@ -50,6 +50,7 @@ Stacks_CompactionStack="compaction-job-execution"
 Stacks_IngestStack="ingest"
 Stacks_SystemTestStack="system-test"
 Stacks_EksBulkImportStack="bulk-import-runner"
+Stacks_EmrServerlessImportStack="bulk-import-worker"
 
 echo "Beginning docker build and push of images for the following stacks: ${DOCKER_STACKS}"
 

@@ -17,12 +17,11 @@ package sleeper.bulkimport.starter;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
@@ -30,24 +29,25 @@ import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import java.io.IOException;
 
 /**
- * The {@link BulkImportStarter} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
+ * The {@link BulkImportSeverlessStarter} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
  * an {@link Executor}.
  */
-public class BulkImportStarter extends AbstractBulkImportStarter {
-
-    public BulkImportStarter() throws IOException {
+public class BulkImportSeverlessStarter extends AbstractBulkImportStarter {
+    public BulkImportSeverlessStarter() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(),
-                AmazonElasticMapReduceClientBuilder.defaultClient(),
+                EmrServerlessClient.builder().build(),
                 AWSStepFunctionsClientBuilder.defaultClient(),
                 AmazonDynamoDBClientBuilder.defaultClient());
         }
 
-    public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+    public BulkImportSeverlessStarter(AmazonS3 s3Client, EmrServerlessClient emrClient,
                              AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
         super(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor());
     }
 
-    public BulkImportStarter(Executor executor) {
+
+    public BulkImportSeverlessStarter(Executor executor) {
         super(executor);
     }
+
 }

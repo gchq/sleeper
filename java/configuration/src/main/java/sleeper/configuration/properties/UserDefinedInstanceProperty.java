@@ -597,6 +597,38 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
 
+    // Bulk import using EMR Serverless
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
+            .description("The architecture for EMR Serverless to use. X86_64 or ARM (Comming soon)")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue("X86_64")
+            .runCDKDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ENABLED = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.enabled")
+            .description("The switch to enable EMR Serverless over persistent EMR.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue("true")
+            .runCDKDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_RELEASE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.release")
+            .description("The version of EMR Serverless to use.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue("emr-6.10.0")
+            .runCDKDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.repo")
+            .description("The name of the repository for the EMR serverless container. The Docker image from the bulk-import module " +
+            "should have been uploaded to an ECR repository of this name in this account.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_TYPE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
+           .description("The type of EMR Serverless to use. Spark or Hive")
+           .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+           .defaultValue("Spark")
+           .runCDKDeployWhenChanged(true)
+           .build();
+
     // Bulk import using EKS
     UserDefinedInstanceProperty BULK_IMPORT_REPO = Index.propertyBuilder("sleeper.bulk.import.eks.repo")
             .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")

@@ -19,8 +19,10 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -39,7 +41,8 @@ public class ExecutorFactory {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final AmazonS3 s3Client;
-    private final AmazonElasticMapReduce emrClient;
+    private AmazonElasticMapReduce emrClient;
+    private EmrServerlessClient emrServerlessClient;
     private final AWSStepFunctions stepFunctionsClient;
     private final String bulkImportPlatform;
 
@@ -47,11 +50,43 @@ public class ExecutorFactory {
                            AmazonElasticMapReduce emrClient,
                            AWSStepFunctions stepFunctionsClient,
                            AmazonDynamoDB dynamoDB) throws IOException {
-        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, System::getenv);
+        this(s3Client, stepFunctionsClient, dynamoDB, System::getenv);
+        this.emrClient = emrClient;
+       logSetup();
+    }
+
+    @VisibleForTesting
+    public ExecutorFactory(AmazonS3 s3Client,
+                           AmazonElasticMapReduce emrClient,
+                           AWSStepFunctions stepFunctionsClient,
+                           AmazonDynamoDB dynamoDB,
+                           UnaryOperator<String> environmentVariable) throws IOException {
+        this(s3Client, stepFunctionsClient, dynamoDB, environmentVariable);
+        this.emrClient = emrClient;
+        logSetup();
+    }
+
+    public ExecutorFactory(AmazonS3 s3Client,
+                           EmrServerlessClient emrServerlessClient,
+                           AWSStepFunctions stepFunctionsClient,
+                           AmazonDynamoDB dynamoDB) throws IOException {
+        this(s3Client, stepFunctionsClient, dynamoDB, System::getenv);
+        this.emrServerlessClient = emrServerlessClient;
+        logSetup();
+    }
+
+    @VisibleForTesting
+    public ExecutorFactory(AmazonS3 s3Client,
+                           EmrServerlessClient emrServerlessClient,
+                           AWSStepFunctions stepFunctionsClient,
+                           AmazonDynamoDB dynamoDB,
+                           UnaryOperator<String> environmentVariable) throws IOException {
+        this(s3Client, stepFunctionsClient, dynamoDB, environmentVariable);
+        this.emrServerlessClient = emrServerlessClient;
+        logSetup();
     }
 
     ExecutorFactory(AmazonS3 s3Client,
-                    AmazonElasticMapReduce emrClient,
                     AWSStepFunctions stepFunctionsClient,
                     AmazonDynamoDB dynamoDB,
                     UnaryOperator<String> getEnvironmentVariable) throws IOException {
@@ -60,16 +95,20 @@ public class ExecutorFactory {
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
         this.s3Client = s3Client;
-        this.emrClient = emrClient;
         this.stepFunctionsClient = stepFunctionsClient;
         this.bulkImportPlatform = getEnvironmentVariable.apply(BULK_IMPORT_PLATFORM);
-        LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
+    }
+
+    private void logSetup() {
+         LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
     }
 
     public Executor createExecutor() {
         switch (bulkImportPlatform) {
             case "NonPersistentEMR":
                 return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+            case "NonPersistentEMRServerless":
+                return new EmrServerlessExecutor(emrServerlessClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
             case "EKS":
                 return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
             case "PersistentEMR":
