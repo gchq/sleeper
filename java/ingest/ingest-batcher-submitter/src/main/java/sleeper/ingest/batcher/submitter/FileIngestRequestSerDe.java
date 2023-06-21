@@ -19,10 +19,12 @@ package sleeper.ingest.batcher.submitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.batcher.FileIngestRequest;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,12 +60,17 @@ public class FileIngestRequestSerDe {
         List<FileIngestRequest> toFileIngestRequests(InstanceProperties properties, Configuration conf, Instant receivedTime) {
             return streamFiles(files, conf, properties.get(FILE_SYSTEM))
                     .map(file -> FileIngestRequest.builder()
-                            .file(file.getPath().toUri().getHost() + file.getPath().toUri().getPath())
+                            .file(getRequestPath(file))
                             .fileSizeBytes(file.getLen())
                             .tableName(tableName)
                             .receivedTime(receivedTime)
                             .build())
                     .collect(Collectors.toList());
+        }
+
+        private static String getRequestPath(FileStatus file) {
+            URI uri = file.getPath().toUri();
+            return uri.getHost() + uri.getPath();
         }
     }
 }
