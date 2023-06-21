@@ -18,13 +18,13 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
+import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetType;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.InstanceTypeConfig;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
-import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.s3.AmazonS3;
@@ -227,6 +227,22 @@ class EmrExecutorTest {
                     .extracting(InstanceGroupConfig::getInstanceType)
                     .containsExactly("m5.xlarge");
         }
+
+        @Test
+        void shouldSetComputeLimits() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "5");
+
+            // When
+            executorWithInstanceGroups().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedComputeLimits())
+                    .isEqualTo(new ComputeLimits()
+                            .withUnitType(ComputeLimitsUnitType.Instances)
+                            .withMinimumCapacityUnits(1)
+                            .withMaximumCapacityUnits(5));
+        }
     }
 
     @Nested
@@ -325,23 +341,22 @@ class EmrExecutorTest {
                     .extracting(InstanceTypeConfig::getInstanceType)
                     .containsExactly("m5.xlarge", "m5a.xlarge");
         }
-    }
 
-    @Test
-    void shouldEnableEMRManagedClusterScaling() {
-        // Given
-        BulkImportJob myJob = singleFileJobBuilder()
-                .platformSpec(ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.getPropertyName(), "r5.xlarge"))
-                .build();
+        @Test
+        void shouldSetComputeLimits() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "5");
 
-        // When
-        executor().runJob(myJob);
+            // When
+            executorWithInstanceFleets().runJob(singleFileJob());
 
-        // Then
-        ManagedScalingPolicy scalingPolicy = requested.get().getManagedScalingPolicy();
-        assertThat(scalingPolicy).extracting(ManagedScalingPolicy::getComputeLimits)
-                .extracting(ComputeLimits::getMaximumCapacityUnits, ComputeLimits::getUnitType)
-                .containsExactly(10, ComputeLimitsUnitType.Instances.name());
+            // Then
+            assertThat(requestedComputeLimits())
+                    .isEqualTo(new ComputeLimits()
+                            .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
+                            .withMinimumCapacityUnits(1)
+                            .withMaximumCapacityUnits(5));
+        }
     }
 
     @Test
@@ -382,7 +397,17 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executor() {
-        return executorWithInstanceConfiguration((ebsConfiguration, platformSpec) -> new JobFlowInstancesConfig());
+        return executorWithInstanceConfiguration(new EmrInstanceConfiguration() {
+            @Override
+            public JobFlowInstancesConfig createJobFlowInstancesConfig(EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
+                return new JobFlowInstancesConfig();
+            }
+
+            @Override
+            public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
+                return new ComputeLimits();
+            }
+        });
     }
 
     private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
@@ -423,6 +448,10 @@ class EmrExecutorTest {
 
     private Stream<InstanceGroupConfig> requestedInstanceGroups() {
         return requested.get().getInstances().getInstanceGroups().stream();
+    }
+
+    private ComputeLimits requestedComputeLimits() {
+        return requested.get().getManagedScalingPolicy().getComputeLimits();
     }
 
     private String requestedInstanceGroupSubnetId() {

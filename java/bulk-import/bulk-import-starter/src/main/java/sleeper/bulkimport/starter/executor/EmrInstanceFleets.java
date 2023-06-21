@@ -15,6 +15,8 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetType;
@@ -30,6 +32,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
@@ -47,6 +50,18 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                 .withInstanceFleets(
                         executorFleet(ebsConfiguration, platformSpec),
                         driverFleet(ebsConfiguration, platformSpec));
+    }
+
+    @Override
+    public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
+
+        Integer maxNumberOfExecutors = Integer.max(
+                platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS),
+                platformSpec.getInt(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS));
+        return new ComputeLimits()
+                .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
+                .withMinimumCapacityUnits(1)
+                .withMaximumCapacityUnits(maxNumberOfExecutors);
     }
 
     private InstanceFleetConfig executorFleet(
