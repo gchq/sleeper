@@ -28,10 +28,10 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
@@ -66,7 +66,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         InstanceFleetConfig config = new InstanceFleetConfig()
                 .withName("Executors")
                 .withInstanceFleetType(InstanceFleetType.CORE)
-                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE).stream()
+                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES).stream()
                         .map(type -> new InstanceTypeConfig()
                                 .withInstanceType(type)
                                 .withEbsConfiguration(ebsConfiguration))
@@ -86,7 +86,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         return new InstanceFleetConfig()
                 .withName("Driver")
                 .withInstanceFleetType(InstanceFleetType.MASTER)
-                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE).stream()
+                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES).stream()
                         .map(type -> new InstanceTypeConfig()
                                 .withInstanceType(type)
                                 .withEbsConfiguration(ebsConfiguration))
