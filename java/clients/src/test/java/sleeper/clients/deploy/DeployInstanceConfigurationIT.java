@@ -28,6 +28,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -52,6 +53,7 @@ public class DeployInstanceConfigurationIT {
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "template-instance");
+            expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "template-table");
             expectedTableProperties.setSchema(schemaWithKey("template-key"));
@@ -73,16 +75,18 @@ public class DeployInstanceConfigurationIT {
             Files.createDirectories(templateDir);
             createTemplatesInDirectory(templateDir);
             Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
+            Files.writeString(tempDir.resolve("tags.properties"), "Project=TestProject");
             Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=test-table");
             Files.writeString(tempDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstanceProperties(
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir(
                     tempDir.resolve("instance.properties"), templateDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "test-instance");
+            expectedInstanceProperties.setTags(Map.of("Project", "TestProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "test-table");
             expectedTableProperties.setSchema(schemaWithKey("key"));
@@ -102,12 +106,13 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstanceProperties(
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir(
                     tempDir.resolve("instance.properties"), templateDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "test-instance");
+            expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "template-table");
             expectedTableProperties.setSchema(schemaWithKey("template-key"));
@@ -121,6 +126,7 @@ public class DeployInstanceConfigurationIT {
 
     private static void createTemplatesInDirectory(Path templatesDir) throws IOException {
         Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.id=template-instance");
+        Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
         Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
     }
