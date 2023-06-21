@@ -15,21 +15,27 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceFleetType;
 import com.amazonaws.services.elasticmapreduce.model.InstanceTypeConfig;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 
+import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
@@ -49,24 +55,39 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                         driverFleet(ebsConfiguration, platformSpec));
     }
 
+    @Override
+    public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
+
+        return new ComputeLimits()
+                .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
+                .withMinimumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
+                .withMaximumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY));
+    }
+
     private InstanceFleetConfig executorFleet(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
         InstanceFleetConfig config = new InstanceFleetConfig()
                 .withName("Executors")
                 .withInstanceFleetType(InstanceFleetType.CORE)
-                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE).stream()
-                        .map(type -> new InstanceTypeConfig()
-                                .withInstanceType(type)
-                                .withEbsConfiguration(ebsConfiguration))
-                        .collect(Collectors.toList()));
+                .withInstanceTypeConfigs(readExecutorInstanceTypes(ebsConfiguration, platformSpec));
 
-        int initialNumberOfExecutors = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
+        int initialExecutorCapacity = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY);
         if ("ON_DEMAND".equals(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE))) {
-            config.setTargetOnDemandCapacity(initialNumberOfExecutors);
+            config.setTargetOnDemandCapacity(initialExecutorCapacity);
         } else {
-            config.setTargetSpotCapacity(initialNumberOfExecutors);
+            config.setTargetSpotCapacity(initialExecutorCapacity);
         }
         return config;
+    }
+
+    private static List<InstanceTypeConfig> readExecutorInstanceTypes(
+            EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
+        return readInstanceTypesProperty(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES))
+                .map(config -> new InstanceTypeConfig()
+                        .withInstanceType(config.getInstanceType())
+                        .withWeightedCapacity(config.getWeightedCapacity())
+                        .withEbsConfiguration(ebsConfiguration))
+                .collect(Collectors.toList());
     }
 
     private InstanceFleetConfig driverFleet(
@@ -74,7 +95,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         return new InstanceFleetConfig()
                 .withName("Driver")
                 .withInstanceFleetType(InstanceFleetType.MASTER)
-                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE).stream()
+                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES).stream()
                         .map(type -> new InstanceTypeConfig()
                                 .withInstanceType(type)
                                 .withEbsConfiguration(ebsConfiguration))

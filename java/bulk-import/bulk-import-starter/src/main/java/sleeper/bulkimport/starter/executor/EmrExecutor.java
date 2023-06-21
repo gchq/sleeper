@@ -17,8 +17,6 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.Application;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.Configuration;
 import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
@@ -35,6 +33,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
@@ -59,8 +58,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
@@ -96,10 +93,6 @@ public class EmrExecutor extends AbstractEmrExecutor {
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
         BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties, bulkImportJob);
 
-        Integer maxNumberOfExecutors = Integer.max(
-                platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS),
-                platformSpec.getInt(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS));
-
         String clusterName = String.join("-", "sleeper",
                 instanceProperties.get(ID),
                 bulkImportJob.getTableName(),
@@ -114,11 +107,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withVisibleToAllUsers(true)
                 .withSecurityConfiguration(instanceProperties.get(BULK_IMPORT_EMR_SECURITY_CONF_NAME))
                 .withManagedScalingPolicy(new ManagedScalingPolicy()
-                        .withComputeLimits(new ComputeLimits()
-                                .withUnitType(ComputeLimitsUnitType.Instances)
-                                .withMinimumCapacityUnits(1)
-                                .withMaximumCapacityUnits(maxNumberOfExecutors)
-                                .withMaximumCoreCapacityUnits(3)))
+                        .withComputeLimits(instanceConfiguration.createComputeLimits(platformSpec)))
                 .withScaleDownBehavior(ScaleDownBehavior.TERMINATE_AT_TASK_COMPLETION)
                 .withReleaseLabel(platformSpec.get(BULK_IMPORT_EMR_RELEASE_LABEL))
                 .withApplications(new Application().withName("Spark"))
