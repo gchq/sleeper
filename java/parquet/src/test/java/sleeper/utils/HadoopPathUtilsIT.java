@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.FileNotFoundException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 class HadoopPathUtilsIT {
@@ -236,6 +239,14 @@ class HadoopPathUtilsIT {
             // When / Then
             assertThat(HadoopPathUtils.streamFiles(null, conf, ""))
                     .isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenFileNotFoundAtSpecifiedPath() {
+            assertThatThrownBy(() -> HadoopPathUtils.getPaths(
+                    List.of("not-a-file.parquet"), new Configuration(), ""))
+                    .isInstanceOf(UncheckedIOException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
         }
     }
 
