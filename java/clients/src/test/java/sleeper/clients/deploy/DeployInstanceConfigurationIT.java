@@ -25,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.SchemaSerDe;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -43,9 +44,7 @@ public class DeployInstanceConfigurationIT {
         @Test
         void shouldLoadInstanceAndTableProperties() throws Exception {
             // Given
-            Files.writeString(tempDir.resolve("instanceproperties.template"), "sleeper.id=template-instance");
-            Files.writeString(tempDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
-            Files.writeString(tempDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("key")));
+            createTemplatesInDirectory(tempDir);
 
             // When
             DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromTemplateDirectory(tempDir);
@@ -55,7 +54,7 @@ public class DeployInstanceConfigurationIT {
             expectedInstanceProperties.set(ID, "template-instance");
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "template-table");
-            expectedTableProperties.setSchema(schemaWithKey("key"));
+            expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
@@ -72,6 +71,7 @@ public class DeployInstanceConfigurationIT {
             // Given
             Path templateDir = tempDir.resolve("templates");
             Files.createDirectories(templateDir);
+            createTemplatesInDirectory(templateDir);
             Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
             Files.writeString(tempDir.resolve("table.properties"), "sleeper.table.name=test-table");
             Files.writeString(tempDir.resolve("schema.json"), new SchemaSerDe().toJson(schemaWithKey("key")));
@@ -98,8 +98,7 @@ public class DeployInstanceConfigurationIT {
             // Given
             Path templateDir = tempDir.resolve("templates");
             Files.createDirectories(templateDir);
-            Files.writeString(templateDir.resolve("tableproperties.template"), "sleeper.table.name=test-table");
-            Files.writeString(templateDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("key")));
+            createTemplatesInDirectory(templateDir);
             Files.writeString(tempDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
@@ -110,13 +109,19 @@ public class DeployInstanceConfigurationIT {
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "test-instance");
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "test-table");
-            expectedTableProperties.setSchema(schemaWithKey("key"));
+            expectedTableProperties.set(TABLE_NAME, "template-table");
+            expectedTableProperties.setSchema(schemaWithKey("template-key"));
             assertThat(instanceConfiguration)
                     .isEqualTo(DeployInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
                             .tableProperties(expectedTableProperties)
                             .build());
         }
+    }
+
+    private static void createTemplatesInDirectory(Path templatesDir) throws IOException {
+        Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.id=template-instance");
+        Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.name=template-table");
+        Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(schemaWithKey("template-key")));
     }
 }
