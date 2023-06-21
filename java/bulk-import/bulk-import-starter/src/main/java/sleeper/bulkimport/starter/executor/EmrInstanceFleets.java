@@ -25,6 +25,8 @@ import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
@@ -66,11 +68,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
         InstanceFleetConfig config = new InstanceFleetConfig()
                 .withName("Executors")
                 .withInstanceFleetType(InstanceFleetType.CORE)
-                .withInstanceTypeConfigs(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES).stream()
-                        .map(type -> new InstanceTypeConfig()
-                                .withInstanceType(type)
-                                .withEbsConfiguration(ebsConfiguration))
-                        .collect(Collectors.toList()));
+                .withInstanceTypeConfigs(readExecutorInstanceTypes(ebsConfiguration, platformSpec));
 
         int initialExecutorCapacity = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY);
         if ("ON_DEMAND".equals(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE))) {
@@ -79,6 +77,23 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
             config.setTargetSpotCapacity(initialExecutorCapacity);
         }
         return config;
+    }
+
+    private static List<InstanceTypeConfig> readExecutorInstanceTypes(
+            EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
+        InstanceTypeConfig config = new InstanceTypeConfig();
+        List<InstanceTypeConfig> configs = new ArrayList<>();
+        for (String entry : platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES)) {
+            try {
+                config.withWeightedCapacity(Integer.parseInt(entry));
+            } catch (NumberFormatException e) {
+                config = new InstanceTypeConfig()
+                        .withInstanceType(entry)
+                        .withEbsConfiguration(ebsConfiguration);
+                configs.add(config);
+            }
+        }
+        return configs;
     }
 
     private InstanceFleetConfig driverFleet(

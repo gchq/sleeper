@@ -358,6 +358,23 @@ class EmrExecutorTest {
                             .withMinimumCapacityUnits(3)
                             .withMaximumCapacityUnits(5));
         }
+
+        @Test
+        void shouldSetCapacityWeightsForInstanceTypesForExecutorsWhenSpecified() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES, "m5.4xlarge,5,m5a.4xlarge");
+
+            // When
+            executorWithInstanceFleets().runJob(singleFileJob());
+
+            // Then
+            assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
+                    .flatExtracting(InstanceFleetConfig::getInstanceTypeConfigs)
+                    .extracting(InstanceTypeConfig::getInstanceType, InstanceTypeConfig::getWeightedCapacity)
+                    .containsExactly(
+                            tuple("m5.4xlarge", 5),
+                            tuple("m5a.4xlarge", null));
+        }
     }
 
     @Test
