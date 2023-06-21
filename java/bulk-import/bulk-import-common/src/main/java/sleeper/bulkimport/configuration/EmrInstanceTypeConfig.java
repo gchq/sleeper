@@ -30,11 +30,15 @@ public class EmrInstanceTypeConfig {
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
-        Builder builder = builder();
+        Builder builder = null;
         List<Builder> builders = new ArrayList<>();
         for (String entry : instanceTypeEntries) {
             try {
-                builder.weightedCapacity(Integer.parseInt(entry));
+                int capacity = Integer.parseInt(entry);
+                if (builder == null) {
+                    throw new IllegalArgumentException("Instance type capacity given without an instance type: " + entry);
+                }
+                builder.weightedCapacity(capacity);
             } catch (NumberFormatException e) {
                 builder = builder().instanceType(entry);
                 builders.add(builder);
