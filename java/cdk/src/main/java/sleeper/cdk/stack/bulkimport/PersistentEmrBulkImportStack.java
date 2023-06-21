@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
@@ -125,9 +126,10 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Executors")
-                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES).stream()
+                .instanceTypeConfigs(readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES))
                         .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                .instanceType(type)
+                                .instanceType(type.getInstanceType())
+                                .weightedCapacity(type.getWeightedCapacity())
                                 .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
                 .targetOnDemandCapacity(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
                 .build();

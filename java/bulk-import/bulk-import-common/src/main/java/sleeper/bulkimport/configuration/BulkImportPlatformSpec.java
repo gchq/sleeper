@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.starter.executor;
+package sleeper.bulkimport.configuration;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.table.TableProperties;
