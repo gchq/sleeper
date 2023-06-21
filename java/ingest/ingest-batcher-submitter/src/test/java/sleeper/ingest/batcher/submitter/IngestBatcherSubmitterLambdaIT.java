@@ -212,6 +212,26 @@ public class IngestBatcherSubmitterLambdaIT {
                             fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"),
                             fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"));
         }
+
+        @Test
+        void shouldStoreAllFilesByBucketName() {
+            // Given
+            uploadFileToS3("test-file-1.parquet");
+            uploadFileToS3("test-file-2.parquet");
+            String json = "{" +
+                    "\"files\":[\"test-bucket\"]," +
+                    "\"tableName\":\"test-table\"" +
+                    "}";
+
+            // When
+            lambda.handleMessage(json, RECEIVED_TIME);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(
+                            fileRequest(TEST_BUCKET + "/test-file-2.parquet"),
+                            fileRequest(TEST_BUCKET + "/test-file-1.parquet"));
+        }
     }
 
     @Nested
