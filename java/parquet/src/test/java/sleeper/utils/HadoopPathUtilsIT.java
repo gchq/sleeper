@@ -43,28 +43,7 @@ class HadoopPathUtilsIT {
     class FindFiles {
 
         @Test
-        void shouldGetFileStatusesForMultipleFiles() throws Exception {
-            // Given
-            String localDir = createTempDirectory(folder, null).toString();
-            Configuration conf = new Configuration();
-            List<String> files = new ArrayList<>();
-
-            files.add(createTestFile(localDir, "file-1.parquet", 2L));
-            files.add(createTestFile(localDir, "file-2.parquet", 4L));
-
-            // When
-            Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
-
-            // Then
-            assertThat(fileStatuses)
-                    .extracting(status -> status.getPath().getName(), FileStatus::getLen)
-                    .containsExactly(
-                            tuple("file-1.parquet", 2L),
-                            tuple("file-2.parquet", 4L));
-        }
-
-        @Test
-        void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
+        void shouldGetPathsForFilesInOneDir() throws Exception {
             // Given
             String localDir = createTempDirectory(folder, null).toString();
             Configuration conf = new Configuration();
@@ -83,7 +62,7 @@ class HadoopPathUtilsIT {
         }
 
         @Test
-        void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
+        void shouldIgnoreCrcFiles() throws Exception {
             // Given
             String localDir = createTempDirectory(folder, null).toString();
             Configuration conf = new Configuration();
@@ -100,6 +79,27 @@ class HadoopPathUtilsIT {
             assertThat(pathsForIngest)
                     .extracting(path -> path.toUri().getPath())
                     .containsExactlyInAnyOrder(localDir + "/file-0.parquet", localDir + "/file-2.csv");
+        }
+
+        @Test
+        void shouldReadFileSizes() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            List<String> files = new ArrayList<>();
+
+            files.add(createTestFile(localDir, "file-1.parquet", 2L));
+            files.add(createTestFile(localDir, "file-2.parquet", 4L));
+
+            // When
+            Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
+
+            // Then
+            assertThat(fileStatuses)
+                    .extracting(status -> status.getPath().getName(), FileStatus::getLen)
+                    .containsExactly(
+                            tuple("file-1.parquet", 2L),
+                            tuple("file-2.parquet", 4L));
         }
     }
 
