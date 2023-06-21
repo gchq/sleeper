@@ -32,9 +32,9 @@ import java.util.function.IntUnaryOperator;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 
 public class EmrInstanceGroups implements EmrInstanceConfiguration {
 
@@ -61,7 +61,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                                 .withName("Executors")
                                 .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE).get(0))
                                 .withInstanceRole(InstanceRoleType.CORE)
-                                .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS))
+                                .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
                                 .withEbsConfiguration(ebsConfiguration)
                                 .withMarket(MarketType.fromValue(platformSpec.getOrDefault(
                                         BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT"))),
@@ -77,8 +77,8 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
     public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
 
         Integer maxNumberOfExecutors = Integer.max(
-                platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS),
-                platformSpec.getInt(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS));
+                platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY),
+                platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY));
         return new ComputeLimits()
                 .withUnitType(ComputeLimitsUnitType.Instances)
                 .withMinimumCapacityUnits(1)

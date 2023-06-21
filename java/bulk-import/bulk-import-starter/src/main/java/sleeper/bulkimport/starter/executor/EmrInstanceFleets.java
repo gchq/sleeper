@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
@@ -55,13 +55,10 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
     @Override
     public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
 
-        Integer maxNumberOfExecutors = Integer.max(
-                platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS),
-                platformSpec.getInt(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS));
         return new ComputeLimits()
                 .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
-                .withMinimumCapacityUnits(1)
-                .withMaximumCapacityUnits(maxNumberOfExecutors);
+                .withMinimumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
+                .withMaximumCapacityUnits(platformSpec.getInt(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY));
     }
 
     private InstanceFleetConfig executorFleet(
@@ -75,11 +72,11 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                                 .withEbsConfiguration(ebsConfiguration))
                         .collect(Collectors.toList()));
 
-        int initialNumberOfExecutors = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS);
+        int initialExecutorCapacity = platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY);
         if ("ON_DEMAND".equals(platformSpec.get(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE))) {
-            config.setTargetOnDemandCapacity(initialNumberOfExecutors);
+            config.setTargetOnDemandCapacity(initialExecutorCapacity);
         } else {
-            config.setTargetSpotCapacity(initialNumberOfExecutors);
+            config.setTargetSpotCapacity(initialExecutorCapacity);
         }
         return config;
     }

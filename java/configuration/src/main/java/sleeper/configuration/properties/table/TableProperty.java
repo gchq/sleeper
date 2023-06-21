@@ -248,18 +248,24 @@ public interface TableProperty extends SleeperProperty {
                     "Valid values are ON_DEMAND or SPOT.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.instances")
+    TableProperty BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.capacity")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
-            .description("(Non-persistent EMR mode only) The initial number of EC2 instances to be used as executors " +
-                    "in the EMR cluster.\n" +
+            .description("(Non-persistent EMR mode only) The initial number of capacity units to provision as EC2 " +
+                    "instances for executors in the EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.instances")
+    TableProperty BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.capacity")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS)
-            .description("(Non-persistent EMR mode only) The maximum number of EC2 instances to be used as executors " +
-                    "in the EMR cluster.\n" +
+            .description("(Non-persistent EMR mode only) The maximum number of capacity units to provision as EC2 " +
+                    "instances for executors in the EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)

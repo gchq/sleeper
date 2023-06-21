@@ -59,9 +59,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -139,8 +139,8 @@ class EmrExecutorTest {
         @Test
         void shouldUseMarketTypeDefinedInConfig() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
-            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY, "5");
+            tableProperties.set(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "10");
             tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
             // When
@@ -155,8 +155,8 @@ class EmrExecutorTest {
         @Test
         void shouldUseMarketTypeDefinedInRequest() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
-            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY, "5");
+            tableProperties.set(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "10");
             tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
             Map<String, String> platformSpec = new HashMap<>();
@@ -231,7 +231,7 @@ class EmrExecutorTest {
         @Test
         void shouldSetComputeLimits() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
 
             // When
             executorWithInstanceGroups().runJob(singleFileJob());
@@ -266,7 +266,7 @@ class EmrExecutorTest {
         @Test
         void shouldUseMarketTypeDefinedInConfig() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY, "5");
             tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
             // When
@@ -281,7 +281,7 @@ class EmrExecutorTest {
         @Test
         void shouldUseMarketTypeDefinedInRequest() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY, "5");
             tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
             Map<String, String> platformSpec = new HashMap<>();
@@ -345,7 +345,8 @@ class EmrExecutorTest {
         @Test
         void shouldSetComputeLimits() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "5");
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY, "3");
+            tableProperties.set(BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
 
             // When
             executorWithInstanceFleets().runJob(singleFileJob());
@@ -354,7 +355,7 @@ class EmrExecutorTest {
             assertThat(requestedComputeLimits())
                     .isEqualTo(new ComputeLimits()
                             .withUnitType(ComputeLimitsUnitType.InstanceFleetUnits)
-                            .withMinimumCapacityUnits(1)
+                            .withMinimumCapacityUnits(3)
                             .withMaximumCapacityUnits(5));
         }
     }
