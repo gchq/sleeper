@@ -92,7 +92,7 @@ class HadoopPathUtilsIT {
             files.add(createTestFile(localDir, "file-2.parquet", 4L));
 
             // When
-            Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
+            Stream<FileStatus> fileStatuses = HadoopPathUtils.streamFiles(files, conf, "");
 
             // Then
             assertThat(fileStatuses)
@@ -179,7 +179,7 @@ class HadoopPathUtilsIT {
             createTestFile(localDir, "file-2.parquet", 4L);
 
             // When
-            Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(List.of(localDir), conf, "");
+            Stream<FileStatus> fileStatuses = HadoopPathUtils.streamFiles(List.of(localDir), conf, "");
 
             // Then
             assertThat(fileStatuses)
@@ -216,6 +216,26 @@ class HadoopPathUtilsIT {
 
             // Then
             assertThat(pathsForIngest).isEmpty();
+        }
+
+        @Test
+        void shouldReturnEmptyListIfNoFilesGettingFileStatus() {
+            // Given
+            Configuration conf = new Configuration();
+
+            // When / Then
+            assertThat(HadoopPathUtils.streamFiles(new ArrayList<>(), conf, ""))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldReturnEmptyListIfNullGettingFileStatus() {
+            // Given
+            Configuration conf = new Configuration();
+
+            // When / Then
+            assertThat(HadoopPathUtils.streamFiles(null, conf, ""))
+                    .isEmpty();
         }
     }
 

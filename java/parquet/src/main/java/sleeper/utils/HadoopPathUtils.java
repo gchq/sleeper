@@ -21,7 +21,6 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,22 +34,21 @@ public class HadoopPathUtils {
     }
 
     public static List<Path> getPaths(List<String> files, Configuration conf, String fileSystemProperty) {
-        if (null == files || files.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return getFiles(files, conf, fileSystemProperty)
+        return streamFiles(files, conf, fileSystemProperty)
                 .map(FileStatus::getPath)
                 .collect(Collectors.toList());
     }
 
-    public static Stream<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
-        return getFiles(
+    public static Stream<FileStatus> streamFiles(List<String> files, Configuration conf, String fileSystemProperty) {
+        if (null == files || files.isEmpty()) {
+            return Stream.empty();
+        }
+        return streamFiles(
                 files.stream().map(file -> new Path(fileSystemProperty + file)),
                 conf);
     }
 
-    private static Stream<FileStatus> getFiles(Stream<Path> paths, Configuration conf) {
+    private static Stream<FileStatus> streamFiles(Stream<Path> paths, Configuration conf) {
         return paths.flatMap(path -> {
             try {
                 return Stream.of(path.getFileSystem(conf).listStatus(path));
@@ -59,7 +57,7 @@ public class HadoopPathUtils {
             }
         }).flatMap(status -> {
             if (status.isDirectory()) {
-                return getFiles(Stream.of(status.getPath()), conf);
+                return streamFiles(Stream.of(status.getPath()), conf);
             } else {
                 if (!status.getPath().getName().endsWith(".crc")) {
                     return Stream.of(status);
