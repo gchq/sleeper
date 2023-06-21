@@ -58,12 +58,11 @@ public class HadoopPathUtils {
         }).flatMap(status -> {
             if (status.isDirectory()) {
                 return streamFiles(Stream.of(status.getPath()), conf);
+            } else if (!status.getPath().getName().endsWith(".crc")) {
+                return Stream.of(status);
             } else {
-                if (!status.getPath().getName().endsWith(".crc")) {
-                    return Stream.of(status);
-                }
+                return Stream.empty();
             }
-            return Stream.empty();
         });
     }
 }
