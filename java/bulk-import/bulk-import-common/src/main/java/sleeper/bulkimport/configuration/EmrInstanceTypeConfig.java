@@ -17,6 +17,7 @@ package sleeper.bulkimport.configuration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class EmrInstanceTypeConfig {
@@ -25,7 +26,7 @@ public class EmrInstanceTypeConfig {
     private final Integer weightedCapacity;
 
     private EmrInstanceTypeConfig(Builder builder) {
-        instanceType = builder.instanceType;
+        instanceType = Objects.requireNonNull(builder.instanceType, "instanceType must not be null");
         weightedCapacity = builder.weightedCapacity;
     }
 
@@ -57,6 +58,38 @@ public class EmrInstanceTypeConfig {
 
     public Integer getWeightedCapacity() {
         return weightedCapacity;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        EmrInstanceTypeConfig that = (EmrInstanceTypeConfig) o;
+
+        if (!instanceType.equals(that.instanceType)) {
+            return false;
+        }
+        return Objects.equals(weightedCapacity, that.weightedCapacity);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = instanceType.hashCode();
+        result = 31 * result + (weightedCapacity != null ? weightedCapacity.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "EmrInstanceTypeConfig{" +
+                "instanceType='" + instanceType + '\'' +
+                ", weightedCapacity=" + weightedCapacity +
+                '}';
     }
 
     public static final class Builder {
