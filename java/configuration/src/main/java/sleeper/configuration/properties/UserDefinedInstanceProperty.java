@@ -640,17 +640,28 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.instance.type")
-            .description("(Persistent EMR mode only) The EC2 instance type used for the master node of the " +
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.instance.types")
+            .description("(Persistent EMR mode only) The EC2 instance types used for the master node of the " +
                     "persistent EMR cluster. Multiple instance types can be specified separated by commas. One will " +
                     "be chosen depending on the capacity available.")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.core.instance.type")
-            .description("(Persistent EMR mode only) The EC2 instance type used for the executor nodes of the " +
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.core.instance.types")
+            .description("(Persistent EMR mode only) The EC2 instance types used for the executor nodes of the " +
                     "persistent EMR cluster. Multiple instance types can be specified separated by commas. " +
-                    "Instance types will be chosen from the list based on the capacity available.")
+                    "Instance types will be chosen from the list based on the capacity available." +
+                    "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
+                    "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
+                    "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
+                    "For example:\n" +
+                    " sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge\n" +
+                    "The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the " +
+                    "capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, " +
+                    "so is defaulted to 1.\n" +
+                    "In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one " +
+                    "instance of m5.4xlarge, or 3 instances of m5.xlarge.\n" +
+                    "See also: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
@@ -659,15 +670,24 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.min.instances")
-            .description("(Persistent EMR mode only) The minimum number of instances in the persistent EMR cluster. " +
-                    "If managed scaling is not used then the cluster will be of fixed size, with number of instances equal to this value.")
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.min.capacity")
+            .description("(Persistent EMR mode only) The minimum number of capacity units to provision as EC2 " +
+                    "instances for executors in the persistent EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
+                    "If managed scaling is not used then the cluster will be of fixed size, with a number of " +
+                    "instances equal to this value.")
             .defaultValue("1")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MAX_NUMBER_OF_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.max.instances")
-            .description("(Persistent EMR mode only) The maximum number of instances in the persistent EMR cluster. " +
-                    "This value is only used if managed scaling is not used.")
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.max.capacity")
+            .description("(Persistent EMR mode only) The maximum number of capacity units to provision as EC2 " +
+                    "instances for executors in the persistent EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
+                    "This value is only used if managed scaling is used.")
             .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
