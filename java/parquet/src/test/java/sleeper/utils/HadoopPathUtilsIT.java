@@ -97,7 +97,7 @@ class HadoopPathUtilsIT {
             // Then
             assertThat(fileStatuses)
                     .extracting(status -> status.getPath().getName(), FileStatus::getLen)
-                    .containsExactly(
+                    .containsExactlyInAnyOrder(
                             tuple("file-1.parquet", 2L),
                             tuple("file-2.parquet", 4L));
         }
@@ -168,6 +168,25 @@ class HadoopPathUtilsIT {
                             localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
                             localDir + "/dir-0/dir-nested/file-0.parquet",
                             localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet");
+        }
+
+        @Test
+        void shouldReadFileSizesUnderADirectory() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            createTestFile(localDir, "file-1.parquet", 2L);
+            createTestFile(localDir, "file-2.parquet", 4L);
+
+            // When
+            Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(List.of(localDir), conf, "");
+
+            // Then
+            assertThat(fileStatuses)
+                    .extracting(status -> status.getPath().getName(), FileStatus::getLen)
+                    .containsExactlyInAnyOrder(
+                            tuple("file-1.parquet", 2L),
+                            tuple("file-2.parquet", 4L));
         }
     }
 

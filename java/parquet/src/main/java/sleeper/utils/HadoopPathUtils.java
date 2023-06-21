@@ -41,7 +41,20 @@ public class HadoopPathUtils {
         }
 
         return getFiles(files, conf, fileSystemProperty)
-                .flatMap(status -> {
+                .map(FileStatus::getPath)
+                .collect(Collectors.toList());
+    }
+
+    public static Stream<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
+        return files.stream()
+                .map(file -> new Path(fileSystemProperty + file))
+                .flatMap(path -> {
+                    try {
+                        return Stream.of(path.getFileSystem(conf).listStatus(path));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }).flatMap(status -> {
                     if (status.isDirectory()) {
                         try {
                             return getFilesOnPath(status.getPath(), conf, fileSystemProperty);
@@ -54,26 +67,12 @@ public class HadoopPathUtils {
                         }
                     }
                     return Stream.empty();
-                })
-                .map(FileStatus::getPath)
-                .collect(Collectors.toList());
+                });
     }
 
     public static Stream<FileStatus> getFilesOnPath(Path path, Configuration conf, String fileSystemProperty) throws IOException {
         return getFiles(Arrays.stream(path.getFileSystem(conf).listStatus(path))
                 .map(status -> status.getPath().toUri().getPath())
                 .collect(Collectors.toList()), conf, fileSystemProperty);
-    }
-
-    public static Stream<FileStatus> getFiles(List<String> files, Configuration conf, String fileSystemProperty) {
-        return files.stream()
-                .map(file -> new Path(fileSystemProperty + file))
-                .flatMap(path -> {
-                    try {
-                        return Stream.of(path.getFileSystem(conf).listStatus(path));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
     }
 }
