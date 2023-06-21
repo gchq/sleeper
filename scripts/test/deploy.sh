@@ -16,17 +16,11 @@
 set -e
 
 if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <subnet> <optional-deploy-paused-flag> <optional-split-points-file>"
+  echo "Usage: $0 <properties-template> <instance-id> <vpc> <subnet> <optional-deploy-paused-flag> <optional-split-points-file>"
   exit 1
 fi
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
-GENERATED_DIR="${SCRIPTS_DIR}/generated"
-TEMPLATES_DIR="${SCRIPTS_DIR}/templates"
-VERSION=$(cat "${TEMPLATES_DIR}/version.txt")
-
-source "${SCRIPTS_DIR}/functions/propertiesUtils.sh"
-copy_all_properties "${THIS_DIR}" "${GENERATED_DIR}" "${TEMPLATES_DIR}"
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "$@"

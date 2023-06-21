@@ -22,16 +22,11 @@ fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-GENERATED_DIR="$SCRIPTS_DIR/generated"
-TEMPLATES_DIR="$SCRIPTS_DIR/templates"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
-
-source "${SCRIPTS_DIR}/functions/propertiesUtils.sh"
-copy_all_properties "${THIS_DIR}" "${GENERATED_DIR}" "${TEMPLATES_DIR}"
 
 java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
   sleeper.systemtest.ingest.batcher.SystemTestForIngestBatcher \

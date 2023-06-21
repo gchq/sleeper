@@ -85,6 +85,14 @@ public class DeployInstanceConfiguration {
                 .tableProperties(tableProperties).build();
     }
 
+    public InstanceProperties getInstanceProperties() {
+        return instanceProperties;
+    }
+
+    public TableProperties getTableProperties() {
+        return tableProperties;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
