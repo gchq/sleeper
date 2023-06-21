@@ -18,6 +18,8 @@ package sleeper.utils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -36,151 +38,166 @@ class HadoopPathUtilsIT {
     @TempDir
     public java.nio.file.Path folder;
 
-    @Test
-    void shouldReturnEmptyListIfNoFiles() {
-        // Given
-        Configuration conf = new Configuration();
+    @Nested
+    @DisplayName("Find files by their paths")
+    class FindFiles {
 
-        // When
-        List<Path> pathsForIngest = HadoopPathUtils.getPaths(new ArrayList<>(), conf, "");
+        @Test
+        void shouldGetFileStatusesForMultipleFiles() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            List<String> files = new ArrayList<>();
 
-        // Then
-        assertThat(pathsForIngest).isEmpty();
-    }
+            files.add(createTestFile(localDir, "file-1.parquet", 2L));
+            files.add(createTestFile(localDir, "file-2.parquet", 4L));
 
-    @Test
-    void shouldReturnEmptyListIfNull() {
-        // Given
-        Configuration conf = new Configuration();
+            // When
+            Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
 
-        // When
-        List<Path> pathsForIngest = HadoopPathUtils.getPaths(null, conf, "");
-
-        // Then
-        assertThat(pathsForIngest).isEmpty();
-    }
-
-    @Test
-    void shouldGetFileStatusesForMultipleFiles() throws Exception {
-        // Given
-        String localDir = createTempDirectory(folder, null).toString();
-        Configuration conf = new Configuration();
-        List<String> files = new ArrayList<>();
-
-        files.add(createTestFile(localDir, "file-1.parquet", 2L));
-        files.add(createTestFile(localDir, "file-2.parquet", 4L));
-
-        // When
-        Stream<FileStatus> fileStatuses = HadoopPathUtils.getFiles(files, conf, "");
-
-        // Then
-        assertThat(fileStatuses)
-                .extracting(status -> status.getPath().getName(), FileStatus::getLen)
-                .containsExactly(
-                        tuple("file-1.parquet", 2L),
-                        tuple("file-2.parquet", 4L));
-    }
-
-    @Test
-    void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
-        // Given
-        String localDir = createTempDirectory(folder, null).toString();
-        Configuration conf = new Configuration();
-        List<String> files = new ArrayList<>();
-
-        files.add(createTestFile(localDir, "file-1.parquet"));
-        files.add(createTestFile(localDir, "file-2.parquet"));
-
-        // When
-        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
-
-        // Then
-        assertThat(pathsForIngest)
-                .extracting(path -> path.toUri().getPath())
-                .containsExactlyInAnyOrder(localDir + "/file-1.parquet", localDir + "/file-2.parquet");
-    }
-
-    @Test
-    void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
-        // Given
-        String localDir = createTempDirectory(folder, null).toString();
-        Configuration conf = new Configuration();
-        List<String> files = new ArrayList<>();
-
-        files.add(createTestFile(localDir, "file-0.parquet"));
-        files.add(createTestFile(localDir, "file-1.crc"));
-        files.add(createTestFile(localDir, "file-2.csv"));
-
-        // When
-        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
-
-        // Then
-        assertThat(pathsForIngest)
-                .extracting(path -> path.toUri().getPath())
-                .containsExactlyInAnyOrder(localDir + "/file-0.parquet", localDir + "/file-2.csv");
-    }
-
-    @Test
-    void shouldGetPathsForFilesInMultipleDirectories() throws Exception {
-        // Given
-        String localDir = createTempDirectory(folder, null).toString();
-        Configuration conf = new Configuration();
-        List<String> files = new ArrayList<>();
-
-        for (int dir = 0; dir < 3; dir++) {
-            Files.createDirectory(Paths.get(localDir + "/dir-" + dir));
-            for (int i = 0; i < 2; i++) {
-                String outputFile = localDir + "/dir-" + dir + "/file-" + i + ".parquet";
-                Files.createFile(Paths.get(outputFile));
-            }
-            //provide all the sub-directories
-            files.add(localDir + "/dir-" + dir + "/");
+            // Then
+            assertThat(fileStatuses)
+                    .extracting(status -> status.getPath().getName(), FileStatus::getLen)
+                    .containsExactly(
+                            tuple("file-1.parquet", 2L),
+                            tuple("file-2.parquet", 4L));
         }
 
-        // When
-        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
+        @Test
+        void shouldGetPathsForMultipleIndividualParquetFilesInOneDir() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            List<String> files = new ArrayList<>();
 
-        // Then
-        assertThat(pathsForIngest)
-                .extracting(path -> path.toUri().getPath())
-                .containsExactlyInAnyOrder(
-                        localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
-                        localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet",
-                        localDir + "/dir-2/file-0.parquet", localDir + "/dir-2/file-1.parquet");
-    }
+            files.add(createTestFile(localDir, "file-1.parquet"));
+            files.add(createTestFile(localDir, "file-2.parquet"));
 
-    @Test
-    void shouldGetPathsForFilesInNestedDirectories() throws Exception {
-        // Given
-        String localDir = createTempDirectory(folder, null).toString();
-        Configuration conf = new Configuration();
-        List<String> files = new ArrayList<>();
+            // When
+            List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
 
-        for (int dir = 0; dir < 2; dir++) {
-            Files.createDirectory(Paths.get(localDir + "/dir-" + dir));
-            for (int i = 0; i < 2; i++) {
-                String outputFile = localDir + "/dir-" + dir + "/file-" + i + ".parquet";
-                Files.createFile(Paths.get(outputFile));
-            }
+            // Then
+            assertThat(pathsForIngest)
+                    .extracting(path -> path.toUri().getPath())
+                    .containsExactlyInAnyOrder(localDir + "/file-1.parquet", localDir + "/file-2.parquet");
         }
 
-        Files.createDirectory(Paths.get(localDir + "/dir-0" + "/dir-nested"));
-        String outputFile = localDir + "/dir-0/dir-nested/file-0.parquet";
-        Files.createFile(Paths.get(outputFile));
+        @Test
+        void shouldGetPathsForIndividualFilesThatAreNotCrcFilesInOneDir() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            List<String> files = new ArrayList<>();
 
-        //provide only the highest directory
-        files.add(localDir);
+            files.add(createTestFile(localDir, "file-0.parquet"));
+            files.add(createTestFile(localDir, "file-1.crc"));
+            files.add(createTestFile(localDir, "file-2.csv"));
 
-        // When
-        List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
+            // When
+            List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
 
-        // Then
-        assertThat(pathsForIngest)
-                .extracting(path -> path.toUri().getPath())
-                .containsExactlyInAnyOrder(
-                        localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
-                        localDir + "/dir-0/dir-nested/file-0.parquet",
-                        localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet");
+            // Then
+            assertThat(pathsForIngest)
+                    .extracting(path -> path.toUri().getPath())
+                    .containsExactlyInAnyOrder(localDir + "/file-0.parquet", localDir + "/file-2.csv");
+        }
+    }
+
+    @Nested
+    @DisplayName("Find files by paths of directories")
+    class FollowDirectories {
+
+        @Test
+        void shouldGetPathsForFilesInMultipleDirectories() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            List<String> files = new ArrayList<>();
+
+            for (int dir = 0; dir < 3; dir++) {
+                Files.createDirectory(Paths.get(localDir + "/dir-" + dir));
+                for (int i = 0; i < 2; i++) {
+                    String outputFile = localDir + "/dir-" + dir + "/file-" + i + ".parquet";
+                    Files.createFile(Paths.get(outputFile));
+                }
+                //provide all the sub-directories
+                files.add(localDir + "/dir-" + dir + "/");
+            }
+
+            // When
+            List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
+
+            // Then
+            assertThat(pathsForIngest)
+                    .extracting(path -> path.toUri().getPath())
+                    .containsExactlyInAnyOrder(
+                            localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
+                            localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet",
+                            localDir + "/dir-2/file-0.parquet", localDir + "/dir-2/file-1.parquet");
+        }
+
+        @Test
+        void shouldGetPathsForFilesInNestedDirectories() throws Exception {
+            // Given
+            String localDir = createTempDirectory(folder, null).toString();
+            Configuration conf = new Configuration();
+            List<String> files = new ArrayList<>();
+
+            for (int dir = 0; dir < 2; dir++) {
+                Files.createDirectory(Paths.get(localDir + "/dir-" + dir));
+                for (int i = 0; i < 2; i++) {
+                    String outputFile = localDir + "/dir-" + dir + "/file-" + i + ".parquet";
+                    Files.createFile(Paths.get(outputFile));
+                }
+            }
+
+            Files.createDirectory(Paths.get(localDir + "/dir-0" + "/dir-nested"));
+            String outputFile = localDir + "/dir-0/dir-nested/file-0.parquet";
+            Files.createFile(Paths.get(outputFile));
+
+            //provide only the highest directory
+            files.add(localDir);
+
+            // When
+            List<Path> pathsForIngest = HadoopPathUtils.getPaths(files, conf, "");
+
+            // Then
+            assertThat(pathsForIngest)
+                    .extracting(path -> path.toUri().getPath())
+                    .containsExactlyInAnyOrder(
+                            localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
+                            localDir + "/dir-0/dir-nested/file-0.parquet",
+                            localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet");
+        }
+    }
+
+    @Nested
+    @DisplayName("Find no files when none are present")
+    class FindNoFiles {
+
+        @Test
+        void shouldReturnEmptyListIfNoFiles() {
+            // Given
+            Configuration conf = new Configuration();
+
+            // When
+            List<Path> pathsForIngest = HadoopPathUtils.getPaths(new ArrayList<>(), conf, "");
+
+            // Then
+            assertThat(pathsForIngest).isEmpty();
+        }
+
+        @Test
+        void shouldReturnEmptyListIfNull() {
+            // Given
+            Configuration conf = new Configuration();
+
+            // When
+            List<Path> pathsForIngest = HadoopPathUtils.getPaths(null, conf, "");
+
+            // Then
+            assertThat(pathsForIngest).isEmpty();
+        }
     }
 
     private static String createTestFile(String localDir, String fileName) throws Exception {
