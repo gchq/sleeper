@@ -588,6 +588,14 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("(Non-persistent EMR mode only) The default EC2 instance types to be used for the executor " +
                     "nodes of the EMR cluster. Multiple instance types can be specified separated by commas. " +
                     "Instance types will be chosen from the list based on the capacity available.\n" +
+                    "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
+                    "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
+                    "adding a number after the instance type in this comma separated list.\n" +
+                    "For example: \n" +
+                    " sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge\n" +
+                    "The above configuration would tell EMR that a m5.4xlarge instance would provide 4 times the " +
+                    "capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, " +
+                    "so is defaulted to 1.\n" +
                     "This default can be overridden by a table property or by a property in the bulk import job specification.")
             .defaultValue("m5.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
