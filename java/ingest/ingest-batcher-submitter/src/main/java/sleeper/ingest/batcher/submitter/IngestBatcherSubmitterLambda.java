@@ -39,7 +39,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
-    private final AmazonS3 s3Client;
     private final IngestBatcherStore store;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -50,7 +49,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
-        s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
@@ -62,11 +61,10 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
-                                        TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client, Configuration conf) {
+                                        TablePropertiesProvider tablePropertiesProvider, Configuration conf) {
         this.store = store;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.s3Client = s3Client;
         this.configuration = conf;
     }
 

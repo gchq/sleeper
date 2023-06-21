@@ -64,14 +64,14 @@ public class IngestBatcherSubmitterLambdaIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTableProperties(instanceProperties));
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tablePropertiesProvider, s3, buildConfiguration());
+            store, instanceProperties, tablePropertiesProvider, buildHadoopConfig());
 
     @BeforeEach
     void setup() {
         s3.createBucket(TEST_BUCKET);
     }
 
-    private static Configuration buildConfiguration() {
+    private static Configuration buildHadoopConfig() {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.bucket.test-bucket.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
@@ -116,8 +116,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             s3.putObject(TEST_BUCKET, "test-file-1.parquet", "a".repeat(123));
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-file-1.parquet\"]," +
-                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "\"files\":[\"test-bucket/test-file-1.parquet\"]," +
+                    "\"tableName\":\"test-table\"" +
                     "}";
 
             // When
@@ -142,8 +142,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"tableName\":\"test-table\"" +
                     "}";
 
             // When
@@ -161,8 +161,8 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/test-file-1.parquet");
             uploadFileToS3("test-directory/test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"tableName\":\"test-table\"" +
                     "}";
 
             // When
@@ -180,8 +180,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"tableName\":\"test-table\"" +
                     "}";
 
             // When
@@ -199,8 +199,8 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/nested-1/test-file-1.parquet");
             uploadFileToS3("test-directory/nested-2/test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-directory\"]," +
-                    "\"tableName\":\"" + TEST_TABLE + "\"" +
+                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"tableName\":\"test-table\"" +
                     "}";
 
             // When
@@ -281,7 +281,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/test-file-1.parquet\"]," +
+                    "\"files\":[\"test-bucket/test-file-1.parquet\"]," +
                     "\"tableName\":\"not-a-table\"" +
                     "}";
 
@@ -296,7 +296,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreMessageIfFileDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"files\":[\"" + TEST_BUCKET + "/not-exists.parquet\"]," +
+                    "\"files\":[\"test-bucket/not-exists.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
