@@ -37,6 +37,14 @@ public interface IngestJobStatusStore {
     }
 
     default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+        jobFinished(IngestJobFinishedEvent.builder()
+                .taskId(taskId)
+                .job(job)
+                .summary(summary)
+                .build());
+    }
+
+    default void jobFinished(IngestJobFinishedEvent event) {
     }
 
     default List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant start, Instant end) {

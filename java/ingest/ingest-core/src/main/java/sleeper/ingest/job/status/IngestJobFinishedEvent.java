@@ -21,12 +21,12 @@ import sleeper.ingest.job.IngestJob;
 
 import java.util.Objects;
 
-public class IngestJobFinishedData {
+public class IngestJobFinishedEvent {
     private final String taskId;
     private final IngestJob job;
     private final RecordsProcessedSummary summary;
 
-    private IngestJobFinishedData(Builder builder) {
+    private IngestJobFinishedEvent(Builder builder) {
         taskId = builder.taskId;
         job = Objects.requireNonNull(builder.job, "job must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
@@ -56,7 +56,7 @@ public class IngestJobFinishedData {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        IngestJobFinishedData that = (IngestJobFinishedData) o;
+        IngestJobFinishedEvent that = (IngestJobFinishedEvent) o;
         return Objects.equals(taskId, that.taskId) && Objects.equals(job, that.job) && Objects.equals(summary, that.summary);
     }
 
@@ -67,7 +67,7 @@ public class IngestJobFinishedData {
 
     @Override
     public String toString() {
-        return "IngestJobFinishedData{" +
+        return "IngestJobFinishedEvent{" +
                 "taskId='" + taskId + '\'' +
                 ", job=" + job +
                 ", summary=" + summary +
@@ -97,8 +97,8 @@ public class IngestJobFinishedData {
             return this;
         }
 
-        public IngestJobFinishedData build() {
-            return new IngestJobFinishedData(this);
+        public IngestJobFinishedEvent build() {
+            return new IngestJobFinishedEvent(this);
         }
     }
 }
