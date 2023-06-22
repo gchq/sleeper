@@ -78,19 +78,10 @@ public class DynamoDBIngestJobStatusFormat {
         this.getTimeNow = getTimeNow;
     }
 
-    public Map<String, AttributeValue> createJobAcceptedRecord(
-            IngestJob job, Instant validationTime, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
-                .number(VALIDATION_TIME, validationTime.toEpochMilli())
-                .bool(VALIDATION_RESULT, true)
-                .string(TASK_ID, taskId)
-                .build();
-    }
-
-    public Map<String, AttributeValue> createJobRejectedRecord(IngestJobValidatedEvent event) {
+    public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
         return createJobRecord(event.getJob(), UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
-                .bool(VALIDATION_RESULT, false)
+                .bool(VALIDATION_RESULT, event.isAccepted())
                 .string(VALIDATION_REASON, event.getReason())
                 .string(TASK_ID, event.getTaskId())
                 .build();

@@ -33,6 +33,10 @@ public class IngestJobValidatedEvent {
         this.reason = reason;
     }
 
+    public static IngestJobValidatedEvent ingestJobAccepted(String taskId, IngestJob job, Instant validationTime) {
+        return new IngestJobValidatedEvent(taskId, job, validationTime, null);
+    }
+
     public static IngestJobValidatedEvent ingestJobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
         return new IngestJobValidatedEvent(taskId, job, validationTime, reason);
     }
@@ -47,6 +51,10 @@ public class IngestJobValidatedEvent {
 
     public Instant getValidationTime() {
         return validationTime;
+    }
+
+    public boolean isAccepted() {
+        return reason == null;
     }
 
     public String getReason() {

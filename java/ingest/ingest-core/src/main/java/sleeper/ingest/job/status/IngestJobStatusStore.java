@@ -16,8 +16,6 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.ingest.job.IngestJob;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -26,10 +24,7 @@ public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {
     };
 
-    default void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
-    }
-
-    default void jobRejected(IngestJobValidatedEvent event) {
+    default void jobValidated(IngestJobValidatedEvent event) {
     }
 
     default void jobStarted(IngestJobStartedEvent event) {

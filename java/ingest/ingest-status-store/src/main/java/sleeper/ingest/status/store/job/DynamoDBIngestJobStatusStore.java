@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.ingest.IngestStatusStoreException;
-import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -75,24 +74,13 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
+    public void jobValidated(IngestJobValidatedEvent event) {
         try {
-            PutItemResult result = putItem(format.createJobAcceptedRecord(job, validationTime, taskId));
-            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
-                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
-        } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
-        }
-    }
-
-    @Override
-    public void jobRejected(IngestJobValidatedEvent event) {
-        try {
-            PutItemResult result = putItem(format.createJobRejectedRecord(event));
-            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+            PutItemResult result = putItem(format.createJobValidatedRecord(event));
+            LOGGER.debug("Put validated event for job {} to table {}, capacity consumed = {}",
                     event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
+            throw new IngestStatusStoreException("Failed putItem in jobValidated", e);
         }
     }
 

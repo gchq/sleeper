@@ -20,7 +20,6 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,22 +34,21 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
 
     @Override
-    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
-        ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobAcceptedStatus.validationTime(validationTime), taskId);
-        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
-                .add(validationRecord);
-    }
-
-    @Override
-    public void jobRejected(IngestJobValidatedEvent event) {
+    public void jobValidated(IngestJobValidatedEvent event) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(event.getJob().getId(), null,
-                IngestJobRejectedStatus.builder().validationTime(event.getValidationTime())
-                        .reason(event.getReason()).build(), event.getTaskId());
+                validatedStatus(event), event.getTaskId());
         tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
+    }
+
+    private static IngestJobValidatedStatus validatedStatus(IngestJobValidatedEvent event) {
+        if (event.isAccepted()) {
+            return IngestJobAcceptedStatus.validationTime(event.getValidationTime());
+        } else {
+            return IngestJobRejectedStatus.builder().validationTime(event.getValidationTime())
+                    .reason(event.getReason()).build();
+        }
     }
 
     @Override
