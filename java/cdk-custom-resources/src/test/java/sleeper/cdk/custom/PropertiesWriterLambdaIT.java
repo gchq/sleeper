@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 @Testcontainers
@@ -62,7 +62,7 @@ public class PropertiesWriterLambdaIT {
         instanceProperties.set(CONFIG_BUCKET, bucket);
         instanceProperties.set(REGION, "region");
         instanceProperties.set(VERSION, "1.2.3");
-        instanceProperties.set(SUBNET, "subnet-12345");
+        instanceProperties.set(SUBNETS, "subnet-12345");
         instanceProperties.set(VPC_ID, "vpc-12345");
         instanceProperties.set(ACCOUNT, account);
         return instanceProperties;

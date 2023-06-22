@@ -17,17 +17,12 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.Application;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
-import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.Configuration;
 import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
-import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
-import com.amazonaws.services.elasticmapreduce.model.MarketType;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
 import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
@@ -35,18 +30,15 @@ import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.elasticmapreduce.model.Tag;
 import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
@@ -57,12 +49,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
  * An {@link Executor} which runs a bulk import job on an EMR cluster.
@@ -70,26 +66,32 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
     private final AmazonElasticMapReduce emrClient;
+    private final EmrInstanceConfiguration instanceConfiguration;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
+        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
+                new EmrInstanceFleets(instanceProperties));
+    }
+
+    public EmrExecutor(AmazonElasticMapReduce emrClient,
+                       InstanceProperties instanceProperties,
+                       TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3,
+                       EmrInstanceConfiguration instanceConfiguration) {
         super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
+        this.instanceConfiguration = instanceConfiguration;
     }
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
-        Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
-
-        Integer maxNumberOfExecutors = Integer.max(
-                Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties)),
-                Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, platformSpec, tableProperties))
-        );
+        BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties, bulkImportJob);
 
         String clusterName = String.join("-", "sleeper",
                 instanceProperties.get(ID),
@@ -101,21 +103,17 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
         RunJobFlowResult response = emrClient.runJobFlow(new RunJobFlowRequest()
                 .withName(clusterName)
-                .withInstances(createJobFlowInstancesConfig(bulkImportJob, tableProperties))
+                .withInstances(createJobFlowInstancesConfig(platformSpec))
                 .withVisibleToAllUsers(true)
-                .withSecurityConfiguration(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME))
+                .withSecurityConfiguration(instanceProperties.get(BULK_IMPORT_EMR_SECURITY_CONF_NAME))
                 .withManagedScalingPolicy(new ManagedScalingPolicy()
-                        .withComputeLimits(new ComputeLimits()
-                                .withUnitType(ComputeLimitsUnitType.Instances)
-                                .withMinimumCapacityUnits(1)
-                                .withMaximumCapacityUnits(maxNumberOfExecutors)
-                                .withMaximumCoreCapacityUnits(3)))
+                        .withComputeLimits(instanceConfiguration.createComputeLimits(platformSpec)))
                 .withScaleDownBehavior(ScaleDownBehavior.TERMINATE_AT_TASK_COMPLETION)
-                .withReleaseLabel(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL, platformSpec, tableProperties))
+                .withReleaseLabel(platformSpec.get(BULK_IMPORT_EMR_RELEASE_LABEL))
                 .withApplications(new Application().withName("Spark"))
                 .withLogUri(logUri)
-                .withServiceRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
-                .withJobFlowRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME))
+                .withServiceRole(instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
+                .withJobFlowRole(instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME))
                 .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
@@ -128,19 +126,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
         LOGGER.info("Cluster created with ARN {}", response.getClusterArn());
     }
 
-    private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
-        JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(instanceProperties.get(UserDefinedInstanceProperty.SUBNET));
-
-        Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
-        String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
-        String executorInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE, platformSpec, tableProperties);
-        Integer initialNumberOfExecutors = Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties));
-
-        String marketTypeOfExecutors = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, platformSpec, tableProperties);
-        if (marketTypeOfExecutors == null) {
-            marketTypeOfExecutors = "SPOT";
-        }
+    private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportPlatformSpec platformSpec) {
 
         VolumeSpecification volumeSpecification = new VolumeSpecification()
 //                .withIops(null) // TODO Add property to control this
@@ -153,21 +139,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withEbsBlockDeviceConfigs(ebsBlockDeviceConfig)
                 .withEbsOptimized(true);
 
-        config.setInstanceGroups(Lists.newArrayList(
-                new InstanceGroupConfig()
-                        .withName("Executors")
-                        .withInstanceType(executorInstanceType)
-                        .withInstanceRole(InstanceRoleType.CORE)
-                        .withInstanceCount(initialNumberOfExecutors)
-                        .withEbsConfiguration(ebsConfiguration)
-                        .withMarket(MarketType.fromValue(marketTypeOfExecutors)),
-                new InstanceGroupConfig()
-                        .withName("Driver")
-                        .withInstanceType(driverInstanceType)
-                        .withInstanceRole(InstanceRoleType.MASTER)
-                        .withInstanceCount(1)
-                        .withEbsConfiguration(ebsConfiguration)
-        ));
+        JobFlowInstancesConfig config = instanceConfiguration.createJobFlowInstancesConfig(ebsConfiguration, platformSpec);
 
         String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
         if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
@@ -177,9 +149,9 @@ public class EmrExecutor extends AbstractEmrExecutor {
         if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
             config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
         }
-
         return config;
     }
+
 
     private List<Configuration> getConfigurations() {
         List<Configuration> configurations = new ArrayList<>();
@@ -229,12 +201,5 @@ public class EmrExecutor extends AbstractEmrExecutor {
         configurations.add(hadoopEnvConfigurations);
 
         return configurations;
-    }
-
-    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
-        if (null == platformSpec) {
-            return tableProperties.get(tableProperty);
-        }
-        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
     }
 }
