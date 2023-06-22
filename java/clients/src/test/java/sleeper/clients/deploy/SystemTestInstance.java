@@ -66,7 +66,11 @@ public class SystemTestInstance implements BeforeAllCallback {
                 .instanceId(instanceId)
                 .vpcId(vpcId).subnetId(subnetId)
                 .build().populate();
-        singleKeyTableProperties = PopulateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
+        singleKeyTableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .schema(schemaWithKey("key"))
+                .tableName("single-key")
+                .build().populate();
         boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDir)
                 .bucketName(instanceProperties.get(JARS_BUCKET))

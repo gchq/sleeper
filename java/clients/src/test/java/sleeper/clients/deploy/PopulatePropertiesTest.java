@@ -21,7 +21,6 @@ import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.SchemaSerDe;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
@@ -104,10 +103,12 @@ class PopulatePropertiesTest {
         InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
                 .build().populate();
-        TableProperties tableProperties = PopulateTableProperties.from(instanceProperties,
-                new SchemaSerDe().toJson(schemaWithKey("key")),
-                new TableProperties(instanceProperties),
-                "test-table");
+        TableProperties tableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(new TableProperties(instanceProperties))
+                .schema(schemaWithKey("key"))
+                .tableName("test-table")
+                .build().populate();
 
         // Then
         TableProperties expected = new TableProperties(instanceProperties);
@@ -129,10 +130,12 @@ class PopulatePropertiesTest {
                 "}],\n" +
                 "\"sortKeyFields\":[],\n" +
                 "\"valueFields\":[]}";
-        TableProperties tableProperties = PopulateTableProperties.from(instanceProperties,
-                schemaWithNewlines,
-                new TableProperties(instanceProperties),
-                "test-table");
+        TableProperties tableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .schema(schemaWithNewlines)
+                .tableProperties(new TableProperties(instanceProperties))
+                .tableName("test-table")
+                .build().populate();
 
         // Then
         TableProperties expected = new TableProperties(instanceProperties);

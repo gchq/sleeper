@@ -33,6 +33,10 @@ public class PopulatePropertiesTestHelper {
     }
 
     public static TableProperties generateTestTableProperties() {
-        return PopulateTableProperties.from(generateTestInstanceProperties(), schemaWithKey("key"), "test-table");
+        return PopulateTableProperties.builder()
+                .instanceProperties(generateTestInstanceProperties())
+                .schema(schemaWithKey("key"))
+                .tableName("test-table")
+                .build().populate();
     }
 }

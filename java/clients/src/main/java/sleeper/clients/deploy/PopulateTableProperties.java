@@ -20,10 +20,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -31,29 +29,69 @@ import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class PopulateTableProperties {
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
+    private final String schemaJson;
+    private final String tableName;
 
-    private PopulateTableProperties() {
+
+    private PopulateTableProperties(Builder builder) {
+        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        tableProperties = Objects.requireNonNullElse(builder.tableProperties, new TableProperties(instanceProperties));
+        schemaJson = builder.schemaJson;
+        tableName = builder.tableName;
     }
 
-    public static TableProperties from(InstanceProperties instanceProperties, Schema schema, String tableName) {
-        return from(instanceProperties, new SchemaSerDe().toJson(schema), new TableProperties(instanceProperties), tableName);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson, Path tablePropertiesFile, String tableName) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        try {
-            tableProperties.load(tablePropertiesFile);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    public TableProperties populate() {
+        if (schemaJson != null) {
+            tableProperties.setSchema(new SchemaSerDe().fromJson(schemaJson));
+            tableProperties.set(SCHEMA, schemaJson);
         }
-        return from(instanceProperties, schemaJson, tableProperties, tableName);
-    }
-
-    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson, TableProperties tableProperties, String tableName) {
-        tableProperties.setSchema(new SchemaSerDe().fromJson(schemaJson));
-        tableProperties.set(SCHEMA, schemaJson);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(DATA_BUCKET, String.join("-", "sleeper", instanceProperties.get(ID), "table", tableName).toLowerCase(Locale.ROOT));
         return tableProperties;
+    }
+
+    public static final class Builder {
+        private InstanceProperties instanceProperties;
+        private TableProperties tableProperties;
+        private String schemaJson;
+        private String tableName;
+
+        public Builder() {
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
+            return this;
+        }
+
+        public Builder schema(Schema schema) {
+            this.schemaJson = new SchemaSerDe().toJson(schema);
+            return this;
+        }
+
+        public Builder schema(String schemaJson) {
+            this.schemaJson = schemaJson;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public PopulateTableProperties build() {
+            return new PopulateTableProperties(this);
+        }
     }
 }
