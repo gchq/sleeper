@@ -33,6 +33,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;

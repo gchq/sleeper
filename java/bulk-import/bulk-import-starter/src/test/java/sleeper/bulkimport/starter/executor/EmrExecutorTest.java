@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
+import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;

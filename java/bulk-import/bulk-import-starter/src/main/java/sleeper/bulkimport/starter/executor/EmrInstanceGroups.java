@@ -23,6 +23,7 @@ import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
 import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import com.amazonaws.services.elasticmapreduce.model.MarketType;
 
+import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.List;
