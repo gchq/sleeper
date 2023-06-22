@@ -17,47 +17,104 @@
 package sleeper.bulkimport.job.runner;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import sleeper.bulkimport.job.runner.dataframelocalsort.JdkImmutableListRegistrator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class KryoSerializerTest {
-    @TempDir
-    private Path tempDir;
 
     @Test
-    void shouldSerializeAndDeserializePartition() throws IOException {
+    void shouldSerializeAndDeserializePartition() {
         // Given
+        Kryo kryo = kryo();
+        Partition partition = partitionWithNRowKeys(1);
+
+        // When
+        byte[] bytes = serialize(kryo, partition);
+
+        // Then
+        assertThat(deserialize(kryo, bytes, Partition.class)).isEqualTo(partition);
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldSerializeAndDeserializePartitionWithManyRowKeys() {
+        // Given
+        Kryo kryo = kryo();
+        Partition partition = partitionWithNRowKeys(10);
+
+        // When
+        byte[] bytes = serialize(kryo, partition);
+
+        // Then
+        assertThat(deserialize(kryo, bytes, Partition.class)).isEqualTo(partition);
+    }
+
+    @Test
+    void shouldFailToDeserializePartitionIfImmutableListsNotRegistered() {
+        // Given
+        Kryo kryo = kryoWithoutImmutableListSupport();
+        Partition partition = partitionWithNRowKeys(1);
+
+        // When / Then
+        byte[] bytes = serialize(kryo, partition);
+        assertThatThrownBy(() -> deserialize(kryo, bytes, Partition.class))
+                .isInstanceOf(KryoException.class)
+                .hasCauseInstanceOf(UnsupportedOperationException.class);
+    }
+
+    private static Partition partitionWithNRowKeys(int n) {
+        return new PartitionFactory(Schema.builder()
+                .rowKeyFields(IntStream.rangeClosed(1, n)
+                        .mapToObj(i -> new Field("key-" + i, new LongType()))
+                        .collect(Collectors.toUnmodifiableList()))
+                .build())
+                .partition("test-partition", Long.MIN_VALUE, null);
+    }
+
+    private static Kryo kryo() {
+        Kryo kryo = kryoWithoutImmutableListSupport();
+        new JdkImmutableListRegistrator().registerClasses(kryo);
+        return kryo;
+    }
+
+    private static Kryo kryoWithoutImmutableListSupport() {
         Kryo kryo = new Kryo();
         kryo.setRegistrationRequired(false);
         kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-        new JdkImmutableListRegistrator().registerClasses(kryo);
         kryo.register(Partition.class);
-        Partition partition = new PartitionFactory(schemaWithKey("key"))
-                .partition("test-partition", Long.MIN_VALUE, null);
+        return kryo;
+    }
 
-        // When
-        Output output = new Output(Files.newOutputStream(tempDir.resolve("test-file")));
-        kryo.writeObject(output, partition);
-        output.close();
+    private static byte[] serialize(Kryo kryo, Object object) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (Output output = new Output(outputStream)) {
+            kryo.writeObject(output, object);
+        }
+        return outputStream.toByteArray();
+    }
 
-        // Then
-        Input input = new Input(Files.newInputStream(tempDir.resolve("test-file")));
-        Partition result = kryo.readObject(input, Partition.class);
-        assertThat(result).isEqualTo(partition);
-        input.close();
+    private static <T> T deserialize(Kryo kryo, byte[] bytes, Class<T> readClass) {
+        try (Input input = new Input(new ByteArrayInputStream(bytes))) {
+            return kryo.readObject(input, readClass);
+        }
     }
 }
