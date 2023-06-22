@@ -40,7 +40,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
@@ -52,7 +52,7 @@ class PopulatePropertiesTest {
     void shouldGenerateInstancePropertiesCorrectly() {
         // Given/When
         InstanceProperties properties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().populate();
 
         // Then
@@ -62,7 +62,7 @@ class PopulatePropertiesTest {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
-        expected.set(SUBNET, "some-subnet");
+        expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
@@ -101,7 +101,7 @@ class PopulatePropertiesTest {
     void shouldGenerateTablePropertiesCorrectly() {
         // Given
         InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().populate();
         TableProperties tableProperties = PopulateTableProperties.builder()
                 .instanceProperties(instanceProperties)
@@ -123,7 +123,7 @@ class PopulatePropertiesTest {
     void shouldRetainWhitespaceInSchema() {
         // Given
         InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().populate();
         String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
                 "\"name\":\"key\",\"type\":\"LongType\"\n" +

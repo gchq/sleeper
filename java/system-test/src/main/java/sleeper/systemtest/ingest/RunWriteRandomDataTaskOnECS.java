@@ -44,7 +44,7 @@ import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
@@ -81,7 +81,7 @@ public class RunWriteRandomDataTaskOnECS {
                 .withContainerOverrides(containerOverride);
 
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(systemTestProperties.get(SUBNET));
+                .withSubnets(systemTestProperties.getList(SUBNETS));
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);

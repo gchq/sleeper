@@ -37,6 +37,7 @@ import sleeper.systemtest.util.InvokeSystemTestLambda;
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class SplitPartitionsUntilNoMoreSplits {
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionsUntilNoMoreSplits.class);
@@ -66,7 +67,7 @@ public class SplitPartitionsUntilNoMoreSplits {
         StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties)
                 .getStateStore(tableProperties);
 
-        try (LambdaClient lambdaClient = LambdaClient.create()) {
+        try (LambdaClient lambdaClient = createSystemTestLambdaClient()) {
             InvokeSystemTestLambda.Client lambda = InvokeSystemTestLambda.client(lambdaClient, systemTestProperties);
             WaitForCurrentSplitAddingMissingJobs applySplit = WaitForCurrentSplitAddingMissingJobs.from(
                     lambda, sqsClient, store, systemTestProperties, tableName);

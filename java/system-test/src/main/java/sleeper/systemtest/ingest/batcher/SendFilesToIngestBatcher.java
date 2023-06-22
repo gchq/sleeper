@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.ingest.batcher;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -49,18 +48,16 @@ public class SendFilesToIngestBatcher {
     private final TableProperties tableProperties;
     private final String sourceBucketName;
     private final IngestBatcherStore batcherStore;
-    private final AmazonS3 s3;
     private final AmazonSQS sqs;
     private final LambdaClient lambda;
 
     public SendFilesToIngestBatcher(
             InstanceProperties instanceProperties, TableProperties tableProperties, String sourceBucketName,
-            IngestBatcherStore batcherStore, AmazonS3 s3, AmazonSQS sqs, LambdaClient lambda) {
+            IngestBatcherStore batcherStore, AmazonSQS sqs, LambdaClient lambda) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.sourceBucketName = sourceBucketName;
         this.batcherStore = batcherStore;
-        this.s3 = s3;
         this.sqs = sqs;
         this.lambda = lambda;
     }
@@ -87,10 +84,8 @@ public class SendFilesToIngestBatcher {
     private void sendFilesAndTriggerJobCreation(
             InstanceProperties properties, String sourceBucketName, List<String> files) throws InterruptedException {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
-        for (String file : files) {
-            sqs.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
-                    FileIngestRequestSerDe.toJson(s3, sourceBucketName, file, "system-test"));
-        }
+        sqs.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
+                FileIngestRequestSerDe.toJson(sourceBucketName, files, "system-test"));
         PollWithRetries.intervalAndPollingTimeout(5000, 1000L * 60L * 2L)
                 .pollUntil("files appear in batcher store", () -> {
                     List<FileIngestRequest> pending = batcherStore.getPendingFilesOldestFirst();

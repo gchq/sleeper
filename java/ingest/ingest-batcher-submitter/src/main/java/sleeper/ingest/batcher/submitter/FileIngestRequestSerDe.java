@@ -16,13 +16,21 @@
 
 package sleeper.ingest.batcher.submitter;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.batcher.FileIngestRequest;
 
+import java.net.URI;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.utils.HadoopPathUtils.streamFiles;
 
 public class FileIngestRequestSerDe {
     private static final Gson GSON = new GsonBuilder().create();
@@ -30,31 +38,39 @@ public class FileIngestRequestSerDe {
     private FileIngestRequestSerDe() {
     }
 
-    public static FileIngestRequest fromJson(String json, Instant receivedTime) {
+    public static List<FileIngestRequest> fromJson(String json, InstanceProperties properties, Configuration conf, Instant receivedTime) {
         Request request = GSON.fromJson(json, Request.class);
-        return FileIngestRequest.builder()
-                .file(request.file)
-                .fileSizeBytes(request.fileSizeBytes)
-                .tableName(request.tableName)
-                .receivedTime(receivedTime)
-                .build();
+        return request.toFileIngestRequests(properties, conf, receivedTime);
     }
 
-    public static String toJson(AmazonS3 s3, String bucketName, String key, String tableName) {
-        long fileSizeBytes = s3.getObjectMetadata(bucketName, key).getContentLength();
-        return GSON.toJson(new Request(bucketName + "/" + key, fileSizeBytes, tableName));
+    public static String toJson(String bucketName, List<String> keys, String tableName) {
+        return GSON.toJson(new Request(bucketName, keys, tableName));
     }
 
 
     private static class Request {
-        private final String file;
-        private final long fileSizeBytes;
+        private final List<String> files;
         private final String tableName;
 
-        Request(String file, long fileSizeBytes, String tableName) {
-            this.file = file;
-            this.fileSizeBytes = fileSizeBytes;
+        Request(String bucketName, List<String> keys, String tableName) {
+            this.files = keys.stream().map(key -> bucketName + "/" + key).collect(Collectors.toList());
             this.tableName = tableName;
+        }
+
+        List<FileIngestRequest> toFileIngestRequests(InstanceProperties properties, Configuration conf, Instant receivedTime) {
+            return streamFiles(files, conf, properties.get(FILE_SYSTEM))
+                    .map(file -> FileIngestRequest.builder()
+                            .file(getRequestPath(file))
+                            .fileSizeBytes(file.getLen())
+                            .tableName(tableName)
+                            .receivedTime(receivedTime)
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
+        private static String getRequestPath(FileStatus file) {
+            URI uri = file.getPath().toUri();
+            return uri.getHost() + uri.getPath();
         }
     }
 }

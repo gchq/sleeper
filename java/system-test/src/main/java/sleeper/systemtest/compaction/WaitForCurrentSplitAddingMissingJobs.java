@@ -42,6 +42,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class WaitForCurrentSplitAddingMissingJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
@@ -143,7 +144,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
-        try (LambdaClient lambdaClient = LambdaClient.create()) {
+        try (LambdaClient lambdaClient = createSystemTestLambdaClient()) {
             WaitForCurrentSplitAddingMissingJobs.from(
                             InvokeSystemTestLambda.client(lambdaClient, systemTestProperties),
                             sqsClient, store, systemTestProperties, tableName)

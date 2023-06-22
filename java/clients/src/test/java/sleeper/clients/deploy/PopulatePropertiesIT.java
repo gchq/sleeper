@@ -45,7 +45,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -77,7 +77,7 @@ public class PopulatePropertiesIT {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
-        expected.set(SUBNET, "some-subnet");
+        expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
@@ -124,6 +124,6 @@ public class PopulatePropertiesIT {
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
         return PopulateInstanceProperties.builder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet");
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }

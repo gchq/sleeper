@@ -40,7 +40,7 @@ public class DeployNewTestInstance {
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
                 .instanceId(args[2])
                 .vpcId(args[3])
-                .subnetId(args[4])
+                .subnetIds(args[4])
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
                 .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .tableName("system-test")

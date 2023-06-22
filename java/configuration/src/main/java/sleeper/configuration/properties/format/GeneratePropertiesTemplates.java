@@ -52,7 +52,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGI
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -72,7 +72,7 @@ public class GeneratePropertiesTemplates {
             ACCOUNT, "1234567890",
             REGION, "eu-west-2",
             VPC_ID, "1234567890",
-            SUBNET, "subnet-abcdefgh");
+            SUBNETS, "subnet-abcdefgh");
 
     private static final Map<InstanceProperty, String> EMR_REPOSITORY_EXAMPLE_VALUES = Map.of(
             ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest",

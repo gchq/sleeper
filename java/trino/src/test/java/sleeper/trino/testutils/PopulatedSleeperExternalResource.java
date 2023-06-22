@@ -67,7 +67,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -76,7 +76,7 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * This class is a JUnit {@link ExternalResource} which starts a local S3 and DynamoDB within a Docker
+ * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
  * LocalStackContainer. Sleeper tables are created, with the data files themselves stored in a temporary directory on
  * the local disk.
  * <p>
@@ -158,7 +158,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         instanceProperties.set(ACCOUNT, "");
         instanceProperties.set(REGION, "");
         instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
+        instanceProperties.set(SUBNETS, "");
         instanceProperties.set(FILE_SYSTEM, "s3a://");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
@@ -234,7 +234,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, instanceProperties);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 InitialiseStateStore initialiseStateStore = InitialiseStateStore
-                    .createInitialiseStateStoreFromSplitPoints(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
+                        .createInitialiseStateStoreFromSplitPoints(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
                 initialiseStateStore.run();
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
             } catch (Exception e) {

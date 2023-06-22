@@ -29,7 +29,7 @@ public class PopulatePropertiesTestHelper {
     public static InstanceProperties generateTestInstanceProperties() {
         return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet").build().populate();
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet").build().populate();
     }
 
     public static TableProperties generateTestTableProperties() {

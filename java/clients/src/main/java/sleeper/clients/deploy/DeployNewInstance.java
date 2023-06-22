@@ -53,7 +53,7 @@ public class DeployNewInstance {
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
-    private final String subnetId;
+    private final String subnetIds;
     private final String tableName;
     private final Path instancePropertiesPath;
     private final Consumer<InstanceProperties> extraInstanceProperties;
@@ -68,7 +68,7 @@ public class DeployNewInstance {
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
-        subnetId = builder.subnetId;
+        subnetIds = builder.subnetIds;
         tableName = builder.tableName;
         instancePropertiesPath = builder.instancePropertiesPath;
         extraInstanceProperties = builder.extraInstanceProperties;
@@ -93,7 +93,7 @@ public class DeployNewInstance {
         builder().scriptsDirectory(scriptsDirectory)
                 .instanceId(args[1])
                 .vpcId(args[2])
-                .subnetId(args[3])
+                .subnetIds(args[3])
                 .tableName(args[4])
                 .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
@@ -114,7 +114,7 @@ public class DeployNewInstance {
 
         LOGGER.info("instanceId: {}", instanceId);
         LOGGER.info("vpcId: {}", vpcId);
-        LOGGER.info("subnetId: {}", subnetId);
+        LOGGER.info("subnetIds: {}", subnetIds);
         LOGGER.info("tableName: {}", tableName);
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
@@ -135,7 +135,7 @@ public class DeployNewInstance {
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
                 .instanceProperties(deployInstanceConfig.getInstanceProperties())
-                .instanceId(instanceId).vpcId(vpcId).subnetId(subnetId)
+                .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
         TableProperties tableProperties = PopulateTableProperties.builder()
@@ -175,7 +175,7 @@ public class DeployNewInstance {
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
-        private String subnetId;
+        private String subnetIds;
         private String tableName;
         private Path instancePropertiesPath;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
@@ -217,8 +217,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder subnetId(String subnetId) {
-            this.subnetId = subnetId;
+        public Builder subnetIds(String subnetIds) {
+            this.subnetIds = subnetIds;
             return this;
         }
 

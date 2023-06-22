@@ -64,7 +64,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
-                .vpcId(vpcId).subnetId(subnetId)
+                .vpcId(vpcId).subnetIds(subnetId)
                 .build().populate();
         singleKeyTableProperties = PopulateTableProperties.builder()
                 .instanceProperties(instanceProperties)
