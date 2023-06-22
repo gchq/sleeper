@@ -681,6 +681,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "If managed scaling is not used then the cluster will be of fixed size, with a number of " +
                     "instances equal to this value.")
             .defaultValue("1")
+            .validationPredicate(Utils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.max.capacity")
@@ -691,6 +692,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "the number of instances.\n" +
                     "This value is only used if managed scaling is used.")
             .defaultValue("10")
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.step.concurrency.level")
