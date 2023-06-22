@@ -33,7 +33,7 @@ public interface IngestJobStatusStore {
     default void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
     }
 
-    default void jobStarted(IngestJobStartedData startedData) {
+    default void jobStarted(IngestJobStartedEvent event) {
     }
 
     default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {

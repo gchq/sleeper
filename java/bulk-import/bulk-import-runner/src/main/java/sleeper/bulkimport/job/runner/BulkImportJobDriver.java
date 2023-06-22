@@ -47,7 +47,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.ingest.job.status.IngestJobStartedData.bulkImportJobStarted;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.bulkImportJobStarted;
 
 /**
  * This class executes a Spark job that reads in input Parquet files and writes

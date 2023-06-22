@@ -29,7 +29,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.job.status.IngestJobStartedData.ingestJobStarted;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
@@ -225,7 +225,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobAccepted(taskId, job, validationTime);
-            store.jobStarted(IngestJobStartedData.builder()
+            store.jobStarted(IngestJobStartedEvent.builder()
                     .taskId(taskId)
                     .job(job)
                     .startTime(startTime)

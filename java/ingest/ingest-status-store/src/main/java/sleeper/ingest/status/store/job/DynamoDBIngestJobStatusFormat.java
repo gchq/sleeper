@@ -29,7 +29,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
-import sleeper.ingest.job.status.IngestJobStartedData;
+import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -95,12 +95,12 @@ public class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedData startedData) {
-        return createJobRecord(startedData.getJob(), UPDATE_TYPE_STARTED)
-                .number(START_TIME, startedData.getStartTime().toEpochMilli())
-                .string(TASK_ID, startedData.getTaskId())
-                .number(INPUT_FILES_COUNT, startedData.getJob().getFiles().size())
-                .bool(START_OF_RUN, startedData.isStartOfRun())
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
+        return createJobRecord(event.getJob(), UPDATE_TYPE_STARTED)
+                .number(START_TIME, event.getStartTime().toEpochMilli())
+                .string(TASK_ID, event.getTaskId())
+                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
 

@@ -34,7 +34,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobStartedData;
+import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -96,11 +96,11 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobStarted(IngestJobStartedData startedData) {
+    public void jobStarted(IngestJobStartedEvent event) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(startedData));
+            PutItemResult result = putItem(format.createJobStartedRecord(event));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
-                    startedData.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
             throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
         }

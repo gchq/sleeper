@@ -21,13 +21,13 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.Objects;
 
-public class IngestJobStartedData {
+public class IngestJobStartedEvent {
     private final String taskId;
     private final IngestJob job;
     private final Instant startTime;
     private final boolean startOfRun;
 
-    private IngestJobStartedData(Builder builder) {
+    private IngestJobStartedEvent(Builder builder) {
         taskId = builder.taskId;
         job = Objects.requireNonNull(builder.job, "job must not be null");
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
@@ -38,7 +38,7 @@ public class IngestJobStartedData {
         return new Builder();
     }
 
-    public static IngestJobStartedData ingestJobStarted(String taskId, IngestJob job, Instant startTime) {
+    public static IngestJobStartedEvent ingestJobStarted(String taskId, IngestJob job, Instant startTime) {
         return builder()
                 .taskId(taskId)
                 .job(job)
@@ -47,7 +47,7 @@ public class IngestJobStartedData {
                 .build();
     }
 
-    public static IngestJobStartedData bulkImportJobStarted(String taskId, IngestJob job, Instant startTime) {
+    public static IngestJobStartedEvent bulkImportJobStarted(String taskId, IngestJob job, Instant startTime) {
         return builder()
                 .taskId(taskId)
                 .job(job)
@@ -80,7 +80,7 @@ public class IngestJobStartedData {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        IngestJobStartedData that = (IngestJobStartedData) o;
+        IngestJobStartedEvent that = (IngestJobStartedEvent) o;
         return Objects.equals(taskId, that.taskId) && Objects.equals(job, that.job) && Objects.equals(startTime, that.startTime);
     }
 
@@ -127,8 +127,8 @@ public class IngestJobStartedData {
             return this;
         }
 
-        public IngestJobStartedData build() {
-            return new IngestJobStartedData(this);
+        public IngestJobStartedEvent build() {
+            return new IngestJobStartedEvent(this);
         }
     }
 }

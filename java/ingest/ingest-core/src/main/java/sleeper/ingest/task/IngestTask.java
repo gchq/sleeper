@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.job.status.IngestJobStartedData.ingestJobStarted;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 public class IngestTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
