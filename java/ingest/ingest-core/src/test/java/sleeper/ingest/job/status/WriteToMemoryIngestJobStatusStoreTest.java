@@ -23,12 +23,14 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.IngestJob;
 
-import java.time.Duration;
 import java.time.Instant;
 
+import static java.time.Duration.ofSeconds;
+import static java.time.Instant.parse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
@@ -70,14 +72,14 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     public void shouldReturnOneFinishedJobWithFiles() {
         String tableName = "test-table";
         String taskId = "test-task";
-        Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
-        Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
+        Instant startTime = parse("2022-09-22T12:00:14.000Z");
+        Instant finishTime = parse("2022-09-22T12:00:44.000Z");
         IngestJob job = createJobWithTableAndFiles("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime, finishTime);
 
         store.jobStarted(ingestJobStarted(taskId, job, startTime));
-        store.jobFinished(taskId, job, summary);
+        store.jobFinished(ingestJobFinished(taskId, job, summary));
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job, finishedIngestRun(job, taskId, summary)));
     }
@@ -92,7 +94,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-        assertThatThrownBy(() -> store.jobFinished(taskId, job, summary))
+        assertThatThrownBy(() -> store.jobFinished(ingestJobFinished(taskId, job, summary)))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -101,17 +103,17 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String tableName = "test-table";
         String taskId = "test-task";
         IngestJob job = createJobWithTableAndFiles("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
-        Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
-        Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
+        Instant startTime1 = parse("2022-09-22T12:00:15.000Z");
+        Instant startTime2 = parse("2022-09-22T12:00:31.000Z");
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
-                new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+                new RecordsProcessed(100L, 100L), startTime1, ofSeconds(15));
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
-                new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+                new RecordsProcessed(200L, 200L), startTime2, ofSeconds(30));
 
         store.jobStarted(ingestJobStarted(taskId, job, startTime1));
-        store.jobFinished(taskId, job, summary1);
+        store.jobFinished(ingestJobFinished(taskId, job, summary1));
         store.jobStarted(ingestJobStarted(taskId, job, startTime2));
-        store.jobFinished(taskId, job, summary2);
+        store.jobFinished(ingestJobFinished(taskId, job, summary2));
 
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job,
@@ -125,17 +127,17 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String taskId = "test-task";
         IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet", "test-file-2.parquet");
         IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableName, "test-file-3.parquet");
-        Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
-        Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
+        Instant startTime1 = parse("2022-09-22T12:00:15.000Z");
+        Instant startTime2 = parse("2022-09-22T12:00:31.000Z");
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
-                new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+                new RecordsProcessed(100L, 100L), startTime1, ofSeconds(15));
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
-                new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+                new RecordsProcessed(200L, 200L), startTime2, ofSeconds(30));
 
         store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
-        store.jobFinished(taskId, job1, summary1);
+        store.jobFinished(ingestJobFinished(taskId, job1, summary1));
         store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
-        store.jobFinished(taskId, job2, summary2);
+        store.jobFinished(ingestJobFinished(taskId, job2, summary2));
 
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job2, finishedIngestRun(job2, taskId, summary2)),
@@ -150,18 +152,18 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String taskId = "test-task";
         IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName1, "test-file-1.parquet", "test-file-2.parquet");
         IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableName2, "test-file-3.parquet");
-        Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
-        Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
+        Instant startTime1 = parse("2022-09-22T12:00:15.000Z");
+        Instant startTime2 = parse("2022-09-22T12:00:31.000Z");
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
-                new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+                new RecordsProcessed(100L, 100L), startTime1, ofSeconds(15));
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
-                new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+                new RecordsProcessed(200L, 200L), startTime2, ofSeconds(30));
 
         // When
         store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
-        store.jobFinished(taskId, job1, summary1);
+        store.jobFinished(ingestJobFinished(taskId, job1, summary1));
         store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
-        store.jobFinished(taskId, job2, summary2);
+        store.jobFinished(ingestJobFinished(taskId, job2, summary2));
 
         // Then
         assertThat(store.getAllJobs(tableName2)).containsExactly(

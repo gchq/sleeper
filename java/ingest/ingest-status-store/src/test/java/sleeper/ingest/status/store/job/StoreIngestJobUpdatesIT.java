@@ -24,7 +24,9 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 
 import java.time.Instant;
 
+import static java.time.Instant.parse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
@@ -36,12 +38,12 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
     public void shouldReportIngestJobFinishedSeparatelyFromStarted() {
         // Given
         IngestJob job = jobWithFiles("file");
-        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Instant startedTime = parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime = parse("2022-12-14T13:51:42.001Z");
 
         // When
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -53,17 +55,17 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
     public void shouldReportLatestUpdatesWhenJobIsRunMultipleTimes() {
         // Given
         IngestJob job = jobWithFiles("file");
-        Instant startTime1 = Instant.parse("2022-10-03T15:19:01.001Z");
-        Instant finishTime1 = Instant.parse("2022-10-03T15:19:31.001Z");
-        Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
-        Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
+        Instant startTime1 = parse("2022-10-03T15:19:01.001Z");
+        Instant finishTime1 = parse("2022-10-03T15:19:31.001Z");
+        Instant startTime2 = parse("2022-10-03T15:19:02.001Z");
+        Instant finishTime2 = parse("2022-10-03T15:19:32.001Z");
         RecordsProcessed processed = new RecordsProcessed(200L, 100L);
 
         // When
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startTime1));
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID_2, job, startTime2));
-        store.jobFinished(DEFAULT_TASK_ID, job, new RecordsProcessedSummary(processed, startTime1, finishTime1));
-        store.jobFinished(DEFAULT_TASK_ID_2, job, new RecordsProcessedSummary(processed, startTime2, finishTime2));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, new RecordsProcessedSummary(processed, startTime1, finishTime1)));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID_2, job, new RecordsProcessedSummary(processed, startTime2, finishTime2)));
 
         // Then
         assertThat(getAllJobStatuses())

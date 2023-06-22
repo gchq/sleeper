@@ -24,7 +24,9 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 import java.time.Period;
 
+import static java.time.Instant.parse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
@@ -100,17 +102,17 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
     public void shouldIncludeFinishedStatusUpdateOutsidePeriod() {
         // Given
         IngestJob job = jobWithFiles("file");
-        Instant periodStart = Instant.parse("2023-01-02T14:52:00.001Z");
-        Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
-        Instant startedUpdateTime = Instant.parse("2023-01-03T14:50:00.123Z");
-        Instant periodEnd = Instant.parse("2023-01-03T14:52:00.001Z");
-        Instant finishedTime = Instant.parse("2023-01-03T14:56:00.001Z");
-        Instant finishedUpdateTime = Instant.parse("2023-01-03T14:56:00.123Z");
+        Instant periodStart = parse("2023-01-02T14:52:00.001Z");
+        Instant startedTime = parse("2023-01-03T14:50:00.001Z");
+        Instant startedUpdateTime = parse("2023-01-03T14:50:00.123Z");
+        Instant periodEnd = parse("2023-01-03T14:52:00.001Z");
+        Instant finishedTime = parse("2023-01-03T14:56:00.001Z");
+        Instant finishedUpdateTime = parse("2023-01-03T14:56:00.123Z");
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime, finishedUpdateTime);
 
         // When
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))

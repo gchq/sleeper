@@ -36,6 +36,14 @@ public class IngestJobFinishedEvent {
         return new Builder();
     }
 
+    public static IngestJobFinishedEvent ingestJobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+        return builder()
+                .taskId(taskId)
+                .job(job)
+                .summary(summary)
+                .build();
+    }
+
     public String getTaskId() {
         return taskId;
     }

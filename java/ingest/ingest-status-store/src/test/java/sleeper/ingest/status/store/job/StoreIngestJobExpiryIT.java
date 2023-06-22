@@ -26,7 +26,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoField;
 
+import static java.time.Duration.ofDays;
+import static java.time.Instant.parse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
 
@@ -51,14 +54,14 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
     public void shouldSetExpiryDateForFinishedJob() {
         // Given
         IngestJob job = jobWithFiles("test-file");
-        Instant startTime = Instant.parse("2022-12-15T11:32:42.001Z");
-        Instant finishTime = Instant.parse("2022-12-15T11:33:42.001Z");
-        Duration timeToLive = Duration.ofDays(7);
+        Instant startTime = parse("2022-12-15T11:32:42.001Z");
+        Instant finishTime = parse("2022-12-15T11:33:42.001Z");
+        Duration timeToLive = ofDays(7);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(startTime), defaultUpdateTime(finishTime));
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startTime));
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime)));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())

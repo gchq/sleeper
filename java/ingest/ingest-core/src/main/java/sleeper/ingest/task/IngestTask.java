@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 public class IngestTask {
@@ -93,7 +94,7 @@ public class IngestTask {
         } finally {
             Instant finishTime = getTimeNow.get();
             RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
-            jobStatusStore.jobFinished(taskId, job, summary);
+            jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
             taskBuilder.addJobSummary(summary);
         }
 
