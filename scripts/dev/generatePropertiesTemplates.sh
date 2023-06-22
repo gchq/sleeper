@@ -18,8 +18,15 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
-pushd "${PROJECT_ROOT}/java/configuration"
-mvn exec:java \
+pushd "${PROJECT_ROOT}/java"
+echo "Compiling..."
+mvn compile -Pquick -q -pl configuration -am
+
+pushd configuration
+echo "Regenerating templates..."
+mvn exec:java -q \
   -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
+
+popd
 popd

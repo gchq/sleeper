@@ -16,15 +16,15 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-	echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
-	exit 1
+  echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
+  exit 1
 fi
 
 ENVIRONMENT_ID=$1
 shift
 
 if [ "$#" -lt 2 ]; then
-	CDK_PARAMS=("--all")
+  CDK_PARAMS=("--all")
 else
   CDK_PARAMS=("$@")
 fi
@@ -42,15 +42,13 @@ pushd "$CDK_ROOT_DIR" > /dev/null
 cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" "${CDK_PARAMS[@]}"
 popd > /dev/null
 
+USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+
 echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
+echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"
 
-# If an EC2 was created, save SSH details
-SSH_KEY_FILE="$CDK_ROOT_DIR/$ENVIRONMENT_ID-BuildEC2.pem"
-if [ -f "$SSH_KEY_FILE" ]; then
-
-  echo "Saving SSH key file"
-  mv -f "$SSH_KEY_FILE" "$ENVIRONMENT_DIR/BuildEC2.pem"
-
-  # Wait for deployment, scan SSH to remember EC2 certificate
-  "$THIS_DIR/scan-ssh.sh"
+# If an EC2 was created, wait for deployment, make a test connection to remember SSH certificate
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].InstanceId" "$OUTPUTS_FILE" --raw-output)
+if [ "$INSTANCE_ID" != "null" ]; then
+  "$THIS_DIR/test-connection.sh"
 fi

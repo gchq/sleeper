@@ -27,12 +27,6 @@ public class InvokeLambda {
     private InvokeLambda() {
     }
 
-    public static void invoke(String lambdaFunction) {
-        try (LambdaClient lambda = LambdaClient.create()) {
-            invokeWith(lambda, lambdaFunction);
-        }
-    }
-
     public static void invokeWith(LambdaClient lambdaClient, String lambdaFunction) {
         LOGGER.info("Invoking lambda {}", lambdaFunction);
         lambdaClient.invoke(builder -> builder
