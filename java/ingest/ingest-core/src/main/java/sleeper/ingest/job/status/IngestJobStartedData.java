@@ -38,6 +38,24 @@ public class IngestJobStartedData {
         return new Builder();
     }
 
+    public static IngestJobStartedData ingestJobStarted(String taskId, IngestJob job, Instant startTime) {
+        return builder()
+                .taskId(taskId)
+                .job(job)
+                .startTime(startTime)
+                .startOfRun(true)
+                .build();
+    }
+
+    public static IngestJobStartedData bulkImportJobStarted(String taskId, IngestJob job, Instant startTime) {
+        return builder()
+                .taskId(taskId)
+                .job(job)
+                .startTime(startTime)
+                .startOfRun(true)
+                .build();
+    }
+
     public String getTaskId() {
         return taskId;
     }

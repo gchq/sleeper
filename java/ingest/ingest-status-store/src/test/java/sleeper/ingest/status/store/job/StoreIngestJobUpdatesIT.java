@@ -25,6 +25,7 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStartedData.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
@@ -39,7 +40,7 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
         store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
 
         // Then
@@ -59,8 +60,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         RecordsProcessed processed = new RecordsProcessed(200L, 100L);
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime1);
-        store.jobStarted(DEFAULT_TASK_ID_2, job, startTime2);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startTime1));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID_2, job, startTime2));
         store.jobFinished(DEFAULT_TASK_ID, job, new RecordsProcessedSummary(processed, startTime1, finishTime1));
         store.jobFinished(DEFAULT_TASK_ID_2, job, new RecordsProcessedSummary(processed, startTime2, finishTime2));
 

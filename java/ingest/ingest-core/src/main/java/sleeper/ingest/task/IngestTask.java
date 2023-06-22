@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
+import static sleeper.ingest.job.status.IngestJobStartedData.ingestJobStarted;
+
 public class IngestTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
 
@@ -83,7 +85,7 @@ public class IngestTask {
             throws IteratorException, StateStoreException, IOException {
 
         Instant startTime = getTimeNow.get();
-        jobStatusStore.jobStarted(taskId, job, startTime);
+        jobStatusStore.jobStarted(ingestJobStarted(taskId, job, startTime));
 
         IngestResult result = IngestResult.noFiles();
         try {
