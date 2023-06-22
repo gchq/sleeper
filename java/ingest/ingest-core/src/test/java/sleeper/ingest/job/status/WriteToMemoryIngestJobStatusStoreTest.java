@@ -39,6 +39,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRu
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -245,7 +246,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobRejected(taskId, job, validationTime, "Test validation reason");
+            store.jobRejected(ingestJobRejected(taskId, job, validationTime, "Test validation reason"));
 
             // Then
             assertThat(store.getAllJobs(tableName))

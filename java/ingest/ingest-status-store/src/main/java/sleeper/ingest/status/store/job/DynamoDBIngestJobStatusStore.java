@@ -37,6 +37,7 @@ import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.List;
@@ -85,11 +86,11 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+    public void jobRejected(IngestJobValidatedEvent event) {
         try {
-            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reason, taskId));
+            PutItemResult result = putItem(format.createJobRejectedRecord(event));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
-                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
             throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
         }

@@ -28,6 +28,7 @@ import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJob
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -56,7 +57,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
 
         // When
-        store.jobRejected(DEFAULT_TASK_ID, job, validationTime, "Test failure");
+        store.jobRejected(ingestJobRejected(DEFAULT_TASK_ID, job, validationTime, "Test failure"));
 
         // Then
         assertThat(getAllJobStatuses())

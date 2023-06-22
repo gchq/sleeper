@@ -33,6 +33,7 @@ import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.Map;
@@ -86,13 +87,12 @@ public class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobRejectedRecord(
-            IngestJob job, Instant validationTime, String reason, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
-                .number(VALIDATION_TIME, validationTime.toEpochMilli())
+    public Map<String, AttributeValue> createJobRejectedRecord(IngestJobValidatedEvent event) {
+        return createJobRecord(event.getJob(), UPDATE_TYPE_VALIDATED)
+                .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
                 .bool(VALIDATION_RESULT, false)
-                .string(VALIDATION_REASON, reason)
-                .string(TASK_ID, taskId)
+                .string(VALIDATION_REASON, event.getReason())
+                .string(TASK_ID, event.getTaskId())
                 .build();
     }
 
