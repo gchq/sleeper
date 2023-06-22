@@ -184,8 +184,8 @@ job specification:
   	"my-bucket/my-files/"
   ],
   "platformSpec": {
-  	"sleeper.table.bulk.import.emr.master.instance.type": "m5.xlarge",
-  	"sleeper.table.bulk.import.emr.executor.instance.type": "m5.4xlarge",
+  	"sleeper.table.bulk.import.emr.master.instance.types": "m5.xlarge",
+  	"sleeper.table.bulk.import.emr.executor.instance.types": "m5.4xlarge",
   	"sleeper.table.bulk.import.emr.executor.initial.instances": "2",
   	"sleeper.table.bulk.import.emr.executor.max.instances": "10"
   }
@@ -203,8 +203,8 @@ part of the job specification:
 
 ```properties
 sleeper.default.bulk.import.emr.release.label=emr-6.10.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This default can be overridden by a table property or by a property in the bulk import job specification.
-sleeper.default.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster.
-sleeper.default.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster.
+sleeper.default.bulk.import.emr.master.instance.types=m5.xlarge # The EC2 instance types to be used for the master node of the EMR cluster.
+sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge # The EC2 instance types to be used for the executor nodes of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.initial.instances=2 # The initial number of EC2 instances to be used as executors in the EMR cluster.
 sleeper.default.bulk.import.emr.executor.max.instances=10 # The maximum number of EC2 instances to be used as executors in the EMR cluster.
 ```
@@ -215,8 +215,8 @@ by properties in the job specification.
 
 ```properties
 sleeper.table.bulk.import.emr.release.label=emr-6.10.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
-sleeper.table.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
-sleeper.table.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
+sleeper.table.bulk.import.emr.master.instance.types=m5.xlarge # The EC2 instance types to be used for the master node of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
+sleeper.table.bulk.import.emr.executor.instance.types=m5.4xlarge # The EC2 instance types to be used for the executor nodes of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.initial.instances=2 # The initial number of EC2 instances to be used as executors in the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.max.instances=10 # The maximum number of EC2 instances to be used as executors in the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 ```
@@ -234,8 +234,8 @@ The other properties of the cluster are controlled using similar properties to t
 
 ```properties
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
-sleeper.bulk.import.persistent.emr.master.instance.type=m5.xlarge
-sleeper.bulk.import.persistent.emr.core.instance.type=m5.4xlarge
+sleeper.bulk.import.persistent.emr.master.instance.types=m5.xlarge
+sleeper.bulk.import.persistent.emr.core.instance.types=m5.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
 sleeper.bulk.import.persistent.emr.min.instances=1
 sleeper.bulk.import.persistent.emr.max.instances=10
