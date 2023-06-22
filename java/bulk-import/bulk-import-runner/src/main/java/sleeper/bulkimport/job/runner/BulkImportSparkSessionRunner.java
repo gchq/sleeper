@@ -74,7 +74,8 @@ public class BulkImportSparkSessionRunner {
         LOGGER.info("Initialising Spark");
         SparkConf sparkConf = new SparkConf();
         sparkConf.set("spark.serializer", KryoSerializer.class.getName());
-        sparkConf.registerKryoClasses(new Class[]{Partition.class});
+        sparkConf.set("spark.kryo.registrator", "sleeper.bulkimport.job.runner.dataframelocalsort.JdkImmutableListRegistrator");
+        sparkConf.registerKryoClasses(new Class[]{Partition.class, List.of().getClass()});
         SparkSession session = new SparkSession.Builder().config(sparkConf).getOrCreate();
         scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters.collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
         session.experimental().extraStrategies_$eq(strategies);
