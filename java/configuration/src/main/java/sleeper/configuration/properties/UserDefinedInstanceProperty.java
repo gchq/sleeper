@@ -650,7 +650,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.core.instance.types")
             .description("(Persistent EMR mode only) The EC2 instance types used for the executor nodes of the " +
                     "persistent EMR cluster. Multiple instance types can be specified separated by commas. " +
-                    "Instance types will be chosen from the list based on the capacity available." +
+                    "Instance types will be chosen from the list based on the capacity available.\n" +
                     "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
                     "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
                     "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
