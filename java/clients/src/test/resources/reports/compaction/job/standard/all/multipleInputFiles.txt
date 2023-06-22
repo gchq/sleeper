@@ -1,0 +1,18 @@
+
+Compaction Job Status Report
+----------------------------
+Total jobs: 1
+
+Total standard jobs: 1
+Total standard jobs pending: 1
+Total standard jobs in progress: 0
+Total standard jobs finished: 0
+
+Total splitting jobs: 0
+Total splitting jobs pending: 0
+Total splitting jobs in progress: 0
+Total splitting jobs finished: 0
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE   | CREATE_TIME              | JOB_ID   | INPUT_FILES | PARTITION_ID   | TYPE    | TASK_ID | START_TIME | FINISH_TIME | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
+| PENDING | 2022-10-13T12:00:00.001Z | test-job |           5 | test-partition | COMPACT |         |            |             |          |              |                 |               |                |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

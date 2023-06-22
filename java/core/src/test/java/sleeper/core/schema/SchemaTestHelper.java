@@ -16,6 +16,7 @@
 package sleeper.core.schema;
 
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 
 public class SchemaTestHelper {
 
@@ -23,7 +24,11 @@ public class SchemaTestHelper {
     }
 
     public static Schema schemaWithKey(String key) {
-        return Schema.builder().rowKeyFields(new Field(key, new LongType())).build();
+        return schemaWithKey(key, new LongType());
+    }
+
+    public static Schema schemaWithKey(String key, PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field(key, type)).build();
     }
 
 }

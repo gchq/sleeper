@@ -43,7 +43,7 @@ import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReference;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -127,8 +127,8 @@ public class CommonEmrBulkImportHelper {
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);
-        addIngestSourceBucketReference(scope, "IngestBucket", instanceProperties)
-                .ifPresent(ingestBucket -> ingestBucket.grantRead(function));
+        addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
+                .forEach(ingestBucket -> ingestBucket.grantRead(function));
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)

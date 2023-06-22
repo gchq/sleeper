@@ -15,12 +15,13 @@
  */
 package sleeper.systemtest.cdk;
 
-import sleeper.clients.cdk.InvokeCdkForInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class DeployNewTestInstance {
@@ -29,16 +30,20 @@ public class DeployNewTestInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (5 != args.length) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
+        if (args.length < 5 || args.length > 7) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
+                    "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
+
         DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
                 .instancePropertiesTemplate(Path.of(args[1]))
                 .extraInstanceProperties(properties ->
                         properties.setProperty(SYSTEM_TEST_REPO.getPropertyName(), args[2] + "/system-test"))
                 .instanceId(args[2])
                 .vpcId(args[3])
-                .subnetId(args[4])
+                .subnetIds(args[4])
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
                 .tableName("system-test")
                 .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
                 .deployWithDefaultClients();

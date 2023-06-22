@@ -32,12 +32,12 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
-public class CompactionJobStatusTest {
+class CompactionJobStatusTest {
 
     private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
     @Test
-    public void shouldBuildCompactionJobCreatedFromJob() {
+    void shouldBuildCompactionJobCreatedFromJob() {
         // Given
         Partition partition = dataHelper.singlePartition();
         CompactionJob job = dataHelper.singleFileCompaction(partition);
@@ -52,7 +52,7 @@ public class CompactionJobStatusTest {
     }
 
     @Test
-    public void shouldBuildSplittingCompactionJobCreatedFromJob() {
+    void shouldBuildSplittingCompactionJobCreatedFromJob() {
         // Given
         CompactionJob job = dataHelper.singleFileSplittingCompaction("root", "left", "right");
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
@@ -66,7 +66,7 @@ public class CompactionJobStatusTest {
     }
 
     @Test
-    public void shouldReportCompactionJobNotStarted() {
+    void shouldReportCompactionJobNotStarted() {
         // Given
         CompactionJob job = dataHelper.singleFileCompaction();
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
@@ -80,7 +80,7 @@ public class CompactionJobStatusTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobStarted() {
+    void shouldBuildCompactionJobStarted() {
         // Given
         CompactionJob job = dataHelper.singleFileCompaction();
 
@@ -94,7 +94,7 @@ public class CompactionJobStatusTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobFinished() {
+    void shouldBuildCompactionJobFinished() {
         // Given
         CompactionJob job = dataHelper.singleFileCompaction();
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");

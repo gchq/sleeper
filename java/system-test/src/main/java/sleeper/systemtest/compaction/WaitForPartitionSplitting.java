@@ -13,55 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.systemtest.compaction;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.QueueAttributeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
+import sleeper.core.util.PollWithRetries;
+import sleeper.splitter.FindPartitionToSplitResult;
+import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.systemtest.util.PollWithRetries;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static java.util.function.Predicate.not;
 
 public class WaitForPartitionSplitting {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
     private static final long POLL_INTERVAL_MILLIS = 5000;
     private static final int MAX_POLLS = 12;
+    private final List<FindPartitionToSplitResult> toSplit;
 
-    private final AmazonSQS sqsClient;
-    private final InstanceProperties instanceProperties;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
-
-    public WaitForPartitionSplitting(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        this.sqsClient = sqsClient;
-        this.instanceProperties = instanceProperties;
+    private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
+        this.toSplit = toSplit;
     }
 
-    public void pollUntilFinished() throws InterruptedException {
-        poll.pollUntil("partition splits finished", this::isPartitionSplitsFinished);
+    public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
+            TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+        return new WaitForPartitionSplitting(
+                FindPartitionsToSplit.getResults(tableProperties, stateStore));
     }
 
-    private boolean isPartitionSplitsFinished() {
-        int unconsumedMessages = getUnconsumedPartitionSplitMessages();
-        LOGGER.info("Unfinished partition splits: {}", unconsumedMessages);
-        return unconsumedMessages == 0;
+    public void pollUntilFinished(StateStore stateStore) throws InterruptedException {
+        PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS)
+                .pollUntil("partition splits finished", () -> this.isSplitFinished(stateStore));
     }
 
-    private int getUnconsumedPartitionSplitMessages() {
-        GetQueueAttributesResult result = sqsClient.getQueueAttributes(new GetQueueAttributesRequest()
-                .withQueueUrl(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL))
-                .withAttributeNames(
-                        QueueAttributeName.ApproximateNumberOfMessages,
-                        QueueAttributeName.ApproximateNumberOfMessagesNotVisible));
-        return getInt(result, QueueAttributeName.ApproximateNumberOfMessages) +
-                getInt(result, QueueAttributeName.ApproximateNumberOfMessagesNotVisible);
+    public boolean isSplitFinished(StateStore stateStore) {
+        Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
+
+        return toSplit.stream()
+                .map(FindPartitionToSplitResult::getPartition)
+                .map(Partition::getId)
+                .allMatch(not(leafPartitionIds::contains));
     }
 
-    private static int getInt(GetQueueAttributesResult result, QueueAttributeName attribute) {
-        return Integer.parseInt(result.getAttributes().get(attribute.toString()));
+    private Set<String> getLeafPartitionIds(StateStore stateStore) {
+        try {
+            return stateStore.getLeafPartitions().stream()
+                    .map(Partition::getId)
+                    .collect(Collectors.toSet());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -35,8 +35,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
@@ -103,8 +103,8 @@ public class ECSIngestTask {
                                               Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
-        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
-        IngestJobStatusStore jobStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
+        IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
                 instanceProperties,

@@ -26,11 +26,14 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminConfigStore;
-import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.clients.admin.AdminClientPropertiesStore;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 import static org.mockito.Mockito.mock;
@@ -53,16 +56,13 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @TempDir
     protected Path tempDir;
 
-    protected String runClientGetOutput() {
-        return runClientGetOutput(client());
+    @Override
+    public AdminClientPropertiesStore getStore() {
+        return new AdminClientPropertiesStore(s3, null, cdk, tempDir);
     }
 
-    protected AdminClient client() {
-        return new AdminClient(store(), out.consoleOut(), in.consoleIn());
-    }
-
-    protected AdminConfigStore store() {
-        return new AdminConfigStore(s3, cdk, tempDir);
+    protected AdminClientPropertiesStore store() {
+        return getStore();
     }
 
     @BeforeEach
@@ -76,6 +76,25 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                 .forEach(object -> s3.deleteObject(CONFIG_BUCKET_NAME, object.getKey()));
         s3.deleteBucket(CONFIG_BUCKET_NAME);
         s3.shutdown();
+    }
+
+    @Override
+    public void setInstanceProperties(InstanceProperties instanceProperties) {
+        try {
+            instanceProperties.saveToS3(s3);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        setInstanceProperties(instanceProperties);
+        try {
+            tableProperties.saveToS3(s3);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

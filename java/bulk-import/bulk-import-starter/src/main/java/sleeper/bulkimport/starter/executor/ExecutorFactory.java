@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.function.UnaryOperator;
@@ -35,6 +37,7 @@ public class ExecutorFactory {
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
     private final AmazonS3 s3Client;
     private final AmazonElasticMapReduce emrClient;
     private final AWSStepFunctions stepFunctionsClient;
@@ -42,17 +45,20 @@ public class ExecutorFactory {
 
     public ExecutorFactory(AmazonS3 s3Client,
                            AmazonElasticMapReduce emrClient,
-                           AWSStepFunctions stepFunctionsClient) throws IOException {
-        this(s3Client, emrClient, stepFunctionsClient, System::getenv);
+                           AWSStepFunctions stepFunctionsClient,
+                           AmazonDynamoDB dynamoDB) throws IOException {
+        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, System::getenv);
     }
 
     ExecutorFactory(AmazonS3 s3Client,
                     AmazonElasticMapReduce emrClient,
                     AWSStepFunctions stepFunctionsClient,
+                    AmazonDynamoDB dynamoDB,
                     UnaryOperator<String> getEnvironmentVariable) throws IOException {
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, getEnvironmentVariable.apply(CONFIG_BUCKET.toEnvironmentVariable()));
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
         this.s3Client = s3Client;
         this.emrClient = emrClient;
         this.stepFunctionsClient = stepFunctionsClient;
@@ -63,11 +69,11 @@ public class ExecutorFactory {
     public Executor createExecutor() {
         switch (bulkImportPlatform) {
             case "NonPersistentEMR":
-                return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, s3Client);
+                return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
             case "EKS":
-                return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, s3Client);
+                return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
             case "PersistentEMR":
-                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, s3Client);
+                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }

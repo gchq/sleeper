@@ -15,35 +15,58 @@
  */
 package sleeper.clients;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.clients.admin.AdminConfigStore;
+import sleeper.clients.admin.AdminClientPropertiesStore;
+import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.AdminMainScreen;
-import sleeper.clients.admin.InstancePropertyReport;
+import sleeper.clients.admin.CompactionStatusReportScreen;
+import sleeper.clients.admin.FilesStatusReportScreen;
+import sleeper.clients.admin.IngestStatusReportScreen;
+import sleeper.clients.admin.InstanceConfigurationScreen;
+import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
-import sleeper.clients.admin.TablePropertyReportScreen;
-import sleeper.clients.admin.UpdatePropertyScreen;
-import sleeper.clients.cdk.InvokeCdkForInstance;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
+import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.function.Function;
 
 public class AdminClient {
 
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
+    private final AdminClientStatusStoreFactory statusStores;
+    private final UpdatePropertiesWithNano editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
+    private final QueueMessageCount.Client queueClient;
+    private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
-    public AdminClient(AdminConfigStore store, ConsoleOutput out, ConsoleInput in) {
+    public AdminClient(AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
+                       UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in,
+                       QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.store = store;
+        this.statusStores = statusStores;
+        this.editor = editor;
         this.out = out;
         this.in = in;
+        this.queueClient = queueClient;
+        this.getStepCount = getStepCount;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id>");
         }
@@ -57,29 +80,51 @@ public class AdminClient {
                 .instancePropertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version).build();
 
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         new AdminClient(
-                new AdminConfigStore(AmazonS3ClientBuilder.defaultClient(), cdk, generatedDir),
+                new AdminClientPropertiesStore(
+                        AmazonS3ClientBuilder.defaultClient(),
+                        dynamoDB,
+                        cdk, generatedDir),
+                AdminClientStatusStoreFactory.from(dynamoDB),
+                new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
-                new ConsoleInput(System.console())).start(instanceId);
+                new ConsoleInput(System.console()),
+                QueueMessageCount.withSqsClient(AmazonSQSClientBuilder.defaultClient()),
+                (properties -> PersistentEMRStepCount.byStatus(properties, AmazonElasticMapReduceClientBuilder.defaultClient())))
+                .start(instanceId);
     }
 
-    public void start(String instanceId) {
-        new AdminMainScreen(out, in).mainLoop(this, instanceId);
+    public void start(String instanceId) throws InterruptedException {
+        try {
+            store.loadInstanceProperties(instanceId);
+            new AdminMainScreen(out, in).mainLoop(this, instanceId);
+        } catch (AdminClientPropertiesStore.CouldNotLoadInstanceProperties e) {
+            e.print(out);
+        }
     }
 
-    public InstancePropertyReport instancePropertyReport() {
-        return new InstancePropertyReport(out, in, store);
+    public InstanceConfigurationScreen instanceConfigurationScreen() {
+        return new InstanceConfigurationScreen(out, in, store, editor);
     }
 
     public TableNamesReport tableNamesReport() {
         return new TableNamesReport(out, in, store);
     }
 
-    public TablePropertyReportScreen tablePropertyReportScreen() {
-        return new TablePropertyReportScreen(out, in, store);
+    public PartitionsStatusReportScreen partitionsStatusReportScreen() {
+        return new PartitionsStatusReportScreen(out, in, store);
     }
 
-    public UpdatePropertyScreen updatePropertyScreen() {
-        return new UpdatePropertyScreen(out, in, store);
+    public FilesStatusReportScreen filesStatusReportScreen() {
+        return new FilesStatusReportScreen(out, in, store);
+    }
+
+    public CompactionStatusReportScreen compactionStatusReportScreen() {
+        return new CompactionStatusReportScreen(out, in, store, statusStores);
+    }
+
+    public IngestStatusReportScreen ingestStatusReportScreen() {
+        return new IngestStatusReportScreen(out, in, store, statusStores, queueClient, getStepCount);
     }
 }

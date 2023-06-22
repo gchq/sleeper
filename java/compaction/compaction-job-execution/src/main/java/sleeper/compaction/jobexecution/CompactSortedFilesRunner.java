@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -46,7 +46,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
@@ -65,9 +64,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
@@ -221,10 +217,8 @@ public class CompactSortedFilesRunner {
 
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(compactionJob.getTableName());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, objectFactory,
-                tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
-                stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
-                tableProperties.get(COMPRESSION_CODEC), taskId);
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
+                compactionJob, stateStore, jobStatusStore, taskId);
         RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Delete message from queue
@@ -241,8 +235,8 @@ public class CompactSortedFilesRunner {
             throws InterruptedException, IOException, ObjectFactoryException, ActionException {
         if (2 != args.length) {
             System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
-                            + args.length
-                            + " arguments (" + StringUtils.join(args, ',') + ")");
+                    + args.length
+                    + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
 
@@ -258,9 +252,9 @@ public class CompactSortedFilesRunner {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient,
+        CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
-        CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient,
+        CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                 instanceProperties);
 
         String sqsJobQueueUrl;

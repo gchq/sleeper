@@ -26,8 +26,16 @@ import sleeper.core.schema.SchemaSerDe;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
@@ -35,7 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
@@ -47,7 +55,7 @@ class GeneratePropertiesTest {
     void shouldGenerateInstancePropertiesCorrectly() {
         // Given/When
         InstanceProperties properties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().generate();
 
         // Then
@@ -57,7 +65,7 @@ class GeneratePropertiesTest {
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
-        expected.set(SUBNET, "some-subnet");
+        expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
@@ -68,10 +76,35 @@ class GeneratePropertiesTest {
     }
 
     @Test
+    void shouldGenerateTearDownDefaultInstancePropertiesCorrectly() {
+        // Given/When
+        InstanceProperties properties = generateTearDownDefaultsFromInstanceId("test-instance");
+
+        // Then
+        InstanceProperties expected = new InstanceProperties();
+        expected.set(ID, "test-instance");
+        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
+        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
+        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
+        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
+        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
+        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
+        expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
+        expected.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionTasksCreationRule");
+        expected.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-SplittingCompactionTasksCreationRule");
+        expected.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-instance-FindPartitionsToSplitPeriodicTrigger");
+        expected.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-instance-GarbageCollectorPeriodicTrigger");
+        expected.set(INGEST_CLOUDWATCH_RULE, "test-instance-IngestTasksCreationRule");
+        expected.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-IngestBatcherJobCreationRule");
+
+        assertThat(properties).isEqualTo(expected);
+    }
+
+    @Test
     void shouldGenerateTablePropertiesCorrectly() {
         // Given
         InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().generate();
         TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
                 new SchemaSerDe().toJson(schemaWithKey("key")),
@@ -91,7 +124,7 @@ class GeneratePropertiesTest {
     void shouldRetainWhitespaceInSchema() {
         // Given
         InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().generate();
         String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
                 "\"name\":\"key\",\"type\":\"LongType\"\n" +

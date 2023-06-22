@@ -30,8 +30,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
@@ -130,12 +129,8 @@ public abstract class IngestJobQueueConsumerTestBase {
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
             String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", getIngestBucket(), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(new Path(FILE_SYSTEM_PREFIX + fileWithoutSystemPrefix),
-                    SchemaConverter.getSchema(recordListAndSchema.sleeperSchema), recordListAndSchema.sleeperSchema)
-                    .withRowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                    .withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                    .withConf(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                    .build();
+            Path path = new Path(FILE_SYSTEM_PREFIX + fileWithoutSystemPrefix);
+            ParquetWriter<Record> writer =  ParquetRecordWriterFactory.createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
             for (Record record : recordListAndSchema.recordList) {
                 writer.write(record);
             }

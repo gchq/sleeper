@@ -27,7 +27,6 @@ import java.util.Properties;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
@@ -92,7 +91,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
@@ -165,48 +164,6 @@ class InstancePropertiesTest {
         assertThat(pageSizeString).isEqualTo("100");
         assertThat(pageSizeInt).isEqualTo(Integer.valueOf(100));
         assertThat(pageSizeLong).isEqualTo(Long.valueOf(100L));
-    }
-
-    @Test
-    void shouldThrowExceptionOnLoadIfRequiredPropertyIsMissing() throws IOException {
-        // Given - no account set
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(JARS_BUCKET, "jars");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(ID, "test");
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
-
-        // When
-        String serialised = instanceProperties.saveAsString();
-
-        // Then
-        InstanceProperties properties = new InstanceProperties();
-        assertThatThrownBy(() -> properties.loadFromString(serialised))
-                .hasMessageContaining(ACCOUNT.getPropertyName());
-    }
-
-    @Test
-    void shouldThrowExceptionOnLoadIfPropertyIsInvalid() throws IOException {
-        // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ACCOUNT, "12345");
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(JARS_BUCKET, "jars");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(ID, "test");
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
-
-        // When
-        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "-1");
-        String serialised = instanceProperties.saveAsString();
-
-        // Then
-        InstanceProperties properties = new InstanceProperties();
-        assertThatThrownBy(() -> properties.loadFromString(serialised))
-                .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
     }
 
     @Test
@@ -287,7 +244,7 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 100);
         instanceProperties.setNumber(MAXIMUM_CONCURRENT_INGEST_TASKS, 200);
         instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
+        instanceProperties.set(SUBNETS, "subnet1");
         instanceProperties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 20);
         instanceProperties.setNumber(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 700);

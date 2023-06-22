@@ -27,8 +27,8 @@ import java.util.List;
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemDefinedInstanceProperty extends InstanceProperty {
     SystemDefinedInstanceProperty VERSION = Index.propertyBuilder("sleeper.version")
-            .description("The version of Sleeper that is being used. This property is used to identify the correct jars in the S3JarsBucket and to " +
-                    "select the correct tag in the ECR repositories.")
+            .description("The version of Sleeper that is being used. This property is used to identify the correct " +
+                    "jars in the S3 jars bucket and to select the correct tag in the ECR repositories.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
     // Configuration
@@ -189,6 +189,26 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the dead letter queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.url")
+            .description("The URL of the queue for ingest batcher file submission.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.url")
+            .description("The URL of the dead letter queue for ingest batcher file submission.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.rule")
+            .description("The name of the CloudWatch rule to trigger the batcher to create jobs from file ingest requests.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.lambda")
+            .description("The name of the ingest batcher Lambda to create jobs from file ingest requests.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.submit.lambda")
+            .description("The name of the ingest batcher Lambda to submit file ingest requests.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
     SystemDefinedInstanceProperty INGEST_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.ingest.task.definition.family")
             .description("The name of the family of task definitions used for ingest tasks.")
             .propertyGroup(InstancePropertyGroup.INGEST)
@@ -228,6 +248,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     // Bulk import using persistent EMR
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using persistent EMR.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.cluster.name")
+            .description("The name of the cluster used for persistent EMR bulk import jobs.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master")

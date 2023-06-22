@@ -23,15 +23,21 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class SplitPartitionsUntilNoMoreSplits {
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionsUntilNoMoreSplits.class);
@@ -39,7 +45,7 @@ public class SplitPartitionsUntilNoMoreSplits {
     private SplitPartitionsUntilNoMoreSplits() {
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, StateStoreException {
         if (args.length != 2) {
             System.out.println("Usage: <instance id> <table name>");
             return;
@@ -54,14 +60,27 @@ public class SplitPartitionsUntilNoMoreSplits {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
-        WaitForCurrentSplitAddingMissingJobs applySplit = new WaitForCurrentSplitAddingMissingJobs(
-                sqsClient, store, systemTestProperties, tableName);
+        TableProperties tableProperties = new TableProperties(systemTestProperties);
+        tableProperties.loadFromS3(s3Client, tableName);
+        StateStore stateStore = new StateStoreProvider(dynamoDBClient, systemTestProperties)
+                .getStateStore(tableProperties);
 
-        do {
-            LOGGER.info("Splitting partitions");
-            InvokeSystemTestLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
-        } while (applySplit.checkIfSplittingNeededAndWait()); // Repeat until no more splitting is needed
+        try (LambdaClient lambdaClient = createSystemTestLambdaClient()) {
+            InvokeSystemTestLambda.Client lambda = InvokeSystemTestLambda.client(lambdaClient, systemTestProperties);
+            WaitForCurrentSplitAddingMissingJobs applySplit = WaitForCurrentSplitAddingMissingJobs.from(
+                    lambda, sqsClient, store, systemTestProperties, tableName);
+
+            int splittingRound = 1;
+            do {
+                WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
+                        .forCurrentPartitionsNeedingSplitting(tableProperties, stateStore);
+                LOGGER.info("Splitting partitions, round {}", splittingRound);
+                splittingRound++;
+                lambda.invokeLambda(PARTITION_SPLITTING_LAMBDA_FUNCTION);
+                waitForPartitionSplitting.pollUntilFinished(stateStore);
+            } while (applySplit.checkIfSplittingCompactionNeededAndWait()); // Repeat until no more splitting is needed
+        }
     }
 }

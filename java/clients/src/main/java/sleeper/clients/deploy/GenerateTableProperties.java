@@ -37,7 +37,8 @@ public class GenerateTableProperties {
         return from(instanceProperties, new SchemaSerDe().toJson(schema), new Properties(), tableName);
     }
 
-    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson, Properties properties, String tableName) {
+    public static TableProperties from(InstanceProperties instanceProperties, String schemaJson,
+                                       Properties properties, String tableName) {
         properties.setProperty(SCHEMA.getPropertyName(), schemaJson);
         properties.setProperty(TABLE_NAME.getPropertyName(), tableName);
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);

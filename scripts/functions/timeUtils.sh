@@ -15,7 +15,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/stringUtils.sh"
 
 time_str() {
-  date -u +"$(time_format)"
+  date -u +"$(time_format "$@")"
 }
 
 record_time() {
@@ -24,16 +24,24 @@ record_time() {
 
 if date -d @0 &>/dev/null; then
   recorded_time_str() {
-    date -ud "@$1" +"$(time_format)"
+    local TIMESTAMP=$1
+    shift
+    date -ud "@$TIMESTAMP" +"$(time_format "$@")"
   }
 else
   recorded_time_str() {
-    date -ur "$1" +"$(time_format)"
+    local TIMESTAMP=$1
+    shift
+    date -ur "$TIMESTAMP" +"$(time_format "$@")"
   }
 fi
 
 time_format() {
-  echo "%Y-%m-%d %T UTC"
+  if [ "$#" -ge 1 ]; then
+    echo "$1"
+  else
+    echo "%Y-%m-%d %T UTC"
+  fi
 }
 
 elapsed_time_str() {

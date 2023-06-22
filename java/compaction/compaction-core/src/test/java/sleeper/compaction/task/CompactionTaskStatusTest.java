@@ -22,9 +22,10 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.task.CompactionTaskStatusTestData.finishedStatusBuilder;
+import static sleeper.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class CompactionTaskStatusTest {
@@ -66,18 +67,10 @@ public class CompactionTaskStatusTest {
                 .containsExactly(3, Duration.ofSeconds(30));
         assertThat(status.asProcessRun()).extracting("taskId",
                         "startTime", "finishTime", "finishedSummary.duration",
-                        "finishedSummary.linesRead", "finishedSummary.linesWritten",
+                        "finishedSummary.recordsRead", "finishedSummary.recordsWritten",
                         "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")
                 .containsExactly("test-task-id",
                         taskStartedTime, taskFinishedTime, Duration.ofSeconds(50),
                         3000L, 1500L, 100.0, 50.0);
-    }
-
-    private static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
-        return CompactionTaskStatus.builder().taskId("test-task-id").startTime(startTime);
-    }
-
-    private static CompactionTaskFinishedStatus.Builder finishedStatusBuilder(RecordsProcessedSummary... jobSummaries) {
-        return CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(jobSummaries));
     }
 }

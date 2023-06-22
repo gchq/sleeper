@@ -17,31 +17,20 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-
-import java.util.List;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import sleeper.statestore.StateStoreProvider;
 
 public abstract class AbstractEmrExecutor extends Executor {
 
-    public AbstractEmrExecutor(
+    protected AbstractEmrExecutor(
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
             AmazonS3 amazonS3Client) {
-        super(instanceProperties, tablePropertiesProvider, amazonS3Client);
-    }
-
-    @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        List<String> args = super.constructArgs(bulkImportJob);
-        args.add(bulkImportJob.getId());
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        return args;
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3Client);
     }
 
     @Override

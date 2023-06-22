@@ -39,7 +39,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
     public void shouldCreateStore() {
         // When
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
@@ -54,7 +54,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
 
         // When
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))

@@ -16,7 +16,6 @@
 package sleeper.compaction.jobexecution.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.assertj.core.groups.Tuple;
 
 import sleeper.compaction.job.CompactionJob;
@@ -24,12 +23,12 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
-import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -86,9 +85,11 @@ public class CompactSortedFilesTestUtils {
 
     public static CompactSortedFiles createCompactSortedFiles(
             Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore, String taskId) {
-        return new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
-                schema, SchemaConverter.getSchema(schema), compactionJob, stateStore, jobStatusStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", taskId);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        return new CompactSortedFiles(instanceProperties, tableProperties, ObjectFactory.noUserJars(),
+                compactionJob, stateStore, jobStatusStore, taskId);
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {
@@ -111,5 +112,4 @@ public class CompactSortedFilesTestUtils {
             fail("StateStoreException generated: " + e.getMessage());
         }
     }
-
 }

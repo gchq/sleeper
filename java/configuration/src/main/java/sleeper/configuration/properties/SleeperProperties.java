@@ -23,6 +23,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.Utils;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -31,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -62,9 +66,24 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         validate();
     }
 
-    protected abstract void validate();
+    public final void validate() {
+        SleeperPropertiesValidationReporter reporter = new SleeperPropertiesValidationReporter();
+        validate(reporter);
+        reporter.throwIfFailed();
+    }
 
-    protected abstract boolean isKnownProperty(String propertyName);
+    protected void validate(SleeperPropertiesValidationReporter reporter) {
+        getPropertiesIndex().getUserDefined().forEach(property ->
+                property.validate(get(property), reporter));
+    }
+
+    public abstract SleeperPropertyIndex<T> getPropertiesIndex();
+
+    protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
+
+    public void saveUsingPrettyPrinter(PrintWriter writer) {
+        this.getPrettyPrinter(writer).print(this);
+    }
 
     public String get(T property) {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
@@ -86,8 +105,15 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return Double.parseDouble(get(property));
     }
 
+    public long getBytes(T property) {
+        return Utils.readBytes(get(property));
+    }
+
     public List<String> getList(T property) {
-        String value = get(property);
+        return readList(get(property));
+    }
+
+    public static List<String> readList(String value) {
         return value == null ? null : Lists.newArrayList(value.split(","));
     }
 
@@ -115,7 +141,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.containsKey(property.getPropertyName());
     }
 
-    protected Properties getProperties() {
+    public Properties getProperties() {
         return properties;
     }
 
@@ -176,6 +202,14 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.stringPropertyNames().stream()
                 .filter(not(this::isKnownProperty))
                 .map(name -> Map.entry(name, properties.getProperty(name)));
+    }
+
+    private boolean isKnownProperty(String propertyName) {
+        return getPropertiesIndex().getByName(propertyName).isPresent();
+    }
+
+    public Map<String, String> toMap() {
+        return PropertiesUtils.toMap(properties);
     }
 
     @Override

@@ -15,8 +15,8 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
 
 import java.util.List;
 
@@ -26,9 +26,9 @@ public class TableNamesReport {
 
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final AdminConfigStore store;
+    private final AdminClientPropertiesStore store;
 
-    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store) {
         this.out = out;
         this.in = in;
         this.store = store;
@@ -40,7 +40,7 @@ public class TableNamesReport {
 
     private void print(List<String> tableNames) {
 
-        out.println("\n\n Table Names Report \n -------------------------");
+        out.println("\n\nTable Names\n----------------------------------");
         for (String tableName : tableNames) {
             out.println(tableName);
         }

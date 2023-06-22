@@ -17,27 +17,27 @@ package sleeper.query.model.output;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.query.model.Query;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.io.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
 
 /**
  * An implementation of {@link ResultsOutput} that writes results to Parquet files in an S3 bucket.
@@ -50,15 +50,16 @@ public class S3ResultsOutput implements ResultsOutput {
     public static final String COMPRESSION_CODEC = "compressionCodec";
     public static final String ROW_GROUP_SIZE = "rowGroupSize";
     public static final String PAGE_SIZE = "pageSize";
-    private final Schema schema;
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
+    private final Map<String, String> config;
     private String s3Bucket;
-    private final String compressionCodec;
     private final String fileSystem;
-    private final long rowGroupSize;
-    private final int pageSize;
 
-    public S3ResultsOutput(InstanceProperties instanceProperties, Schema schema, Map<String, String> config) {
-        this.schema = schema;
+    public S3ResultsOutput(InstanceProperties instanceProperties, TableProperties tableProperties, Map<String, String> config) {
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        this.config = config;
         this.s3Bucket = config.get(S3_BUCKET);
         if (null == this.s3Bucket) {
             this.s3Bucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
@@ -66,14 +67,7 @@ public class S3ResultsOutput implements ResultsOutput {
         if (null == this.s3Bucket) {
             throw new IllegalArgumentException("Bucket to output results to cannot be found in either the config or the instance properties");
         }
-
-        String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
-        String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
-
-        this.compressionCodec = config.getOrDefault(COMPRESSION_CODEC, "zstd");
         this.fileSystem = instanceProperties.get(FILE_SYSTEM);
-        this.rowGroupSize = Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize));
-        this.pageSize = Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize));
     }
 
     @Override
@@ -81,14 +75,9 @@ public class S3ResultsOutput implements ResultsOutput {
         String outputFile = fileSystem + s3Bucket + "/query-" + query.getQueryId() + "/" + UUID.randomUUID() + ".parquet";
         ResultsOutputLocation outputLocation = new ResultsOutputLocation("s3", outputFile);
 
-        ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(outputFile),
-                SchemaConverter.getSchema(schema), schema)
-                .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
-                .withRowGroupSize(rowGroupSize)
-                .withPageSize(pageSize);
         LOGGER.info("Opening writer for results of query {} to {}", query.getQueryId(), outputFile);
         long count = 0L;
-        try (ParquetWriter<Record> writer = builder.build()) {
+        try (ParquetWriter<Record> writer = buildParquetWriter(new Path(outputFile))) {
             long startTime = System.currentTimeMillis();
             while (results.hasNext()) {
                 writer.write(results.next());
@@ -113,5 +102,15 @@ public class S3ResultsOutput implements ResultsOutput {
                 LOGGER.error("IOException closing results of query", e);
             }
         }
+    }
+
+    private ParquetWriter<Record> buildParquetWriter(Path path) throws IOException {
+        String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
+        String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
+        ParquetRecordWriterFactory.Builder builder = parquetRecordWriterBuilder(path, tableProperties)
+                .withRowGroupSize(Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize)))
+                .withPageSize(Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize)));
+        Optional.ofNullable(config.get(COMPRESSION_CODEC)).ifPresent(builder::withCompressionCodec);
+        return builder.build();
     }
 }

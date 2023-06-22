@@ -26,12 +26,12 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.cdk.CdkCommand;
-import sleeper.clients.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.util.ClientUtils;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -64,7 +64,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
-                .vpcId(vpcId).subnetId(subnetId)
+                .vpcId(vpcId).subnetIds(subnetId)
                 .build().generate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
         boolean jarsChanged = SyncJars.builder().s3(s3v2)

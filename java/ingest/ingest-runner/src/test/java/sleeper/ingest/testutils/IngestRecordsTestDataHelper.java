@@ -336,5 +336,4 @@ public class IngestRecordsTestDataHelper {
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
-
 }

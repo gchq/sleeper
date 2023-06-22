@@ -1,10 +1,11 @@
 
 Ingest Job Status Report
 ------------------------
-Total jobs waiting in queue (excluded from report): 2
+Jobs waiting in ingest queue (excluded from report): 2
+Total jobs waiting across all queues: 2
 Total jobs in progress: 2
 --------------------------------------------------------------------------------------------------------------------------------------
-| STATE       | JOB_ID                               | TOTAL_FILES | TASK_ID                              | START_TIME               |
+| STATE       | JOB_ID                               | INPUT_FILES | TASK_ID                              | START_TIME               |
 | IN PROGRESS | job55555-5555-5555-5555-555555555555 |           3 | task2222-2222-2222-2222-222222222222 | 2022-09-21T13:34:12.001Z |
 | IN PROGRESS | job22222-2222-2222-2222-222222222222 |           1 | task1111-1111-1111-1111-111111111111 | 2022-09-18T13:34:12.001Z |
 --------------------------------------------------------------------------------------------------------------------------------------

@@ -22,6 +22,8 @@ import com.amazonaws.services.dynamodbv2.model.BillingMode;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
@@ -33,6 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class DynamoDBUtils {
@@ -85,12 +89,30 @@ public class DynamoDBUtils {
                 .flatMap(result -> result.getItems().stream());
     }
 
+    public static Stream<Map<String, AttributeValue>> streamPagedItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
+        return streamPagedResults(dynamoDB, queryRequest)
+                .flatMap(result ->
+                        result.getItems().stream());
+    }
+
     public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
+        return streamResults(scanRequest, dynamoDB::scan,
+                ScanResult::getLastEvaluatedKey, scanRequest::withExclusiveStartKey);
+    }
+
+    public static Stream<QueryResult> streamPagedResults(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
+        return streamResults(queryRequest, dynamoDB::query,
+                QueryResult::getLastEvaluatedKey, queryRequest::withExclusiveStartKey);
+    }
+
+    public static <Request, Result, Key> Stream<Result> streamResults(
+            Request request, Function<Request, Result> query,
+            Function<Result, Key> getLastKey, Function<Key, Request> withStartKey) {
         return Stream.iterate(
-                dynamoDB.scan(scanRequest),
+                query.apply(request),
                 Objects::nonNull,
-                result -> null != result.getLastEvaluatedKey()
-                        ? dynamoDB.scan(scanRequest.withExclusiveStartKey(result.getLastEvaluatedKey()))
-                        : null);
+                result -> Optional.ofNullable(getLastKey.apply(result))
+                        .map(lastKey -> query.apply(withStartKey.apply(lastKey)))
+                        .orElse(null));
     }
 }

@@ -89,7 +89,7 @@ public class ArrayListRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOM
                                 int maxNoOfRecordsInMemory,
                                 long maxNoOfRecordsInLocalStore) {
         this.parquetConfiguration = requireNonNull(parquetConfiguration);
-        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
+        this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.recordMapper = recordMapper;
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfRecordsInMemory = maxNoOfRecordsInMemory;

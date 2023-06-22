@@ -20,10 +20,13 @@ import sleeper.clients.teardown.TearDownInstance;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.util.ClientUtils.optionalArgument;
+import static sleeper.systemtest.cdk.SystemTestStack.generateSystemTestClusterName;
 
 public class TearDownTestInstance {
 
@@ -37,8 +40,12 @@ public class TearDownTestInstance {
         TearDownInstance.builder()
                 .scriptsDir(Path.of(args[0]))
                 .instanceId(optionalArgument(args, 1).orElse(null))
-                .extraEcsClusters(List.of(SYSTEM_TEST_CLUSTER_NAME))
-                .extraEcrRepositories(List.of(SYSTEM_TEST_REPO))
+                .getExtraEcsClusters(properties -> List.of(
+                        Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
+                                .orElseGet(() -> generateSystemTestClusterName(properties.get(ID)))))
+                .getExtraEcrRepositories(properties -> List.of(
+                        Optional.ofNullable(properties.get(SYSTEM_TEST_REPO))
+                                .orElseGet(() -> properties.get(ID) + "/system-test")))
                 .tearDownWithDefaultClients();
     }
 }

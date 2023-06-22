@@ -17,12 +17,15 @@ package sleeper.systemtest.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
+import java.time.Duration;
 
 public class InvokeSystemTestLambda {
 
@@ -30,12 +33,29 @@ public class InvokeSystemTestLambda {
     }
 
     public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
+        try (LambdaClient lambdaClient = createSystemTestLambdaClient()) {
+            AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+            SystemTestProperties systemTestProperties = new SystemTestProperties();
+            systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+            s3Client.shutdown();
+            client(lambdaClient, systemTestProperties).invokeLambda(lambdaFunctionProperty);
+        }
+    }
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        s3Client.shutdown();
+    public static Client client(LambdaClient lambdaClient, InstanceProperties instanceProperties) {
+        return lambdaFunctionProperty ->
+                InvokeLambda.invokeWith(lambdaClient, instanceProperties.get(lambdaFunctionProperty));
+    }
 
-        InvokeLambda.invoke(systemTestProperties.get(lambdaFunctionProperty));
+    public static LambdaClient createSystemTestLambdaClient() {
+        return LambdaClient.builder()
+                .overrideConfiguration(builder -> builder
+                        .apiCallTimeout(Duration.ofMinutes(5))
+                        .apiCallAttemptTimeout(Duration.ofMinutes(5)))
+                .build();
+    }
+
+    public interface Client {
+        void invokeLambda(InstanceProperty lambdaFunctionProperty);
     }
 }

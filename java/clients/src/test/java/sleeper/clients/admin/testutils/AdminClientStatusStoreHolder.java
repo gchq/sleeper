@@ -1,0 +1,77 @@
+/*
+ * Copyright 2022-2023 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.clients.admin.testutils;
+
+import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.task.IngestTaskStatusStore;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+
+public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFactory {
+
+    private final Map<String, CompactionJobStatusStore> compactionJobStoreByInstance = new HashMap<>();
+    private final Map<String, CompactionTaskStatusStore> compactionTaskStoreByInstance = new HashMap<>();
+    private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
+    private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
+
+    public void setStore(String instanceId, CompactionJobStatusStore store) {
+        compactionJobStoreByInstance.put(instanceId, store);
+    }
+
+    public void setStore(String instanceId, CompactionTaskStatusStore store) {
+        compactionTaskStoreByInstance.put(instanceId, store);
+    }
+
+    public void setStore(String instanceId, IngestJobStatusStore store) {
+        ingestJobStoreByInstance.put(instanceId, store);
+    }
+
+    public void setStore(String instanceId, IngestTaskStatusStore store) {
+        ingestTaskStoreByInstance.put(instanceId, store);
+    }
+
+    @Override
+    public CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(compactionJobStoreByInstance.get(instanceProperties.get(ID)))
+                .orElse(CompactionJobStatusStore.NONE);
+    }
+
+    @Override
+    public CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(compactionTaskStoreByInstance.get(instanceProperties.get(ID)))
+                .orElse(CompactionTaskStatusStore.NONE);
+    }
+
+    @Override
+    public IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(ingestJobStoreByInstance.get(instanceProperties.get(ID)))
+                .orElse(IngestJobStatusStore.NONE);
+    }
+
+    @Override
+    public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(ingestTaskStoreByInstance.get(instanceProperties.get(ID)))
+                .orElse(IngestTaskStatusStore.NONE);
+    }
+}

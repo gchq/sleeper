@@ -16,12 +16,12 @@
 package sleeper.clients.admin;
 
 import sleeper.clients.AdminClient;
-import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
-import sleeper.console.menu.ChooseOne;
-import sleeper.console.menu.Chosen;
-import sleeper.console.menu.MenuOption;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.util.console.ConsoleOutput;
+import sleeper.clients.util.console.UserExitedException;
+import sleeper.clients.util.console.menu.ChooseOne;
+import sleeper.clients.util.console.menu.Chosen;
+import sleeper.clients.util.console.menu.MenuOption;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,16 +36,24 @@ public class AdminMainScreen {
         this.chooseOne = new ChooseOne(out, in);
     }
 
-    public void mainLoop(AdminClient client, String instanceId) {
+    public void mainLoop(AdminClient client, String instanceId) throws InterruptedException {
         List<MenuOption> options = Arrays.asList(
-                new MenuOption("Print Sleeper instance property report", () ->
-                        client.instancePropertyReport().print(instanceId)),
+                new MenuOption("View/edit instance configuration", () ->
+                        client.instanceConfigurationScreen().viewAndEditProperties(instanceId)),
+                new MenuOption("View/edit table configuration", () ->
+                        client.instanceConfigurationScreen().viewAndEditTableProperties(instanceId)),
+                new MenuOption("View configuration by group", () ->
+                        client.instanceConfigurationScreen().viewAndEditPropertyGroup(instanceId)),
                 new MenuOption("Print Sleeper table names", () ->
                         client.tableNamesReport().print(instanceId)),
-                new MenuOption("Print Sleeper table property report", () ->
-                        client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)),
-                new MenuOption("Update an instance or table property", () ->
-                        client.updatePropertyScreen().choosePropertyAndUpdate(instanceId))
+                new MenuOption("Run partition status report", () ->
+                        client.partitionsStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run files status report", () ->
+                        client.filesStatusReportScreen().chooseTableAndPrint(instanceId)),
+                new MenuOption("Run compaction status report", () ->
+                        client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId)),
+                new MenuOption("Run ingest status report", () ->
+                        client.ingestStatusReportScreen().chooseArgsAndPrint(instanceId))
         );
         while (true) {
             try {

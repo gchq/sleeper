@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,58 +30,46 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+ import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
- * Initialises a {@link StateStore}. If a file of split points is
- * provided then these are used to create the initial {@link Partition}s.
- * Each line of the file should contain a single point which is a split in
- * the first dimension of the row key. (Only splitting by the first dimension
- * is supported.) If a file isn't provided then a single root {@link Partition}
- * is created.
+ * Initialises a {@link StateStore} from the given list of {@link Partition}s. Utility methods
+ * are provided to allow an instance of this class to be created from a list of split points.
  */
 public class InitialiseStateStore {
-    private final Schema schema;
-    private final StateStore stateStore;
-    private final List<Object> splitPoints;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialiseStateStore.class);
 
-    public InitialiseStateStore(TableProperties tableProperties,
-                                StateStore stateStore,
-                                List<Object> splitPoints) {
-        this.schema = tableProperties.getSchema();
+    private final StateStore stateStore;
+    private final List<Partition> initialPartitions;
+
+    public InitialiseStateStore(StateStore stateStore,
+                                List<Partition> initialPartitions) {
         this.stateStore = stateStore;
-        this.splitPoints = splitPoints;
+        this.initialPartitions = initialPartitions;
     }
 
-    public InitialiseStateStore(Schema schema,
-                                StateStore stateStore,
-                                List<Object> splitPoints) {
-        this.schema = schema;
-        this.stateStore = stateStore;
-        this.splitPoints = splitPoints;
+    public static InitialiseStateStore createInitialiseStateStoreFromSplitPoints(TableProperties tableProperties,
+            StateStore stateStore, List<Object> splitPoints) {
+        return createInitialiseStateStoreFromSplitPoints(tableProperties.getSchema(), stateStore, splitPoints);
+    }
+
+    public static InitialiseStateStore createInitialiseStateStoreFromSplitPoints(Schema schema, StateStore stateStore,
+            List<Object> splitPoints) {
+        PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
+        List<Partition> initialPartitions = partitionsFromSplitPoints.construct();
+
+        return new InitialiseStateStore(stateStore, initialPartitions);
     }
 
     public void run() throws StateStoreException {
-        // Validate that this appears to be an empty database
+        // Validate that this appears to be an empty table
         List<Partition> partitions = stateStore.getAllPartitions();
         if (!partitions.isEmpty()) {
             LOGGER.error("This should only be run on a database on which no data has been ingested - this instance has " + partitions.size() + " partitions");
@@ -95,15 +82,12 @@ public class InitialiseStateStore {
         }
         LOGGER.info("Database appears to be empty");
 
-        PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
-        List<Partition> initialPartitions = partitionsFromSplitPoints.construct();
-
         stateStore.initialise(initialPartitions);
     }
 
     public static void main(String[] args) throws StateStoreException, IOException {
-        if (2 != args.length && 3 != args.length && 4 != args.length) {
-            System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name> <optional split points file> <optional boolean strings base64 encoded>");
+        if (2 != args.length) {
+            System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name>");
             return;
         }
 
@@ -126,44 +110,7 @@ public class InitialiseStateStore {
             stateStore = new DynamoDBStateStore(tableProperties, dynamoDBClient);
         }
 
-        List<Object> splitPoints = null;
-        if (args.length > 2) {
-            splitPoints = new ArrayList<>();
-            String splitPointsFile = args[2];
-            boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
-
-            PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            List<String> lines = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8))) {
-                String lineFromFile = reader.readLine();
-                while (null != lineFromFile) {
-                    lines.add(lineFromFile);
-                    lineFromFile = reader.readLine();
-                }
-            }
-            for (String line : lines) {
-                if (rowKey1Type instanceof IntType) {
-                    splitPoints.add(Integer.parseInt(line));
-                } else if (rowKey1Type instanceof LongType) {
-                    splitPoints.add(Long.parseLong(line));
-                } else if (rowKey1Type instanceof StringType) {
-                    if (stringsBase64Encoded) {
-                        byte[] encodedString = Base64.decodeBase64(line);
-                        splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                    } else {
-                        splitPoints.add(line);
-                    }
-                } else if (rowKey1Type instanceof ByteArrayType) {
-                    splitPoints.add(Base64.decodeBase64(line));
-                } else {
-                    throw new RuntimeException("Unknown key type " + rowKey1Type);
-                }
-            }
-            LOGGER.info("Read " + splitPoints.size() + " split points from file");
-        }
-
-        new InitialiseStateStore(tableProperties, stateStore, splitPoints).run();
+        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();

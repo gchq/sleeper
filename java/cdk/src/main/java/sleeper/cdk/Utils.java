@@ -222,6 +222,10 @@ public class Utils {
         return key -> (String) scope.getNode().tryGetContext(key);
     }
 
+    public static boolean shouldDeployPaused(Construct scope) {
+        return "true".equalsIgnoreCase((String) scope.getNode().tryGetContext("deployPaused"));
+    }
+
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
                 .ifPresent(tagName -> Tags.of(stack).add(tagName, stack.getNode().getId()));

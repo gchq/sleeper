@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.starter;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -58,9 +59,10 @@ public class BulkImportStarterIT {
         AmazonS3 s3Client = createS3Client();
         AmazonElasticMapReduce emrClient = mock(AmazonElasticMapReduce.class);
         AWSStepFunctions stepFunctionsClient = mock(AWSStepFunctions.class);
+        AmazonDynamoDB dynamoDB = mock(AmazonDynamoDB.class);
 
         // When / Then
-        assertThatThrownBy(() -> new BulkImportStarter(s3Client, emrClient, stepFunctionsClient))
+        assertThatThrownBy(() -> new BulkImportStarter(s3Client, emrClient, stepFunctionsClient, dynamoDB))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

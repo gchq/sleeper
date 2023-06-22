@@ -23,27 +23,28 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TableNamesReportTest extends AdminClientMockStoreBase {
+class TableNamesReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintTableNamesReportWhenChosen() {
+    void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         setInstanceTables(createValidInstanceProperties(), "test-table-1", "test-table-2");
-        in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, EXIT_OPTION);
 
         // When
-        String output = runClientGetOutput();
+        String output = runClient()
+                .enterPrompts(TABLE_NAMES_REPORT_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
 
         // Then
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN + "\n\n" +
-                " Table Names Report \n" +
-                " -------------------------\n" +
+                "Table Names\n" +
+                "----------------------------------\n" +
                 "test-table-1\n" +
                 "test-table-2\n" +
                 PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);

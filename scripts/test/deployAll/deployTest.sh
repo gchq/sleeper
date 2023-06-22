@@ -15,8 +15,8 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
+  echo "Usage: $0 <uniqueId> <vpc> <subnet> <optional-deploy-paused-flag> <optional-split-points-file>"
   exit 1
 fi
 

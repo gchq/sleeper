@@ -92,7 +92,6 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -125,7 +124,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -644,7 +643,7 @@ public class SqsQueryProcessorLambdaIT {
         return recordCount;
     }
 
-    private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, Query query) throws FileNotFoundException, IllegalArgumentException, IOException {
+    private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
         String fileSystem = instanceProperties.get(FILE_SYSTEM);
         String resultsBucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
         String outputDir = fileSystem + resultsBucket + "/query-" + query.getQueryId();
@@ -750,7 +749,7 @@ public class SqsQueryProcessorLambdaIT {
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties).getStateStore(tableProperties);
         try {
-            new InitialiseStateStore(tableProperties, stateStore, splitPoints).run();
+            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, splitPoints).run();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } finally {
@@ -768,7 +767,7 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(ACCOUNT, "unused");
         instanceProperties.set(REGION, "unused");
         instanceProperties.set(VPC_ID, "unused");
-        instanceProperties.set(SUBNET, "unused");
+        instanceProperties.set(SUBNETS, "unused");
         instanceProperties.set(JARS_BUCKET, "unused");
         instanceProperties.set(VERSION, "unused");
         instanceProperties.set(FILE_SYSTEM, dir);

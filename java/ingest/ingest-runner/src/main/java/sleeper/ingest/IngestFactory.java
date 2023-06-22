@@ -58,11 +58,8 @@ public class IngestFactory {
         localDir = Objects.requireNonNull(builder.localDir, "localDir must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
-        if (builder.hadoopConfiguration == null) {
-            hadoopConfiguration = defaultHadoopConfiguration();
-        } else {
-            hadoopConfiguration = builder.hadoopConfiguration;
-        }
+        hadoopConfiguration = Objects.requireNonNullElseGet(builder.hadoopConfiguration,
+                IngestFactory::defaultHadoopConfiguration);
         // If S3AsyncClient is not set, a default client will be created if it is needed.
         s3AsyncClient = builder.s3AsyncClient;
     }
@@ -110,7 +107,7 @@ public class IngestFactory {
                     .buildAcceptingRecords();
         } else if (recordBatchType.equals("arrow")) {
             return ArrowRecordBatchFactory.builderWith(instanceProperties)
-                    .schema(parquetConfiguration.getSleeperSchema())
+                    .schema(parquetConfiguration.getTableProperties().getSchema())
                     .localWorkingDirectory(localDir)
                     .buildAcceptingRecords();
         } else {
@@ -146,6 +143,7 @@ public class IngestFactory {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         conf.set("fs.s3a.fast.upload", "true");
+        conf.set("fs.s3a.bucket.probe", "0");
         return conf;
     }
 

@@ -15,23 +15,48 @@
  */
 package sleeper.systemtest.compaction;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
+import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.job.common.QueueMessageCount.withSqsClient;
 
 public class InvokeCompactionJobCreation {
 
     private InvokeCompactionJobCreation() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length != 1) {
             System.out.println("Usage: <instance id>");
             return;
         }
 
-        InvokeSystemTestLambda.forInstance(args[0], COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+        String instanceId = args[0];
+
+        InvokeSystemTestLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+
+        SystemTestProperties systemTestProperties = new SystemTestProperties();
+        systemTestProperties.loadFromS3GivenInstanceId(AmazonS3ClientBuilder.defaultClient(), instanceId);
+        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
+                AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
+
+        WaitForQueueEstimate.matchesUnstartedJobs(
+                        withSqsClient(AmazonSQSClientBuilder.defaultClient()),
+                        systemTestProperties, COMPACTION_JOB_QUEUE_URL,
+                        statusStore, "system-test",
+                        PollWithRetries.intervalAndMaxPolls(5000, 12))
+                .pollUntilFinished();
     }
 }

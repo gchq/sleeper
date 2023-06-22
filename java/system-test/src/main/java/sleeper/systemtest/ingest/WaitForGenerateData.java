@@ -24,9 +24,9 @@ import com.amazonaws.services.ecs.model.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.ingest.json.TaskStatusJson;
 import sleeper.systemtest.ingest.json.TasksJson;
-import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Math.min;
-import static sleeper.util.ClientUtils.optionalArgument;
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 
 public class WaitForGenerateData {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForGenerateData.class);
@@ -83,7 +83,7 @@ public class WaitForGenerateData {
         List<DescribeTasksRequest> tasksRequests = new ArrayList<>();
         for (int i = 0; i < tasks.size(); i += 100) {
             tasksRequests.add(new DescribeTasksRequest().withCluster(cluster).withTasks(
-                    tasks.subList(i, min(i + 100, tasks.size() - 1))
+                    tasks.subList(i, min(i + 100, tasks.size()))
                             .stream().map(Task::getTaskArn).collect(Collectors.toList())));
         }
         return tasksRequests.stream()

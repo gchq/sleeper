@@ -27,14 +27,14 @@ public class BulkImportJobSerDeTest {
 
     @Test
     public void shouldDeserialiseEmptyJob() {
-        // Given
-        BulkImportJob empty = new BulkImportJob.Builder().build();
-
-        // When
+        // Given / When
         BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson("{}");
 
         // Then
-        assertThat(bulkImportJob).isEqualTo(empty);
+        assertThat(bulkImportJob)
+                .isEqualTo(new BulkImportJob.Builder().id(bulkImportJob.getId()).build());
+        assertThat(bulkImportJob.getId())
+                .isNotNull();
     }
 
     @Test
@@ -67,13 +67,13 @@ public class BulkImportJobSerDeTest {
     @Test
     public void shouldSerialiseEmptyJob() {
         // Given
-        BulkImportJob emptyJob = new BulkImportJob.Builder().build();
+        BulkImportJob emptyJob = new BulkImportJob.Builder().id("empty-job").build();
 
         // When
         String serialised = new BulkImportJobSerDe().toJson(emptyJob);
 
         // Then
-        assertThat(serialised).isEqualTo("{}");
+        assertThat(serialised).isEqualTo("{\"id\":\"empty-job\"}");
     }
 
     @Test

@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -41,8 +42,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -162,9 +162,9 @@ public class GarbageCollectorIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 100000)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 20L * 60L * 1000L)
                 .build();
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
@@ -185,7 +185,7 @@ public class GarbageCollectorIT {
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(System.currentTimeMillis())
                 .build();
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer2 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file2), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
@@ -207,7 +207,7 @@ public class GarbageCollectorIT {
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(System.currentTimeMillis())
                 .build();
-        ParquetRecordWriter writer3 = new ParquetRecordWriter(new Path(file3), SchemaConverter.getSchema(schema), schema);
+        ParquetWriter<Record> writer3 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file3), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);

@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
@@ -58,7 +57,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private final String statusTableName;
     private final DynamoDBIngestJobStatusFormat format;
 
-    private DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
@@ -69,22 +68,36 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         this.format = new DynamoDBIngestJobStatusFormat(timeToLiveInSeconds, getTimeNow);
     }
 
-    public static IngestJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            return new DynamoDBIngestJobStatusStore(dynamoDB, properties);
-        } else {
-            return IngestJobStatusStore.none();
-        }
-    }
-
     public static String jobStatusTableName(String instanceId) {
         return instanceTableName(instanceId, "ingest-job-status");
     }
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
+    public void jobAccepted(String taskId, IngestJob job, Instant validationTime) {
         try {
-            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId));
+            PutItemResult result = putItem(format.createJobAcceptedRecord(job, validationTime, taskId));
+            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    @Override
+    public void jobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
+        try {
+            PutItemResult result = putItem(format.createJobRejectedRecord(job, validationTime, reason, taskId));
+            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    @Override
+    public void jobStarted(String taskId, IngestJob job, Instant startTime, boolean startOfRun) {
+        try {
+            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId, startOfRun));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

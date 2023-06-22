@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * A convenience class for specifying partitions.
@@ -88,6 +89,21 @@ public class PartitionsBuilder {
         return this;
     }
 
+    public PartitionsBuilder treeWithSingleSplitPoint(Object splitPoint) {
+        return fromRoot(root -> root.split(splitPoint));
+    }
+
+    public PartitionsBuilder fromRoot(Consumer<Splitter> splits) {
+        rootFirst("root");
+        splits.accept(new Splitter("root", ""));
+        return this;
+    }
+
+    public PartitionsBuilder splitToNewChildren(
+            String parentId, String leftId, String rightId, Object splitPoint) {
+        return splitToNewChildrenOnDimension(parentId, leftId, rightId, 0, splitPoint);
+    }
+
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition parent = partitionById(parentId);
@@ -113,5 +129,40 @@ public class PartitionsBuilder {
 
     public PartitionTree buildTree() {
         return new PartitionTree(schema, partitions);
+    }
+
+    public class Splitter {
+
+        private final String parentId;
+        private final String partitionPrefix;
+
+        private Splitter(String parentId, String partitionPrefix) {
+            this.parentId = parentId;
+            this.partitionPrefix = partitionPrefix;
+        }
+
+        private Splitter(String nonRootParentId) {
+            this(nonRootParentId, nonRootParentId);
+        }
+
+        public void split(Object splitPoint) {
+            splitToNewChildren(parentId, leftId(), rightId(), splitPoint);
+        }
+
+        public void splitToLeftAndRight(Object splitPoint,
+                                        Consumer<Splitter> left,
+                                        Consumer<Splitter> right) {
+            split(splitPoint);
+            left.accept(new Splitter(leftId()));
+            right.accept(new Splitter(rightId()));
+        }
+
+        private String leftId() {
+            return partitionPrefix + "L";
+        }
+
+        private String rightId() {
+            return partitionPrefix + "R";
+        }
     }
 }

@@ -36,13 +36,15 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +67,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
     private final List<PrimitiveType> rowKeyTypes;
-    private final int garbageCollectorDelayBeforeDeletionInSeconds;
+    private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final KeySerDe keySerDe;
     private final String fs;
     private final String s3Bucket;
@@ -74,13 +76,14 @@ public class S3FileInfoStore implements FileInfoStore {
     private final Schema fileSchema;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
+    private Clock clock = Clock.systemUTC();
 
     private S3FileInfoStore(Builder builder) {
         this.fs = Objects.requireNonNull(builder.fs, "fs must not be null");
         this.s3Bucket = Objects.requireNonNull(builder.s3Bucket, "s3Bucket must not be null");
         this.dynamoRevisionIdTable = Objects.requireNonNull(builder.dynamoRevisionIdTable, "dynamoRevisionIdTable must not be null");
         this.rowKeyTypes = builder.rowKeyTypes;
-        this.garbageCollectorDelayBeforeDeletionInSeconds = builder.garbageCollectorDelayBeforeDeletionInSeconds;
+        this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         this.dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         this.keySerDe = new KeySerDe(rowKeyTypes);
         this.fileSchema = initialiseFileInfoSchema();
@@ -286,8 +289,8 @@ public class S3FileInfoStore implements FileInfoStore {
     public Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
-            long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
-            long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+            long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
+            long deleteTime = clock.millis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(getCurrentFilesRevisionId()));
             List<FileInfo> filesReadyForGC = fileInfos.stream().filter(f -> {
                 if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
@@ -484,9 +487,8 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = new ParquetRecordWriter.Builder(new Path(path), SchemaConverter.getSchema(fileSchema), fileSchema)
-                .withConf(conf)
-                .build();
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileSchema, conf);
+
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
         }
@@ -507,6 +509,9 @@ public class S3FileInfoStore implements FileInfoStore {
         return fileInfos;
     }
 
+    public void fixTime(Instant now) {
+        clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
 
     public static final class Builder {
         private AmazonDynamoDB dynamoDB;
@@ -514,7 +519,7 @@ public class S3FileInfoStore implements FileInfoStore {
         private List<PrimitiveType> rowKeyTypes;
         private String fs;
         private String s3Bucket;
-        private int garbageCollectorDelayBeforeDeletionInSeconds;
+        private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
 
         public Builder() {
@@ -540,7 +545,6 @@ public class S3FileInfoStore implements FileInfoStore {
             return this;
         }
 
-
         public Builder s3Bucket(String s3Bucket) {
             this.s3Bucket = s3Bucket;
             return this;
@@ -550,8 +554,8 @@ public class S3FileInfoStore implements FileInfoStore {
             return new S3FileInfoStore(this);
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInSeconds(int garbageCollectorDelayBeforeDeletionInSeconds) {
-            this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
+        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+            this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 

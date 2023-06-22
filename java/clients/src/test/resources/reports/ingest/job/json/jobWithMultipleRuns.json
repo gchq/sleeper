@@ -1,5 +1,7 @@
 {
-  "numberInQueue": 0,
+  "queueMessages": {
+    "ingestMessages": 0
+  },
   "jobList": [
     {
       "jobId": "$(jobId1)",
@@ -23,8 +25,8 @@
             "updateTime": "2022-10-12T10:01:45.123Z",
             "summary": {
               "recordsProcessed": {
-                "linesRead": 300,
-                "linesWritten": 200
+                "recordsRead": 300,
+                "recordsWritten": 200
               },
               "startTime": "2022-10-12T10:01:15.001Z",
               "finishTime": "2022-10-12T10:01:45.001Z",
@@ -45,8 +47,8 @@
             "updateTime": "2022-10-12T10:01:20.123Z",
             "summary": {
               "recordsProcessed": {
-                "linesRead": 300,
-                "linesWritten": 200
+                "recordsRead": 300,
+                "recordsWritten": 200
               },
               "startTime": "2022-10-12T10:01:00.001Z",
               "finishTime": "2022-10-12T10:01:20.001Z",

@@ -120,7 +120,6 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
     }
 
     public static final class Builder<T> {
-
         private Schema schema;
         private String localWorkingDirectory;
         private long workingBufferAllocatorBytes;
@@ -157,6 +156,11 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         public Builder<T> maxBatchBufferAllocatorBytes(long maxBatchBufferAllocatorBytes) {
             this.maxBatchBufferAllocatorBytes = maxBatchBufferAllocatorBytes;
             return this;
+        }
+
+        public Builder<T> batchBufferAllocatorBytes(long batchBufferAllocatorBytes) {
+            return minBatchBufferAllocatorBytes(batchBufferAllocatorBytes)
+                    .maxBatchBufferAllocatorBytes(batchBufferAllocatorBytes);
         }
 
         public Builder<T> maxNoOfBytesToWriteLocally(long maxNoOfBytesToWriteLocally) {

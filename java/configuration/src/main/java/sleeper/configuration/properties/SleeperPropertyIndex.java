@@ -26,6 +26,7 @@ import java.util.Optional;
 public class SleeperPropertyIndex<T extends SleeperProperty> {
 
     private final Map<String, T> allMap = new HashMap<>();
+    private final Map<PropertyGroup, List<T>> byGroup = new HashMap<>();
     private final List<T> all = new ArrayList<>();
     private final List<T> userDefined = new ArrayList<>();
     private final List<T> systemDefined = new ArrayList<>();
@@ -33,6 +34,8 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
     public void add(T property) {
         allMap.put(property.getPropertyName(), property);
         all.add(property);
+        byGroup.computeIfAbsent(property.getPropertyGroup(), group -> new ArrayList<>())
+                .add(property);
         if (property.isSystemDefined()) {
             systemDefined.add(property);
         } else {
@@ -58,5 +61,9 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
 
     public Optional<T> getByName(String propertyName) {
         return Optional.ofNullable(allMap.get(propertyName));
+    }
+
+    public List<T> getAllInGroup(PropertyGroup propertyGroup) {
+        return byGroup.getOrDefault(propertyGroup, Collections.emptyList());
     }
 }

@@ -98,7 +98,7 @@ public class InitialiseStateStoreIT {
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndNoSplitPoints() throws StateStoreException {
         // Given
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -123,7 +123,7 @@ public class InitialiseStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -179,7 +179,7 @@ public class InitialiseStateStoreIT {
         splitPoints.add(-10);
         splitPoints.add(0);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -287,7 +287,7 @@ public class InitialiseStateStoreIT {
         splitPoints.add(-10);
         splitPoints.add(0);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -399,7 +399,7 @@ public class InitialiseStateStoreIT {
         Field field = new Field("key", new StringType());
         Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -428,7 +428,7 @@ public class InitialiseStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -486,7 +486,7 @@ public class InitialiseStateStoreIT {
         splitPoints.add("E");
         splitPoints.add("P");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -594,7 +594,7 @@ public class InitialiseStateStoreIT {
         splitPoints.add("E");
         splitPoints.add("P");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -706,7 +706,7 @@ public class InitialiseStateStoreIT {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -736,7 +736,7 @@ public class InitialiseStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -794,7 +794,7 @@ public class InitialiseStateStoreIT {
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{50});
         splitPoints.add(new byte[]{99});
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -908,7 +908,7 @@ public class InitialiseStateStoreIT {
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{50});
         splitPoints.add(new byte[]{99});
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
@@ -1021,10 +1021,9 @@ public class InitialiseStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(Long.MIN_VALUE);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        assertThatThrownBy(initialiseStateStore::run)
+        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -1036,10 +1035,9 @@ public class InitialiseStateStoreIT {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(0);
         splitPoints.add(0);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        assertThatThrownBy(initialiseStateStore::run)
+        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -1051,10 +1049,9 @@ public class InitialiseStateStoreIT {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(1);
         splitPoints.add(0);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        assertThatThrownBy(initialiseStateStore::run)
+        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

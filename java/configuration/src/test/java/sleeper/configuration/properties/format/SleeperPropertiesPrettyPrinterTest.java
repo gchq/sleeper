@@ -20,11 +20,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.properties.table.TablePropertyGroup;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -36,11 +41,15 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forInstancePropertiesWithGroup;
+import static sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter.forTablePropertiesWithGroup;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class SleeperPropertiesPrettyPrinterTest {
 
@@ -64,12 +73,12 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithMultipleLines() throws Exception {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.default.gc.delay.seconds=123"))
-                    .contains("# A file will not be deleted until this number of seconds have passed after it has been marked as\n" +
+            assertThat(printInstanceProperties("sleeper.default.gc.delay.minutes=123"))
+                    .contains("# A file will not be deleted until this number of minutes have passed after it has been marked as\n" +
                             "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                             "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
                             "# can be overridden on a per-table basis.\n" +
-                            "sleeper.default.gc.delay.seconds");
+                            "sleeper.default.gc.delay.minutes");
         }
 
         @Test
@@ -82,6 +91,16 @@ class SleeperPropertiesPrettyPrinterTest {
                             "# The direct method is simpler but the async method should provide better performance when the number\n" +
                             "# of partitions is large.\n" +
                             "sleeper.ingest.partition.file.writer.type");
+        }
+
+        @Test
+        void shouldPrintSystemDefinedProperty() throws Exception {
+            // When / Then
+            assertThat(printInstanceProperties("sleeper.version=1.2.3"))
+                    .contains("# The version of Sleeper that is being used. This property is used to identify the correct jars in the\n" +
+                            "# S3 jars bucket and to select the correct tag in the ECR repositories.\n" +
+                            "# (this property is system-defined and may not be edited)\n" +
+                            "sleeper.version");
         }
 
         @Test
@@ -236,61 +255,127 @@ class SleeperPropertiesPrettyPrinterTest {
     @Nested
     @DisplayName("Print groups")
     class PrintGroups {
+        private final String output = printEmptyInstanceProperties();
+
         @Test
-        void shouldPrintPropertyGroupDescriptions() throws IOException {
-            // When / Then
-            assertThat(printEmptyInstanceProperties())
-                    .contains("# The following properties are commonly used throughout Sleeper\n\n")
-                    .contains("# The following properties relate to standard ingest\n\n")
-                    .contains("# The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
-                            "# or EKS.\n\n")
-                    .contains("# The following properties relate to the splitting of partitions\n\n")
-                    .contains("# The following properties relate to compactions.\n\n")
-                    .contains("# The following properties relate to queries.\n\n");
+        void shouldPrintPropertyGroupDescriptions() {
+            assertThat(output)
+                    .contains("## The following properties are commonly used throughout Sleeper.\n\n")
+                    .contains("## The following properties relate to standard ingest.\n\n")
+                    .contains("## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR\n" +
+                            "## or EKS.\n\n")
+                    .contains("## The following properties relate to the splitting of partitions.\n\n")
+                    .contains("## The following properties relate to compactions.\n\n")
+                    .contains("## The following properties relate to queries.\n\n");
         }
 
         @Test
-        void shouldPrintPropertyGroupsInTheCorrectOrder() throws IOException {
-            // When
-            String output = printEmptyInstanceProperties();
-
-            // Then
-            assertThat(output.indexOf("The following properties relate to standard ingest"))
-                    .isLessThan(output.indexOf("The following properties relate to bulk import"));
-            assertThat(output.indexOf("The following properties relate to garbage collection"))
-                    .isLessThan(output.indexOf("The following properties relate to compactions"));
-            assertThat(output.indexOf("The following properties relate to compactions"))
-                    .isLessThan(output.indexOf("The following properties relate to queries"));
+        void shouldPrintPropertyGroupsInTheCorrectOrder() {
+            assertThat(output).containsSubsequence(
+                    "The following properties are commonly used throughout Sleeper",
+                    "The following properties relate to standard ingest",
+                    "The following properties relate to bulk import",
+                    "The following properties relate to garbage collection",
+                    "The following properties relate to compactions",
+                    "The following properties relate to queries");
         }
 
         @Test
-        void shouldDisplayPropertiesInTheCorrectGroup() throws IOException {
-            // When
-            String output = printEmptyInstanceProperties();
+        void shouldDisplayUserDefinedPropertyInTheCorrectGroup() {
+            assertThat(output).containsSubsequence(
+                    "The following properties are commonly used throughout Sleeper",
+                    "sleeper.id",
+                    "The following properties relate to standard ingest");
+        }
 
-            // Then check that one UserDefinedInstanceProperty is in the correct group
-            assertThat(output.indexOf("sleeper.id"))
-                    .isBetween(
-                            output.indexOf("The following properties are commonly used throughout Sleeper"),
-                            output.indexOf("The following properties relate to standard ingest"));
-            // Then check that one SystemDefinedInstanceProperty is in the correct group
-            assertThat(output.indexOf("sleeper.config.bucket"))
-                    .isBetween(
-                            output.indexOf("The following properties are commonly used throughout Sleeper"),
-                            output.indexOf("The following properties relate to standard ingest"));
+        @Test
+        void shouldDisplaySystemDefinedPropertyInTheCorrectGroup() {
+            assertThat(output).containsSubsequence(
+                    "The following properties are commonly used throughout Sleeper",
+                    "sleeper.config.bucket",
+                    "The following properties relate to standard ingest");
+        }
+
+        @Test
+        void shouldPrintOneNewLineBeforeFirstHeader() {
+            assertThat(output).startsWith("\n" +
+                    "## The following properties are commonly used throughout Sleeper");
+        }
+
+        @Test
+        void shouldPrintTwoNewLinesBeforeOtherHeaders() {
+            assertThat(output).contains("\n\n" +
+                    "## The following properties relate to standard ingest");
         }
     }
 
-    private static String printEmptyInstanceProperties() throws IOException {
-        return printInstanceProperties("");
+    @Nested
+    @DisplayName("Filter by group")
+    class FilterByGroup {
+        @Test
+        void shouldFilterInstancePropertiesByGroup() throws IOException {
+            // When
+            String output = printInstancePropertiesByGroup("", InstancePropertyGroup.COMMON);
+
+            // Then
+            assertThat(output)
+                    .contains(InstanceProperty.getAll().stream()
+                            .filter(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()))
+                    .doesNotContain(InstanceProperty.getAll().stream()
+                            .filter(not(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON)))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()));
+        }
+
+        @Test
+        void shouldFilterTablePropertiesByGroup() {
+            // When
+            TableProperties tableProperties = createTestTableProperties(new InstanceProperties(), schemaWithKey("key"));
+            String output = printTablePropertiesByGroup(tableProperties, TablePropertyGroup.METADATA);
+
+            // Then
+            assertThat(output)
+                    .contains(TableProperty.getAll().stream()
+                            .filter(property -> property.getPropertyGroup().equals(TablePropertyGroup.METADATA))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()))
+                    .doesNotContain(TableProperty.getAll().stream()
+                            .filter(not(property -> property.getPropertyGroup().equals(TablePropertyGroup.METADATA)))
+                            .map(SleeperProperty::getPropertyName)
+                            .collect(Collectors.toList()));
+        }
+
+        @Test
+        void shouldNotShowUnknownPropertiesWhenFilteringByGroup() throws IOException {
+            // When
+            String output = printInstancePropertiesByGroup("unknown.property=123", InstancePropertyGroup.COMMON);
+
+            // Then
+            assertThat(output)
+                    .doesNotContain("unknown.property");
+        }
+    }
+
+    private static String printEmptyInstanceProperties() {
+        return printInstanceProperties(new InstanceProperties());
     }
 
     private static String printInstanceProperties(String properties) throws IOException {
         return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
     }
 
+    private static String printInstancePropertiesByGroup(String properties, PropertyGroup group) throws IOException {
+        return printInstancePropertiesByGroup(new InstanceProperties(loadProperties(properties)), group);
+    }
+
     private static String printInstanceProperties(InstanceProperties properties) {
         return print(SleeperPropertiesPrettyPrinter::forInstanceProperties, properties);
+    }
+
+    private static String printInstancePropertiesByGroup(InstanceProperties properties, PropertyGroup group) {
+        return print(writer -> forInstancePropertiesWithGroup(writer, group), properties);
     }
 
     private static String printTableProperties(Schema schema) {
@@ -310,6 +395,10 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static String printTableProperties(TableProperties tableProperties) {
         return print(SleeperPropertiesPrettyPrinter::forTableProperties, tableProperties);
+    }
+
+    private static String printTablePropertiesByGroup(TableProperties tableProperties, PropertyGroup group) {
+        return print(writer -> forTablePropertiesWithGroup(writer, group), tableProperties);
     }
 
     private static <T extends SleeperProperty> String print(

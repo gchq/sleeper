@@ -98,13 +98,14 @@ public class SqsQueryProcessor {
         CloseableIterator<Record> results;
         try {
             queryTrackers.queryInProgress(query);
+            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
             if (query instanceof LeafPartitionQuery) {
                 results = processLeafPartitionQuery((LeafPartitionQuery) query);
             } else {
                 results = processRangeQuery(query, queryTrackers);
             }
             if (null != results) {
-                publishResults(results, query, queryTrackers);
+                publishResults(results, query, tableProperties, queryTrackers);
             }
         } catch (StateStoreException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
@@ -164,17 +165,17 @@ public class SqsQueryProcessor {
         return configurationCache.get(tableName);
     }
 
-    private void publishResults(CloseableIterator<Record> results, Query query, QueryStatusReportListeners queryTrackers) {
+    private void publishResults(CloseableIterator<Record> results, Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
         Schema schema = tablePropertiesProvider.getTableProperties(query.getTableName()).getSchema();
 
         try {
             ResultsOutputInfo outputInfo;
             if (null == query.getResultsPublisherConfig() || query.getResultsPublisherConfig().isEmpty()) {
-                outputInfo = new S3ResultsOutput(instanceProperties, schema, new HashMap<>()).publish(query, results);
+                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>()).publish(query, results);
             } else if (SQSResultsOutput.SQS.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
                 outputInfo = new SQSResultsOutput(instanceProperties, sqsClient, schema, query.getResultsPublisherConfig()).publish(query, results);
             } else if (S3ResultsOutput.S3.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new S3ResultsOutput(instanceProperties, schema, query.getResultsPublisherConfig()).publish(query, results);
+                outputInfo = new S3ResultsOutput(instanceProperties, tableProperties, query.getResultsPublisherConfig()).publish(query, results);
             } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
                 outputInfo = new WebSocketResultsOutput(query.getResultsPublisherConfig()).publish(query, results);
             } else {

@@ -4,6 +4,141 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/12-performance-test.md)
 
+## Version 0.17.0
+
+This contains the following improvements:
+
+Ingest batcher:
+- Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md) and [docs/10-design.md](./docs/10-design.md) for more information.
+
+Bulk Import:
+- Upgrade EMR version to 6.10.0.
+- Upgrade Spark version to 3.3.1.
+
+Development:
+- Added devcontainers support.
+- Added a script to regenerate properties templates from property definitions.
+- Added OWASP Dependency-Check Maven plugin.
+
+Tests:
+- Added a way to automatically run system tests and upload the results to an S3 bucket.
+- Increase rate at which Fargate tasks are started in system tests.
+
+Misc:
+- Upgrade parquet-mr version to 1.13.0.
+- Rename `LINES` to `RECORDS` in reports and throughout the project.
+- Update properties templates.
+
+Bugfixes:
+- Fixed an issue where ingest tasks reported an ingest rate of NaN when exiting immediately.
+- Fixed an issue where the default value for a table property did not display when confirming changes in the admin client if the property was unset.
+- Fixed an issue where tearing down an instance would fail if the config bucket was empty.
+
+## Version 0.16.0
+
+This contains the following improvements:
+
+Trino:
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/13-trino.md). This is an experimental feature.
+
+Bulk Import:
+- Improve observability of bulk import jobs by including them in ingest job status reports.
+- Added table property for minimum leaf partition count. If the minimum is not met, bulk import jobs will not be run.
+
+Scripts:
+- Added logging output to `DownloadConfig` class.
+- Added ability to define splitpoints file in `deploy.sh`.
+- Added runnable class to remove log groups left over from old instances (`CleanUpLogGroups`).
+
+CDK:
+- Added the flag `deployPaused` to deploy the system in a paused state.
+- Add the tag `InstanceId` to all AWS resources when they are deployed.
+- Pre-authenticate the environment EC2 instance with AWS.
+
+Clients:
+- Added count of input files to compaction job report.
+- For persistent EMR bulk import, report on steps that have not started yet in the ingest status report.
+- Avoid loading properties unnecessarily in the admin client.
+- Refactor compaction and ingest reports to remove unnecessary wrapping of arguments.
+
+Tests:
+- Simplify `compactionPerformance` system test to only perform merge compactions.
+- Assert output of `compactionPerformance` system test to detect failures
+- Create `partitionSplitting` system test, which do not perform merge compactions and only perform splitting compactions.
+- Create `bulkImportPerformance` system test, which performs a bulk import and does no merge/splitting compactions.
+- Reduce code duplication in Arrow ingest test helpers.
+- Introduce test fakes for querying properties and status stores in the admin client and reports.
+
+Bugfixes:
+- Fixed issue where the queue estimates sometimes did not update before invoking the compaction task lambda in the `compactionPerformance` system test.
+- Fixed issue where the `tearDown` script failed if non-persistent EMR clusters were still running.
+- Fixed issue where `WaitForGenerateData` was excluding 1 task from checks, causing it to not wait if the number of tasks was 1.
+
+## Version 0.15.0
+
+This contains the following improvements:
+
+Standard ingest:
+- Added ability to define multiple source buckets.
+
+Tables:
+- Added ability to export partition information to a file.
+
+Scripts:
+- Added a script to add a new table to an existing instance of Sleeper (`scripts/deploy/addTable.sh`).
+- Added a script to bring an existing instance of Sleeper up to date (`scripts/deploy/deployExisting.sh`).
+- Replace the deployment scripts with Java.
+
+Docker CLI:
+- Added a builder docker image, to be used inside EC2 to run scripts and Sleeper CLI commands (`sleeper builder`).
+- Added deployment docker image to Sleeper CLI for deploying a pre-built version of Sleeper (`sleeper deployment`).
+- Added a command to bring the Sleeper CLI up to date (`sleeper cli upgrade`).
+- Added support for Apple M1 and other ARM-based processors.
+
+CDK:
+- Added a way to run `cdk deploy` from Java.
+- Added a way to run `cdk destroy` from Java.
+- Add validation for Sleeper version on `cdk deploy` by default.
+- Add the Sleeper CLI to the cdk-environment EC2.
+- Add versioning for Lambdas, update when code is changed on `cdk deploy`.
+
+Clients:
+- Added a "shopping basket" view to the admin client.
+    - Viewing and editing properties now brings you to a text editor where you can make changes and save them.
+    - Upon saving and leaving the editor, you will be presented with a summary of your changes, and have the 
+    option to save these changes to S3, return to the editor, or discard the changes.
+    - Any validation issues will appear in the summary screen, and prevent you from saving until they are resolved.
+- Properties that require a `cdk deploy` are now flagged, and the `cdk deploy` is performed after changing 
+any of these properties.
+- Properties are now grouped based on their context.
+    - You can also filter properties by group in the admin client.
+- Descriptions are now displayed above properties in the editor.
+- Properties that cannot be changed (either they are system defined or they require redeploying the instance) 
+are included in the validation checks when making changes in the editor.
+- Added the following status reports to the admin client main menu:
+    - Partitions.
+    - Files.
+    - Compaction jobs & tasks.
+    - Ingest jobs & tasks.
+
+Tests:
+- Upgrade LocalStack and DynamoDB in Testcontainers tests.
+
+Bugfixes:
+- You can now deploy an EC2 environment into an existing VPC.
+- The deploy script no longer fails to find a bucket to upload jars to after creating it.
+- All records are now loaded for the compaction and ingest reports - some records were missing  when there were 
+too many records.
+- The compaction performance test can now run with more than 100 data generation ECS tasks.
+- Added transitive dependency declarations to built Maven artifacts.
+- The partitions status report now displays the correct field name for the split field.
+- CDK now references bulk import bucket correctly. Previously you could encounter deployment failures when
+switching bulk import stacks.
+- Running the `connectToTable.sh` script no longer clear the generated directory if you encounter an AWS auth 
+failure (this has been moved to  `scripts/utility/downloadConfig.sh`).
+- The compaction performance test no longer fails if a job started before it was reported as created.
+- The compaction performance test no longer fails if the partition splitting job queue size updates too slowly.
+
 ## Version 0.14.0
 
 This contains the following improvements:

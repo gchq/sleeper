@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -82,7 +82,7 @@ public class CreateJobsLambda {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         this.tableLister = new TableLister(s3Client, instanceProperties);
-        this.jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
     /**
@@ -105,7 +105,7 @@ public class CreateJobsLambda {
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         this.tableLister = new TableLister(s3Client, instanceProperties);
-        this.jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {

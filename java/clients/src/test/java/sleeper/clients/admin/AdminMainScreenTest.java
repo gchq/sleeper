@@ -20,29 +20,28 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_INPUT_NOT_RECOGNISED;
-import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class AdminMainScreenTest extends AdminClientMockStoreBase {
+class AdminMainScreenTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldDisplayMainScreenAndExitWhenChosen() {
-        // Given
-        in.enterNextPrompt(EXIT_OPTION);
+    void shouldDisplayMainScreenAndExitWhenChosen() throws Exception {
+        // When
+        String output = runClient().exitGetOutput();
 
-        // When / Then
-        assertThat(runClientGetOutput()).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN);
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN);
     }
 
     @Test
-    public void shouldPromptOnInvalidChoiceOnMainScreen() {
-        // Given
-        in.enterNextPrompts("abc", EXIT_OPTION);
+    void shouldPromptOnInvalidChoiceOnMainScreen() throws Exception {
+        // When
+        String output = runClient().enterPrompt("abc").exitGetOutput();
 
-        // When / Then
-        assertThat(runClientGetOutput()).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN +
                 CLEAR_CONSOLE + PROMPT_INPUT_NOT_RECOGNISED + MAIN_SCREEN);
     }
 

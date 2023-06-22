@@ -15,11 +15,11 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.ToStringPrintStream;
-import sleeper.clients.AdminClient;
+import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.testutil.TestConsoleInput;
+import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -27,6 +27,9 @@ import sleeper.core.schema.type.StringType;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -35,15 +38,16 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public abstract class AdminClientTestBase {
+public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -54,10 +58,15 @@ public abstract class AdminClientTestBase {
     protected static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     protected static final String TABLE_NAME_VALUE = "test-table";
 
-    protected String runClientGetOutput(AdminClient client) {
-        client.start(INSTANCE_ID);
-        return out.toString();
+    protected RunAdminClient runClient() {
+        return new RunAdminClient(
+                out, in, this, editor, INSTANCE_ID);
     }
+
+    public abstract void setInstanceProperties(InstanceProperties properties);
+
+    public abstract void setInstanceProperties(
+            InstanceProperties instanceProperties, TableProperties tableProperties);
 
     protected InstanceProperties createValidInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -67,7 +76,7 @@ public abstract class AdminClientTestBase {
         instanceProperties.set(VERSION, "0.1");
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
         instanceProperties.set(JARS_BUCKET, "bucket");
-        instanceProperties.set(SUBNET, "subnet1");
+        instanceProperties.set(SUBNETS, "subnet1");
         Map<String, String> tags = new HashMap<>();
         tags.put("name", "abc");
         tags.put("project", "test");
@@ -88,5 +97,32 @@ public abstract class AdminClientTestBase {
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ENCRYPTED, "false");
         return tableProperties;
+    }
+
+    protected RunAdminClient editInstanceConfiguration(InstanceProperties before, InstanceProperties after)
+            throws Exception {
+        return runClient().enterPrompt(INSTANCE_CONFIGURATION_OPTION)
+                .editFromStore(before, after);
+    }
+
+    protected RunAdminClient viewInstanceConfiguration(InstanceProperties properties) throws Exception {
+        return runClient().enterPrompt(INSTANCE_CONFIGURATION_OPTION)
+                .viewInEditorFromStore(properties);
+    }
+
+    protected RunAdminClient editTableConfiguration(InstanceProperties instanceProperties,
+                                                    TableProperties before, TableProperties after)
+            throws Exception {
+        return runClient()
+                .enterPrompts(TABLE_CONFIGURATION_OPTION, before.get(TABLE_NAME))
+                .editFromStore(instanceProperties, before, after);
+    }
+
+    protected RunAdminClient viewTableConfiguration(InstanceProperties instanceProperties,
+                                                    TableProperties tableProperties)
+            throws Exception {
+        return runClient()
+                .enterPrompts(TABLE_CONFIGURATION_OPTION, tableProperties.get(TABLE_NAME))
+                .viewInEditorFromStore(instanceProperties, tableProperties);
     }
 }

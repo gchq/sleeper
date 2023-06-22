@@ -1,0 +1,8 @@
+name: Dependency Check Nightly
+on:
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  build-cli:
+    uses: ./.github/workflows/dependency-check.yaml

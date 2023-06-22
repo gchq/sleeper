@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.15.0-SNAPSHOT</version>
+    <version>0.18.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -46,6 +46,7 @@
         <module>metrics</module>
         <module>distribution</module>
         <module>dynamodb-tools</module>
+        <module>trino</module>
         <module>build</module>
     </modules>
 
@@ -58,11 +59,12 @@
         <!--
         The Spark and Hadoop versions must match the EMR release we use for bulk import.
         See the versions listed in the documentation:
-        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-690-release.html
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+        For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.3.0</spark.version>
+        <spark.version>3.3.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
-        <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
+        <parquet-hadoop.version>1.13.0</parquet-hadoop.version>
         <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
         <aws-java-sdk.version>1.12.380</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.19.12</aws-java-sdk-v2.version>
@@ -90,10 +92,18 @@
         <arrow.version>10.0.1</arrow.version>
         <bouncycastle.version>1.72</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
+        <trino.version>390</trino.version>
+        <!-- Trino's AssertJ plugin is not compatible with the latest version -->
+        <trino.assertj.version>3.18.1</trino.assertj.version>
         <!-- Build module uses Jersey for communicating with GitHub API -->
         <jersey.version>2.38</jersey.version>
         <!-- Netty version is managed because AWS and Arrow both depend on it but use incompatible versions -->
         <netty.version>4.1.86.Final</netty.version>
+        <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
+        <!-- We want to avoid mixing them but they should be compatible. -->
+        <jetty.version>9.4.49.v20220914</jetty.version>
+        <jakarta.activation.version>1.2.2</jakarta.activation.version>
+        <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
@@ -118,11 +128,16 @@
         <spotbugs.version>4.7.3</spotbugs.version>
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
+        <dependency-check.plugin.version>8.2.1</dependency-check.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
         java.util.AbstractList is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
         java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
+
+        See also https://arrow.apache.org/docs/java/install.html
+        "When using Java 17 or later, some JDK internals must be exposed by adding - - add-opens=java.base/java.nio=ALL-UNNAMED.
+        Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
         -->
         <module.access.args>
             --add-opens java.base/java.nio=ALL-UNNAMED
@@ -183,10 +198,96 @@
                 <artifactId>aws-crt</artifactId>
                 <version>${aws-crt.version}</version>
             </dependency>
+            <!-- Shared dependencies -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
                 <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-client</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlets</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-proxy</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-continuation</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-webapp</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-xml</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta.xml.bind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta.activation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${hadoop.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-api</artifactId>
+                <version>${hadoop.version}</version>
             </dependency>
             <!-- Apache commons -->
             <dependency>
@@ -419,6 +520,10 @@
                 <artifactId>go-offline-maven-plugin</artifactId>
                 <version>${go-offline.plugin.version}</version>
             </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -571,6 +676,14 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check.plugin.version}</version>
+                    <configuration>
+                        <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

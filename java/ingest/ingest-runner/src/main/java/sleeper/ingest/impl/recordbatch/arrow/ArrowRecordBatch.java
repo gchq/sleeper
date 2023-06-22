@@ -71,7 +71,12 @@ import static java.util.Objects.requireNonNull;
  * </ul>
  * <p>
  * Subclasses of this class are responsible for implementing the {@link #append} method to take objects of type
- * {@link INCOMINGDATATYPE} and append the data to the internal {@link VectorSchemaRoot}.
+ * {@link INCOMINGDATATYPE} and append the data to the internal {@link VectorSchemaRoot}. Note that the entire
+ * contents of each {@link INCOMINGDATATYPE} are added to the {@link VectorSchemaRoot} in one go. Therefore if
+ * the contents of the {@link INCOMINGDATATYPE} do not fit within the {@link VectorSchemaRoot} then the data
+ * in the {@link VectorSchemaRoot} will be flushed and then retried. If the contents will never fit in the
+ * {@link VectorSchemaRoot} then no progress can be made. It will be necessary to either increase the amount
+ * of memory in the {@link VectorSchemaRoot} or to decrease the size of the {@link INCOMINGDATATYPE}.
  * <p>
  * Note that this class does not currently support Sleeper {@link MapType} or {@link ListType} fields.
  *
@@ -414,7 +419,10 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
      */
     protected void flushToLocalArrowFileThenClear() throws IOException {
         if (currentInsertIndex <= 0) {
-            throw new AssertionError("A request was made to flush to disk when there were no records in memory");
+            throw new AssertionError("A request was made to flush to disk when there were no records in memory. "
+                + "The most likely reason for this is that the contents of the incoming data type are too big "
+                + "to fit within the in memory buffer. Either increase the size of the memory buffer or reduce "
+                + "the number of records in the incoming data type.");
         }
         String localFileName = constructLocalFileNameForBatch(currentBatchNo);
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
@@ -539,8 +547,7 @@ public class ArrowRecordBatch<INCOMINGDATATYPE> implements RecordBatch<INCOMINGD
         boolean writeRequired = true;
         while (writeRequired) {
             try {
-                recordMapper.insert(allFields, vectorSchemaRoot, data, currentInsertIndex);
-                currentInsertIndex++;
+                currentInsertIndex = recordMapper.insert(allFields, vectorSchemaRoot, data, currentInsertIndex);
                 writeRequired = false;
             } catch (OutOfMemoryException e) {
                 LOGGER.debug("OutOfMemoryException occurred whilst writing a Record: flushing and retrying");

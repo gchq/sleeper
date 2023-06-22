@@ -19,7 +19,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Locale;
@@ -51,18 +54,6 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     protected void init() {
         tags = csvTagsToMap(get(TAGS));
         super.init();
-    }
-
-    /**
-     * Validates all UserDefinedProperties
-     */
-    @Override
-    protected void validate() {
-        for (UserDefinedInstanceProperty sleeperProperty : UserDefinedInstanceProperty.getAll()) {
-            if (!sleeperProperty.validationPredicate().test(get(sleeperProperty))) {
-                throw new IllegalArgumentException("sleeper property: " + sleeperProperty.getPropertyName() + " is invalid");
-            }
-        }
     }
 
     public Map<String, String> getTags() {
@@ -115,8 +106,14 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         LOGGER.info("Saved instance properties to bucket {}, key {}", get(CONFIG_BUCKET), S3_INSTANCE_PROPERTIES_FILE);
     }
 
-    protected boolean isKnownProperty(String propertyName) {
-        return InstanceProperty.has(propertyName);
+    @Override
+    public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
+        return InstanceProperty.Index.INSTANCE;
+    }
+
+    @Override
+    protected SleeperPropertiesPrettyPrinter<InstanceProperty> getPrettyPrinter(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.forInstanceProperties(writer);
     }
 
     public static Map<String, String> csvTagsToMap(String csvTags) {

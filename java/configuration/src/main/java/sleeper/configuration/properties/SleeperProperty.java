@@ -35,8 +35,18 @@ public interface SleeperProperty {
         return false;
     }
 
+    default boolean isEditable() {
+        return !isSystemDefined();
+    }
+
     default Predicate<String> validationPredicate() {
         return s -> true;
+    }
+
+    default void validate(String value, SleeperPropertiesValidationReporter reporter) {
+        if (!validationPredicate().test(value)) {
+            reporter.invalidProperty(this, value);
+        }
     }
 
     default String toEnvironmentVariable() {
@@ -47,5 +57,13 @@ public interface SleeperProperty {
      * @return True if the property can only be applied by running the CDK, and not just by saving it to S3
      */
     boolean isRunCDKDeployWhenChanged();
+
+    default boolean isIncludedInTemplate() {
+        return false;
+    }
+
+    default boolean isIncludedInBasicTemplate() {
+        return false;
+    }
 
 }

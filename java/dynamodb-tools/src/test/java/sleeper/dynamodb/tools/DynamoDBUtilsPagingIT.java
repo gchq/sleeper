@@ -31,8 +31,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
     @Test
     void shouldReturnPagedResultsWhenMoreRecordsThanScanLimit() {
         // Given
-        createStringTable();
-
         Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .string(TEST_VALUE, "value1").build();
@@ -53,8 +51,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
     @Test
     void shouldReturnOnePageOfResultsWhenFewerRecordsThanScanLimit() {
         // Given
-        createStringTable();
-
         Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .string(TEST_VALUE, "value1").build();
@@ -71,8 +67,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
     @Test
     void shouldReturnPagedResultsWhenRecordsEqualToScanLimit() {
         // Given
-        createStringTable();
-
         Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .string(TEST_VALUE, "value1").build();
@@ -89,8 +83,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
     @Test
     void shouldReturnPagedResultsWhenLastPageHasFewerRecordsThanScanLimit() {
         // Given
-        createStringTable();
-
         Map<String, AttributeValue> record1 = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
                 .string(TEST_VALUE, "value1").build();
@@ -114,9 +106,6 @@ public class DynamoDBUtilsPagingIT extends DynamoDBTableTestBase {
 
     @Test
     void shouldReturnNoResultsWhenNoRecordsExist() {
-        // Given
-        createStringTable();
-
         // When/Then
         assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
                 .withTableName(TEST_TABLE_NAME)

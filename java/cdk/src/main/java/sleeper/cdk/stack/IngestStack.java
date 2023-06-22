@@ -54,6 +54,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.util.Arrays;
@@ -62,7 +63,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
+import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
@@ -93,7 +98,7 @@ public class IngestStack extends NestedStack {
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
-    private final IngestStatusStoreStack statusStore;
+    private final IngestStatusStoreResources statusStore;
 
     public IngestStack(
             Construct scope,
@@ -102,10 +107,11 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets,
-            Topic topic) {
+            Topic topic,
+            IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        this.statusStore = IngestStatusStoreStack.from(scope, instanceProperties);
+        this.statusStore = statusStoreStack.getResources();
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -134,10 +140,13 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    public static Optional<IBucket> addIngestSourceBucketReference(Construct scope, String id, InstanceProperties instanceProperties) {
-        return Optional.ofNullable(instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
-                .filter(bucketName -> !bucketName.isEmpty())
-                .map(bucketName -> Bucket.fromBucketName(scope, id, bucketName));
+    public static List<IBucket> addIngestSourceBucketReferences(Construct scope, String id, InstanceProperties instanceProperties) {
+        AtomicInteger index = new AtomicInteger(1);
+        return Optional.ofNullable(instanceProperties.getList(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
+                .orElse(List.of()).stream()
+                .filter(not(String::isEmpty))
+                .map(bucketName -> Bucket.fromBucketName(scope, id + index.getAndIncrement(), bucketName))
+                .collect(Collectors.toList());
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -253,8 +262,8 @@ public class IngestStack extends NestedStack {
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.
-        addIngestSourceBucketReference(this, "SourceBucket", instanceProperties)
-                .ifPresent(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
+        addIngestSourceBucketReferences(this, "SourceBucket", instanceProperties)
+                .forEach(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
@@ -306,12 +315,11 @@ public class IngestStack extends NestedStack {
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
-        String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestTasksCreationRule");
         Rule rule = Rule.Builder
                 .create(this, "IngestTasksCreationPeriodicTrigger")
-                .ruleName(ruleName)
+                .ruleName(SleeperScheduleRule.INGEST.buildRuleName(instanceProperties))
                 .description("A rule to periodically trigger the ingest tasks lambda")
-                .enabled(Boolean.TRUE)
+                .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();

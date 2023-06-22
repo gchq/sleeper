@@ -53,7 +53,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -77,7 +77,7 @@ public class TestUtils {
         instanceProperties.set(ACCOUNT, "unused");
         instanceProperties.set(REGION, "unused");
         instanceProperties.set(VPC_ID, "unused");
-        instanceProperties.set(SUBNET, "unused");
+        instanceProperties.set(SUBNETS, "unused");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
@@ -109,7 +109,7 @@ public class TestUtils {
 
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(tableName, schema, dynamoDB).create();
-            new InitialiseStateStore(schema, stateStore, Lists.newArrayList(splitPoints)).run();
+            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Lists.newArrayList(splitPoints)).run();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } finally {

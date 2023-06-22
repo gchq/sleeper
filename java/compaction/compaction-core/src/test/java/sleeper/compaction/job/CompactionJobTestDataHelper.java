@@ -15,36 +15,50 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
-import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
-import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
-import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
-
 public class CompactionJobTestDataHelper {
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-    private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    public static final String KEY_FIELD = "key";
+    public static final String DEFAULT_TASK_ID = "test-task";
+    public static final Schema SCHEMA = Schema.builder()
+            .rowKeyFields(new Field(KEY_FIELD, new StringType()))
+            .build();
+
+    private final CompactionJobFactory jobFactory;
     private List<Partition> partitions;
     private PartitionTree partitionTree;
     private FileInfoFactory fileFactory;
+
+    public CompactionJobTestDataHelper() {
+        this("test-table");
+    }
+
+    private CompactionJobTestDataHelper(String tableName) {
+        this.jobFactory = CompactionJobFactory.withTableName(tableName)
+                .outputFilePrefix("test-fs")
+                .build();
+    }
+
+    public static CompactionJobTestDataHelper forTable(String tableName) {
+        return new CompactionJobTestDataHelper(tableName);
+    }
 
     public Partition singlePartition() {
         return singlePartitionTree().getRootPartition();
@@ -55,6 +69,20 @@ public class CompactionJobTestDataHelper {
             throw new IllegalStateException("Partition tree already initialised");
         }
         setPartitions(createPartitions(config));
+    }
+
+    public void reportStartedJob(Instant startTime, CompactionJobStatusStore statusStore) {
+        CompactionJob job = singleFileCompaction();
+        statusStore.jobCreated(job);
+        statusStore.jobStarted(job, startTime, DEFAULT_TASK_ID);
+    }
+
+    public CompactionJob reportFinishedJob(RecordsProcessedSummary summary, CompactionJobStatusStore statusStore) {
+        CompactionJob job = singleFileCompaction();
+        statusStore.jobCreated(job);
+        statusStore.jobStarted(job, summary.getStartTime(), DEFAULT_TASK_ID);
+        statusStore.jobFinished(job, summary, DEFAULT_TASK_ID);
+        return job;
     }
 
     public CompactionJob singleFileCompaction() {
@@ -108,8 +136,8 @@ public class CompactionJobTestDataHelper {
 
     private void setPartitions(List<Partition> partitions) {
         this.partitions = partitions;
-        partitionTree = new PartitionTree(schema, partitions);
-        fileFactory = FileInfoFactory.builder().schema(schema).partitionTree(partitionTree).build();
+        partitionTree = new PartitionTree(SCHEMA, partitions);
+        fileFactory = FileInfoFactory.builder().schema(SCHEMA).partitionTree(partitionTree).build();
     }
 
     private boolean isPartitionsSpecified() {
@@ -117,11 +145,11 @@ public class CompactionJobTestDataHelper {
     }
 
     private List<Partition> createSinglePartition() {
-        return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
+        return new PartitionsFromSplitPoints(SCHEMA, Collections.emptyList()).construct();
     }
 
     private List<Partition> createPartitions(Consumer<PartitionsBuilder> config) {
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
+        PartitionsBuilder builder = new PartitionsBuilder(SCHEMA);
         config.accept(builder);
         return builder.buildList();
     }

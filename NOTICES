@@ -61,11 +61,11 @@ Apache Hadoop (org.apache.hadoop:hadoop-aws:3.3.3, org.apache.hadoop:hadoop-clie
 
 - Apache License, Version 2.0
 
-Apache Parquet (org.apache.parquet:parquet-hadoop:1.12.2):
+Apache Parquet (org.apache.parquet:parquet-hadoop:1.13.0):
 
 - Apache License, Version 2.0
 
-Apache Spark (org.apache.spark:spark-sql_2.12:3.3.0):
+Apache Spark (org.apache.spark:spark-sql_2.12:3.3.1):
 
 - Apache License, Version 2.0
 
