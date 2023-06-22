@@ -91,7 +91,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGIO
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
@@ -244,7 +244,7 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 100);
         instanceProperties.setNumber(MAXIMUM_CONCURRENT_INGEST_TASKS, 200);
         instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.set(SUBNET, "subnet1");
+        instanceProperties.set(SUBNETS, "subnet1");
         instanceProperties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 20);
         instanceProperties.setNumber(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 700);

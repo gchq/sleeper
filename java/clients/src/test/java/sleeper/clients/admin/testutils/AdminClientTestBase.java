@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -76,7 +76,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
         instanceProperties.set(VERSION, "0.1");
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
         instanceProperties.set(JARS_BUCKET, "bucket");
-        instanceProperties.set(SUBNET, "subnet1");
+        instanceProperties.set(SUBNETS, "subnet1");
         Map<String, String> tags = new HashMap<>();
         tags.put("name", "abc");
         tags.put("project", "test");

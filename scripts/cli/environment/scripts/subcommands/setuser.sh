@@ -16,35 +16,16 @@
 set -e
 
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
-
-if [ "$#" -gt 0 ]; then
-  ENVIRONMENT_ID=$1
-  echo "$ENVIRONMENT_ID" > "$ENVIRONMENTS_DIR/current.txt"
-else
-  ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
-fi
-
+ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
-KNOWN_HOSTS_FILE="$ENVIRONMENT_DIR/known_hosts"
 
-EC2_IP=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].PublicIP" "$OUTPUTS_FILE" --raw-output)
+if [ "$#" -lt 1 ]; then
+  USERNAME=$(jq ".[\"$ENVIRONMENT_ID-BuildEC2\"].LoginUser" "$OUTPUTS_FILE" --raw-output)
+  echo "Setting default user: $USERNAME"
+else
+  USERNAME=$1
+  echo "Setting user: $USERNAME"
+fi
 
-echo "Scanning $EC2_IP"
-
-# Wait for deployment, scan SSH to remember EC2 certificate
-RETRY_NUM=30
-RETRY_EVERY=10
-NUM=$RETRY_NUM
-until ssh-keyscan -H "$EC2_IP" > "$KNOWN_HOSTS_FILE"
-do
-  1>&2 echo "Failed SSH scan with status $?, retrying $NUM more times, next in $RETRY_EVERY seconds"
-  sleep $RETRY_EVERY
-  ((NUM--))
-
-  if [ $NUM -eq 0 ]
-  then
-    1>&2 echo "SSH scan unsuccessful after $RETRY_NUM tries"
-    exit 1
-  fi
-done
+echo "$USERNAME" > "$ENVIRONMENTS_DIR/currentUser.txt"

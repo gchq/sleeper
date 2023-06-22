@@ -45,8 +45,8 @@ sleeper cdk bootstrap
 sleeper environment deploy TestEnvironment
 ```
 
-The `sleeper environment deploy` command will create an SSH key locally, and wait for the EC2 instance to be deployed.
-You can then SSH to it with this command:
+The `sleeper environment deploy` command will wait for the EC2 instance to be deployed.
+You can then SSH to it with EC2 Instance Connect and SSM Session Manager, using this command:
 
 ```bash
 sleeper environment connect
@@ -75,6 +75,12 @@ deployment being slow uploading jars and Docker images.
 The Sleeper Git repository will also be cloned, and you can access it by running `sleeper builder` in the EC2.
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
+
+If you want someone else to be able to access the same environment EC2, they can run `sleeper environment deploy <id>`
+with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
+can set up separate users with `sleeper environment adduser <username>`, and switch users with
+`sleeper environment setuser <username>`. If you call `sleeper environment setuser` with no arguments, you'll switch
+back to the original default user for the EC2.
 
 ### System test
 

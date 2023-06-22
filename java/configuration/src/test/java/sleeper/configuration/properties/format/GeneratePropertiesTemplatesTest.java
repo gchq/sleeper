@@ -44,7 +44,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
@@ -70,7 +70,7 @@ class GeneratePropertiesTemplatesTest {
                     Arguments.of(ACCOUNT, "1234567890"),
                     Arguments.of(REGION, "eu-west-2"),
                     Arguments.of(VPC_ID, "1234567890"),
-                    Arguments.of(SUBNET, "subnet-abcdefgh")
+                    Arguments.of(SUBNETS, "subnet-abcdefgh")
             );
         }
     }

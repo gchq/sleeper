@@ -52,7 +52,7 @@ public class ExecutorFactoryIT {
             "sleeper.version=0.10.0-SNAPSHOT\n" +
             "sleeper.jars.bucket=jars-bucket\n" +
             "sleeper.vpc=1234567890\n" +
-            "sleeper.subnet=subnet-123\n" +
+            "sleeper.subnets=subnet-123\n" +
             "sleeper.account=123\n";
 
     @BeforeEach

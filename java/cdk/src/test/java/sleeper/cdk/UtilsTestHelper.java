@@ -29,7 +29,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -61,7 +61,7 @@ public class UtilsTestHelper {
         instanceProperties.set(ACCOUNT, "");
         instanceProperties.set(REGION, "");
         instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
+        instanceProperties.set(SUBNETS, "");
         return instanceProperties;
     }
 
