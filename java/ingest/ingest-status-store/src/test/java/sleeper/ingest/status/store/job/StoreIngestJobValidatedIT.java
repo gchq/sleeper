@@ -19,6 +19,7 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobStartedData;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
@@ -38,7 +39,12 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
 
         // When
         store.jobAccepted(DEFAULT_TASK_ID, job, validationTime);
-        store.jobStartedWithValidation(DEFAULT_TASK_ID, job, startedTime);
+        store.jobStarted(IngestJobStartedData.builder()
+                .taskId(DEFAULT_TASK_ID)
+                .job(job)
+                .startTime(startedTime)
+                .startOfRun(false)
+                .build());
 
         // Then
         assertThat(getAllJobStatuses())

@@ -224,7 +224,12 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobAccepted(taskId, job, validationTime);
-            store.jobStartedWithValidation(taskId, job, startTime);
+            store.jobStarted(IngestJobStartedData.builder()
+                    .taskId(taskId)
+                    .job(job)
+                    .startTime(startTime)
+                    .startOfRun(false)
+                    .build());
 
             // Then
             assertThat(store.getAllJobs(tableName))

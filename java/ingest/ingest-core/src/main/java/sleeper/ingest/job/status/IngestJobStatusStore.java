@@ -42,15 +42,6 @@ public interface IngestJobStatusStore {
                 .build());
     }
 
-    default void jobStartedWithValidation(String taskId, IngestJob job, Instant startTime) {
-        jobStarted(IngestJobStartedData.builder()
-                .taskId(taskId)
-                .job(job)
-                .startTime(startTime)
-                .startOfRun(false)
-                .build());
-    }
-
     default void jobStarted(IngestJobStartedData startedData) {
     }
 
