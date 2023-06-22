@@ -100,10 +100,11 @@ public class IngestJobStartedEvent {
 
     @Override
     public String toString() {
-        return "IngestJobStartedData{" +
-                ", taskId='" + taskId + '\'' +
+        return "IngestJobStartedEvent{" +
+                "taskId='" + taskId + '\'' +
                 ", job=" + job +
                 ", startTime=" + startTime +
+                ", startOfRun=" + startOfRun +
                 '}';
     }
 
