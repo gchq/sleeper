@@ -20,7 +20,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -55,7 +54,6 @@ public class KryoSerializerTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSerializeAndDeserializePartitionWithManyRowKeys() {
         // Given
         Kryo kryo = kryo();
@@ -87,7 +85,7 @@ public class KryoSerializerTest {
                         .mapToObj(i -> new Field("key-" + i, new LongType()))
                         .collect(Collectors.toUnmodifiableList()))
                 .build())
-                .partition("test-partition", Long.MIN_VALUE, null);
+                .rootFirst("test-partition");
     }
 
     private static Kryo kryo() {
