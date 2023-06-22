@@ -22,7 +22,6 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 
 import java.time.Instant;
 
-import static java.time.Instant.parse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -58,9 +57,9 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         // Given
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithFiles("file2");
-        Instant startedTime1 = parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime1 = parse("2022-12-14T13:51:42.001Z");
-        Instant startedTime2 = parse("2022-12-14T13:52:12.001Z");
+        Instant startedTime1 = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime1 = Instant.parse("2022-12-14T13:51:42.001Z");
+        Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
@@ -95,9 +94,9 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
     public void shouldIncludeUnfinishedIngestJobWithOneFinishedRun() {
         // Given
         IngestJob job = jobWithFiles("test-file");
-        Instant startedTime1 = parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime1 = parse("2022-12-14T13:51:42.001Z");
-        Instant startedTime2 = parse("2022-12-14T13:52:12.001Z");
+        Instant startedTime1 = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant finishedTime1 = Instant.parse("2022-12-14T13:51:42.001Z");
+        Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
         store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime1));
