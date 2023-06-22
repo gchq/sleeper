@@ -19,6 +19,7 @@ package sleeper.ingest.job.status;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class IngestJobValidatedEvent {
     private final String taskId;
@@ -59,5 +60,35 @@ public class IngestJobValidatedEvent {
 
     public String getReason() {
         return reason;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
+        return Objects.equals(taskId, that.taskId)
+                && Objects.equals(job, that.job)
+                && Objects.equals(validationTime, that.validationTime)
+                && Objects.equals(reason, that.reason);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(taskId, job, validationTime, reason);
+    }
+
+    @Override
+    public String toString() {
+        return "IngestJobValidatedEvent{" +
+                "taskId='" + taskId + '\'' +
+                ", job=" + job +
+                ", validationTime=" + validationTime +
+                ", reason='" + reason + '\'' +
+                '}';
     }
 }
