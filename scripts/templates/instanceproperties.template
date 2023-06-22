@@ -468,27 +468,47 @@ sleeper.default.bulk.import.emr.executor.max.instances=10
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 
-# (Persistent EMR mode only) The EC2 instance type used for the master node of the persistent EMR
+# (Persistent EMR mode only) The EC2 instance types used for the master node of the persistent EMR
 # cluster. Multiple instance types can be specified separated by commas. One will be chosen depending
 # on the capacity available.
-sleeper.bulk.import.persistent.emr.master.instance.type=m5.xlarge
+sleeper.bulk.import.persistent.emr.master.instance.types=m5.xlarge
 
-# (Persistent EMR mode only) The EC2 instance type used for the executor nodes of the persistent EMR
+# (Persistent EMR mode only) The EC2 instance types used for the executor nodes of the persistent EMR
 # cluster. Multiple instance types can be specified separated by commas. Instance types will be chosen
-# from the list based on the capacity available.
-sleeper.bulk.import.persistent.emr.core.instance.type=m5.4xlarge
+# from the list based on the capacity available.You can assign weights to instance types to define the
+# amount of capacity that each instance type provides. By default, each instance type delivers a
+# capacity of 1. You can set custom weights for an instance type by adding a number after the instance
+# type in this comma separated list. This must be a whole number.
+# For example:
+#  sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge
+# The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the
+# capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, so is
+# defaulted to 1.
+# In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one
+# instance of m5.4xlarge, or 3 instances of m5.xlarge.
+# See also:
+# https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options
+sleeper.bulk.import.persistent.emr.core.instance.types=m5.4xlarge
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
 
-# (Persistent EMR mode only) The minimum number of instances in the persistent EMR cluster. If managed
-# scaling is not used then the cluster will be of fixed size, with number of instances equal to this
-# value.
-sleeper.bulk.import.persistent.emr.min.instances=1
+# (Persistent EMR mode only) The minimum number of capacity units to provision as EC2 instances for
+# executors in the persistent EMR cluster.
+# This is measured in instance fleet capacity units. These are declared alongside the requested
+# instance types, as each type will count for a certain number of units. By default the units are the
+# number of instances.
+# If managed scaling is not used then the cluster will be of fixed size, with a number of instances
+# equal to this value.
+sleeper.bulk.import.persistent.emr.min.capacity=1
 
-# (Persistent EMR mode only) The maximum number of instances in the persistent EMR cluster. This value
-# is only used if managed scaling is not used.
-sleeper.bulk.import.persistent.emr.max.instances=10
+# (Persistent EMR mode only) The maximum number of capacity units to provision as EC2 instances for
+# executors in the persistent EMR cluster.
+# This is measured in instance fleet capacity units. These are declared alongside the requested
+# instance types, as each type will count for a certain number of units. By default the units are the
+# number of instances.
+# This value is only used if managed scaling is used.
+sleeper.bulk.import.persistent.emr.max.capacity=10
 
 # (Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
