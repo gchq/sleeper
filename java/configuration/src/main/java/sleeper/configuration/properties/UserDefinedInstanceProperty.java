@@ -698,6 +698,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.step.concurrency.level")
             .description("(Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.")
             .defaultValue("2")
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
 
