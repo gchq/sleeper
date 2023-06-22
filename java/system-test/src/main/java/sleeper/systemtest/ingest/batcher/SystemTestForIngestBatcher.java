@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
@@ -146,7 +147,8 @@ public class SystemTestForIngestBatcher {
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
-                    .instancePropertiesPath(instancePropertiesPath)
+                    .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
+                            instancePropertiesPath, scriptsDir.resolve("templates")))
                     .extraInstanceProperties(properties ->
                             properties.set(INGEST_SOURCE_BUCKET, sourceBucketName))
                     .instanceId(instanceId)

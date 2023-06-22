@@ -39,9 +39,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
-import static sleeper.clients.deploy.DeployInstanceConfiguration.fromTemplateDirectory;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 
 public class DeployNewInstance {
@@ -55,7 +53,7 @@ public class DeployNewInstance {
     private final String vpcId;
     private final String subnetIds;
     private final String tableName;
-    private final Path instancePropertiesPath;
+    private final DeployInstanceConfiguration deployInstanceConfig;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
     private final Path splitPointsFile;
@@ -70,7 +68,7 @@ public class DeployNewInstance {
         vpcId = builder.vpcId;
         subnetIds = builder.subnetIds;
         tableName = builder.tableName;
-        instancePropertiesPath = builder.instancePropertiesPath;
+        deployInstanceConfig = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
@@ -95,7 +93,9 @@ public class DeployNewInstance {
                 .vpcId(args[2])
                 .subnetIds(args[3])
                 .tableName(args[4])
-                .instancePropertiesPath(optionalArgument(args, 5).map(Path::of).orElse(null))
+                .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
+                        optionalArgument(args, 5).map(Path::of).orElse(null),
+                        scriptsDirectory.resolve("templates")))
                 .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
                 .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
@@ -121,16 +121,9 @@ public class DeployNewInstance {
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
-        LOGGER.info("instancePropertiesPath: {}", instancePropertiesPath);
         LOGGER.info("splitPointsFile: {}", splitPointsFile);
         LOGGER.info("deployPaused: {}", deployPaused);
-        DeployInstanceConfiguration deployInstanceConfig;
-        if (instancePropertiesPath != null) {
-            deployInstanceConfig = fromInstancePropertiesOrTemplatesDir(instancePropertiesPath, templatesDirectory);
-        } else {
-            deployInstanceConfig = fromTemplateDirectory(templatesDirectory);
-        }
-        Properties tagsProperties = loadProperties(generatedDirectory.resolve("tags.properties"));
+        Properties tagsProperties = deployInstanceConfig.getInstanceProperties().getTagsProperties();
         tagsProperties.setProperty("InstanceID", instanceId);
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
@@ -177,7 +170,7 @@ public class DeployNewInstance {
         private String vpcId;
         private String subnetIds;
         private String tableName;
-        private Path instancePropertiesPath;
+        private DeployInstanceConfiguration deployInstanceConfiguration;
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
@@ -227,8 +220,8 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instancePropertiesPath(Path instancePropertiesPath) {
-            this.instancePropertiesPath = instancePropertiesPath;
+        public Builder deployInstanceConfiguration(DeployInstanceConfiguration deployInstanceConfiguration) {
+            this.deployInstanceConfiguration = deployInstanceConfiguration;
             return this;
         }
 

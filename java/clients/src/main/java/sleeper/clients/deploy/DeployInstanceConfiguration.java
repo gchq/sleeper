@@ -55,6 +55,9 @@ public class DeployInstanceConfiguration {
     }
 
     public static DeployInstanceConfiguration fromInstancePropertiesOrTemplatesDir(Path instancePropertiesPath, Path templatesDir) throws IOException {
+        if (instancePropertiesPath == null) {
+            return fromTemplateDirectory(templatesDir);
+        }
         Path rootDir = instancePropertiesPath.getParent();
         if (rootDir == null) {
             throw new IllegalArgumentException("Could not find parent of instance properties file");

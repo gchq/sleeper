@@ -21,6 +21,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
 
@@ -34,8 +35,10 @@ public class DeployNewTestInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet> " +
                     "<optional-deploy-paused-flag> <optional-split-points-file>");
         }
-        DeployNewInstance.builder().scriptsDirectory(Path.of(args[0]))
-                .instancePropertiesPath(Path.of(args[1]))
+        Path scriptsDir = Path.of(args[0]);
+        DeployNewInstance.builder().scriptsDirectory(scriptsDir)
+                .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
+                        Path.of(args[1]), scriptsDir.resolve("templates")))
                 .extraInstanceProperties(properties ->
                         properties.set(SYSTEM_TEST_REPO, args[2] + "/system-test"))
                 .instanceId(args[2])
