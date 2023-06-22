@@ -19,12 +19,12 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
@@ -39,12 +39,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
 
         // When
         store.jobAccepted(DEFAULT_TASK_ID, job, validationTime);
-        store.jobStarted(IngestJobStartedEvent.builder()
-                .taskId(DEFAULT_TASK_ID)
-                .job(job)
-                .startTime(startedTime)
-                .startOfRun(false)
-                .build());
+        store.jobStarted(validatedIngestJobStarted(DEFAULT_TASK_ID, job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())

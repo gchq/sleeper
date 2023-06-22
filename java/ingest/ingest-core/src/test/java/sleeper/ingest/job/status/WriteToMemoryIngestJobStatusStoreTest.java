@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
@@ -225,12 +226,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobAccepted(taskId, job, validationTime);
-            store.jobStarted(IngestJobStartedEvent.builder()
-                    .taskId(taskId)
-                    .job(job)
-                    .startTime(startTime)
-                    .startOfRun(false)
-                    .build());
+            store.jobStarted(validatedIngestJobStarted(taskId, job, startTime));
 
             // Then
             assertThat(store.getAllJobs(tableName))

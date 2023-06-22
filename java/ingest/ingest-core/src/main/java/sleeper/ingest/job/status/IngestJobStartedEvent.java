@@ -56,6 +56,15 @@ public class IngestJobStartedEvent {
                 .build();
     }
 
+    public static IngestJobStartedEvent validatedIngestJobStarted(String taskId, IngestJob job, Instant startTime) {
+        return builder()
+                .taskId(taskId)
+                .job(job)
+                .startTime(startTime)
+                .startOfRun(false)
+                .build();
+    }
+
     public String getTaskId() {
         return taskId;
     }
