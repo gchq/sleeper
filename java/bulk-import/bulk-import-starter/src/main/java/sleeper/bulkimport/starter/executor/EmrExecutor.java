@@ -54,6 +54,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -70,13 +72,24 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
     private final AmazonElasticMapReduce emrClient;
+    private final IntUnaryOperator randomSubnet;
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
+        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
+                new Random()::nextInt);
+    }
+
+    public EmrExecutor(AmazonElasticMapReduce emrClient,
+                       InstanceProperties instanceProperties,
+                       TablePropertiesProvider tablePropertiesProvider,
+                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3,
+                       IntUnaryOperator randomSubnet) {
         super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
         this.emrClient = emrClient;
+        this.randomSubnet = randomSubnet;
     }
 
     @Override
@@ -130,7 +143,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
     private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
         JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(instanceProperties.get(UserDefinedInstanceProperty.SUBNET));
+                .withEc2SubnetId(randomSubnet());
 
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
@@ -179,6 +192,11 @@ public class EmrExecutor extends AbstractEmrExecutor {
         }
 
         return config;
+    }
+
+    private String randomSubnet() {
+        List<String> subnets = instanceProperties.getList(UserDefinedInstanceProperty.SUBNETS);
+        return subnets.get(randomSubnet.applyAsInt(subnets.size()));
     }
 
     private List<Configuration> getConfigurations() {

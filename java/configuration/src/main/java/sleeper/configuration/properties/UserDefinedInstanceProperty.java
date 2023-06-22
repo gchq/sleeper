@@ -100,8 +100,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "If there is no S3 endpoint then the NAT costs can be very significant.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
-    UserDefinedInstanceProperty SUBNET = Index.propertyBuilder("sleeper.subnet")
-            .description("The subnet to deploy ECS tasks to.")
+    UserDefinedInstanceProperty SUBNETS = Index.propertyBuilder("sleeper.subnets")
+            .description("A comma separated list of subnets to deploy to. ECS tasks will be run across multiple " +
+                    "subnets. EMR clusters will be deployed in a subnet chosen when the cluster is created.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();

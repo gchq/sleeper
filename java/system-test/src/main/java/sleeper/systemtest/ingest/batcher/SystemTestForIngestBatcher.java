@@ -150,7 +150,7 @@ public class SystemTestForIngestBatcher {
                             properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
                     .instanceId(instanceId)
                     .vpcId(vpc)
-                    .subnetId(subnet)
+                    .subnetIds(subnet)
                     .deployPaused(true)
                     .tableName("system-test")
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)

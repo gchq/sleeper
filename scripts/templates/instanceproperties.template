@@ -24,8 +24,9 @@ sleeper.region=changeme
 # The id of the VPC to deploy to.
 sleeper.vpc=changeme
 
-# The subnet to deploy ECS tasks to.
-sleeper.subnet=changeme
+# A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
+# clusters will be deployed in a subnet chosen when the cluster is created.
+sleeper.subnets=changeme
 
 
 ## The following properties relate to standard ingest.

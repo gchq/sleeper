@@ -62,7 +62,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 
 /**
@@ -129,7 +129,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetId(instanceProperties.get(SUBNET))
+                .ec2SubnetId(instanceProperties.getList(SUBNETS).get(0))
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
                 .coreInstanceGroup(coreInstanceGroupConfigProperty);
 

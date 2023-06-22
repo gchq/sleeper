@@ -56,7 +56,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
@@ -78,7 +78,7 @@ public class RunTasks {
     private final String ec2TaskDefinition;
     private final String launchType;
     private final int maximumRunningTasks;
-    private final String subnet;
+    private final List<String> subnets;
     private final String fargateVersion;
     private final Scaler scaler;
 
@@ -114,7 +114,7 @@ public class RunTasks {
             throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
         }
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
-        this.subnet = instanceProperties.get(SUBNET);
+        this.subnets = instanceProperties.getList(SUBNETS);
         this.fargateVersion = instanceProperties.get(FARGATE_VERSION);
         this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 
@@ -165,7 +165,7 @@ public class RunTasks {
             args.add(s3Bucket);
             args.add(type);
             TaskOverride override = createOverride(args, containerName);
-            NetworkConfiguration networkConfiguration = networkConfig(subnet);
+            NetworkConfiguration networkConfiguration = networkConfig(subnets);
 
             // Create 1 task for each item on the queue
             launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
@@ -209,16 +209,15 @@ public class RunTasks {
     /**
      * Create the container networking configuration.
      *
-     * @param subnet the subnet name
+     * @param subnets the subnet name
      * @return task network configuration
      */
-    private static NetworkConfiguration networkConfig(String subnet) {
+    private static NetworkConfiguration networkConfig(List<String> subnets) {
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(subnet);
+                .withSubnets(subnets);
 
-        NetworkConfiguration networkConfiguration = new NetworkConfiguration()
+        return new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);
-        return networkConfiguration;
     }
 
     /**
@@ -233,9 +232,8 @@ public class RunTasks {
                 .withName(containerName)
                 .withCommand(args);
 
-        TaskOverride override = new TaskOverride()
+        return new TaskOverride()
                 .withContainerOverrides(containerOverride);
-        return override;
     }
 
     /**
