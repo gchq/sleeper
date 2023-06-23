@@ -26,13 +26,18 @@ import java.util.List;
 
 public final class JdkImmutableListRegistrator implements KryoRegistrator {
     @Override
-    public void registerClasses(final Kryo kryo) {
-        final ImmutableListSerializer serializer = new ImmutableListSerializer();
+    public void registerClasses(Kryo kryo) {
+        ImmutableListSerializer serializer = new ImmutableListSerializer();
+
+        // The field Partition.rowKeyTypes is populated from Schema.getRowKeyTypes,
+        // which uses Collectors.toUnmodifiableList. In the JDK we've tested, this will produce
+        // either a ListN or a List12, depending on the number of row keys.
+
+        // ImmutableCollections.ListN is package-private
         kryo.register(List.of().getClass(), serializer);
+
+        // ImmutableCollections.List12 is package-private
         kryo.register(List.of(1).getClass(), serializer);
-        kryo.register(List.of(1, 2, 3, 4).getClass(), serializer);
-        kryo.register(List.of(1, 2, 3, 4).subList(0, 2).getClass(), serializer);
-        kryo.register(List.of(1, 2, 3, 4).iterator().getClass(), serializer);
     }
 
     private static class ImmutableListSerializer extends Serializer<List<Object>> {

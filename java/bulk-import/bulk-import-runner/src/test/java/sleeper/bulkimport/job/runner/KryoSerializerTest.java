@@ -41,10 +41,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class KryoSerializerTest {
 
     @Test
-    void shouldSerializeAndDeserializePartition() {
+    void shouldSerializeAndDeserializePartitionWithOneRowKey() {
         // Given
         Kryo kryo = kryo();
         Partition partition = partitionWithNRowKeys(1);
+
+        // When
+        byte[] bytes = serialize(kryo, partition);
+
+        // Then
+        assertThat(deserialize(kryo, bytes, Partition.class)).isEqualTo(partition);
+    }
+
+    @Test
+    void shouldSerializeAndDeserializePartitionWithTwoRowKeys() {
+        // Given
+        Kryo kryo = kryo();
+        Partition partition = partitionWithNRowKeys(2);
 
         // When
         byte[] bytes = serialize(kryo, partition);
