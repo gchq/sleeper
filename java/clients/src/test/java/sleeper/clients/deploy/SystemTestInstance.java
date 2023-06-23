@@ -64,7 +64,7 @@ public class SystemTestInstance implements BeforeAllCallback {
         instanceProperties = GenerateInstanceProperties.builder()
                 .sts(sts).regionProvider(DefaultAwsRegionProviderChain.builder().build())
                 .instanceId(instanceId)
-                .vpcId(vpcId).subnetId(subnetId)
+                .vpcId(vpcId).subnetIds(subnetId)
                 .build().generate();
         singleKeyTableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "single-key");
         boolean jarsChanged = SyncJars.builder().s3(s3v2)

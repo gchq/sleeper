@@ -16,33 +16,21 @@
 set -e
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: environment destroy <uniqueId> <optional_cdk_parameters>"
+  echo "Usage: environment adduser <username>"
   exit 1
 fi
 
-ENVIRONMENT_ID=$1
-shift
-
-if [ "$#" -lt 2 ]; then
-  CDK_PARAMS=("--all")
-  DELETE_ENVIRONMENT_DIR=true
-else
-  CDK_PARAMS=("$@")
-  DELETE_ENVIRONMENT_DIR=false
-fi
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-UTIL_SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../util && pwd)
-CDK_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
-ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
+USERNAME="$1"
 
-"$UTIL_SCRIPTS_DIR/configure-aws.sh"
-
-pushd "$CDK_DIR" > /dev/null
-cdk destroy -c instanceId="$ENVIRONMENT_ID" "${CDK_PARAMS[@]}"
-popd > /dev/null
-
-if [ "$DELETE_ENVIRONMENT_DIR" = true ]; then
-  rm -rf "$ENVIRONMENT_DIR"
-fi
+"$THIS_DIR/setuser.sh"
+"$THIS_DIR/connect.sh" \
+  cloud-init status --wait \
+  "&&" sudo adduser --disabled-password --gecos "-" "$USERNAME" \
+  "&&" sudo passwd -d "$USERNAME" \
+  "&&" sudo usermod -aG sudo "$USERNAME" \
+  "&&" sudo usermod -aG docker "$USERNAME" \
+  "&&" sudo runuser --login "$USERNAME" -c '"git clone https://github.com/gchq/sleeper.git ~/.sleeper/builder/sleeper"' \
+  "&&" sudo runuser --login "$USERNAME" -c '"~/.sleeper/builder/sleeper/scripts/cli/install.sh"' \
+  "&&" sudo runuser --login "$USERNAME" -c '"sleeper builder chown -R root:root ."'
+"$THIS_DIR/setuser.sh" "$USERNAME"

@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
-import sleeper.clients.util.PollWithRetries;
+import sleeper.core.util.PollWithRetries;
 
 import static com.amazonaws.services.s3.Headers.CONTENT_TYPE;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;

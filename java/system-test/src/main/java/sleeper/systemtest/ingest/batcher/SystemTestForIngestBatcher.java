@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class SystemTestForIngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
@@ -91,7 +92,7 @@ public class SystemTestForIngestBatcher {
                     .s3ClientV2(s3Client)
                     .cloudFormationClient(cloudFormationClient)
                     .sqsClient(AmazonSQSClientBuilder.defaultClient())
-                    .lambdaClient(LambdaClient.create())
+                    .lambdaClient(createSystemTestLambdaClient())
                     .dynamoDB(AmazonDynamoDBClientBuilder.defaultClient())
                     .build().run();
         }
@@ -150,7 +151,7 @@ public class SystemTestForIngestBatcher {
                             properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
                     .instanceId(instanceId)
                     .vpcId(vpc)
-                    .subnetId(subnet)
+                    .subnetIds(subnet)
                     .deployPaused(true)
                     .tableName("system-test")
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
