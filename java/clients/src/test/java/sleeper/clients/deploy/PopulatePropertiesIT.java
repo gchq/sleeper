@@ -33,6 +33,7 @@ import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +73,7 @@ public class PopulatePropertiesIT {
 
         // Then
         InstanceProperties expected = new InstanceProperties();
+        expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
         expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
