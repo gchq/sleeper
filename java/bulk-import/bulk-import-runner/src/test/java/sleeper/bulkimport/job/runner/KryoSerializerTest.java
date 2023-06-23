@@ -20,8 +20,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.apache.spark.SparkConf;
+import org.apache.spark.serializer.KryoSerializer;
 import org.junit.jupiter.api.Test;
-import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
@@ -101,17 +102,14 @@ public class KryoSerializerTest {
     }
 
     private static Kryo kryo() {
-        Kryo kryo = kryoWithoutImmutableListSupport();
-        new JdkImmutableListRegistrator().registerClasses(kryo);
-        return kryo;
+        SparkConf sparkConf = BulkImportSparkSessionRunner.createSparkConf();
+        return new KryoSerializer(sparkConf).newKryo();
     }
 
     private static Kryo kryoWithoutImmutableListSupport() {
-        Kryo kryo = new Kryo();
-        kryo.setRegistrationRequired(false);
-        kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-        kryo.register(Partition.class);
-        return kryo;
+        SparkConf sparkConf = BulkImportSparkSessionRunner.createSparkConf();
+        sparkConf.remove("spark.kryo.registrator");
+        return new KryoSerializer(sparkConf).newKryo();
     }
 
     private static byte[] serialize(Kryo kryo, Object object) {
