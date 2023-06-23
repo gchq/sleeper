@@ -228,7 +228,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "copies the completed Parquet file asynchronously into S3).\n" +
                     "The direct method is simpler but the async method should provide better performance when the number of partitions " +
                     "is large.")
-            .defaultValue("async")
+            .defaultValue("direct")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     // ArrayList ingest
