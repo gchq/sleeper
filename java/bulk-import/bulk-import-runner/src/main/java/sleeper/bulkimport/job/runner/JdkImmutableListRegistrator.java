@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.bulkimport.job.runner.dataframelocalsort;
+package sleeper.bulkimport.job.runner;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;

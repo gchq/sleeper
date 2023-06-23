@@ -23,7 +23,6 @@ import com.esotericsoftware.kryo.io.Output;
 import org.junit.jupiter.api.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
-import sleeper.bulkimport.job.runner.dataframelocalsort.JdkImmutableListRegistrator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
 import sleeper.core.schema.Field;
