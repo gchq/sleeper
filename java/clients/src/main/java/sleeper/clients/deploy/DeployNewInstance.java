@@ -128,7 +128,7 @@ public class DeployNewInstance {
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
                 .instanceProperties(deployInstanceConfig.getInstanceProperties())
-                .tagsProperties(deployInstanceConfig.getInstanceProperties().getTagsProperties())
+                .tagsProperties(tagsProperties)
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
