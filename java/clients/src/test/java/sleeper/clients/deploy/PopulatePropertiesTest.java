@@ -22,6 +22,8 @@ import software.amazon.awssdk.regions.Region;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -49,7 +51,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PopulatePropertiesTest {
     @Test
-    void shouldGenerateInstancePropertiesCorrectly() {
+    void shouldPopulateInstanceProperties() {
         // Given/When
         InstanceProperties properties = populateInstancePropertiesBuilder()
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
@@ -57,6 +59,7 @@ class PopulatePropertiesTest {
 
         // Then
         InstanceProperties expected = new InstanceProperties();
+        expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
         expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
@@ -73,7 +76,36 @@ class PopulatePropertiesTest {
     }
 
     @Test
-    void shouldGenerateTearDownDefaultInstancePropertiesCorrectly() {
+    void shouldDefaultTagsWhenNotProvidedAndNotSetInInstanceProperties() {
+        // Given/When
+        InstanceProperties properties = populateInstancePropertiesBuilder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
+
+        // Then
+        assertThat(properties.getTags())
+                .isEqualTo(Map.of("InstanceID", "test-instance"));
+    }
+
+    @Test
+    void shouldAddToExistingTagsWhenSetInInstanceProperties() {
+        // Given/When
+
+        InstanceProperties beforePopulate = new InstanceProperties();
+        beforePopulate.setTags(Map.of("TestTag", "TestValue"));
+        InstanceProperties afterPopulate = populateInstancePropertiesBuilder()
+                .instanceProperties(beforePopulate)
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
+
+        // Then
+        assertThat(afterPopulate.getTags())
+                .isEqualTo(Map.of("TestTag", "TestValue",
+                        "InstanceID", "test-instance"));
+    }
+
+    @Test
+    void shouldGenerateDefaultInstancePropertiesFromInstanceId() {
         // Given/When
         InstanceProperties properties = generateTearDownDefaultsFromInstanceId("test-instance");
 
@@ -96,6 +128,7 @@ class PopulatePropertiesTest {
 
         assertThat(properties).isEqualTo(expected);
     }
+
 
     @Test
     void shouldGenerateTablePropertiesCorrectly() {

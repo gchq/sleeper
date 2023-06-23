@@ -61,7 +61,7 @@ public class PopulateInstanceProperties {
         vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
         subnetIds = requireNonEmpty(builder.subnetIds, "subnetIds must not be empty");
         properties = Optional.ofNullable(builder.properties).orElseGet(InstanceProperties::new);
-        tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(Properties::new);
+        tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(properties::getTagsProperties);
     }
 
     public static Builder builder() {
