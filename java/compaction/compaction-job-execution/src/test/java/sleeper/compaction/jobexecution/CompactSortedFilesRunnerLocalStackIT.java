@@ -286,7 +286,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
         // - Check DynamoDBStateStore has correct file in partition list
-        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList() ;//stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getFileInPartitionList();
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         assertThat(fileInPartitionList)
                 .extracting(FileInfo::getFilename)
                 .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());

@@ -134,7 +134,7 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr"));
     }
- 
+
     @Test
     void shouldGenerateTestData200EvenAndOddByteArrays() {
         // When
