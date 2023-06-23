@@ -27,6 +27,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoField;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
 
 public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase {
@@ -39,7 +41,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Duration timeToLive = Duration.ofDays(7);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startTime));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
@@ -56,8 +58,8 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(startTime), defaultUpdateTime(finishTime));
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startTime));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime)));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
@@ -72,7 +74,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Duration timeToLive = Duration.ofDays(1);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startTime));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())

@@ -23,6 +23,7 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 
 public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBase {
@@ -34,7 +35,7 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -49,7 +50,7 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -66,8 +67,8 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime2 = Instant.parse("2022-12-14T13:56:12.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
-        store.jobStarted(DEFAULT_TASK_ID, job2, startedTime2);
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
 
         // Then
         assertThat(getAllJobStatuses())
