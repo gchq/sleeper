@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -123,12 +122,9 @@ public class DeployNewInstance {
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
         LOGGER.info("splitPointsFile: {}", splitPointsFile);
         LOGGER.info("deployPaused: {}", deployPaused);
-        Properties tagsProperties = deployInstanceConfig.getInstanceProperties().getTagsProperties();
-        tagsProperties.setProperty("InstanceID", instanceId);
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .instanceProperties(deployInstanceConfig.getInstanceProperties())
-                .tagsProperties(tagsProperties)
+                .deployInstanceConfig(deployInstanceConfig)
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);

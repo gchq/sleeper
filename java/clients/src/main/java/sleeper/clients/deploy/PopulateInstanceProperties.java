@@ -70,6 +70,7 @@ public class PopulateInstanceProperties {
 
     public InstanceProperties populate() {
         InstanceProperties instanceProperties = populateDefaultsFromInstanceId(properties, instanceId);
+        tagsProperties.setProperty("InstanceID", instanceId);
         instanceProperties.loadTags(tagsProperties);
         instanceProperties.set(ACCOUNT, accountSupplier.get());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
@@ -155,6 +156,11 @@ public class PopulateInstanceProperties {
         public Builder tagsProperties(Properties tagsProperties) {
             this.tagsProperties = tagsProperties;
             return this;
+        }
+
+        public Builder deployInstanceConfig(DeployInstanceConfiguration deployInstanceConfig) {
+            return instanceProperties(deployInstanceConfig.getInstanceProperties())
+                    .tagsProperties(deployInstanceConfig.getInstanceProperties().getTagsProperties());
         }
 
         public PopulateInstanceProperties build() {
