@@ -21,7 +21,6 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsConfigurationProperty;
-import software.amazon.awscdk.services.emr.CfnCluster.InstanceGroupConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.JobFlowInstancesConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.ManagedScalingPolicyProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.VolumeSpecificationProperty;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
@@ -54,15 +54,15 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_NUMBER_OF_INSTANCES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 
 /**
@@ -116,22 +116,28 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .ebsBlockDeviceConfigs(List.of(ebsBlockDeviceConfig))
                 .ebsOptimized(true)
                 .build();
-
-        InstanceGroupConfigProperty masterInstanceGroupConfigProperty = InstanceGroupConfigProperty.builder()
-                .instanceCount(1)
-                .instanceType(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE))
-                .ebsConfiguration(ebsConf)
+        CfnCluster.InstanceFleetConfigProperty masterInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
+                .name("Driver")
+                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES).stream()
+                        .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                .instanceType(type)
+                                .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
+                .targetOnDemandCapacity(1)
                 .build();
-        InstanceGroupConfigProperty coreInstanceGroupConfigProperty = InstanceGroupConfigProperty.builder()
-                .instanceCount(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES))
-                .instanceType(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE))
-                .ebsConfiguration(ebsConf)
+        CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
+                .name("Executors")
+                .instanceTypeConfigs(readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES))
+                        .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                .instanceType(type.getInstanceType())
+                                .weightedCapacity(type.getWeightedCapacity())
+                                .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
+                .targetOnDemandCapacity(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetId(instanceProperties.get(SUBNET))
-                .masterInstanceGroup(masterInstanceGroupConfigProperty)
-                .coreInstanceGroup(coreInstanceGroupConfigProperty);
+                .ec2SubnetIds(instanceProperties.getList(SUBNETS))
+                .masterInstanceFleet(masterInstanceFleetConfigProperty)
+                .coreInstanceFleet(coreInstanceFleetConfigProperty);
 
         String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
         if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
@@ -165,9 +171,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         if (instanceProperties.getBoolean(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING)) {
             ManagedScalingPolicyProperty scalingPolicy = ManagedScalingPolicyProperty.builder()
                     .computeLimits(CfnCluster.ComputeLimitsProperty.builder()
-                            .unitType("Instances")
-                            .minimumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES))
-                            .maximumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_NUMBER_OF_INSTANCES))
+                            .unitType("InstanceFleetUnits")
+                            .minimumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
+                            .maximumCapacityUnits(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY))
                             .maximumCoreCapacityUnits(3)
                             .build())
                     .build();

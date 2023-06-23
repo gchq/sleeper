@@ -39,7 +39,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class GenerateInstanceProperties {
@@ -47,7 +47,7 @@ public class GenerateInstanceProperties {
     private final AwsRegionProvider regionProvider;
     private final String instanceId;
     private final String vpcId;
-    private final String subnetId;
+    private final String subnetIds;
     private final Properties properties;
     private final Properties tagsProperties;
 
@@ -56,7 +56,7 @@ public class GenerateInstanceProperties {
         regionProvider = requireNonNull(builder.regionProvider, "regionProvider must not be null");
         instanceId = requireNonEmpty(builder.instanceId, "instanceId must not be empty");
         vpcId = requireNonEmpty(builder.vpcId, "vpcId must not be empty");
-        subnetId = requireNonEmpty(builder.subnetId, "subnetId must not be empty");
+        subnetIds = requireNonEmpty(builder.subnetIds, "subnetIds must not be empty");
         properties = Optional.ofNullable(builder.properties).orElseGet(Properties::new);
         tagsProperties = Optional.ofNullable(builder.tagsProperties).orElseGet(Properties::new);
     }
@@ -71,7 +71,7 @@ public class GenerateInstanceProperties {
         instanceProperties.set(ACCOUNT, accountSupplier.get());
         instanceProperties.set(REGION, regionProvider.getRegion().id());
         instanceProperties.set(VPC_ID, vpcId);
-        instanceProperties.set(SUBNET, subnetId);
+        instanceProperties.set(SUBNETS, subnetIds);
         return instanceProperties;
     }
 
@@ -99,7 +99,7 @@ public class GenerateInstanceProperties {
         private AwsRegionProvider regionProvider;
         private String instanceId;
         private String vpcId;
-        private String subnetId;
+        private String subnetIds;
         private Properties properties;
         private Properties tagsProperties;
 
@@ -130,8 +130,8 @@ public class GenerateInstanceProperties {
             return this;
         }
 
-        public Builder subnetId(String subnetId) {
-            this.subnetId = subnetId;
+        public Builder subnetIds(String subnetIds) {
+            this.subnetIds = subnetIds;
             return this;
         }
 

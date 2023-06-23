@@ -37,7 +37,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
@@ -120,7 +120,7 @@ public class SleeperPropertiesValidationTest {
             instanceProperties.set(VERSION, "0.1");
             instanceProperties.set(ID, "test");
             instanceProperties.set(VPC_ID, "aVPC");
-            instanceProperties.set(SUBNET, "subnet1");
+            instanceProperties.set(SUBNETS, "subnet1");
 
             // When / Then
             assertThatThrownBy(instanceProperties::validate)

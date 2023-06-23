@@ -25,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
+import java.time.Duration;
 
 public class InvokeSystemTestLambda {
 
@@ -32,7 +33,7 @@ public class InvokeSystemTestLambda {
     }
 
     public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {
-        try (LambdaClient lambdaClient = LambdaClient.create()) {
+        try (LambdaClient lambdaClient = createSystemTestLambdaClient()) {
             AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
             SystemTestProperties systemTestProperties = new SystemTestProperties();
             systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
@@ -44,6 +45,14 @@ public class InvokeSystemTestLambda {
     public static Client client(LambdaClient lambdaClient, InstanceProperties instanceProperties) {
         return lambdaFunctionProperty ->
                 InvokeLambda.invokeWith(lambdaClient, instanceProperties.get(lambdaFunctionProperty));
+    }
+
+    public static LambdaClient createSystemTestLambdaClient() {
+        return LambdaClient.builder()
+                .overrideConfiguration(builder -> builder
+                        .apiCallTimeout(Duration.ofMinutes(5))
+                        .apiCallAttemptTimeout(Duration.ofMinutes(5)))
+                .build();
     }
 
     public interface Client {

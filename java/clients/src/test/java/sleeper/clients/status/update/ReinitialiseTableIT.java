@@ -86,7 +86,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
@@ -734,7 +734,7 @@ public class ReinitialiseTableIT {
         instanceProperties.set(VERSION, "0.1");
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
         instanceProperties.set(JARS_BUCKET, "bucket");
-        instanceProperties.set(SUBNET, "subnet1");
+        instanceProperties.set(SUBNETS, "subnet1");
         Map<String, String> tags = new HashMap<>();
         tags.put("name", "abc");
         tags.put("project", "test");
@@ -772,7 +772,7 @@ public class ReinitialiseTableIT {
     private String createSplitPointsFile(boolean encoded) throws IOException {
         String folderName = createTempDirectory(folder, null).toString();
         String splitPointsFileName = folderName + "/split-points.txt";
-        FileWriter fstream = new FileWriter(splitPointsFileName);
+        FileWriter fstream = new FileWriter(splitPointsFileName, StandardCharsets.UTF_8);
         BufferedWriter info = new BufferedWriter(fstream);
         if (encoded) {
             info.write(Base64.encodeBase64String((SPLIT_PARTITION_STRING_1.getBytes(StandardCharsets.UTF_8))));

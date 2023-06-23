@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -388,27 +389,23 @@ public class S3StateStoreIT {
         }
 
         // When
-        for (int i = 0; i < 20; i++) {
-            final FileInfo fileInfo = files.get(i);
-            executorService.execute(() -> {
-                try {
-                    stateStore.addFile(fileInfo);
-                } catch (StateStoreException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-        Thread.sleep(5000L);
+        CompletableFuture.allOf(files.stream()
+                .map(file -> (Runnable) () -> {
+                    try {
+                        stateStore.addFile(file);
+                    } catch (StateStoreException e) {
+                        e.printStackTrace();
+                    }
+                })
+                .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
+                .toArray(CompletableFuture[]::new)
+        ).join();
 
         // Then
-        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
-        int retries = 0;
-        while (fileInPartitionList.size() < 20 && retries < 5) {
-            Thread.sleep(3000L);
-            retries++;
-            fileInPartitionList = stateStore.getFileInPartitionList();
-        }
         assertThat(fileInPartitionList).hasSize(20).containsExactlyInAnyOrderElementsOf(files);
+        assertThat(stateStore.getActiveFiles())
+                .hasSize(20)
+                .containsExactlyInAnyOrderElementsOf(files);
         executorService.shutdown();
     }
 
@@ -938,7 +935,7 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] min = new byte[]{1, 2, 3, 4};
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList(min))
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema, List.of(min))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 

@@ -21,6 +21,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,31 +33,39 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
     private final IngestBatcherStore store;
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final Configuration configuration;
 
     public IngestBatcherSubmitterLambda() throws IOException {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3, s3Bucket);
+        instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
                 instanceProperties, tablePropertiesProvider);
+        this.configuration = new Configuration();
     }
 
-    public IngestBatcherSubmitterLambda(IngestBatcherStore store, TablePropertiesProvider tablePropertiesProvider) {
+    public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
+                                        TablePropertiesProvider tablePropertiesProvider, Configuration conf) {
         this.store = store;
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.configuration = conf;
     }
 
     @Override
@@ -67,22 +76,23 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     }
 
     public void handleMessage(String json, Instant receivedTime) {
-        FileIngestRequest request;
+        List<FileIngestRequest> requests;
         try {
-            request = FileIngestRequestSerDe.fromJson(json, receivedTime);
+            requests = FileIngestRequestSerDe.fromJson(json, instanceProperties, configuration, receivedTime);
         } catch (RuntimeException e) {
             LOGGER.warn("Received invalid ingest request: {}", json, e);
             return;
         }
-
         // Table properties are needed to set the expiry time on DynamoDB records in the store.
         // To avoid that failing, we can discard the message here if the table does not exist.
-        if (tablePropertiesProvider.getTablePropertiesIfExists(request.getTableName())
-                .isEmpty()) {
+        if (requests.size() > 0 &&
+                tablePropertiesProvider.getTablePropertiesIfExists(requests.get(0).getTableName()).isEmpty()) {
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }
-        LOGGER.info("Adding {} to store", request.getFile());
-        store.addFile(request);
+        requests.forEach(request -> {
+            LOGGER.info("Adding {} to store", request.getFile());
+            store.addFile(request);
+        });
     }
 }
