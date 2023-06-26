@@ -23,11 +23,12 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.clients.util.PollWithRetries;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
@@ -41,6 +42,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class WaitForCurrentSplitAddingMissingJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
@@ -76,8 +78,9 @@ public class WaitForCurrentSplitAddingMissingJobs {
         return new Builder();
     }
 
-    public static WaitForCurrentSplitAddingMissingJobs from(AmazonSQS sqsClient, CompactionJobStatusStore store,
-                                                            InstanceProperties instanceProperties, String tableName) {
+    public static WaitForCurrentSplitAddingMissingJobs from(
+            InvokeSystemTestLambda.Client lambdaClient, AmazonSQS sqsClient, CompactionJobStatusStore store,
+            InstanceProperties instanceProperties, String tableName) {
         return builder()
                 .queueClient(withSqsClient(sqsClient))
                 .store(store)
@@ -89,7 +92,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
                         JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
                 .waitForCompactionJobs(PollWithRetries.intervalAndMaxPolls(
                         COMPACTION_JOB_POLL_INTERVAL_MILLIS, COMPACTION_JOB_MAX_POLLS))
-                .lambdaClient(InvokeSystemTestLambda.client(instanceProperties))
+                .lambdaClient(lambdaClient)
                 .build();
     }
 
@@ -141,8 +144,12 @@ public class WaitForCurrentSplitAddingMissingJobs {
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, systemTestProperties);
 
-        WaitForCurrentSplitAddingMissingJobs.from(sqsClient, store, systemTestProperties, tableName)
-                .waitForSplittingAndCompaction();
+        try (LambdaClient lambdaClient = createSystemTestLambdaClient()) {
+            WaitForCurrentSplitAddingMissingJobs.from(
+                            InvokeSystemTestLambda.client(lambdaClient, systemTestProperties),
+                            sqsClient, store, systemTestProperties, tableName)
+                    .waitForSplittingAndCompaction();
+        }
     }
 
     public static final class Builder {

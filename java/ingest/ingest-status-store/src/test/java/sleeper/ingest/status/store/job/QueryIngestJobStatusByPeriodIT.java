@@ -18,7 +18,6 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
-import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
@@ -26,7 +25,8 @@ import java.time.Instant;
 import java.time.Period;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStartedData.startOfRun;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 
@@ -44,8 +44,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime1, startedUpdateTime2);
 
         // When
-        store.jobStarted(startOfRun(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(startOfRun(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
 
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
@@ -68,7 +68,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime);
 
         // When
-        store.jobStarted(startOfRun(DEFAULT_TASK_ID, job, startedTime));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
@@ -86,8 +86,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime1, startedUpdateTime2);
 
         // When
-        store.jobStarted(startOfRun(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(startOfRun(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
 
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
@@ -110,8 +110,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime, finishedUpdateTime);
 
         // When
-        store.jobStarted(startOfRun(DEFAULT_TASK_ID, job, startedTime));
-        store.jobFinished(IngestJobFinishedData.from(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
+        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
+        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))

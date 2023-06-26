@@ -21,12 +21,11 @@ import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.SchemaSerDe;
 
-import java.util.Properties;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId;
+import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -43,29 +42,30 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-class GeneratePropertiesTest {
+class PopulatePropertiesTest {
     @Test
-    void shouldGenerateInstancePropertiesCorrectly() {
+    void shouldPopulateInstanceProperties() {
         // Given/When
-        InstanceProperties properties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
-                .build().generate();
+        InstanceProperties properties = populateInstancePropertiesBuilder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
 
         // Then
         InstanceProperties expected = new InstanceProperties();
+        expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
         expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
-        expected.set(SUBNET, "some-subnet");
+        expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
@@ -76,7 +76,36 @@ class GeneratePropertiesTest {
     }
 
     @Test
-    void shouldGenerateTearDownDefaultInstancePropertiesCorrectly() {
+    void shouldDefaultTagsWhenNotProvidedAndNotSetInInstanceProperties() {
+        // Given/When
+        InstanceProperties properties = populateInstancePropertiesBuilder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
+
+        // Then
+        assertThat(properties.getTags())
+                .isEqualTo(Map.of("InstanceID", "test-instance"));
+    }
+
+    @Test
+    void shouldAddToExistingTagsWhenSetInInstanceProperties() {
+        // Given/When
+
+        InstanceProperties beforePopulate = new InstanceProperties();
+        beforePopulate.setTags(Map.of("TestTag", "TestValue"));
+        InstanceProperties afterPopulate = populateInstancePropertiesBuilder()
+                .instanceProperties(beforePopulate)
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
+
+        // Then
+        assertThat(afterPopulate.getTags())
+                .isEqualTo(Map.of("TestTag", "TestValue",
+                        "InstanceID", "test-instance"));
+    }
+
+    @Test
+    void shouldGenerateDefaultInstancePropertiesFromInstanceId() {
         // Given/When
         InstanceProperties properties = generateTearDownDefaultsFromInstanceId("test-instance");
 
@@ -100,16 +129,19 @@ class GeneratePropertiesTest {
         assertThat(properties).isEqualTo(expected);
     }
 
+
     @Test
     void shouldGenerateTablePropertiesCorrectly() {
         // Given
-        InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
-                .build().generate();
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
-                new SchemaSerDe().toJson(schemaWithKey("key")),
-                new Properties(),
-                "test-table");
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
+        TableProperties tableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(new TableProperties(instanceProperties))
+                .schema(schemaWithKey("key"))
+                .tableName("test-table")
+                .build().populate();
 
         // Then
         TableProperties expected = new TableProperties(instanceProperties);
@@ -123,18 +155,20 @@ class GeneratePropertiesTest {
     @Test
     void shouldRetainWhitespaceInSchema() {
         // Given
-        InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet")
-                .build().generate();
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
+                .build().populate();
         String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
                 "\"name\":\"key\",\"type\":\"LongType\"\n" +
                 "}],\n" +
                 "\"sortKeyFields\":[],\n" +
                 "\"valueFields\":[]}";
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
-                schemaWithNewlines,
-                new Properties(),
-                "test-table");
+        TableProperties tableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .schema(schemaWithNewlines)
+                .tableProperties(new TableProperties(instanceProperties))
+                .tableName("test-table")
+                .build().populate();
 
         // Then
         TableProperties expected = new TableProperties(instanceProperties);
@@ -146,8 +180,8 @@ class GeneratePropertiesTest {
         assertThat(tableProperties).isEqualTo(expected);
     }
 
-    private GenerateInstanceProperties.Builder generateInstancePropertiesBuilder() {
-        return GenerateInstanceProperties.builder()
+    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL);
     }
 }

@@ -25,7 +25,6 @@ import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
-import sleeper.ingest.job.status.IngestJobFinishedData;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreException;
 
@@ -33,7 +32,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.job.status.IngestJobStartedData.startOfRun;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 public class IngestTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
@@ -86,7 +86,7 @@ public class IngestTask {
             throws IteratorException, StateStoreException, IOException {
 
         Instant startTime = getTimeNow.get();
-        jobStatusStore.jobStarted(startOfRun(taskId, job, startTime));
+        jobStatusStore.jobStarted(ingestJobStarted(taskId, job, startTime));
 
         IngestResult result = IngestResult.noFiles();
         try {
@@ -94,7 +94,7 @@ public class IngestTask {
         } finally {
             Instant finishTime = getTimeNow.get();
             RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
-            jobStatusStore.jobFinished(IngestJobFinishedData.from(taskId, job, summary));
+            jobStatusStore.jobFinished(ingestJobFinished(taskId, job, summary));
             taskBuilder.addJobSummary(summary);
         }
 

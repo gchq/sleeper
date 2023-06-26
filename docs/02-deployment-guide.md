@@ -286,7 +286,7 @@ properties:
 * `sleeper.account`
 * `sleeper.region`
 * `sleeper.vpc`
-* `sleeper.subnet`
+* `sleeper.subnets`
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
 

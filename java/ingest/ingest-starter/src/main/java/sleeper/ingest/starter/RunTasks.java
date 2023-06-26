@@ -27,12 +27,21 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.RunECSTasks;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.
@@ -42,38 +51,21 @@ public class RunTasks {
 
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
-    private final String sqsJobQueueUrl;
-    private final String clusterName;
+    private final InstanceProperties properties;
     private final String containerName;
-    private final String taskDefinition;
-    private final int maximumRunningTasks;
-    private final String subnet;
-    private final String bucketName;
-    private final String fargateVersion;
 
     public RunTasks(AmazonSQS sqsClient,
                     AmazonECS ecsClient,
-                    String sqsJobQueueUrl,
-                    String clusterName,
-                    String containerName,
-                    String taskDefinition,
-                    int maximumRunningTasks,
-                    String subnet,
-                    String bucketName,
-                    String fargateVersion) {
+                    InstanceProperties properties,
+                    String containerName) {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
-        this.sqsJobQueueUrl = sqsJobQueueUrl;
-        this.clusterName = clusterName;
+        this.properties = properties;
         this.containerName = containerName;
-        this.taskDefinition = taskDefinition;
-        this.maximumRunningTasks = maximumRunningTasks;
-        this.subnet = subnet;
-        this.bucketName = bucketName;
-        this.fargateVersion = fargateVersion;
     }
 
     public void run() {
+        String sqsJobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
         int queueSize = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(sqsJobQueueUrl)
@@ -85,10 +77,12 @@ public class RunTasks {
         }
 
         // Find out number of pending and running tasks
-        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(clusterName, ecsClient);
+        int numRunningAndPendingTasks = CommonJobUtils.getNumPendingAndRunningTasks(
+                properties.get(INGEST_CLUSTER), ecsClient);
         LOGGER.info("Number of running and pending tasks is {}", numRunningAndPendingTasks);
 
         // Finish if number of running tasks is already the maximum
+        int maximumRunningTasks = properties.getInt(MAXIMUM_CONCURRENT_INGEST_TASKS);
         if (numRunningAndPendingTasks == maximumRunningTasks) {
             LOGGER.info("Finishing as number of running tasks is already the maximum");
             return;
@@ -102,7 +96,7 @@ public class RunTasks {
         int numberOfTasksToCreate = Math.min(queueSize, maxNumTasksToCreate);
 
         List<String> args = new ArrayList<>();
-        args.add(bucketName);
+        args.add(properties.get(CONFIG_BUCKET));
 
         ContainerOverride containerOverride = new ContainerOverride()
                 .withName(containerName)
@@ -112,19 +106,19 @@ public class RunTasks {
                 .withContainerOverrides(containerOverride);
 
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(subnet);
+                .withSubnets(properties.getList(SUBNETS));
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);
 
         RunTaskRequest runTaskRequest = new RunTaskRequest()
-                .withCluster(clusterName)
+                .withCluster(properties.get(INGEST_CLUSTER))
                 .withLaunchType(LaunchType.FARGATE)
-                .withTaskDefinition(taskDefinition)
+                .withTaskDefinition(properties.get(INGEST_TASK_DEFINITION_FAMILY))
                 .withNetworkConfiguration(networkConfiguration)
                 .withOverrides(override)
                 .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                .withPlatformVersion(fargateVersion);
+                .withPlatformVersion(properties.get(FARGATE_VERSION));
 
         RunECSTasks.runTasks(ecsClient, runTaskRequest, numberOfTasksToCreate);
     }

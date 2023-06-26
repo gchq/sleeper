@@ -87,7 +87,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -184,7 +184,7 @@ class BulkImportJobDriverIT {
         instanceProperties.set(REGION, "");
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
+        instanceProperties.set(SUBNETS, "");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
