@@ -64,9 +64,12 @@ public class BulkImportStarterLambdaIT {
     }
 
     @Nested
-    @DisplayName("Create job for directory")
-    class CreateJobForDirectory {
+    @DisplayName("Expand directories")
+    class ExpandDirectories {
         AmazonS3 s3Client = createS3Client();
+        Executor executor = mock(Executor.class);
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
+                new InstanceProperties(), createHadoopConfiguration());
 
         @BeforeEach
         void setup() {
@@ -85,10 +88,8 @@ public class BulkImportStarterLambdaIT {
         }
 
         @Test
-        void shouldCreateJobForDirectoryWithOneFileInside() {
+        void shouldExpandDirectoryWithOneFileInside() {
             // Given
-            Executor executor = mock(Executor.class);
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
             uploadFileToS3("test-dir/test-1.parquet");
             SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
 
@@ -101,10 +102,8 @@ public class BulkImportStarterLambdaIT {
         }
 
         @Test
-        void shouldCreateJobForDirectoryWithMultipleFilesInside() {
+        void shouldExpandDirectoryWithMultipleFilesInside() {
             // Given
-            Executor executor = mock(Executor.class);
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
             uploadFileToS3("test-dir/test-1.parquet");
             uploadFileToS3("test-dir/test-2.parquet");
             SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
@@ -120,10 +119,8 @@ public class BulkImportStarterLambdaIT {
         }
 
         @Test
-        void shouldCreateJobForDirectoryWithFileInsideNestedDirectory() {
+        void shouldExpandDirectoryWithFileInsideNestedDirectory() {
             // Given
-            Executor executor = mock(Executor.class);
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
             uploadFileToS3("test-dir/nested-dir/test-1.parquet");
             SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
 
@@ -136,10 +133,26 @@ public class BulkImportStarterLambdaIT {
         }
 
         @Test
-        void shouldNotCreateJobForDirectoryThatDoesNotExist() {
+        void shouldExpandMultipleDirectories() {
             // Given
-            Executor executor = mock(Executor.class);
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
+            uploadFileToS3("test-dir-1/test-1.parquet");
+            uploadFileToS3("test-dir-2/test-2.parquet");
+            SQSEvent event = getSqsEvent(jobWithFiles(List.of(
+                    "test-bucket/test-dir-1", "test-bucket/test-dir-2")));
+
+            // When
+            bulkImportStarter.handleRequest(event, mock(Context.class));
+
+            // Then
+            verify(executor, times(1)).runJob(
+                    jobWithFiles(List.of(
+                            "test-bucket/test-dir-1/test-1.parquet",
+                            "test-bucket/test-dir-2/test-2.parquet")));
+        }
+
+        @Test
+        void shouldSkipJobIfDirectoryDoesNotExist() {
+            // Given
             SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
 
             // When
