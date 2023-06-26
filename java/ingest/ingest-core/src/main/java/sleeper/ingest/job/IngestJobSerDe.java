@@ -17,16 +17,31 @@ package sleeper.ingest.job;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.hadoop.conf.Configuration;
+
+import sleeper.configuration.properties.InstanceProperties;
+
+import java.util.Optional;
+
+import static sleeper.utils.HadoopPathUtils.expandDirectories;
 
 public class IngestJobSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
+    private final Configuration configuration;
+    private final InstanceProperties properties;
 
     public IngestJobSerDe() {
+        this(new Configuration(), new InstanceProperties());
+    }
+
+    public IngestJobSerDe(Configuration configuration, InstanceProperties properties) {
         this.gson = new GsonBuilder().create();
         this.gsonPrettyPrinting = new GsonBuilder()
                 .setPrettyPrinting()
                 .create();
+        this.configuration = configuration;
+        this.properties = properties;
     }
 
     public String toJson(IngestJob ingestJob) {
@@ -42,5 +57,11 @@ public class IngestJobSerDe {
 
     public IngestJob fromJson(String jsonIngestJob) {
         return gson.fromJson(jsonIngestJob, IngestJob.class);
+    }
+
+    public Optional<IngestJob> fromJsonExpandingDirs(String jsonIngestJob) {
+        IngestJob ingestJob = fromJson(jsonIngestJob);
+        return expandDirectories(ingestJob.getFiles(), configuration, properties)
+                .map(files -> ingestJob.toBuilder().files(files).build());
     }
 }
