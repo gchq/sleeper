@@ -38,7 +38,10 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -97,15 +100,23 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 .map(SQSEvent.SQSMessage::getBody)
                 .map(bulkImportJobSerDe::fromJson)
                 .map(this::expandDirectories)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .forEach(executor::runJob);
         return null;
     }
 
-    private BulkImportJob expandDirectories(BulkImportJob job) {
+    private Optional<BulkImportJob> expandDirectories(BulkImportJob job) {
         BulkImportJob.Builder builder = job.toBuilder();
-        builder.files(streamFiles(job.getFiles(), hadoopConfig, instanceProperties.get(FILE_SYSTEM))
-                .map(HadoopPathUtils::getRequestPath)
-                .collect(Collectors.toList()));
-        return builder.build();
+        List<String> files = new ArrayList<>();
+        try {
+            streamFiles(job.getFiles(), hadoopConfig, instanceProperties.get(FILE_SYSTEM))
+                    .map(HadoopPathUtils::getRequestPath)
+                    .forEach(files::add);
+        } catch (UncheckedIOException e) {
+            LOGGER.warn("Could not expand directories for job: {}", job);
+            return Optional.empty();
+        }
+        return Optional.of(builder.files(files).build());
     }
 }

@@ -99,6 +99,55 @@ public class BulkImportStarterLambdaIT {
             verify(executor, times(1)).runJob(
                     jobWithFiles(List.of("test-bucket/test-dir/test-1.parquet")));
         }
+
+        @Test
+        void shouldCreateJobForDirectoryWithMultipleFilesInside() {
+            // Given
+            Executor executor = mock(Executor.class);
+            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
+            uploadFileToS3("test-dir/test-1.parquet");
+            uploadFileToS3("test-dir/test-2.parquet");
+            SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
+
+            // When
+            bulkImportStarter.handleRequest(event, mock(Context.class));
+
+            // Then
+            verify(executor, times(1)).runJob(
+                    jobWithFiles(List.of(
+                            "test-bucket/test-dir/test-1.parquet",
+                            "test-bucket/test-dir/test-2.parquet")));
+        }
+
+        @Test
+        void shouldCreateJobForDirectoryWithFileInsideNestedDirectory() {
+            // Given
+            Executor executor = mock(Executor.class);
+            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
+            uploadFileToS3("test-dir/nested-dir/test-1.parquet");
+            SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
+
+            // When
+            bulkImportStarter.handleRequest(event, mock(Context.class));
+
+            // Then
+            verify(executor, times(1)).runJob(
+                    jobWithFiles(List.of("test-bucket/test-dir/nested-dir/test-1.parquet")));
+        }
+
+        @Test
+        void shouldNotCreateJobForDirectoryThatDoesNotExist() {
+            // Given
+            Executor executor = mock(Executor.class);
+            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
+            SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
+
+            // When
+            bulkImportStarter.handleRequest(event, mock(Context.class));
+
+            // Then
+            verify(executor, times(0)).runJob(any());
+        }
     }
 
     @Test
