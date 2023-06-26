@@ -41,7 +41,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @Testcontainers
-public class BulkImportStarterIT {
+public class BulkImportStarterLambdaIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
@@ -62,7 +62,7 @@ public class BulkImportStarterIT {
         AmazonDynamoDB dynamoDB = mock(AmazonDynamoDB.class);
 
         // When / Then
-        assertThatThrownBy(() -> new BulkImportStarter(s3Client, emrClient, stepFunctionsClient, dynamoDB))
+        assertThatThrownBy(() -> new BulkImportStarterLambda(s3Client, emrClient, stepFunctionsClient, dynamoDB))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -71,7 +71,7 @@ public class BulkImportStarterIT {
         // Given
         Executor executor = mock(Executor.class);
         Context context = mock(Context.class);
-        BulkImportStarter bulkImportStarter = new BulkImportStarter(executor);
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor);
         SQSEvent event = getSqsEvent();
 
         // When

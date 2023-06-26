@@ -161,7 +161,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .timeout(Duration.seconds(10))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .handler("sleeper.bulkimport.starter.BulkImportStarter")
+                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
         configureJobStarterFunction(bulkImportJobStarter);

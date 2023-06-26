@@ -121,7 +121,7 @@ public class CommonEmrBulkImportHelper {
                 .timeout(Duration.seconds(20))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .handler("sleeper.bulkimport.starter.BulkImportStarter")
+                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(jobQueue))));
 

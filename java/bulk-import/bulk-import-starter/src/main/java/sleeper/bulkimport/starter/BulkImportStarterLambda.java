@@ -36,28 +36,28 @@ import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import java.io.IOException;
 
 /**
- * The {@link BulkImportStarter} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
+ * The {@link BulkImportStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
  * an {@link Executor}.
  */
-public class BulkImportStarter implements RequestHandler<SQSEvent, Void> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarter.class);
+public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarterLambda.class);
 
     private final Executor executor;
     private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
 
-    public BulkImportStarter() throws IOException {
+    public BulkImportStarterLambda() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(),
                 AmazonElasticMapReduceClientBuilder.defaultClient(),
                 AWSStepFunctionsClientBuilder.defaultClient(),
                 AmazonDynamoDBClientBuilder.defaultClient());
     }
 
-    public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
-                             AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
+    public BulkImportStarterLambda(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+                                   AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
         this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor());
     }
 
-    public BulkImportStarter(Executor executor) {
+    public BulkImportStarterLambda(Executor executor) {
         this.executor = executor;
     }
 
