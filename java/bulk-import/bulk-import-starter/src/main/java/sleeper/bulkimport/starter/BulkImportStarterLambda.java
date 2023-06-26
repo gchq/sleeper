@@ -26,14 +26,21 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
+import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.utils.HadoopPathUtils.streamFiles;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
@@ -43,6 +50,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarterLambda.class);
 
     private final Executor executor;
+    private final Configuration hadoopConfig;
     private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
 
     public BulkImportStarterLambda() throws IOException {
@@ -58,7 +66,12 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     public BulkImportStarterLambda(Executor executor) {
+        this(executor, new Configuration());
+    }
+
+    public BulkImportStarterLambda(Executor executor, Configuration hadoopConfig) {
         this.executor = executor;
+        this.hadoopConfig = hadoopConfig;
     }
 
     @Override
@@ -67,7 +80,16 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
                 .map(bulkImportJobSerDe::fromJson)
+                .map(this::expandDirectories)
                 .forEach(executor::runJob);
         return null;
+    }
+
+    private BulkImportJob expandDirectories(BulkImportJob job) {
+        BulkImportJob.Builder builder = job.toBuilder();
+        builder.files(streamFiles(job.getFiles(), hadoopConfig, executor.getInstanceProperties().get(FILE_SYSTEM))
+                .map(HadoopPathUtils::getRequestPath)
+                .collect(Collectors.toList()));
+        return builder.build();
     }
 }

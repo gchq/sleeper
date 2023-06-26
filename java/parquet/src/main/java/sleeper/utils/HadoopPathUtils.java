@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,5 +65,10 @@ public class HadoopPathUtils {
                 return Stream.empty();
             }
         });
+    }
+
+    public static String getRequestPath(FileStatus file) {
+        URI uri = file.getPath().toUri();
+        return uri.getHost() + uri.getPath();
     }
 }
