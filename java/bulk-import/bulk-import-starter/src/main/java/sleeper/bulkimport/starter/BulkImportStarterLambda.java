@@ -94,7 +94,13 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 .map(SQSEvent.SQSMessage::getBody)
                 .map(bulkImportJobSerDe::fromJson)
                 .map(job -> expandDirectories(job.getFiles(), hadoopConfig, instanceProperties)
-                        .map(files -> job.toBuilder().files(files).build()).orElse(null))
+                        .map(files -> {
+                            LOGGER.info("Expanded directories for job: {}", job);
+                            return job.toBuilder().files(files).build();
+                        }).orElseGet(() -> {
+                            LOGGER.warn("Could not expand directories for job {}, skipping", job);
+                            return null;
+                        }))
                 .filter(Objects::nonNull)
                 .forEach(executor::runJob);
         return null;
