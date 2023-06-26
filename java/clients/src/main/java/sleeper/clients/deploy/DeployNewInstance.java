@@ -34,12 +34,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 
 public class DeployNewInstance {
@@ -53,8 +52,8 @@ public class DeployNewInstance {
     private final String vpcId;
     private final String subnetIds;
     private final String tableName;
-    private final Path instancePropertiesTemplate;
-    private final Consumer<Properties> extraInstanceProperties;
+    private final DeployInstanceConfiguration deployInstanceConfig;
+    private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
     private final Path splitPointsFile;
     private final boolean deployPaused;
@@ -68,7 +67,7 @@ public class DeployNewInstance {
         vpcId = builder.vpcId;
         subnetIds = builder.subnetIds;
         tableName = builder.tableName;
-        instancePropertiesTemplate = builder.instancePropertiesTemplate;
+        deployInstanceConfig = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
         splitPointsFile = builder.splitPointsFile;
@@ -83,20 +82,21 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 7) {
+        if (args.length < 6 || args.length > 8) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> " +
-                    "<optional-deploy-paused-flag> <optional-split-points-file>");
+                    "<optional-instance-properties-file> <optional-deploy-paused-flag> <optional-split-points-file>");
         }
         Path scriptsDirectory = Path.of(args[0]);
-
         builder().scriptsDirectory(scriptsDirectory)
                 .instanceId(args[1])
                 .vpcId(args[2])
                 .subnetIds(args[3])
                 .tableName(args[4])
-                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false")))
-                .splitPointsFile(optionalArgument(args, 6).map(Path::of).orElse(null))
-                .instancePropertiesTemplate(scriptsDirectory.resolve("templates/instanceproperties.template"))
+                .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
+                        optionalArgument(args, 5).map(Path::of).orElse(null),
+                        scriptsDirectory.resolve("templates")))
+                .deployPaused("true".equalsIgnoreCase(optionalArgument(args, 6).orElse("false")))
+                .splitPointsFile(optionalArgument(args, 7).map(Path::of).orElse(null))
                 .instanceType(InvokeCdkForInstance.Type.STANDARD)
                 .deployWithDefaultClients();
     }
@@ -117,25 +117,21 @@ public class DeployNewInstance {
         LOGGER.info("tableName: {}", tableName);
         LOGGER.info("templatesDirectory: {}", templatesDirectory);
         LOGGER.info("generatedDirectory: {}", generatedDirectory);
-        LOGGER.info("instancePropertiesTemplate: {}", instancePropertiesTemplate);
         LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
         LOGGER.info("jarsDirectory: {}", jarsDirectory);
         LOGGER.info("sleeperVersion: {}", sleeperVersion);
         LOGGER.info("splitPointsFile: {}", splitPointsFile);
         LOGGER.info("deployPaused: {}", deployPaused);
-
-        Properties tagsProperties = loadProperties(templatesDirectory.resolve("tags.template"));
-        tagsProperties.setProperty("InstanceID", instanceId);
-        InstanceProperties instanceProperties = GenerateInstanceProperties.builder()
+        InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .properties(loadInstancePropertiesTemplate())
-                .tagsProperties(tagsProperties)
+                .deployInstanceConfig(deployInstanceConfig)
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
-                .build().generate();
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties,
-                Files.readString(templatesDirectory.resolve("schema.template")),
-                loadProperties(templatesDirectory.resolve("tableproperties.template")),
-                tableName);
+                .build().populate();
+        extraInstanceProperties.accept(instanceProperties);
+        TableProperties tableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(deployInstanceConfig.getTableProperties())
+                .tableName(tableName).build().populate();
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
@@ -162,12 +158,6 @@ public class DeployNewInstance {
         LOGGER.info("Finished deployment of new instance");
     }
 
-    private Properties loadInstancePropertiesTemplate() throws IOException {
-        Properties properties = loadProperties(instancePropertiesTemplate);
-        extraInstanceProperties.accept(properties);
-        return properties;
-    }
-
     public static final class Builder {
         private AWSSecurityTokenService sts;
         private AwsRegionProvider regionProvider;
@@ -177,8 +167,8 @@ public class DeployNewInstance {
         private String vpcId;
         private String subnetIds;
         private String tableName;
-        private Path instancePropertiesTemplate;
-        private Consumer<Properties> extraInstanceProperties = properties -> {
+        private DeployInstanceConfiguration deployInstanceConfiguration;
+        private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
         private Path splitPointsFile;
@@ -227,12 +217,12 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instancePropertiesTemplate(Path instancePropertiesTemplate) {
-            this.instancePropertiesTemplate = instancePropertiesTemplate;
+        public Builder deployInstanceConfiguration(DeployInstanceConfiguration deployInstanceConfiguration) {
+            this.deployInstanceConfiguration = deployInstanceConfiguration;
             return this;
         }
 
-        public Builder extraInstanceProperties(Consumer<Properties> extraInstanceProperties) {
+        public Builder extraInstanceProperties(Consumer<InstanceProperties> extraInstanceProperties) {
             this.extraInstanceProperties = extraInstanceProperties;
             return this;
         }
