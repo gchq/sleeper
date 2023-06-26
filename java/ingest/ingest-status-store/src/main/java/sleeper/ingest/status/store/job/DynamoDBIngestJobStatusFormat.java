@@ -89,7 +89,7 @@ public class DynamoDBIngestJobStatusFormat {
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
-                .string(RUN_ID, event.getRunId())
+                .string(RUN_ID, event.getJobRunId())
                 .build();
     }
 

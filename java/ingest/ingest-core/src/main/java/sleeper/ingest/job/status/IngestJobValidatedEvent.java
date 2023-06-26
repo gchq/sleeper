@@ -23,36 +23,36 @@ import java.util.List;
 import java.util.Objects;
 
 public class IngestJobValidatedEvent {
-    private final String runId;
     private final IngestJob job;
+    private final String jobRunId;
     private final Instant validationTime;
     private final List<String> reasons;
 
-    private IngestJobValidatedEvent(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
-        this.runId = runId;
+    private IngestJobValidatedEvent(IngestJob job, String jobRunId, Instant validationTime, List<String> reasons) {
         this.job = job;
+        this.jobRunId = jobRunId;
         this.validationTime = validationTime;
         this.reasons = reasons;
     }
 
-    public static IngestJobValidatedEvent ingestJobAccepted(String runId, IngestJob job, Instant validationTime) {
-        return new IngestJobValidatedEvent(runId, job, validationTime, List.of());
+    public static IngestJobValidatedEvent ingestJobAccepted(IngestJob job, String jobRunId, Instant validationTime) {
+        return new IngestJobValidatedEvent(job, jobRunId, validationTime, List.of());
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
-        return new IngestJobValidatedEvent(null, job, validationTime, List.of(reasons));
+        return new IngestJobValidatedEvent(job, null, validationTime, List.of(reasons));
     }
 
-    public static IngestJobValidatedEvent ingestJobRejected(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
-        return new IngestJobValidatedEvent(runId, job, validationTime, reasons);
-    }
-
-    public String getRunId() {
-        return runId;
+    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, List<String> reasons) {
+        return new IngestJobValidatedEvent(job, null, validationTime, reasons);
     }
 
     public IngestJob getJob() {
         return job;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
     }
 
     public Instant getValidationTime() {
@@ -76,7 +76,7 @@ public class IngestJobValidatedEvent {
             return false;
         }
         IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
-        return Objects.equals(runId, that.runId)
+        return Objects.equals(jobRunId, that.jobRunId)
                 && Objects.equals(job, that.job)
                 && Objects.equals(validationTime, that.validationTime)
                 && Objects.equals(reasons, that.reasons);
@@ -84,13 +84,13 @@ public class IngestJobValidatedEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(runId, job, validationTime, reasons);
+        return Objects.hash(jobRunId, job, validationTime, reasons);
     }
 
     @Override
     public String toString() {
         return "IngestJobValidatedEvent{" +
-                "runId='" + runId + '\'' +
+                "jobRunId='" + jobRunId + '\'' +
                 ", job=" + job +
                 ", validationTime=" + validationTime +
                 ", reasons='" + reasons + '\'' +

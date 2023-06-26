@@ -88,8 +88,8 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
-    public static ProcessRun rejectedRun(Instant validationTime, String reason) {
-        return rejectedRun(validationTime, List.of(reason));
+    public static ProcessRun rejectedRun(Instant validationTime, String... reasons) {
+        return rejectedRun(validationTime, List.of(reasons));
     }
 
     public static ProcessRun rejectedRun(Instant validationTime, List<String> reasons) {

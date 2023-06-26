@@ -211,7 +211,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted("test-run", job, validationTime));
+            store.jobValidated(ingestJobAccepted(job, "test-run", validationTime));
 
             // Then
             assertThat(store.getAllJobs(tableName))
@@ -222,16 +222,15 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
-            // TODO set run ID in started event
-            String runId = "run-1";
+            String jobRunId = "run-1";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(runId, job, validationTime));
-            store.jobStarted(validatedIngestJobStarted(taskId, job, startTime));
+            store.jobValidated(ingestJobAccepted(job, jobRunId, validationTime));
+            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableName))
@@ -259,15 +258,12 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportJobWithMultipleValidationFailures() {
             // Given
             String tableName = "test-table";
-            // TODO set run ID instead of task ID
-            String runId = "run-1";
-            String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(taskId, job, validationTime,
-                    List.of("Test validation reason 1", "Test validation reason 2")));
+            store.jobValidated(ingestJobRejected(job, validationTime,
+                    "Test validation reason 1", "Test validation reason 2"));
 
             // Then
             assertThat(store.getAllJobs(tableName))

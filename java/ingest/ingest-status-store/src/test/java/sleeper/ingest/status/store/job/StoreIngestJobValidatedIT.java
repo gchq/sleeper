@@ -42,8 +42,8 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
 
         // When
         // TODO add run ID
-        store.jobValidated(ingestJobAccepted(DEFAULT_TASK_ID, job, validationTime));
-        store.jobStarted(validatedIngestJobStarted(DEFAULT_TASK_ID, job, startedTime));
+        store.jobValidated(ingestJobAccepted(job, DEFAULT_TASK_ID, validationTime));
+        store.jobStarted(validatedIngestJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())

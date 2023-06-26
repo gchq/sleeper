@@ -311,7 +311,7 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        statusStore.jobValidated(ingestJobAccepted(runId, job.toIngestJob(), validationTime));
+        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), runId, validationTime));
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);

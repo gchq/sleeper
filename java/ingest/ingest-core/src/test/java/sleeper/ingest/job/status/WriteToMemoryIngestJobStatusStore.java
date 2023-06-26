@@ -36,7 +36,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(event.getJob().getId(), null,
-                validatedStatus(event), event.getRunId(), null);
+                validatedStatus(event), event.getJobRunId(), null);
         tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
@@ -48,6 +48,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                     defaultUpdateTime(event.getValidationTime()));
         } else {
             return IngestJobRejectedStatus.builder().validationTime(event.getValidationTime())
+                    .updateTime(defaultUpdateTime(event.getValidationTime()))
                     .reasons(event.getReasons()).build();
         }
     }
@@ -60,7 +61,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                         .inputFileCount(job.getFiles().size())
                         .startTime(event.getStartTime())
                         .updateTime(defaultUpdateTime(event.getStartTime())).build(),
-                event.getTaskId());
+                event.getJobRunId(), event.getTaskId());
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
     }

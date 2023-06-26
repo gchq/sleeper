@@ -177,7 +177,7 @@ class BulkImportJobDriverTest {
                         Instant startTime, Instant finishTime,
                         BulkImportJobDriver.BulkImportSessionRunner sessionRunner,
                         StateStore stateStore) throws Exception {
-        statusStore.jobValidated(ingestJobAccepted(runId, job.toIngestJob(), validationTime));
+        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), runId, validationTime));
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),

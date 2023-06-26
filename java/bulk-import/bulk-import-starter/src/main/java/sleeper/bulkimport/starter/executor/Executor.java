@@ -145,11 +145,11 @@ public abstract class Executor {
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
             ingestJobStatusStore.jobValidated(ingestJobRejected(
-                    runId, bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
+                    bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
             return false;
         } else {
             ingestJobStatusStore.jobValidated(ingestJobAccepted(
-                    runId, bulkImportJob.toIngestJob(), validationTimeSupplier.get()));
+                    bulkImportJob.toIngestJob(), runId, validationTimeSupplier.get()));
             return true;
         }
     }

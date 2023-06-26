@@ -22,14 +22,16 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class IngestJobStartedEvent {
-    private final String taskId;
     private final IngestJob job;
+    private final String jobRunId;
+    private final String taskId;
     private final Instant startTime;
     private final boolean startOfRun;
 
     private IngestJobStartedEvent(Builder builder) {
-        taskId = builder.taskId;
         job = Objects.requireNonNull(builder.job, "job must not be null");
+        jobRunId = builder.jobRunId;
+        taskId = builder.taskId;
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
         startOfRun = builder.startOfRun;
     }
@@ -56,21 +58,23 @@ public class IngestJobStartedEvent {
                 .build();
     }
 
-    public static IngestJobStartedEvent validatedIngestJobStarted(String taskId, IngestJob job, Instant startTime) {
+    public static IngestJobStartedEvent.Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {
         return builder()
-                .taskId(taskId)
                 .job(job)
                 .startTime(startTime)
-                .startOfRun(false)
-                .build();
-    }
-
-    public String getTaskId() {
-        return taskId;
+                .startOfRun(false);
     }
 
     public IngestJob getJob() {
         return job;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
+    public String getTaskId() {
+        return taskId;
     }
 
     public Instant getStartTime() {
@@ -109,21 +113,27 @@ public class IngestJobStartedEvent {
     }
 
     public static final class Builder {
-        private String taskId;
         private IngestJob job;
+        private String jobRunId;
+        private String taskId;
         private Instant startTime;
         private boolean startOfRun;
 
         private Builder() {
         }
 
-        public Builder taskId(String taskId) {
-            this.taskId = taskId;
+        public Builder job(IngestJob job) {
+            this.job = job;
             return this;
         }
 
-        public Builder job(IngestJob job) {
-            this.job = job;
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
+            return this;
+        }
+
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
             return this;
         }
 
