@@ -162,13 +162,13 @@ class BulkImportJobDriverTest {
 
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime,
-                        BulkImportJobDriver.BulkImportSessionRunner sessionRunner) throws Exception {
+                        BulkImportJobDriver.SessionRunner sessionRunner) throws Exception {
         runJob(job, taskId, startTime, finishTime, sessionRunner, stateStore);
     }
 
     private void runJob(BulkImportJob job, String taskId,
                         Instant startTime, Instant finishTime,
-                        BulkImportJobDriver.BulkImportSessionRunner sessionRunner,
+                        BulkImportJobDriver.SessionRunner sessionRunner,
                         StateStore stateStore) throws Exception {
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),

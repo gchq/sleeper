@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
-public class BulkImportSparkSessionRunner {
+public class BulkImportSparkSessionRunner implements BulkImportJobDriver.SessionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);
 
     private final BulkImportJobRunner jobRunner;
@@ -69,6 +69,7 @@ public class BulkImportSparkSessionRunner {
         this.stateStoreProvider = stateStoreProvider;
     }
 
+    @Override
     public BulkImportJobOutput run(BulkImportJob job) throws IOException {
         // Initialise Spark
         LOGGER.info("Initialising Spark");
