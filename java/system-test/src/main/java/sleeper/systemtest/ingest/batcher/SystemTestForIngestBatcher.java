@@ -42,13 +42,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class SystemTestForIngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);
     private final Path scriptsDir;
-    private final Path propertiesTemplate;
+    private final Path instancePropertiesPath;
     private final String instanceId;
     private final String vpc;
     private final String subnet;
@@ -61,7 +62,7 @@ public class SystemTestForIngestBatcher {
 
     private SystemTestForIngestBatcher(Builder builder) {
         scriptsDir = builder.scriptsDir;
-        propertiesTemplate = builder.propertiesTemplate;
+        instancePropertiesPath = builder.instancePropertiesPath;
         instanceId = builder.instanceId;
         vpc = builder.vpc;
         subnet = builder.subnet;
@@ -79,12 +80,12 @@ public class SystemTestForIngestBatcher {
 
     public static void main(String[] args) throws IOException, InterruptedException, StateStoreException {
         if (args.length != 5) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-template> <instance-id> <vpc> <subnet>");
+            throw new IllegalArgumentException("Usage: <scripts-dir> <properties-file> <instance-id> <vpc> <subnet>");
         }
         try (S3Client s3Client = S3Client.create();
              CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             builder().scriptsDir(Path.of(args[0]))
-                    .propertiesTemplate(Path.of(args[1]))
+                    .instancePropertiesPath(Path.of(args[1]))
                     .instanceId(args[2])
                     .vpc(args[3])
                     .subnet(args[4])
@@ -146,9 +147,10 @@ public class SystemTestForIngestBatcher {
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             DeployNewInstance.builder().scriptsDirectory(scriptsDir)
-                    .instancePropertiesTemplate(propertiesTemplate)
+                    .deployInstanceConfiguration(fromInstancePropertiesOrTemplatesDir(
+                            instancePropertiesPath, scriptsDir.resolve("templates")))
                     .extraInstanceProperties(properties ->
-                            properties.setProperty(INGEST_SOURCE_BUCKET.getPropertyName(), sourceBucketName))
+                            properties.set(INGEST_SOURCE_BUCKET, sourceBucketName))
                     .instanceId(instanceId)
                     .vpcId(vpc)
                     .subnetIds(subnet)
@@ -170,7 +172,7 @@ public class SystemTestForIngestBatcher {
 
     public static final class Builder {
         private Path scriptsDir;
-        private Path propertiesTemplate;
+        private Path instancePropertiesPath;
         private String instanceId;
         private String vpc;
         private String subnet;
@@ -193,8 +195,8 @@ public class SystemTestForIngestBatcher {
             return this;
         }
 
-        public Builder propertiesTemplate(Path propertiesTemplate) {
-            this.propertiesTemplate = propertiesTemplate;
+        public Builder instancePropertiesPath(Path instancePropertiesPath) {
+            this.instancePropertiesPath = instancePropertiesPath;
             return this;
         }
 

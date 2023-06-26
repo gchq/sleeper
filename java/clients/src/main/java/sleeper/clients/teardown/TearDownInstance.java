@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.GenerateInstanceProperties;
+import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
@@ -142,7 +142,7 @@ public class TearDownInstance {
             return properties;
         } catch (AmazonS3Exception e) {
             LOGGER.info("Failed to download configuration, using default properties");
-            return GenerateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
+            return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
         }
     }
 

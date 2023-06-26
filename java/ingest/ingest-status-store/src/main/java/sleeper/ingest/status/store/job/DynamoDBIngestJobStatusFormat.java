@@ -28,9 +28,12 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
+import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.Map;
@@ -75,38 +78,29 @@ public class DynamoDBIngestJobStatusFormat {
         this.getTimeNow = getTimeNow;
     }
 
-    public Map<String, AttributeValue> createJobAcceptedRecord(
-            IngestJob job, Instant validationTime, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
-                .number(VALIDATION_TIME, validationTime.toEpochMilli())
-                .bool(VALIDATION_RESULT, true)
-                .string(TASK_ID, taskId)
+    public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
+        return createJobRecord(event.getJob(), UPDATE_TYPE_VALIDATED)
+                .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
+                .bool(VALIDATION_RESULT, event.isAccepted())
+                .string(VALIDATION_REASON, event.getReason())
+                .string(TASK_ID, event.getTaskId())
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobRejectedRecord(
-            IngestJob job, Instant validationTime, String reason, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
-                .number(VALIDATION_TIME, validationTime.toEpochMilli())
-                .bool(VALIDATION_RESULT, false)
-                .string(VALIDATION_REASON, reason)
-                .string(TASK_ID, taskId)
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
+        return createJobRecord(event.getJob(), UPDATE_TYPE_STARTED)
+                .number(START_TIME, event.getStartTime().toEpochMilli())
+                .string(TASK_ID, event.getTaskId())
+                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime, String taskId, boolean startOfRun) {
-        return createJobRecord(job, UPDATE_TYPE_STARTED)
-                .number(START_TIME, startTime.toEpochMilli())
-                .string(TASK_ID, taskId)
-                .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .bool(START_OF_RUN, startOfRun)
-                .build();
-    }
-
-    public Map<String, AttributeValue> createJobFinishedRecord(IngestJob job, RecordsProcessedSummary summary, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_FINISHED)
+    public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
+        RecordsProcessedSummary summary = event.getSummary();
+        return createJobRecord(event.getJob(), UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
-                .string(TASK_ID, taskId)
+                .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
