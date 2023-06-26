@@ -43,20 +43,27 @@ public class ExecutorFactory {
     private final AWSStepFunctions stepFunctionsClient;
     private final String bulkImportPlatform;
 
-    public ExecutorFactory(AmazonS3 s3Client,
-                           AmazonElasticMapReduce emrClient,
-                           AWSStepFunctions stepFunctionsClient,
-                           AmazonDynamoDB dynamoDB) throws IOException {
-        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, System::getenv);
-    }
-
     ExecutorFactory(AmazonS3 s3Client,
                     AmazonElasticMapReduce emrClient,
                     AWSStepFunctions stepFunctionsClient,
                     AmazonDynamoDB dynamoDB,
                     UnaryOperator<String> getEnvironmentVariable) throws IOException {
-        this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(s3Client, getEnvironmentVariable.apply(CONFIG_BUCKET.toEnvironmentVariable()));
+        this(loadInstanceProperties(s3Client, getEnvironmentVariable), s3Client, emrClient, stepFunctionsClient, dynamoDB, getEnvironmentVariable);
+    }
+
+    public ExecutorFactory(InstanceProperties instanceProperties, AmazonS3 s3Client,
+                           AmazonElasticMapReduce emrClient,
+                           AWSStepFunctions stepFunctionsClient,
+                           AmazonDynamoDB dynamoDB) {
+        this(instanceProperties, s3Client, emrClient, stepFunctionsClient, dynamoDB, System::getenv);
+    }
+
+    public ExecutorFactory(InstanceProperties instanceProperties, AmazonS3 s3Client,
+                           AmazonElasticMapReduce emrClient,
+                           AWSStepFunctions stepFunctionsClient,
+                           AmazonDynamoDB dynamoDB,
+                           UnaryOperator<String> getEnvironmentVariable) {
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
         this.s3Client = s3Client;
@@ -64,6 +71,12 @@ public class ExecutorFactory {
         this.stepFunctionsClient = stepFunctionsClient;
         this.bulkImportPlatform = getEnvironmentVariable.apply(BULK_IMPORT_PLATFORM);
         LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
+    }
+
+    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, UnaryOperator<String> getEnvironmentVariable) throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, getEnvironmentVariable.apply(CONFIG_BUCKET.toEnvironmentVariable()));
+        return instanceProperties;
     }
 
     public Executor createExecutor() {

@@ -88,18 +88,16 @@ public class BulkImportStarterLambdaIT {
         void shouldCreateJobForDirectoryWithOneFileInside() {
             // Given
             Executor executor = mock(Executor.class);
-            when(executor.getInstanceProperties()).thenReturn(new InstanceProperties());
-            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, createHadoopConfiguration());
+            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(), createHadoopConfiguration());
             uploadFileToS3("test-dir/test-1.parquet");
-            SQSEvent event = getSqsEvent(new BulkImportJob.Builder().id("id")
-                    .files(List.of("test-bucket/test-dir")).build());
+            SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-dir")));
 
             // When
             bulkImportStarter.handleRequest(event, mock(Context.class));
 
             // Then
-            verify(executor, times(1)).runJob(BulkImportJob.builder().id("id")
-                    .files(List.of("test-bucket/test-dir/test-1.parquet")).build());
+            verify(executor, times(1)).runJob(
+                    jobWithFiles(List.of("test-bucket/test-dir/test-1.parquet")));
         }
     }
 
@@ -122,7 +120,7 @@ public class BulkImportStarterLambdaIT {
         Executor executor = mock(Executor.class);
         when(executor.getInstanceProperties()).thenReturn(new InstanceProperties());
         Context context = mock(Context.class);
-        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor);
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties());
         SQSEvent event = getSqsEvent();
 
         // When
@@ -133,7 +131,7 @@ public class BulkImportStarterLambdaIT {
     }
 
     private SQSEvent getSqsEvent() {
-        return getSqsEvent(BulkImportJob.builder().id("id").build());
+        return getSqsEvent(jobWithFiles(List.of()));
     }
 
     private SQSEvent getSqsEvent(BulkImportJob importJob) {
@@ -146,6 +144,11 @@ public class BulkImportStarterLambdaIT {
                 sqsMessage
         ));
         return event;
+    }
+
+    private static BulkImportJob jobWithFiles(List<String> files) {
+        return BulkImportJob.builder()
+                .id("id").files(files).build();
     }
 
     private static Configuration createHadoopConfiguration() {

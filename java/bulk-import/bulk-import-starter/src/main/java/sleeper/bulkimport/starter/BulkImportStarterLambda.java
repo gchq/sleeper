@@ -34,11 +34,13 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.utils.HadoopPathUtils.streamFiles;
 
@@ -52,6 +54,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private final Executor executor;
     private final Configuration hadoopConfig;
     private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
+    private final InstanceProperties instanceProperties;
 
     public BulkImportStarterLambda() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(),
@@ -62,16 +65,29 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     public BulkImportStarterLambda(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
                                    AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
-        this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor());
+        this(loadInstanceProperties(s3Client), s3Client, emrClient, stepFunctionsClient, dynamoDB);
     }
 
-    public BulkImportStarterLambda(Executor executor) {
-        this(executor, new Configuration());
+    public BulkImportStarterLambda(InstanceProperties properties, AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+                                   AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) {
+        this(new ExecutorFactory(properties, s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor(),
+                properties);
     }
 
-    public BulkImportStarterLambda(Executor executor, Configuration hadoopConfig) {
+    public BulkImportStarterLambda(Executor executor, InstanceProperties properties) {
+        this(executor, properties, new Configuration());
+    }
+
+    public BulkImportStarterLambda(Executor executor, InstanceProperties properties, Configuration hadoopConfig) {
         this.executor = executor;
+        this.instanceProperties = properties;
         this.hadoopConfig = hadoopConfig;
+    }
+
+    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        return instanceProperties;
     }
 
     @Override
@@ -87,7 +103,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     private BulkImportJob expandDirectories(BulkImportJob job) {
         BulkImportJob.Builder builder = job.toBuilder();
-        builder.files(streamFiles(job.getFiles(), hadoopConfig, executor.getInstanceProperties().get(FILE_SYSTEM))
+        builder.files(streamFiles(job.getFiles(), hadoopConfig, instanceProperties.get(FILE_SYSTEM))
                 .map(HadoopPathUtils::getRequestPath)
                 .collect(Collectors.toList()));
         return builder.build();
