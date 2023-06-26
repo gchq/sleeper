@@ -19,12 +19,18 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 
+import sleeper.configuration.properties.InstanceProperties;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
 /**
  * Utility class of methods common to ingest jobs.
@@ -32,6 +38,19 @@ import java.util.stream.Stream;
 public class HadoopPathUtils {
 
     private HadoopPathUtils() {
+    }
+
+    public static Optional<List<String>> expandDirectories(
+            List<String> directories, Configuration conf, InstanceProperties properties) {
+        List<String> files = new ArrayList<>();
+        try {
+            streamFiles(directories, conf, properties.get(FILE_SYSTEM))
+                    .map(HadoopPathUtils::getRequestPath)
+                    .forEach(files::add);
+        } catch (UncheckedIOException e) {
+            return Optional.empty();
+        }
+        return Optional.of(files);
     }
 
     public static List<Path> getPaths(List<String> files, Configuration conf, String fileSystemProperty) {

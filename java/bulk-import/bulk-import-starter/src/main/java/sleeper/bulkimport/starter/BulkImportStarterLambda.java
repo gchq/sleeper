@@ -30,22 +30,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.utils.HadoopPathUtils.streamFiles;
+import static sleeper.utils.HadoopPathUtils.expandDirectories;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
@@ -99,24 +93,10 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
                 .map(bulkImportJobSerDe::fromJson)
-                .map(this::expandDirectories)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .map(job -> expandDirectories(job.getFiles(), hadoopConfig, instanceProperties)
+                        .map(files -> job.toBuilder().files(files).build()).orElse(null))
+                .filter(Objects::nonNull)
                 .forEach(executor::runJob);
         return null;
-    }
-
-    private Optional<BulkImportJob> expandDirectories(BulkImportJob job) {
-        BulkImportJob.Builder builder = job.toBuilder();
-        List<String> files = new ArrayList<>();
-        try {
-            streamFiles(job.getFiles(), hadoopConfig, instanceProperties.get(FILE_SYSTEM))
-                    .map(HadoopPathUtils::getRequestPath)
-                    .forEach(files::add);
-        } catch (UncheckedIOException e) {
-            LOGGER.warn("Could not expand directories for job: {}", job);
-            return Optional.empty();
-        }
-        return Optional.of(builder.files(files).build());
     }
 }
