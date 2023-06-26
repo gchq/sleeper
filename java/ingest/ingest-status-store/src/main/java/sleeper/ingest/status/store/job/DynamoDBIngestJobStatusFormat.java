@@ -37,7 +37,6 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -84,13 +83,13 @@ public class DynamoDBIngestJobStatusFormat {
     }
 
     public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
-        // TODO pass reasons & run ID
         return createJobRecord(event.getJob(), UPDATE_TYPE_VALIDATED)
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
                 .bool(VALIDATION_RESULT, event.isAccepted())
-                .list(VALIDATION_REASONS, List.of(event.getReason()))
-                .string(TASK_ID, event.getTaskId())
-                .string(RUN_ID, null)
+                .list(VALIDATION_REASONS, event.getReasons().stream()
+                        .map(DynamoDBAttributes::createStringAttribute)
+                        .collect(Collectors.toList()))
+                .string(RUN_ID, event.getRunId())
                 .build();
     }
 

@@ -60,8 +60,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
 
         // When
-        // TODO add run ID
-        store.jobValidated(ingestJobRejected(DEFAULT_TASK_ID, job, validationTime, "Test failure"));
+        store.jobValidated(ingestJobRejected(job, validationTime, "Test failure"));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -77,8 +76,8 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
 
         // When
-        store.jobRejected(ingestJobRejected(DEFAULT_TASK_ID, job, validationTime,
-                List.of("Test validation reason 1", "Test validation reason 2")));
+        store.jobValidated(ingestJobRejected(job, validationTime,
+                "Test validation reason 1", "Test validation reason 2"));
 
         // Then
         assertThat(store.getAllJobs(tableName))

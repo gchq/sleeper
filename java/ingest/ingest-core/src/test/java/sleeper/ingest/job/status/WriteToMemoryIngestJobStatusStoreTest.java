@@ -207,24 +207,22 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
-            // TODO set run ID instead of task ID
-            String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(taskId, job, validationTime));
+            store.jobValidated(ingestJobAccepted("test-run", job, validationTime));
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, acceptedRun(taskId, validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRun(validationTime)));
         }
 
         @Test
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
-            // TODO set run ID
+            // TODO set run ID in started event
             String runId = "run-1";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
@@ -232,7 +230,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(taskId, job, validationTime));
+            store.jobValidated(ingestJobAccepted(runId, job, validationTime));
             store.jobStarted(validatedIngestJobStarted(taskId, job, startTime));
 
             // Then
@@ -245,13 +243,11 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportJobWithOneValidationFailure() {
             // Given
             String tableName = "test-table";
-            // TODO set run ID instead of task ID
-            String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobRejected(taskId, job, validationTime, "Test validation reason"));
+            store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
 
             // Then
             assertThat(store.getAllJobs(tableName))

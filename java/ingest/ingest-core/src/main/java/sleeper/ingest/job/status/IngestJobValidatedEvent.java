@@ -19,31 +19,36 @@ package sleeper.ingest.job.status;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 public class IngestJobValidatedEvent {
-    private final String taskId;
+    private final String runId;
     private final IngestJob job;
     private final Instant validationTime;
-    private final String reason;
+    private final List<String> reasons;
 
-    private IngestJobValidatedEvent(String taskId, IngestJob job, Instant validationTime, String reason) {
-        this.taskId = taskId;
+    private IngestJobValidatedEvent(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
+        this.runId = runId;
         this.job = job;
         this.validationTime = validationTime;
-        this.reason = reason;
+        this.reasons = reasons;
     }
 
-    public static IngestJobValidatedEvent ingestJobAccepted(String taskId, IngestJob job, Instant validationTime) {
-        return new IngestJobValidatedEvent(taskId, job, validationTime, null);
+    public static IngestJobValidatedEvent ingestJobAccepted(String runId, IngestJob job, Instant validationTime) {
+        return new IngestJobValidatedEvent(runId, job, validationTime, List.of());
     }
 
-    public static IngestJobValidatedEvent ingestJobRejected(String taskId, IngestJob job, Instant validationTime, String reason) {
-        return new IngestJobValidatedEvent(taskId, job, validationTime, reason);
+    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
+        return new IngestJobValidatedEvent(null, job, validationTime, List.of(reasons));
     }
 
-    public String getTaskId() {
-        return taskId;
+    public static IngestJobValidatedEvent ingestJobRejected(String runId, IngestJob job, Instant validationTime, List<String> reasons) {
+        return new IngestJobValidatedEvent(runId, job, validationTime, reasons);
+    }
+
+    public String getRunId() {
+        return runId;
     }
 
     public IngestJob getJob() {
@@ -55,11 +60,11 @@ public class IngestJobValidatedEvent {
     }
 
     public boolean isAccepted() {
-        return reason == null;
+        return reasons.isEmpty();
     }
 
-    public String getReason() {
-        return reason;
+    public List<String> getReasons() {
+        return reasons;
     }
 
     @Override
@@ -71,24 +76,24 @@ public class IngestJobValidatedEvent {
             return false;
         }
         IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
-        return Objects.equals(taskId, that.taskId)
+        return Objects.equals(runId, that.runId)
                 && Objects.equals(job, that.job)
                 && Objects.equals(validationTime, that.validationTime)
-                && Objects.equals(reason, that.reason);
+                && Objects.equals(reasons, that.reasons);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, job, validationTime, reason);
+        return Objects.hash(runId, job, validationTime, reasons);
     }
 
     @Override
     public String toString() {
         return "IngestJobValidatedEvent{" +
-                "taskId='" + taskId + '\'' +
+                "runId='" + runId + '\'' +
                 ", job=" + job +
                 ", validationTime=" + validationTime +
-                ", reason='" + reason + '\'' +
+                ", reasons='" + reasons + '\'' +
                 '}';
     }
 }

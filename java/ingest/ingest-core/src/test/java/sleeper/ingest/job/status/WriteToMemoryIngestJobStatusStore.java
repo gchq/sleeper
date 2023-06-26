@@ -35,9 +35,8 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
-        // TODO add run IDs
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(event.getJob().getId(), null,
-                validatedStatus(event), event.getTaskId());
+                validatedStatus(event), event.getRunId(), null);
         tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
@@ -45,10 +44,11 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     private static IngestJobValidatedStatus validatedStatus(IngestJobValidatedEvent event) {
         if (event.isAccepted()) {
-            return IngestJobAcceptedStatus.validationTime(event.getValidationTime());
+            return IngestJobAcceptedStatus.from(event.getValidationTime(),
+                    defaultUpdateTime(event.getValidationTime()));
         } else {
             return IngestJobRejectedStatus.builder().validationTime(event.getValidationTime())
-                    .reason(event.getReason()).build();
+                    .reasons(event.getReasons()).build();
         }
     }
 

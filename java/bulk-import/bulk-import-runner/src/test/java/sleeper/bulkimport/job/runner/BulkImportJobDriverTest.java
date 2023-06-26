@@ -45,6 +45,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.statestore.FileInfoTestData.defaultFileOnRootPartitionWithRecords;
 
 class BulkImportJobDriverTest {
@@ -176,7 +177,7 @@ class BulkImportJobDriverTest {
                         Instant startTime, Instant finishTime,
                         BulkImportJobDriver.BulkImportSessionRunner sessionRunner,
                         StateStore stateStore) throws Exception {
-        statusStore.jobAccepted(runId, job.toIngestJob(), validationTime);
+        statusStore.jobValidated(ingestJobAccepted(runId, job.toIngestJob(), validationTime));
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),

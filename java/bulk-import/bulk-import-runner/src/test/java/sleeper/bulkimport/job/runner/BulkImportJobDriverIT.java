@@ -97,6 +97,7 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 @Testcontainers
 class BulkImportJobDriverIT {
@@ -310,7 +311,7 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        statusStore.jobAccepted(runId, job.toIngestJob(), validationTime);
+        statusStore.jobValidated(ingestJobAccepted(runId, job.toIngestJob(), validationTime));
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);

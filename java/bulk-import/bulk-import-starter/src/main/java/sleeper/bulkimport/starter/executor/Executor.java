@@ -40,6 +40,8 @@ import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
@@ -142,12 +144,12 @@ public abstract class Executor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobStatusStore.jobRejected(runId, bulkImportJob.toIngestJob(),
-                    validationTimeSupplier.get(), failedChecks);
+            ingestJobStatusStore.jobValidated(ingestJobRejected(
+                    runId, bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
             return false;
         } else {
-            ingestJobStatusStore.jobAccepted(runId, bulkImportJob.toIngestJob(),
-                    validationTimeSupplier.get());
+            ingestJobStatusStore.jobValidated(ingestJobAccepted(
+                    runId, bulkImportJob.toIngestJob(), validationTimeSupplier.get()));
             return true;
         }
     }

@@ -78,7 +78,8 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        IngestJobStatusStore ingestJobStatusStore,
                        AmazonS3 amazonS3, String taskId,
                        Supplier<Instant> validationTimeSupplier) {
-        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
+        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, taskId, validationTimeSupplier,
                 new EmrInstanceFleets(instanceProperties));
     }
 
