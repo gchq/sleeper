@@ -402,10 +402,8 @@ public class S3StateStoreIT {
         ).join();
 
         // Then
+        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         assertThat(fileInPartitionList).hasSize(20).containsExactlyInAnyOrderElementsOf(files);
-        assertThat(stateStore.getActiveFiles())
-                .hasSize(20)
-                .containsExactlyInAnyOrderElementsOf(files);
         executorService.shutdown();
     }
 

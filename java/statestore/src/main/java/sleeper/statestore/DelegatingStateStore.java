@@ -97,6 +97,12 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findFilesThatShouldHaveStatusOfGCPending'");
+    }
+
+    @Override
     public List<FileInfo> getFileInPartitionInfosWithNoJobId() throws StateStoreException {
         return fileInfoStore.getFileInPartitionInfosWithNoJobId();
     }

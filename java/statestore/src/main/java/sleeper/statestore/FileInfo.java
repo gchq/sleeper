@@ -33,6 +33,7 @@ public class FileInfo {
     public enum FileStatus {
         FILE_IN_PARTITION,
         ACTIVE,
+        GARBAGE_COLLECTION_PENDING,
         READY_FOR_GARBAGE_COLLECTION
     }
 

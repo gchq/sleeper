@@ -429,6 +429,11 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
+    public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
+        throw new RuntimeException("Not implemented yet");
+    }
+
+    @Override
     public List<FileInfo> getFileInPartitionInfosWithNoJobId() throws StateStoreException {
         try {
             ScanRequest scanRequest = new ScanRequest()

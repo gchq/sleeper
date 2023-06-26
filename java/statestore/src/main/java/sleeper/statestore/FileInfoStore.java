@@ -191,6 +191,16 @@ public interface FileInfoStore {
     Iterator<String> getReadyForGCFiles() throws StateStoreException;
 
     /**
+     * Identifies files which should have a status of GARBAGE_COLLECTION_PENDING. This means
+     * that there is a file-lifecycle record for them but no file-in-partition records. This
+     * method should set the status of any such files to {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}
+     * in the file-lifecycle store.
+     *
+     * @throws StateStoreException if operation fails
+     */
+    void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException;
+
+    /**
      * Returns an {@link Iterator} of {@link FileInfo}s file-lifecycle records of files that
      * are ready for garbage collection, i.e. their file-lifecycle status is
      * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update

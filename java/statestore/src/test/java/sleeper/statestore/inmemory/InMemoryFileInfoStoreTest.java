@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStoreTest {
@@ -281,6 +282,39 @@ public class InMemoryFileInfoStoreTest {
         store.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
         assertThat(readyForGCFiles).hasSize(2);
         assertThat(readyForGCFiles.stream().collect(Collectors.toSet())).containsExactlyInAnyOrder("file1", "file3");
+    }
+
+    @Test
+    public void shouldFindFilesThatShouldHaveStatusOfGCPending() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
+        FileInfo file2 = factory.rootFile("file2", 100L, "a", "b");
+        FileInfo file3 = factory.rootFile("file3", 100L, "a", "b");
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.addFile(file1);
+        store.addFile(file2);
+        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1), file3);
+
+        // When
+        store.findFilesThatShouldHaveStatusOfGCPending();
+
+        // Then
+        // - Check that file1 has status of GARBAGE_COLLECTION_PENDING
+        FileInfo fileInfoForFile1 = store.getFileLifecycleList().stream()
+                .filter(fi -> fi.getFilename().equals(file1.getFilename()))
+                .findFirst()
+                .get();
+        assertThat(fileInfoForFile1.getFileStatus()).isEqualTo(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING);
+        // - Check that file2 and file3 have statuses of ACTIVE
+        List<FileInfo> fileInfoForFile2 = store.getFileLifecycleList().stream()
+                .filter(fi -> fi.getFilename().equals(file2.getFilename()) || fi.getFilename().equals(file3.getFilename()))
+                .collect(Collectors.toList());
+        assertThat(fileInfoForFile2).extracting(FileInfo::getFileStatus).containsOnly(FileInfo.FileStatus.ACTIVE);
     }
 
     @Test

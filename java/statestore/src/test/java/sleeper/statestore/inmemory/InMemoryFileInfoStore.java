@@ -24,9 +24,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +37,10 @@ import static java.util.stream.Collectors.mapping;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
+/**
+ * This class is intended for testing only. It is not thread-safe and should not be used
+ * where concurrent operations may be happening.
+ */
 public class InMemoryFileInfoStore implements FileInfoStore {
     private final Map<String, Map<String, FileInfo>> fileInPartitionEntries = new HashMap<>(); // filename -> partition id -> fileinfo
     private final Map<String, FileInfo> fileLifecycleEntries = new HashMap<>();
@@ -121,6 +127,20 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         return fileLifecycleEntries.values().stream()
             .filter(f -> f.getFileStatus().equals(READY_FOR_GARBAGE_COLLECTION))
             .filter(f -> (f.getLastStateStoreUpdateTime() < deleteTime));
+    }
+
+    @Override
+    public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
+        // Identify any files which have lifecycle records that do not have any
+        // file-in-partition records.
+        Set<String> allFilesWithLifecycleEntries = new HashSet<>(fileLifecycleEntries.keySet());
+        Set<String> allFilesWithFileInPartitionEntries = new HashSet<>(fileInPartitionEntries.keySet());
+        allFilesWithLifecycleEntries.removeAll(allFilesWithFileInPartitionEntries);
+        // Update the file-lifecylce records to GARBAGE_COLLECTION_PENDING.
+        for (String filename : allFilesWithLifecycleEntries) {
+            FileInfo updatedFileInfo = fileLifecycleEntries.get(filename).cloneWithStatus(FileStatus.GARBAGE_COLLECTION_PENDING);
+            fileLifecycleEntries.put(filename, updatedFileInfo);
+        }
     }
 
     @Override

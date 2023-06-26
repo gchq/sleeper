@@ -41,6 +41,7 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -454,6 +455,11 @@ public class S3FileInfoStore implements FileInfoStore {
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving ready for GC files", e);
         }
+    }
+
+    @Override
+    public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
