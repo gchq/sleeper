@@ -49,7 +49,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
@@ -419,11 +418,11 @@ class EmrExecutorTest {
         // Given
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
         BulkImportJob myJob = singleFileJob();
-        EmrExecutor emrExecutor = createExecutor(
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+        EmrExecutor executor = executorWithRunIdAndValidationTime(
+                "test-run", Instant.parse("2023-06-12T17:30:00Z"));
 
         // When
-        emrExecutor.runJob(myJob);
+        executor.runJob(myJob);
 
         // Then
         assertThat(requested.get())
@@ -441,8 +440,8 @@ class EmrExecutorTest {
         instanceProperties.set(JARS_BUCKET, "jarsBucket");
         instanceProperties.set(CONFIG_BUCKET, "configBucket");
         instanceProperties.set(VERSION, "1.2.3");
-        EmrExecutor executor = createExecutor(
-                "test-run", () -> Instant.parse("2023-06-12T17:30:00Z"));
+        EmrExecutor executor = executorWithRunIdAndValidationTime(
+                "test-run", Instant.parse("2023-06-12T17:30:00Z"));
         assertThat(executor.constructArgs(singleFileJob(), "test-task"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
@@ -457,34 +456,24 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executor() {
-        return executorWithInstanceConfiguration(new EmrInstanceConfiguration() {
-            @Override
-            public JobFlowInstancesConfig createJobFlowInstancesConfig(EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-                return new JobFlowInstancesConfig();
-            }
-
-            @Override
-            public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
-                return new ComputeLimits();
-            }
-        });
+        return executorWithInstanceConfiguration(new FakeEmrInstanceConfiguration());
     }
 
     private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
+        return executor(configuration, "test-run", Instant::now);
+    }
+
+    private EmrExecutor executorWithRunIdAndValidationTime(String runId, Instant validationTime) {
+        return executor(new FakeEmrInstanceConfiguration(), runId, List.of(validationTime).iterator()::next);
+    }
+
+    private EmrExecutor executor(
+            EmrInstanceConfiguration configuration, String runId, Supplier<Instant> validationTimeSupplier) {
         return new EmrExecutor(emr, instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
-                amazonS3, configuration);
-    }
-
-    private EmrExecutor createExecutorWithDefaults() {
-        return createExecutor(UUID.randomUUID().toString(), Instant::now);
-    }
-
-    private EmrExecutor createExecutor(String runId, Supplier<Instant> validationTimeSupplier) {
-        return new EmrExecutor(emr, instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, ingestJobStatusStore, amazonS3, runId, validationTimeSupplier);
+                ingestJobStatusStore, amazonS3, runId, validationTimeSupplier, configuration);
     }
 
     private EmrExecutor executorWithInstanceGroups() {
@@ -537,5 +526,17 @@ class EmrExecutorTest {
 
     private Stream<InstanceFleetConfig> requestedInstanceFleets(InstanceFleetType type) {
         return requestedInstanceFleets().filter(fleet -> type.name().equals(fleet.getInstanceFleetType()));
+    }
+
+    public static class FakeEmrInstanceConfiguration implements EmrInstanceConfiguration {
+        @Override
+        public JobFlowInstancesConfig createJobFlowInstancesConfig(EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
+            return new JobFlowInstancesConfig();
+        }
+
+        @Override
+        public ComputeLimits createComputeLimits(BulkImportPlatformSpec platformSpec) {
+            return new ComputeLimits();
+        }
     }
 }

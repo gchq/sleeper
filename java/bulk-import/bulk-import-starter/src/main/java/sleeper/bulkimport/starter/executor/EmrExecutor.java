@@ -76,10 +76,10 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3, String taskId,
+                       AmazonS3 amazonS3, String runId,
                        Supplier<Instant> validationTimeSupplier) {
         this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3, taskId, validationTimeSupplier,
+                amazonS3, runId, validationTimeSupplier,
                 new EmrInstanceFleets(instanceProperties));
     }
 
@@ -88,11 +88,11 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3, String taskId,
+                       AmazonS3 amazonS3, String runId,
                        Supplier<Instant> validationTimeSupplier,
                        EmrInstanceConfiguration instanceConfiguration) {
         super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
-                taskId, validationTimeSupplier);
+                runId, validationTimeSupplier);
         this.emrClient = emrClient;
         this.instanceConfiguration = instanceConfiguration;
     }
