@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
+import static sleeper.statestore.FileInfo.FileStatus.FILE_IN_PARTITION;;
 import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
@@ -189,9 +191,9 @@ public class InMemoryFileInfoStoreTest {
 
         // Then
         List<FileInfo> expectedFileInfoList = Arrays.asList(
-                file1.cloneWithStatus(FileStatus.ACTIVE),
-                file2.cloneWithStatus(FileStatus.ACTIVE),
-                file4.cloneWithStatus(FileStatus.ACTIVE));
+                file1.cloneWithStatus(ACTIVE),
+                file2.cloneWithStatus(ACTIVE),
+                file4.cloneWithStatus(ACTIVE));
         assertThat(activeFileList)
                 .containsExactlyInAnyOrder(expectedFileInfoList.toArray(new FileInfo[0]));
     }
@@ -219,9 +221,9 @@ public class InMemoryFileInfoStoreTest {
 
         // Then
         List<FileInfo> expectedFileInfoList = Arrays.asList(
-                file1.cloneWithStatus(FileStatus.FILE_IN_PARTITION),
-                file2.cloneWithStatus(FileStatus.FILE_IN_PARTITION),
-                file3.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
+                file1.cloneWithStatus(FILE_IN_PARTITION),
+                file2.cloneWithStatus(FILE_IN_PARTITION),
+                file3.cloneWithStatus(FILE_IN_PARTITION));
         assertThat(fileLifecycleList)
                 .containsExactlyInAnyOrder(expectedFileInfoList.toArray(new FileInfo[0]));
     }
@@ -309,12 +311,12 @@ public class InMemoryFileInfoStoreTest {
                 .filter(fi -> fi.getFilename().equals(file1.getFilename()))
                 .findFirst()
                 .get();
-        assertThat(fileInfoForFile1.getFileStatus()).isEqualTo(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING);
+        assertThat(fileInfoForFile1.getFileStatus()).isEqualTo(GARBAGE_COLLECTION_PENDING);
         // - Check that file2 and file3 have statuses of ACTIVE
         List<FileInfo> fileInfoForFile2 = store.getFileLifecycleList().stream()
                 .filter(fi -> fi.getFilename().equals(file2.getFilename()) || fi.getFilename().equals(file3.getFilename()))
                 .collect(Collectors.toList());
-        assertThat(fileInfoForFile2).extracting(FileInfo::getFileStatus).containsOnly(FileInfo.FileStatus.ACTIVE);
+        assertThat(fileInfoForFile2).extracting(FileInfo::getFileStatus).containsOnly(ACTIVE);
     }
 
     @Test
@@ -334,8 +336,8 @@ public class InMemoryFileInfoStoreTest {
         store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
 
         // Then
-        assertThat(store.getFileInPartitionList()).containsExactly(newFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
-        assertThat(store.getFileInPartitionInfosWithNoJobId()).containsExactly(newFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
+        assertThat(store.getFileInPartitionList()).containsExactly(newFile.cloneWithStatus(FILE_IN_PARTITION));
+        assertThat(store.getFileInPartitionInfosWithNoJobId()).containsExactly(newFile.cloneWithStatus(FILE_IN_PARTITION));
         assertThat(store.getPartitionToFileInPartitionMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files ->
@@ -360,8 +362,8 @@ public class InMemoryFileInfoStoreTest {
         store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(Collections.singletonList(oldFile), newLeftFile, newRightFile);
 
         // Then
-        newLeftFile = newLeftFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
-        newRightFile = newRightFile.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
+        newLeftFile = newLeftFile.cloneWithStatus(FILE_IN_PARTITION);
+        newRightFile = newRightFile.cloneWithStatus(FILE_IN_PARTITION);
         assertThat(store.getFileInPartitionList()).containsExactlyInAnyOrder(newLeftFile, newRightFile);
         assertThat(store.getFileInPartitionInfosWithNoJobId()).containsExactlyInAnyOrder(newLeftFile, newRightFile);
         assertThat(store.getPartitionToFileInPartitionMap())
@@ -407,7 +409,7 @@ public class InMemoryFileInfoStoreTest {
         store.atomicallyUpdateJobStatusOfFiles("job", Collections.singletonList(file));
 
         // Then
-        assertThat(store.getFileInPartitionList()).containsExactly(file.toBuilder().jobId("job").fileStatus(FileStatus.FILE_IN_PARTITION).build());
+        assertThat(store.getFileInPartitionList()).containsExactly(file.toBuilder().jobId("job").fileStatus(FILE_IN_PARTITION).build());
         assertThat(store.getFileInPartitionInfosWithNoJobId()).isEmpty();
     }
 
@@ -427,7 +429,7 @@ public class InMemoryFileInfoStoreTest {
         // When / Then
         assertThatThrownBy(() -> store.atomicallyUpdateJobStatusOfFiles("job2", Collections.singletonList(file)))
                 .isInstanceOf(StateStoreException.class);
-        assertThat(store.getFileInPartitionList()).containsExactly(file.toBuilder().jobId("job1").fileStatus(FileStatus.FILE_IN_PARTITION).build());
+        assertThat(store.getFileInPartitionList()).containsExactly(file.toBuilder().jobId("job1").fileStatus(FILE_IN_PARTITION).build());
         assertThat(store.getFileInPartitionInfosWithNoJobId()).isEmpty();
     }
 

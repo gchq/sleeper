@@ -57,6 +57,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -139,6 +140,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
+    // TODO Is this method needed?
     @Override
     public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
         Map<String, AttributeValue> key = new HashMap<>();
@@ -430,7 +432,61 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
-        throw new RuntimeException("Not implemented yet");
+        // List files from file-lifecycle table
+        List<FileInfo> fileLifecycleList = getFileLifecycleList();
+        Set<String> filenamesFromFileLifecycleList = fileLifecycleList.stream()
+            .map(FileInfo::getFilename)
+            .collect(Collectors.toSet());
+        LOGGER.info("Found {} files in the file-lifecycle table", filenamesFromFileLifecycleList.size());
+
+        // List files from file-in-partition table
+        List<FileInfo> fileInPartitionList = getFileInPartitionList();
+        Set<String> filenamesFromFileInPartitionList = fileInPartitionList.stream()
+            .map(FileInfo::getFilename)
+            .collect(Collectors.toSet());
+        LOGGER.info("Found {} files in the file-in-partition table", filenamesFromFileInPartitionList.size());
+
+        // Find any files which have a file-lifecycle entry but no file-in-partition entry
+        filenamesFromFileLifecycleList.removeAll(filenamesFromFileInPartitionList);
+        LOGGER.info("Found {} files which have file-lifecyle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
+
+        changeStatusOfFileLifecycleEntriesToGCPending(filenamesFromFileLifecycleList);
+        LOGGER.info("Changed status of {} files in file-lifecyle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
+    }
+
+    private void changeStatusOfFileLifecycleEntriesToGCPending(Set<String> filenames) throws StateStoreException {
+        if (null == filenames || filenames.isEmpty()) {
+            return;
+        }
+
+        for (String filename : filenames) {
+            changeStatusOfFileLifecycleEntryToGCPending(filename);
+        }
+    }
+
+    private void changeStatusOfFileLifecycleEntryToGCPending(String filename) throws StateStoreException {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(DynamoDBStateStore.FILE_NAME, DynamoDBAttributes.createStringAttribute(filename));
+        Map<String, String> expressionAttributeNames = new HashMap<>();
+        expressionAttributeNames.put("#status", DynamoDBFileInfoFormat.STATUS);
+        expressionAttributeNames.put("#lastupdatetime", DynamoDBFileInfoFormat.LAST_UPDATE_TIME);
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":status", DynamoDBAttributes.createStringAttribute(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING.toString()));
+        expressionAttributeValues.put(":lastupdatetime", DynamoDBAttributes.createNumberAttribute(Instant.now().toEpochMilli()));
+        UpdateItemRequest updateItemRequest = new UpdateItemRequest()
+            .withTableName(fileLifecycleTablename)
+            .withKey(key)
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(expressionAttributeValues)
+            .withUpdateExpression("SET #status = :status, #lastupdatetime = :lastupdatetime");
+        try {
+            dynamoDB.updateItem(updateItemRequest);
+        } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
+            | ItemCollectionSizeLimitExceededException | TransactionConflictException | RequestLimitExceededException
+            | InternalServerErrorException e) {
+            throw new StateStoreException(e);
+        }
+        LOGGER.info("Changed status of file {} to GARBAGE_COLLECTION_PENDING in the file-lifecycle table");
     }
 
     @Override

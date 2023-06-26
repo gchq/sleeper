@@ -63,6 +63,8 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
+import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
 
 @Testcontainers
 public class DynamoDBStateStoreIT {
@@ -759,6 +761,39 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(fileInfos).hasSize(4).containsExactlyInAnyOrderElementsOf(expected.values());
+    }
+
+    @Test
+    public void shouldFindFilesThatShouldHaveStatusOfGCPending() throws Exception {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new StringType());
+        StateStore dynamoDBStateStore = getStateStore(schema);
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
+        FileInfo file2 = factory.rootFile("file2", 100L, "a", "b");
+        FileInfo file3 = factory.rootFile("file3", 100L, "a", "b");
+        dynamoDBStateStore.addFile(file1);
+        dynamoDBStateStore.addFile(file2);
+        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1), file3);
+
+        // When
+        dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
+
+        // Then
+        // - Check that file1 has status of GARBAGE_COLLECTION_PENDING
+        FileInfo fileInfoForFile1 = dynamoDBStateStore.getFileLifecycleList().stream()
+                .filter(fi -> fi.getFilename().equals(file1.getFilename()))
+                .findFirst()
+                .get();
+        assertThat(fileInfoForFile1.getFileStatus()).isEqualTo(GARBAGE_COLLECTION_PENDING);
+        // - Check that file2 and file3 have statuses of ACTIVE
+        List<FileInfo> fileInfoForFile2 = dynamoDBStateStore.getFileLifecycleList().stream()
+                .filter(fi -> fi.getFilename().equals(file2.getFilename()) || fi.getFilename().equals(file3.getFilename()))
+                .collect(Collectors.toList());
+        assertThat(fileInfoForFile2).extracting(FileInfo::getFileStatus).containsOnly(ACTIVE);
     }
 
 //     @Test
