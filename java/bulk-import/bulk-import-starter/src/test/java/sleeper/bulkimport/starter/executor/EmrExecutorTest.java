@@ -486,7 +486,7 @@ class EmrExecutorTest {
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
-                ingestJobStatusStore, amazonS3, null, validationTimeSupplier, configuration);
+                ingestJobStatusStore, amazonS3, validationTimeSupplier, configuration);
     }
 
     private EmrExecutor executorWithInstanceGroups() {

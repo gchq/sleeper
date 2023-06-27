@@ -84,10 +84,10 @@ public class StateMachineExecutor extends Executor {
                                 TablePropertiesProvider tablePropertiesProvider,
                                 StateStoreProvider stateStoreProvider,
                                 IngestJobStatusStore ingestJobStatusStore,
-                                AmazonS3 s3Client, String jobRunId,
+                                AmazonS3 s3Client,
                                 Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, s3Client,
-                jobRunId, validationTimeSupplier);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                s3Client, validationTimeSupplier);
         this.stepFunctions = stepFunctions;
     }
 

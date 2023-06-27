@@ -34,10 +34,9 @@ import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -150,8 +149,7 @@ class StateMachineExecutorTest {
     void shouldFailValidationWhenInputFilesAreNull() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutor(
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+        StateMachineExecutor stateMachineExecutor = createExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -234,7 +232,7 @@ class StateMachineExecutorTest {
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "myStateMachine");
-        StateMachineExecutor stateMachineExecutor = createExecutor("test-run", Instant::now);
+        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -282,8 +280,7 @@ class StateMachineExecutorTest {
                     return tableProperties;
                 });
 
-        StateMachineExecutor stateMachineExecutor = createExecutor(
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+        StateMachineExecutor stateMachineExecutor = createExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -301,11 +298,11 @@ class StateMachineExecutorTest {
     }
 
     private StateMachineExecutor createExecutorWithDefaults() {
-        return createExecutor(UUID.randomUUID().toString(), Instant::now);
+        return createExecutorWithValidationTime(Instant.now());
     }
 
-    private StateMachineExecutor createExecutor(String taskId, Supplier<Instant> validationTimeSupplier) {
+    private StateMachineExecutor createExecutorWithValidationTime(Instant validationTime) {
         return new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, ingestJobStatusStore, amazonS3, taskId, validationTimeSupplier);
+                stateStoreProvider, ingestJobStatusStore, amazonS3, List.of(validationTime).iterator()::next);
     }
 }

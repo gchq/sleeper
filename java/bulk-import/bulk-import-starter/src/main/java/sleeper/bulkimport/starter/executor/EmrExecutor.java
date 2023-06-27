@@ -76,11 +76,10 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3, String jobRunId,
+                       AmazonS3 amazonS3,
                        Supplier<Instant> validationTimeSupplier) {
         this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3, jobRunId, validationTimeSupplier,
-                new EmrInstanceFleets(instanceProperties));
+                amazonS3, validationTimeSupplier, new EmrInstanceFleets(instanceProperties));
     }
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
@@ -88,11 +87,11 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3, String jobRunId,
+                       AmazonS3 amazonS3,
                        Supplier<Instant> validationTimeSupplier,
                        EmrInstanceConfiguration instanceConfiguration) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
-                jobRunId, validationTimeSupplier);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, validationTimeSupplier);
         this.emrClient = emrClient;
         this.instanceConfiguration = instanceConfiguration;
     }

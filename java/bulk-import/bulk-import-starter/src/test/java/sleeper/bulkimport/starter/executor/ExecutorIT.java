@@ -292,7 +292,7 @@ class ExecutorIT {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
         return new FakeExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3, "test-run", List.of(validationTime).iterator()::next);
+                ingestJobStatusStore, s3, List.of(validationTime).iterator()::next);
     }
 
     private static class FakeExecutor extends Executor {
@@ -311,9 +311,9 @@ class ExecutorIT {
                      TablePropertiesProvider tablePropertiesProvider,
                      StateStoreProvider stateStoreProvider,
                      IngestJobStatusStore ingestJobStatusStore,
-                     AmazonS3 s3, String jobRunId, Supplier<Instant> validationTimeSupplier) {
+                     AmazonS3 s3, Supplier<Instant> validationTimeSupplier) {
             super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                    s3, jobRunId, validationTimeSupplier);
+                    s3, validationTimeSupplier);
         }
 
         @Override

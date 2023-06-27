@@ -56,7 +56,7 @@ public abstract class Executor {
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
                     StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                    String jobRunId, Supplier<Instant> validationTimeSupplier) {
+                    Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;

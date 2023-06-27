@@ -34,10 +34,10 @@ public abstract class AbstractEmrExecutor extends Executor {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore ingestJobStatusStore,
-            AmazonS3 amazonS3Client, String jobRunId,
+            AmazonS3 amazonS3Client,
             Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3Client,
-                jobRunId, validationTimeSupplier);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3Client, validationTimeSupplier);
     }
 
     @Override

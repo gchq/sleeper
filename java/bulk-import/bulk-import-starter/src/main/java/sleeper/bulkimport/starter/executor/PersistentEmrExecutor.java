@@ -55,10 +55,10 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore ingestJobStatusStore,
-            AmazonS3 amazonS3, String taskId,
+            AmazonS3 amazonS3,
             Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
-                taskId, validationTimeSupplier);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, validationTimeSupplier);
         this.emrClient = emrClient;
         this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
