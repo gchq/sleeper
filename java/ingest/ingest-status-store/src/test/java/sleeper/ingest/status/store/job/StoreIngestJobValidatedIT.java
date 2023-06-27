@@ -49,7 +49,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunOnTask(taskId, validationTime)));
+                .containsExactly(jobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
     }
 
     @Test

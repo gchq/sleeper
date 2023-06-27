@@ -42,6 +42,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -439,9 +440,10 @@ class EmrExecutorTest {
         executor.runJob(myJob, "test-job-run");
 
         // Then
+        IngestJob ingestJob = myJob.toIngestJob();
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
-                        acceptedRun(Instant.parse("2023-06-02T15:41:00Z"))));
+                .containsExactly(jobStatus(ingestJob,
+                        acceptedRun(ingestJob, Instant.parse("2023-06-02T15:41:00Z"))));
         assertThat(ingestJobStatusStore.streamTableRecords("myTable"))
                 .extracting(ProcessStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");

@@ -53,7 +53,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                     defaultUpdateTime(event.getValidationTime()));
         } else {
             return IngestJobRejectedStatus.builder()
-                    .job(job)
+                    .job(event.getJob())
                     .validationTime(event.getValidationTime())
                     .updateTime(defaultUpdateTime(event.getValidationTime()))
                     .reasons(event.getReasons()).build();

@@ -25,7 +25,6 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
@@ -108,8 +107,7 @@ public class IngestJobStatusTestData {
                         .validationTime(validationTime)
                         .updateTime(defaultUpdateTime(validationTime))
                         .reasons(reasons)
-                        .inputFileCount(Optional.ofNullable(job.getFiles())
-                                .map(List::size).orElse(0))
+                        .job(job)
                         .build())
                 .build();
     }
