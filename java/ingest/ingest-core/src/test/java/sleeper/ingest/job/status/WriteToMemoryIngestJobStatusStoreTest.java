@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -29,13 +30,22 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunOnTask;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFinished;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -48,7 +58,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
         IngestJob job = createJobWithTableAndFiles("test-job", tableName);
 
-        store.jobStarted(taskId, job, startTime);
+        store.jobStarted(ingestJobStarted(taskId, job, startTime));
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job, startedIngestRun(job, taskId, startTime)));
     }
@@ -60,7 +70,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
         IngestJob job = createJobWithTableAndFiles("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
 
-        store.jobStarted(taskId, job, startTime);
+        store.jobStarted(ingestJobStarted(taskId, job, startTime));
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job, startedIngestRun(job, taskId, startTime)));
     }
@@ -75,8 +85,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-        store.jobStarted(taskId, job, startTime);
-        store.jobFinished(taskId, job, summary);
+        store.jobStarted(ingestJobStarted(taskId, job, startTime));
+        store.jobFinished(ingestJobFinished(taskId, job, summary));
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job, finishedIngestRun(job, taskId, summary)));
     }
@@ -91,7 +101,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-        assertThatThrownBy(() -> store.jobFinished(taskId, job, summary))
+        assertThatThrownBy(() -> store.jobFinished(ingestJobFinished(taskId, job, summary)))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -107,10 +117,10 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
-        store.jobStarted(taskId, job, startTime1);
-        store.jobFinished(taskId, job, summary1);
-        store.jobStarted(taskId, job, startTime2);
-        store.jobFinished(taskId, job, summary2);
+        store.jobStarted(ingestJobStarted(taskId, job, startTime1));
+        store.jobFinished(ingestJobFinished(taskId, job, summary1));
+        store.jobStarted(ingestJobStarted(taskId, job, startTime2));
+        store.jobFinished(ingestJobFinished(taskId, job, summary2));
 
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job,
@@ -131,10 +141,10 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
-        store.jobStarted(taskId, job1, startTime1);
-        store.jobFinished(taskId, job1, summary1);
-        store.jobStarted(taskId, job2, startTime2);
-        store.jobFinished(taskId, job2, summary2);
+        store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
+        store.jobFinished(ingestJobFinished(taskId, job1, summary1));
+        store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
+        store.jobFinished(ingestJobFinished(taskId, job2, summary2));
 
         assertThat(store.getAllJobs(tableName)).containsExactly(
                 jobStatus(job2, finishedIngestRun(job2, taskId, summary2)),
@@ -157,10 +167,10 @@ public class WriteToMemoryIngestJobStatusStoreTest {
                 new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
         // When
-        store.jobStarted(taskId, job1, startTime1);
-        store.jobFinished(taskId, job1, summary1);
-        store.jobStarted(taskId, job2, startTime2);
-        store.jobFinished(taskId, job2, summary2);
+        store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
+        store.jobFinished(ingestJobFinished(taskId, job1, summary1));
+        store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
+        store.jobFinished(ingestJobFinished(taskId, job2, summary2));
 
         // Then
         assertThat(store.getAllJobs(tableName2)).containsExactly(
@@ -185,8 +195,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
 
         // When
-        store.jobStarted(taskId, job1, startTime1);
-        store.jobStarted(taskId, job2, startTime2);
+        store.jobStarted(ingestJobStarted(taskId, job1, startTime1));
+        store.jobStarted(ingestJobStarted(taskId, job2, startTime2));
 
         // Then
         assertThat(store.getAllJobs(tableName2)).containsExactly(
@@ -202,31 +212,30 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
-            String runId = "run-1";
+            String taskId = "some-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobAccepted(runId, job, validationTime);
+            store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
         }
 
         @Test
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
             String tableName = "test-table";
-            String runId = "run-1";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobAccepted(runId, job, validationTime);
-            store.jobStarted(runId, taskId, job, startTime, false);
+            store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
+            store.jobStarted(validatedIngestJobStarted(job, startTime).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableName))
@@ -238,12 +247,11 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportJobWithOneValidationFailure() {
             // Given
             String tableName = "test-table";
-            String runId = "run-1";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobRejected(runId, job, validationTime, List.of("Test validation reason"));
+            store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
 
             // Then
             assertThat(store.getAllJobs(tableName))
@@ -255,18 +263,109 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         void shouldReportJobWithMultipleValidationFailures() {
             // Given
             String tableName = "test-table";
-            String runId = "run-1";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobRejected(runId, job, validationTime,
-                    List.of("Test validation reason 1", "Test validation reason 2"));
+            store.jobValidated(ingestJobRejected(job, validationTime,
+                    "Test validation reason 1", "Test validation reason 2"));
 
             // Then
             assertThat(store.getAllJobs(tableName))
                     .containsExactly(jobStatus(job, rejectedRun(job, validationTime,
                             List.of("Test validation reason 1", "Test validation reason 2"))));
+        }
+    }
+
+    @Nested
+    @DisplayName("Correlate runs by ID")
+    class CorrelateRunsById {
+        @Test
+        void shouldReportAcceptedJob() {
+            // Given
+            String tableName = "test-table";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+
+            // When
+            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId("test-run").build());
+
+            // Then
+            assertThat(store.getAllJobs(tableName))
+                    .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run");
+        }
+
+        @Test
+        void shouldReportStartedJob() {
+            // Given
+            String tableName = "test-table";
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+
+            // When
+            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableName))
+                    .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                            validationTime, startTime)));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
+        }
+
+        @Test
+        void shouldReportFinishedJob() {
+            // Given
+            String tableName = "test-table";
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+
+            // When
+            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableName))
+                    .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
+                            validationTime, summary)));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run", "test-run");
+        }
+
+        @Test
+        void shouldReportUnvalidatedFinishedJob() {
+            // Given
+            String tableName = "test-table";
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableName))
+                    .containsExactly(finishedIngestJob(job, taskId, summary));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
         }
     }
 }

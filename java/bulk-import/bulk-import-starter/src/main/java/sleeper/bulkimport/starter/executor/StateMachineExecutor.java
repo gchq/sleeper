@@ -84,18 +84,18 @@ public class StateMachineExecutor extends Executor {
                                 TablePropertiesProvider tablePropertiesProvider,
                                 StateStoreProvider stateStoreProvider,
                                 IngestJobStatusStore ingestJobStatusStore,
-                                AmazonS3 s3Client, String taskId,
+                                AmazonS3 s3Client,
                                 Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, s3Client,
-                taskId, validationTimeSupplier);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                s3Client, validationTimeSupplier);
         this.stepFunctions = stepFunctions;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         Map<String, Object> input = new HashMap<>();
-        List<String> args = constructArgs(bulkImportJob, stateMachineArn);
+        List<String> args = constructArgs(bulkImportJob, jobRunId, stateMachineArn);
         input.put("job", bulkImportJob);
         input.put("args", args);
 
@@ -136,7 +136,7 @@ public class StateMachineExecutor extends Executor {
     }
 
     @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
+    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
         Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
 
         // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
@@ -153,7 +153,7 @@ public class StateMachineExecutor extends Executor {
                 .platformSpec(bulkImportJob.getPlatformSpec())
                 .sparkConf(sparkProperties)
                 .build();
-        return super.constructArgs(cloneWithUpdatedProps, taskId);
+        return super.constructArgs(cloneWithUpdatedProps, jobRunId, taskId);
     }
 
     @Override

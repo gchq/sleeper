@@ -45,6 +45,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.statestore.FileInfoTestData.defaultFileOnRootPartitionWithRecords;
 
 class BulkImportJobDriverTest {
@@ -144,44 +145,44 @@ class BulkImportJobDriverTest {
         assertThat(stateStore.getActiveFiles()).isEmpty();
     }
 
-    private void runJob(BulkImportJob job, String runId, String taskId, Instant validationTime,
+    private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles) throws Exception {
-        runJob(job, runId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
+        runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
     }
 
-    private void runJobFailStateStoreUpdate(BulkImportJob job, String runId, String taskId,
+    private void runJobFailStateStoreUpdate(BulkImportJob job, String jobRunId, String taskId,
                                             Instant validationTime, Instant startTime,
                                             Instant finishTime, List<FileInfo> outputFiles,
                                             Exception failure) throws Exception {
         StateStore stateStore = mock(StateStore.class);
         doThrow(failure).when(stateStore).addFiles(outputFiles);
-        runJob(job, runId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
+        runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, outputFiles, stateStore);
     }
 
-    private void runJob(BulkImportJob job, String runId, String taskId, Instant validationTime,
+    private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
                         Instant startTime, Instant finishTime, List<FileInfo> outputFiles,
                         StateStore stateStore) throws Exception {
         BulkImportJobOutput output = new BulkImportJobOutput(outputFiles, () -> {
         });
-        runJob(job, runId, taskId, validationTime, startTime, finishTime, bulkImportJob -> output, stateStore);
+        runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, bulkImportJob -> output, stateStore);
     }
 
-    private void runJob(BulkImportJob job, String runId, String taskId,
+    private void runJob(BulkImportJob job, String jobRunId, String taskId,
                         Instant validationTime, Instant startTime, Instant finishTime,
                         BulkImportJobDriver.BulkImportSessionRunner sessionRunner) throws Exception {
-        runJob(job, runId, taskId, validationTime, startTime, finishTime, sessionRunner, stateStore);
+        runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, sessionRunner, stateStore);
     }
 
-    private void runJob(BulkImportJob job, String runId, String taskId, Instant validationTime,
+    private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
                         Instant startTime, Instant finishTime,
                         BulkImportJobDriver.BulkImportSessionRunner sessionRunner,
                         StateStore stateStore) throws Exception {
-        statusStore.jobAccepted(runId, job.toIngestJob(), validationTime);
+        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 statusStore, List.of(startTime, finishTime).iterator()::next);
-        driver.run(job, runId, taskId);
+        driver.run(job, jobRunId, taskId);
     }
 
     private BulkImportJob singleFileImportJob() {

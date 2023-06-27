@@ -25,61 +25,85 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunOnTask;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
-    void shouldReportIngestJobStartedWithValidation() {
+    void shouldReportUnstartedJobWithNoValidationFailures() {
         // Given
-        IngestJob job = jobWithFiles("file1");
-        Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
-        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
+        String tableName = "test-table";
+        String taskId = "some-task";
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobAccepted(DEFAULT_RUN_ID, job, validationTime);
-        store.jobStartedWithValidation(DEFAULT_RUN_ID, DEFAULT_TASK_ID, job, startedTime);
+        store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
-                        acceptedRunWhichStarted(job, DEFAULT_TASK_ID,
-                                validationTime, startedTime)));
+                .containsExactly(jobStatus(job, acceptedRunOnTask(taskId, validationTime)));
     }
 
     @Test
-    void shouldReportIngestJobWithOneValidationFailure() {
+    void shouldReportStartedJobWithNoValidationFailures() {
         // Given
-        IngestJob job = jobWithFiles("file1");
-        Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
+        String tableName = "test-table";
+        String taskId = "some-task";
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+        Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
         // When
-        store.jobRejected(DEFAULT_RUN_ID, job, validationTime, List.of("Test failure"));
+        store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
+        store.jobStarted(validatedIngestJobStarted(job, startTime).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
-                        rejectedRun(job, validationTime, "Test failure")));
+                .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                        validationTime, startTime)));
+    }
+
+    @Test
+    void shouldReportJobWithOneValidationFailure() {
+        // Given
+        String tableName = "test-table";
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+
+        // When
+        store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(jobStatus(job, rejectedRun(
+                        job, validationTime, "Test validation reason")));
     }
 
     @Test
     void shouldReportJobWithMultipleValidationFailures() {
         // Given
-        IngestJob job = jobWithFiles("file1");
-        Instant validationTime = Instant.parse("2022-12-14T13:50:12.001Z");
+        String tableName = "test-table";
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobRejected(DEFAULT_TASK_ID, job, validationTime,
-                List.of("Test validation reason 1", "Test validation reason 2"));
+        store.jobValidated(ingestJobRejected(job, validationTime,
+                "Test validation reason 1", "Test validation reason 2"));
 
         // Then
-        assertThat(store.getAllJobs(tableName))
+        assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
-                        rejectedRun(job, validationTime,
-                                List.of("Test validation reason 1", "Test validation reason 2"))));
+                .containsExactly(jobStatus(job, rejectedRun(job, validationTime,
+                        List.of("Test validation reason 1", "Test validation reason 2"))));
     }
 }

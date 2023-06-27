@@ -55,22 +55,22 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobStatusStore ingestJobStatusStore,
-            AmazonS3 amazonS3, String taskId,
+            AmazonS3 amazonS3,
             Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
-                taskId, validationTimeSupplier);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, validationTimeSupplier);
         this.emrClient = emrClient;
         this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         StepConfig stepConfig = new StepConfig()
                 .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(constructArgs(bulkImportJob, clusterName)));
+                        .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName)));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
                 .withSteps(stepConfig);

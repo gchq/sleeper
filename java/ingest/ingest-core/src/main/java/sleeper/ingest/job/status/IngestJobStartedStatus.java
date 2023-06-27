@@ -98,7 +98,7 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
                 "inputFileCount=" + inputFileCount +
                 ", startTime=" + startTime +
                 ", updateTime=" + updateTime +
-                ", isStandardIngest=" + isStartOfRun +
+                ", isStartOfRun=" + isStartOfRun +
                 '}';
     }
 

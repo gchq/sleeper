@@ -47,6 +47,8 @@ import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -54,9 +56,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
@@ -86,18 +88,28 @@ class ExecutorIT {
     }
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    private final AmazonS3 s3 = createS3Client();
     private final AmazonDynamoDB dynamoDB = createDynamoDBClient();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
+    private final String bucketName = UUID.randomUUID().toString();
+    private final String tableName = "myTable";
     private final IngestJobStatusStore ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
 
     @BeforeEach
     void setup() {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
+        s3.createBucket(bucketName);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.setSchema(SCHEMA);
+        tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
     }
 
     @AfterEach
     public void tearDown() {
         dynamoDB.deleteTable(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID)));
+        s3.shutdown();
     }
 
     @Nested
@@ -106,51 +118,45 @@ class ExecutorIT {
         @Test
         void shouldFailValidationIfFileListIsEmpty() {
             // Given
-            AmazonS3 s3 = createS3Client();
-            String bucketName = UUID.randomUUID().toString();
-            s3.createBucket(bucketName);
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName("myTable")
+                    .tableName(tableName)
                     .id("my-job")
                     .files(Lists.newArrayList())
                     .build();
-            ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
             // When
-            executorMock.runJob(importJob);
-            assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+            fakeExecutor.runJob(importJob);
+
+            // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableName))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                     "The input files must be set to a non-null and non-empty value.")));
-            s3.shutdown();
         }
 
         @Test
         void shouldFailValidationIfJobPointsAtNonExistentTable() {
             // Given
-            AmazonS3 s3 = createS3Client();
-            String bucketName = UUID.randomUUID().toString();
-            s3.createBucket(bucketName);
             BulkImportJob importJob = new BulkImportJob.Builder()
                     .tableName("table-that-does-not-exist")
                     .id("my-job")
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
-            ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
             // When
-            executorMock.runJob(importJob);
+            fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
                     .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                     "Table does not exist.")));
-            s3.shutdown();
         }
 
         @Test
@@ -160,12 +166,12 @@ class ExecutorIT {
                     .id("my-job")
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
-            ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
             // When
-            executorMock.runJob(importJob);
+            fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
                     .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
@@ -178,17 +184,17 @@ class ExecutorIT {
             // Given
             String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName("myTable")
+                    .tableName(tableName)
                     .files(Lists.newArrayList("file1.parquet"))
                     .id(invalidId)
                     .build();
-            ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
             // When
-            executorMock.runJob(importJob);
+            fakeExecutor.runJob(importJob);
 
             // Then
-            assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs(tableName))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
@@ -199,17 +205,17 @@ class ExecutorIT {
         void shouldFailValidationIfJobIdContainsUppercaseLetters() {
             // Given
             BulkImportJob importJob = new BulkImportJob.Builder()
-                    .tableName("myTable")
+                    .tableName(tableName)
                     .id("importJob")
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
-            ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+            FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
             // When
-            executorMock.runJob(importJob);
+            fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
@@ -221,117 +227,99 @@ class ExecutorIT {
     @Test
     void shouldCallRunOnPlatformIfJobIsValid() {
         // Given
-        AmazonS3 s3 = createS3Client();
-        String bucketName = UUID.randomUUID().toString();
-        s3.createBucket(bucketName);
         s3.putObject(bucketName, "file1.parquet", "");
         s3.putObject(bucketName, "file2.parquet", "");
         s3.putObject(bucketName, "directory/file3.parquet", "");
         BulkImportJob importJob = new BulkImportJob.Builder()
-                .tableName("myTable")
+                .tableName(tableName)
                 .id("my-job")
-                .files(Lists.newArrayList(bucketName + "/file1.parquet", bucketName + "/file2.parquet", bucketName + "/directory/file3.parquet"))
+                .files(List.of(
+                        bucketName + "/file1.parquet",
+                        bucketName + "/file2.parquet",
+                        bucketName + "/directory/file3.parquet"))
                 .build();
-        ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+        FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
-        executorMock.runJob(importJob);
+        fakeExecutor.runJob(importJob, "job-run-id");
 
         // Then
-        assertThat(executorMock.isRunJobOnPlatformCalled()).isTrue();
+        assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
+        assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
-        s3.shutdown();
     }
 
     @Test
     void shouldSucceedIfS3ObjectIsADirectoryContainingFiles() {
         // Given
-        AmazonS3 s3 = createS3Client();
-        String bucketName = UUID.randomUUID().toString();
-        s3.createBucket(bucketName);
         s3.putObject(bucketName, "directory/file1.parquet", "");
         BulkImportJob importJob = new BulkImportJob.Builder()
-                .tableName("myTable")
+                .tableName(tableName)
                 .id("my-job")
-                .files(Lists.newArrayList(bucketName + "/directory", bucketName + "/directory/"))
+                .files(List.of(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
-        ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+        FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
-        executorMock.runJob(importJob);
+        fakeExecutor.runJob(importJob, "job-run-id");
 
         // Then
-        assertThat(executorMock.isRunJobOnPlatformCalled()).isTrue();
+        assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
+        assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
-        s3.shutdown();
     }
 
     @Test
     void shouldDoNothingWhenJobIsNull() {
         // Given
-        ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+        FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
-        executorMock.runJob(null);
+        fakeExecutor.runJob(null);
 
         // Then
-        assertThat(executorMock.isRunJobOnPlatformCalled()).isFalse();
+        assertThat(fakeExecutor.getJobsRun()).isEmpty();
     }
 
-    private ExecutorMock buildExecutorWithBulkImportBucketAndTable(String bucketName, String tableName, AmazonS3 s3,
-                                                                   String taskId, Supplier<Instant> validationTimeSupplier) {
-        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(SCHEMA);
-        tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
+    private FakeExecutor buildExecutorWithValidationTime(Instant validationTime) {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
-        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3, taskId, validationTimeSupplier);
+                inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
+        return new FakeExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                ingestJobStatusStore, s3, List.of(validationTime).iterator()::next);
     }
 
-    private ExecutorMock buildExecutorWithTable(String tableName, String taskId, Supplier<Instant> validationTimeSupplier) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(SCHEMA);
-        tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-                inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
-        return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, null, taskId, validationTimeSupplier);
-    }
+    private static class FakeExecutor extends Executor {
+        private final List<BulkImportJob> jobsRun = new ArrayList<>();
+        private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
 
-    private static class ExecutorMock extends Executor {
-        private boolean runJobOnPlatformCalled = false;
-
-        public boolean isRunJobOnPlatformCalled() {
-            return runJobOnPlatformCalled;
+        public List<BulkImportJob> getJobsRun() {
+            return jobsRun;
         }
 
-        ExecutorMock(InstanceProperties instanceProperties,
+        public List<String> getJobRunIdsOfJobsRun() {
+            return jobRunIdsOfJobsRun;
+        }
+
+        FakeExecutor(InstanceProperties instanceProperties,
                      TablePropertiesProvider tablePropertiesProvider,
                      StateStoreProvider stateStoreProvider,
                      IngestJobStatusStore ingestJobStatusStore,
-                     AmazonS3 s3, String taskId, Supplier<Instant> validationTimeSupplier) {
+                     AmazonS3 s3, Supplier<Instant> validationTimeSupplier) {
             super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                    s3, taskId, validationTimeSupplier);
+                    s3, validationTimeSupplier);
         }
 
         @Override
-        protected void runJobOnPlatform(BulkImportJob bulkImportJob) {
-            runJobOnPlatformCalled = true;
+        protected void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
+            jobsRun.add(bulkImportJob);
+            jobRunIdsOfJobsRun.add(jobRunId);
         }
 
         @Override

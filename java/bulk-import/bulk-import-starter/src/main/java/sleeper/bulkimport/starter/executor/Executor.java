@@ -40,6 +40,8 @@ import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
@@ -50,22 +52,24 @@ public abstract class Executor {
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
-    protected final String runId;
     protected final Supplier<Instant> validationTimeSupplier;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
                     StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                    String runId, Supplier<Instant> validationTimeSupplier) {
+                    Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.s3Client = s3Client;
-        this.runId = runId;
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
     public void runJob(BulkImportJob bulkImportJob) {
+        runJob(bulkImportJob, UUID.randomUUID().toString());
+    }
+
+    public void runJob(BulkImportJob bulkImportJob, String jobRunId) {
         if (null == bulkImportJob) {
             LOGGER.warn("Received null job, exiting early.");
             return;
@@ -74,18 +78,21 @@ public abstract class Executor {
         if (!validateJob(bulkImportJob)) {
             return;
         }
+        ingestJobStatusStore.jobValidated(ingestJobAccepted(
+                bulkImportJob.toIngestJob(), validationTimeSupplier.get())
+                .jobRunId(jobRunId).build());
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        runJobOnPlatform(bulkImportJob);
+        runJobOnPlatform(bulkImportJob, jobRunId);
         LOGGER.info("Successfully submitted job");
     }
 
-    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
+    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId);
 
     protected abstract String getJarLocation();
 
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
+    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         LOGGER.info("Using Spark config {}", userConfig);
 
@@ -105,7 +112,7 @@ public abstract class Executor {
         args.add(instanceProperties.get(CONFIG_BUCKET));
         args.add(bulkImportJob.getId());
         args.add(taskId);
-        args.add(runId);
+        args.add(jobRunId);
         return args;
     }
 
@@ -142,12 +149,10 @@ public abstract class Executor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobStatusStore.jobRejected(runId, bulkImportJob.toIngestJob(),
-                    validationTimeSupplier.get(), failedChecks);
+            ingestJobStatusStore.jobValidated(ingestJobRejected(
+                    bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
             return false;
         } else {
-            ingestJobStatusStore.jobAccepted(runId, bulkImportJob.toIngestJob(),
-                    validationTimeSupplier.get());
             return true;
         }
     }

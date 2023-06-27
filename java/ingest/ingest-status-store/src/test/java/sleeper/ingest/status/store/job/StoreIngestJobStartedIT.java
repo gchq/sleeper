@@ -23,7 +23,6 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 
 public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -34,12 +33,12 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(startedIngestJob(job, DEFAULT_TASK_ID, startedTime));
+                .containsExactly(defaultJobStartedStatus(job, startedTime));
     }
 
     @Test
@@ -49,12 +48,12 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(startedIngestJob(job, DEFAULT_TASK_ID, startedTime));
+                .containsExactly(defaultJobStartedStatus(job, startedTime));
     }
 
     @Test
@@ -66,15 +65,15 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime2 = Instant.parse("2022-12-14T13:56:12.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
-        store.jobStarted(DEFAULT_TASK_ID, job2, startedTime2);
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        startedIngestJob(job2, DEFAULT_TASK_ID, startedTime2),
-                        startedIngestJob(job1, DEFAULT_TASK_ID, startedTime1));
+                        defaultJobStartedStatus(job2, startedTime2),
+                        defaultJobStartedStatus(job1, startedTime1));
     }
 
 }

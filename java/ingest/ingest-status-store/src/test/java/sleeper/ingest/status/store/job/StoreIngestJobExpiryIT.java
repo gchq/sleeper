@@ -39,7 +39,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Duration timeToLive = Duration.ofDays(7);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
+        store.jobStarted(defaultJobStartedEvent(job, startTime));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
@@ -56,8 +56,8 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(startTime), defaultUpdateTime(finishTime));
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startTime, finishTime));
+        store.jobStarted(defaultJobStartedEvent(job, startTime));
+        store.jobFinished(defaultJobFinishedEvent(job, startTime, finishTime));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
@@ -72,7 +72,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Duration timeToLive = Duration.ofDays(1);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
+        store.jobStarted(defaultJobStartedEvent(job, startTime));
 
         // When/Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())

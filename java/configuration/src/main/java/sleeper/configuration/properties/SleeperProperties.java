@@ -110,7 +110,10 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public List<String> getList(T property) {
-        String value = get(property);
+        return readList(get(property));
+    }
+
+    public static List<String> readList(String value) {
         return value == null ? null : Lists.newArrayList(value.split(","));
     }
 

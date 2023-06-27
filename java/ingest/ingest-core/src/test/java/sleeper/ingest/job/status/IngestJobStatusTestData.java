@@ -90,8 +90,16 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
-    public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String reason) {
-        return rejectedRun(job, validationTime, List.of(reason));
+    public static ProcessRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(job, validationTime,
+                        defaultUpdateTime(validationTime)))
+                .build();
+    }
+
+    public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String... reasons) {
+        return rejectedRun(job, validationTime, List.of(reasons));
     }
 
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {

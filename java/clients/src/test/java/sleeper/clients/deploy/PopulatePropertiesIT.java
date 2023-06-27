@@ -33,6 +33,7 @@ import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,12 +46,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
-public class GeneratePropertiesIT {
+public class PopulatePropertiesIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -64,20 +65,21 @@ public class GeneratePropertiesIT {
     private Path tempDir;
 
     @Test
-    void shouldGenerateInstancePropertiesCorrectly() {
+    void shouldPopulateInstancePropertiesCorrectly() {
         // Given/When
-        InstanceProperties properties = generateInstancePropertiesBuilder()
+        InstanceProperties properties = populateInstancePropertiesBuilder()
                 .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().generate();
+                .build().populate();
 
         // Then
         InstanceProperties expected = new InstanceProperties();
+        expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
         expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
         expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.set(VPC_ID, "some-vpc");
-        expected.set(SUBNET, "some-subnet");
+        expected.set(SUBNETS, "some-subnet");
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
@@ -90,9 +92,9 @@ public class GeneratePropertiesIT {
     @Test
     void shouldSaveBucketNamesToLocalDirectoryWhenInstancePropertiesGenerated() throws IOException {
         // Given
-        InstanceProperties properties = generateInstancePropertiesBuilder()
+        InstanceProperties properties = populateInstancePropertiesBuilder()
                 .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().generate();
+                .build().populate();
 
         // When
         SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
@@ -105,10 +107,15 @@ public class GeneratePropertiesIT {
     @Test
     void shouldSaveBucketNamesToLocalDirectoryWhenTablePropertiesGenerated() throws IOException {
         // Given
-        InstanceProperties instanceProperties = generateInstancePropertiesBuilder()
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
                 .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().generate();
-        TableProperties tableProperties = GenerateTableProperties.from(instanceProperties, schemaWithKey("key"), "test-table");
+                .build().populate();
+        TableProperties tableProperties = PopulateTableProperties.builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(new TableProperties(instanceProperties))
+                .schema(schemaWithKey("key"))
+                .tableName("test-table")
+                .build().populate();
 
         // When
         SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(tableProperties));
@@ -117,8 +124,8 @@ public class GeneratePropertiesIT {
         assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).exists();
     }
 
-    private GenerateInstanceProperties.Builder generateInstancePropertiesBuilder() {
-        return GenerateInstanceProperties.builder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetId("some-subnet");
+    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstanceProperties.builder()
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }

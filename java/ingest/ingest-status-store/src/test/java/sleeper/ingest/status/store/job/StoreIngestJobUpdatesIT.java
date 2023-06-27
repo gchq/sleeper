@@ -17,15 +17,14 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 
@@ -39,13 +38,13 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
-        store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(finishedIngestJob(job, DEFAULT_TASK_ID, defaultSummary(startedTime, finishedTime)));
+                .containsExactly(defaultJobFinishedStatus(job, startedTime, finishedTime));
     }
 
     @Test
@@ -56,20 +55,21 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant finishTime1 = Instant.parse("2022-10-03T15:19:31.001Z");
         Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
         Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
-        RecordsProcessed processed = new RecordsProcessed(200L, 100L);
+        String taskId1 = "first-task";
+        String taskId2 = "second-task";
 
         // When
-        store.jobStarted(DEFAULT_TASK_ID, job, startTime1);
-        store.jobStarted(DEFAULT_TASK_ID_2, job, startTime2);
-        store.jobFinished(DEFAULT_TASK_ID, job, new RecordsProcessedSummary(processed, startTime1, finishTime1));
-        store.jobFinished(DEFAULT_TASK_ID_2, job, new RecordsProcessedSummary(processed, startTime2, finishTime2));
+        store.jobStarted(ingestJobStarted(taskId1, job, startTime1));
+        store.jobStarted(ingestJobStarted(taskId2, job, startTime2));
+        store.jobFinished(ingestJobFinished(taskId1, job, defaultSummary(startTime1, finishTime1)));
+        store.jobFinished(ingestJobFinished(taskId2, job, defaultSummary(startTime2, finishTime2)));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
-                        finishedIngestRun(job, DEFAULT_TASK_ID_2, new RecordsProcessedSummary(processed, startTime2, finishTime2)),
-                        finishedIngestRun(job, DEFAULT_TASK_ID, new RecordsProcessedSummary(processed, startTime1, finishTime1))));
+                        finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2)),
+                        finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1))));
     }
 
 }

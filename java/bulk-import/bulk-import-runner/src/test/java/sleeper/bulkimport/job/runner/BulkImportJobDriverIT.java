@@ -87,7 +87,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -97,6 +97,7 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 @Testcontainers
 class BulkImportJobDriverIT {
@@ -123,7 +124,6 @@ class BulkImportJobDriverIT {
     private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
     private final Schema schema = getSchema();
     private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
-    private final String runId = "test-run";
     private final String taskId = "test-bulk-import-spark-cluster";
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
@@ -184,7 +184,7 @@ class BulkImportJobDriverIT {
         instanceProperties.set(REGION, "");
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
+        instanceProperties.set(SUBNETS, "");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
@@ -310,11 +310,12 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
-        statusStore.jobAccepted(runId, job.toIngestJob(), validationTime);
+        String jobRunId = "test-run";
+        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
-        driver.run(job, runId, taskId);
+        driver.run(job, jobRunId, taskId);
     }
 
     @ParameterizedTest

@@ -29,12 +29,14 @@ import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
+import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -56,7 +58,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String VALIDATION_TIME = "ValidationTime";
     public static final String VALIDATION_RESULT = "Result";
-    public static final String VALIDATION_REASONS = "ValidationReason";
+    public static final String VALIDATION_REASONS = "ValidationReasons";
 
     public static final String TABLE_NAME = "TableName";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
@@ -65,7 +67,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
-    public static final String RUN_ID = "RunId";
+    public static final String JOB_RUN_ID = "JobRunId";
     public static final String TASK_ID = "TaskId";
     public static final String EXPIRY_DATE = "ExpiryDate";
     public static final String UPDATE_TYPE_VALIDATED = "validated";
@@ -80,44 +82,35 @@ public class DynamoDBIngestJobStatusFormat {
         this.getTimeNow = getTimeNow;
     }
 
-    public Map<String, AttributeValue> createJobAcceptedRecord(
-            IngestJob job, Instant validationTime, String runId) {
-        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
-                .number(VALIDATION_TIME, validationTime.toEpochMilli())
-                .bool(VALIDATION_RESULT, true)
-                .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .string(RUN_ID, runId)
-                .build();
-    }
-
-    public Map<String, AttributeValue> createJobRejectedRecord(
-            IngestJob job, Instant validationTime, List<String> reasons, String runId) {
-        return createJobRecord(job, UPDATE_TYPE_VALIDATED)
-                .number(VALIDATION_TIME, validationTime.toEpochMilli())
-                .bool(VALIDATION_RESULT, false)
-                .list(VALIDATION_REASONS, reasons.stream()
+    public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
+        return createJobRecord(event.getJob(), UPDATE_TYPE_VALIDATED)
+                .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
+                .bool(VALIDATION_RESULT, event.isAccepted())
+                .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
-                .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .string(RUN_ID, runId)
+                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobStartedRecord(IngestJob job, Instant startTime,
-                                                              String runId, String taskId, boolean startOfRun) {
-        return createJobRecord(job, UPDATE_TYPE_STARTED)
-                .number(START_TIME, startTime.toEpochMilli())
-                .string(RUN_ID, runId)
-                .string(TASK_ID, taskId)
-                .number(INPUT_FILES_COUNT, job.getFiles().size())
-                .bool(START_OF_RUN, startOfRun)
+    public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
+        return createJobRecord(event.getJob(), UPDATE_TYPE_STARTED)
+                .number(START_TIME, event.getStartTime().toEpochMilli())
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
+                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
 
-    public Map<String, AttributeValue> createJobFinishedRecord(IngestJob job, RecordsProcessedSummary summary, String taskId) {
-        return createJobRecord(job, UPDATE_TYPE_FINISHED)
+    public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
+        RecordsProcessedSummary summary = event.getSummary();
+        return createJobRecord(event.getJob(), UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
-                .string(TASK_ID, taskId)
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
@@ -140,12 +133,13 @@ public class DynamoDBIngestJobStatusFormat {
     }
 
     private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return new ProcessStatusUpdateRecord(
-                getStringAttribute(item, JOB_ID),
-                getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
-                getStatusUpdate(item),
-                getStringAttribute(item, RUN_ID),
-                getStringAttribute(item, TASK_ID));
+        return ProcessStatusUpdateRecord.builder()
+                .jobId(getStringAttribute(item, JOB_ID))
+                .statusUpdate(getStatusUpdate(item))
+                .jobRunId(getStringAttribute(item, JOB_RUN_ID))
+                .taskId(getStringAttribute(item, TASK_ID))
+                .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
+                .build();
     }
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {

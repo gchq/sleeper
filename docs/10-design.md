@@ -26,6 +26,10 @@ The Sleeper instance also contains infrastructure to ingest data, compact data, 
 partitions, execute queries, and run Athena queries. Each of these are provided by a separate CDK stack. All of
 these are optional, but in practice the compaction, garbage collection and partition splitting stacks are essential.
 
+The following diagram shows the architecture of Sleeper.
+
+![High level design diagram](diagrams/high-level-design.png)
+
 ## Records
 
 Records are the fundamental unit of data in Sleeper. A record is simply a map from a field name to a value, i.e.

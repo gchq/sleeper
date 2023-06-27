@@ -34,8 +34,8 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestInstanceProperties;
-import static sleeper.clients.deploy.GeneratePropertiesTestHelper.generateTestTableProperties;
+import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
+import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
