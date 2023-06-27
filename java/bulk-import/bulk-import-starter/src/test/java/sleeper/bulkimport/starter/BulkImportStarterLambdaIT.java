@@ -47,7 +47,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @Testcontainers
 public class BulkImportStarterLambdaIT {
@@ -56,6 +55,8 @@ public class BulkImportStarterLambdaIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
+    private final AmazonS3 s3Client = createS3Client();
+
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
@@ -63,29 +64,24 @@ public class BulkImportStarterLambdaIT {
                 .build();
     }
 
+    @BeforeEach
+    void setup() {
+        s3Client.createBucket(TEST_BUCKET);
+    }
+
+    @AfterEach
+    void tearDown() {
+        s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
+                s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
+        s3Client.deleteBucket(TEST_BUCKET);
+    }
+
     @Nested
     @DisplayName("Expand directories")
     class ExpandDirectories {
-        AmazonS3 s3Client = createS3Client();
         Executor executor = mock(Executor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
                 new InstanceProperties(), createHadoopConfiguration());
-
-        @BeforeEach
-        void setup() {
-            s3Client.createBucket(TEST_BUCKET);
-        }
-
-        @AfterEach
-        void tearDown() {
-            s3Client.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary ->
-                    s3Client.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
-            s3Client.deleteBucket(TEST_BUCKET);
-        }
-
-        void uploadFileToS3(String filePath) {
-            s3Client.putObject(TEST_BUCKET, filePath, "test");
-        }
 
         @Test
         void shouldExpandDirectoryWithOneFileInside() {
@@ -179,21 +175,17 @@ public class BulkImportStarterLambdaIT {
     @Test
     public void shouldHandleAValidRequest() {
         // Given
+        uploadFileToS3("test-1.parquet");
         Executor executor = mock(Executor.class);
-        when(executor.getInstanceProperties()).thenReturn(new InstanceProperties());
-        Context context = mock(Context.class);
-        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties());
-        SQSEvent event = getSqsEvent();
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
+                new InstanceProperties(), createHadoopConfiguration());
+        SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-1.parquet")));
 
         // When
-        bulkImportStarter.handleRequest(event, context);
+        bulkImportStarter.handleRequest(event, mock(Context.class));
 
         // Then
         verify(executor, times(1)).runJob(any());
-    }
-
-    private SQSEvent getSqsEvent() {
-        return getSqsEvent(jobWithFiles(List.of()));
     }
 
     private SQSEvent getSqsEvent(BulkImportJob importJob) {
@@ -219,5 +211,9 @@ public class BulkImportStarterLambdaIT {
         conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
         conf.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
         return conf;
+    }
+
+    private void uploadFileToS3(String filePath) {
+        s3Client.putObject(TEST_BUCKET, filePath, "test");
     }
 }
