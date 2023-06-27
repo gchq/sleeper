@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.util.List;
 import java.util.Optional;
 
 import static sleeper.utils.HadoopPathUtils.expandDirectories;
@@ -61,7 +62,10 @@ public class IngestJobSerDe {
 
     public Optional<IngestJob> fromJsonExpandingDirs(String jsonIngestJob) {
         IngestJob ingestJob = fromJson(jsonIngestJob);
-        return expandDirectories(ingestJob.getFiles(), configuration, properties)
-                .map(files -> ingestJob.toBuilder().files(files).build());
+        List<String> files = expandDirectories(ingestJob.getFiles(), configuration, properties);
+        if (files.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(ingestJob.toBuilder().files(files).build());
     }
 }
