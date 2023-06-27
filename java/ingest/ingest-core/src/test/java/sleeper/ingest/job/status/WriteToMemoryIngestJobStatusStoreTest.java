@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -292,6 +293,9 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             // Then
             assertThat(store.getAllJobs(tableName))
                     .containsExactly(jobStatus(job, acceptedRun(validationTime)));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run");
         }
 
         @Test
@@ -312,6 +316,9 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableName))
                     .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
                             validationTime, startTime)));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
         }
 
         @Test
@@ -334,6 +341,9 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableName))
                     .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
                             validationTime, summary)));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run", "test-run");
         }
 
         @Test
@@ -353,6 +363,9 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             // Then
             assertThat(store.getAllJobs(tableName))
                     .containsExactly(finishedIngestJob(job, taskId, summary));
+            assertThat(store.streamTableRecords(tableName))
+                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .containsExactly("test-run", "test-run");
         }
     }
 }

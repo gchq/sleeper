@@ -62,6 +62,53 @@ public class ProcessStatusUpdateRecord {
         return expiryDate;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ProcessStatusUpdateRecord that = (ProcessStatusUpdateRecord) o;
+
+        if (!jobId.equals(that.jobId)) {
+            return false;
+        }
+        if (!statusUpdate.equals(that.statusUpdate)) {
+            return false;
+        }
+        if (!Objects.equals(jobRunId, that.jobRunId)) {
+            return false;
+        }
+        if (!Objects.equals(taskId, that.taskId)) {
+            return false;
+        }
+        return Objects.equals(expiryDate, that.expiryDate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = jobId.hashCode();
+        result = 31 * result + statusUpdate.hashCode();
+        result = 31 * result + (jobRunId != null ? jobRunId.hashCode() : 0);
+        result = 31 * result + (taskId != null ? taskId.hashCode() : 0);
+        result = 31 * result + (expiryDate != null ? expiryDate.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ProcessStatusUpdateRecord{" +
+                "jobId='" + jobId + '\'' +
+                ", statusUpdate=" + statusUpdate +
+                ", jobRunId='" + jobRunId + '\'' +
+                ", taskId='" + taskId + '\'' +
+                ", expiryDate=" + expiryDate +
+                '}';
+    }
+
     public static final class Builder {
         private String jobId;
         private ProcessStatusUpdate statusUpdate;
