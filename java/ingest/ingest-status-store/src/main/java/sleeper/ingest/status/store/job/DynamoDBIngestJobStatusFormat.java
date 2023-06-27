@@ -58,7 +58,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String VALIDATION_TIME = "ValidationTime";
     public static final String VALIDATION_RESULT = "Result";
-    public static final String VALIDATION_REASONS = "ValidationReason";
+    public static final String VALIDATION_REASONS = "ValidationReasons";
 
     public static final String TABLE_NAME = "TableName";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
