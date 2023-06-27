@@ -78,18 +78,15 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class EmrExecutorTest {
-    private AmazonElasticMapReduce emr;
-    private AtomicReference<RunJobFlowRequest> requested;
-    private AmazonS3 amazonS3;
+    private final AmazonElasticMapReduce emr = mock(AmazonElasticMapReduce.class);
+    private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
+    private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final TableProperties tableProperties = new TableProperties(instanceProperties);
-    private IngestJobStatusStore ingestJobStatusStore;
+    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
     @BeforeEach
     public void setUpEmr() {
-        requested = new AtomicReference<>();
-        amazonS3 = mock(AmazonS3.class);
-        emr = mock(AmazonElasticMapReduce.class);
         when(emr.runJobFlow(any(RunJobFlowRequest.class)))
                 .then((Answer<RunJobFlowResult>) invocation -> {
                     requested.set(invocation.getArgument(0));
@@ -99,7 +96,6 @@ class EmrExecutorTest {
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(SUBNETS, "subnet-abc");
         tableProperties.set(TABLE_NAME, "myTable");
-        ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
     }
 
     @Nested
