@@ -115,7 +115,7 @@ class ExecutorIT {
                     .files(Lists.newArrayList())
                     .build();
             ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                    "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
 
             // When
             executorMock.runJob(importJob);
@@ -139,7 +139,7 @@ class ExecutorIT {
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
             ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                    "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
 
             // When
             executorMock.runJob(importJob);
@@ -161,7 +161,7 @@ class ExecutorIT {
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
             ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                    "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
             // When
             executorMock.runJob(importJob);
 
@@ -183,7 +183,7 @@ class ExecutorIT {
                     .id(invalidId)
                     .build();
             ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                    "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
             // When
             executorMock.runJob(importJob);
 
@@ -204,7 +204,7 @@ class ExecutorIT {
                     .files(Lists.newArrayList("file1.parquet"))
                     .build();
             ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                    "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                    "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
 
             // When
             executorMock.runJob(importJob);
@@ -233,7 +233,7 @@ class ExecutorIT {
                 .files(Lists.newArrayList(bucketName + "/file1.parquet", bucketName + "/file2.parquet", bucketName + "/directory/file3.parquet"))
                 .build();
         ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executorMock.runJob(importJob);
@@ -260,7 +260,7 @@ class ExecutorIT {
                 .files(Lists.newArrayList(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
         ExecutorMock executorMock = buildExecutorWithBulkImportBucketAndTable(bucketName, "myTable", s3,
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executorMock.runJob(importJob);
@@ -278,7 +278,7 @@ class ExecutorIT {
     void shouldDoNothingWhenJobIsNull() {
         // Given
         ExecutorMock executorMock = buildExecutorWithTable("myTable",
-                "test-task", () -> Instant.parse("2023-06-02T15:41:00Z"));
+                "test-run", () -> Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executorMock.runJob(null);
@@ -288,7 +288,7 @@ class ExecutorIT {
     }
 
     private ExecutorMock buildExecutorWithBulkImportBucketAndTable(String bucketName, String tableName, AmazonS3 s3,
-                                                                   String taskId, Supplier<Instant> validationTimeSupplier) {
+                                                                   String jobRunId, Supplier<Instant> validationTimeSupplier) {
         instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
@@ -298,10 +298,10 @@ class ExecutorIT {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
         return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, s3, taskId, validationTimeSupplier);
+                ingestJobStatusStore, s3, jobRunId, validationTimeSupplier);
     }
 
-    private ExecutorMock buildExecutorWithTable(String tableName, String taskId, Supplier<Instant> validationTimeSupplier) {
+    private ExecutorMock buildExecutorWithTable(String tableName, String jobRunId, Supplier<Instant> validationTimeSupplier) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(SCHEMA);
@@ -310,7 +310,7 @@ class ExecutorIT {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
         return new ExecutorMock(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, null, taskId, validationTimeSupplier);
+                ingestJobStatusStore, null, jobRunId, validationTimeSupplier);
     }
 
     private static class ExecutorMock extends Executor {
@@ -324,9 +324,9 @@ class ExecutorIT {
                      TablePropertiesProvider tablePropertiesProvider,
                      StateStoreProvider stateStoreProvider,
                      IngestJobStatusStore ingestJobStatusStore,
-                     AmazonS3 s3, String taskId, Supplier<Instant> validationTimeSupplier) {
+                     AmazonS3 s3, String jobRunId, Supplier<Instant> validationTimeSupplier) {
             super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                    s3, taskId, validationTimeSupplier);
+                    s3, jobRunId, validationTimeSupplier);
         }
 
         @Override

@@ -36,7 +36,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
         ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(event.getJob().getId(), null,
-                validatedStatus(event), event.getJobRunId(), null);
+                validatedStatus(event), event.getJobRunId(), event.getTaskId());
         tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
                 .add(validationRecord);
@@ -72,7 +72,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
         RecordsProcessedSummary summary = event.getSummary();
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary),
-                event.getTaskId());
+                event.getJobRunId(), event.getTaskId());
         List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));

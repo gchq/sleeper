@@ -52,18 +52,18 @@ public abstract class Executor {
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
-    protected final String runId;
+    protected final String jobRunId;
     protected final Supplier<Instant> validationTimeSupplier;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
                     StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                    String runId, Supplier<Instant> validationTimeSupplier) {
+                    String jobRunId, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.s3Client = s3Client;
-        this.runId = runId;
+        this.jobRunId = jobRunId;
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
@@ -107,7 +107,7 @@ public abstract class Executor {
         args.add(instanceProperties.get(CONFIG_BUCKET));
         args.add(bulkImportJob.getId());
         args.add(taskId);
-        args.add(runId);
+        args.add(jobRunId);
         return args;
     }
 
@@ -149,7 +149,8 @@ public abstract class Executor {
             return false;
         } else {
             ingestJobStatusStore.jobValidated(ingestJobAccepted(
-                    bulkImportJob.toIngestJob(), runId, validationTimeSupplier.get()));
+                    bulkImportJob.toIngestJob(), validationTimeSupplier.get())
+                    .jobRunId(jobRunId).build());
             return true;
         }
     }

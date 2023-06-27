@@ -24,27 +24,37 @@ import java.util.Objects;
 
 public class IngestJobValidatedEvent {
     private final IngestJob job;
-    private final String jobRunId;
     private final Instant validationTime;
     private final List<String> reasons;
+    private final String jobRunId;
+    private final String taskId;
 
-    private IngestJobValidatedEvent(IngestJob job, String jobRunId, Instant validationTime, List<String> reasons) {
-        this.job = job;
-        this.jobRunId = jobRunId;
-        this.validationTime = validationTime;
-        this.reasons = reasons;
+    private IngestJobValidatedEvent(Builder builder) {
+        job = Objects.requireNonNull(builder.job, "job must not be null");
+        validationTime = Objects.requireNonNull(builder.validationTime, "validationTime must not be null");
+        reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
+        jobRunId = builder.jobRunId;
+        taskId = builder.taskId;
     }
 
     public static IngestJobValidatedEvent ingestJobAccepted(IngestJob job, String jobRunId, Instant validationTime) {
-        return new IngestJobValidatedEvent(job, jobRunId, validationTime, List.of());
+        return ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build();
+    }
+
+    public static Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
+        return builder().job(job).validationTime(validationTime).reasons(List.of());
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
-        return new IngestJobValidatedEvent(job, null, validationTime, List.of(reasons));
+        return builder().job(job).validationTime(validationTime).reasons(reasons).build();
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, List<String> reasons) {
-        return new IngestJobValidatedEvent(job, null, validationTime, reasons);
+        return builder().job(job).validationTime(validationTime).reasons(reasons).build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public IngestJob getJob() {
@@ -53,6 +63,10 @@ public class IngestJobValidatedEvent {
 
     public String getJobRunId() {
         return jobRunId;
+    }
+
+    public String getTaskId() {
+        return taskId;
     }
 
     public Instant getValidationTime() {
@@ -68,26 +82,6 @@ public class IngestJobValidatedEvent {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
-        return Objects.equals(jobRunId, that.jobRunId)
-                && Objects.equals(job, that.job)
-                && Objects.equals(validationTime, that.validationTime)
-                && Objects.equals(reasons, that.reasons);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(jobRunId, job, validationTime, reasons);
-    }
-
-    @Override
     public String toString() {
         return "IngestJobValidatedEvent{" +
                 "jobRunId='" + jobRunId + '\'' +
@@ -95,5 +89,53 @@ public class IngestJobValidatedEvent {
                 ", validationTime=" + validationTime +
                 ", reasons='" + reasons + '\'' +
                 '}';
+    }
+
+    public static final class Builder {
+        private IngestJob job;
+        private Instant validationTime;
+        private List<String> reasons;
+        private String jobRunId;
+        private String taskId;
+
+        private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public Builder job(IngestJob job) {
+            this.job = job;
+            return this;
+        }
+
+        public Builder validationTime(Instant validationTime) {
+            this.validationTime = validationTime;
+            return this;
+        }
+
+        public Builder reasons(List<String> reasons) {
+            this.reasons = reasons;
+            return this;
+        }
+
+        public Builder reasons(String... reasons) {
+            return reasons(List.of(reasons));
+        }
+
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
+            return this;
+        }
+
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
+        public IngestJobValidatedEvent build() {
+            return new IngestJobValidatedEvent(this);
+        }
     }
 }

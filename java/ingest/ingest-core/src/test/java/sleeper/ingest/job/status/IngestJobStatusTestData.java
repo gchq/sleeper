@@ -88,6 +88,14 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+    public static ProcessRun acceptedRunOnTask(String taskId, Instant validationTime) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(validationTime,
+                        defaultUpdateTime(validationTime)))
+                .build();
+    }
+
     public static ProcessRun rejectedRun(Instant validationTime, String... reasons) {
         return rejectedRun(validationTime, List.of(reasons));
     }
