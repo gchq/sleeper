@@ -64,7 +64,7 @@ public class DynamoDBStateStoreCreator {
     private final String partitionTableName;
     private final Schema schema;
     private final List<PrimitiveType> rowKeyTypes;
-    private final int garbageCollectorDelayBeforeDeletionInMinutes;
+    private final double garbageCollectorDelayBeforeDeletionInMinutes;
     private final boolean stronglyConsistentReads;
     private final Collection<Tag> tags;
 
@@ -73,7 +73,7 @@ public class DynamoDBStateStoreCreator {
             String fileLifecycleTablename,
             String partitionTablename,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInMinutes,
+            double garbageCollectorDelayBeforeDeletionInMinutes,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB,
             Map<String, String> tags) {
@@ -120,7 +120,7 @@ public class DynamoDBStateStoreCreator {
             AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(FILE_IN_PARTITION_TABLENAME), tableProperties.get(FILE_LIFECYCLE_TABLENAME),
                 tableProperties.get(PARTITION_TABLENAME), tableProperties.getSchema(),
-                tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
+                tableProperties.getDouble(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
                 tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS),
                 dynamoDB, Collections.EMPTY_MAP);
     }

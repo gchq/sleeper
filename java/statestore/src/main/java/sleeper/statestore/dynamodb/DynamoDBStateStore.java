@@ -41,7 +41,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                 tableProperties.get(FILE_LIFECYCLE_TABLENAME),
                 tableProperties.get(PARTITION_TABLENAME),
                 tableProperties.getSchema(),
-                tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
+                tableProperties.getDouble(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
                 tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS),
                 dynamoDB);
     }
@@ -51,7 +51,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
             String fileLifecycleTablename,
             String partitionTablename,
             Schema schema,
-            int garbageCollectorDelayBeforeDeletionInMinutes,
+            double garbageCollectorDelayBeforeDeletionInMinutes,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()

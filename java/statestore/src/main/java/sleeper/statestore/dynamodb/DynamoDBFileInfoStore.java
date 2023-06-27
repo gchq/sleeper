@@ -80,7 +80,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     private final String fileInPartitionTablename;
     private final String fileLifecycleTablename;
     private final boolean stronglyConsistentReads;
-    private final int garbageCollectorDelayBeforeDeletionInMinutes;
+    private final double garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
     private Clock clock = Clock.systemUTC();
 
@@ -399,13 +399,15 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     private Stream<FileInfo> getReadyForGCFileInfosStream() {
-        long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
+        long delayInMilliseconds = (long) (1000.0 * 60.0 * garbageCollectorDelayBeforeDeletionInMinutes);
+        LOGGER.info("Delay in milliseconds is {}", delayInMilliseconds);
         long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
         Map<String, String> expressionAttributeNames = new HashMap<>();
         expressionAttributeNames.put("#status", STATUS);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":deletetime", new AttributeValue().withN("" + deleteTime));
-        expressionAttributeValues.put(":readyforgc", new AttributeValue().withS(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION.toString()));
+        expressionAttributeValues.put(":readyforgc", new AttributeValue().withS(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING.toString()));
+        // LOGGER.info("Running scan on table {} ", fileLifecycleTablename);
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(fileLifecycleTablename)
                 .withConsistentRead(stronglyConsistentReads)
@@ -435,6 +437,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         // List files from file-lifecycle table
         List<FileInfo> fileLifecycleList = getFileLifecycleList();
         Set<String> filenamesFromFileLifecycleList = fileLifecycleList.stream()
+            .filter(f -> f.getFileStatus().equals(ACTIVE))
             .map(FileInfo::getFilename)
             .collect(Collectors.toSet());
         LOGGER.info("Found {} files in the file-lifecycle table", filenamesFromFileLifecycleList.size());
@@ -486,7 +489,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             | InternalServerErrorException e) {
             throw new StateStoreException(e);
         }
-        LOGGER.info("Changed status of file {} to GARBAGE_COLLECTION_PENDING in the file-lifecycle table");
+        LOGGER.info("Changed status of file {} to GARBAGE_COLLECTION_PENDING in the file-lifecycle table", filename);
     }
 
     @Override
@@ -551,7 +554,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         private String fileInPartitionTablename;
         private String fileLifecycleTablename;
         private boolean stronglyConsistentReads;
-        private int garbageCollectorDelayBeforeDeletionInMinutes;
+        private double garbageCollectorDelayBeforeDeletionInMinutes;
 
         private Builder() {
         }
@@ -581,7 +584,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        public Builder garbageCollectorDelayBeforeDeletionInMinutes(double garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }

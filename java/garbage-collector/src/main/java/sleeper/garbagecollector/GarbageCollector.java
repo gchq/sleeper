@@ -69,7 +69,10 @@ public class GarbageCollector {
             LOGGER.info("Obtaining StateStore for table {}", tableName);
             StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
-            LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
+            LOGGER.info("Finding files in state store that should have status of GARBAGE_COLLECTION_PENDING");
+            stateStore.findFilesThatShouldHaveStatusOfGCPending();
+
+            LOGGER.info("Requesting iterator of files ready for garbage collection from state store");
             Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFileInfos();
 
             int numberDeleted = 0;

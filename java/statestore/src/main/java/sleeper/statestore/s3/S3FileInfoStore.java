@@ -72,7 +72,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private static final Function<List<FileInfo>, List<FileInfo>> IDENTITY_UPDATE = l -> l;
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
     private final List<PrimitiveType> rowKeyTypes;
-    private final int garbageCollectorDelayBeforeDeletionInMinutes;
+    private final double garbageCollectorDelayBeforeDeletionInMinutes;
     private final KeySerDe keySerDe;
     private final String fs;
     private final String s3Bucket;
@@ -442,7 +442,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private Stream<FileInfo> getReadyForGCFileInfosStream() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
-            long delayInMilliseconds = 1000L * 60L * garbageCollectorDelayBeforeDeletionInMinutes;
+            long delayInMilliseconds = (long) (1000.0 * 60.0 * garbageCollectorDelayBeforeDeletionInMinutes);
             long deleteTime = clock.millis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFileLifecyclePath(getCurrentFilesRevisionId()));
             return fileInfos.stream().filter(f -> {
@@ -736,7 +736,7 @@ public class S3FileInfoStore implements FileInfoStore {
         private List<PrimitiveType> rowKeyTypes;
         private String fs;
         private String s3Bucket;
-        private int garbageCollectorDelayBeforeDeletionInMinutes;
+        private double garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
 
         public Builder() {
@@ -771,7 +771,7 @@ public class S3FileInfoStore implements FileInfoStore {
             return new S3FileInfoStore(this);
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        public Builder garbageCollectorDelayBeforeDeletionInMinutes(double garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }

@@ -54,7 +54,7 @@ public class S3StateStore extends DelegatingStateStore {
                 tableProperties.get(DATA_BUCKET),
                 tableProperties.get(REVISION_TABLENAME),
                 tableProperties.getSchema(),
-                tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
+                tableProperties.getDouble(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
                 dynamoDB,
                 conf);
     }
@@ -64,7 +64,7 @@ public class S3StateStore extends DelegatingStateStore {
                         String s3Bucket,
                         String dynamoRevisionIdTable,
                         Schema tableSchema,
-                        int garbageCollectorDelayBeforeDeletionInMinutes,
+                        double garbageCollectorDelayBeforeDeletionInMinutes,
                         AmazonDynamoDB dynamoDB,
                         Configuration conf) {
         super(S3FileInfoStore.builder()

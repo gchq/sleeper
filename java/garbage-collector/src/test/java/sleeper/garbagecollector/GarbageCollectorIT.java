@@ -17,13 +17,12 @@ package sleeper.garbagecollector;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -46,13 +45,13 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableLister;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -117,7 +116,7 @@ public class GarbageCollectorIT {
         tableProperties.set(FILE_IN_PARTITION_TABLENAME, tableName + "-fip");
         tableProperties.set(FILE_LIFECYCLE_TABLENAME, tableName + "-fl");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0.1");
         tableProperties.saveToS3(s3);
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
@@ -133,7 +132,7 @@ public class GarbageCollectorIT {
                 .build();
     }
 
-//     @Test
+    @Test
     public void shouldGarbageCollect() throws StateStoreException, IOException, InterruptedException {
         // Given
         AmazonS3 s3Client = createS3Client();
@@ -147,23 +146,92 @@ public class GarbageCollectorIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        System.out.println(tableProperties);
         TableLister tableLister = new TableLister(s3Client, instanceProperties);
         Partition partition = stateStore.getAllPartitions().get(0);
         String tempFolder = createTempDirectory(folder, null).toString();
-        //  - A file which should be garbage collected immediately
+        //  - File1 should be garbage collected as we remove its file-in-partition record
         String file1 = tempFolder + "/file1.parquet";
-        FileInfo fileInfo1 = FileInfo.builder()
+        String file2 = tempFolder + "/file2.parquet";
+        String file3 = tempFolder + "/file3.parquet";
+        // String file4 = tempFolder + "/file4.parquet";
+        FileInfo fileInfo1 = writeFile(file1, partition, schema);
+        FileInfo fileInfo2 = writeFile(file2, partition, schema);
+        FileInfo fileInfo3 = writeFile(file3, partition, schema);
+        // FileInfo fileInfo4 = writeFile(file4, partition, schema);
+        stateStore.addFile(fileInfo1);
+        stateStore.addFile(fileInfo2);
+        stateStore.addFile(fileInfo3);
+        GarbageCollector garbageCollector = new GarbageCollector(new Configuration(), tableLister, tablePropertiesProvider, stateStoreProvider, 10);
+
+        // When 1
+        //  - Run garbage collector - nothing should change
+        garbageCollector.run();
+
+        // Then 1
+        //  - There should be no files ready for garbage collection
+        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
+        //  - All files should still be there
+        assertThat(Files.exists(new File(file1).toPath())).isTrue();
+        assertThat(Files.exists(new File(file2).toPath())).isTrue();
+        assertThat(Files.exists(new File(file3).toPath())).isTrue();
+        assertThat(stateStore.getActiveFileList())
+            .extracting(FileInfo::getFilename)
+            .containsExactlyInAnyOrder(file1, file2, file3);
+
+        // When 2
+        //  - Replace file1 with file4 and immediately run garbage collector
+        String file4 = tempFolder + "/file4.parquet";
+        FileInfo fileInfo4 = writeFile(file4, partition, schema);
+        List<FileInfo> fileInfo1List = new ArrayList<>();
+        fileInfo1List.add(fileInfo1);
+        stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(fileInfo1List, fileInfo4);
+        garbageCollector.run();
+
+        // Then 2
+        //  - Nothing should have changed yet
+        //  - There should be no files ready for garbage collection
+        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
+        //  - All files should still be there
+        assertThat(Files.exists(new File(file1).toPath())).isTrue();
+        assertThat(Files.exists(new File(file2).toPath())).isTrue();
+        assertThat(Files.exists(new File(file3).toPath())).isTrue();
+        assertThat(Files.exists(new File(file4).toPath())).isTrue();
+        assertThat(stateStore.getActiveFileList())
+            .extracting(FileInfo::getFilename)
+            .containsExactlyInAnyOrder(file2, file3, file4);
+
+        // When 3
+        //  - Sleep for 7 seconds
+        Thread.sleep(7000L);
+        garbageCollector.run();
+        garbageCollector.run();
+
+        // Then 3
+        //  - File1 should have been deleted, the rest should not have been deleted
+        assertThat(Files.exists(new File(file1).toPath())).isFalse();
+        assertThat(Files.exists(new File(file2).toPath())).isTrue();
+        assertThat(Files.exists(new File(file3).toPath())).isTrue();
+        assertThat(Files.exists(new File(file4).toPath())).isTrue();
+        assertThat(stateStore.getActiveFileList())
+            .extracting(FileInfo::getFilename)
+            .containsExactlyInAnyOrder(file2, file3, file4);
+
+        s3Client.shutdown();
+        dynamoDBClient.shutdown();
+    }
+
+    private FileInfo writeFile(String filename, Partition partition, Schema schema) throws IOException {
+        FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new IntType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .filename(filename)
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partition.getId())
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis() - 20L * 60L * 1000L)
+                // .lastStateStoreUpdateTime(System.currentTimeMillis() - 20L * 60L * 1000L)
                 .build();
-        ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);
+        ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
@@ -171,79 +239,6 @@ public class GarbageCollectorIT {
             writer1.write(record);
         }
         writer1.close();
-        stateStore.addFile(fileInfo1);
-        //  - An active file which should not be garbage collected
-        String file2 = tempFolder + "/file2.parquet";
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new IntType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(partition.getId())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
-                .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis())
-                .build();
-        ParquetWriter<Record> writer2 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file2), schema);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", i);
-            record.put("value", "" + i);
-            writer2.write(record);
-        }
-        writer2.close();
-        stateStore.addFile(fileInfo2);
-        //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
-        //      just been marked as ready for GC
-        String file3 = tempFolder + "/file3.parquet";
-        FileInfo fileInfo3 = FileInfo.builder()
-                .rowKeyTypes(new IntType())
-                .filename(file3)
-                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                .partitionId(partition.getId())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
-                .numberOfRecords(100L)
-                .lastStateStoreUpdateTime(System.currentTimeMillis())
-                .build();
-        ParquetWriter<Record> writer3 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file3), schema);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", i);
-            record.put("value", "" + i);
-            writer3.write(record);
-        }
-        writer3.close();
-        stateStore.addFile(fileInfo3);
-
-        Configuration conf = new Configuration();
-        GarbageCollector garbageCollector = new GarbageCollector(conf, tableLister, tablePropertiesProvider, stateStoreProvider, 10);
-
-        // When
-        Thread.sleep(1000L);
-        garbageCollector.run(); // This should remove file 1 but leave files 2 and 3
-
-        // Then
-        //  - There should be no more files currently ready for garbage collection
-        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
-        //  - File1 should have been deleted
-        assertThat(Files.exists(new File(file1).toPath())).isFalse();
-        //  - The active file should still be there
-        List<FileInfo> activeFiles = stateStore.getFileInPartitionList();
-        assertThat(activeFiles).containsExactly(fileInfo2);
-        //  - The ready for GC table should still have 1 item in (but it's not returned by getReadyForGCFiles()
-        //      because it is less than 10 seconds since it was marked as ready for GC). As the StateStore API
-        //      does not have a method to return all values in the ready for gc table, we query the table
-        //      directly.
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
-                .withConsistentRead(true);
-        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems())
-                .extracting(item -> item.get(DynamoDBStateStore.FILE_NAME).getS())
-                .containsExactly(file3);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
+        return fileInfo;
     }
 }
