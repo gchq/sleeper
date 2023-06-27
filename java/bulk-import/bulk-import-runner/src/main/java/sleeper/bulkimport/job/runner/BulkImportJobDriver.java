@@ -110,7 +110,7 @@ public class BulkImportJobDriver {
         } catch (RuntimeException e) {
             statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
                     new RecordsProcessed(0, 0), startTime, getTime.get()))
-                    .taskId(taskId).build());
+                    .taskId(taskId).jobRunId(jobRunId).build());
             throw e;
         }
 
@@ -119,8 +119,9 @@ public class BulkImportJobDriver {
                     .addFiles(output.fileInfos());
             LOGGER.info("Added {} files to statestore", output.numFiles());
         } catch (Exception e) {
-            statusStore.jobFinished(ingestJobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get())));
+            statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()))
+                    .taskId(taskId).jobRunId(jobRunId).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
@@ -131,8 +132,9 @@ public class BulkImportJobDriver {
         long numRecords = output.numRecords();
         double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
-        statusStore.jobFinished(ingestJobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                new RecordsProcessed(numRecords, numRecords), startTime, finishTime)));
+        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
+                new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+                .taskId(taskId).jobRunId(jobRunId).build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.

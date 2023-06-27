@@ -419,7 +419,7 @@ class EmrExecutorTest {
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
         BulkImportJob myJob = singleFileJob();
         EmrExecutor executor = executorWithRunIdAndValidationTime(
-                "test-run", Instant.parse("2023-06-12T17:30:00Z"));
+                "test-run", Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executor.runJob(myJob);
