@@ -37,11 +37,11 @@ public class IngestJobFinishedEvent {
     }
 
     public static IngestJobFinishedEvent ingestJobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        return builder()
-                .taskId(taskId)
-                .job(job)
-                .summary(summary)
-                .build();
+        return ingestJobFinished(job, summary).taskId(taskId).build();
+    }
+
+    public static Builder ingestJobFinished(IngestJob job, RecordsProcessedSummary summary) {
+        return builder().job(job).summary(summary);
     }
 
     public String getTaskId() {
