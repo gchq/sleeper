@@ -128,33 +128,26 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printProcessJobRun(ProcessRun run) {
-        if (run.getStartedStatus() instanceof IngestJobValidatedStatus) {
-            printValidatedJobRun(run);
-        } else {
-            runReporter.printProcessJobRun(run);
-        }
-    }
-
-    private void printValidatedJobRun(ProcessRun run) {
-        IngestJobValidatedStatus validatedStatus = (IngestJobValidatedStatus) run.getStartedStatus();
         out.println();
         if (run.getTaskId() != null) {
             out.printf("Run on task %s%n", run.getTaskId());
         }
-        out.printf("Validation Time: %s%n", validatedStatus.getStartTime());
-        out.printf("Validation Update Time: %s%n", validatedStatus.getUpdateTime());
-        out.printf("Job was %s%n", validatedStatus.isValid() ? "accepted" : "rejected with reasons:");
-        if (!validatedStatus.isValid()) {
-            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) validatedStatus;
+        run.getLastStatusOfType(IngestJobValidatedStatus.class)
+                .ifPresent(this::printValidation);
+        run.getLastStatusOfType(IngestJobStartedStatus.class)
+                .ifPresent(started -> runReporter.printProcessJobRun(run, started));
+    }
+
+    private void printValidation(IngestJobValidatedStatus status) {
+        out.printf("Validation Time: %s%n", status.getStartTime());
+        out.printf("Validation Update Time: %s%n", status.getUpdateTime());
+        if (status.isValid()) {
+            out.println("Job was accepted");
+        } else {
+            out.println("Job was rejected with reasons:");
+            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) status;
             rejectedStatus.getReasons().forEach(reason -> out.printf("- %s%n", reason));
         }
-        run.getStatusUpdates().stream()
-                .filter(update -> update instanceof IngestJobStartedStatus)
-                .findFirst().ifPresent(statusUpdate -> {
-                    out.println();
-                    runReporter.printProcessJobRun(run, (IngestJobStartedStatus) statusUpdate);
-                });
-
     }
 
     private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
