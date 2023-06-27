@@ -10,27 +10,31 @@
         "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
       ]
     },
-    "jobRunList": [
+    "jobRuns": [
       {
         "taskId": "task-id",
-        "startedStatus": {
-          "updateTime": "2022-10-13T14:02:10.123Z",
-          "startTime": "2022-10-13T14:02:10Z"
-        },
-        "finishedStatus": {
-          "updateTime": "2022-10-13T14:02:10.123Z",
-          "summary": {
-            "recordsProcessed": {
-              "recordsRead": 1234,
-              "recordsWritten": 1234
-            },
-            "startTime": "2022-10-13T14:02:10Z",
-            "finishTime": "2022-10-13T14:02:10.123Z",
-            "durationInSeconds": 0.123,
-            "recordsReadPerSecond": 10032.520325203252,
-            "recordsWrittenPerSecond": 10032.520325203252
+        "updates": [
+          {
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-10-13T14:02:10.123Z",
+            "startTime": "2022-10-13T14:02:10Z"
+          },
+          {
+            "type": "ProcessFinishedStatus",
+            "updateTime": "2022-10-13T14:02:10.123Z",
+            "summary": {
+              "recordsProcessed": {
+                "recordsRead": 1234,
+                "recordsWritten": 1234
+              },
+              "startTime": "2022-10-13T14:02:10Z",
+              "finishTime": "2022-10-13T14:02:10.123Z",
+              "durationInSeconds": 0.123,
+              "recordsReadPerSecond": 10032.520325203252,
+              "recordsWrittenPerSecond": 10032.520325203252
+            }
           }
-        }
+        ]
       }
     ]
   },
@@ -45,27 +49,31 @@
         "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
       ]
     },
-    "jobRunList": [
+    "jobRuns": [
       {
         "taskId": "task-id",
-        "startedStatus": {
-          "updateTime": "2022-10-13T14:01:10.123Z",
-          "startTime": "2022-10-13T14:01:10Z"
-        },
-        "finishedStatus": {
-          "updateTime": "2022-10-13T14:02:10.123Z",
-          "summary": {
-            "recordsProcessed": {
-              "recordsRead": 1000600,
-              "recordsWritten": 500300
-            },
-            "startTime": "2022-10-13T14:01:10Z",
-            "finishTime": "2022-10-13T14:02:10Z",
-            "durationInSeconds": 60.0,
-            "recordsReadPerSecond": 16676.666666666668,
-            "recordsWrittenPerSecond": 8338.333333333334
+        "updates": [
+          {
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-10-13T14:01:10.123Z",
+            "startTime": "2022-10-13T14:01:10Z"
+          },
+          {
+            "type": "ProcessFinishedStatus",
+            "updateTime": "2022-10-13T14:02:10.123Z",
+            "summary": {
+              "recordsProcessed": {
+                "recordsRead": 1000600,
+                "recordsWritten": 500300
+              },
+              "startTime": "2022-10-13T14:01:10Z",
+              "finishTime": "2022-10-13T14:02:10Z",
+              "durationInSeconds": 60.0,
+              "recordsReadPerSecond": 16676.666666666668,
+              "recordsWrittenPerSecond": 8338.333333333334
+            }
           }
-        }
+        ]
       }
     ]
   },
@@ -77,27 +85,31 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "jobRunList": [
+    "jobRuns": [
       {
         "taskId": "task-id",
-        "startedStatus": {
-          "updateTime": "2022-10-13T12:01:10.123Z",
-          "startTime": "2022-10-13T12:01:10Z"
-        },
-        "finishedStatus": {
-          "updateTime": "2022-10-13T14:01:10.123Z",
-          "summary": {
-            "recordsProcessed": {
-              "recordsRead": 1000600,
-              "recordsWritten": 500300
-            },
-            "startTime": "2022-10-13T12:01:10Z",
-            "finishTime": "2022-10-13T14:01:10Z",
-            "durationInSeconds": 7200.0,
-            "recordsReadPerSecond": 138.97222222222223,
-            "recordsWrittenPerSecond": 69.48611111111111
+        "updates": [
+          {
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-10-13T12:01:10.123Z",
+            "startTime": "2022-10-13T12:01:10Z"
+          },
+          {
+            "type": "ProcessFinishedStatus",
+            "updateTime": "2022-10-13T14:01:10.123Z",
+            "summary": {
+              "recordsProcessed": {
+                "recordsRead": 1000600,
+                "recordsWritten": 500300
+              },
+              "startTime": "2022-10-13T12:01:10Z",
+              "finishTime": "2022-10-13T14:01:10Z",
+              "durationInSeconds": 7200.0,
+              "recordsReadPerSecond": 138.97222222222223,
+              "recordsWrittenPerSecond": 69.48611111111111
+            }
           }
-        }
+        ]
       }
     ]
   },
@@ -109,27 +121,31 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "jobRunList": [
+    "jobRuns": [
       {
         "taskId": "task-id",
-        "startedStatus": {
-          "updateTime": "2022-10-13T12:00:10.123Z",
-          "startTime": "2022-10-13T12:00:10Z"
-        },
-        "finishedStatus": {
-          "updateTime": "2022-10-13T12:00:10.123Z",
-          "summary": {
-            "recordsProcessed": {
-              "recordsRead": 600,
-              "recordsWritten": 300
-            },
-            "startTime": "2022-10-13T12:00:10Z",
-            "finishTime": "2022-10-13T12:00:10.123Z",
-            "durationInSeconds": 0.123,
-            "recordsReadPerSecond": 4878.048780487805,
-            "recordsWrittenPerSecond": 2439.0243902439024
+        "updates": [
+          {
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-10-13T12:00:10.123Z",
+            "startTime": "2022-10-13T12:00:10Z"
+          },
+          {
+            "type": "ProcessFinishedStatus",
+            "updateTime": "2022-10-13T12:00:10.123Z",
+            "summary": {
+              "recordsProcessed": {
+                "recordsRead": 600,
+                "recordsWritten": 300
+              },
+              "startTime": "2022-10-13T12:00:10Z",
+              "finishTime": "2022-10-13T12:00:10.123Z",
+              "durationInSeconds": 0.123,
+              "recordsReadPerSecond": 4878.048780487805,
+              "recordsWrittenPerSecond": 2439.0243902439024
+            }
           }
-        }
+        ]
       }
     ]
   }

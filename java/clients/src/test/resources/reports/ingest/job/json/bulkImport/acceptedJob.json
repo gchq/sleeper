@@ -5,14 +5,16 @@
   "jobList": [
     {
       "jobId": "job11111-1111-1111-1111-111111111111",
-      "jobRunList": [
+      "jobRuns": [
         {
-          "validatedStatus": {
-            "isValid": true,
-            "inputFileCount": 2,
-            "validatedTime": "2023-06-05T17:20:00Z",
-            "updateTime": "2023-06-05T17:20:00.123Z"
-          }
+          "updates": [
+            {
+              "type": "IngestJobAcceptedStatus",
+              "inputFileCount": 2,
+              "validationTime": "2023-06-05T17:20:00Z",
+              "updateTime": "2023-06-05T17:20:00.123Z"
+            }
+          ]
         }
       ]
     }

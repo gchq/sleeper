@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJobWhichStarted;
@@ -55,7 +56,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> mixedJobStatuses = mixedJobStatuses();
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, mixedJobStatuses, 0)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, mixedJobStatuses, 0)).isEqualTo(
                 replaceBracketedJobIds(mixedJobStatuses, example("reports/ingest/job/json/mixedJobs.json")));
     }
 
@@ -65,7 +66,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).isEqualTo(
                 replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/json/jobWithMultipleRuns.json")));
     }
 
@@ -75,7 +76,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).isEqualTo(
                 replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 
@@ -86,7 +87,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         Map<String, Integer> stepCount = Map.of("PENDING", 2, "RUNNING", 1);
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, noJobs, 0, stepCount)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, noJobs, 0, stepCount)).isEqualTo(
                 example("reports/ingest/job/json/noJobsWithEmrStepsUnfinished.json"));
     }
 
@@ -99,7 +100,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
             List<IngestJobStatus> acceptedJob = acceptedJob();
 
             // When / Then
-            assertThat(getJsonReport(JobQuery.Type.ALL, acceptedJob, 0)).hasToString(
+            assertThatJson(getJsonReport(JobQuery.Type.ALL, acceptedJob, 0)).isEqualTo(
                     example("reports/ingest/job/json/bulkImport/acceptedJob.json"));
         }
 
@@ -109,7 +110,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
             List<IngestJobStatus> acceptedJobWhichStarted = acceptedJobWhichStarted();
 
             // When / Then
-            assertThat(getJsonReport(JobQuery.Type.ALL, acceptedJobWhichStarted, 0)).hasToString(
+            assertThatJson(getJsonReport(JobQuery.Type.ALL, acceptedJobWhichStarted, 0)).isEqualTo(
                     example("reports/ingest/job/json/bulkImport/acceptedJobWhichStarted.json"));
         }
 
@@ -119,7 +120,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
             List<IngestJobStatus> rejectedJob = rejectedJobWithMultipleReasons();
 
             // When / Then
-            assertThat(getJsonReport(JobQuery.Type.ALL, rejectedJob, 0)).hasToString(
+            assertThatJson(getJsonReport(JobQuery.Type.ALL, rejectedJob, 0)).isEqualTo(
                     example("reports/ingest/job/json/bulkImport/rejectedJob.json"));
         }
     }

@@ -5,81 +5,95 @@
   "jobList": [
     {
       "jobId": "$(jobId4)",
-      "jobRunList": [
+      "jobRuns": [
         {
           "taskId": "task2222-2222-2222-2222-222222222222",
-          "startedStatus": {
-            "inputFileCount": 4,
-            "startTime": "2022-09-22T13:34:12.001Z",
-            "updateTime": "2022-09-22T13:34:12.123Z"
-          },
-          "finishedStatus": {
-            "updateTime": "2022-09-22T13:35:12.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 600,
-                "recordsWritten": 300
-              },
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 4,
               "startTime": "2022-09-22T13:34:12.001Z",
-              "finishTime": "2022-09-22T13:35:12.001Z",
-              "durationInSeconds": 60.0,
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
+              "updateTime": "2022-09-22T13:34:12.123Z"
+            },
+            {
+              "type": "ProcessFinishedStatus",
+              "updateTime": "2022-09-22T13:35:12.123Z",
+              "summary": {
+                "recordsProcessed": {
+                  "recordsRead": 600,
+                  "recordsWritten": 300
+                },
+                "startTime": "2022-09-22T13:34:12.001Z",
+                "finishTime": "2022-09-22T13:35:12.001Z",
+                "durationInSeconds": 60.0,
+                "recordsReadPerSecond": 10.0,
+                "recordsWrittenPerSecond": 5.0
+              }
             }
-          }
+          ]
         }
       ]
     },
     {
       "jobId": "$(jobId3)",
-      "jobRunList": [
+      "jobRuns": [
         {
           "taskId": "task2222-2222-2222-2222-222222222222",
-          "startedStatus": {
-            "inputFileCount": 3,
-            "startTime": "2022-09-21T13:34:12.001Z",
-            "updateTime": "2022-09-21T13:34:12.123Z"
-          }
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 3,
+              "startTime": "2022-09-21T13:34:12.001Z",
+              "updateTime": "2022-09-21T13:34:12.123Z"
+            }
+          ]
         }
       ]
     },
     {
       "jobId": "$(jobId2)",
-      "jobRunList": [
+      "jobRuns": [
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
-          "startedStatus": {
-            "inputFileCount": 2,
-            "startTime": "2022-09-19T13:34:12.001Z",
-            "updateTime": "2022-09-19T13:34:12.123Z"
-          },
-          "finishedStatus": {
-            "updateTime": "2022-09-19T13:35:12.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 600,
-                "recordsWritten": 300
-              },
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 2,
               "startTime": "2022-09-19T13:34:12.001Z",
-              "finishTime": "2022-09-19T13:35:12.001Z",
-              "durationInSeconds": 60.0,
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
+              "updateTime": "2022-09-19T13:34:12.123Z"
+            },
+            {
+              "type": "ProcessFinishedStatus",
+              "updateTime": "2022-09-19T13:35:12.123Z",
+              "summary": {
+                "recordsProcessed": {
+                  "recordsRead": 600,
+                  "recordsWritten": 300
+                },
+                "startTime": "2022-09-19T13:34:12.001Z",
+                "finishTime": "2022-09-19T13:35:12.001Z",
+                "durationInSeconds": 60.0,
+                "recordsReadPerSecond": 10.0,
+                "recordsWrittenPerSecond": 5.0
+              }
             }
-          }
+          ]
         }
       ]
     },
     {
       "jobId": "$(jobId1)",
-      "jobRunList": [
+      "jobRuns": [
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
-          "startedStatus": {
-            "inputFileCount": 1,
-            "startTime": "2022-09-18T13:34:12.001Z",
-            "updateTime": "2022-09-18T13:34:12.123Z"
-          }
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 1,
+              "startTime": "2022-09-18T13:34:12.001Z",
+              "updateTime": "2022-09-18T13:34:12.123Z"
+            }
+          ]
         }
       ]
     }
