@@ -242,7 +242,7 @@ class StateMachineExecutorTest {
                 .build();
 
         // When
-        stateMachineExecutor.runJob(myJob);
+        stateMachineExecutor.runJob(myJob, "test-run");
 
         // Then
         assertThatJson(requested.get().getInput())

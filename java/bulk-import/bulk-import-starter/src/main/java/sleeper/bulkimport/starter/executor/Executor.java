@@ -52,7 +52,6 @@ public abstract class Executor {
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
-    protected final String jobRunId;
     protected final Supplier<Instant> validationTimeSupplier;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
@@ -63,11 +62,14 @@ public abstract class Executor {
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.s3Client = s3Client;
-        this.jobRunId = jobRunId;
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
     public void runJob(BulkImportJob bulkImportJob) {
+        runJob(bulkImportJob, UUID.randomUUID().toString());
+    }
+
+    public void runJob(BulkImportJob bulkImportJob, String jobRunId) {
         if (null == bulkImportJob) {
             LOGGER.warn("Received null job, exiting early.");
             return;

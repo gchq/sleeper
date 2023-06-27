@@ -41,7 +41,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
 
@@ -73,6 +73,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
@@ -83,7 +84,7 @@ class EmrExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final InstanceProperties instanceProperties = new InstanceProperties();
     private final TableProperties tableProperties = new TableProperties(instanceProperties);
-    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final WriteToMemoryIngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
     @BeforeEach
     public void setUpEmr() {
@@ -414,8 +415,7 @@ class EmrExecutorTest {
         // Given
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
         BulkImportJob myJob = singleFileJob();
-        EmrExecutor executor = executorWithRunIdAndValidationTime(
-                "test-run", Instant.parse("2023-06-02T15:41:00Z"));
+        EmrExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executor.runJob(myJob);
@@ -430,14 +430,31 @@ class EmrExecutorTest {
     }
 
     @Test
+    void shouldReportJobRunIdToStatusStore() {
+        // Given
+        BulkImportJob myJob = singleFileJob();
+        EmrExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+
+        // When
+        executor.runJob(myJob, "test-job-run");
+
+        // Then
+        assertThat(ingestJobStatusStore.getAllJobs("myTable"))
+                .containsExactly(jobStatus(myJob.toIngestJob(),
+                        acceptedRun(Instant.parse("2023-06-02T15:41:00Z"))));
+        assertThat(ingestJobStatusStore.streamTableRecords("myTable"))
+                .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                .containsExactly("test-job-run");
+    }
+
+    @Test
     void shouldConstructArgs() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(JARS_BUCKET, "jarsBucket");
         instanceProperties.set(CONFIG_BUCKET, "configBucket");
         instanceProperties.set(VERSION, "1.2.3");
-        EmrExecutor executor = executorWithRunIdAndValidationTime(
-                "test-run", Instant.parse("2023-06-12T17:30:00Z"));
+        EmrExecutor executor = executorWithValidationTime(Instant.parse("2023-06-12T17:30:00Z"));
         assertThat(executor.constructArgs(singleFileJob(), "test-run", "test-task"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
@@ -456,20 +473,20 @@ class EmrExecutorTest {
     }
 
     private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
-        return executor(configuration, "test-run", Instant::now);
+        return executor(configuration, Instant::now);
     }
 
-    private EmrExecutor executorWithRunIdAndValidationTime(String runId, Instant validationTime) {
-        return executor(new FakeEmrInstanceConfiguration(), runId, List.of(validationTime).iterator()::next);
+    private EmrExecutor executorWithValidationTime(Instant validationTime) {
+        return executor(new FakeEmrInstanceConfiguration(), List.of(validationTime).iterator()::next);
     }
 
     private EmrExecutor executor(
-            EmrInstanceConfiguration configuration, String runId, Supplier<Instant> validationTimeSupplier) {
+            EmrInstanceConfiguration configuration, Supplier<Instant> validationTimeSupplier) {
         return new EmrExecutor(emr, instanceProperties,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
-                ingestJobStatusStore, amazonS3, runId, validationTimeSupplier, configuration);
+                ingestJobStatusStore, amazonS3, null, validationTimeSupplier, configuration);
     }
 
     private EmrExecutor executorWithInstanceGroups() {

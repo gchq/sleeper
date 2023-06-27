@@ -47,6 +47,7 @@ import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -128,6 +129,7 @@ class ExecutorIT {
             fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableName))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
@@ -149,6 +151,7 @@ class ExecutorIT {
             fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
                     .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
@@ -168,6 +171,7 @@ class ExecutorIT {
             fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getJob("my-job")).isPresent().get()
                     .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                     .isEqualTo(jobStatus(importJob.toIngestJob(),
@@ -189,6 +193,7 @@ class ExecutorIT {
             fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs(tableName))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
@@ -210,6 +215,7 @@ class ExecutorIT {
             fakeExecutor.runJob(importJob);
 
             // Then
+            assertThat(fakeExecutor.getJobsRun()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                     .containsExactly(jobStatus(importJob.toIngestJob(),
@@ -235,10 +241,11 @@ class ExecutorIT {
         FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
-        fakeExecutor.runJob(importJob);
+        fakeExecutor.runJob(importJob, "job-run-id");
 
         // Then
-        assertThat(fakeExecutor.isRunJobOnPlatformCalled()).isTrue();
+        assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
+        assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
@@ -257,10 +264,11 @@ class ExecutorIT {
         FakeExecutor fakeExecutor = buildExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
-        fakeExecutor.runJob(importJob);
+        fakeExecutor.runJob(importJob, "job-run-id");
 
         // Then
-        assertThat(fakeExecutor.isRunJobOnPlatformCalled()).isTrue();
+        assertThat(fakeExecutor.getJobsRun()).containsExactly(importJob);
+        assertThat(fakeExecutor.getJobRunIdsOfJobsRun()).containsExactly("job-run-id");
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(importJob.toIngestJob(),
@@ -276,7 +284,7 @@ class ExecutorIT {
         fakeExecutor.runJob(null);
 
         // Then
-        assertThat(fakeExecutor.isRunJobOnPlatformCalled()).isFalse();
+        assertThat(fakeExecutor.getJobsRun()).isEmpty();
     }
 
     private FakeExecutor buildExecutorWithValidationTime(Instant validationTime) {
@@ -288,10 +296,15 @@ class ExecutorIT {
     }
 
     private static class FakeExecutor extends Executor {
-        private boolean runJobOnPlatformCalled = false;
+        private final List<BulkImportJob> jobsRun = new ArrayList<>();
+        private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
 
-        public boolean isRunJobOnPlatformCalled() {
-            return runJobOnPlatformCalled;
+        public List<BulkImportJob> getJobsRun() {
+            return jobsRun;
+        }
+
+        public List<String> getJobRunIdsOfJobsRun() {
+            return jobRunIdsOfJobsRun;
         }
 
         FakeExecutor(InstanceProperties instanceProperties,
@@ -305,7 +318,8 @@ class ExecutorIT {
 
         @Override
         protected void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
-            runJobOnPlatformCalled = true;
+            jobsRun.add(bulkImportJob);
+            jobRunIdsOfJobsRun.add(jobRunId);
         }
 
         @Override
