@@ -24,26 +24,26 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 class ProcessRunsBuilder {
-    private final Map<String, ProcessRun.Builder> builderByRunId = new HashMap<>();
+    private final Map<String, ProcessRun.Builder> builderByJobRunId = new HashMap<>();
     private final Map<String, ProcessRun.Builder> builderByTaskId = new HashMap<>();
     private final List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(ProcessStatusUpdateRecord record) {
-        String runId = record.getRunId();
+        String jobRunId = record.getJobRunId();
         String taskId = record.getTaskId();
         ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
         if (isStartedUpdateAndStartOfRun(statusUpdate)) {
             ProcessRun.Builder builder = ProcessRun.builder()
                     .startedStatus((ProcessRunStartedUpdate) statusUpdate)
                     .taskId(taskId);
-            if (runId != null) {
-                builderByRunId.put(runId, builder);
+            if (jobRunId != null) {
+                builderByJobRunId.put(jobRunId, builder);
             } else {
                 builderByTaskId.put(taskId, builder);
             }
             orderedBuilders.add(builder);
-        } else if (builderByRunId.containsKey(runId)) {
-            addToBuilderByKey(statusUpdate, builderByRunId, runId)
+        } else if (builderByJobRunId.containsKey(jobRunId)) {
+            addToBuilderByKey(statusUpdate, builderByJobRunId, jobRunId)
                     .ifPresent(builder -> {
                         if (taskId != null) {
                             builder.taskId(taskId);

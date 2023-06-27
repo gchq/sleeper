@@ -23,18 +23,18 @@ public class ProcessStatusUpdateRecord {
     private final String jobId;
     private final Instant expiryDate;
     private final ProcessStatusUpdate statusUpdate;
-    private final String runId;
+    private final String jobRunId;
     private final String taskId;
 
     public ProcessStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String taskId) {
         this(jobId, expiryDate, statusUpdate, null, taskId);
     }
 
-    public ProcessStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String runId, String taskId) {
+    public ProcessStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String jobRunId, String taskId) {
         this.jobId = Objects.requireNonNull(jobId, "jobId must not be null");
         this.expiryDate = expiryDate;
         this.statusUpdate = Objects.requireNonNull(statusUpdate, "statusUpdate must not be null");
-        this.runId = runId;
+        this.jobRunId = jobRunId;
         this.taskId = taskId;
     }
 
@@ -54,8 +54,8 @@ public class ProcessStatusUpdateRecord {
         return statusUpdate.getUpdateTime();
     }
 
-    public String getRunId() {
-        return runId;
+    public String getJobRunId() {
+        return jobRunId;
     }
 
     public String getTaskId() {
