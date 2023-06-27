@@ -67,7 +67,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
-    public static final String RUN_ID = "RunId";
+    public static final String JOB_RUN_ID = "JobRunId";
     public static final String TASK_ID = "TaskId";
     public static final String EXPIRY_DATE = "ExpiryDate";
     public static final String UPDATE_TYPE_VALIDATED = "validated";
@@ -89,16 +89,16 @@ public class DynamoDBIngestJobStatusFormat {
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
-                .string(RUN_ID, event.getJobRunId())
+                .string(JOB_RUN_ID, event.getJobRunId())
+                .string(TASK_ID, event.getTaskId())
                 .build();
     }
 
     public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
-        // TODO pass run ID
         return createJobRecord(event.getJob(), UPDATE_TYPE_STARTED)
                 .number(START_TIME, event.getStartTime().toEpochMilli())
+                .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .string(RUN_ID, null)
                 .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
                 .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
@@ -106,11 +106,9 @@ public class DynamoDBIngestJobStatusFormat {
 
     public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
-        // TODO pass run ID
-        // Note that it wasn't passed on this branch before,
-        // so it needs to be tested
         return createJobRecord(event.getJob(), UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
+                .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getRecordsRead())
@@ -138,7 +136,7 @@ public class DynamoDBIngestJobStatusFormat {
                 getStringAttribute(item, JOB_ID),
                 getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
                 getStatusUpdate(item),
-                getStringAttribute(item, RUN_ID),
+                getStringAttribute(item, JOB_RUN_ID),
                 getStringAttribute(item, TASK_ID));
     }
 
